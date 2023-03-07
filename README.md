@@ -7,6 +7,8 @@ designs at IHP’s facility.
 
 As of March 2023, this repository is targeting the SG13G2 process node.
 
+[<p align="center"><img src="docs/images/ihp_logo.png" alt="IHP Logo Image" width="50%"/></p>](https://github.com/IHP-GmbH/IHP-Open-PDK)
+
 # Current status -- Preview
 
 > **Warning**
