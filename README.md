@@ -5,8 +5,7 @@ IHP Open Source PDK project goal is to provide a fully open source Process
 Design Kit and related data, which can be used to create manufacturable
 designs at IHP’s facility.
 
-As of March 2023, this repository is targeting the SG13G2 process node. More
-advanced technologies/nodes may become available in the future.
+As of March 2023, this repository is targeting the SG13G2 process node.
 
 # Current status -- Preview
 
@@ -46,8 +45,7 @@ The IHP is one of the world's leading research institutions in the field of sili
 ## Contacting IHP
 
 Requests for more information about SG13G2 and other standard and
-custom foundry technologies can be emailed to
-<<ihp@ihp-microelectronics.com>>.
+custom foundry technologies can be emailed to \<TBD\>.
 
 # License
 
