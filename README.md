@@ -31,6 +31,10 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 
 # PDK Contents
 
+* Base cellset with limited set of standard logic cells
+    * CDL *(remove _allcells assembly?)*
+    * GDSII *(remove _allcells assembly?)*
+    * LEF, Tech LEF
 * GDSII view of primitive devices
 * KLayout layer property file
 * HSPICE Models of HBT devices
