@@ -36,7 +36,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII *(remove _allcells assembly?)*
     * LEF, Tech LEF
 * GDSII view of primitive devices
-* KLayout layer property file
+* KLayout layer property and tech files
 * HSPICE Models of HBT devices
 * SG13G2 Process specification
 * MOS/HBT Measurements in MDM format
