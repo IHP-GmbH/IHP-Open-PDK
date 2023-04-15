@@ -35,6 +35,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * CDL *(remove _allcells assembly?)*
     * GDSII *(remove _allcells assembly?)*
     * LEF, Tech LEF
+    * SPICE Netlist
 * GDSII view of primitive devices
 * KLayout layer property and tech files
 * HSPICE Models of HBT devices
