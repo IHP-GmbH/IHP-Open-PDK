@@ -52,7 +52,7 @@ The IHP is one of the world's leading research institutions in the field of sili
 ## Contacting IHP
 
 Requests for more information about SG13G2 and other standard and
-custom foundry technologies can be emailed to \<TBD\>.
+custom foundry technologies can be emailed to \<openpdk@ihp-microelectronics.com\>.
 
 # License
 
