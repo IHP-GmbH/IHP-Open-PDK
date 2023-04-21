@@ -40,6 +40,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * KLayout layer property and tech files
 * HSPICE Models of HBT devices
 * SG13G2 Process specification
+* SG13G2 Layout Rules
 * MOS/HBT Measurements in MDM format
 * Project Roadmap Gantt chart
 
