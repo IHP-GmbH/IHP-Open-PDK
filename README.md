@@ -6,9 +6,9 @@ Design Kit and related data, which can be used to create manufacturable
 designs at IHP’s facility.
 
 As of March 2023, this repository is targeting the SG13G2 process node.
-<!--
+
 [<p align="center"><img src="docs/images/ihp_logo.png" alt="IHP Logo Image" width="50%"/></p>](https://github.com/IHP-GmbH/IHP-Open-PDK)
--->
+
 # Current status -- Preview
 
 > **Warning**
@@ -36,6 +36,8 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII *(remove _allcells assembly?)*
     * LEF, Tech LEF
     * SPICE Netlist
+    * Liberty
+    * Verilog
 * GDSII view of primitive devices
 * KLayout layer property and tech files
 * HSPICE Models of HBT devices
