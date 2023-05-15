@@ -36,8 +36,8 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII *(remove _allcells assembly?)*
     * LEF, Tech LEF
     * SPICE Netlist
-    * Liberty *(clkgate cells are not available)*
-    * Verilog *(clkgate cells are not available)*
+    * Liberty
+    * Verilog
 * GDSII view of primitive devices
 * KLayout layer property and tech files
 * HSPICE Models of HBT devices
