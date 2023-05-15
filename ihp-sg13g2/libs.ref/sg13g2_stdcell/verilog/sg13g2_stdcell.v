@@ -730,6 +730,33 @@ module sg13g2_inv_8 (Y, A);
 endmodule
 `endcelldefine
 
+// type: gclk 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_lgcp_1 (GCLK, GATE, CLK);
+	output GCLK;
+	input GATE, CLK;
+	reg notifier;
+	wire delayed_GATE, delayed_CLK;
+
+	// Function
+	wire int_fwire_clk, int_fwire_int_GATE;
+
+	not (int_fwire_clk, delayed_CLK);
+	ihp_latch (int_fwire_int_GATE, notifier, int_fwire_clk, delayed_GATE);
+	and (GCLK, delayed_CLK, int_fwire_int_GATE);
+
+	// Timing
+	specify
+		(CLK => GCLK) = 0;
+		$setuphold (posedge CLK, posedge GATE, 0, 0, notifier,,, delayed_CLK, delayed_GATE);
+		$setuphold (posedge CLK, negedge GATE, 0, 0, notifier,,, delayed_CLK, delayed_GATE);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
 // type: mux2 
 `timescale 1ns/10ps
 `celldefine
@@ -1039,6 +1066,36 @@ module sg13g2_sighold (SH);
 	// Missing function for pin SH
 	// Timing
 	specify
+	endspecify
+endmodule
+`endcelldefine
+
+// type: sgclk 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_slgcp_1 (GCLK, GATE, SCE, CLK);
+	output GCLK;
+	input GATE, SCE, CLK;
+	reg notifier;
+	wire delayed_GATE, delayed_SCE, delayed_CLK;
+
+	// Function
+	wire int_fwire_clk, int_fwire_int_GATE, int_fwire_test;
+
+	not (int_fwire_clk, delayed_CLK);
+	or (int_fwire_test, delayed_GATE, delayed_SCE);
+	ihp_latch (int_fwire_int_GATE, notifier, int_fwire_clk, int_fwire_test);
+	and (GCLK, delayed_CLK, int_fwire_int_GATE);
+
+	// Timing
+	specify
+		(CLK => GCLK) = 0;
+		$setuphold (posedge CLK, posedge GATE, 0, 0, notifier,,, delayed_CLK, delayed_GATE);
+		$setuphold (posedge CLK, negedge GATE, 0, 0, notifier,,, delayed_CLK, delayed_GATE);
+		$setuphold (posedge CLK, posedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$setuphold (posedge CLK, negedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
 	endspecify
 endmodule
 `endcelldefine
