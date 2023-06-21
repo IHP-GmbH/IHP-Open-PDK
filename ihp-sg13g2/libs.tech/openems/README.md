@@ -32,7 +32,7 @@ and map the corresponding material names for the output file.
 All example models provided here are complete and ready to run, they already include the 
 geometry code. Translators are only required when you create your own models from GDSII data.
 
-# Matlab example
+# Matlab inductor example
 The Matlab example SG13_L2n0_30GHz_mesh1um_50dB.m models a 2nH inductor over frequency 
 range 0 to 30 GHz. One single port is defined between the terminals, so that we get 1-port 
 S-parameters. In the model code, that results is converted into the equivalent series 
@@ -40,15 +40,32 @@ elements and L,R, Q are plotted over frequency.
 The example code references two external files: SG13G2 technology setup and a utility 
 to write Touchstone S1P files. 
 
-# Python example
+# Python inductor example
 The Python examples SG13_L2n0_mesh1.5um_v2.py and SG13_L2n0_mesh1um_v2.py model
 a 2nH inductor over frequency range 0 to 30 GHz. One single port is defined between the 
 terminals, so that we get 1-port S-parameters. In the model code, that results is 
 converted into the equivalent series elements and L,R, Q are plotted over frequency.
+The difference between both models is mesh density, 1.5um and 1um. 
 
-The difference between both models is mesh density, 1.5µm and 1µm. 
+Model SG13_L2n0_2port_groundpolygon_mesh1.5um.py shows how to create a 2-port simulation 
+with a common ground node. That ground node is connected to bulk substrate, so that 
+simulation results include both series effects (in coil)  and shunt effects (coil to substrate).
+In openEMS (FDTD) that requires excitation at both ports, one after another. In the code,
+function createSimulation() is called twice, once for each port, to run these two excitations.
+Only with both results we get the full 2x2 element S-matrix for Touchstone *.s2p export.
 
-For the Python examples, all code (including technology setup and S1P export) is included in a single file.
+For the Python inductor models, all code (including technology setup and S1P export) is included in a single file.
+
+# Python transmission line example
+Model SG13_line_2port_TM2overM1_880um_PML.py represents an RFIC microstrip line simulated 
+using two ports. The line is on TopMetal2 over Metal1 ground, line width w=15um for 50 Ohm. 
+
+FDTD method excites one port at a time: excite port 1 to get S11 and S21, 
+excite port 2 to get S22 and S12. In this model, function createSimulation() is called
+twice, once for each port, to run these two excitations. Only with both results we get the 
+full 2x2 element [S] matrix so that we can create an S2P output file.
+For this transmission line, simulation results are compared to measurements. 
+Measurement data for the line is obtained by de-embedding the pad sections from raw measurement.
 
 # Metal model
 Typical openEMS examples for PCB use flat conductors that are infinitely small for the 
