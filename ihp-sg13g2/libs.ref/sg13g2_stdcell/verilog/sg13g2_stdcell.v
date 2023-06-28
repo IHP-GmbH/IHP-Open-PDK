@@ -38,10 +38,188 @@ module sg13g2_a21o_1 (X, A1, A2, B1);
 endmodule
 `endcelldefine
 
+// type: AO21 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_a21o_2 (X, A1, A2, B1);
+	output X;
+	input A1, A2, B1;
+
+	// Function
+	wire int_fwire_0;
+
+	and (int_fwire_0, A1, A2);
+	or (X, int_fwire_0, B1);
+
+	// Timing
+	specify
+		(A1 => X) = 0;
+		(A2 => X) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B1 => X) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => X) = 0;
+		ifnone (B1 => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: a21oi 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_a21oi_1 (Y, A1, A2, B1);
+	output Y;
+	input A1, A2, B1;
+
+	// Function
+	wire int_fwire_0, int_fwire_1;
+
+	and (int_fwire_0, A1, A2);
+	or (int_fwire_1, int_fwire_0, B1);
+	not (Y, int_fwire_1);
+
+	// Timing
+	specify
+		(A1 => Y) = 0;
+		(A2 => Y) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		ifnone (B1 => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: a21oi 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_a21oi_2 (Y, A1, A2, B1);
+	output Y;
+	input A1, A2, B1;
+
+	// Function
+	wire int_fwire_0, int_fwire_1;
+
+	and (int_fwire_0, A1, A2);
+	or (int_fwire_1, int_fwire_0, B1);
+	not (Y, int_fwire_1);
+
+	// Timing
+	specify
+		(A1 => Y) = 0;
+		(A2 => Y) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		ifnone (B1 => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: a221oi 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_a221oi_1 (Y, A1, A2, B1, B2, C1);
+	output Y;
+	input A1, A2, B1, B2, C1;
+
+	// Function
+	wire int_fwire_0, int_fwire_1, int_fwire_2;
+
+	and (int_fwire_0, B1, B2);
+	and (int_fwire_1, A1, A2);
+	or (int_fwire_2, int_fwire_1, int_fwire_0, C1);
+	not (Y, int_fwire_2);
+
+	// Timing
+	specify
+		if (B1 == 1'b1 & B2 == 1'b0)
+			(A1 => Y) = 0;
+		if (B1 == 1'b0 & B2 == 1'b1)
+			(A1 => Y) = 0;
+		if (B1 == 1'b0 & B2 == 1'b0)
+			(A1 => Y) = 0;
+		ifnone (A1 => Y) = 0;
+		if (B1 == 1'b1 & B2 == 1'b0)
+			(A2 => Y) = 0;
+		if (B1 == 1'b0 & B2 == 1'b1)
+			(A2 => Y) = 0;
+		if (B1 == 1'b0 & B2 == 1'b0)
+			(A2 => Y) = 0;
+		ifnone (A2 => Y) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		ifnone (B1 => Y) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B2 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B2 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
+			(B2 => Y) = 0;
+		ifnone (B2 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(C1 => Y) = 0;
+		ifnone (C1 => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: a22oi 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_a22oi_1 (Y, A1, A2, B1, B2);
+	output Y;
+	input A1, A2, B1, B2;
+
+	// Function
+	wire int_fwire_0, int_fwire_1;
+
+	and (int_fwire_0, A1, A2);
+	or (int_fwire_1, int_fwire_0, B1, B2);
+	not (Y, int_fwire_1);
+
+	// Timing
+	specify
+		(A1 => Y) = 0;
+		(A2 => Y) = 0;
+		(B1 => Y) = 0;
+		(B2 => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: AND2 
 `timescale 1ns/10ps
 `celldefine
 module sg13g2_and2_1 (X, A, B);
+	output X;
+	input A, B;
+
+	// Function
+	and (X, A, B);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: AND2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_and2_2 (X, A, B);
 	output X;
 	input A, B;
 
@@ -75,10 +253,49 @@ module sg13g2_and3_1 (X, A, B, C);
 endmodule
 `endcelldefine
 
+// type: AND3 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_and3_2 (X, A, B, C);
+	output X;
+	input A, B, C;
+
+	// Function
+	and (X, A, B, C);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+		(C => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: AND4 
 `timescale 1ns/10ps
 `celldefine
 module sg13g2_and4_1 (X, A, B, C, D);
+	output X;
+	input A, B, C, D;
+
+	// Function
+	and (X, A, B, C, D);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+		(C => X) = 0;
+		(D => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: AND4 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_and4_2 (X, A, B, C, D);
 	output X;
 	input A, B, C, D;
 
@@ -780,6 +997,29 @@ module sg13g2_mux2_1 (X, A0, A1, S);
 endmodule
 `endcelldefine
 
+// type: mux2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_mux2_2 (X, A0, A1, S);
+	output X;
+	input A0, A1, S;
+
+	// Function
+	ihp_mux2 (X, A0, A1, S);
+
+	// Timing
+	specify
+		(A0 => X) = 0;
+		(A1 => X) = 0;
+		if (A0 == 1'b0 & A1 == 1'b1)
+			(S => X) = 0;
+		ifnone (S => X) = 0;
+		if (A0 == 1'b1 & A1 == 1'b0)
+			(S => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: mux4 
 `timescale 1ns/10ps
 `celldefine
@@ -839,6 +1079,27 @@ module sg13g2_nand2_1 (Y, A, B);
 endmodule
 `endcelldefine
 
+// type: nand2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nand2_2 (Y, A, B);
+	output Y;
+	input A, B;
+
+	// Function
+	wire int_fwire_0;
+
+	and (int_fwire_0, A, B);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: nand2b1 
 `timescale 1ns/10ps
 `celldefine
@@ -857,6 +1118,50 @@ module sg13g2_nand2b_1 (Y, A_N, B);
 	specify
 		(A_N => Y) = 0;
 		(B => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: nand2b2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nand2b_2 (Y, A_N, B);
+	output Y;
+	input A_N, B;
+
+	// Function
+	wire A_N__bar, int_fwire_0;
+
+	not (A_N__bar, A_N);
+	and (int_fwire_0, A_N__bar, B);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A_N => Y) = 0;
+		(B => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: nand3 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nand3_1 (Y, A, B, C);
+	output Y;
+	input A, B, C;
+
+	// Function
+	wire int_fwire_0;
+
+	and (int_fwire_0, A, B, C);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+		(C => Y) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -884,6 +1189,29 @@ module sg13g2_nand3b_1 (Y, A_N, B, C);
 endmodule
 `endcelldefine
 
+// type: nand4 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nand4_1 (Y, A, B, C, D);
+	output Y;
+	input A, B, C, D;
+
+	// Function
+	wire int_fwire_0;
+
+	and (int_fwire_0, A, B, C, D);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+		(C => Y) = 0;
+		(D => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: nor2 
 `timescale 1ns/10ps
 `celldefine
@@ -905,10 +1233,97 @@ module sg13g2_nor2_1 (Y, A, B);
 endmodule
 `endcelldefine
 
+// type: nor2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nor2_2 (Y, A, B);
+	output Y;
+	input A, B;
+
+	// Function
+	wire int_fwire_0;
+
+	or (int_fwire_0, A, B);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: nor2b 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nor2b_1 (Y, A, B_N);
+	output Y;
+	input A, B_N;
+
+	// Function
+	wire B_N__bar, int_fwire_0;
+
+	not (B_N__bar, B_N);
+	or (int_fwire_0, A, B_N__bar);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B_N => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: nor2b 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nor2b_2 (Y, A, B_N);
+	output Y;
+	input A, B_N;
+
+	// Function
+	wire B_N__bar, int_fwire_0;
+
+	not (B_N__bar, B_N);
+	or (int_fwire_0, A, B_N__bar);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B_N => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: nor3 
 `timescale 1ns/10ps
 `celldefine
 module sg13g2_nor3_1 (Y, A, B, C);
+	output Y;
+	input A, B, C;
+
+	// Function
+	wire int_fwire_0;
+
+	or (int_fwire_0, A, B, C);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+		(C => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: nor3 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nor3_2 (Y, A, B, C);
 	output Y;
 	input A, B, C;
 
@@ -950,10 +1365,78 @@ module sg13g2_nor4_1 (Y, A, B, C, D);
 endmodule
 `endcelldefine
 
+// type: nor4 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_nor4_2 (Y, A, B, C, D);
+	output Y;
+	input A, B, C, D;
+
+	// Function
+	wire int_fwire_0;
+
+	or (int_fwire_0, A, B, C, D);
+	not (Y, int_fwire_0);
+
+	// Timing
+	specify
+		(A => Y) = 0;
+		(B => Y) = 0;
+		(C => Y) = 0;
+		(D => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: o21ai 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_o21ai_1 (Y, A1, A2, B1);
+	output Y;
+	input A1, A2, B1;
+
+	// Function
+	wire int_fwire_0, int_fwire_1;
+
+	or (int_fwire_0, A1, A2);
+	and (int_fwire_1, int_fwire_0, B1);
+	not (Y, int_fwire_1);
+
+	// Timing
+	specify
+		(A1 => Y) = 0;
+		(A2 => Y) = 0;
+		if (A1 == 1'b1 & A2 == 1'b0)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => Y) = 0;
+		ifnone (B1 => Y) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: or2 
 `timescale 1ns/10ps
 `celldefine
 module sg13g2_or2_1 (X, A, B);
+	output X;
+	input A, B;
+
+	// Function
+	or (X, A, B);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: or2 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_or2_2 (X, A, B);
 	output X;
 	input A, B;
 
@@ -987,10 +1470,49 @@ module sg13g2_or3_1 (X, A, B, C);
 endmodule
 `endcelldefine
 
+// type: or3 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_or3_2 (X, A, B, C);
+	output X;
+	input A, B, C;
+
+	// Function
+	or (X, A, B, C);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+		(C => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
 // type: or4 
 `timescale 1ns/10ps
 `celldefine
 module sg13g2_or4_1 (X, A, B, C, D);
+	output X;
+	input A, B, C, D;
+
+	// Function
+	or (X, A, B, C, D);
+
+	// Timing
+	specify
+		(A => X) = 0;
+		(B => X) = 0;
+		(C => X) = 0;
+		(D => X) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: or4 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_or4_2 (X, A, B, C, D);
 	output X;
 	input A, B, C, D;
 
