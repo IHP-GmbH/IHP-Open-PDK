@@ -32,8 +32,8 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 # PDK Contents
 
 * Base cellset with limited set of standard logic cells
-    * CDL *(remove _allcells assembly?)*
-    * GDSII *(remove _allcells assembly?)*
+    * CDL
+    * GDSII
     * LEF, Tech LEF
     * SPICE Netlist
     * Liberty
