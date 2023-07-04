@@ -38,7 +38,10 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * SPICE Netlist
     * Liberty
     * Verilog
-* GDSII view of primitive devices
+* SRAM cellset
+    * GDSII
+* Primitive devices
+    * GDSII
 * KLayout layer property and tech files
 * HSPICE Models of HBT devices
 * OpenEMS: tutorials, scripts, documentation
