@@ -5,7 +5,7 @@ Directory contents:
 * SG13_`<device>` -> measurement data
 * test_structures -> different test segments layouts (GDSII) with the documentation
 
-### Naming convention
+### DC Test Devices Naming Convention
 ```
 W10u0_L0u5_S387_5
 * W10u0 -> width 10um
