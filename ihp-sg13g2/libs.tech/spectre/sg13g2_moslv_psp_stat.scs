@@ -1,0 +1,99 @@
+simulator lang=spectre insensitive=yes
+******************************************************************************* 
+*                                                                             * 
+* Library:      SG13G2_dev                                                    * 
+* Technologies: SG13G2                                                        *
+* Component:    Spectre model file for Spectre 18                             *
+*                                                                             *
+* Simulator:    Spectre 20.1                                                  *
+* Model:        PSP 103.6                                                     *
+* Revision:     200310                                                        * 
+*                                                                             * 
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2023 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+******************************************************************************* 
+*                                                                             *
+*                                                                             *
+*                S T A T I S T I C A L    V A R I A T I O N S                 *
+*                                                                             *
+*                                                                             *
+******************************************************************************* 
+*
+*
+*
+* NOTE: do not use percent=yes option
+* values are one-sigma deviations (1/3 of min-max)
+* 
+
+parameters sg13g2_lv_nmos_vfbo_mm     = 1.0
+parameters sg13g2_lv_pmos_vfbo_mm     = 1.0
+parameters sg13g2_lv_svaricap_vfbo_mm = 1.0   
+
+statistics {
+  process { 
+    vary sg13g2_lv_nmos_ctl         dist=gauss  std=0.1562  percent=no 
+    vary sg13g2_lv_nmos_rsw1        dist=gauss  std=0.0407  percent=no 
+    vary sg13g2_lv_nmos_muew        dist=gauss  std=0.0320  percent=no 
+    vary sg13g2_lv_nmos_dphibo      dist=gauss  std=0.0656  percent=no 
+    vary sg13g2_lv_nmos_dphibl      dist=gauss  std=0.1135  percent=no 
+    vary sg13g2_lv_nmos_dphibw      dist=gauss  std=0.1197  percent=no 
+    vary sg13g2_lv_nmos_dphiblw     dist=gauss  std=0.0135  percent=no 
+    vary sg13g2_lv_nmos_themuo      dist=gauss  std=0.0026  percent=no 
+    vary sg13g2_lv_nmos_thesatl     dist=gauss  std=0.0908  percent=no 
+    vary sg13g2_lv_nmos_thesatw     dist=gauss  std=0.0272  percent=no 
+    vary sg13g2_lv_nmos_thesatlw    dist=gauss  std=0.1503  percent=no 
+    vary sg13g2_lv_nmos_toxo        dist=gauss  std=0.0133  percent=no 
+    vary sg13g2_lv_nmos_toxovo      dist=gauss  std=0.0133  percent=no 
+    vary sg13g2_lv_nmos_cjorbot     dist=gauss  std=0.0267  percent=no 
+    vary sg13g2_lv_nmos_cjorsti     dist=gauss  std=0.0267  percent=no 
+    vary sg13g2_lv_nmos_cjorgat     dist=gauss  std=0.0267  percent=no 
+   
+    vary sg13g2_lv_pmos_ctl         dist=gauss  std=0.1880  percent=no 
+    vary sg13g2_lv_pmos_rsw1        dist=gauss  std=0.0727  percent=no 
+    vary sg13g2_lv_pmos_muew        dist=gauss  std=0.0235  percent=no 
+    vary sg13g2_lv_pmos_dphibo      dist=gauss  std=0.1078  percent=no 
+    vary sg13g2_lv_pmos_dphibl      dist=gauss  std=0.1412  percent=no 
+    vary sg13g2_lv_pmos_dphibw      dist=gauss  std=1.4858  percent=no 
+    vary sg13g2_lv_pmos_dphiblw     dist=gauss  std=1e-9    percent=no 
+    vary sg13g2_lv_pmos_themuo      dist=gauss  std=0.0247  percent=no 
+    vary sg13g2_lv_pmos_thesatl     dist=gauss  std=0.1718  percent=no 
+    vary sg13g2_lv_pmos_thesatw     dist=gauss  std=0.0427  percent=no 
+    vary sg13g2_lv_pmos_thesatlw    dist=gauss  std=0.1667  percent=no 
+    vary sg13g2_lv_pmos_toxo        dist=gauss  std=0.0133  percent=no 
+    vary sg13g2_lv_pmos_toxovo      dist=gauss  std=0.0133  percent=no 
+    vary sg13g2_lv_pmos_cjorbot     dist=gauss  std=0.0267  percent=no 
+    vary sg13g2_lv_pmos_cjorsti     dist=gauss  std=0.0267  percent=no 
+    vary sg13g2_lv_pmos_cjorgat     dist=gauss  std=0.0267  percent=no 
+   
+    vary sg13g2_lv_svaricap_lap     dist=gauss  std=0.0400 percent=no     
+    vary sg13g2_lv_svaricap_toxo    dist=gauss  std=0.0130 percent=no       
+  }
+
+  mismatch {   
+    vary sg13g2_lv_nmos_vfbo_mm     dist=gauss  std=0.0040 percent=no  
+  
+    vary sg13g2_lv_pmos_vfbo_mm     dist=gauss  std=0.0032 percent=no  
+  
+    vary sg13g2_lv_svaricap_vfbo_mm dist=gauss  std=0.0001 percent=no         
+  }
+  truncate tr=3.0      // +/- 3 sigma
+
+  correlate param=[sg13g2_lv_nmos_dphibo  sg13g2_lv_nmos_toxo]    cc=1
+  correlate param=[sg13g2_lv_pmos_dphibo  sg13g2_lv_pmos_toxo]    cc=1
+}
+
