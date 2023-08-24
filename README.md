@@ -51,6 +51,10 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * MOS/HBT Measurements in MDM format
 * Project Roadmap Gantt chart
 
+## Contributing
+
+Thank you for considering contributing to IHP Open Source PDK project on GitHub! To get started, please fork the repository and create a new branch for your contributions. Whether you're interested in code improvements, bug fixes, feature additions, or documentation enhancements, your input is invaluable. Please ensure your code adheres to [GitHub coding standards](https://github.com/git/git/blob/master/Documentation/CodingGuidelines) and accompanies appropriate tests. Please see the [Contributing file](CONTRIBUTING.md) for additional details. We appreciate your support and look forward to collaborating with you!
+
 # About IHP
 
 **The IHP is a non-university research establishment institutionally funded by the German federal and state governments and a member of the Leibniz Association.**
