@@ -7,10 +7,9 @@ Directory contents:
 * test_structures -> different test segments layouts (GDSII) with the documentation
 
 ### CMOS Device under Test (DUT) Naming Convention
-```
-W10u0_L0u5_S387_5
-* W10u0 -> width 10um
-* L0u5  -> length 0.5um
-* S387  -> test segment S387
-* 5     -> DUT №5
-```
+Example: `W10u0_L0u5_S387_5`
+* `W10u0` -> width 10um
+* `L0u5`  -> length 0.5um
+* `S387`  -> test segment S387
+* `5`     -> DUT №5
+
