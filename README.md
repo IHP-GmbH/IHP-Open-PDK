@@ -43,6 +43,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * Primitive devices
     * GDSII
 * KLayout layer property and tech files
+* KLayout DRC rules (initial/incomplete minimal set)
 * Pcells (limited set, for reference only)
 * HSPICE Models of HBT devices
 * OpenEMS: tutorials, scripts, documentation
