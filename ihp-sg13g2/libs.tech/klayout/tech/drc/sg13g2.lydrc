@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright 2023 IHP PDK Authors
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+     https://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>drc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>drc_scripts</group-name>
+ <menu-path>tools_menu.drc.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>application = RBA::Application.instance
+main_window = application.main_window
+curr_layout_view = main_window.current_view()
+unless curr_layout_view
+    layout_path = RBA::FileDialog::ask_open_file_name("Chose your layout file.", ".", "GDSII files (*.GDS *.gds *.GDS.gz *.gds.gz *.GDS2 *.gds2 *.GDS2.gz *.gds2.gz);; All files (*)")
+    main_window.load_layout(layout_path, 1)
+    curr_layout_view = main_window.current_view()
+end
+active_layout = RBA::CellView::active.layout
+active_cellname = RBA::CellView::active.cell_name
+source(active_layout, active_cellname)
+if active_layout.dbu != 0.001
+    puts "WARNING: Layout dbu value (" + active_layout.dbu.to_s + " ) deviates from rule file dbu value (0.001). This will scale the layout and may not be intended."
+end
+report("design rules: sg13g2 | layout cell: " + active_cellname, "sg13g2.lyrdb")
+
+class DRC::DRCLayer
+
+    def babylon_rectangle(constraint = nil, by = nil, aspect = nil)
+        orthogonal_only = true, measure_extents = false, 
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        self_rectangles = self.rectangles
+        output_layer = DRC::DRCLayer::new(@engine, RBA::Region::new)
+        self_rectangles.data.min_coherence = true
+        self_rectangles.data.each_merged do |self_polygon|
+            self_region = RBA::Region::new(self_polygon)
+            self_region.min_coherence = true
+            long_edge = nil
+            short_edge = nil
+            index = 0 
+            self_region.edges.each do |self_edge|
+                if index == 0
+                    long_edge = self_edge
+                elsif index == 1
+                    if long_edge.length &gt;= self_edge.length
+                        short_edge = self_edge
+                    else
+                        short_edge = long_edge
+                        long_edge = self_edge
+                    end
+                else
+                    break
+                end
+                index += 1
+            end
+            aspect_ratio = long_edge.length/short_edge.length.to_f
+            if !constraint &amp;&amp; !by &amp;&amp; !aspect
+                output_layer.data.insert(self_region)
+            elsif !constraint &amp;&amp; !by &amp;&amp; aspect
+                if babylon_constraint(aspect_ratio, aspect)
+                    output_layer.data.insert(self_region)
+                end
+            elsif constraint &amp;&amp; !by &amp;&amp; !aspect
+                if babylon_constraint(long_edge.length, constraint) || babylon_constraint(short_edge.length, constraint)
+                    output_layer.data.insert(self_region)
+                end
+            elsif constraint &amp;&amp; !by &amp;&amp; aspect
+                if babylon_constraint(aspect_ratio, aspect)
+                    if babylon_constraint(long_edge.length, constraint) || babylon_constraint(short_edge.length, constraint)
+                        output_layer.data.insert(self_region)
+                    end
+                end
+            elsif constraint &amp;&amp; by &amp;&amp; !aspect
+                if (babylon_constraint(long_edge.length, constraint) &amp;&amp; babylon_constraint(short_edge.length, by)) || (babylon_constraint(short_edge.length, constraint) &amp;&amp; babylon_constraint(long_edge.length, by))
+                    output_layer.data.insert(self_region)
+                end
+            elsif constraint &amp;&amp; by &amp;&amp; aspect
+                if babylon_constraint(aspect_ratio, aspect)
+                    if (babylon_constraint(long_edge.length, constraint) &amp;&amp; babylon_constraint(short_edge.length, by)) || (babylon_constraint(short_edge.length, constraint) &amp;&amp; babylon_constraint(long_edge.length, by))
+                        output_layer.data.insert(self_region)
+                    end
+                end
+            else
+                raise "'by' constraint is not allowed without first constraint"
+            end
+        end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+    
+    def babylon_area(constraint)
+        output_layer = self.dup 
+        constraint.each do |expression|
+            output_layer.data.min_coherence = true
+            if expression[0] == "&gt;"
+                output_layer = output_layer.with_area((expression[1] + 1), nil)
+            elsif expression[0] == "&lt;"
+                output_layer = output_layer.with_area(nil, expression[1])
+            elsif expression[0] == "=="
+                output_layer = output_layer.with_area(expression[1])
+            elsif expression[0] == "!="
+                output_layer = output_layer.without_area(expression[1])
+            elsif expression[0] == "&gt;="
+                output_layer = output_layer.with_area(expression[1], nil)
+            elsif expression[0] == "&lt;="
+                output_layer = output_layer.with_area(nil, (expression[1] + 1))
+            else
+                raise "invalid expression"
+            end
+        end
+        return output_layer
+    end
+    
+    def babylon_constraint(value, constraint)
+        output_bool = true
+        constraint.each do |expression|
+            if expression[0] == "&gt;"
+                output_bool = output_bool &amp;&amp; (value &gt; expression[1])
+            elsif expression[0] == "&lt;"
+                output_bool = output_bool &amp;&amp; (value &lt; expression[1])
+            elsif expression[0] == "=="
+                output_bool = output_bool &amp;&amp; (value == expression[1])
+            elsif expression[0] == "!="
+                output_bool = output_bool &amp;&amp; (value != expression[1])
+            elsif expression[0] == "&gt;="
+                output_bool = output_bool &amp;&amp; (value &gt;= expression[1])
+            elsif expression[0] == "&lt;="
+                output_bool = output_bool &amp;&amp; (value &lt;= expression[1])
+            else
+                raise "invalid expression"
+            end
+        end
+        return output_bool
+    end
+
+    def babylon_not(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self - other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+end
+
+NWell_org = source.polygons("31/0")
+NWell_pin_org = source.polygons("31/2")
+Activ_org = source.polygons("1/0")
+Activ_pin_org = source.polygons("1/2")
+GatPoly_org = source.polygons("5/0")
+GatPoly_pin_org = source.polygons("5/2")
+Cont_org = source.polygons("6/0")
+Metal1_org = source.polygons("8/0")
+Metal1_pin_org = source.polygons("8/2")
+Metal2_org = source.polygons("10/0")
+Metal2_pin_org = source.polygons("10/2")
+Metal3_org = source.polygons("30/0")
+Metal3_pin_org = source.polygons("30/2")
+Metal4_org = source.polygons("50/0")
+Metal4_pin_org = source.polygons("50/2")
+Metal5_org = source.polygons("67/0")
+Metal5_pin_org = source.polygons("67/2")
+TopMetal1_org = source.polygons("126/0")
+TopMetal1_pin_org = source.polygons("126/2")
+TopMetal2_org = source.polygons("134/0")
+TopMetal2_pin_org = source.polygons("134/2")
+EdgeSeal_org = source.polygons("39/0")
+PEmWind_org = source.polygons("11/0")
+BasPoly_org = source.polygons("13/0")
+DeepCo_org = source.polygons("35/0")
+PEmPoly_org = source.polygons("53/0", "70/0")
+EmPoly_org = source.polygons("55/0")
+LDMOS_org = source.polygons("57/0")
+PBiWind_org = source.polygons("58/0")
+Flash_org = source.polygons("71/0")
+ColWind_org = source.polygons("139/0")
+NoDRC = source.polygons("62/0")
+LBE_org = source.polygons("157/0")
+copy_PEmWind_org = PEmWind_org.dup
+copy_BasPoly_org = BasPoly_org.dup
+copy_DeepCo_org = DeepCo_org.dup
+copy_PEmPoly_org = PEmPoly_org.dup
+copy_EmPoly_org = EmPoly_org.dup
+copy_LDMOS_org = LDMOS_org.dup
+copy_PBiWind_org = PBiWind_org.dup
+copy_Flash_org = Flash_org.dup
+copy_ColWind_org = ColWind_org.dup
+NWell_org_not_NoDRC = NWell_org.babylon_not(NoDRC)
+Activ_org_not_NoDRC = Activ_org.babylon_not(NoDRC)
+GatPoly_org_not_NoDRC = GatPoly_org.babylon_not(NoDRC)
+Cont_org_not_NoDRC = Cont_org.babylon_not(NoDRC)
+Activ_pin_org_not_NoDRC = Activ_pin_org.babylon_not(NoDRC)
+GatPoly_pin_org_not_NoDRC = GatPoly_pin_org.babylon_not(NoDRC)
+NWell_pin_org_not_NoDRC = NWell_pin_org.babylon_not(NoDRC)
+Metal1_org_not_NoDRC = Metal1_org.babylon_not(NoDRC)
+Metal2_org_not_NoDRC = Metal2_org.babylon_not(NoDRC)
+Metal3_org_not_NoDRC = Metal3_org.babylon_not(NoDRC)
+Metal4_org_not_NoDRC = Metal4_org.babylon_not(NoDRC)
+Metal5_org_not_NoDRC = Metal5_org.babylon_not(NoDRC)
+TopMetal1_org_not_NoDRC = TopMetal1_org.babylon_not(NoDRC)
+TopMetal2_org_not_NoDRC = TopMetal2_org.babylon_not(NoDRC)
+EdgeSeal_org_not_NoDRC = EdgeSeal_org.babylon_not(NoDRC)
+Metal1_pin_org_not_NoDRC = Metal1_pin_org.babylon_not(NoDRC)
+Metal2_pin_org_not_NoDRC = Metal2_pin_org.babylon_not(NoDRC)
+Metal3_pin_org_not_NoDRC = Metal3_pin_org.babylon_not(NoDRC)
+Metal4_pin_org_not_NoDRC = Metal4_pin_org.babylon_not(NoDRC)
+Metal5_pin_org_not_NoDRC = Metal5_pin_org.babylon_not(NoDRC)
+TopMetal1_pin_org_not_NoDRC = TopMetal1_pin_org.babylon_not(NoDRC)
+TopMetal2_pin_org_not_NoDRC = TopMetal2_pin_org.babylon_not(NoDRC)
+LBE_org_not_NoDRC = LBE_org.babylon_not(NoDRC)
+(copy_PEmWind_org).output("forbidden.PEmWind", " PEmWind forbidden layer in 0.13um designs")
+(copy_BasPoly_org).output("forbidden.BasPoly", " BasPoly forbidden layer in 0.13um designs")
+(copy_DeepCo_org).output("forbidden.DeepCo", " DeepCo forbidden layer in 0.13um designs")
+(copy_PEmPoly_org).output("forbidden.PEmPoly", " PEmPoly forbidden layer in 0.13um designs")
+(copy_EmPoly_org).output("forbidden.EmPoly", " EmPoly forbidden layer in 0.13um designs")
+(copy_LDMOS_org).output("forbidden.LDMOS", " LDMOS forbidden layer in 0.13um designs")
+(copy_PBiWind_org).output("forbidden.PBiWind", " PBiWind forbidden layer in 0.13um designs")
+(copy_Flash_org).output("forbidden.Flash", " Flash forbidden layer in 0.13um designs")
+(copy_ColWind_org).output("forbidden.ColWind", " ColWind forbidden layer in 0.13um designs")
+NWell = NWell_org_not_NoDRC
+Activ = Activ_org_not_NoDRC
+GatPoly = GatPoly_org_not_NoDRC
+Cont = Cont_org_not_NoDRC
+Activ_pin = Activ_pin_org_not_NoDRC
+GatPoly_pin = GatPoly_pin_org_not_NoDRC
+NWell_pin = NWell_pin_org_not_NoDRC
+Metal1 = Metal1_org_not_NoDRC
+Metal2 = Metal2_org_not_NoDRC
+Metal3 = Metal3_org_not_NoDRC
+Metal4 = Metal4_org_not_NoDRC
+Metal5 = Metal5_org_not_NoDRC
+TopMetal1 = TopMetal1_org_not_NoDRC
+TopMetal2 = TopMetal2_org_not_NoDRC
+EdgeSeal = EdgeSeal_org_not_NoDRC
+Metal1_pin = Metal1_pin_org_not_NoDRC
+Metal2_pin = Metal2_pin_org_not_NoDRC
+Metal3_pin = Metal3_pin_org_not_NoDRC
+Metal4_pin = Metal4_pin_org_not_NoDRC
+Metal5_pin = Metal5_pin_org_not_NoDRC
+TopMetal1_pin = TopMetal1_pin_org_not_NoDRC
+TopMetal2_pin = TopMetal2_pin_org_not_NoDRC
+LBE = LBE_org_not_NoDRC
+Activ_pin_not_Activ = Activ_pin.babylon_not(Activ)
+GatPoly_pin_not_GatPoly = GatPoly_pin.babylon_not(GatPoly)
+NWell_pin_not_NWell = NWell_pin.babylon_not(NWell)
+Cont_outside_EdgeSeal = Cont.merged(true, 0).outside(EdgeSeal)
+Metal1_pin_not_Metal1 = Metal1_pin.babylon_not(Metal1)
+Metal2_pin_not_Metal2 = Metal2_pin.babylon_not(Metal2)
+Metal3_pin_not_Metal3 = Metal3_pin.babylon_not(Metal3)
+Metal4_pin_not_Metal4 = Metal4_pin.babylon_not(Metal4)
+Metal5_pin_not_Metal5 = Metal5_pin.babylon_not(Metal5)
+TopMetal1_pin_not_TopMetal1 = TopMetal1_pin.babylon_not(TopMetal1)
+TopMetal2_pin_not_TopMetal2 = TopMetal2_pin.babylon_not(TopMetal2)
+area_LBE_2500000 = LBE.babylon_area([["&gt;", 250000.0*1000.0*1000.0]])
+Cont_SQ = Cont.babylon_rectangle([["==", 160]], [["==", 160]], nil)
+(Activ_pin_not_Activ).output("forbidden.a", " Activ enclosure of Activ_pin = 0.0")
+(GatPoly_pin_not_GatPoly).output("forbidden.b", " GatPoly enclosure of GatPoly_pin = 0.0")
+(NWell_pin_not_NWell).output("forbidden.c", " NWell enclosure of NWell_pin = 0.0")
+(Metal1_pin_not_Metal1).output("forbidden.d", " Metal1 enclosure of Metal1_pin = 0.0")
+(Metal2_pin_not_Metal2).output("forbidden.f.M1", " Metal2 enclosure of Metal2_pin = 0.0")
+(Metal3_pin_not_Metal3).output("forbidden.f.M2", " Metal3 enclosure of Metal3_pin = 0.0")
+(Metal4_pin_not_Metal4).output("forbidden.f.M3", " Metal4 enclosure of Metal4_pin = 0.0")
+(Metal5_pin_not_Metal5).output("forbidden.f.M4", " Metal5 enclosure of Metal5_pin = 0.0")
+(TopMetal1_pin_not_TopMetal1).output("forbidden.f.M5", " TopMetal1 enclosure of TopMetal1_pin = 0.0")
+(TopMetal2_pin_not_TopMetal2).output("forbidden.f.MT1", " TopMetal2 enclosure of TopMetal2_pin = 0.0")
+(area_LBE_2500000).output("LBE.b1", " LBE.b1: Max allowed LBE area = 250000.0")
+Cont_outside_EdgeSeal_not_Cont_SQ = Cont_outside_EdgeSeal.babylon_not(Cont_SQ)
+(Cont_outside_EdgeSeal_not_Cont_SQ).output("Cnt.a", " Min.and max. size of Cont = 0.16")
+</text>
+</klayout-macro>
