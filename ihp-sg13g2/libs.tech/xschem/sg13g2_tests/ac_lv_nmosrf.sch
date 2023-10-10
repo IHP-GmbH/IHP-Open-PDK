@@ -98,7 +98,7 @@ lab=Vout2}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv_psp.lib mos_tt
+.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
 .lib $::SG13G2_MODELS/cornerRES.lib res_typ 
 "}
 C {devices/code_shown.sym} 1190 -310 0 0 {name=NGSPICE only_toplevel=true 

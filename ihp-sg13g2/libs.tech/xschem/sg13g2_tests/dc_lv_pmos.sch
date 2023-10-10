@@ -61,7 +61,7 @@ lab=#net3}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv_psp.lib mos_tt
+.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
 value="

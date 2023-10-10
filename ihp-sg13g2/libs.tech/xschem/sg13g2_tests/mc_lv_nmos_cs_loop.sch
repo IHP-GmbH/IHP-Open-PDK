@@ -28,7 +28,7 @@ lab=Vgs}
 C {devices/code_shown.sym} 260 110 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv_psp.lib mos_tt_stat
+.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt_stat
 "}
 C {devices/code_shown.sym} -300 -440 0 0 {name=NGSPICE only_toplevel=true 
 value="

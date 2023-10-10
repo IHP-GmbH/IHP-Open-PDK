@@ -117,8 +117,8 @@ lab=Vdsp}
 C {devices/code_shown.sym} -330 -530 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv_psp.lib mos_tt
-.lib $::SG13G2_MODELS/cornerMOShv_psp.lib mos_tt
+.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
+.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} -320 -410 0 0 {name=NGSPICE only_toplevel=true 
 value="

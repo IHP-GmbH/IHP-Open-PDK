@@ -28,9 +28,9 @@ The test circuits are organized by simulation type and shown in the table below:
 | sp_rfmim_cap.sch           | The S-parameters  simulation of a rfmim capacitor. Measurements of capacitance and series resistance. Three corners available: cap_typ, cap_bcs, cap_wcs.   |
 
 
-## Python postprocessing scripts
+## Python post processing scripts
 
-Since the data from MC anlysis are exported into a CSV file some python scripts are provided in order to postporocess 
+Since the data from MC analysis are exported into a CSV file some python scripts are provided in order to post process 
 and visualize the data (usually in a form of a histogram). 
 The common use of a scrip is 
 
@@ -58,12 +58,12 @@ Example MC simulation $f_{3dB}$ results for a HBT based common emitter amplifier
 |--|--|--|
 |![image](fig/mc_hbt_3dB_bcs.csv.png) |![image](fig/mc_hbt_3dB_typ.csv.png)  | ![image](fig/mc_hbt_3dB_wcs.csv.png) |
 
-Example MC simulation tergeting $V_{GS}$ of a NMOS transistor polarized using current source.
+Example MC simulation targeting $V_{GS}$ of a NMOS transistor polarized using current source.
 |Low voltage|High voltage|
 |--|--|
 |![image](fig/sg13_lv_nmos_cs.csv.png) |![image](fig/sg13_hv_nmos_cs.csv.png)  |
 
-Example MC simulation tergeting $V_{GS}$ of a PMOS transistor polarized using current source.
+Example MC simulation targeting $V_{GS}$ of a PMOS transistor polarized using current source.
 |Low voltage|High voltage|
 |--|--|
 |![image](fig/sg13_lv_pmos_cs.csv.png) |![image](fig/sg13_hv_pmos_cs.csv.png)  |
