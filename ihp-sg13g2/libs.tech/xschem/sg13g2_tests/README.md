@@ -40,11 +40,10 @@ The following table describes the purpose of each script.
 
 | Script name                | Description                                           |
 |--------------------------- |  -----------------------------------------------------|
-| MC_mos.py                  | Reports mean and std and plots the $V_{GS}$ histogram  using data form `mc_xx_ymos_cs.csv`. The image is also saved into a png file 
-| MC_res.py                  | Reports mean and std and plots the $R_{sil}$, $R_{ppd}$, $R_{high}$ histograms using data form `mc_res_op.csv`. The image is also saved into a png file 
-| MC_mim_cap.py              | Reports mean and std and plots MiM capacitor histograms using data form `mc_cmim.csv`. The image is also saved into a png file 
-| MC_hbt_3dB.py              | Reports mean and std and plots 3dB cut-off frequency histograms using data form `mc_hbt_3dB.csv`. The image is also saved into a png file 
-| mc_hbt_3dB.py              | Reports mean and std and plots 3dB cut-off frequency histograms using data form `mc_hbt_3dB.csv`. The image is also saved into a png file 
+| MC_mos.py                  | Reports mean and std and plots the $V_{GS}$ histogram  using data form `mc_xx_ymos_cs.csv`. The generated plot is saved into a png file 
+| MC_res.py                  | Reports mean and std and plots the $R_{sil}$, $R_{ppd}$, $R_{high}$ histograms using data form `mc_res_op.csv`. The generated plot is saved into a png file 
+| MC_mim_cap.py              | Reports mean and std and plots MiM capacitor histograms using data form `mc_cmim.csv`. The generated plot is saved into a png file 
+| MC_hbt_3dB.py              | Reports mean and std and plots 3dB cut-off frequency histograms using data form `mc_hbt_3dB.csv`. The generated plot issaved into a png file `mc_hbt_3dB.csv.png` 
 
 ## Results
 
