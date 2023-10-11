@@ -39,7 +39,7 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 
 The top level schematic is `IHP_testcases.sch` can be found at `libs.tech/xschem/sg13g2_tests` directory. 
 By default each test case exports the netlist to the `simulation` directory where `.spiceinit`file is uesd to configure NGSpice in HSPICE compatibility mode. Also a `psp103_nqs.osdi` file is 
-by default placed in this directory in order to simulate the MOSFET devices using PSP103 model. This file can be regenerated and updated (if necessary) using method described [here](https://gitlab.com/dmt-development/ihp_sg13g2_compact_models) 
+by default placed in this directory in order to simulate the MOSFET devices using PSP103 model. This file can be regenerated and updated (if necessary) using method described [here](../ngspice/openvaf/README.md) 
 It is important to notice that the NGSpice version should be 40+ and it have to compiled using `--enable-osdi` flag as follows:
 ```
 git clone https://git.code.sf.net/p/ngspice/ngspice ngspice-ngspice
