@@ -25,12 +25,12 @@ L 7 1040 -730 1040 -60 {}
 L 7 1380 -730 1380 -60 {}
 L 7 20 -730 20 -60 {}
 L 7 1750 -730 1750 -60 {}
+L 7 2140 -730 2140 -60 {}
 T {DC} 40 -710 0 0 0.8 0.8 {}
 T {Transient} 380 -710 0 0 0.8 0.8 {}
 T {AC} 730 -710 0 0 0.8 0.8 {}
 T {Monte Carlo} 1060 -710 0 0 0.8 0.8 {}
-T {S-param
-} 1440 -710 0 0 0.8 0.8 {}
+T {S-param} 1440 -710 0 0 0.8 0.8 {}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 90 -780 0 0 {name=h1
 descr="IHP-Open-PDK"
@@ -61,3 +61,6 @@ C {sg13g2_tests/sp_parasitic_cap.sym} 1560 -590 0 0 {name=x22}
 C {sg13g2_tests/sp_rfmim_cap.sym} 1560 -550 0 0 {name=x23}
 C {sg13g2_tests/dc_ntap1.sym} 180 -400 0 0 {name=x25}
 C {sg13g2_tests/dc_ptap1.sym} 180 -360 0 0 {name=x26}
+C {sg13g2_tests/tran_logic_not.sym} 520 -590 0 0 {name=x27}
+C {sg13g2_tests/dc_logic_not.sym} 180 -220 0 0 {name=x28}
+C {sg13g2_tests/tran_logic_nand.sym} 520 -550 0 0 {name=x29}
