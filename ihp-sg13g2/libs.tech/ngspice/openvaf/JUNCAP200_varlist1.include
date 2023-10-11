@@ -1,0 +1,106 @@
+//======================================================================================
+//======================================================================================
+// Filename: JUNCAP200_varlist1.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA) and 2012-2015 Delft University of Technology 
+//  Licensed under the Educational Community License, Version 2.0 (the "License"); you
+//  may not use this file except in compliance with the License. You may obtain a copy
+//  of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 200.5.0, August 2016
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+        // declaration of clipped parameters
+        real TRJ_i, IMAX_i, FREV_i;
+        real CJORBOT_i, CJORSTI_i, CJORGAT_i, VBIRBOT_i, VBIRSTI_i, VBIRGAT_i;
+        real PBOT_i, PSTI_i, PGAT_i, PHIGBOT_i, PHIGSTI_i, PHIGGAT_i;
+        real IDSATRBOT_i, IDSATRSTI_i, IDSATRGAT_i, XJUNSTI_i, XJUNGAT_i;
+        real CSRHBOT_i, CSRHSTI_i, CSRHGAT_i, CTATBOT_i, CTATSTI_i, CTATGAT_i;
+        real MEFFTATBOT_i, MEFFTATSTI_i, MEFFTATGAT_i;
+        real CBBTBOT_i, CBBTSTI_i, CBBTGAT_i, FBBTRBOT_i, FBBTRSTI_i, FBBTRGAT_i;
+        real STFBBTBOT_i, STFBBTSTI_i, STFBBTGAT_i;
+        real VBRBOT_i, VBRSTI_i, VBRGAT_i, PBRBOT_i, PBRSTI_i, PBRGAT_i;
+
+        real SWJUNEXP_i, VJUNREF_i, FJUNQ_i;
+
+        // declaration of variables calculated outside macro "juncapfunction", voltage-independent part
+        real tkr, tkd, auxt, KBOL_over_QELE, phitr, phitrinv, phitd, phitdinv;
+        real perfc, berfc, cerfc;
+        real deltaphigr, deltaphigd, pmax;
+
+        real phigrbot, phigrsti, phigrgat, phigdbot, phigdsti, phigdgat;
+        real ftdbot, ftdsti, ftdgat, idsatbot, idsatsti, idsatgat;
+        real ubibot, ubisti, ubigat, vbibot, vbisti, vbigat;
+        real vbibot2, vbisti2, vbigat2, pbot2, psti2, pgat2, vbibot2r, vbisti2r, vbigat2r;
+        real vbiinvbot, vbiinvsti, vbiinvgat;
+        real one_minus_PBOT, one_minus_PSTI, one_minus_PGAT;
+        real one_over_one_minus_PBOT, one_over_one_minus_PSTI, one_over_one_minus_PGAT;
+        real cjobot, cjosti, cjogat;
+        real qprefbot, qprefsti, qprefgat, qpref2bot, qpref2sti, qpref2gat;
+        real wdepnulrbot, wdepnulrsti, wdepnulrgat, wdepnulrinvbot, wdepnulrinvsti, wdepnulrinvgat;
+        real VBIRBOTinv, VBIRSTIinv, VBIRGATinv;
+        real deltaEbot, deltaEsti, deltaEgat, atatbot, atatsti, atatgat;
+        real btatpartbot, btatpartsti, btatpartgat;
+        real fbbtbot, fbbtsti, fbbtgat;
+        real alphaav, fstopbot, fstopsti, fstopgat, VBRinvbot, VBRinvsti, VBRinvgat;
+        real slopebot, slopesti, slopegat;
+        real vmaxbot, vmaxsti, vmaxgat;
+
+        // JUNCAP-Express variables
+        real I1, I2, I3, I4, I5;
+        real I1_cor, I2_cor, I3_cor, I4_cor, I5_cor;
+        real V1, V2, V3, V4, V5;
+        real alphaje, m0_rev, mcor_rev;
+        real tt0, tt1, tt2, tm0, tm1;
+        real FRACNA, FRACNB, FRACI;
+        real zfrac;
+        real ijunfor1, ijunfor2, ijunrev;
+
+        `ifdef JUNCAP_StandAlone
+        // do nothing
+        `else // JUNCAP_StandAlone
+        real CJORBOTD_i, CJORSTID_i, CJORGATD_i, VBIRBOTD_i, VBIRSTID_i, VBIRGATD_i;
+        real PBOTD_i, PSTID_i, PGATD_i, PHIGBOTD_i, PHIGSTID_i, PHIGGATD_i;
+        real IDSATRBOTD_i, IDSATRSTID_i, IDSATRGATD_i, XJUNSTID_i, XJUNGATD_i;
+        real CSRHBOTD_i, CSRHSTID_i, CSRHGATD_i, CTATBOTD_i, CTATSTID_i, CTATGATD_i;
+        real MEFFTATBOTD_i, MEFFTATSTID_i, MEFFTATGATD_i;
+        real CBBTBOTD_i, CBBTSTID_i, CBBTGATD_i, FBBTRBOTD_i, FBBTRSTID_i, FBBTRGATD_i;
+        real STFBBTBOTD_i, STFBBTSTID_i, STFBBTGATD_i;
+        real VBRBOTD_i, VBRSTID_i, VBRGATD_i, PBRBOTD_i, PBRSTID_i, PBRGATD_i;
+
+        real VJUNREFD_i, FJUNQD_i;
+
+        real phigrbot_d, phigrsti_d, phigrgat_d, phigdbot_d, phigdsti_d, phigdgat_d;
+        real ftdbot_d, ftdsti_d, ftdgat_d, idsatbot_d, idsatsti_d, idsatgat_d;
+        real ubibot_d, ubisti_d, ubigat_d, vbibot_d, vbisti_d, vbigat_d;
+        real vbiinvbot_d, vbiinvsti_d, vbiinvgat_d;
+        real one_minus_PBOT_d, one_minus_PSTI_d, one_minus_PGAT_d;
+        real one_over_one_minus_PBOT_d, one_over_one_minus_PSTI_d, one_over_one_minus_PGAT_d;
+        real cjobot_d, cjosti_d, cjogat_d;
+        real qprefbot_d, qprefsti_d, qprefgat_d, qpref2bot_d, qpref2sti_d, qpref2gat_d;
+        real wdepnulrbot_d, wdepnulrsti_d, wdepnulrgat_d, wdepnulrinvbot_d, wdepnulrinvsti_d, wdepnulrinvgat_d;
+        real VBIRBOTinv_d, VBIRSTIinv_d, VBIRGATinv_d;
+        real deltaEbot_d, deltaEsti_d, deltaEgat_d, atatbot_d, atatsti_d, atatgat_d;
+        real btatpartbot_d, btatpartsti_d, btatpartgat_d;
+        real fbbtbot_d, fbbtsti_d, fbbtgat_d;
+        real fstopbot_d, fstopsti_d, fstopgat_d, VBRinvbot_d, VBRinvsti_d, VBRinvgat_d;
+        real slopebot_d, slopesti_d, slopegat_d;
+        `endif // JUNCAP_StandAlone
+
+        `LocalGlobalVars

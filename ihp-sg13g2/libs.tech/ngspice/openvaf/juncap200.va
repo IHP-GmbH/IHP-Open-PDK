@@ -1,0 +1,339 @@
+//======================================================================================
+//======================================================================================
+// Filename: juncap200.va
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA) and 2012-2015 Delft University of Technology 
+//  Licensed under the Educational Community License, Version 2.0 (the "License"); you
+//  may not use this file except in compliance with the License. You may obtain a copy
+//  of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 200.5.0, August 2016
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+`include "discipline.h"
+
+`include "Common103_macrodefs.include"
+
+`include "JUNCAP200_macrodefs.include"
+
+`define JUNCAP_StandAlone
+
+// Note: some verilog-A compilers have problems handling the ddx-operator,
+// which occurs in definition of OP-output variables. If the line below is
+// commented out, all OP-output variables using the ddx-operator are skipped.
+`define OPderiv
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Start of JUNCAP2 model code
+//
+/////////////////////////////////////////////////////////////////////////////
+
+module JUNCAP200(A,K);
+
+    //  --------------------------------------------------------------------------------------------------------------
+    //  Node definitions
+    //  --------------------------------------------------------------------------------------------------------------
+        inout       A,K;
+        electrical  A,K;
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Special model parameters and switch parameters
+        //  --------------------------------------------------------------------------------------------------------------
+        `MPInb(LEVEL          ,200        ,""                                     ,"Model level must be 200")
+        `MPIty(TYPE           ,1.0        ,""                                     ,"Type parameter, in output value 1 reflects n-type, -1 reflects p-type")
+        `MPRnb(DTA            ,0.0        ,"K"                                    ,"Temperature offset with respect to ambient temperature")
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Instance parameters
+        //  --------------------------------------------------------------------------------------------------------------
+        `IPRco(AB             ,1.0e-12    ,"m^2"      ,`AB_cliplow   ,inf         ,"Junction area")
+        `IPRco(LS             ,1.0e-6     ,"m^2"      ,`LS_cliplow   ,inf         ,"STI-edge part of junction perimeter")
+        `IPRco(LG             ,1.0e-6     ,"m^2"      ,`LG_cliplow   ,inf         ,"Gate-edge part of junction perimeter")
+        `IPRco(MULT           ,1.0        ,""         ,`MULT_cliplow ,inf         ,"Number of devices in parallel")
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  JUNCAP2 model parameters
+        //  --------------------------------------------------------------------------------------------------------------
+        `include "JUNCAP200_parlist.include"
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Variables
+        //  --------------------------------------------------------------------------------------------------------------
+        real MULT_i;
+        real EPSSI;
+        `include "JUNCAP200_varlist1.include"
+        `include "JUNCAP200_varlist2.include"
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Variables for operating point info
+        //  --------------------------------------------------------------------------------------------------------------
+
+        `OPP(vak               ,"V"            ,"Voltage between anode and cathode")
+        `ifdef OPderiv
+        `OPP(cj                ,"F"            ,"Total source junction capacitance")
+        `OPP(cjbot             ,"F"            ,"Junction capacitance (bottom component)")
+        `OPP(cjgat             ,"F"            ,"Junction capacitance (gate-edge component)")
+        `OPP(cjsti             ,"F"            ,"Junction capacitance (STI-edge component)")
+        `endif // OPderiv
+        `OPP(ij                ,"A"            ,"Total source junction current")
+        `OPP(ijbot             ,"A"            ,"Junction current (bottom component)")
+        `OPP(ijgat             ,"A"            ,"Junction current (gate-edge component)")
+        `OPP(ijsti             ,"A"            ,"Junction current (STI-edge component)")
+        `OPP(si                ,"A^2/Hz"       ,"Total junction current noise spectral density")
+
+        // local parameters after scaling, T-scaling, and clipping
+        `OPP(idsatsbot         ,"A"            ,"Total bottom saturation current")
+        `OPP(idsatssti         ,"A"            ,"Total STI-edge saturation current")
+        `OPP(idsatsgat         ,"A"            ,"Total gate-edge saturation current")
+        `OPP(cjosbot           ,"F"            ,"Total bottom capacity")
+        `OPP(cjossti           ,"F"            ,"Total STI-edge capacity")
+        `OPP(cjosgat           ,"F"            ,"Total gate-edge capacity")
+        `OPP(vbisbot           ,"V"            ,"built-in voltage of the bottom junction")
+        `OPP(vbissti           ,"V"            ,"built-in voltage of the STI-edge junction")
+        `OPP(vbisgat           ,"V"            ,"built-in voltage of the gate-edge junction")
+
+//  --------------------------------------------------------------------------------------------------------------
+//  Analog block with all calculations and contribs
+//  --------------------------------------------------------------------------------------------------------------
+
+    analog begin
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Definition of bias/instance independent model variables
+        //  --------------------------------------------------------------------------------------------------------------
+        begin : initial_model
+
+            EPSSI        = `EPSO * `EPSRSI;
+            `include "JUNCAP200_InitModel.include"
+
+        end // initial_model
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Definition of instance dependent and bias independent variables
+        //  --------------------------------------------------------------------------------------------------------------
+        begin : initial_instance
+
+            // Clipping of the local model parameters
+
+                AB_i         = `CLIP_LOW(AB, `AB_cliplow);
+                LS_i         = `CLIP_LOW(LS, `LS_cliplow);
+                LG_i         = `CLIP_LOW(LG, `LG_cliplow);
+                MULT_i       = `CLIP_LOW(MULT, `MULT_cliplow);
+
+                exp_VMAX_over_phitd = 0.0;
+                `JuncapInitInstance(AB_i, LS_i, LG_i, idsatbot, idsatsti, idsatgat, vbibot, vbisti, vbigat, PBOT_i, PSTI_i, PGAT_i, VBIRBOT_i, VBIRSTI_i, VBIRGAT_i, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim)
+
+            // Initialization of (global) variables; required for some verilog-A compilers
+                ISATFOR1     =  0.0;
+                MFOR1        =  1.0;
+                MFOR2        =  1.0;
+                ISATFOR2     =  0.0;
+                MREV         =  1.0;
+                ISATREV      =  0.0;
+                m0flag       =  0.0;
+                xhighf1      =  0.0;
+                expxhf1      =  0.0;
+                xhighf2      =  0.0;
+                expxhf2      =  0.0;
+                xhighr       =  0.0;
+                expxhr       =  0.0;
+
+                m0_rev       =  0.0;
+                mcor_rev     =  0.0;
+                I1_cor       =  0.0;
+                I2_cor       =  0.0;
+                I3_cor       =  0.0;
+                I4_cor       =  0.0;
+                I5_cor       =  0.0;
+                tt0          =  0.0;
+                tt1          =  0.0;
+                tt2          =  0.0;
+                zfrac        =  0.0;
+                zflagbot     =  1.0;
+                zflagsti     =  1.0;
+                zflaggat     =  1.0;
+                alphaje      =  0.0;
+
+                if (SWJUNEXP_i == 1.0) begin : JUNCAPexpressInit
+                    // Note: the variables in the macro below are (re-)declared locally, to keep them separated from their globally declared counterparts.
+                    // This trick allows one to use the "juncapcommon" macro both in the JUNCAP-express initialization and in the full-JUNCAP evalutation,
+                    // while in the former the verilog-A compiler will still consider the variables as voltage-INdependent. This is essential to avoid
+                    // recomputation of the JUNCAP-express initialization at each bias-step.
+
+                    `LocalGlobalVars
+                    // results computed here are not used elsewhere
+                    real ijunbot, ijunsti, ijungat, qjunbot, qjunsti, qjungat;
+
+                    // Initialization of (local) variables; required for some verilog-A compilers
+                    ysq         =  0.0;
+                    terfc       =  0.0;
+                    erfcpos     =  0.0;
+                    h1          =  0.0;
+                    h2          =  0.0;
+                    h2d         =  0.0;
+                    h3          =  0.0;
+                    h4          =  0.0;
+                    h5          =  0.0;
+                    idmult      =  0.0;
+                    vj          =  0.0;
+                    z           =  0.0;
+                    zinv        =  0.0;
+                    two_psistar =  0.0;
+                    vjlim       =  0.0;
+                    vjsrh       =  0.0;
+                    vbbt        =  0.0;
+                    vav         =  0.0;
+                    tmp         =  0.0;
+                    id          =  0.0;
+                    isrh        =  0.0;
+                    vbi_minus_vjsrh = 0.0;
+                    wsrhstep    =  0.0;
+                    dwsrh       =  0.0;
+                    wsrh        =  0.0;
+                    wdep        =  0.0;
+                    asrh        =  0.0;
+                    itat        =  0.0;
+                    btat        =  0.0;
+                    twoatatoverthreebtat =  0.0;
+                    umaxbeforelimiting =  0.0;
+                    umax        =  0.0;
+                    sqrtumax    =  0.0;
+                    umaxpoweronepointfive =  0.0;
+                    wgamma      =  0.0;
+                    wtat        =  0.0;
+                    ktat        =  0.0;
+                    ltat        =  0.0;
+                    mtat        =  0.0;
+                    xerfc       =  0.0;
+                    erfctimesexpmtat =  0.0;
+                    gammamax    =  0.0;
+                    ibbt        =  0.0;
+                    Fmaxr       =  0.0;
+                    fbreakdown  =  0.0;
+                    qjunbot     =  0.0;
+                    qjunsti     =  0.0;
+                    qjungat     =  0.0;
+
+                    // Computation of JUNCAP-express internal parameters
+                    `JuncapExpressInit1(AB_i, LS_i, LG_i, VJUNREF_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim)
+                    `JuncapExpressInit2(AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim)
+                    `JuncapExpressInit3(AB_i, LS_i, LG_i, idsatbot, idsatsti, idsatgat, ISATFOR1, MFOR1, ISATFOR2, MFOR2, ISATREV, MREV, m0flag)
+                    `JuncapExpressInit4(AB_i, LS_i, LG_i, FJUNQ_i, cjobot, cjosti, cjogat, zflagbot, zflagsti, zflaggat)
+                    `JuncapExpressInit5(AB_i, LS_i, LG_i, ISATFOR1, ISATFOR2, ISATREV, xhighf1, expxhf1, xhighf2, expxhf2, xhighr, expxhr)
+
+                end // JUNCAPexpressInit
+
+        end // initial_instance
+
+        begin : evaluateblock
+
+            // Local variables
+            real ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat, ijun, qjun, jnoise, VAK;
+
+            // Variable initializing
+            ijun        =  0.0;
+            ijunbot     =  0.0;
+            ijunsti     =  0.0;
+            ijungat     =  0.0;
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  DC and AC bias dependent quantities (calculations for current and charge contributions)
+        //  --------------------------------------------------------------------------------------------------------------
+            begin : evaluateStaticDynamic
+
+                VAK         =  TYPE * V(A, K);
+                if (SWJUNEXP_i == 1.0) begin
+                    `JuncapExpressCurrent(VAK, MFOR1, ISATFOR1, MFOR2, ISATFOR2, MREV, ISATREV, m0flag, xhighf1, expxhf1, xhighf2, expxhf2, xhighr, expxhr, ijun)
+                    begin : evaluateDynamic
+                        real tmpv, vjv;
+                        `JuncapExpressCharge(VAK, AB_i, LS_i, LG_i, qprefbot, qprefsti, qprefgat, qpref2bot, qpref2sti, qpref2gat, vbiinvbot, vbiinvsti, vbiinvgat, one_minus_PBOT, one_minus_PSTI, one_minus_PGAT, vfmin, vch, zflagbot, zflagsti, zflaggat, qjunbot, qjunsti, qjungat)
+                    end
+                end else begin
+                    `juncapcommon(VAK, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat)
+                    ijun        =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat;
+                end
+                qjun        =  AB_i * qjunbot + LS_i * qjunsti + LG_i * qjungat;
+
+        end // evaluateStaticDynamic
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Current contributions
+        //  --------------------------------------------------------------------------------------------------------------
+
+        begin : loadStatic
+            I(A, K)      <+  (TYPE * MULT_i) * ijun;
+        end // loadStatic
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  ddt() contribs from charges
+        //  --------------------------------------------------------------------------------------------------------------
+
+        begin : loadDynamic
+            I(A, K)      <+  ddt((TYPE * MULT_i) * qjun);
+        end // loadDynamic
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Noise
+        //  --------------------------------------------------------------------------------------------------------------
+
+        begin : noise
+            jnoise      = (2 * `QELE) * abs(ijun);
+            I(A, K)      <+  white_noise(MULT_i * jnoise, "shot");
+        end // noise
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  Operating point info
+        //  --------------------------------------------------------------------------------------------------------------
+
+        begin : OPinfo
+            vak         =  VAK;
+            `ifdef OPderiv
+            cjbot       =  TYPE * MULT_i * AB_i * ddx(qjunbot, V(A));
+            cjgat       =  TYPE * MULT_i * LG_i * ddx(qjungat, V(A));
+            cjsti       =  TYPE * MULT_i * LS_i * ddx(qjunsti, V(A));
+            cj          =  cjbot + cjgat + cjsti;
+            `endif // OPderiv
+            if (SWJUNEXP_i == 1.0) begin
+                ijbot       =  0.0;
+                ijgat       =  0.0;
+                ijsti       =  0.0;
+                idsatsbot   =  0.0;
+                idsatssti   =  0.0;
+                idsatsgat   =  0.0;
+            end else begin
+                ijbot       =  MULT_i * AB_i * ijunbot;
+                ijgat       =  MULT_i * LG_i * ijungat;
+                ijsti       =  MULT_i * LS_i * ijunsti;
+                idsatsbot   =  MULT_i * AB_i * idsatbot;
+                idsatssti   =  MULT_i * LS_i * idsatsti;
+                idsatsgat   =  MULT_i * LG_i * idsatgat;
+            end
+            ij        = MULT_i * ijun;
+            si        = MULT_i * jnoise;
+            cjosbot   = MULT_i * AB_i * cjobot;
+            cjossti   = MULT_i * LS_i * cjosti;
+            cjosgat   = MULT_i * LG_i * cjogat;
+            vbisbot   = vbibot;
+            vbissti   = vbisti;
+            vbisgat   = vbigat;
+        end // OPinfo
+        end // evaluateblock
+    end // analogBlock
+endmodule
