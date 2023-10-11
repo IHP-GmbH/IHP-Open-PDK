@@ -26,9 +26,9 @@ logy=0
 color="4 5"
 node="out
 in"}
-N -290 90 -290 110 {
+N -440 90 -440 110 {
 lab=GND}
-N -290 20 -290 30 {
+N -440 20 -440 30 {
 lab=in}
 N -160 50 -160 110 {
 lab=GND}
@@ -62,13 +62,15 @@ N -230 -80 -230 20 {
 lab=in}
 N -230 -80 -200 -80 {
 lab=in}
-N -290 -30 -290 20 {
+N -440 -30 -440 20 {
 lab=in}
 N -290 -30 -230 -30 {
 lab=in}
 N -160 -30 -30 -30 {
 lab=out}
-N -310 -30 -290 -30 {
+N -460 -30 -440 -30 {
+lab=in}
+N -440 -30 -290 -30 {
 lab=in}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -88,8 +90,8 @@ write ../raw/tran_logic_not.raw
 .endc
 "}
 C {devices/gnd.sym} -160 110 0 0 {name=l1 lab=GND}
-C {devices/gnd.sym} -290 110 0 0 {name=l2 lab=GND}
-C {devices/vsource.sym} -290 60 0 0 {name=Vin value="dc 0 ac 0 pulse(0, 1.8, 0, 100p, 100p, 2n, 4n ) "}
+C {devices/gnd.sym} -440 110 0 0 {name=l2 lab=GND}
+C {devices/vsource.sym} -440 60 0 0 {name=Vin value="dc 0 ac 0 pulse(0, 1.8, 0, 100p, 100p, 2n, 4n ) "}
 C {devices/vsource.sym} 100 20 0 0 {name=Vdd value=1.8}
 C {devices/gnd.sym} 100 110 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} -110 110 0 0 {name=l4 lab=GND}
@@ -106,7 +108,7 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/ptap1.sym} -110 80 0 0 {name=R1
+C {sg13g2_pr/ptap1.sym} -110 80 2 0 {name=R1
 model=ptap1
 spiceprefix=X
 R=262.847.0
@@ -126,5 +128,5 @@ m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
-C {devices/lab_pin.sym} -310 -30 0 0 {name=p1 sig_type=std_logic lab=in}
+C {devices/lab_pin.sym} -460 -30 0 0 {name=p1 sig_type=std_logic lab=in}
 C {devices/lab_pin.sym} -30 -30 2 0 {name=p2 sig_type=std_logic lab=out}

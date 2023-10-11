@@ -109,7 +109,7 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/ptap1.sym} 70 90 0 0 {name=R1
+C {sg13g2_pr/ptap1.sym} 70 90 2 0 {name=R1
 model=ptap1
 spiceprefix=X
 R=262.847.0
