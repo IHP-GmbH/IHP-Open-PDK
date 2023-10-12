@@ -74,13 +74,13 @@ lab=GND}
 N 410 -150 410 -110 {
 lab=#net1}
 N 150 40 150 70 {
-lab=#net2}
+lab=GND}
 N 100 40 150 40 {
-lab=#net2}
+lab=GND}
 N 0 -210 0 -190 {
-lab=#net3}
+lab=#net1}
 N -50 -190 0 -190 {
-lab=#net3}
+lab=#net1}
 N -50 -290 -50 -220 {
 lab=#net1}
 N 410 -280 410 -150 {
@@ -90,21 +90,21 @@ lab=#net1}
 N -190 40 -170 40 {
 lab=A}
 N 230 -210 230 -190 {
-lab=#net4}
+lab=#net1}
 N 180 -190 230 -190 {
-lab=#net4}
+lab=#net1}
 N 180 -290 180 -220 {
 lab=#net1}
 N 230 -290 230 -270 {
 lab=#net1}
 N 100 -40 200 -40 {
-lab=#net5}
+lab=GND}
 N 200 -40 200 -30 {
-lab=#net5}
+lab=GND}
 N 200 30 200 40 {
 lab=GND}
 N 100 -10 100 10 {
-lab=#net6}
+lab=#net2}
 N -50 -160 -50 -140 {
 lab=out}
 N 0 -140 180 -140 {
@@ -147,11 +147,18 @@ N 410 10 410 130 {
 lab=GND}
 N 100 -90 240 -90 {
 lab=out}
+N 150 70 150 130 {
+lab=GND}
+N 200 -30 200 30 {
+lab=GND}
+N 0 -270 -0 -210 {
+lab=#net1}
+N 230 -270 230 -210 {
+lab=#net1}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
 .lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ
 "}
 C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true 
 value="
@@ -183,18 +190,6 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/ptap1.sym} 150 100 2 0 {name=R1
-model=ptap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
-}
-C {sg13g2_pr/ntap1.sym} 0 -240 0 0 {name=R2
-model=ntap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
-}
 C {sg13g2_pr/sg13_lv_pmos.sym} -70 -190 0 0 {name=M2
 L=0.45u
 W=1.0u
@@ -205,12 +200,6 @@ spiceprefix=X
 }
 C {devices/lab_pin.sym} -190 40 0 0 {name=p1 sig_type=std_logic lab=A}
 C {devices/lab_pin.sym} 240 -90 2 0 {name=p2 sig_type=std_logic lab=out}
-C {sg13g2_pr/ntap1.sym} 230 -240 0 0 {name=R3
-model=ntap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
-}
 C {sg13g2_pr/sg13_lv_pmos.sym} 160 -190 0 0 {name=M3
 L=0.45u
 W=1.0u
@@ -226,12 +215,6 @@ ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
-}
-C {sg13g2_pr/ptap1.sym} 200 0 2 0 {name=R4
-model=ptap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
 }
 C {devices/gnd.sym} 200 40 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} -270 50 0 0 {name=l7 lab=GND}

@@ -61,7 +61,6 @@ value="
 pre_osdi ./psp103_nqs.osdi
 save all 
 op
-print I(vd)
 *reset 
 dc Vds 0 3 0.01 Vgs 0. 0.9 0.1
 write ../raw/dc_lv_nmos.raw

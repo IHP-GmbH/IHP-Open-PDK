@@ -40,13 +40,13 @@ lab=#net1}
 N -30 30 -20 30 {
 lab=in}
 N 70 30 70 60 {
-lab=#net2}
+lab=GND}
 N 20 30 70 30 {
-lab=#net2}
+lab=GND}
 N 70 -90 70 -70 {
-lab=#net3}
+lab=#net1}
 N 20 -70 70 -70 {
-lab=#net3}
+lab=#net1}
 N 20 -40 20 0 {
 lab=out}
 N 20 -170 20 -100 {
@@ -73,6 +73,10 @@ N -310 -20 -290 -20 {
 lab=in}
 N -230 -20 -50 -20 {
 lab=in}
+N 70 60 70 120 {
+lab=GND}
+N 70 -150 70 -90 {
+lab=#net1}
 C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
@@ -108,18 +112,6 @@ ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
-}
-C {sg13g2_pr/ptap1.sym} 70 90 2 0 {name=R1
-model=ptap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
-}
-C {sg13g2_pr/ntap1.sym} 70 -120 0 0 {name=R2
-model=ntap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 -70 0 0 {name=M2
 L=0.45u
