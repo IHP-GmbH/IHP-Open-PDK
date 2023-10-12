@@ -1,0 +1,168 @@
+//======================================================================================
+//======================================================================================
+// Filename: Common103_macrodefs.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+//  2004-2011 Arizona State University Licensed under the Educational Community License,
+//  Version 2.0 (the "License"); you may not use this file except in compliance with the
+//  License. You may obtain a copy of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+//////////////////////////////////////////////////////////////
+//
+//  General macros and constants for compact va-models
+//
+//////////////////////////////////////////////////////////////
+
+// Clipping functions
+`define CLIP_LOW(val,min)      ((val)>(min)?(val):(min))
+`define CLIP_HIGH(val,max)     ((val)<(max)?(val):(max))
+`define CLIP_BOTH(val,min,max) ((val)>(min)?((val)<(max)?(val):(max)):(min))
+
+// Min/Max functions
+`define MAX(x,y)              ((x)>(y)?(x):(y))
+`define MIN(x,y)              ((x)<(y)?(x):(y))
+
+// Mathematical constants
+`define PI                    3.1415926535897931
+`define SQRTPI                1.77245385090551603
+
+// Physical constants
+`define KELVINCONVERSION      273.15
+`define KBOL                  1.3806505E-23
+`define QELE                  1.6021918E-19
+`define HBAR                  1.05457168E-34
+`define MELE                  9.1093826E-31
+`define EPSO                  8.8541878176E-12
+`define EPSRSI                11.8
+
+// Other constants
+`define oneThird              3.3333333333333333e-01
+`define twoThirds             6.6666666666666667e-01
+
+// Constants needed in safe exponential function (called "expl")
+`define se                    4.6051701859880916e+02
+`define se05                  2.3025850929940458e+02
+`define ke                    1.0e-200
+`define ke05                  1.0e-100
+`define keinv                 1.0e200
+`define ke05inv               1.0e100
+
+//  P3       3rd order polynomial expansion of exp()
+`define P3(u) (1.0 + (u) * (1.0 + 0.5 * ((u) * (1.0 + (u) * `oneThird))))
+
+//  expl     exp() with 3rd order polynomial extrapolation for very low values (exp_low),
+//           very high values (exp_high), or both (expl)
+`define expl(x, res) \
+if (abs(x) < `se05) begin\
+        res       = exp(x); \
+end else begin \
+        if ((x) < 0.0) begin\
+                res       = `ke05 / `P3(-`se05 - (x)); \
+        end else begin\
+                res       =  `ke05inv * `P3((x) - `se05); \
+        end \
+end
+
+`define expl_low(x, res) \
+if ((x) > -`se05) begin\
+        res       =  exp(x); \
+end else begin\
+        res       = `ke05 / `P3(-`se05 - (x)); \
+end
+
+`define expl_high(x, res) \
+if ((x) < `se05) begin\
+        res       = exp(x); \
+end else begin \
+        res       =  `ke05inv * `P3((x) - `se05); \
+end
+
+//  Exchange function
+`define swap(a, b) \
+temp = a; \
+a    = b; \
+b    = temp;
+
+//  Parameter definition macros: "des" description argument is intended to
+//  be a short description, the "inf" information argument is intended to be
+//  a detailed description (e.g. for display as part of on-line help).
+//
+//  MPR      model    parameter real
+//  MPI      model    parameter integer
+//  IPR      instance parameter real
+//  IPI      instance parameter integer
+//  OPP      operating point parameter, includes units and description for printing
+//  OPM      operating point parameter, scales with $mfactor
+//  OPD      operating point parameter, scales with 1/$mfactor
+//
+//  Instance parameters have the attribute *type="instance"* and note that
+//  compilers treat these as both instance and model parameters, with a
+//  specified instance value taking precedence over a specified model card value.
+//
+//  There are some issues with passing range directives with some compilers,
+//  so for each parameter declaration there are multiple versions:
+//  cc       closed lower bound, closed upper bound
+//  co       closed lower bound, open   upper bound
+//  cz       closed lower bound of zero (no upper bound)
+//  oc       open   lower bound, closed upper bound
+//  oo       open   lower bound, open   upper bound
+//  oz       open   lower bound of zero (no upper bound)
+//  nb       no bounds
+//  sw       switch (integer only, values  0=false  and >0=true)
+//  ty       switch (integer only, values -1=n-type and +1=p-type)
+//
+
+`define ALIAS(alias,paramName) aliasparam alias = paramName;
+`define OPP(nam,uni,des)               (*units=uni,                             desc=des*)           real    nam;
+`define OPM(nam,uni,des)               (*units=uni, multiplicity="multiply",    desc=des*)           real    nam;
+`define OPD(nam,uni,des)               (*units=uni, multiplicity="divide",      desc=des*)           real    nam;
+`define MPRcc(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter real    nam=def from[lwr:upr];
+`define MPRco(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter real    nam=def from[lwr:upr);
+`define MPRcz(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter real    nam=def from[  0:inf);
+`define MPRoc(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter real    nam=def from(lwr:upr];
+`define MPRoo(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter real    nam=def from(lwr:upr);
+`define MPRoz(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter real    nam=def from(  0:inf);
+`define MPRnb(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter real    nam=def;
+`define MPIcc(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter integer nam=def from[lwr:upr];
+`define MPIco(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter integer nam=def from[lwr:upr);
+`define MPIcz(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter integer nam=def from[  0:inf);
+`define MPIoc(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter integer nam=def from(lwr:upr];
+`define MPIoo(nam,def,uni,lwr,upr,des) (*units=uni                            , desc=des*) parameter integer nam=def from(lwr:upr);
+`define MPIoz(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter integer nam=def from(  0:inf);
+`define MPInb(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter integer nam=def;
+`define MPIsw(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter integer nam=def from[  0:inf);
+`define MPIty(nam,def,uni,        des) (*units=uni                            , desc=des*) parameter integer nam=def from[ -1:  1] exclude 0;
+`define IPRcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from[lwr:upr];
+`define IPRco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from[lwr:upr);
+`define IPRcz(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from[  0:inf);
+`define IPRoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from(lwr:upr];
+`define IPRoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from(lwr:upr);
+`define IPRoz(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def from(  0:inf);
+`define IPRnb(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter real    nam=def;
+`define IPIcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from[lwr:upr];
+`define IPIco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from[lwr:upr);
+`define IPIcz(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from[  0:inf);
+`define IPIoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from(lwr:upr];
+`define IPIoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from(lwr:upr);
+`define IPIoz(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from(  0:inf);
+`define IPInb(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def;
+`define IPIsw(nam,def,uni,        des) (*units=uni, type="instance",            desc=des*) parameter integer nam=def from[  0:inf);

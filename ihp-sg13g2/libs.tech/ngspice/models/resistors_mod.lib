@@ -1,0 +1,73 @@
+*#######################################################################
+*
+* Copyright 2023 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+*distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+       
+.include resistors_parm.lib 
+
+**ptap1 (TIE SUB)
+.subckt ptap1 1 2 
+R1 1 2 R=262.847
+.ends ptap1
+
+**ntap1 (TIE WELL)
+.subckt ntap1 1 2 
+R1 1 2 R=262.847
+.ends ntap1
+
+* Parasitic R/C models
+* aluminum: prozess tol. res_rpara 
+* value is taken from extraction routine
+.subckt Rparasitic 1 2 
+.param R=0 w=0 l=0 TC1=0.00353 TC2=0
+R1 1 2 R=r*res_rpara TC1=TC1 TC2=TC2 
+.ends Rparasitic
+
+.subckt rsil 1 3
+.param w=0.5e-6 l=0.5e-6 b=0
++kappa=1.85
++ps=0.18e-6
++leff=(b+1)*l+(2/kappa*weff+ps)*b
++res_rzspec=2*rzspec/w
++weff=w+0.01e-6
++rzspec=4.5e-6
+R1 1 2 res_rsil L=leff W=weff
+R2 2 3 R=res_rzspec TC1=3100e-6 TC2=0.3e-6
+.ends rsil
+
+.subckt rhigh 1 3 
+.param w=0.5e-6 l=0.96e-6 b=0 
++kappa=1.85
++ps=0.18e-6
++leff=(b+1)*l+(2/kappa*weff+ps)*b
++res_rzspec=2*rzspec/w
++weff=w-0.04e-6
++rzspec=80e-6
+R1 1 2 res_rhigh L=leff W=weff
+R2 2 3 R=res_rzspec TC1=-2300e-6 TC2=2.1e-6
+.ends rhigh
+
+.subckt rppd 1 3 
+.param w=0.5e-6 l=0.5e-6 b=0
++kappa=1.85
++ps=0.18e-6
++leff=(b+1)*l+(2/kappa*weff+ps)*b
++res_rzspec=2*rzspec/w
++weff=w+0.006e-6
++rzspec=35e-6
+R1 1 2 res_rppd L=leff W=weff
+R2 2 3 R=res_rzspec TC1=-950e-6
+.ends rppd

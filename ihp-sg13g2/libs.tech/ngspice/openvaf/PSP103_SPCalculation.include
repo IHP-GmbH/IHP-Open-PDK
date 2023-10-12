@@ -1,0 +1,350 @@
+//======================================================================================
+//======================================================================================
+// Filename: PSP103_SPCalculation.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+//  2004-2011 Arizona State University Licensed under the Educational Community License,
+//  Version 2.0 (the "License"); you may not use this file except in compliance with the
+//  License. You may obtain a copy of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+// Initialisation of some variables
+    alpha        =  0.0;
+    GdL          =  1.0;
+    dL           =  0.0;
+    qbm          =  0.0;
+    dps          =  0.0;
+    qim          =  0.0;
+    qim1         =  0.0;
+    H            =  1.0;
+    s1           =  0.0;
+    eta_p        =  1.0;
+    Gvsat        =  1.0;
+    Gvsatinv     =  1.0;
+    SP_S_x1      =  0.0;
+    x_s          =  0.0;
+    sqm          =  0.0;
+    xitsb        =  0.0;
+    rhob         =  0.0;
+    Gmob         =  1.0;
+    Gmob_dL      =  1.0;
+    Udse         =  0.0;
+    thesat1      =  0.0;
+    xgm          =  0.0;
+
+// Bias definition
+    Vgbstar      =  Vgs + Vsbstar;
+    Vgb1         =  Vgbstar - VFB_T;
+    Vsbx         =  Vsbstar + 0.5 * (Vds - Vdsx);
+    if (CFD_i < 1.0e-10) begin
+        Vdsp       =  Vdsx;
+    end else begin
+        Vdsp       =  2.0 * (sqrt(1.0 + CFD_i * Vdsx) - 1.0) / CFD_i;
+    end
+    delVg        =  CF_i * Vdsp * (1.0 + CFB_i * Vsbx); // DIBL
+    dphit1       =  PSCE_i * (1.0 + PSCED_i * Vdsx) * (1.0 + PSCEB_i * Vsbx); // SCE on subthreshold slope
+    Vgb1         =  Vgb1 + delVg;
+
+// Bias dependent body factor
+    if (DNSUB_i > 0.0) begin
+        Dnsub        =  DNSUB_i * `MAXA(0.0, Vgs + Vsb - VNSUB_i, NSLP_i);
+        Gf           =  G_0 * sqrt(1.0 + Dnsub);
+    end else begin
+        Gf           =  G_0;
+    end
+    Gf2          =  Gf * Gf;
+    inv_Gf2      =  1.0 / Gf2;
+
+// Bias dependence of interface states
+    dCTG         =  1.0;
+    if (CTG_i > 0.0) begin
+        xgct         =  2.0 * Vgb1 * inv_phit;
+        temp1        =  Gf2 + xgct;
+        temp2        = `MAXA((temp1 + xgct), 0.0, 5.0);
+        xsct0        =  0.5 * (temp1 - Gf * sqrt(temp2));
+        xbct         =  phib * inv_phit;
+        xsbstar      =  Vsbx * inv_phit;
+        temp1        =  xbct + xsbstar + 2.0;
+        xsct         = `MINA(xsct0, temp1, 5.0);
+        temp2        =  CTG_T * (xsct - (1.0 + CTB_i) * (0.5 * xbct + xsbstar));
+       `expl_low(temp2, dCTG)
+    end
+    ct_fact      =  1.0 + CT_T * dCTG;
+    phit1        =  phit * ct_fact * (1.0 + dphit1);  
+    inv_phit1    =  1.0 / phit1;
+    xg           =  Vgb1 * inv_phit1;
+
+// Surface potential at source side
+    xi           =  1.0 + Gf * `invSqrt2;
+    inv_xi       =  1.0 /  xi;
+    Ux           =  Vsbstar * inv_phit1;
+    xn_s         =  phib * inv_phit1 + Ux;
+    if (xn_s < `se)
+        delta_ns     =  exp(-xn_s);
+    else
+        delta_ns     = `ke / `P3(xn_s - `se);
+    margin       =  1.0e-5 * xi;
+
+    `sp_s(x_s, xg, xn_s, delta_ns)
+    x_d          =  x_s;
+    x_m          =  x_s;
+    x_ds         =  0.0;
+
+// Core PSP current calculation
+    Vdsat_lim    =  3.912023005 * phit1;
+    if (xg <= 0.0) begin
+        qis          =  0.0;
+        xgm          =  xg - x_s;
+        Voxm         =  xgm * phit1;
+        qeff1        =  Voxm;
+        Vdsat        =  Vdsat_lim;
+        Vdse         =  Vds;
+    end else begin // (xg > 0)
+        delta_1s     =  0.0;
+        temp         =  1.0 / (2.0 + x_s * x_s);
+        xi0s         =  x_s * x_s * temp;
+        xi1s         =  4.0 * (x_s * temp * temp);
+        xi2s         =  (8.0 * temp - 12.0 * xi0s) * temp * temp;
+        if (x_s < `se05) begin
+            delta_1s     =  exp(x_s);
+            Es           =  1.0 / delta_1s;
+            delta_1s     =  delta_ns * delta_1s;
+        end else if (x_s > (xn_s - `se05)) begin
+            delta_1s     =  exp(x_s - xn_s);
+            Es           =  delta_ns / delta_1s;
+        end else begin
+            delta_1s     = `ke05 / `P3(xn_s - x_s - `se05);
+            Es           = `ke05 / `P3(x_s - `se05);
+        end
+        Ds           =  delta_1s - delta_ns * (x_s + 1.0 + xi0s);
+        if (x_s < 1.0e-5) begin
+            Ps           =  0.5 * (x_s * x_s * (1.0 - `oneThird * (x_s * (1.0 - 0.25 * x_s))));
+            Ds           =  `oneSixth * (delta_ns * x_s * x_s * x_s * (1.0 + 1.75 * x_s));
+            temp         =  sqrt(1.0 - `oneThird * (x_s * (1.0 - 0.25 * x_s)));
+            sqm          =  `invSqrt2 * (x_s * temp);
+            alpha        =  1.0 + Gf * `invSqrt2 * (1.0 - 0.5 * x_s + `oneSixth * (x_s * x_s)) / temp;
+        end else begin
+            Ps           =  x_s - 1.0 + Es;
+            sqm          =  sqrt(Ps);
+            alpha        =  1.0 + 0.5 * (Gf * (1.0 - Es) / sqm);
+        end
+        Em           =  Es;
+        Ed           =  Em;
+        Dm           =  Ds;
+        Dd           =  Dm;
+
+        // Drain saturation voltage
+        Rxcor        =  (1.0 + 0.2 * XCOR_T * Vsbx) / (1.0 + XCOR_T * Vsbx);
+        if (Ds > `ke05) begin
+            xgs          =  Gf * sqrt(Ps + Ds);
+            qis          =  Gf2 * Ds * phit1 / (xgs + Gf * sqm);
+            qbs          =  sqm * Gf * phit1;
+            if (RSB_i < 0.0) begin
+                rhob         =  1.0 / (1.0 - RSB_i * Vsbx);
+            end else begin
+                rhob         =  1.0 + RSB_i * Vsbx;
+            end
+            if (RSG_i < 0.0) begin
+                temp         =  1.0 - RSG_i * qis;
+            end else begin
+                temp         =  1.0 / (1.0 + RSG_i * qis);
+            end
+            GR           =  THER_i * (rhob * temp * qis);
+            Eeffm        =  E_eff0 * (qbs + eta_mu * qis);
+            temp1        =  ln(Ps / (Ps + Ds + 1.0e-14));
+            Mutmp        =  pow(Eeffm * MUE_T, THEMU_T) + CS_T * exp(0.5 * THECS_T * temp1);
+            Gmob         =  (1.0 + Mutmp + GR) * Rxcor;
+            if (THESATB_i < 0.0) begin
+                xitsb        =  1.0 / (1.0 - THESATB_i * Vsbx);
+            end else begin
+                xitsb        =  1.0 + THESATB_i * Vsbx;
+            end
+            temp2        =  qis * xitsb;
+            wsat         =  100.0 * (temp2 / (100.0 + temp2));
+            if (THESATG_i < 0.0) begin
+                temp         =  1.0 / (1.0 - THESATG_i * wsat);
+            end else begin
+                temp         =  1.0 + THESATG_i * wsat;
+            end
+            thesat1      =  THESAT_T * (temp / Gmob);
+            phi_inf      =  qis / alpha + phit1;
+            ysat         =  thesat1 * phi_inf * `invSqrt2;
+            if (CHNL_TYPE==`PMOS) begin
+                ysat         =  ysat / sqrt(1.0 + ysat);
+            end
+            za           =  2.0 / (1.0 + sqrt(1.0 + 4.0 * ysat));
+            temp1        =  za * ysat;
+            Phi_0        =  phi_inf * za * (1.0 + 0.86 * (temp1 * (1.0 - temp1 * za) / (1.0 + 4.0 * (temp1 * temp1 * za))));
+            asat         =  xgs + 0.5 * Gf2;
+            Phi_2        =  0.98 * (Gf2 * Ds * phit1 / (asat + sqrt(asat * asat - Gf2 * Ds * 0.98)));
+            Phi_0_2      =  Phi_0 + Phi_2;
+            Phi0_Phi2    =  2.0 * (Phi_0 * Phi_2);
+            Phi_sat      =  Phi0_Phi2 / (Phi_0_2 + sqrt(Phi_0_2 * Phi_0_2 - 1.98 * Phi0_Phi2));
+            Vdsat        =  Phi_sat - phit1 * ln(1.0 + Phi_sat * (Phi_sat - 2.0 * asat * phit1) * inv_Gf2 / (phit1 * phit1 * Ds));
+        end else begin
+            Vdsat        =  Vdsat_lim;
+        end
+        temp         =  pow(Vds / Vdsat, AX_i);
+        Vdse         =  Vds * pow(1.0 + temp, -inv_AX);
+
+        // Surface potential at drain side
+        Udse         =  Vdse * inv_phit1;
+        xn_d         =  xn_s + Udse;
+        if (Udse < `se) begin
+            k_ds         =  exp(-Udse);
+        end else begin
+            k_ds         = `ke / `P3(Udse - `se);
+        end
+        delta_nd     =  delta_ns * k_ds;
+
+        `sp_s_d(x_d, xg, xn_d, delta_nd)
+        x_ds         =  x_d - x_s;
+
+        // Approximations for extremely small x_ds: capacitance calculation
+        if (x_ds < 1.0e-10) begin
+            pC           =  2.0 * (xg - x_s) + Gf2 * (1.0 - Es + delta_1s * k_ds - delta_nd * (1.0 + xi1s));
+            qC           =  Gf2 * (1.0 - k_ds) * Ds;
+            temp         =  2.0 - Gf2 * (Es + delta_1s * k_ds - delta_nd * xi2s);
+            temp         =  pC * pC - 2.0 * (temp * qC);
+            x_ds         =  2.0 * (qC / (pC + sqrt(temp)));
+            x_d          =  x_s + x_ds;
+        end
+        dps          =  x_ds * phit1;
+
+        xi0d         =  x_d * x_d / (2.0 + x_d * x_d);
+        if (x_d < `se05) begin
+            Ed            =  exp(-x_d);
+            if (x_d < 1.0e-5) begin
+                Dd            = `oneSixth * delta_nd * x_d * x_d * x_d * (1.0 + 1.75 * x_d);
+            end else begin
+                Dd            =  delta_nd * (1.0 / Ed - x_d - 1.0 - xi0d);
+            end
+        end else begin
+            if (x_d > (xn_d - `se05)) begin
+                temp          =  exp(x_d - xn_d);
+                Ed            =  delta_nd / temp;
+                Dd            =  temp - delta_nd * (x_d + 1.0 + xi0d);
+            end else begin
+                Ed            = `ke05 / `P3(x_d - `se05);
+                temp          = `ke05 / `P3(xn_d - x_d - `se05);
+                Dd            =  temp - delta_nd * (x_d + 1.0 + xi0d);
+            end
+        end
+
+        // Mid-point surface potential
+        x_m          =  0.5 * (x_s + x_d);
+        Em           =  0.0;
+        temp         =  Ed * Es;
+        if (temp > 0.0) begin
+            Em           =  sqrt(temp);
+        end
+        D_bar        =  0.5 * (Ds + Dd);
+        Dm           =  D_bar + 0.125 * (x_ds * x_ds * (Em - 2.0 * inv_Gf2));
+
+        if (x_m < 1.0e-5) begin
+            Pm           =  0.5 * (x_m * x_m * (1.0 - `oneThird * (x_m * (1.0 - 0.25 * x_m))));
+            xgm          =  Gf * sqrt(Dm + Pm);
+
+            // Polysilicon depletion
+            if (kp > 0.0) begin
+                eta_p        =  1.0 / sqrt(1.0 + kp * xgm);
+            end // (kp > 0.0)
+            temp         =  sqrt(1.0 - `oneThird * (x_m * (1.0 - 0.25 * x_m)));
+            sqm          = `invSqrt2 * (x_m * temp);
+            alpha        =  eta_p + `invSqrt2 * (Gf * (1.0 - 0.5 * x_m + `oneSixth * (x_m * x_m)) / temp);
+        end else begin
+            Pm           =  x_m - 1.0 + Em;
+            xgm          =  Gf * sqrt(Dm + Pm);
+
+            // Polysilicon depletion
+            if (kp > 0.0) begin
+                d0           =  1.0 - Em + 2.0 * (xgm * inv_Gf2);
+                eta_p        =  1.0 / sqrt(1.0 + kp * xgm);
+                temp         =  eta_p / (eta_p + 1.0);
+                x_pm         =  kp * (temp * temp * Gf2 * Dm);
+                p_pd         =  2.0 * (xgm - x_pm) + Gf2 * (1.0 - Em + Dm);
+                q_pd         =  x_pm * (x_pm - 2.0 * xgm);
+                xi_pd        =  1.0 - 0.5 * (Gf2 * (Em + Dm));
+                u_pd         =  q_pd * p_pd / (p_pd * p_pd - xi_pd * q_pd);
+                x_m          =  x_m + u_pd;
+                km           =  exp(u_pd);
+                Em           =  Em / km;
+                Dm           =  Dm * km;
+                Pm           =  x_m - 1.0 + Em;
+                xgm          =  Gf * sqrt(Dm + Pm);
+                km0          =  1.0 - Em + 2.0 * (xgm * eta_p * inv_Gf2);
+                x_ds         =  x_ds * km * (d0 + D_bar) / (km0 + km * D_bar);
+                dps          =  x_ds * phit1;
+            end // (kp > 0.0)
+            sqm          =  sqrt(Pm);
+            alpha        =  eta_p + 0.5 * (Gf * (1.0 - Em) / sqm);
+        end
+
+        // Potential midpoint inversion charge
+        qim          =  phit1 * (Gf2 * Dm / (xgm + Gf * sqm));
+        qim1         =  qim + phit1 * alpha;
+        qbm          =  sqm * Gf * phit1;
+
+        // Series resistance
+        if (RSG_i < 0.0) begin
+            temp         = 1.0 - RSG_i * qim;
+        end else begin
+            temp         = 1.0 / (1.0 + RSG_i * qim);
+        end
+        GR           =  THER_i * (rhob * temp * qim);
+
+        // Mobility reduction
+        qeff         =  qbm + eta_mu * qim;
+        qeff1        =  qbm + eta_mu1 * qim;
+        Eeffm        =  E_eff0 * qeff;
+        temp1        =  ln(Pm / (Pm + Dm + 1.0e-14));
+        Mutmp        =  pow(Eeffm * MUE_T, THEMU_T) + CS_T * exp(0.5 * THECS_T * temp1);
+        Gmob         =  (1.0 + Mutmp + GR) * Rxcor;
+
+        // Channel length modulation
+        s1           =  ln((1.0 + (Vds - dps) * inv_VP) / (1.0 + (Vdse - dps) * inv_VP));
+        dL           =  ALP_i * s1;
+        GdL          =  1.0 / (1.0 + dL + dL * dL);
+
+        // Velocity saturation
+        temp2        =  qim * xitsb;
+        wsat         =  100.0 * (temp2 / (100.0 + temp2));
+        Gmob_dL      =  Gmob * GdL;
+        if (THESATG_i < 0.0) begin
+            temp         =  1.0 / (1.0 - THESATG_i * wsat);
+        end else begin
+            temp         =  1.0 + THESATG_i * wsat;
+        end
+        thesat1      =  THESAT_T * (temp / Gmob_dL);
+        zsat         =  thesat1 * thesat1 * dps * dps;
+        if (CHNL_TYPE == `PMOS) begin
+            zsat         =  zsat / (1.0 + thesat1 * dps);
+        end
+        Gvsat        =  0.5 * (Gmob_dL * (1.0 + sqrt(1.0 + 2.0 * zsat)));
+        Gvsatinv     =  1.0 / Gvsat;
+
+        // Variables for calculation of intrinsic charges and gate current
+        Voxm         =  xgm * phit1;
+        temp         =  Gmob_dL * Gvsatinv;
+        alpha1       =  alpha * (1.0 + 0.5 * (zsat * temp * temp));
+        H            =  temp * qim1 / alpha1;
+
+    end // (xg > 0)

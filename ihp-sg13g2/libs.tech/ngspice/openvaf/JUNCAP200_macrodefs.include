@@ -1,0 +1,471 @@
+//======================================================================================
+//======================================================================================
+// Filename: JUNCAP200_macrodefs.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA) and 2012-2015 Delft University of Technology 
+//  Licensed under the Educational Community License, Version 2.0 (the "License"); you
+//  may not use this file except in compliance with the License. You may obtain a copy
+//  of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 200.5.0, August 2016
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+///////////////////////////////////////////
+//
+// Macros and constants used in JUNCAP2
+//
+///////////////////////////////////////////
+
+// Other constants
+`define MINTEMP          -2.5e2
+`define vbilow            5.0e-2
+`define a                 2.0
+`define epsch             0.1
+`define dvbi              5.0e-2
+`define epsav             1.0e-6
+`define vbrmax            1.0e3
+`define vmaxlarge         1.0e8
+`define aerfc             0.29214664
+`define twothirds         0.666666666666667
+
+// Clipping values
+`define levelnumber        2.0e2
+`define AB_cliplow         0.0
+`define LS_cliplow         0.0
+`define LG_cliplow         0.0
+`define MULT_cliplow       0.0
+`define TRJ_cliplow        `MINTEMP
+`define IMAX_cliplow       1.0e-12
+`define FREV_cliplow       1.0e1
+`define FREV_cliphigh      1.0e10
+`define CJORBOT_cliplow    1.0e-12
+`define CJORSTI_cliplow    1.0e-18
+`define CJORGAT_cliplow    1.0e-18
+`define VBIR_cliplow       `vbilow
+`define P_cliplow          5.0e-2
+`define P_cliphigh         0.95
+`define IDSATR_cliplow     0.0
+`define CSRH_cliplow       0.0
+`define XJUN_cliplow       1.0e-9
+`define CTAT_cliplow       0.0
+`define MEFFTAT_cliplow    1.0e-2
+`define CBBT_cliplow       0.0
+`define VBR_cliplow        0.1
+`define PBR_cliplow        0.1
+`define VJUNREF_cliplow    0.5
+`define FJUNQ_cliplow      0.0
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Macro definitions.
+//
+//  Note that because at present locally scoped variables
+//  can only be in named blocks, the intermediate variables
+//  used in the macros below must be explicitly declared
+//  as variables.
+//
+/////////////////////////////////////////////////////////////////////////////
+
+// Variable declarations of variables that need to be *local* in juncap-express initialization
+
+`define LocalGlobalVars \
+/* declaration of variables needed in macro "calcerfcexpmtat" */ \
+real ysq, terfc, erfcpos; \
+ \
+/* declaration of variables needed in hypfunction 5 */ \
+real h1, h2, h2d, h3, h4, h5; \
+ \
+/* declaration of variables calculated outside macro "juncapfunction", voltage-dependent part */ \
+real idmult, vj, z, zinv, two_psistar, vjlim, vjsrh, vbbt, vav; \
+ \
+/* declaration of variables used within macro "juncapfunction" */ \
+real tmp, id; \
+real isrh, vbi_minus_vjsrh, wsrhstep, dwsrh, wsrh, wdep, asrh; \
+real itat, btat, twoatatoverthreebtat, umaxbeforelimiting, umax, sqrtumax, umaxpoweronepointfive; \
+real wgamma, wtat, ktat, ltat, mtat, xerfc, erfctimesexpmtat, gammamax; \
+real ibbt, Fmaxr; \
+real fbreakdown;
+
+// Instance parameter dependent initialization
+`define JuncapInitInstance(AB_i, LS_i, LG_i, idsatbot, idsatsti, idsatgat, vbibot, vbisti, vbigat, PBOT_i, PSTI_i, PGAT_i, VBIRBOT_i, VBIRSTI_i, VBIRGAT_i, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim) \
+if (idsatbot * AB_i > 0.0) begin \
+        vmaxbot      =  phitd * ln(IMAX_i / (idsatbot * AB_i) + 1.0); \
+end else begin \
+        vmaxbot      = `vmaxlarge; \
+end \
+if (idsatsti * LS_i > 0.0) begin \
+        vmaxsti      =  phitd * ln(IMAX_i / (idsatsti * LS_i) + 1.0); \
+end else begin \
+        vmaxsti      = `vmaxlarge; \
+end \
+if (idsatgat * LG_i > 0.0) begin \
+        vmaxgat      =  phitd * ln(IMAX_i / (idsatgat * LG_i) + 1.0); \
+end else begin \
+        vmaxgat      = `vmaxlarge; \
+end \
+VMAX         =  min(min(vmaxbot, vmaxsti), vmaxgat); \
+`expl(VMAX * phitdinv, exp_VMAX_over_phitd) \
+ \
+/* determination of minimum value of the relevant built-in voltages */ \
+/* and determination of limiting value of conditioned voltage for BBT calculation */ \
+vbibot2      =  vbibot; \
+vbisti2      =  vbisti; \
+vbigat2      =  vbigat; \
+pbot2        =  PBOT_i; \
+psti2        =  PSTI_i; \
+pgat2        =  PGAT_i; \
+vbibot2r     =  VBIRBOT_i; \
+vbisti2r     =  VBIRSTI_i; \
+vbigat2r     =  VBIRGAT_i; \
+if (AB_i == 0.0) begin \
+        vbibot2      =  vbisti + vbigat; \
+        pbot2        =  0.9 * min(PSTI_i, PGAT_i); \
+        vbibot2r     =  VBIRSTI_i + VBIRGAT_i; \
+end \
+if (LS_i == 0.0) begin \
+        vbisti2      =  vbibot + vbigat; \
+        psti2        =  0.9 * min(PBOT_i, PGAT_i); \
+        vbisti2r     =  VBIRBOT_i + VBIRGAT_i; \
+end \
+if (LG_i == 0.0) begin \
+        vbigat2      =  vbibot + vbisti; \
+        pgat2        =  0.9 * min(PBOT_i, PSTI_i); \
+        vbigat2r     =  VBIRBOT_i + VBIRSTI_i; \
+end \
+vbimin       =  min(min(vbibot2, vbisti2), vbigat2); \
+vch          =  vbimin * `epsch; \
+pmax         =  max(max(pbot2, psti2), pgat2); \
+vfmin        =  vbimin * (1.0 - (pow(`a, (-1.0 / (pmax))))); \
+vbbtlim      =  min(min(vbibot2r, vbisti2r), vbigat2r) - `dvbi;
+
+
+// Special power-functions
+
+`define mypower(x,power,result) \
+if (power == 0.5) begin \
+        result       =  sqrt(x); \
+end else begin \
+        result       =  pow(x, power); \
+end
+
+`define mypower2(x,power,result) \
+if (power == -1.0) begin \
+        result       =  1.0 / (x); \
+end else begin \
+        result       =  pow(x, power); \
+end
+
+`define mypower3(x,power,result) \
+if (power == 4.0) begin \
+        result       =  (x) * (x) * (x) * (x); \
+end else begin \
+        result       =  pow(abs(x), power); \
+end
+
+// Smoothing functions
+`define hypfunction2(x,x0,eps,hyp2) \
+hyp2         =  0.5 * ((x) + (x0) - sqrt(((x) - (x0)) * ((x) - (x0)) + 4.0 * (eps) * (eps)));
+
+`define hypfunction5(x,x0,eps,hyp5) \
+h1           =  4.0 * (eps) * (eps); \
+h2           =  (eps) / (x0); \
+h2d          =  (x) + (eps) * h2; \
+h3           =  (x0) + h2d; \
+h4           =  (x0) - h2d; \
+h5           =  sqrt(h4 * h4 + h1); \
+hyp5         =  2.0 * ((x) * (x0) / (h3 + h5));
+
+
+// A special function used to calculate TAT-currents,
+// including an approximation of the erfc-function
+
+`define calcerfcexpmtat(y,m,result) \
+ysq          =  y * y; \
+if (y > 0.0) begin \
+        terfc        =  1.0 / (1.0 + perfc * y); \
+end else begin \
+        terfc        =  1.0 / (1.0 - perfc * y); \
+end \
+`expl_low(-ysq + m, tmp) \
+erfcpos = (`aerfc * terfc + berfc * (terfc * terfc) + cerfc * (terfc * terfc * terfc)) * tmp; \
+if (y > 0.0) begin \
+        result       =  erfcpos; \
+end else begin\
+        `expl_low(m, tmp) \
+        result       =  2.0 * tmp - erfcpos; \
+end
+
+// This is the main function of the JUNCAP2-model. It returns the current and charge
+// for a single diode
+`define juncapfunction(VAK,qpref,qpref2,vbiinv,one_minus_P,idsat,CSRH,CTAT,vbi,wdepnulr,VBIRinv,P,ftd,btatpart,atat,one_over_one_minus_P,CBBT,VBIR,wdepnulrinv,fbbt,VBR,VBRinv,PBR,fstop,slope,Ijprime,Qjprime) \
+`mypower((1.0 - vj * vbiinv), one_minus_P, tmp) \
+Qjprime      =  qpref * (1.0 - tmp) + qpref2 * (VAK - vj); \
+id           =  idsat * idmult; \
+if ((CSRH == 0.0) && (CTAT == 0.0)) begin \
+        isrh         =  0.0; \
+end else begin \
+        vbi_minus_vjsrh =  vbi-vjsrh; \
+        wsrhstep     =  1.0 - sqrt(1.0 - two_psistar / vbi_minus_vjsrh); \
+        if (P == 0.5) begin \
+                dwsrh        =  0.0; \
+        end else begin \
+                dwsrh        =  ((wsrhstep * wsrhstep * ln(wsrhstep) / (1.0 - wsrhstep)) + wsrhstep) * (1.0 - 2.0 * P); \
+        end \
+        wsrh         =  wsrhstep + dwsrh; \
+        `mypower(vbi_minus_vjsrh * VBIRinv, P, tmp) \
+        wdep         =  wdepnulr * tmp; \
+        asrh         =  ftd * ((zinv - 1.0) * wdep); \
+        isrh         =  CSRH * (asrh * wsrh); \
+end \
+if (CTAT == 0.0) begin \
+        itat         =  0.0; \
+end else begin \
+        btat         =  btatpart * ((wdep * one_minus_P) / vbi_minus_vjsrh); \
+        twoatatoverthreebtat = (`twothirds * atat) / btat; \
+        umaxbeforelimiting = twoatatoverthreebtat * twoatatoverthreebtat; \
+        umax         =  sqrt(umaxbeforelimiting * umaxbeforelimiting / (umaxbeforelimiting * umaxbeforelimiting + 1.0)); \
+        sqrtumax     =  sqrt(abs(umax)); \
+        umaxpoweronepointfive = umax * sqrtumax; \
+        `mypower2((1.0 + btat * umaxpoweronepointfive), (-P * one_over_one_minus_P), wgamma) \
+        wtat         =  wsrh * wgamma / (wsrh + wgamma); \
+        ktat         =  sqrt(0.375 * (btat / sqrtumax)); \
+        ltat         =  2.0 * (twoatatoverthreebtat * sqrtumax) - umax; \
+        mtat         =  atat * twoatatoverthreebtat * sqrtumax - atat * umax + 0.5 * (btat * umaxpoweronepointfive); \
+        xerfc        =  (ltat - 1.0) * ktat; \
+        `calcerfcexpmtat(xerfc, mtat, erfctimesexpmtat) \
+        gammamax     = `SQRTPI * 0.5 * (atat * erfctimesexpmtat  / ktat); \
+        itat         =  CTAT * (asrh * gammamax * wtat); \
+end \
+if (CBBT == 0.0) begin \
+        ibbt         =  0.0; \
+end else begin \
+        `mypower(((VBIR - vbbt) * VBIRinv), P, tmp) \
+        Fmaxr        =  one_over_one_minus_P * ((VBIR - vbbt) * wdepnulrinv / tmp); \
+        `expl(-fbbt / Fmaxr, tmp) \
+        ibbt         =  CBBT * (VAK * Fmaxr * Fmaxr * tmp); \
+end \
+if (VBR > `vbrmax) begin \
+        fbreakdown   =  1.0; \
+end else begin \
+        if (vav > -alphaav * VBR) begin \
+                `mypower3(vav * VBRinv, PBR, tmp) \
+                fbreakdown    =  1.0 / (1.0 - tmp); \
+        end else begin \
+                fbreakdown    =  fstop + (vav + alphaav * VBR) * slope; \
+        end \
+end \
+Ijprime      =  (id + isrh + itat + ibbt) * fbreakdown;
+
+
+// The following code is written as a macro because the naming of the instance parameters is
+// different for JUNCAP2 stand-alone and JUNCAP2-in-PSP: AB, LS, LG for JUNCAP2 stand-alone,
+// ABSOURCE, LSSOURCE, LGSOURCE for source junction in PSP and ABDRAIN, LSDRAIN, LGDRAIN for
+// drain junction in PSP
+`define juncapcommon(V, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+vbbt         =  0.0; \
+two_psistar  =  0.0; \
+if ( !( ((AB_i) == 0.0) && ((LS_i) == 0.0) && ((LG_i) == 0.0) ) ) begin \
+        `hypfunction5(V, vfmin, vch, vj) \
+        if (V < VMAX)  begin \
+                `expl(0.5 * (V * phitdinv), zinv) \
+                idmult       =  zinv * zinv; \
+        end else begin \
+                idmult       =  (1.0 + (V - VMAX) * phitdinv) * exp_VMAX_over_phitd; \
+                zinv         =  sqrt(idmult); \
+        end \
+        idmult       =  idmult - 1.0; \
+        z            =  1.0 / zinv; \
+        if (V > 0.0) begin \
+                two_psistar    =  2.0 * (phitd * ln(2.0 + z + sqrt((z + 1.0) * (z + 3.0)))); \
+        end else begin \
+                two_psistar    = -V + 2.0 * (phitd * ln(2.0 * zinv + 1.0 + sqrt((1.0 + zinv) * (1.0 + 3.0 * zinv)))); \
+        end \
+        vjlim        =  vbimin - two_psistar; \
+        `hypfunction2(V, vjlim, phitd, vjsrh) \
+        `hypfunction2(V, vbbtlim, phitr, vbbt) \
+        `hypfunction2(V, 0.0, `epsav, vav) \
+end \
+if ((AB_i) == 0.0) begin \
+        ijunbot      =  0.0; \
+        qjunbot      =  0.0; \
+end else begin \
+        `juncapfunction(V, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, ijunbot, qjunbot) \
+end \
+if ((LS_i) == 0.0) begin \
+        ijunsti      =  0.0; \
+        qjunsti      =  0.0; \
+end else begin \
+        `juncapfunction(V, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, ijunsti, qjunsti) \
+end \
+if ((LG_i) == 0.0) begin \
+        ijungat      =  0.0; \
+        qjungat      =  0.0; \
+end else begin \
+        `juncapfunction(V, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, ijungat, qjungat) \
+end
+
+//============================================================================================================
+//  JUNCAP-express
+//
+//  The macros below are used in the express-version of JUNCAP2
+//============================================================================================================
+
+`define relerr      1.0e-3
+`define P1(x)       ((x) + 1.0)
+
+`define expll(x, xlow, expxlow, xhigh, expxhigh) \
+((x) < (xlow)) ? (expxlow) / `P1((xlow) - (x)) : (((x) > (xhigh)) ? (expxhigh) * `P1((x) - (xhigh)) : exp(x))
+
+
+// The "JuncapExpressInit"-macro below is split into three parts, as some verilog-A compilers cannot handle
+// macros beyond a certain size. Moreover, it is useful to limit the list of input and output variables.
+
+// Part 1
+`define JuncapExpressInit1(AB_i, LS_i, LG_i, VJUNREF_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim) \
+FRACNA       =  0.4; \
+FRACNB       =  0.65; \
+FRACI        =  0.8; \
+/* Sample voltages */ \
+V1           = -FRACNA * VJUNREF_i; \
+V2           = -FRACNB * VJUNREF_i; \
+V3           = -FRACI * VJUNREF_i; \
+V4           =  0.1; \
+V5           =  0.2; \
+/* evaluate full JUNCAP-model at five voltages */ \
+`juncapcommon(V1, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+I1           =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat; \
+`juncapcommon(V2, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+I2           =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat; \
+`juncapcommon(V3, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+I3           =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat;
+
+// Part 2
+`define JuncapExpressInit2(AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim) \
+/* forward currents */ \
+`juncapcommon(V4, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+I4           =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat; \
+`juncapcommon(V5, AB_i, LS_i, LG_i, qprefbot, qpref2bot, vbiinvbot, one_minus_PBOT, idsatbot, CSRHBOT_i, CTATBOT_i, vbibot, wdepnulrbot, VBIRBOTinv, PBOT_i, ftdbot, btatpartbot, atatbot, one_over_one_minus_PBOT, CBBTBOT_i, VBIRBOT_i, wdepnulrinvbot, fbbtbot, VBRBOT_i, VBRinvbot, PBRBOT_i, fstopbot, slopebot, qprefsti, qpref2sti, vbiinvsti, one_minus_PSTI, idsatsti, CSRHSTI_i, CTATSTI_i, vbisti, wdepnulrsti, VBIRSTIinv, PSTI_i, ftdsti, btatpartsti, atatsti, one_over_one_minus_PSTI, CBBTSTI_i, VBIRSTI_i, wdepnulrinvsti, fbbtsti, VBRSTI_i, VBRinvsti, PBRSTI_i, fstopsti, slopesti, qprefgat, qpref2gat, vbiinvgat, one_minus_PGAT, idsatgat, CSRHGAT_i, CTATGAT_i, vbigat, wdepnulrgat, VBIRGATinv, PGAT_i, ftdgat, btatpartgat, atatgat, one_over_one_minus_PGAT, CBBTGAT_i, VBIRGAT_i, wdepnulrinvgat, fbbtgat, VBRGAT_i, VBRinvgat, PBRGAT_i, fstopgat, slopegat, VMAX, exp_VMAX_over_phitd, vbimin, vch, vfmin, vbbtlim, ijunbot, qjunbot, ijunsti, qjunsti, ijungat, qjungat) \
+I5           =  AB_i * ijunbot + LS_i * ijunsti + LG_i * ijungat;
+
+// Part 3
+`define JuncapExpressInit3(AB_i, LS_i, LG_i, idsatbot, idsatsti, idsatgat, ISATFOR1, MFOR1, ISATFOR2, MFOR2, ISATREV, MREV, m0flag) \
+/* compute internal parameters from these five (I,V)-values */ \
+ISATFOR1     =  AB_i * idsatbot + LS_i * idsatsti + LG_i * idsatgat; \
+I4_cor       =  I4 - ISATFOR1 * (exp(V4 * phitdinv * MFOR1) - 1.0); \
+I5_cor       =  I5 - ISATFOR1 * (exp(V5 * phitdinv * MFOR1) - 1.0); \
+if ( !( ((AB_i) == 0.0) && ((LS_i) == 0.0) && ((LG_i) == 0.0) ) ) begin \
+        if ((I4 > 0.0) && (I5 > 0.0)) begin \
+                if ((((I4_cor / I4) > `relerr) || ((I5_cor / I5) > `relerr)) && (I4_cor > 0.0) && (I5_cor > 0.0)) begin \
+                        alphaje      =  I4_cor / I5_cor; \
+                        MFOR2        =  phitd * ln(alphaje) / (V4 - V5); \
+                        ISATFOR2     =  I4_cor / (exp(V4 * phitdinv * MFOR2) - 1.0); \
+                end \
+        end \
+        I1_cor       =  I1 - ISATFOR1 * (exp(V1 * phitdinv * MFOR1) - 1.0) - ISATFOR2 * (exp(V1 * phitdinv * MFOR2) - 1.0); \
+        I2_cor       =  I2 - ISATFOR1 * (exp(V2 * phitdinv * MFOR1) - 1.0) - ISATFOR2 * (exp(V2 * phitdinv * MFOR2) - 1.0); \
+        I3_cor       =  I3 - ISATFOR1 * (exp(V3 * phitdinv * MFOR1) - 1.0) - ISATFOR2 * (exp(V3 * phitdinv * MFOR2) - 1.0); \
+        if ((I1 < 0.0) && (I2 < 0.0) && (I3 < 0.0)) begin \
+                if ((((I1_cor / I1) > `relerr) || ((I2_cor / I2) > `relerr) || ((I3_cor / I3) > `relerr)) \
+             && (I1_cor < 0.0) && (I2_cor < 0.0) && (I3_cor < 0.0)) begin \
+                        alphaje      =  I1_cor / I2_cor; \
+                        m0_rev       = -phitd * ln(alphaje) / (V1 - V2); /* zeroth order approximation */ \
+                        tt0          =  V2 / (V2 - V1); \
+                        tt1          =  phitd * (alphaje - 1.0) * (pow(alphaje, tt0) - 1.0); \
+                        tt0          =  V1 / (V1 - V2); \
+                        tt2          =  pow(alphaje, tt0) * (V2 - V1) + alphaje * V1 - V2; \
+                        mcor_rev     =  tt1 / tt2; /* first order Newton correction */ \
+                        MREV         =  m0_rev + mcor_rev; \
+                        if (abs(V3 * phitdinv * MREV) < 1.0e-6) begin \
+                                /* Taylor approximation needed */ \
+                                /* Note: ISATREV and MREV have different meaning in this situation!! */ \
+                                m0flag       =  1.0; \
+                                ISATREV      =  I3_cor * (1.0 / V3 + 0.5 * phitdinv * MREV); \
+                                MREV         = -0.5 * I3_cor * MREV * phitdinv / V3; \
+                        end else begin \
+                                m0flag       =  0.0; \
+                                ISATREV      = -I3_cor / (exp(-V3 * phitdinv * MREV) - 1.0); \
+                        end \
+                end \
+        end \
+end
+
+// Part 4
+`define JuncapExpressInit4(AB_i, LS_i, LG_i, FJUNQ_i, cjobot, cjosti, cjogat, zflagbot, zflagsti, zflaggat) \
+/* charge model initialization */ \
+zfrac        =  FJUNQ_i * (AB_i * cjobot + LS_i * cjosti + LG_i * cjogat); \
+if ((AB_i * cjobot) <= zfrac) begin \
+        zflagbot     =  0.0; \
+end \
+if ((LS_i * cjosti) <= zfrac) begin \
+        zflagsti     =  0.0; \
+end \
+if ((LG_i * cjogat) <= zfrac) begin \
+        zflaggat     =  0.0; \
+end
+
+// Part 5
+`define JuncapExpressInit5(AB_i, LS_i, LG_i, ISATFOR1, ISATFOR2, ISATREV, xhighf1, expxhf1, xhighf2, expxhf2, xhighr, expxhr) \
+/* calculate limits beyond which exponentials are linearly extrapolated */ \
+if ( !( ((AB_i) == 0.0) && ((LS_i) == 0.0) && ((LG_i) == 0.0) ) ) begin \
+        xhighf1      =  ln(0.5 * IMAX_i / (ISATFOR1 + 1.0e-21)); \
+        xhighf2      =  ln(0.5 * IMAX_i / (ISATFOR2 + 1.0e-21)); \
+        xhighr       =  ln(0.5 * IMAX_i / (abs(ISATREV) + 1.0e-21)); \
+end \
+xhighf1      =  min(xhighf1, `se05); \
+expxhf1      =  exp(xhighf1); \
+xhighf2      =  min(xhighf2, `se05); \
+expxhf2      =  exp(xhighf2); \
+xhighr       =  min(xhighr, `se05); \
+expxhr       =  exp(xhighr);
+
+`define JuncapExpressCurrent(V, MFOR1, ISATFOR1, MFOR2, ISATFOR2, MREV, ISATREV, m0flag, xhighf1, expxhf1, xhighf2, expxhf2, xhighr, expxhr, ijun) \
+tm0          =  V * phitdinv * MFOR1; \
+tm1          = `expll(tm0, -`se05, `ke05, xhighf1, expxhf1); \
+ijunfor1     =  ISATFOR1 * (tm1 - 1.0); \
+tm0          =  V * phitdinv * MFOR2; \
+tm1          = `expll(tm0, -`se05, `ke05, xhighf2, expxhf2); \
+ijunfor2     =  ISATFOR2 * (tm1 - 1.0); \
+ijunrev      =  0.0; \
+if (m0flag > 0.0) begin \
+        ijunrev      =  V * (ISATREV + V * MREV); \
+end else begin \
+        tm0          = -V * phitdinv * MREV; \
+        tm1          = `expll(tm0, -`se05, `ke05, xhighr, expxhr); \
+        ijunrev      = -ISATREV * (tm1 - 1.0); \
+end \
+ijun         =  ijunfor1 + ijunfor2 + ijunrev;
+
+`define JuncapExpressCharge(V, AB_i, LS_i, LG_i, qprefbot, qprefsti, qprefgat, qpref2bot, qpref2sti, qpref2gat, vbiinvbot, vbiinvsti, vbiinvgat, one_minus_PBOT, one_minus_PSTI, one_minus_PGAT, vfmin, vch, zflagbot, zflagsti, zflaggat, qjunbot, qjunsti, qjungat) \
+tmpv         =  0.0; \
+vjv          =  0.0; \
+`hypfunction5(V, vfmin, vch, vjv) \
+if (zflagbot > 0.5) begin \
+        `mypower((1.0 - vjv * vbiinvbot), one_minus_PBOT, tmpv) \
+        qjunbot      =  qprefbot * (1.0 - tmpv) + qpref2bot * (V - vjv); \
+end \
+if (zflagsti > 0.5) begin \
+        `mypower((1.0 - vjv * vbiinvsti), one_minus_PSTI, tmpv) \
+        qjunsti      =  qprefsti * (1.0 - tmpv) + qpref2sti * (V - vjv); \
+end \
+if (zflaggat > 0.5) begin \
+        `mypower((1.0 - vjv * vbiinvgat), one_minus_PGAT, tmpv) \
+        qjungat      = qprefgat * (1.0 - tmpv) + qpref2gat * (V - vjv); \
+end
+

@@ -1,0 +1,406 @@
+//======================================================================================
+//======================================================================================
+// Filename: JUNCAP200_InitModel.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA) and 2012-2015 Delft University of Technology 
+//  Licensed under the Educational Community License, Version 2.0 (the "License"); you
+//  may not use this file except in compliance with the License. You may obtain a copy
+//  of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 200.5.0, August 2016
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+                //  --------------------------------------------------------------------------------------------------------------
+                //  Calculation of internal parameters which are independent on instance parameters
+                //  --------------------------------------------------------------------------------------------------------------
+
+                TRJ_i        = `CLIP_LOW( TRJ        ,`TRJ_cliplow);
+                IMAX_i       = `CLIP_LOW( IMAX       ,`IMAX_cliplow);
+                FREV_i       = `CLIP_BOTH(FREV       ,`FREV_cliplow,`FREV_cliphigh);
+
+                CJORBOT_i    = `CLIP_LOW( CJORBOT    ,`CJORBOT_cliplow);
+                CJORSTI_i    = `CLIP_LOW( CJORSTI    ,`CJORSTI_cliplow);
+                CJORGAT_i    = `CLIP_LOW( CJORGAT    ,`CJORGAT_cliplow);
+                VBIRBOT_i    = `CLIP_LOW( VBIRBOT    ,`VBIR_cliplow);
+                VBIRSTI_i    = `CLIP_LOW( VBIRSTI    ,`VBIR_cliplow);
+                VBIRGAT_i    = `CLIP_LOW( VBIRGAT    ,`VBIR_cliplow);
+                PBOT_i       = `CLIP_BOTH(PBOT       ,`P_cliplow,`P_cliphigh);
+                PSTI_i       = `CLIP_BOTH(PSTI       ,`P_cliplow,`P_cliphigh);
+                PGAT_i       = `CLIP_BOTH(PGAT       ,`P_cliplow,`P_cliphigh);
+                PHIGBOT_i    =  PHIGBOT;
+                PHIGSTI_i    =  PHIGSTI;
+                PHIGGAT_i    =  PHIGGAT;
+                IDSATRBOT_i  = `CLIP_LOW( IDSATRBOT  ,`IDSATR_cliplow);
+                IDSATRSTI_i  = `CLIP_LOW( IDSATRSTI  ,`IDSATR_cliplow);
+                IDSATRGAT_i  = `CLIP_LOW( IDSATRGAT  ,`IDSATR_cliplow);
+                CSRHBOT_i    = `CLIP_LOW( CSRHBOT    ,`CSRH_cliplow);
+                CSRHSTI_i    = `CLIP_LOW( CSRHSTI    ,`CSRH_cliplow);
+                CSRHGAT_i    = `CLIP_LOW( CSRHGAT    ,`CSRH_cliplow);
+                XJUNSTI_i    = `CLIP_LOW( XJUNSTI    ,`XJUN_cliplow);
+                XJUNGAT_i    = `CLIP_LOW( XJUNGAT    ,`XJUN_cliplow);
+                CTATBOT_i    = `CLIP_LOW( CTATBOT    ,`CTAT_cliplow);
+                CTATSTI_i    = `CLIP_LOW( CTATSTI    ,`CTAT_cliplow);
+                CTATGAT_i    = `CLIP_LOW( CTATGAT    ,`CTAT_cliplow);
+                MEFFTATBOT_i = `CLIP_LOW( MEFFTATBOT ,`MEFFTAT_cliplow);
+                MEFFTATSTI_i = `CLIP_LOW( MEFFTATSTI ,`MEFFTAT_cliplow);
+                MEFFTATGAT_i = `CLIP_LOW( MEFFTATGAT ,`MEFFTAT_cliplow);
+                CBBTBOT_i    = `CLIP_LOW( CBBTBOT    ,`CBBT_cliplow);
+                CBBTSTI_i    = `CLIP_LOW( CBBTSTI    ,`CBBT_cliplow);
+                CBBTGAT_i    = `CLIP_LOW( CBBTGAT    ,`CBBT_cliplow);
+                FBBTRBOT_i   =  FBBTRBOT;
+                FBBTRSTI_i   =  FBBTRSTI;
+                FBBTRGAT_i   =  FBBTRGAT;
+                STFBBTBOT_i  =  STFBBTBOT;
+                STFBBTSTI_i  =  STFBBTSTI;
+                STFBBTGAT_i  =  STFBBTGAT;
+                VBRBOT_i     = `CLIP_LOW( VBRBOT     ,`VBR_cliplow);
+                VBRSTI_i     = `CLIP_LOW( VBRSTI     ,`VBR_cliplow);
+                VBRGAT_i     = `CLIP_LOW( VBRGAT     ,`VBR_cliplow);
+                PBRBOT_i     = `CLIP_LOW( PBRBOT     ,`PBR_cliplow);
+                PBRSTI_i     = `CLIP_LOW( PBRSTI     ,`PBR_cliplow);
+                PBRGAT_i     = `CLIP_LOW( PBRGAT     ,`PBR_cliplow);
+
+                SWJUNEXP_i   =  0.0;
+                if (SWJUNEXP > 0.5) begin
+                        SWJUNEXP_i   =  1.0;
+                end else begin
+                        SWJUNEXP_i   =  0.0;
+                end
+
+                VJUNREF_i    = `CLIP_LOW( VJUNREF   ,`VJUNREF_cliplow);
+                FJUNQ_i      = `CLIP_LOW( FJUNQ     ,`FJUNQ_cliplow);
+
+                `ifdef JUNCAP_StandAlone
+                // do nothing
+                `else // JUNCAP_StandAlone
+                if (SWJUNASYM == 0.0) begin
+                CJORBOTD_i   = CJORBOT_i;
+                CJORSTID_i   = CJORSTI_i;
+                CJORGATD_i   = CJORGAT_i;
+                VBIRBOTD_i   = VBIRBOT_i;
+                VBIRSTID_i   = VBIRSTI_i;
+                VBIRGATD_i   = VBIRGAT_i;
+                PBOTD_i      = PBOT_i;
+                PSTID_i      = PSTI_i;
+                PGATD_i      = PGAT_i;
+                PHIGBOTD_i   = PHIGBOT_i;
+                PHIGSTID_i   = PHIGSTI_i;
+                PHIGGATD_i   = PHIGGAT_i;
+                IDSATRBOTD_i = IDSATRBOT_i;
+                IDSATRSTID_i = IDSATRSTI_i;
+                IDSATRGATD_i = IDSATRGAT_i;
+                CSRHBOTD_i   = CSRHBOT_i;
+                CSRHSTID_i   = CSRHSTI_i;
+                CSRHGATD_i   = CSRHGAT_i;
+                XJUNSTID_i   = XJUNSTI_i;
+                XJUNGATD_i   = XJUNGAT_i;
+                CTATBOTD_i   = CTATBOT_i;
+                CTATSTID_i   = CTATSTI_i;
+                CTATGATD_i   = CTATGAT_i;
+                MEFFTATBOTD_i = MEFFTATBOT_i;
+                MEFFTATSTID_i = MEFFTATSTI_i;
+                MEFFTATGATD_i = MEFFTATGAT_i;
+                CBBTBOTD_i   = CBBTBOT_i;
+                CBBTSTID_i   = CBBTSTI_i;
+                CBBTGATD_i   = CBBTGAT_i;
+                FBBTRBOTD_i  = FBBTRBOT_i;
+                FBBTRSTID_i  = FBBTRSTI_i;
+                FBBTRGATD_i  = FBBTRGAT_i;
+                STFBBTBOTD_i = STFBBTBOT_i;
+                STFBBTSTID_i = STFBBTSTI_i;
+                STFBBTGATD_i = STFBBTGAT_i;
+                VBRBOTD_i    = VBRBOT_i;
+                VBRSTID_i    = VBRSTI_i;
+                VBRGATD_i    = VBRGAT_i;
+                PBRBOTD_i    = PBRBOT_i;
+                PBRSTID_i    = PBRSTI_i;
+                PBRGATD_i    = PBRGAT_i;
+                VJUNREFD_i   = VJUNREF_i;
+                FJUNQD_i     = FJUNQ_i;
+                end else begin
+                CJORBOTD_i   = `CLIP_LOW( CJORBOTD   ,`CJORBOT_cliplow);
+                CJORSTID_i   = `CLIP_LOW( CJORSTID   ,`CJORSTI_cliplow);
+                CJORGATD_i   = `CLIP_LOW( CJORGATD   ,`CJORGAT_cliplow);
+                VBIRBOTD_i   = `CLIP_LOW( VBIRBOTD   ,`VBIR_cliplow);
+                VBIRSTID_i   = `CLIP_LOW( VBIRSTID   ,`VBIR_cliplow);
+                VBIRGATD_i   = `CLIP_LOW( VBIRGATD   ,`VBIR_cliplow);
+                PBOTD_i      = `CLIP_BOTH(PBOTD      ,`P_cliplow,`P_cliphigh);
+                PSTID_i      = `CLIP_BOTH(PSTID      ,`P_cliplow,`P_cliphigh);
+                PGATD_i      = `CLIP_BOTH(PGATD      ,`P_cliplow,`P_cliphigh);
+                PHIGBOTD_i   =  PHIGBOTD;
+                PHIGSTID_i   =  PHIGSTID;
+                PHIGGATD_i   =  PHIGGATD;
+                IDSATRBOTD_i = `CLIP_LOW( IDSATRBOTD ,`IDSATR_cliplow);
+                IDSATRSTID_i = `CLIP_LOW( IDSATRSTID ,`IDSATR_cliplow);
+                IDSATRGATD_i = `CLIP_LOW( IDSATRGATD ,`IDSATR_cliplow);
+                CSRHBOTD_i   = `CLIP_LOW( CSRHBOTD   ,`CSRH_cliplow);
+                CSRHSTID_i   = `CLIP_LOW( CSRHSTID   ,`CSRH_cliplow);
+                CSRHGATD_i   = `CLIP_LOW( CSRHGATD   ,`CSRH_cliplow);
+                XJUNSTID_i   = `CLIP_LOW( XJUNSTID   ,`XJUN_cliplow);
+                XJUNGATD_i   = `CLIP_LOW( XJUNGATD   ,`XJUN_cliplow);
+                CTATBOTD_i   = `CLIP_LOW( CTATBOTD   ,`CTAT_cliplow);
+                CTATSTID_i   = `CLIP_LOW( CTATSTID   ,`CTAT_cliplow);
+                CTATGATD_i   = `CLIP_LOW( CTATGATD   ,`CTAT_cliplow);
+                MEFFTATBOTD_i = `CLIP_LOW( MEFFTATBOTD,`MEFFTAT_cliplow);
+                MEFFTATSTID_i = `CLIP_LOW( MEFFTATSTID,`MEFFTAT_cliplow);
+                MEFFTATGATD_i = `CLIP_LOW( MEFFTATGATD,`MEFFTAT_cliplow);
+                CBBTBOTD_i   = `CLIP_LOW( CBBTBOTD   ,`CBBT_cliplow);
+                CBBTSTID_i   = `CLIP_LOW( CBBTSTID   ,`CBBT_cliplow);
+                CBBTGATD_i   = `CLIP_LOW( CBBTGATD   ,`CBBT_cliplow);
+                FBBTRBOTD_i  =  FBBTRBOTD;
+                FBBTRSTID_i  =  FBBTRSTID;
+                FBBTRGATD_i  =  FBBTRGATD;
+                STFBBTBOTD_i =  STFBBTBOTD;
+                STFBBTSTID_i =  STFBBTSTID;
+                STFBBTGATD_i =  STFBBTGATD;
+                VBRBOTD_i    = `CLIP_LOW( VBRBOTD    ,`VBR_cliplow);
+                VBRSTID_i    = `CLIP_LOW( VBRSTID    ,`VBR_cliplow);
+                VBRGATD_i    = `CLIP_LOW( VBRGATD    ,`VBR_cliplow);
+                PBRBOTD_i    = `CLIP_LOW( PBRBOTD    ,`PBR_cliplow);
+                PBRSTID_i    = `CLIP_LOW( PBRSTID    ,`PBR_cliplow);
+                PBRGATD_i    = `CLIP_LOW( PBRGATD    ,`PBR_cliplow);
+                VJUNREFD_i   = `CLIP_LOW( VJUNREFD   ,`VJUNREF_cliplow);
+                FJUNQD_i     = `CLIP_LOW( FJUNQD     ,`FJUNQ_cliplow);
+                end
+                `endif // JUNCAP_StandAlone
+
+                tkr          = `KELVINCONVERSION + TRJ_i;
+                tkd          =  max($temperature + DTA, `KELVINCONVERSION + `MINTEMP);
+                auxt         =  tkd / tkr;
+                KBOL_over_QELE = `KBOL / `QELE;
+                phitr        =  KBOL_over_QELE * tkr;
+                phitrinv     =  1.0 / phitr;
+                phitd        =  KBOL_over_QELE * tkd;
+                phitdinv     =  1.0 / phitd;
+
+                // bandgap voltages at reference temperature
+                deltaphigr   = -(7.02e-4 * tkr * tkr) / (1108.0 + tkr);
+                phigrbot     =  PHIGBOT_i + deltaphigr;
+                phigrsti     =  PHIGSTI_i + deltaphigr;
+                phigrgat     =  PHIGGAT_i + deltaphigr;
+
+                // bandgap voltages at device temperature
+                deltaphigd   = -(7.02e-4 * tkd * tkd) / (1108.0 + tkd);
+                phigdbot     =  PHIGBOT_i + deltaphigd;
+                phigdsti     =  PHIGSTI_i + deltaphigd;
+                phigdgat     =  PHIGGAT_i + deltaphigd;
+
+                 // factors ftd for ideal-current model
+                 ftdbot      =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrbot * phitrinv) - (phigdbot * phitdinv)));
+                 ftdsti      =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrsti * phitrinv) - (phigdsti * phitdinv)));
+                 ftdgat      =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrgat * phitrinv) - (phigdgat * phitdinv)));
+
+                // temperature-scaled saturation current for ideal-current model
+                idsatbot     =  IDSATRBOT_i * ftdbot * ftdbot;
+                idsatsti     =  IDSATRSTI_i * ftdsti * ftdsti;
+                idsatgat     =  IDSATRGAT_i * ftdgat * ftdgat;
+
+                 // built-in voltages before limiting
+                 ubibot      =  VBIRBOT_i * auxt - 2.0 * phitd * ln(ftdbot);
+                 ubisti      =  VBIRSTI_i * auxt - 2.0 * phitd * ln(ftdsti);
+                 ubigat      =  VBIRGAT_i * auxt - 2.0 * phitd * ln(ftdgat);
+
+                // built-in voltages limited to phitd
+                vbibot       =  ubibot + phitd * ln(1 + exp((`vbilow - ubibot) * phitdinv));
+                vbisti       =  ubisti + phitd * ln(1 + exp((`vbilow - ubisti) * phitdinv));
+                vbigat       =  ubigat + phitd * ln(1 + exp((`vbilow - ubigat) * phitdinv));
+
+                // inverse values of built-in voltages
+                vbiinvbot    =  1.0 / vbibot;
+                vbiinvsti    =  1.0 / vbisti;
+                vbiinvgat    =  1.0 / vbigat;
+
+                // one minus the grading coefficient
+                one_minus_PBOT =  1.0 - PBOT_i;
+                one_minus_PSTI =  1.0 - PSTI_i;
+                one_minus_PGAT =  1.0 - PGAT_i;
+
+                // one over "one minus the grading coefficient"
+                one_over_one_minus_PBOT = 1.0 / one_minus_PBOT;
+                one_over_one_minus_PSTI = 1.0 / one_minus_PSTI;
+                one_over_one_minus_PGAT = 1.0 / one_minus_PGAT;
+
+         // temperature-scaled zero-bias capacitance
+                cjobot       =  CJORBOT_i * pow((VBIRBOT_i * vbiinvbot), PBOT_i);
+                cjosti       =  CJORSTI_i * pow((VBIRSTI_i * vbiinvsti), PSTI_i);
+                cjogat       =  CJORGAT_i * pow((VBIRGAT_i * vbiinvgat), PGAT_i);
+
+                // prefactor in physical part of charge model
+                qprefbot     =  cjobot * vbibot * one_over_one_minus_PBOT;
+                qprefsti     =  cjosti * vbisti * one_over_one_minus_PSTI;
+                qprefgat     =  cjogat * vbigat * one_over_one_minus_PGAT;
+
+                // prefactor in mathematical extension of charge model
+                qpref2bot    = `a * cjobot;
+                qpref2sti    = `a * cjosti;
+                qpref2gat    = `a * cjogat;
+
+                // zero-bias depletion widths at reference temperature, needed in SRH and TAT model
+                wdepnulrbot  =  EPSSI / CJORBOT_i;
+                wdepnulrsti  =  XJUNSTI_i * EPSSI / CJORSTI_i;
+                wdepnulrgat  =  XJUNGAT_i * EPSSI / CJORGAT_i;
+
+                // inverse values of "wdepnulr", used in BBT model
+                wdepnulrinvbot = 1.0 / wdepnulrbot;
+                wdepnulrinvsti = 1.0 / wdepnulrsti;
+                wdepnulrinvgat = 1.0 / wdepnulrgat;
+
+                // inverse values of built-in voltages at reference temperature, needed in SRH and BBT model
+                VBIRBOTinv   =  1.0 / VBIRBOT_i;
+                VBIRSTIinv   =  1.0 / VBIRSTI_i;
+                VBIRGATinv   =  1.0 / VBIRGAT_i;
+
+                // some constants needed in erfc-approximation, needed in TAT model
+                perfc        =  (`SQRTPI * `aerfc);
+                berfc        =  ((-5.0 * (`aerfc) + 6.0 - pow((perfc), -2.0)) / 3.0);
+                cerfc        =  (1.0 - (`aerfc) - (berfc));
+
+                // half the bandgap energy, limited to values > phitd, needed in TAT model
+                deltaEbot    =  max(0.5 * phigdbot, phitd);
+                deltaEsti    =  max(0.5 * phigdsti, phitd);
+                 deltaEgat   =  max(0.5 * phigdgat, phitd);
+
+                // values of atat, needed in TAT model
+                atatbot      =  deltaEbot * phitdinv;
+                atatsti      =  deltaEsti * phitdinv;
+                atatgat      =  deltaEgat * phitdinv;
+
+                // values of btatpart, needed in TAT model
+                btatpartbot  =  sqrt(32.0 * MEFFTATBOT_i * `MELE * `QELE * (deltaEbot * deltaEbot * deltaEbot)) / (3.0 * `HBAR);
+                btatpartsti  =  sqrt(32.0 * MEFFTATSTI_i * `MELE * `QELE * (deltaEsti * deltaEsti * deltaEsti)) / (3.0 * `HBAR);
+                btatpartgat  =  sqrt(32.0 * MEFFTATGAT_i * `MELE * `QELE * (deltaEgat * deltaEgat * deltaEgat)) / (3.0 * `HBAR);
+
+                // temperature-scaled values of FBBT, needed in BBT model
+                fbbtbot      =  FBBTRBOT_i * (1.0 + STFBBTBOT_i * (tkd - tkr));
+                fbbtsti      =  FBBTRSTI_i * (1.0 + STFBBTSTI_i * (tkd - tkr));
+                fbbtgat      =  FBBTRGAT_i * (1.0 + STFBBTGAT_i * (tkd - tkr));
+                fbbtbot      = `CLIP_LOW(fbbtbot, 0.0);
+                fbbtsti      = `CLIP_LOW(fbbtsti, 0.0);
+                fbbtgat      = `CLIP_LOW(fbbtgat, 0.0);
+
+                // values of fstop, needed in avalanche/breakdown model
+                alphaav      =  1.0 - 1.0 / FREV_i;
+                fstopbot     =  1.0 / (1.0 - pow(alphaav, PBRBOT_i));
+                fstopsti     =  1.0 / (1.0 - pow(alphaav, PBRSTI_i));
+                fstopgat     =  1.0 / (1.0 - pow(alphaav, PBRGAT_i));
+
+                // inverse values of breakdown voltages, needed in avalanche/breakdown model
+                VBRinvbot    =  1.0 / VBRBOT_i;
+                VBRinvsti    =  1.0 / VBRSTI_i;
+                VBRinvgat    =  1.0 / VBRGAT_i;
+
+                // slopes for linear extrapolation close to and beyond breakdown, needed in avalanche/breakdown model
+                slopebot     = -(fstopbot * fstopbot * pow(alphaav, (PBRBOT_i - 1.0))) * PBRBOT_i * VBRinvbot;
+                slopesti     = -(fstopsti * fstopsti * pow(alphaav, (PBRSTI_i - 1.0))) * PBRSTI_i * VBRinvsti;
+                slopegat     = -(fstopgat * fstopgat * pow(alphaav, (PBRGAT_i - 1.0))) * PBRGAT_i * VBRinvgat;
+
+                `ifdef JUNCAP_StandAlone
+                // do nothing
+                `else // JUNCAP_StandAlone
+                phigrbot_d   =  PHIGBOTD_i + deltaphigr;
+                phigrsti_d   =  PHIGSTID_i + deltaphigr;
+                phigrgat_d   =  PHIGGATD_i + deltaphigr;
+
+                phigdbot_d   =  PHIGBOTD_i + deltaphigd;
+                phigdsti_d   =  PHIGSTID_i + deltaphigd;
+                phigdgat_d   =  PHIGGATD_i + deltaphigd;
+
+                ftdbot_d     =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrbot_d * phitrinv) - (phigdbot_d * phitdinv)));
+                ftdsti_d     =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrsti_d * phitrinv) - (phigdsti_d * phitdinv)));
+                ftdgat_d     =  (pow(auxt, 1.5)) * exp(0.5 * ((phigrgat_d * phitrinv) - (phigdgat_d * phitdinv)));
+
+                idsatbot_d   =  IDSATRBOTD_i * ftdbot_d * ftdbot_d;
+                idsatsti_d   =  IDSATRSTID_i * ftdsti_d * ftdsti_d;
+                idsatgat_d   =  IDSATRGATD_i * ftdgat_d * ftdgat_d;
+
+                ubibot_d     =  VBIRBOTD_i * auxt - 2.0 * phitd * ln(ftdbot_d);
+                ubisti_d     =  VBIRSTID_i * auxt - 2.0 * phitd * ln(ftdsti_d);
+                ubigat_d     =  VBIRGATD_i * auxt - 2.0 * phitd * ln(ftdgat_d);
+
+                vbibot_d     =  ubibot_d + phitd * ln(1.0 + exp((`vbilow - ubibot_d) * phitdinv));
+                vbisti_d     =  ubisti_d + phitd * ln(1.0 + exp((`vbilow - ubisti_d) * phitdinv));
+                vbigat_d     =  ubigat_d + phitd * ln(1.0 + exp((`vbilow - ubigat_d) * phitdinv));
+
+                vbiinvbot_d  =  1.0 / vbibot_d;
+                vbiinvsti_d  =  1.0 / vbisti_d;
+                vbiinvgat_d  =  1.0 / vbigat_d;
+
+                one_minus_PBOT_d = 1.0 - PBOTD_i;
+                one_minus_PSTI_d = 1.0 - PSTID_i;
+                one_minus_PGAT_d = 1.0 - PGATD_i;
+
+                one_over_one_minus_PBOT_d = 1.0 / one_minus_PBOT_d;
+                one_over_one_minus_PSTI_d = 1.0 / one_minus_PSTI_d;
+                one_over_one_minus_PGAT_d = 1.0 / one_minus_PGAT_d;
+
+                cjobot_d     =  CJORBOTD_i * pow((VBIRBOTD_i * vbiinvbot_d), PBOTD_i);
+                cjosti_d     =  CJORSTID_i * pow((VBIRSTID_i * vbiinvsti_d), PSTID_i);
+                cjogat_d     =  CJORGATD_i * pow((VBIRGATD_i * vbiinvgat_d), PGATD_i);
+
+                qprefbot_d   =  cjobot_d * vbibot_d * one_over_one_minus_PBOT_d;
+                qprefsti_d   =  cjosti_d * vbisti_d * one_over_one_minus_PSTI_d;
+                qprefgat_d   =  cjogat_d * vbigat_d * one_over_one_minus_PGAT_d;
+
+                qpref2bot_d  = `a * cjobot_d;
+                qpref2sti_d  = `a * cjosti_d;
+                qpref2gat_d  = `a * cjogat_d;
+
+                wdepnulrbot_d =  EPSSI / CJORBOTD_i;
+                wdepnulrsti_d =  XJUNSTID_i * EPSSI / CJORSTID_i;
+                wdepnulrgat_d =  XJUNGATD_i * EPSSI / CJORGATD_i;
+
+                wdepnulrinvbot_d = 1.0 / wdepnulrbot_d;
+                wdepnulrinvsti_d = 1.0 / wdepnulrsti_d;
+                wdepnulrinvgat_d = 1.0 / wdepnulrgat_d;
+
+                VBIRBOTinv_d =  1.0 / VBIRBOTD_i;
+                VBIRSTIinv_d =  1.0 / VBIRSTID_i;
+                VBIRGATinv_d =  1.0 / VBIRGATD_i;
+
+                deltaEbot_d  =  max(0.5 * phigdbot_d, phitd);
+                deltaEsti_d  =  max(0.5 * phigdsti_d, phitd);
+                deltaEgat_d  =  max(0.5 * phigdgat_d, phitd);
+
+                atatbot_d    =  deltaEbot_d * phitdinv;
+                atatsti_d    =  deltaEsti_d * phitdinv;
+                atatgat_d    =  deltaEgat_d * phitdinv;
+
+                btatpartbot_d =  sqrt(32.0 * MEFFTATBOTD_i * `MELE * `QELE * (deltaEbot_d * deltaEbot_d * deltaEbot_d)) / (3.0 * `HBAR);
+                btatpartsti_d =  sqrt(32.0 * MEFFTATSTID_i * `MELE * `QELE * (deltaEsti_d * deltaEsti_d * deltaEsti_d)) / (3.0 * `HBAR);
+                btatpartgat_d =  sqrt(32.0 * MEFFTATGATD_i * `MELE * `QELE * (deltaEgat_d * deltaEgat_d * deltaEgat_d)) / (3.0 * `HBAR);
+
+                fbbtbot_d    =  FBBTRBOTD_i * (1.0 + STFBBTBOTD_i * (tkd - tkr));
+                fbbtsti_d    =  FBBTRSTID_i * (1.0 + STFBBTSTID_i * (tkd - tkr));
+                fbbtgat_d    =  FBBTRGATD_i * (1.0 + STFBBTGATD_i * (tkd - tkr));
+                fbbtbot_d    = `CLIP_LOW(fbbtbot_d, 0.0);
+                fbbtsti_d    = `CLIP_LOW(fbbtsti_d, 0.0);
+                fbbtgat_d    = `CLIP_LOW(fbbtgat_d, 0.0);
+
+                fstopbot_d   =  1.0 / (1.0 - pow(alphaav, PBRBOTD_i));
+                fstopsti_d   =  1.0 / (1.0 - pow(alphaav, PBRSTID_i));
+                fstopgat_d   =  1.0 / (1.0 - pow(alphaav, PBRGATD_i));
+
+                VBRinvbot_d  =  1.0 / VBRBOTD_i;
+                VBRinvsti_d  =  1.0 / VBRSTID_i;
+                VBRinvgat_d  =  1.0 / VBRGATD_i;
+
+                slopebot_d   = -(fstopbot_d * fstopbot_d * pow(alphaav, (PBRBOTD_i - 1.0))) * PBRBOTD_i * VBRinvbot_d;
+                slopesti_d   = -(fstopsti_d * fstopsti_d * pow(alphaav, (PBRSTID_i - 1.0))) * PBRSTID_i * VBRinvsti_d;
+                slopegat_d   = -(fstopgat_d * fstopgat_d * pow(alphaav, (PBRGATD_i - 1.0))) * PBRGATD_i * VBRinvgat_d;
+                `endif // JUNCAP_StandAlone
