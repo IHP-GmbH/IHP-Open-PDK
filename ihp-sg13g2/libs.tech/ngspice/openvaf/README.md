@@ -5,5 +5,5 @@ First download from [here](https://openvaf.semimod.de/download/) and install (co
 
 ```
 openvaf psp103_nqs.va
-mv psps103_nqs.osdi ../../xschem/sg13g2_tests/simulation/
+mv psp103_nqs.osdi ../../xschem/sg13g2_tests/simulation/
 ```
