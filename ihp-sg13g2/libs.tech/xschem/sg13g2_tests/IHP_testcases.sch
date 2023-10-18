@@ -34,7 +34,7 @@ T {S-param} 1440 -710 0 0 0.8 0.8 {}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 90 -780 0 0 {name=h1
 descr="IHP-Open-PDK"
-url="https://github.com/KHermanUBB/IHP-Open-PDK/tree/main"}
+url="https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main"}
 C {sg13g2_tests/dc_lv_nmos.sym} 180 -630 0 0 {name=x5}
 C {sg13g2_tests/dc_hv_nmos.sym} 180 -600 0 0 {name=x6}
 C {sg13g2_tests/dc_lv_pmos.sym} 180 -570 0 0 {name=x7}
