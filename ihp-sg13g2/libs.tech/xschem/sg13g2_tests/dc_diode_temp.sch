@@ -31,9 +31,7 @@ N -500 40 -500 60 {
 lab=GND}
 N -500 -80 -500 -20 {
 lab=Vd}
-N -500 -80 -380 -80 {
-lab=Vd}
-N -320 -80 -220 -80 {
+N -500 -80 -220 -80 {
 lab=Vd}
 N -220 -80 -220 -40 {
 lab=Vd}
@@ -41,23 +39,17 @@ N -220 20 -220 60 {
 lab=GND}
 N -220 -80 -200 -80 {
 lab=Vd}
-N -380 -80 -320 -80 {
-lab=Vd}
 N -70 40 -70 60 {
 lab=GND}
 N -70 -80 -70 -20 {
 lab=Vdp}
-N -70 -80 50 -80 {
-lab=Vdp}
-N 110 -80 210 -80 {
+N -70 -80 210 -80 {
 lab=Vdp}
 N 210 -80 210 -40 {
 lab=Vdp}
 N 210 20 210 60 {
 lab=GND}
 N 210 -80 230 -80 {
-lab=Vdp}
-N 50 -80 110 -80 {
 lab=Vdp}
 C {devices/gnd.sym} -220 60 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -500 60 0 0 {name=l2 lab=GND}
@@ -75,8 +67,8 @@ op
 print Vd 
 reset 
 dc temp -40 125 1
-write ../raw/dc_diode_temp.raw
-wrdata ../csv/dc_diode_temp.csv Vd Vdp
+write dc_diode_temp.raw
+wrdata dc_diode_temp.csv Vd Vdp
 
 .endc
 "}
@@ -90,7 +82,7 @@ C {devices/isource.sym} -500 10 2 0 {name=I0 value=200n}
 C {devices/title.sym} -360 130 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -450 -220 0 0 {name=h5
 descr="Load IV curve" 
-tclcommand="xschem raw_read $netlist_dir/../raw/dc_diode_temp.raw dc"
+tclcommand="xschem raw_read $netlist_dir/dc_diode_temp.raw dc"
 }
 C {devices/gnd.sym} 210 60 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} -70 60 0 0 {name=l4 lab=GND}

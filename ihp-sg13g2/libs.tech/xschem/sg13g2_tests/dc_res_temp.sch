@@ -32,9 +32,7 @@ i(vppd)
 i(vsil)"}
 N -140 30 -140 90 {
 lab=GND}
-N -140 -70 -140 -30 {
-lab=Vcc}
-N -140 -110 -140 -70 {
+N -140 -110 -140 -30 {
 lab=Vcc}
 N -140 -110 90 -110 {
 lab=Vcc}
@@ -79,8 +77,8 @@ echo High poly resisotr value:
 print Vcc/I(Vrh)
 reset 
 dc temp -40 125 1 
-write ../raw/dc_res_temp.raw
-wrdata ../csv/dc_res_temp.csv I(Vsil) I(Vppd) I(Vrh)
+write dc_res_temp.raw
+wrdata dc_res_temp.csv I(Vsil) I(Vppd) I(Vrh)
 .endc
 "}
 C {devices/gnd.sym} 90 90 0 0 {name=l1 lab=GND}
@@ -89,7 +87,7 @@ C {devices/gnd.sym} -140 90 0 0 {name=l3 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -70 -170 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/dc_res_temp.raw dc"
+tclcommand="xschem raw_read $netlist_dir/dc_res_temp.raw dc"
 }
 C {devices/lab_pin.sym} -140 -60 2 0 {name=p1 sig_type=std_logic lab=Vcc}
 C {devices/ammeter.sym} 90 -40 0 0 {name=Vsil}

@@ -26,11 +26,7 @@ N -70 -110 -40 -110 {
 lab=#net2}
 N 20 -110 60 -110 {
 lab=#net3}
-N -120 -40 -110 -40 {
-lab=#net1}
-N -200 -40 -180 -40 {
-lab=#net1}
-N -180 -40 -120 -40 {
+N -200 -40 -110 -40 {
 lab=#net1}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -67,8 +63,8 @@ let run=run+1
 end
 ***************** LOOP *********************
 
-wrdata ../csv/mc_hbt_op.csv \{$scratch\}.Ic
-write ../raw/mc_hbt_op.raw
+wrdata mc_hbt_op.csv \{$scratch\}.Ic
+write mc_hbt_op.raw
 echo
 print \{$scratch\}.Ic
 
