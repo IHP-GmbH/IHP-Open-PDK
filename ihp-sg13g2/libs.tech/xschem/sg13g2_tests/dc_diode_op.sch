@@ -26,13 +26,13 @@ unitx=1
 logx=0
 logy=0
 color="7 8"
-node="i(vmdp)
-i(vmda)"}
+node="i(Vmdp)
+i(Vmda)"}
 N -500 20 -500 40 {
 lab=GND}
 N -500 -100 -500 -40 {
 lab=#net1}
-N -500 -100 -380 -100 {
+N -500 -100 -350 -100 {
 lab=#net1}
 N -350 40 -350 50 {
 lab=GND}
@@ -45,8 +45,6 @@ lab=#net1}
 N -170 -30 -170 -20 {
 lab=#net3}
 N -170 -100 -170 -90 {
-lab=#net1}
-N -380 -100 -350 -100 {
 lab=#net1}
 N -350 -100 -170 -100 {
 lab=#net1}
@@ -65,8 +63,8 @@ op
 print I(Vmda) I(Vmdp) 
 reset 
 dc V1 -12 1 1m
-write ../raw/dc_diode_op.raw
-wrdata ../csv/dc_diode.csv I(Vmda) I(Vmdp)
+write dc_diode_op.raw
+wrdata dc_diode.csv I(Vmda) I(Vmdp)
 .endc
 "}
 C {sg13g2_pr/dantenna.sym} -350 10 2 0 {name=XD1
@@ -77,7 +75,7 @@ w=780n
 C {devices/title.sym} -360 130 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -470 -260 0 0 {name=h5
 descr="Load IV curve" 
-tclcommand="xschem raw_read $netlist_dir/../raw/dc_diode_op.raw dc"
+tclcommand="xschem raw_read $netlist_dir/dc_diode_op.raw dc"
 }
 C {devices/gnd.sym} -170 50 0 0 {name=l3 lab=GND}
 C {sg13g2_pr/dpantenna.sym} -170 10 2 0 {name=XD2

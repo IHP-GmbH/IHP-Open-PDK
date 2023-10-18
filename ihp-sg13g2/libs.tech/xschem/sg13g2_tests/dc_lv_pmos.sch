@@ -67,13 +67,13 @@ C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 op
 print I(Vd)
 *reset 
 dc Vds 0 -2 -0.01 Vgs -0.45 -1.1 -0.05
-write ../raw/dc_lv_pmos.raw
+write dc_lv_pmos.raw
 *plot all
 .endc
 "}
@@ -86,7 +86,7 @@ C {devices/gnd.sym} 70 90 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -230 -150 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/dc_lv_pmos.raw dc"
+tclcommand="xschem raw_read $netlist_dir/dc_lv_pmos.raw dc"
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 0 2 1 {name=M1
 L=0.45u

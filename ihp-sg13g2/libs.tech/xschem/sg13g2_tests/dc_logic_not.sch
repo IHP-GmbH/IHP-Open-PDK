@@ -29,54 +29,46 @@ node="gain
 out"}
 N -290 100 -290 120 {
 lab=GND}
-N -290 30 -290 40 {
-lab=in}
 N 20 60 20 120 {
 lab=GND}
 N 280 60 280 120 {
 lab=GND}
-N 280 -40 280 0 {
-lab=#net1}
-N -30 30 -20 30 {
-lab=in}
-N 70 30 70 60 {
+N 70 30 70 120 {
 lab=GND}
 N 20 30 70 30 {
 lab=GND}
-N 70 -90 70 -70 {
-lab=#net1}
 N 20 -70 70 -70 {
 lab=#net1}
-N 20 -40 20 0 {
+N 20 -20 20 0 {
 lab=out}
 N 20 -170 20 -100 {
 lab=#net1}
-N 20 -170 280 -170 {
+N 70 -170 280 -170 {
 lab=#net1}
-N 280 -170 280 -40 {
+N 280 -170 280 0 {
 lab=#net1}
-N 70 -170 70 -150 {
+N 70 -170 70 -70 {
 lab=#net1}
-N -50 30 -30 30 {
+N -50 30 -20 30 {
 lab=in}
-N -50 -70 -50 30 {
+N -50 -20 -50 30 {
 lab=in}
 N -50 -70 -20 -70 {
 lab=in}
-N -290 -20 -290 30 {
+N -290 -20 -290 40 {
 lab=in}
-N -290 -20 -230 -20 {
+N -290 -20 -50 -20 {
 lab=in}
 N 20 -20 150 -20 {
 lab=out}
 N -310 -20 -290 -20 {
 lab=in}
-N -230 -20 -50 -20 {
-lab=in}
-N 70 60 70 120 {
-lab=GND}
-N 70 -150 70 -90 {
+N 20 -170 70 -170 {
 lab=#net1}
+N 20 -40 20 -20 {
+lab=out}
+N -50 -70 -50 -20 {
+lab=in}
 C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
@@ -87,11 +79,11 @@ C {devices/code_shown.sym} -360 -260 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 dc Vin 0 1.8 1m
 let gain = -deriv(V(out))/10
-write ../raw/dc_logic_not.raw
+write dc_logic_not.raw
 .endc
 "}
 C {devices/gnd.sym} 20 120 0 0 {name=l1 lab=GND}
@@ -103,7 +95,7 @@ C {devices/gnd.sym} 70 120 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 420 180 0 0 {name=h5
 descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/../raw/dc_logic_not.raw dc"
+tclcommand="xschem raw_read $netlist_dir/dc_logic_not.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 0 30 2 1 {name=M1
 L=0.45u

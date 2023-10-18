@@ -23,7 +23,7 @@ unitx=1
 logx=0
 logy=0
 color=4
-node=i(vc)
+node=i(Vc)
 y1=-5.5e-05
 rainbow=0}
 T {Nx - number of emitters} -210 110 0 0 0.2 0.2 {}
@@ -47,11 +47,7 @@ N -170 -80 -140 -80 {
 lab=#net2}
 N -80 -80 -40 -80 {
 lab=#net3}
-N -220 -10 -210 -10 {
-lab=#net1}
-N -300 -10 -280 -10 {
-lab=#net1}
-N -280 -10 -220 -10 {
+N -300 -10 -210 -10 {
 lab=#net1}
 C {devices/code_shown.sym} -310 180 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -67,7 +63,7 @@ op
 print I(Vc)
 reset 
 dc Vce 0 2 0.01 I0 0 5u 0.1u
-write ../raw/test_npn_13G2.raw
+write test_npn_13G2.raw
 .endc
 "}
 C {devices/gnd.sym} -170 80 0 0 {name=l1 lab=GND}
@@ -78,7 +74,7 @@ C {devices/gnd.sym} -120 80 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 70 -70 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/test_npn_13G2.raw dc"
+tclcommand="xschem raw_read $netlist_dir/test_npn_13G2.raw dc"
 }
 C {sg13g2_pr/npn13G2.sym} -190 -10 0 0 {name=Q1
 model=npn13G2
