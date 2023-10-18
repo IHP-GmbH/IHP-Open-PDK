@@ -43,12 +43,12 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * Primitive devices
     * GDSII
 * KLayout layer property and tech files
-* KLayout DRC rules (initial/incomplete minimal set)
+* KLayout DRC rules (minimal set)
 * Pcells (limited set, for reference only)
-* HSPICE Models of HBT devices
+* MOS/HBT/Passive device models for ngspice/Xyce
+* xschem: primitive device symbols, settings and testbenches
 * OpenEMS: tutorials, scripts, documentation
-* SG13G2 Process specification
-* SG13G2 Layout Rules
+* SG13G2 Process specification & Layout Rules
 * MOS/HBT Measurements in MDM format
 * Project Roadmap Gantt chart
 
