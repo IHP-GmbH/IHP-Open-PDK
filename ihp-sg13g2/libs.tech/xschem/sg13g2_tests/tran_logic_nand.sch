@@ -69,51 +69,41 @@ logy=0
 color=7}
 N 100 70 100 130 {
 lab=GND}
-N 410 -50 410 10 {
+N 410 -50 410 130 {
 lab=GND}
-N 410 -150 410 -110 {
-lab=#net1}
-N 150 40 150 70 {
+N 150 40 150 130 {
 lab=GND}
 N 100 40 150 40 {
 lab=GND}
-N 0 -210 0 -190 {
-lab=#net1}
 N -50 -190 0 -190 {
 lab=#net1}
 N -50 -290 -50 -220 {
 lab=#net1}
-N 410 -280 410 -150 {
-lab=#net1}
-N 0 -290 0 -270 {
+N 0 -290 0 -190 {
 lab=#net1}
 N -190 40 -170 40 {
 lab=A}
-N 230 -210 230 -190 {
-lab=#net1}
 N 180 -190 230 -190 {
 lab=#net1}
 N 180 -290 180 -220 {
 lab=#net1}
-N 230 -290 230 -270 {
+N 230 -290 230 -190 {
 lab=#net1}
 N 100 -40 200 -40 {
 lab=GND}
-N 200 -40 200 -30 {
-lab=GND}
-N 200 30 200 40 {
+N 200 -40 200 40 {
 lab=GND}
 N 100 -10 100 10 {
 lab=#net2}
 N -50 -160 -50 -140 {
 lab=out}
-N 0 -140 180 -140 {
+N 100 -140 180 -140 {
 lab=out}
 N 180 -160 180 -140 {
 lab=out}
-N 100 -140 100 -70 {
+N 100 -90 100 -70 {
 lab=out}
-N -50 -140 0 -140 {
+N -50 -140 100 -140 {
 lab=out}
 N 60 -190 140 -190 {
 lab=B}
@@ -123,8 +113,6 @@ N -90 40 60 40 {
 lab=A}
 N -90 -190 -90 40 {
 lab=A}
-N -170 -40 60 -40 {
-lab=B}
 N -170 40 -90 40 {
 lab=A}
 N -170 120 -170 130 {
@@ -137,24 +125,22 @@ N -270 40 -270 50 {
 lab=GND}
 N -270 -40 -270 -20 {
 lab=B}
-N -270 -40 -170 -40 {
+N -270 -40 60 -40 {
 lab=B}
-N -50 -290 410 -290 {
+N 230 -290 410 -290 {
 lab=#net1}
-N 410 -290 410 -280 {
+N 410 -290 410 -110 {
 lab=#net1}
-N 410 10 410 130 {
-lab=GND}
 N 100 -90 240 -90 {
 lab=out}
-N 150 70 150 130 {
-lab=GND}
-N 200 -30 200 30 {
-lab=GND}
-N 0 -270 -0 -210 {
+N -50 -290 0 -290 {
 lab=#net1}
-N 230 -270 230 -210 {
+N 0 -290 180 -290 {
 lab=#net1}
+N 180 -290 230 -290 {
+lab=#net1}
+N 100 -140 100 -90 {
+lab=out}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
@@ -164,11 +150,11 @@ C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
 *meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
-write ../raw/tran_logic_nand.raw
+write tran_logic_nand.raw
 .endc
 "}
 C {devices/gnd.sym} 100 130 0 0 {name=l1 lab=GND}
@@ -180,7 +166,7 @@ C {devices/gnd.sym} 150 130 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -270 -610 0 0 {name=h5
 descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/../raw/tran_logic_nand.raw tran"
+tclcommand="xschem raw_read $netlist_dir/tran_logic_nand.raw tran"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 80 40 2 1 {name=M1
 L=0.45u

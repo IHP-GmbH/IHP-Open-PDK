@@ -39,7 +39,7 @@ value="
 .param temp=27
 
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 
 let mc_runs = 1000
 let run = 0
@@ -64,8 +64,8 @@ let run=run+1
 end
 ***************** LOOP *********************
 
-wrdata ../csv/sg13_hv_nmos_cs.csv \{$scratch\}.vg
-write ../raw/sg13_hv_nmos_cs.raw
+wrdata sg13_hv_nmos_cs.csv \{$scratch\}.vg
+write sg13_hv_nmos_cs.raw
 echo
 print \{$scratch\}.vg
 

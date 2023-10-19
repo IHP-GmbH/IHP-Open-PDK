@@ -116,15 +116,13 @@ N 690 -390 690 -380 {
 lab=out}
 N 370 -400 370 -380 {
 lab=in}
-N 150 -380 370 -380 {
-lab=in}
 N 690 -380 830 -380 {
 lab=out}
 N 370 -380 500 -380 {
 lab=in}
 N 560 -380 690 -380 {
 lab=out}
-N 80 -380 150 -380 {
+N 80 -380 370 -380 {
 lab=in}
 N 530 -350 530 -230 {
 lab=GND}
@@ -137,7 +135,7 @@ sp lin 500 1e9 200e9 0
 let Cseries = 1e+15/(2*PI*frequency*imag(1/Y_2_1))
 let Rseries = -real(1/Y_2_1)
 let s21=vdb(s_2_1)
-write ../raw/sp_rfmim_cap.raw
+write sp_rfmim_cap.raw
 .endc
 " }
 C {devices/title.sym} 160 -30 0 0 {name=l1 author="Copyright 2023 IHP PDK Authors"}
@@ -166,7 +164,7 @@ C {devices/lab_pin.sym} 370 -400 1 0 {name=p1 sig_type=std_logic lab=in}
 C {devices/lab_pin.sym} 690 -390 1 0 {name=p2 sig_type=std_logic lab=out}
 C {devices/launcher.sym} 900 -650 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/sp_rfmim_cap.raw ac"
+tclcommand="xschem raw_read $netlist_dir/sp_rfmim_cap.raw ac"
 }
 C {devices/gnd.sym} 530 -230 0 0 {name=l2 lab=GND}
 C {sg13g2_pr/cap_rfcmim.sym} 530 -380 3 0 {name=C1 model=cap_rfcmim W=7.0e-6 L=7.0e-6 wfeed=5.0e-6 spiceprefix=X}

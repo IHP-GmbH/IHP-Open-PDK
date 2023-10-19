@@ -26,17 +26,15 @@ N 60 -170 90 -170 {
 lab=Vc}
 N 150 -170 190 -170 {
 lab=#net2}
-N 10 -100 20 -100 {
-lab=Vb}
-N -200 -100 -180 -100 {
+N -200 -100 -130 -100 {
 lab=#net1}
 N 40 -170 60 -170 {
 lab=Vc}
-N -180 -100 -130 -100 {
-lab=#net1}
-N -70 -100 10 -100 {
+N -20 -100 20 -100 {
 lab=Vb}
 N -20 -130 -20 -100 {
+lab=Vb}
+N -70 -100 -20 -100 {
 lab=Vb}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -52,7 +50,7 @@ value="
 .control 
 let mc_runs = 1000
 let run = 0
-shell rm ../csv/mc_hbt_3dB.csv
+shell rm mc_hbt_3dB.csv
 ***************** LOOP *********************
 dowhile run < mc_runs
 reset
@@ -62,7 +60,7 @@ ac dec 10 10k 1000meg
 meas ac vnom_at FIND Vc AT=100k 
 let v3db = vnom_at*0.707
 meas ac freq_3dB when Vc=v3db
-print freq_3dB >> ../csv/mc_hbt_3dB.csv
+print freq_3dB >> mc_hbt_3dB.csv
 let run=run+1 
 end
 ***************** LOOP *********************
