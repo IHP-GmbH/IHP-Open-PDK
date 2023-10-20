@@ -13,15 +13,15 @@ List of available DRC rules:
 | Cnt.a             | Min. and max. size of **Cont**                       |
 | Cnt.b             | Min. **Cont** space                                  |
 | M1.a              | Min. width of **Metal1**                             |
-| ~~M1.b~~          | Min. **Metal1** space                                |
+| M1.b              | Min. **Metal1** space                                |
 | M2.a              | Min. width of **Metal2**                             |
-| ~~M2.b~~          | Min. **Metal2** space                                |
+| M2.b              | Min. **Metal2** space                                |
 | M3.a              | Min. width of **Metal3**                             |
-| ~~M3.b~~          | Min. **Metal3** space                                |
+| M3.b              | Min. **Metal3** space                                |
 | M4.a              | Min. width of **Metal4**                             |
-| ~~M4.b~~          | Min. **Metal4** space                                |
+| M4.b              | Min. **Metal4** space                                |
 | M5.a              | Min. width of **Metal5**                             |
-| ~~M5.b~~          | Min. **Metal5** space                                |
+| M5.b              | Min. **Metal5** space                                |
 | V1.a              | Minimum and maximum **Via1** area                    |
 | V1.b              | Minimum **Via1** space                               |
 | V2.a              | Minimum and maximum **Via2** area                    |
@@ -72,8 +72,8 @@ List of available DRC rules:
 | LBE.a             | Min. width of **LBE**                                |
 | LBE.b             | Max. width of **LBE**                                |
 | LBE.b1            | Max. allowed **LBE** area                            |
-| ~~LBE.c~~         | **LBE** space or notch                               |
-| ~~LBE.d~~         | Min. space of **LBE** to inner edge of **Edge Seal** |
+| LBE.c             | **LBE** space or notch                               |
+| LBE.d             | Min. space of **LBE** to inner edge of **Edge Seal** |
 | LBE.h             | No **LBE** ring allowed                              |
 | LBE.i             | Max. global **LBE** density                          |
 | Pin.a             | Minimum **Activ** enclosure of **Active_pin**        |
