@@ -10,9 +10,7 @@ res_typ when mc_ok = 0
 res_typ_stat when mc_ok = 0} 360 -430 0 0 0.3 0.3 {}
 N 380 40 380 100 {
 lab=GND}
-N 380 -60 380 -20 {
-lab=Vcc}
-N 380 -100 380 -60 {
+N 380 -100 380 -20 {
 lab=Vcc}
 N 380 -100 610 -100 {
 lab=Vcc}
@@ -75,8 +73,8 @@ let run=run+1
 end
 ***************** LOOP *********************
 
-wrdata ../csv/mc_res_op.csv \{$scratch\}.rsilval \{$scratch\}.rppdval \{$scratch\}.rhighval
-write ../raw/mc_res_op.raw
+wrdata mc_res_op.csv \{$scratch\}.rsilval \{$scratch\}.rppdval \{$scratch\}.rhighval
+write mc_res_op.raw
 echo
 print \{$scratch\}.rsilval
 print \{$scratch\}.rppdval

@@ -28,54 +28,46 @@ node="out
 in"}
 N -440 90 -440 110 {
 lab=GND}
-N -440 20 -440 30 {
-lab=in}
 N -160 50 -160 110 {
 lab=GND}
 N 100 50 100 110 {
 lab=GND}
-N 100 -50 100 -10 {
-lab=#net1}
-N -210 20 -200 20 {
-lab=in}
-N -110 20 -110 50 {
+N -110 20 -110 110 {
 lab=GND}
 N -160 20 -110 20 {
 lab=GND}
-N -110 -100 -110 -80 {
-lab=#net1}
 N -160 -80 -110 -80 {
 lab=#net1}
-N -160 -50 -160 -10 {
+N -160 -30 -160 -10 {
 lab=out}
 N -160 -180 -160 -110 {
 lab=#net1}
-N -160 -180 100 -180 {
+N -110 -180 100 -180 {
 lab=#net1}
-N 100 -180 100 -50 {
+N 100 -180 100 -10 {
 lab=#net1}
-N -110 -180 -110 -160 {
+N -110 -180 -110 -80 {
 lab=#net1}
-N -230 20 -210 20 {
+N -230 20 -200 20 {
 lab=in}
-N -230 -80 -230 20 {
+N -230 -30 -230 20 {
 lab=in}
 N -230 -80 -200 -80 {
 lab=in}
-N -440 -30 -440 20 {
-lab=in}
-N -290 -30 -230 -30 {
+N -440 -30 -440 30 {
 lab=in}
 N -160 -30 -30 -30 {
 lab=out}
 N -460 -30 -440 -30 {
 lab=in}
-N -440 -30 -290 -30 {
+N -440 -30 -230 -30 {
 lab=in}
-N -110 50 -110 110 {
-lab=GND}
-N -110 -160 -110 -100 {
+N -160 -180 -110 -180 {
 lab=#net1}
+N -230 -80 -230 -30 {
+lab=in}
+N -160 -50 -160 -30 {
+lab=out}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
@@ -86,11 +78,11 @@ C {devices/code_shown.sym} 160 -70 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
 meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
-write ../raw/tran_logic_not.raw
+write tran_logic_not.raw
 .endc
 "}
 C {devices/gnd.sym} -160 110 0 0 {name=l1 lab=GND}
@@ -102,7 +94,7 @@ C {devices/gnd.sym} -110 110 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 230 -170 0 0 {name=h5
 descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/../raw/tran_logic_not.raw tran"
+tclcommand="xschem raw_read $netlist_dir/tran_logic_not.raw tran"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -180 20 2 1 {name=M1
 L=0.45u

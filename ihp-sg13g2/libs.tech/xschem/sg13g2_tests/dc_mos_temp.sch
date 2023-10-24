@@ -125,11 +125,11 @@ value="
 .savecurrents
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 dc temp -40 125 1
-write ../raw/mos_temp.raw
-wrdata ../csv/mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
+write mos_temp.raw
+wrdata mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
 .endc
 "}
 C {devices/gnd.sym} -20 200 0 0 {name=l1 lab=GND}
@@ -141,7 +141,7 @@ C {devices/gnd.sym} 30 200 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -220 -150 0 0 {name=h5
 descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/../raw/mos_temp.raw dc"
+tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -40 110 2 1 {name=M1
 L=0.35u
