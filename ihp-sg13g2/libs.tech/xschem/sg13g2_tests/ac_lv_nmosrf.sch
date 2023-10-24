@@ -105,14 +105,14 @@ C {devices/code_shown.sym} 1190 -310 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
+* pre_osdi ./psp103_nqs.osdi
 save all 
 ac dec 1001 10meg 10000meg 
 let vd1 = abs(Vout1)
 let vd2 = abs(Vout2)
 meas ac Vout_1_5GHz find vd1 at=5000meg
 meas ac Vout_2_5GHz find vd2 at=5000meg
-write ../raw/ac_lv_nmosrf.raw
+write ac_lv_nmosrf.raw
 .endc
 "}
 C {devices/gnd.sym} 160 50 0 0 {name=l1 lab=GND}
@@ -124,7 +124,7 @@ C {devices/gnd.sym} 210 50 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -210 -300 0 0 {name=h5
 descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/../raw/ac_lv_nmosrf.raw ac"}
+tclcommand="xschem raw_read $netlist_dir/ac_lv_nmosrf.raw ac"}
 C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M1
 L=0.35u
 W=1.0u

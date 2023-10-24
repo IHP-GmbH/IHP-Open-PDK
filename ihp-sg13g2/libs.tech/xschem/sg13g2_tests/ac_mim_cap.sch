@@ -73,7 +73,7 @@ let mag=abs(out)
 meas ac freq_at when mag = 0.707
 let C = 1/(2*PI*freq_at*1e+5)
 print C
-write ../raw/ac_mim_cap.raw 
+write ac_mim_cap.raw 
 .endc
 " }
 C {devices/title.sym} 160 -30 0 0 {name=l1 author="Copyright 2023 IHP PDK Authors"}
@@ -95,5 +95,5 @@ C {devices/lab_pin.sym} 690 -390 1 0 {name=p2 sig_type=std_logic lab=out}
 C {sg13g2_pr/cap_cmim.sym} 530 -380 1 0 {name=C1 model=cap_cmim W=7.0e-6 L=7.0e-6 MF=1 spiceprefix=X}
 C {devices/launcher.sym} 200 -740 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/ac_mim_cap.raw ac"
+tclcommand="xschem raw_read $netlist_dir/ac_mim_cap.raw ac"
 }

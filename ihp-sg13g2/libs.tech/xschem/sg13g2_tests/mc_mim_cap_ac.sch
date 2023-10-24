@@ -44,7 +44,7 @@ value="
 .control 
 let mc_runs = 1000
 let run = 0
-shell rm ../csv/mc_cmim.csv
+shell rm mc_cmim.csv
 ***************** LOOP *********************
 dowhile run < mc_runs
 reset
@@ -54,7 +54,7 @@ ac dec 1000 1e6 100e9
 let mag=abs(out)
 meas ac freq_at when mag = 0.707
 let C = 1/(2*PI*freq_at*1e+5)
-print C >> ../csv/mc_cmim.csv
+print C >> mc_cmim.csv
 let run=run+1 
 end
 ***************** LOOP *********************

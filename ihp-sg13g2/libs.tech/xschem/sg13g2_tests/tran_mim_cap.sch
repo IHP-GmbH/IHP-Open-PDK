@@ -60,7 +60,7 @@ value="
 .control
 save all
 tran 10n 6u
-write ../raw/test_mim_cap.raw
+write test_mim_cap.raw
 .endc
 " }
 C {devices/title.sym} 160 -30 0 0 {name=l1 author="Copyright 2023 IHP PDK Authors"}
@@ -99,6 +99,6 @@ value="
 "}
 C {devices/launcher.sym} 780 -450 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/../raw/test_mim_cap.raw tran"
+tclcommand="xschem raw_read $netlist_dir/test_mim_cap.raw tran"
 }
 C {sg13g2_pr/cap_cmim.sym} 40 -220 0 0 {name=C2 model=cap_cmim W=7.0e-6 L=7.0e-6 MF=1 spiceprefix=X}

@@ -15,23 +15,22 @@
 #### XSCHEM SYSTEM-WIDE DESIGN LIBRARY PATHS: XSCHEM_LIBRARY_PATH
 ###########################################################################
 #### If unset xschem starts with XSCHEM_LIBRARY_PATH set to the default, typically:
-# /home/schippes/.xschem/xschem_library
-# /home/schippes/share/xschem/xschem_library/devices
-# /home/schippes/share/doc/xschem/examples
-# /home/schippes/share/doc/xschem/ngspice
-# /home/schippes/share/doc/xschem/logic
-# /home/schippes/share/doc/xschem/xschem_simulator
-# /home/schippes/share/doc/xschem/binto7seg
-# /home/schippes/share/doc/xschem/pcb
-# /home/schippes/share/doc/xschem/rom8k
+# ${HOME}/.xschem/xschem_library
+# <install_root>/share/xschem/xschem_library/devices
+# <install_root>/share/doc/xschem/examples
+# <install_root>/share/doc/xschem/ngspice
+# <install_root>/share/doc/xschem/logic
+# <install_root>/share/doc/xschem/xschem_simulator
+# <install_root>/share/doc/xschem/binto7seg
+# <install_root>/share/doc/xschem/pcb
+# <install_root>/share/doc/xschem/rom8k
 
 #### Flush any previous definition
 set XSCHEM_LIBRARY_PATH {}
 #### include devices/*.sym
 append XSCHEM_LIBRARY_PATH ${XSCHEM_SHAREDIR}/xschem_library
 #### include skywater libraries. Here i use [pwd]. This works if i start xschem from here.
-append XSCHEM_LIBRARY_PATH :$env(PWD)
-# append XSCHEM_LIBRARY_PATH :/mnt/sda7/home/schippes/pdks/sky130A/libs.tech/xschem
+append XSCHEM_LIBRARY_PATH :[file dirname [info script]]
 #### add ~/.xschem/xschem_library (USER_CONF_DIR is normally ~/.xschem)
 append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library 
 
@@ -42,50 +41,19 @@ append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library
 #### color can be an ordinary name (grey, brown, blue) or a hex code {#77aaff}
 #### hex code must be enclosed in braces
 array unset dircolor
-set dircolor(xschem_examples$) blue
-#set dircolor(xschem_180MCU_PDK$) blue
+set dircolor(sg13g2_pr$) blue
+set dircolor(sg13g2_tests$) blue
 set dircolor(xschem_library$) red
 set dircolor(devices$) red
 
 ###########################################################################
-#### WINDOW TO OPEN ON STARTUP: XSCHEM_START_WINDOW
-###########################################################################
-#### Start without a design if no filename given on command line:
-#### To avoid absolute paths, use a path that is relative to one of the
-#### XSCHEM_LIBRARY_PATH directories. Default: empty
-set XSCHEM_START_WINDOW {sg13g2_tests/IHP_testcases.sch}
-
-###########################################################################
-#### IHP130 PDK SPECIFIC VARIABLES
-###########################################################################
-
-## check if env var PDK_ROOT exists, and use it for building open_pdks paths
-if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
-  ## found variable, set tcl PDK_ROOT var
-  if {![file isdir $env(PDK_ROOT)]} {
-    puts stderr "Warning: PDK_ROOT environment variable is set but path not found on the system."
-  }
-  set PDK_ROOT $env(PDK_ROOT)
-} else {
-  ## not existing or empty. 
-  puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find a pdk install"
-  if {[file isdir [pwd]/..]} {
-    set PDK_ROOT [file normalize [pwd]/../..]
-  } else {
-    puts stderr {No pdk installation found, set PDK_ROOT env. var. and restart xschem}
-  }
-}
-###########################################################################
 #### DIRECTORY WHERE SIMULATIONS, NETLIST AND SIMULATOR OUTPUTS ARE PLACED
 ###########################################################################
 #### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations) 
-# set netlist_dir $env(HOME)/.xschem/simulations
-
-if {[info exists PDK_ROOT]} {
-  set netlist_dir ${PDK_ROOT}/libs.tech/xschem/sg13g2_tests/simulation
-  puts stderr "pdk installation: using $PDK_ROOT"
-  puts stderr "netlist_dir: $netlist_dir"
-}
+set netlist_dir $env(PWD)/simulations
+#### if this is set to '1' netlists and simulations will go into a simulation/ folder
+#### inside the directory containing the top level schematic. Default: not set (0)
+# set local_netlist_dir 1
 
 ###########################################################################
 #### NETLIST AND HIERARCHICAL PRINT EXCLUDE PATTERNS
@@ -102,6 +70,10 @@ if {[info exists PDK_ROOT]} {
 #### variable controls hierarchical print
 #### default value: empty
 # set noprint_libs {}
+#### nolist_libs is a list with same rules as for xschem_libs. This
+#### variable controls cell listing in procedure list_hierarchy.
+#### default value: empty
+# set nolist_libs {}
 
 ###########################################################################
 #### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS 
@@ -122,13 +94,18 @@ if {[info exists PDK_ROOT]} {
 # set hspice_netlist 1
 # set verilog_2001 1
 
-#### to use a fixed line with set change_lw to 0 and set some value to line_width
+#### to use a fixed line width set change_lw to 0 and set some value to line_width
 #### these are the defaults
 # set line_width 0
 # set change_lw 1
 
 #### allow color postscript and svg exports. Default: 1, enable color
 # set color_ps 1
+
+#### set paper size: name, height, width. Sizes in 1/72 of an inch (typographical points)
+#### default: {a4 842 595}
+# set ps_paper_size {a4 842 595}
+# set ps_paper_size {letter 792 612}
 
 #### initial size of xschem window you can specify also position with (wxh+x+y)
 #### this is the default:
@@ -138,6 +115,10 @@ if {[info exists PDK_ROOT]} {
 #### allowing to move away by zooming / unzooming with mouse wheel
 #### default setting: 0
 # set unzoom_nodrift 0
+
+#### if set to 1 full zoom will center the drawing instead of anhoring to lower
+#### left corner. Default: 0
+set zoom_full_center 1
 
 #### if set to 1 allow to place multiple components with same name.
 #### Warning: this is normally not allowed in any simulation netlist.
@@ -155,11 +136,14 @@ if {[info exists PDK_ROOT]} {
 #### if set to 1 automatically join/trim wires while editing
 #### this may slow down on rally big designs. Can be disabled via menu 
 #### default: 0
-# set autotrim_wires 0
+set autotrim_wires 1
 
 #### set widget scaling (mainly for font display), this is useful on 4K displays
 #### default: unset (tk uses its default) > 1.0 ==> bigger 
 # set tk_scaling 1.7
+
+#### use the tclreadline package if available , Default: 1 (enabled).
+# set use_tclreadline 1
 
 #### disable some symbol layers. Default: none, all layers are visible.
 # set enable_layer(5) 0 ;# example to disable pin red boxes
@@ -167,17 +151,45 @@ if {[info exists PDK_ROOT]} {
 #### enable to scale grid point size as done with lines at close zoom, default: 0
 # set big_grid_points 0
 
+#### enable grouping contiguous bits of bus slices in net->pin instance
+#### assignments for verilog netlists. Default: disabled (0)
+# set verilog_bitblast 0
+
+#### allow searching the full search path for schematics associated to symbols
+#### instead of looking only in symbol directory. Default: disabled (0).
+# set search_schematic 0
+
+#### focus the schematic window if mouse goes over it, even if a dialog box
+#### is displayed, without needing to click.
+#### This allows to move/zoom/pan the schematic while editing attributes.
+#### Clicking in the schematic window usually closes the dialog box or starts
+#### editing a new component if clicking on a new component.
+#### default: enabled (1)
+# set autofocus_mainwindow 1
+
+#### set component browser always above drawing canvas.
+#### default: enabled (1)
+# set component_browser_on_top 0
+
+#### set graph line with multiplier with respect to xschem actual line width
+#### default: 2.0
+# set graph_linewidth_mult 2.0
+
 ###########################################################################
 #### EXPORT FORMAT TRANSLATORS, PNG AND PDF
 ###########################################################################
 #### command to translate xpm to png; (assumes command takes source 
 #### and dest file as arguments, example: gm convert plot.xpm plot.png)
 #### default: {gm convert}
+#### Windows ghostscript uses gswin64c
+# set to_png {gswin64c -sDEVICE=png16m -o}
 # set to_png {gm convert}
 
 #### command to translate ps to pdf; (assumes command takes source
 #### and dest file as arguments, example: ps2pdf plot.ps plot.pdf)
 #### default: ps2pdf
+#### Windows ghostscript uses gswin64c
+# set to_pdf {gswin64c -sDEVICE=pdfwrite -o}
 # set to_pdf ps2pdf
 set to_pdf {ps2pdf -dAutoRotatePages=/None}
 
@@ -198,8 +210,8 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### Warning: changing these values will likely break compatibility
 #### with existing symbol libraries. Defaults: grid 20, snap 10.
-# set grid 20
-# set snap 10
+# set cadgrid 20
+# set cadsnap 10
 
 ###########################################################################
 #### CUSTOM COLORS  MAY BE DEFINED HERE
@@ -247,12 +259,12 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 #### KEYBINDINGS
 ###########################################################################
 #### General format for specifying a replacement for a keybind
-#### Replace Ctrl-d with Escape (so you wont kill the program)
-# set replace_key(Control-d) Escape
+#### Replace Ctrl-q with Escape (so you wont kill the program)
+# set replace_key(Control-q) Escape
 
 #### swap w and W keybinds; Always specify Shift for capital letters
-# set replace_key(Shift-W) w
-# set replace_key(w) Shift-W
+# set replace_key(Shift-W) Key-w
+# set replace_key(Key-w) Shift-W
 
 ###########################################################################
 #### TERMINAL
@@ -282,12 +294,10 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 # set show_infowindow 0
 
 ###########################################################################
-#### CONFIGURE COMPUTER FARM JOB REDIRECTORS FOR SIMULATIONS
+#### ALWAYS SHOW ERC INFO WINDOW AFTER NETLIST
 ###########################################################################
-#### RTDA NC
-# set computerfarm {nc run -Il}
-#### LSF BSUB
-# set computerfarm {bsub -Is}
+#### default: 0 
+# set show_infowindow_after_netlist 0
 
 ###########################################################################
 #### TCP CONNECTION WITH GAW
@@ -306,14 +316,23 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 #### BESPICE WAVE SOCKET CONNECTION
 ###########################################################################
 #### set bespice wave listening port; default: not enabled
-set bespice_listen_port 2022
+# set bespice_listen_port 2022
 
 ###########################################################################
 #### TCL FILES TO LOAD AT STARTUP
 ###########################################################################
 #### list of tcl files to preload.
-# lappend tcl_files ${XSCHEM_SHAREDIR}/change_index.tcl
+set tcl_files {}
 lappend tcl_files ${XSCHEM_SHAREDIR}/ngspice_backannotate.tcl
+# lappend tcl_files ${XSCHEM_SHAREDIR}/change_index.tcl
+# lappend tcl_files ....
+
+###########################################################################
+#### WEB URL DOWNLOAD HELPER APPLICATION
+###########################################################################
+#### used to download files from web: default: {curl -f -s -O -J}
+# set download_url_helper {curl -f -s -O -J}
+# set download_url_helper {wget -N --quiet --content-disposition}
 
 ###########################################################################
 #### XSCHEM TOOLBAR
@@ -329,10 +348,85 @@ set toolbar_visible 1
 # or tab is open.
 set tabbed_interface 1
 
+###########################################################################
+#### CASE INSENSITIVE SYMBOL LOOKUP
+###########################################################################
+## this option might be useful on filesystems that are case insensitive and
+## on designs ported from windows where case of file names does not matter.
+## if this option is set symbol lookup will be case insensitive,
+## so a symbol reference 'AMPLI.SYM' will match with 'ampli.sym' or
+## Amply.sym on disk. File system must be case insensitive for this to work,
+## like FAT32 or NTFS.
+## Do not set this option if you don't know what you are doing.
+## Default: not enabled (0)
+# set case_insensitive 1
+
+###########################################################################
+#### HIDE GRAPHS IF NO SPICE DATA LOADED
+###########################################################################
+## if enabled graphs will be hidden if no data is loaded.
+## default: not enabled (0)
+# set hide_empty_graphs 0
+
+###########################################################################
+#### SHOW HIDDEN TEXTS
+###########################################################################
+## This option shows text objects even if they have attribute 'hide=true' set
+## default: 0 (not set) 
+# set show_hidden_texts 1
+
+###########################################################################
+#### LIVE BACKANNOTATION OF DATA AT CURSOR 2 (B) POSITION
+###########################################################################
+## if enabled will backannotate values in schematic at cursor 'b' position
+## in graph. Default: not enabled (0)
+set live_cursor2_backannotate 1
+
+###########################################################################
+#### IHP PDK SPECIFIC VARIABLES
+###########################################################################
+
+## check if env var PDK_ROOT exists, and use it for building open_pdks paths
+if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
+  ## found variable, set tcl PDK_ROOT var
+  if {![file isdir $env(PDK_ROOT)]} {
+    puts stderr "Warning: PDK_ROOT environment variable is set but path not found on the system."
+  }
+  set PDK_ROOT $env(PDK_ROOT)
+} else {
+  ## not existing or empty. 
+  puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find an open_pdks install"
+  if {[file isdir /usr/share/pdk]} {set PDK_ROOT /usr/share/pdk
+  } elseif {[file isdir /usr/local/share/pdk]} {set PDK_ROOT /usr/local/share/pdk
+  } elseif {[file isdir $env(HOME)/share/pdk]} {set PDK_ROOT $env(HOME)/share/pdk
+  } else {
+    puts stderr {No open_pdks installation found, set PDK_ROOT env. var. and restart xschem}
+  }
+}
 
 if {[info exists PDK_ROOT]} {
-  set SG13G2_MODELS ${PDK_ROOT}/libs.tech/ngspice/models
-  set SG13G2_MODELS_XYCE ${PDK_ROOT}/libs.tech/xyce/models
+  ## get process variant
+  if {[info exists env(PDK)]} {
+    set PDK $env(PDK)
+  } else {
+    set PDK ihp-sg13g2
+  }
+  set SG13G2_MODELS ${PDK_ROOT}/${PDK}/libs.tech/ngspice/models
+  set SG13G2_MODELS_XYCE ${PDK_ROOT}/${PDK}/libs.tech/xyce/models
   puts stderr "SG13G2_MODELS: $SG13G2_MODELS"
   puts stderr "SG13G2_MODELS_XYCE: $SG13G2_MODELS_XYCE"
+  #puts stderr "SKYWATER_STDCELLS: $SG13G2_STDCELLS"
+}
+
+
+# open_pdks specific:
+# Set variables after ${PDK_ROOT} is known
+# This overrides some of the variables set above.
+
+set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_tests/IHP_testcases.sch
+append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
+
+# allow a user-specific path add-on (https://github.com/iic-jku/iic-osic-tools/issues/7)
+if { [info exists ::env(XSCHEM_USER_LIBRARY_PATH) ] } {
+    append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
 }
