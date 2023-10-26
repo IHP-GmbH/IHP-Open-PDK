@@ -1,6 +1,11 @@
 # Data for the Quality Assurance (QA) flow
 
 Proposed directory structure:
-```
-TBD
+```bash
+.
+├── drc
+│   ├── devices
+│   ├── layers
+│   └── special
+└── lvs
 ```
