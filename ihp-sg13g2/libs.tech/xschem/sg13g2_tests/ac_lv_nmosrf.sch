@@ -105,7 +105,7 @@ C {devices/code_shown.sym} 1190 -310 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 ac dec 1001 10meg 10000meg 
 let vd1 = abs(Vout1)

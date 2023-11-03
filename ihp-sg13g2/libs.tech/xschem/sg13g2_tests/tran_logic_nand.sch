@@ -150,7 +150,7 @@ C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=127
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
 *meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
