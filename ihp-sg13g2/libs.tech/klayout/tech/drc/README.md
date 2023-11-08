@@ -3,7 +3,7 @@
 These are layout rules necessary for all layouts in standard MPW runs. The minimum required rules are
 tested with the MinimumDRC script during the tape-in procedure.
 For special mask sets, like for BEOL runs, some rules are not important. This is mentioned in the header of
-a section or as in an extra column behind each rule.
+a section.
 
 ### 1.1 Activ (not in BEOL)
 | Rule              | Description                                          |
