@@ -13,7 +13,7 @@ As of March 2023, this repository is targeting the SG13G2 process node.
 
 > **Warning**
 >
-> IHP is currently treating the current content as a **preview only**.
+> IHP is currently treating the existing content as a **preview only**.
 
 While the SG13G2 process node and the PDK from which this open source
 release was derived have been used to create many designs that have been
