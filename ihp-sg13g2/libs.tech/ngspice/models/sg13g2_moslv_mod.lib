@@ -1,0 +1,158 @@
+******************************************************************************* 
+*                                                                             * 
+* Library:      SG13G2_dev                                                    * 
+* Technologies: SG13G2                                                        *
+* Component:    Spectre model file for Spectre 18                             *
+*                                                                             *
+* Simulator:    Spectre 20.1                                                  *
+* Model:        PSP 103.6                                                     *
+* Revision:     200310                                                        * 
+*                                                                             * 
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2023 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+*******************************************************************************   
+*                                                                             *  
+*                                                                             *  
+*              C O M M O N    SG 13  M O S     M O D E L S                    *  
+*                                                                             *  
+*                                                                             *  
+*******************************************************************************   
+*  
+* NOTE: do not include this file directly in the netlist, use models.typ, .bcs or .wcs only  
+*   
+*  
+*  
+*******************************************************************************   
+* variable C section  
+*******************************************************************************   
+  
+  
+  
+*******************************************************************************   
+* MOS transistor section  
+*******************************************************************************   
+  
+  
+  
+* MOS-Subckt with D/S-overlap possibility  
+*  
+*       z1              z2            z1  
+*   ----------------------------------------  
+*   |          |   |         |   |         |  
+*   |    S     | G |   D     | G |    S    |  w/ng, >=0.15u   
+*   |          |   |         |   |         |  
+*   ----------------------------------------  
+*   
+*  z1=0.34u, z2=0.38u           
+*  
+* Parameters as,ad,ps,pd are calculated automatically, if <= 0  
+*  
+*  
+
+* SEMIMOD TODO:
+* - DTA parameter not working?
+  
+.subckt sg13_lv_nmos d g s b  
++ w=0.35u l=0.34u ng=1 mfact=1 as=0 ad=0 pd=0 ps=0 trise=0 z1=0.34e-6 z2=0.38e-6 wmin=0.15e-6 
++ rfmode=0 pre_layout=1   
+* if as = 0, calculate value, else take it  
+* if as is given externally, no adjustment for ng is done! -> must be done in the extractor  
+* if ng>1 and as=0 (in schematic) recalculate!  
+  
+* --- Warning limits if design parameters exceed the values of the measured   
+*     test structures from which the model was derived   
+*LowL  paramtest warnif = (l<0.129u)  message = "Instance parameter 'l' is too small. Validated range for length is [0.13um, 10um]."  
+*HigL  paramtest warnif = (l>10.1u)   message = "Instance parameter 'l' is too large. Validated range for length is [0.13um, 10um]."  
+*if (rfmode) {  
+*   LowW  paramtest warnif = (w/ng<0.99u)  message = "Instance parameter 'w/ng' is too small. Validated range for width per finger and rfmode=1 is [1um, 10um]."  
+*   HigW  paramtest warnif = (w/ng>10.1u)  message = "Instance parameter 'w/ng' is too large. Validated range for width per finger and rfmode=1 is [1um, 10um]."  
+*} else {  
+*   LowW  paramtest warnif = (w/ng<0.149u) message = "Instance parameter 'w/ng' is too small. Validated range for 'w' is [0.15um, 10um]."  
+*   HigW  paramtest warnif = (w/ng>10.1u)  message = "Instance parameter 'w/ng' is too large. Validated range for 'w' is [0.15um, 10um]."  
+*}  
+  
+* include the model parameters
+.include sg13g2_moslv_parm.lib
+
+.if (as <= 1e-50)  
+    .if (floor(floor(ng/2+0.501)*2+0.001) != ng)		  
+        Nsg13_lv_nmos d g s b sg13g2_lv_nmos_psp w='w/ng' l=l mult=ng    
+          + as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'   
+          + ad='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'  
+          + ps='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'  
+          + pd='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'  
+          + dta=trise  
+          + ngcon=2   
+    .else
+        Nsg13_lv_nmos d g s b sg13g2_lv_nmos_psp w='w/ng' l=l mult=ng    
+          + as='max(w/ng,wmin)*(2*z1+max(0,(ng-2)/2)*z2)/ng'  
+          + ad='max(w/ng,wmin)*z2/2'  
+          + ps='2*(max(w/ng,wmin)*(2+max(ng-2,0)/2)+2*z1+max(ng-2,0)/2*z2)/ng'  
+          + pd='max(w/ng,wmin)+z2'  
+          + dta=trise  
+          + ngcon=2   
+    .endif
+.else
+    Nsg13_lv_nmos d g s b sg13g2_lv_nmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult=ng      
+      + dta=trise  
+      + ngcon=2   
+.endif
+.ends
+  
+.subckt sg13_lv_pmos d g s b   
++ w=0.35u l=0.28u ng=1 mfact=1 as=0 ad=0 pd=0 ps=0 trise=0 z1=0.34e-6 z2=0.38e-6 wmin=0.15e-6 
++ rfmode=0  pre_layout=1  
+  
+* --- Warning limits if design parameters exceed the values of the measured   
+*     test structures from which the model was derived   
+*LowL  paramtest warnif = (l<0.129u)  message = "Instance parameter 'l' is too small. Validated range for length is [0.13um, 10um]."  
+*HigL  paramtest warnif = (l>10.1u)   message = "Instance parameter 'l' is too large. Validated range for length is [0.13um, 10um]."  
+*if (rfmode) {  
+*   LowW  paramtest warnif = (w/ng<4.9u)   message = "Instance parameter 'w/ng' is too small. Validated range for width per finger and rfmode=1 is [2.5um, 10um]."  
+*   HigW  paramtest warnif = (w/ng>10.1u)  message = "Instance parameter 'w/ng' is too large. Validated range for width per finger and rfmode=1 is [2.5um, 10um]."  
+*} else {  
+*   LowW  paramtest warnif = (w/ng<0.149u) message = "Instance parameter 'w/ng' is too small. Validated range for 'w' is [0.15um, 10um]."  
+*   HigW  paramtest warnif = (w/ng>10.1u)  message = "Instance parameter 'w/ng' is too large. Validated range for 'w' is [0.15um, 10um]."  
+*}  
+
+.include sg13g2_moslv_parm.lib
+.if (as <= 1e-50)  
+    .if (floor(floor(ng/2+0.501)*2+0.001) != ng)		  
+        Nsg13_lv_pmos d g s b sg13g2_lv_pmos_psp w='w/ng' l=l mult=ng   
+          + as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'   
+          + ad='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'  
+          + ps='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'  
+          + pd='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'  
+          + dta=trise  
+          + ngcon=2   
+    .else
+        Nsg13_lv_pmos d g s b sg13g2_lv_pmos_psp w='w/ng' l=l mult=ng   
+          + as='max(w/ng,wmin)*(2*z1+max(0,(ng-2)/2)*z2)/ng'  
+          + ad='max(w/ng,wmin)*z2/2'  
+          + ps='2*(max(w/ng,wmin)*(2+max(ng-2,0)/2)+2*z1+max(ng-2,0)/2*z2)/ng'  
+          + pd='max(w/ng,wmin)+z2'  
+          + dta=trise  
+          + ngcon=2   
+    .endif
+.else
+    Nsg13_lv_pmos d g s b sg13g2_lv_pmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult=ng   
+      + dta=trise  
+      + ngcon=2   
+.endif
+.ends
+  

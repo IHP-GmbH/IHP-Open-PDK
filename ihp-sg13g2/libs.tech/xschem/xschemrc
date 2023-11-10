@@ -1,0 +1,432 @@
+#### xschemrc system configuration file
+
+#### values may be overridden by user's ~/.xschem/xschemrc configuration file
+#### or by project-local ./xschemrc
+
+###########################################################################
+#### XSCHEM INSTALLATION DIRECTORY: XSCHEM_SHAREDIR
+###########################################################################
+#### Normally there is no reason to set this variable if using standard
+#### installation. Location of files is set at compile time but may be overridden
+#### with following line:
+# set XSCHEM_SHAREDIR $env(HOME)/share/xschem
+
+###########################################################################
+#### XSCHEM SYSTEM-WIDE DESIGN LIBRARY PATHS: XSCHEM_LIBRARY_PATH
+###########################################################################
+#### If unset xschem starts with XSCHEM_LIBRARY_PATH set to the default, typically:
+# ${HOME}/.xschem/xschem_library
+# <install_root>/share/xschem/xschem_library/devices
+# <install_root>/share/doc/xschem/examples
+# <install_root>/share/doc/xschem/ngspice
+# <install_root>/share/doc/xschem/logic
+# <install_root>/share/doc/xschem/xschem_simulator
+# <install_root>/share/doc/xschem/binto7seg
+# <install_root>/share/doc/xschem/pcb
+# <install_root>/share/doc/xschem/rom8k
+
+#### Flush any previous definition
+set XSCHEM_LIBRARY_PATH {}
+#### include devices/*.sym
+append XSCHEM_LIBRARY_PATH ${XSCHEM_SHAREDIR}/xschem_library
+#### include skywater libraries. Here i use [pwd]. This works if i start xschem from here.
+append XSCHEM_LIBRARY_PATH :[file dirname [info script]]
+#### add ~/.xschem/xschem_library (USER_CONF_DIR is normally ~/.xschem)
+append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library 
+
+###########################################################################
+#### SET CUSTOM COLORS FOR XSCHEM LIBRARIES MATCHING CERTAIN PATTERNS
+###########################################################################
+#### each line contains a dircolor(pattern) followed by a color
+#### color can be an ordinary name (grey, brown, blue) or a hex code {#77aaff}
+#### hex code must be enclosed in braces
+array unset dircolor
+set dircolor(sg13g2_pr$) blue
+set dircolor(sg13g2_tests$) blue
+set dircolor(xschem_library$) red
+set dircolor(devices$) red
+
+###########################################################################
+#### DIRECTORY WHERE SIMULATIONS, NETLIST AND SIMULATOR OUTPUTS ARE PLACED
+###########################################################################
+#### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations) 
+set netlist_dir $env(PWD)/simulations
+#### if this is set to '1' netlists and simulations will go into a simulation/ folder
+#### inside the directory containing the top level schematic. Default: not set (0)
+# set local_netlist_dir 1
+
+###########################################################################
+#### NETLIST AND HIERARCHICAL PRINT EXCLUDE PATTERNS
+###########################################################################
+#### xschem_libs is a list of patterns of cells to exclude from netlisting.
+#### Matching is done as regular expression on full cell path
+#### Example:
+#### set xschem_libs { {/cmoslib/} {/analoglib/.*pass} buffer }
+#### in this case all schematic cells of directory cmoslib and cells containing
+#### /analoglib/...pass and buffer will be excluded from netlisting
+#### default value: empty
+# set xschem_libs {}
+#### noprint_libs is a list with same rules as for xschem_libs. This
+#### variable controls hierarchical print
+#### default value: empty
+# set noprint_libs {}
+#### nolist_libs is a list with same rules as for xschem_libs. This
+#### variable controls cell listing in procedure list_hierarchy.
+#### default value: empty
+# set nolist_libs {}
+
+###########################################################################
+#### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS 
+#### IN SPICE NETLISTS (EXAMPLE: DATA[7] --> DATA<7>) 
+###########################################################################
+#### default: empty (use xschem default, [ ])
+# set bus_replacement_char {<>}
+#### for XSPICE: replace square brackets as the are used for XSPICE vector nodes.
+# set bus_replacement_char {__} 
+
+###########################################################################
+#### SOME DEFAULT BEHAVIOR
+###########################################################################
+#### Allowed values:  spice, verilog, vhdl, tedax, default: spice
+# set netlist_type spice
+
+#### Some netlisting options (these are the defaults)
+# set hspice_netlist 1
+# set verilog_2001 1
+
+#### to use a fixed line width set change_lw to 0 and set some value to line_width
+#### these are the defaults
+# set line_width 0
+# set change_lw 1
+
+#### allow color postscript and svg exports. Default: 1, enable color
+# set color_ps 1
+
+#### set paper size: name, height, width. Sizes in 1/72 of an inch (typographical points)
+#### default: {a4 842 595}
+# set ps_paper_size {a4 842 595}
+# set ps_paper_size {letter 792 612}
+
+#### initial size of xschem window you can specify also position with (wxh+x+y)
+#### this is the default:
+# set initial_geometry {900x600}
+
+#### if set to 0, when zooming out allow the viewport do drift toward the mouse position,
+#### allowing to move away by zooming / unzooming with mouse wheel
+#### default setting: 0
+# set unzoom_nodrift 0
+
+#### if set to 1 full zoom will center the drawing instead of anhoring to lower
+#### left corner. Default: 0
+set zoom_full_center 1
+
+#### if set to 1 allow to place multiple components with same name.
+#### Warning: this is normally not allowed in any simulation netlist.
+#### default: 0, do not allow place multiple elements with same name (refdes)
+# set disable_unique_names 0
+
+#### if set to 1 continue drawing lines / wires after click
+#### default: 0
+# set persistent_command 1
+
+#### if set to 1 a wire is inserted when separating components that are
+#### connected by pins. Default: not enabled (0)
+# set connect_by_kissing 1
+
+#### if set to 1 automatically join/trim wires while editing
+#### this may slow down on rally big designs. Can be disabled via menu 
+#### default: 0
+set autotrim_wires 1
+
+#### set widget scaling (mainly for font display), this is useful on 4K displays
+#### default: unset (tk uses its default) > 1.0 ==> bigger 
+# set tk_scaling 1.7
+
+#### use the tclreadline package if available , Default: 1 (enabled).
+# set use_tclreadline 1
+
+#### disable some symbol layers. Default: none, all layers are visible.
+# set enable_layer(5) 0 ;# example to disable pin red boxes
+
+#### enable to scale grid point size as done with lines at close zoom, default: 0
+# set big_grid_points 0
+
+#### enable grouping contiguous bits of bus slices in net->pin instance
+#### assignments for verilog netlists. Default: disabled (0)
+# set verilog_bitblast 0
+
+#### allow searching the full search path for schematics associated to symbols
+#### instead of looking only in symbol directory. Default: disabled (0).
+# set search_schematic 0
+
+#### focus the schematic window if mouse goes over it, even if a dialog box
+#### is displayed, without needing to click.
+#### This allows to move/zoom/pan the schematic while editing attributes.
+#### Clicking in the schematic window usually closes the dialog box or starts
+#### editing a new component if clicking on a new component.
+#### default: enabled (1)
+# set autofocus_mainwindow 1
+
+#### set component browser always above drawing canvas.
+#### default: enabled (1)
+# set component_browser_on_top 0
+
+#### set graph line with multiplier with respect to xschem actual line width
+#### default: 2.0
+# set graph_linewidth_mult 2.0
+
+###########################################################################
+#### EXPORT FORMAT TRANSLATORS, PNG AND PDF
+###########################################################################
+#### command to translate xpm to png; (assumes command takes source 
+#### and dest file as arguments, example: gm convert plot.xpm plot.png)
+#### default: {gm convert}
+#### Windows ghostscript uses gswin64c
+# set to_png {gswin64c -sDEVICE=png16m -o}
+# set to_png {gm convert}
+
+#### command to translate ps to pdf; (assumes command takes source
+#### and dest file as arguments, example: ps2pdf plot.ps plot.pdf)
+#### default: ps2pdf
+#### Windows ghostscript uses gswin64c
+# set to_pdf {gswin64c -sDEVICE=pdfwrite -o}
+# set to_pdf ps2pdf
+set to_pdf {ps2pdf -dAutoRotatePages=/None}
+
+###########################################################################
+#### UNDO: SAVE ON DISK OR KEEP IN MEMORY
+###########################################################################
+#### Alloved: 'disk'or 'memory'. 
+#### Saving undo on disk is safer but slower on extremely big schematics.
+#### In most cases you won't notice any delay. Undo on disk allows previous
+#### state recovery in case of crashes. In-memory undo is extremely fast
+#### but should a crash occur everything is lost.
+#### It is highly recommended to keep undo on disk.
+#### Default: disk
+# set undo_type disk
+
+###########################################################################
+#### CUSTOM GRID / SNAP VALUE SETTINGS
+###########################################################################
+#### Warning: changing these values will likely break compatibility
+#### with existing symbol libraries. Defaults: grid 20, snap 10.
+# set cadgrid 20
+# set cadsnap 10
+
+###########################################################################
+#### CUSTOM COLORS  MAY BE DEFINED HERE
+###########################################################################
+#  set cadlayers 22
+#  set light_colors {
+#   "#ffffff" "#0044ee" "#aaaaaa" "#222222" "#229900"
+#   "#bb2200" "#00ccee" "#ff0000" "#888800" "#00aaaa"
+#   "#880088" "#00ff00" "#0000cc" "#666600" "#557755"
+#   "#aa2222" "#7ccc40" "#00ffcc" "#ce0097" "#d2d46b"
+#   "#ef6158" "#fdb200" }
+
+#  set dark_colors {
+#   "#000000" "#00ccee" "#3f3f3f" "#cccccc" "#88dd00"
+#   "#bb2200" "#00ccee" "#ff0000" "#ffff00" "#ffffff"
+#   "#ff00ff" "#00ff00" "#0000cc" "#aaaa00" "#aaccaa"
+#   "#ff7777" "#bfff81" "#00ffcc" "#ce0097" "#d2d46b"
+#   "#ef6158" "#fdb200" }
+
+###########################################################################
+#### CAIRO STUFF
+###########################################################################
+#### Scale all fonts by this number
+# set cairo_font_scale 1.0
+
+#### default for following two is 0.85 (xscale) and 0.88 (yscale) to 
+#### match cairo font spacing
+# set nocairo_font_xscale 1.0
+#### set nocairo_font_yscale 1.0
+
+#### Scale line spacing by this number
+# set cairo_font_line_spacing 1.0
+
+#### Specify a font
+# set cairo_font_name {Sans-Serif}
+# set svg_font_name {Sans-Serif}
+
+#### Lift up text by some zoom-corrected pixels for
+#### better compatibility wrt no cairo version.
+#### Useful values in the range [-1, 3]
+# set cairo_vert_correct 0
+# set nocairo_vert_correct 0
+
+###########################################################################
+#### KEYBINDINGS
+###########################################################################
+#### General format for specifying a replacement for a keybind
+#### Replace Ctrl-q with Escape (so you wont kill the program)
+# set replace_key(Control-q) Escape
+
+#### swap w and W keybinds; Always specify Shift for capital letters
+# set replace_key(Shift-W) Key-w
+# set replace_key(Key-w) Shift-W
+
+###########################################################################
+#### TERMINAL
+###########################################################################
+#### default for linux: xterm
+# set terminal {xterm -geometry 100x35 -fn 9x15 -bg black -fg white -cr white -ms white }
+#### lxterminal is not OK since it will not inherit env vars: 
+#### In order to reduce memory usage and increase the performance, all instances
+#### of the lxterminal are sharing a single process. LXTerminal is part of LXDE
+
+###########################################################################
+#### EDITOR
+###########################################################################
+#### editor must not detach from launching shell (-f mandatory for gvim)
+#### default for linux: gvim -f
+# set editor {gvim -f -geometry 90x28}
+# set editor { xterm -geometry 100x40 -e nano }
+# set editor { xterm -geometry 100x40 -e pico }
+
+#### For Windows
+# set editor {notepad.exe}
+
+###########################################################################
+#### SHOW ERC INFO WINDOW (erc errors, warnings etc)
+###########################################################################
+#### default: 0 (can be enabled by menu)
+# set show_infowindow 0
+
+###########################################################################
+#### ALWAYS SHOW ERC INFO WINDOW AFTER NETLIST
+###########################################################################
+#### default: 0 
+# set show_infowindow_after_netlist 0
+
+###########################################################################
+#### TCP CONNECTION WITH GAW
+###########################################################################
+#### set gaw address for socket connection: {host port}
+#### default: set to localhost, port 2020
+# set gaw_tcp_address {localhost 2020}
+
+###########################################################################
+#### XSCHEM LISTEN TO TCP PORT
+###########################################################################
+#### set xschem listening port; default: not enabled
+# set xschem_listen_port 2021
+
+###########################################################################
+#### BESPICE WAVE SOCKET CONNECTION
+###########################################################################
+#### set bespice wave listening port; default: not enabled
+# set bespice_listen_port 2022
+
+###########################################################################
+#### TCL FILES TO LOAD AT STARTUP
+###########################################################################
+#### list of tcl files to preload.
+set tcl_files {}
+lappend tcl_files ${XSCHEM_SHAREDIR}/ngspice_backannotate.tcl
+# lappend tcl_files ${XSCHEM_SHAREDIR}/change_index.tcl
+# lappend tcl_files ....
+
+###########################################################################
+#### WEB URL DOWNLOAD HELPER APPLICATION
+###########################################################################
+#### used to download files from web: default: {curl -f -s -O -J}
+# set download_url_helper {curl -f -s -O -J}
+# set download_url_helper {wget -N --quiet --content-disposition}
+
+###########################################################################
+#### XSCHEM TOOLBAR
+###########################################################################
+#### default: not enabled.
+set toolbar_visible 1
+# set toolbar_horiz   1
+
+###########################################################################
+#### TABBED WINDOWS
+###########################################################################
+# default: not enabled. Interface can be changed runtime if only one window 
+# or tab is open.
+set tabbed_interface 1
+
+###########################################################################
+#### CASE INSENSITIVE SYMBOL LOOKUP
+###########################################################################
+## this option might be useful on filesystems that are case insensitive and
+## on designs ported from windows where case of file names does not matter.
+## if this option is set symbol lookup will be case insensitive,
+## so a symbol reference 'AMPLI.SYM' will match with 'ampli.sym' or
+## Amply.sym on disk. File system must be case insensitive for this to work,
+## like FAT32 or NTFS.
+## Do not set this option if you don't know what you are doing.
+## Default: not enabled (0)
+# set case_insensitive 1
+
+###########################################################################
+#### HIDE GRAPHS IF NO SPICE DATA LOADED
+###########################################################################
+## if enabled graphs will be hidden if no data is loaded.
+## default: not enabled (0)
+# set hide_empty_graphs 0
+
+###########################################################################
+#### SHOW HIDDEN TEXTS
+###########################################################################
+## This option shows text objects even if they have attribute 'hide=true' set
+## default: 0 (not set) 
+# set show_hidden_texts 1
+
+###########################################################################
+#### LIVE BACKANNOTATION OF DATA AT CURSOR 2 (B) POSITION
+###########################################################################
+## if enabled will backannotate values in schematic at cursor 'b' position
+## in graph. Default: not enabled (0)
+set live_cursor2_backannotate 1
+
+###########################################################################
+#### IHP PDK SPECIFIC VARIABLES
+###########################################################################
+
+## check if env var PDK_ROOT exists, and use it for building open_pdks paths
+if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
+  ## found variable, set tcl PDK_ROOT var
+  if {![file isdir $env(PDK_ROOT)]} {
+    puts stderr "Warning: PDK_ROOT environment variable is set but path not found on the system."
+  }
+  set PDK_ROOT $env(PDK_ROOT)
+} else {
+  ## not existing or empty. 
+  puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find an open_pdks install"
+  if {[file isdir /usr/share/pdk]} {set PDK_ROOT /usr/share/pdk
+  } elseif {[file isdir /usr/local/share/pdk]} {set PDK_ROOT /usr/local/share/pdk
+  } elseif {[file isdir $env(HOME)/share/pdk]} {set PDK_ROOT $env(HOME)/share/pdk
+  } else {
+    puts stderr {No open_pdks installation found, set PDK_ROOT env. var. and restart xschem}
+  }
+}
+
+if {[info exists PDK_ROOT]} {
+  ## get process variant
+  if {[info exists env(PDK)]} {
+    set PDK $env(PDK)
+  } else {
+    set PDK ihp-sg13g2
+  }
+  set SG13G2_MODELS ${PDK_ROOT}/${PDK}/libs.tech/ngspice/models
+  set SG13G2_MODELS_XYCE ${PDK_ROOT}/${PDK}/libs.tech/xyce/models
+  puts stderr "SG13G2_MODELS: $SG13G2_MODELS"
+  puts stderr "SG13G2_MODELS_XYCE: $SG13G2_MODELS_XYCE"
+  #puts stderr "SKYWATER_STDCELLS: $SG13G2_STDCELLS"
+}
+
+
+# open_pdks specific:
+# Set variables after ${PDK_ROOT} is known
+# This overrides some of the variables set above.
+
+set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_tests/IHP_testcases.sch
+append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
+
+# allow a user-specific path add-on (https://github.com/iic-jku/iic-osic-tools/issues/7)
+if { [info exists ::env(XSCHEM_USER_LIBRARY_PATH) ] } {
+    append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
+}

@@ -1,5 +1,5 @@
 # IHP Open Source PDK
-130nm BiCMOS Open Source PDK, dedicated for Analog, Mixed Signal and RF Design
+130nm BiCMOS Open Source PDK, dedicated for Analog/Digital, Mixed Signal and RF Design
 
 IHP Open Source PDK project goal is to provide a fully open source Process
 Design Kit and related data, which can be used to create manufacturable
@@ -43,17 +43,18 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * Primitive devices
     * GDSII
 * KLayout layer property and tech files
+* KLayout DRC rules (minimal set)
 * Pcells (limited set, for reference only)
-* HSPICE Models of HBT devices
+* MOS/HBT/Passive device models for ngspice/Xyce
+* xschem: primitive device symbols, settings and testbenches
 * OpenEMS: tutorials, scripts, documentation
-* SG13G2 Process specification
-* SG13G2 Layout Rules
+* SG13G2 Process specification & Layout Rules
 * MOS/HBT Measurements in MDM format
 * Project Roadmap Gantt chart
 
 ## Contributing
 
-Thank you for considering contributing to IHP Open Source PDK project on GitHub! To get started, please fork the repository and create a new branch for your contributions. Whether you're interested in code improvements, bug fixes, feature additions, or documentation enhancements, your input is invaluable. Please ensure your code adheres to [GitHub coding standards](https://github.com/git/git/blob/master/Documentation/CodingGuidelines) and accompanies appropriate tests. Please see the [Contributing file](CONTRIBUTING.md) for additional details. We appreciate your support and look forward to collaborating with you!
+Thank you for considering contributing to IHP Open Source PDK project on GitHub! To get started, please fork the **'dev'** branch of the repository and create a new branch for your contributions. Whether you're interested in code improvements, bug fixes, feature additions, or documentation enhancements, your input is invaluable. Please ensure your code adheres to [GitHub coding standards](https://github.com/git/git/blob/master/Documentation/CodingGuidelines) and accompanies appropriate tests. Please see the [Contributing file](CONTRIBUTING.md) for additional details. We appreciate your support and look forward to collaborating with you!
 
 # About IHP
 

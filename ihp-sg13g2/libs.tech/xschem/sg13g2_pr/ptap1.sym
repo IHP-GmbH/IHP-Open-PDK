@@ -1,0 +1,48 @@
+v {xschem version=3.1.0 file_version=1.2
+* Copyright 2023 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+
+}
+G {}
+K {type=res
+format="@spiceprefix@name @pinlist @model"
+template="name=R1
+model=ptap1
+spiceprefix=X
+R=262.847.0
+Imax=0.3e-6
+"
+}
+V {}
+S {}
+E {}
+L 4 0 20 0 30 {}
+L 4 0 20 7.5 17.5 {}
+L 4 -7.5 12.5 7.5 17.5 {}
+L 4 -7.5 12.5 7.5 7.5 {}
+L 4 -7.5 2.5 7.5 7.5 {}
+L 4 -7.5 2.5 7.5 -2.5 {}
+L 4 -7.5 -7.5 7.5 -2.5 {}
+L 4 -7.5 -7.5 7.5 -12.5 {}
+L 4 -7.5 -17.5 7.5 -12.5 {}
+L 4 -7.5 -17.5 0 -20 {}
+L 4 0 -30 0 -20 {}
+L 4 -10 20 10 20 {}
+B 5 -2.5 27.5 2.5 32.5 {name=M dir=inout propag=1 pinnumber=2}
+B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 pinnumber=1}
+T {@model} 15 -16.25 0 0 0.2 0.2 {}
+T {@spiceprefix@name} 15 -28.75 0 0 0.2 0.2 {}
+T {tcleval( R=[ ev \{262.847\} ] )} 15 0 0 0 0.2 0.2 {layer=13}
+T {} 15 20 0 0 0.2 0.2 {}
+T {SUB} 20 10 0 0 0.2 0.2 {layer=13}
