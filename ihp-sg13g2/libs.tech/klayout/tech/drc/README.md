@@ -124,7 +124,7 @@ This section is a summary of all minimum required density rules.
 | LBE.d             | Min. space of **LBE** to inner edge of **Edge Seal** |
 | LBE.h             | No **LBE** ring allowed                              |
 | LBE.i             | Max. global **LBE** density                          |
-### 1.16 Pin layer rules
+### 1.15 Pin layer rules
 | Rule              | Description                                          |
 |-------------------|------------------------------------------------------|
 | Pin.a             | Minimum **Activ** enclosure of **Active_pin**        |
@@ -138,7 +138,7 @@ This section is a summary of all minimum required density rules.
 | Pin.f5            | Minimum **Metal5** enclosure of **Metal5_pin**       |
 | Pin.g             | Minimum **TopMetal1** enclosure of **TopMetal1_pin** |
 | Pin.h             | Minimum **TopMetal2** enclosure of **TopMetal2_pin** |
-### 1.17 Forbidden layers
+### 1.16 Forbidden layers
 Following layers are forbidden in designs submitted for sg13g2 technology.
 | Rule              | Description                                          |
 |-------------------|------------------------------------------------------|
