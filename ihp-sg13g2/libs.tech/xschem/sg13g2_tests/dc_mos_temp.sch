@@ -44,13 +44,9 @@ N -20 110 30 110 {
 lab=GND}
 N 30 110 30 200 {
 lab=GND}
-N -70 110 -60 110 {
+N -280 110 -250 110 {
 lab=Vgs}
-N -280 110 -260 110 {
-lab=Vgs}
-N -130 110 -70 110 {
-lab=Vgs}
-N -260 110 -250 110 {
+N -130 110 -60 110 {
 lab=Vgs}
 N -280 -100 -270 -100 {
 lab=Vds}
@@ -64,9 +60,7 @@ N 190 110 240 110 {
 lab=GND}
 N 240 110 240 200 {
 lab=GND}
-N 140 110 150 110 {
-lab=Vgs}
-N 80 110 140 110 {
+N 80 110 150 110 {
 lab=Vgs}
 N 190 -20 190 0 {
 lab=Vds}
@@ -78,9 +72,7 @@ N 660 110 710 110 {
 lab=GND}
 N 710 110 710 200 {
 lab=GND}
-N 610 110 620 110 {
-lab=Vgsp}
-N 550 110 610 110 {
+N 550 110 620 110 {
 lab=Vgsp}
 N 660 -20 660 0 {
 lab=Vdsp}
@@ -92,9 +84,7 @@ N 870 110 920 110 {
 lab=GND}
 N 920 110 920 200 {
 lab=GND}
-N 820 110 830 110 {
-lab=Vgsp}
-N 760 110 820 110 {
+N 760 110 830 110 {
 lab=Vgsp}
 N 870 -20 870 0 {
 lab=Vdsp}
@@ -108,9 +98,7 @@ N 390 0 390 60 {
 lab=GND}
 N 390 -100 390 -60 {
 lab=Vdsp}
-N 390 110 410 110 {
-lab=Vgsp}
-N 410 110 420 110 {
+N 390 110 420 110 {
 lab=Vgsp}
 N 390 -100 400 -100 {
 lab=Vdsp}
@@ -125,7 +113,7 @@ value="
 .savecurrents
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 dc temp -40 125 1
 write mos_temp.raw

@@ -54,7 +54,7 @@ C {devices/code_shown.sym} -300 -320 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 op
 *reset 

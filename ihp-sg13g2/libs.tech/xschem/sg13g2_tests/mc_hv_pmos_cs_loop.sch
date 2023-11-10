@@ -11,19 +11,19 @@ N 480 -50 530 -50 {
 lab=GND}
 N 530 -50 530 40 {
 lab=GND}
-N 430 -50 440 -50 {
-lab=Vgs}
 N 480 -200 480 -180 {
 lab=GND}
-N 480 -120 480 -80 {
+N 480 -100 480 -80 {
 lab=Vgs}
-N 400 -50 430 -50 {
+N 400 -50 440 -50 {
 lab=Vgs}
 N 400 -100 400 -50 {
 lab=Vgs}
 N 400 -100 480 -100 {
 lab=Vgs}
 N 380 -100 400 -100 {
+lab=Vgs}
+N 480 -120 480 -100 {
 lab=Vgs}
 C {devices/code_shown.sym} 260 110 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -38,7 +38,7 @@ value="
 .param temp=27
 
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 
 let mc_runs = 1000
 let run = 0

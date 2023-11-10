@@ -44,11 +44,7 @@ N 20 -70 50 -70 {
 lab=#net2}
 N 110 -70 150 -70 {
 lab=#net3}
-N -30 0 -20 0 {
-lab=#net1}
-N -110 0 -90 0 {
-lab=#net1}
-N -90 0 -30 0 {
+N -110 0 -20 0 {
 lab=#net1}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -59,7 +55,7 @@ C {devices/code_shown.sym} 310 -30 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 op
 print all

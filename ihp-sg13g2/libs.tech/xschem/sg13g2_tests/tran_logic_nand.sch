@@ -153,7 +153,7 @@ value="
 pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
-*meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
+meas tran tdelay TRIG v(b) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
 write tran_logic_nand.raw
 .endc
 "}
