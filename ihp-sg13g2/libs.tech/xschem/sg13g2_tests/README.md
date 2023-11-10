@@ -5,11 +5,11 @@ The test circuits are organized by simulation type and shown in the table below:
 
 | File name                  | Description                                           |
 |--------------------------- |  -----------------------------------------------------|
-| IHPtestcases.sch           | The top level schematic                               |
-| dc_lv_nmos.sch             | DC simulation of low voltage a nmos transistor the simulation can perform booth:(1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
-| dc_lv_pmos.sch             | DC simulation of low voltage a pmos transistor the simulation can perform booth:(1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
-| dc_hv_nmos.sch             | DC simulation of high voltage a nmos transistor the simulation can perform booth:(1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
-| dc_hv_pmos.sch             | DC simulation of high voltage a pmos transistor the simulation can perform booth:(1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
+| IHP_testcases.sch          | The top level schematic                               |
+| dc_lv_nmos.sch             | DC simulation of low voltage nmos transistor, the simulation can perform both: (1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
+| dc_lv_pmos.sch             | DC simulation of low voltage pmos transistor, the simulation can perform both: (1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
+| dc_hv_nmos.sch             | DC simulation of high voltage nmos transistor, the simulation can perform both: (1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
+| dc_hv_pmos.sch             | DC simulation of high voltage pmos transistor, the simulation can perform both: (1) DC operational point and (2) dc parametric sweep in order obtain a family of the output characteristics |
 | dc_mos_temp.sch            | Temperature sweep from -40 to 125 of four versions of the mos transistors polarized using constant voltage sources $V_{DS}=1.5$ and $V_{GS}=0.75$. The output drain currents  $I_{D}$ are dumped into a CSV file in the following order: NMOSLV, NMOSHV, PMOSLV, PMOSHV |
 | dc_mos_cs_temp.sch         | Temperature sweep from -40 to 125 of four versions of the mos transistors polarized using constant current source $I_{D}=10\mu$ and shorted gate and drain terminals. The output  $V_{GS}$ voltages are dumped into a CSV file in the following order: NMOSLV, NMOSHV, PMOSLV, PMOSHV |
 | tran_mim_cap.sch           | Transient simulation of a MiM capacitor using current source and reference capacitor model |
