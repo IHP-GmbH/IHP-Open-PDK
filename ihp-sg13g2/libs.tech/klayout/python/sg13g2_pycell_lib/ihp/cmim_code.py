@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 ########################################################################
+
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
