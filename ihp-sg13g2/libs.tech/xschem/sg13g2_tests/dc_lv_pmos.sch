@@ -24,7 +24,7 @@ unitx=1
 logx=0
 logy=0
 }
-T {The Vce source is inverted in 
+T {The Vds source is inverted in 
 order to plot positive value of 
 the current, which corresponds 
 to real value of Ic} -290 -110 0 0 0.3 0.3 {}
@@ -36,10 +36,6 @@ N 20 30 20 90 {
 lab=GND}
 N 150 30 150 90 {
 lab=GND}
-N 20 -70 20 -30 {
-lab=#net2}
-N 150 -70 150 -30 {
-lab=#net3}
 N 20 0 70 0 {
 lab=GND}
 N 70 0 70 90 {
@@ -48,15 +44,11 @@ N 20 -110 50 -110 {
 lab=#net2}
 N 110 -110 150 -110 {
 lab=#net3}
-N -30 0 -20 0 {
+N -110 0 -20 0 {
 lab=#net1}
-N -110 0 -90 0 {
-lab=#net1}
-N -90 0 -30 0 {
-lab=#net1}
-N 20 -110 20 -70 {
+N 20 -110 20 -30 {
 lab=#net2}
-N 150 -110 150 -70 {
+N 150 -110 150 -30 {
 lab=#net3}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
@@ -67,7 +59,7 @@ C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 op
 print I(Vd)

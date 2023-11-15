@@ -144,16 +144,16 @@ lab=out}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
+.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_ff
 "}
 C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.param temp=27
+.param temp=127
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
-*meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
+meas tran tdelay TRIG v(b) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
 write tran_logic_nand.raw
 .endc
 "}

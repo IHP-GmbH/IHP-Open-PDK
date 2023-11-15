@@ -79,7 +79,7 @@ C {devices/code_shown.sym} -360 -260 0 0 {name=NGSPICE only_toplevel=true
 value="
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 dc Vin 0 1.8 1m
 let gain = -deriv(V(out))/10
