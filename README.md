@@ -44,7 +44,10 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII
 * KLayout layer property and tech files
 * KLayout DRC rules (minimal set)
-* Pcells (limited set, for reference only)
+* KLayout PyCells
+    * initial version of the wrapper API
+    * sample cells
+* Pcells (limited set, for reference only) `libs.tech/pycell`
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * OpenEMS: tutorials, scripts, documentation
