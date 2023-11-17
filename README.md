@@ -39,7 +39,11 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * Liberty
     * Verilog
 * SRAM cellset
+    * CDL
     * GDSII
+    * LEF
+    * Liberty
+    * Verilog
 * Primitive devices
     * GDSII
 * KLayout layer property and tech files
@@ -47,7 +51,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * KLayout PyCells
     * initial version of the wrapper API
     * sample cells
-* Pcells (limited set, for reference only) `libs.tech/pycell`
+* Pcells (for reference only) `libs.tech/pycell`
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * OpenEMS: tutorials, scripts, documentation
