@@ -1,0 +1,519 @@
+******************************************************************************* 
+*                                                                             * 
+* Library:      SG13G2_dev                                                    * 
+* Technologies: SG13G2                                                        *
+* Component:    Spectre model file for Spectre 18                             *
+*                                                                             *
+* Simulator:    Spectre 20.1                                                  *
+* Model:        PSP 103.6                                                     *
+* Revision:     200310                                                        * 
+*                                                                             * 
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2023 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+******************************************************************************* 
+*                                                                             *
+*                                                                             *
+*                            M O S     C O R N E R S                          *
+*                                                                             *
+*                                                                             *
+******************************************************************************* 
+*
+* NOTE: use only typical mean file (this file) for Monte Carlo simulations of process tolerance!
+*
+* hint: using spectre, add this file as a model file in analog artist;
+*	using spectreS, add it under Environment/Include with syntax=spectre
+*
+* Corner naming scheme: typical mean=tt, worst case=ss, best case=ff, combinations sf, fs, ...
+* Digit	Devices
+ 
+
+* Monte-Carlo begin ---------------------------------------------
+*
+* NOTE: default of all   parameters should be 1.0
+* NOTE: deviations from 1.0 are used to fit statistical results
+* 
+*
+*
+*
+*******************************************************************************
+*                                                                             
+* Low Voltage (lv) MOS Transistors   
+*                                                 
+* Model:                                PSP 103.6
+* Date:                                 10.03.2020
+* Lot:                                  EDJ809
+* WAFER:                                06
+* CHIP Nr:                              x=3, y=9
+* Device:                               SG13G2
+* Maximum drain-source voltage:         1.5
+* Measurement data:                     
+* Nom. Temperature  (TNOM):             27 grd C
+* Meas. Temperature (TEMP):             27 grd C
+* Valid range for model:                L = (0.13 - 10)um
+*                                       W = (0.15 - 10)um
+*                                                                             
+*******************************************************************************
+
+**************** CORNER_LIB OF sg13g2_lv TT MODEL ****************  
+* Typical           
+.LIB mos_tt  
+  .parameters sg13g2_lv_nmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_nmos_ctl    = 1.2080
+  .parameters sg13g2_lv_nmos_rsw1   = 0.7200
+  .parameters sg13g2_lv_nmos_muew   = 0.8500
+  .parameters sg13g2_lv_nmos_dphibo = 0.9915
+  .parameters sg13g2_lv_nmos_dphibl = 0.9693
+  .parameters sg13g2_lv_nmos_dphibw = 0.9749
+  .parameters sg13g2_lv_nmos_dphiblw= 0.9754
+  .parameters sg13g2_lv_nmos_themuo = 0.8757
+  .parameters sg13g2_lv_nmos_thesatl= 0.7850
+  .parameters sg13g2_lv_nmos_thesatw= 1.5000
+  .parameters sg13g2_lv_nmos_thesatlw= 0.6127
+  .parameters sg13g2_lv_nmos_toxo   = 1.0000
+  .parameters sg13g2_lv_nmos_toxovo = 1.0000
+  .parameters sg13g2_lv_nmos_cjorbot= 1.0000
+  .parameters sg13g2_lv_nmos_cjorsti= 1.0000
+  .parameters sg13g2_lv_nmos_cjorgat= 1.0000
+
+  .parameters sg13g2_lv_pmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_pmos_ctl    = 1.9570
+  .parameters sg13g2_lv_pmos_rsw1   = 0.7720
+  .parameters sg13g2_lv_pmos_muew   = 1.0520
+  .parameters sg13g2_lv_pmos_dphibo = 0.9050
+  .parameters sg13g2_lv_pmos_dphibl = 0.8550
+  .parameters sg13g2_lv_pmos_dphibw = -1.5800
+  .parameters sg13g2_lv_pmos_dphiblw= 1.0000
+  .parameters sg13g2_lv_pmos_themuo = 0.9580
+  .parameters sg13g2_lv_pmos_thesatl= 0.5510
+  .parameters sg13g2_lv_pmos_thesatw= 1.0800
+  .parameters sg13g2_lv_pmos_thesatlw= 1.0000
+  .parameters sg13g2_lv_pmos_toxo   = 1.0000
+  .parameters sg13g2_lv_pmos_toxovo = 1.0000
+  .parameters sg13g2_lv_pmos_cjorbot= 1.0000
+  .parameters sg13g2_lv_pmos_cjorsti= 1.0000
+  .parameters sg13g2_lv_pmos_cjorgat= 1.0000
+ 
+  .parameters sg13g2_lv_svaricap_lap   = 1.082   
+  .parameters sg13g2_lv_svaricap_toxo  = 1   
+
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_tt
+  
+* Typical with statistical modeling
+.LIB mos_tt_stat  
+  .parameters sg13g2_lv_nmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_nmos_ctl_norm    = 1.2080
+  .parameters sg13g2_lv_nmos_rsw1_norm   = 0.7200
+  .parameters sg13g2_lv_nmos_muew_norm   = 0.8500
+  .parameters sg13g2_lv_nmos_dphibo_norm = 0.9915
+  .parameters sg13g2_lv_nmos_dphibl_norm = 0.9693
+  .parameters sg13g2_lv_nmos_dphibw_norm = 0.9749
+  .parameters sg13g2_lv_nmos_dphiblw_norm= 0.9754
+  .parameters sg13g2_lv_nmos_themuo_norm = 0.8757
+  .parameters sg13g2_lv_nmos_thesatl_norm= 0.7850
+  .parameters sg13g2_lv_nmos_thesatw_norm= 1.5000
+  .parameters sg13g2_lv_nmos_thesatlw_norm= 0.6127
+  .parameters sg13g2_lv_nmos_toxo_norm   = 1.0000
+  .parameters sg13g2_lv_nmos_toxovo_norm = 1.0000
+  .parameters sg13g2_lv_nmos_cjorbot_norm= 1.0000
+  .parameters sg13g2_lv_nmos_cjorsti_norm= 1.0000
+  .parameters sg13g2_lv_nmos_cjorgat_norm= 1.0000
+
+  .parameters sg13g2_lv_pmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_pmos_ctl_norm    = 1.2080
+  .parameters sg13g2_lv_pmos_rsw1_norm   = 0.7200
+  .parameters sg13g2_lv_pmos_muew_norm   = 0.8500
+  .parameters sg13g2_lv_pmos_dphibo_norm = 0.9915
+  .parameters sg13g2_lv_pmos_dphibl_norm = 0.9693
+  .parameters sg13g2_lv_pmos_dphibw_norm = 0.9749
+  .parameters sg13g2_lv_pmos_dphiblw_norm= 0.9754
+  .parameters sg13g2_lv_pmos_themuo_norm = 0.8757
+  .parameters sg13g2_lv_pmos_thesatl_norm= 0.7850
+  .parameters sg13g2_lv_pmos_thesatw_norm= 1.5000
+  .parameters sg13g2_lv_pmos_thesatlw_norm= 0.6127
+  .parameters sg13g2_lv_pmos_toxo_norm   = 1.0000
+  .parameters sg13g2_lv_pmos_toxovo_norm = 1.0000
+  .parameters sg13g2_lv_pmos_cjorbot_norm= 1.0000
+  .parameters sg13g2_lv_pmos_cjorsti_norm= 1.0000
+  .parameters sg13g2_lv_pmos_cjorgat_norm= 1.0000
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.082   
+  .parameters sg13g2_lv_svaricap_toxo  = 1   
+
+  .include sg13g2_moslv_stat.lib
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_tt_stat
+
+**************** CORNER_LIB OF sg13g2_lv SS MODEL **************** 
+* Slow n, Slow p without statistical
+.LIB mos_ss  
+  .parameters sg13g2_lv_nmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_nmos_ctl    = 0.4939
+  .parameters sg13g2_lv_nmos_rsw1   = 0.6560
+  .parameters sg13g2_lv_nmos_muew   = 0.9700
+  .parameters sg13g2_lv_nmos_dphibo = 1.2070
+  .parameters sg13g2_lv_nmos_dphibl = 1.3360
+  .parameters sg13g2_lv_nmos_dphibw = 1.3290
+  .parameters sg13g2_lv_nmos_dphiblw= 1.0110
+  .parameters sg13g2_lv_nmos_themuo = 0.8866
+  .parameters sg13g2_lv_nmos_thesatl= 1.0960
+  .parameters sg13g2_lv_nmos_thesatw= 1.5930
+  .parameters sg13g2_lv_nmos_thesatlw= 0.9875
+  .parameters sg13g2_lv_nmos_toxo   = 1.0400
+  .parameters sg13g2_lv_nmos_toxovo = 1.0400
+  .parameters sg13g2_lv_nmos_cjorbot= 1.0800
+  .parameters sg13g2_lv_nmos_cjorsti= 1.0800
+  .parameters sg13g2_lv_nmos_cjorgat= 1.0800
+ 
+  .parameters sg13g2_lv_pmos_vfbo_mm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl    = 1.3520
+  .parameters sg13g2_lv_pmos_rsw1   = 0.9365
+  .parameters sg13g2_lv_pmos_muew   = 1.1030
+  .parameters sg13g2_lv_pmos_dphibo = 0.5883
+  .parameters sg13g2_lv_pmos_dphibl = 1.3540
+  .parameters sg13g2_lv_pmos_dphibw = -4.9920
+  .parameters sg13g2_lv_pmos_dphiblw= 1.0000
+  .parameters sg13g2_lv_pmos_themuo = 0.8720
+  .parameters sg13g2_lv_pmos_thesatl= 1.2190
+  .parameters sg13g2_lv_pmos_thesatw= 0.9875
+  .parameters sg13g2_lv_pmos_thesatlw= 1.0000
+  .parameters sg13g2_lv_pmos_toxo   = 1.0400
+  .parameters sg13g2_lv_pmos_toxovo = 1.0400
+  .parameters sg13g2_lv_pmos_cjorbot= 1.0800
+  .parameters sg13g2_lv_pmos_cjorsti= 1.0800
+  .parameters sg13g2_lv_pmos_cjorgat= 1.0800
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1   
+  .parameters sg13g2_lv_svaricap_toxo  = 1.04   
+  
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_ss
+  
+* Slow n, Slow p with statistical
+.LIB mos_ss_stat
+  .parameters sg13g2_lv_nmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_nmos_ctl_norm    = 0.4939
+  .parameters sg13g2_lv_nmos_rsw1_norm   = 0.6560
+  .parameters sg13g2_lv_nmos_muew_norm   = 0.9700
+  .parameters sg13g2_lv_nmos_dphibo_norm = 1.2070
+  .parameters sg13g2_lv_nmos_dphibl_norm = 1.3360
+  .parameters sg13g2_lv_nmos_dphibw_norm = 1.3290
+  .parameters sg13g2_lv_nmos_dphiblw_norm= 1.0110
+  .parameters sg13g2_lv_nmos_themuo_norm = 0.8866
+  .parameters sg13g2_lv_nmos_thesatl_norm= 1.0960
+  .parameters sg13g2_lv_nmos_thesatw_norm= 1.5930
+  .parameters sg13g2_lv_nmos_thesatlw_norm= 0.9875
+  .parameters sg13g2_lv_nmos_toxo_norm   = 1.0400
+  .parameters sg13g2_lv_nmos_toxovo_norm = 1.0400
+  .parameters sg13g2_lv_nmos_cjorbot_norm= 1.0800
+  .parameters sg13g2_lv_nmos_cjorsti_norm= 1.0800
+  .parameters sg13g2_lv_nmos_cjorgat_norm= 1.0800
+ 
+  .parameters sg13g2_lv_pmos_vfbo_mm_norm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl_norm    = 1.3520
+  .parameters sg13g2_lv_pmos_rsw1_norm   = 0.9365
+  .parameters sg13g2_lv_pmos_muew_norm   = 1.1030
+  .parameters sg13g2_lv_pmos_dphibo_norm = 0.5883
+  .parameters sg13g2_lv_pmos_dphibl_norm = 1.3540
+  .parameters sg13g2_lv_pmos_dphibw_norm = -4.9920
+  .parameters sg13g2_lv_pmos_dphiblw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_themuo_norm = 0.8720
+  .parameters sg13g2_lv_pmos_thesatl_norm= 1.2190
+  .parameters sg13g2_lv_pmos_thesatw_norm= 0.9875
+  .parameters sg13g2_lv_pmos_thesatlw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_toxo_norm   = 1.0400
+  .parameters sg13g2_lv_pmos_toxovo_norm = 1.0400
+  .parameters sg13g2_lv_pmos_cjorbot_norm= 1.0800
+  .parameters sg13g2_lv_pmos_cjorsti_norm= 1.0800
+  .parameters sg13g2_lv_pmos_cjorgat_norm= 1.0800
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1   
+  .parameters sg13g2_lv_svaricap_toxo  = 1.04   
+  
+  .include sg13g2_moslv_stat.lib
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_ss_stat
+
+**************** CORNER_LIB OF sg13g2_lv FF MODEL **************** 
+* Fast n, Fast p    
+.LIB mos_ff
+  .parameters sg13g2_lv_nmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_nmos_ctl    = 1.4310
+  .parameters sg13g2_lv_nmos_rsw1   = 0.9000
+  .parameters sg13g2_lv_nmos_muew   = 0.7780
+  .parameters sg13g2_lv_nmos_dphibo = 0.8137
+  .parameters sg13g2_lv_nmos_dphibl = 0.6550
+  .parameters sg13g2_lv_nmos_dphibw = 0.6105
+  .parameters sg13g2_lv_nmos_dphiblw= 0.9300
+  .parameters sg13g2_lv_nmos_themuo = 0.8708
+  .parameters sg13g2_lv_nmos_thesatl= 0.5510
+  .parameters sg13g2_lv_nmos_thesatw= 1.4300
+  .parameters sg13g2_lv_nmos_thesatlw= 0.0860
+  .parameters sg13g2_lv_nmos_toxo   = 0.9600
+  .parameters sg13g2_lv_nmos_toxovo = 0.9600
+  .parameters sg13g2_lv_nmos_cjorbot= 0.9200
+  .parameters sg13g2_lv_nmos_cjorsti= 0.9200
+  .parameters sg13g2_lv_nmos_cjorgat= 0.9200
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_pmos_ctl    = 2.4800
+  .parameters sg13g2_lv_pmos_rsw1   = 0.5000
+  .parameters sg13g2_lv_pmos_muew   = 0.9620
+  .parameters sg13g2_lv_pmos_dphibo = 1.2350
+  .parameters sg13g2_lv_pmos_dphibl = 0.5066
+  .parameters sg13g2_lv_pmos_dphibw = 3.9230
+  .parameters sg13g2_lv_pmos_dphiblw= 1.0000
+  .parameters sg13g2_lv_pmos_themuo = 1.0200
+  .parameters sg13g2_lv_pmos_thesatl= 0.1880
+  .parameters sg13g2_lv_pmos_thesatw= 1.2440
+  .parameters sg13g2_lv_pmos_thesatlw= 2.0000
+  .parameters sg13g2_lv_pmos_toxo   = 0.9600
+  .parameters sg13g2_lv_pmos_toxovo = 0.9600
+  .parameters sg13g2_lv_pmos_cjorbot= 0.9200
+  .parameters sg13g2_lv_pmos_cjorsti= 0.9200
+  .parameters sg13g2_lv_pmos_cjorgat= 0.9200
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.24   
+  .parameters sg13g2_lv_svaricap_toxo  = 0.96   
+  
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_ff
+  
+* Fast n, Fast p    
+.LIB mos_ff_stat
+  .parameters sg13g2_lv_nmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_nmos_ctl_norm    = 1.4310
+  .parameters sg13g2_lv_nmos_rsw1_norm   = 0.9000
+  .parameters sg13g2_lv_nmos_muew_norm   = 0.7780
+  .parameters sg13g2_lv_nmos_dphibo_norm = 0.8137
+  .parameters sg13g2_lv_nmos_dphibl_norm = 0.6550
+  .parameters sg13g2_lv_nmos_dphibw_norm = 0.6105
+  .parameters sg13g2_lv_nmos_dphiblw_norm= 0.9300
+  .parameters sg13g2_lv_nmos_themuo_norm = 0.8708
+  .parameters sg13g2_lv_nmos_thesatl_norm= 0.5510
+  .parameters sg13g2_lv_nmos_thesatw_norm= 1.4300
+  .parameters sg13g2_lv_nmos_thesatlw_norm= 0.0860
+  .parameters sg13g2_lv_nmos_toxo_norm   = 0.9600
+  .parameters sg13g2_lv_nmos_toxovo_norm = 0.9600
+  .parameters sg13g2_lv_nmos_cjorbot_norm= 0.9200
+  .parameters sg13g2_lv_nmos_cjorsti_norm= 0.9200
+  .parameters sg13g2_lv_nmos_cjorgat_norm= 0.9200
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_pmos_ctl_norm    = 2.4800
+  .parameters sg13g2_lv_pmos_rsw1_norm   = 0.5000
+  .parameters sg13g2_lv_pmos_muew_norm   = 0.9620
+  .parameters sg13g2_lv_pmos_dphibo_norm = 1.2350
+  .parameters sg13g2_lv_pmos_dphibl_norm = 0.5066
+  .parameters sg13g2_lv_pmos_dphibw_norm = 3.9230
+  .parameters sg13g2_lv_pmos_dphiblw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_themuo_norm = 1.0200
+  .parameters sg13g2_lv_pmos_thesatl_norm= 0.1880
+  .parameters sg13g2_lv_pmos_thesatw_norm= 1.2440
+  .parameters sg13g2_lv_pmos_thesatlw_norm= 2.0000
+  .parameters sg13g2_lv_pmos_toxo_norm   = 0.9600
+  .parameters sg13g2_lv_pmos_toxovo_norm = 0.9600
+  .parameters sg13g2_lv_pmos_cjorbot_norm= 0.9200
+  .parameters sg13g2_lv_pmos_cjorsti_norm= 0.9200
+  .parameters sg13g2_lv_pmos_cjorgat_norm= 0.9200
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.24   
+  .parameters sg13g2_lv_svaricap_toxo  = 0.96   
+  
+  .include sg13g2_moslv_stat.lib   
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_ff_stat
+
+**************** CORNER_LIB OF sg13g2_lv SF MODEL **************** 
+* Slow n, Fast p    
+.LIB mos_sf  
+  .parameters sg13g2_lv_nmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_nmos_ctl    = 0.8509
+  .parameters sg13g2_lv_nmos_rsw1   = 0.6880
+  .parameters sg13g2_lv_nmos_muew   = 0.9100
+  .parameters sg13g2_lv_nmos_dphibo = 1.0993
+  .parameters sg13g2_lv_nmos_dphibl = 1.1526
+  .parameters sg13g2_lv_nmos_dphibw = 1.1520
+  .parameters sg13g2_lv_nmos_dphiblw= 0.9932
+  .parameters sg13g2_lv_nmos_themuo = 0.8812
+  .parameters sg13g2_lv_nmos_thesatl= 0.9405
+  .parameters sg13g2_lv_nmos_thesatw= 1.5465
+  .parameters sg13g2_lv_nmos_thesatlw= 0.8001
+  .parameters sg13g2_lv_nmos_toxo   = 1.0200
+  .parameters sg13g2_lv_nmos_toxovo = 1.0200
+  .parameters sg13g2_lv_nmos_cjorbot= 1.0400
+  .parameters sg13g2_lv_nmos_cjorsti= 1.0400
+  .parameters sg13g2_lv_nmos_cjorgat= 1.0400
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl    = 2.2185
+  .parameters sg13g2_lv_pmos_rsw1   = 0.6360
+  .parameters sg13g2_lv_pmos_muew   = 1.0070
+  .parameters sg13g2_lv_pmos_dphibo = 1.0700
+  .parameters sg13g2_lv_pmos_dphibl = 0.6808
+  .parameters sg13g2_lv_pmos_dphibw = 1.1715
+  .parameters sg13g2_lv_pmos_dphiblw= 1.0000
+  .parameters sg13g2_lv_pmos_themuo = 0.9890
+  .parameters sg13g2_lv_pmos_thesatl= 0.3695
+  .parameters sg13g2_lv_pmos_thesatw= 1.1620
+  .parameters sg13g2_lv_pmos_thesatlw= 1.5000
+  .parameters sg13g2_lv_pmos_toxo   = 0.9800
+  .parameters sg13g2_lv_pmos_toxovo = 0.9800
+  .parameters sg13g2_lv_pmos_cjorbot= 0.9600
+  .parameters sg13g2_lv_pmos_cjorsti= 0.9600
+  .parameters sg13g2_lv_pmos_cjorgat= 0.9600
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.161   
+  .parameters sg13g2_lv_svaricap_toxo  = 0.98   
+  
+  .include sg13g2_moslv_mod.lib   
+.ENDL mos_sf
+  
+* Slow n, Fast p with statistical modeling 
+.LIB mos_sf_stat
+  .parameters sg13g2_lv_nmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_nmos_ctl_norm    = 0.8509
+  .parameters sg13g2_lv_nmos_rsw1_norm   = 0.6880
+  .parameters sg13g2_lv_nmos_muew_norm   = 0.9100
+  .parameters sg13g2_lv_nmos_dphibo_norm = 1.0993
+  .parameters sg13g2_lv_nmos_dphibl_norm = 1.1526
+  .parameters sg13g2_lv_nmos_dphibw_norm = 1.1520
+  .parameters sg13g2_lv_nmos_dphiblw_norm= 0.9932
+  .parameters sg13g2_lv_nmos_themuo_norm = 0.8812
+  .parameters sg13g2_lv_nmos_thesatl_norm= 0.9405
+  .parameters sg13g2_lv_nmos_thesatw_norm= 1.5465
+  .parameters sg13g2_lv_nmos_thesatlw_norm= 0.8001
+  .parameters sg13g2_lv_nmos_toxo_norm   = 1.0200
+  .parameters sg13g2_lv_nmos_toxovo_norm = 1.0200
+  .parameters sg13g2_lv_nmos_cjorbot_norm= 1.0400
+  .parameters sg13g2_lv_nmos_cjorsti_norm= 1.0400
+  .parameters sg13g2_lv_nmos_cjorgat_norm= 1.0400
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm_norm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl_norm    = 2.2185
+  .parameters sg13g2_lv_pmos_rsw1_norm   = 0.6360
+  .parameters sg13g2_lv_pmos_muew_norm   = 1.0070
+  .parameters sg13g2_lv_pmos_dphibo_norm = 1.0700
+  .parameters sg13g2_lv_pmos_dphibl_norm = 0.6808
+  .parameters sg13g2_lv_pmos_dphibw_norm = 1.1715
+  .parameters sg13g2_lv_pmos_dphiblw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_themuo_norm = 0.9890
+  .parameters sg13g2_lv_pmos_thesatl_norm= 0.3695
+  .parameters sg13g2_lv_pmos_thesatw_norm= 1.1620
+  .parameters sg13g2_lv_pmos_thesatlw_norm= 1.5000
+  .parameters sg13g2_lv_pmos_toxo_norm   = 0.9800
+  .parameters sg13g2_lv_pmos_toxovo_norm = 0.9800
+  .parameters sg13g2_lv_pmos_cjorbot_norm= 0.9600
+  .parameters sg13g2_lv_pmos_cjorsti_norm= 0.9600
+  .parameters sg13g2_lv_pmos_cjorgat_norm= 0.9600
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.161   
+  .parameters sg13g2_lv_svaricap_toxo  = 0.98   
+  
+  .include sg13g2_moslv_stat.lib   
+  .include sg13g2_moslv_mod.lib   
+.ENDL mos_sf_stat
+**************** CORNER_LIB OF sg13g2_lv FS MODEL **************** 
+* Fast n, Slow p without statistical
+.LIB mos_fs
+  .parameters sg13g2_lv_nmos_vfbo_mm= 1.0
+  .parameters sg13g2_lv_nmos_ctl    = 1.3195
+  .parameters sg13g2_lv_nmos_rsw1   = 0.8100
+  .parameters sg13g2_lv_nmos_muew   = 0.8140
+  .parameters sg13g2_lv_nmos_dphibo = 0.9026
+  .parameters sg13g2_lv_nmos_dphibl = 0.8122
+  .parameters sg13g2_lv_nmos_dphibw = 0.7927
+  .parameters sg13g2_lv_nmos_dphiblw= 0.9527
+  .parameters sg13g2_lv_nmos_themuo = 0.8733
+  .parameters sg13g2_lv_nmos_thesatl= 0.6680
+  .parameters sg13g2_lv_nmos_thesatw= 1.4650
+  .parameters sg13g2_lv_nmos_thesatlw= 0.3493
+  .parameters sg13g2_lv_nmos_toxo   = 0.9800
+  .parameters sg13g2_lv_nmos_toxovo = 0.9800
+  .parameters sg13g2_lv_nmos_cjorbot= 0.9600
+  .parameters sg13g2_lv_nmos_cjorsti= 0.9600
+  .parameters sg13g2_lv_nmos_cjorgat= 0.9600
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl    = 1.6545
+  .parameters sg13g2_lv_pmos_rsw1   = 0.8542
+  .parameters sg13g2_lv_pmos_muew   = 1.0775
+  .parameters sg13g2_lv_pmos_dphibo = 0.7467
+  .parameters sg13g2_lv_pmos_dphibl = 1.1045
+  .parameters sg13g2_lv_pmos_dphibw = -3.2860
+  .parameters sg13g2_lv_pmos_dphiblw= 1.0000
+  .parameters sg13g2_lv_pmos_themuo = 0.9150
+  .parameters sg13g2_lv_pmos_thesatl= 0.8850
+  .parameters sg13g2_lv_pmos_thesatw= 1.0337
+  .parameters sg13g2_lv_pmos_thesatlw= 1.0000
+  .parameters sg13g2_lv_pmos_toxo   = 1.0200
+  .parameters sg13g2_lv_pmos_toxovo = 1.0200
+  .parameters sg13g2_lv_pmos_cjorbot= 1.0400
+  .parameters sg13g2_lv_pmos_cjorsti= 1.0400
+  .parameters sg13g2_lv_pmos_cjorgat= 1.0400
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.041   
+  .parameters sg13g2_lv_svaricap_toxo  = 1.02   
+  
+  .include sg13g2_moslv_mod.lib   
+.ENDL mos_fs
+  
+* Fast n, Slow p with statistical
+.LIB mos_fs_stat
+  .parameters sg13g2_lv_nmos_vfbo_mm_norm= 1.0
+  .parameters sg13g2_lv_nmos_ctl_norm    = 1.3195
+  .parameters sg13g2_lv_nmos_rsw1_norm   = 0.8100
+  .parameters sg13g2_lv_nmos_muew_norm   = 0.8140
+  .parameters sg13g2_lv_nmos_dphibo_norm = 0.9026
+  .parameters sg13g2_lv_nmos_dphibl_norm = 0.8122
+  .parameters sg13g2_lv_nmos_dphibw_norm = 0.7927
+  .parameters sg13g2_lv_nmos_dphiblw_norm= 0.9527
+  .parameters sg13g2_lv_nmos_themuo_norm = 0.8733
+  .parameters sg13g2_lv_nmos_thesatl_norm= 0.6680
+  .parameters sg13g2_lv_nmos_thesatw_norm= 1.4650
+  .parameters sg13g2_lv_nmos_thesatlw_norm= 0.3493
+  .parameters sg13g2_lv_nmos_toxo_norm   = 0.9800
+  .parameters sg13g2_lv_nmos_toxovo_norm = 0.9800
+  .parameters sg13g2_lv_nmos_cjorbot_norm= 0.9600
+  .parameters sg13g2_lv_nmos_cjorsti_norm= 0.9600
+  .parameters sg13g2_lv_nmos_cjorgat_norm= 0.9600
+  
+  .parameters sg13g2_lv_pmos_vfbo_mm_norm= 1.0  
+  .parameters sg13g2_lv_pmos_ctl_norm    = 1.6545
+  .parameters sg13g2_lv_pmos_rsw1_norm   = 0.8542
+  .parameters sg13g2_lv_pmos_muew_norm   = 1.0775
+  .parameters sg13g2_lv_pmos_dphibo_norm = 0.7467
+  .parameters sg13g2_lv_pmos_dphibl_norm = 1.1045
+  .parameters sg13g2_lv_pmos_dphibw_norm = -3.2860
+  .parameters sg13g2_lv_pmos_dphiblw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_themuo_norm = 0.9150
+  .parameters sg13g2_lv_pmos_thesatl_norm= 0.8850
+  .parameters sg13g2_lv_pmos_thesatw_norm= 1.0337
+  .parameters sg13g2_lv_pmos_thesatlw_norm= 1.0000
+  .parameters sg13g2_lv_pmos_toxo_norm   = 1.0200
+  .parameters sg13g2_lv_pmos_toxovo_norm = 1.0200
+  .parameters sg13g2_lv_pmos_cjorbot_norm= 1.0400
+  .parameters sg13g2_lv_pmos_cjorsti_norm= 1.0400
+  .parameters sg13g2_lv_pmos_cjorgat_norm= 1.0400
+  
+  .parameters sg13g2_lv_svaricap_lap   = 1.041   
+  .parameters sg13g2_lv_svaricap_toxo  = 1.02   
+  
+  .include sg13g2_moslv_stat.lib
+  .include sg13g2_moslv_mod.lib
+.ENDL mos_fs_stat

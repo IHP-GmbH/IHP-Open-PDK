@@ -1,0 +1,85 @@
+*#######################################################################
+*
+* Copyright 2023 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+*distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+* Typical without statistical modeling          
+.LIB res_typ  
+  .parameters rsh_rhigh = 1360
+  .parameters rsh_rppd  = 260.0
+  .parameters rsh_rsil  = 7.0
+  .parameters res_area  = 1.0
+  .parameters res_rpara = 1.0
+           
+.include resistors_mod.lib
+.ENDL res_typ
+  
+* Typical with statistical modeling
+.LIB res_typ_stat  
+  .parameters rsh_rhigh_norm= 1360
+  .parameters rsh_rppd_norm= 260.0
+  .parameters rsh_rsil_norm= 7.0
+  .parameters res_area_norm= 1.0
+  .parameters res_rpara_norm= 1.0
+
+.include resistors_stat.lib
+.include resistors_mod.lib
+.ENDL res_typ_stat
+
+* Best Case without statistical modeling
+.LIB res_bcs  
+  .parameters rsh_rhigh = 1020
+  .parameters rsh_rppd  = 234.0
+  .parameters rsh_rsil  = 6.02
+  .parameters res_area  = 1.0
+  .parameters res_rpara = 1.0
+           
+.include resistors_mod.lib
+.ENDL res_bcs
+  
+* Best Case with statistical modeling
+.LIB res_bcs_stat  
+  .parameters rsh_rhigh_norm= 1020
+  .parameters rsh_rppd_norm= 234.0
+  .parameters rsh_rsil_norm= 6.02
+  .parameters res_area_norm= 1.0
+  .parameters res_rpara_norm= 1.0
+
+.include resistors_stat.lib
+.include resistors_mod.lib
+.ENDL res_bcs_stat
+           
+* Worst Case without statistical modeling
+.LIB res_wcs  
+  .parameters rsh_rhigh = 1700
+  .parameters rsh_rppd  = 286.0
+  .parameters rsh_rsil  = 7.98
+  .parameters res_area  = 1.0
+  .parameters res_rpara = 1.0
+           
+.include resistors_mod.lib
+.ENDL res_wcs
+  
+* Worst Case with statistical modeling
+.LIB res_wcs_stat  
+  .parameters rsh_rhigh_norm= 1700
+  .parameters rsh_rppd_norm= 286.0
+  .parameters rsh_rsil_norm= 7.98
+  .parameters res_area_norm= 1.0
+  .parameters res_rpara_norm= 1.0
+
+.include resistors_stat.lib
+.include resistors_mod.lib
+.ENDL res_wcs_stat
