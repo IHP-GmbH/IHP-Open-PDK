@@ -230,6 +230,7 @@ class SG13_Tech(TechImpl):
             "TopMetal1":        (126, 0),
             "TopMetal1.pin":    (126, 2),
             "PolyRes":          (128, 0),
+            "Vmim":             (129, 0),
         }
 
 
