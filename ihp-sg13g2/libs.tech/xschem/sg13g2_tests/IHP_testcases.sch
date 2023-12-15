@@ -62,5 +62,6 @@ C {sg13g2_tests/sp_rfmim_cap.sym} 1560 -550 0 0 {name=x23}
 C {sg13g2_tests/dc_ntap1.sym} 180 -400 0 0 {name=x25}
 C {sg13g2_tests/dc_ptap1.sym} 180 -360 0 0 {name=x26}
 C {sg13g2_tests/tran_logic_not.sym} 520 -590 0 0 {name=x27}
-C {sg13g2_tests/dc_logic_not.sym} 180 -220 0 0 {name=x28}
+C {sg13g2_tests/dc_logic_not.sym} 180 -190 0 0 {name=x28}
 C {sg13g2_tests/tran_logic_nand.sym} 520 -550 0 0 {name=x29}
+C {sg13g2_tests/dc_pnpMPA.sym} 180 -230 0 0 {name=x30}

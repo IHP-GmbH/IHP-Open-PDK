@@ -391,3 +391,68 @@ Rsub s1 bn R = '(300+(400*Nx))*(El/2.5)**0.85'
 Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
 Rt t 0 R = 1e9
 .ends npn13G2v
+
+*******************************************************************************
+* pnpMPA section
+*******************************************************************************
+*--------------------------------------------------
+* Testfield: T323
+* Technology: SG13
+* Lot: PQA701
+* Wafer: 17
+* DUT: diode_pp=pnpMPA
+* Temperature range: -40C ... +125C
+* Date: 21.10.2022
+* DC Measurements at T=27C, T=-40C and T=125C (2013), 2022 only T=27C
+* CV Measurements at T=27C
+*
+*--------------------------------------------------------------------------
+*
+.param ccb0 = 970e-018  isc0 = 2e-023  ikr0 = 4e-007  rc0 = 1e+003  rb0 = 700
+*
+.subckt pnpMPA e b c
+.param a=2p p=6u ac=13.33p pc=14.64u
++ dev_a=a*1e12 dev_p=p*1e6 sub_a=ac*1e12 sub_p=pc*1e6
+
+QpnpMPA e b c pnpMPA_mod area=dev_a
+
+.model pnpMPA_mod pnp
++ level = 1
++ tnom = 27
++ is = '1.660E-19*sgp_mpa_is'
++ nf = 1.015
++ ise = 1e-022
++ ne = 1
++ bf = '1.10*sgp_mpa_bf'
++ ikf = 0.0003
++ vaf = 100
++ nr = 1
++ isc = '(isc0*(sub_a))/(dev_a)'
++ nc = 1
++ br = 0.00015
++ ikr = '(ikr0*(sub_a))/(dev_a)'
++ var = 150
++ rb = 'rb0*sgp_mpa_rb'
++ irb = 1e-015
++ rbm = '0.9*rb0*sgp_mpa_rb'
++ re = '20*sgp_mpa_re'
++ rc = '(rc0/(sub_a))*(dev_a)*sgp_mpa_rc'
++ cje = '1.72e-015*sgp_mpa_cje'
++ vje = 0.46
++ mje = 0.126
++ cjc = '((ccb0*(sub_a))/(dev_a))*sgp_mpa_cjc'
++ vjc = 0.58
++ mjc = 0.3
++ cjs = 0
++ vjs = 0.95
++ mjs = 0.5
++ xtb = 2.44
++ xti = 2.54
++ eg = 1.17
++ trm1 = 0.001
++ trm2 = 0
++ trc1 = -0.01121
++ trc2 = 3.02E-005
++ tre1 = 0
++ tre2 = 0
+.ends pnpMPA
