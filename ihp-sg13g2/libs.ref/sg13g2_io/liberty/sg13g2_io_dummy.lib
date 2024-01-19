@@ -1,0 +1,71 @@
+library (sg13g2_io_dummy) {
+    delay_model : table_lookup;
+    capacitive_load_unit (1,ff);
+    current_unit : "1mA";
+    leakage_power_unit : "1mW";
+    pulling_resistance_unit : "1kohm";
+    time_unit : "1ps";
+    voltage_unit : "1V";
+    voltage_map (vss, 0.0);
+    voltage_map (vdd, 1.2);
+    voltage_map (iovss, 0.0);
+    voltage_map (iovdd, 3.3);
+    default_cell_leakage_power : 0;
+    default_fanout_load : 1;
+    default_inout_pin_cap : 1;
+    default_input_pin_cap : 1;
+    default_leakage_power_density : 0;
+    default_max_fanout : 30;
+    default_max_transition : 5000;
+    default_output_pin_cap : 0;
+    in_place_swap_mode : match_footprint;
+    input_threshold_pct_fall : 50;
+    input_threshold_pct_rise : 50;
+    nom_process : 1;
+    nom_temperature : 25;
+    nom_voltage : 1.8;
+    output_threshold_pct_fall : 50;
+    output_threshold_pct_rise : 50;
+    slew_derate_from_library : 1;
+    slew_lower_threshold_pct_fall : 20;
+    slew_lower_threshold_pct_rise : 20;
+    slew_upper_threshold_pct_fall : 80;
+    slew_upper_threshold_pct_rise : 80;
+    operating_conditions ("typ") {
+        process : 1;
+        temperature : 25;
+        voltage : 1.8;
+        tree_type: "balanced_tree";
+    }
+    default_operating_conditions : "typ";
+    input_voltage (core_input) {
+        vih : 1.2;
+        vil : 0;
+        vimax : 1.2;
+        vimin : 0;
+    }
+    output_voltage (core_output) {
+        voh : 1.2;
+        vol : 0;
+        vomax : 1.2;
+        vomin : 0;
+    }
+    input_voltage (io_input) {
+        vih : 3.3;
+        vil : 0;
+        vimax : 3.3;
+        vimin : 0;
+    }
+    output_voltage (io_output) {
+        voh : 3.3;
+        vol : 0;
+        vomax : 3.3;
+        vomin : 0;
+    }
+    lu_table_template (delay_template_2x2) {
+        variable_1 : input_net_transition;
+        variable_2 : total_output_net_capacitance;
+        index_1 ("10, 200");
+        index_2 ("500, 30000");
+    }
+}
