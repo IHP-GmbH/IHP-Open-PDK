@@ -31,11 +31,13 @@
  <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
  <text>application = RBA::Application.instance
 main_window = application.main_window
-curr_layout_view = main_window.current_view()
-unless curr_layout_view
-    layout_path = RBA::FileDialog::ask_open_file_name("Chose your layout file.", ".", "GDSII files (*.GDS *.gds *.GDS.gz *.gds.gz *.GDS2 *.gds2 *.GDS2.gz *.gds2.gz);; All files (*)")
-    main_window.load_layout(layout_path, 1)
+if main_window
     curr_layout_view = main_window.current_view()
+    unless curr_layout_view
+        layout_path = RBA::FileDialog::ask_open_file_name("Chose your layout file.", ".", "GDSII files (*.GDS *.gds *.GDS.gz *.gds.gz *.GDS2 *.gds2 *.GDS2.gz *.gds2.gz);; All files (*)")
+        main_window.load_layout(layout_path, 1)
+        curr_layout_view = main_window.current_view()
+    end
 end
 active_layout = RBA::CellView::active.layout
 active_cellname = RBA::CellView::active.cell_name
@@ -619,6 +621,8 @@ TM2_density = TopMet2Filler.ext_or(TopMetal2).ext_not(TopMet2Slit)
 GP_Nsram_Gat_a = GP_Nsram.ext_width(130, RBA::Region::Euclidian, false, true, false, 0, 180, true, false, true)
 GP_Nsram_Gat_b = GP_Nsram.ext_space(180, RBA::Region::Euclidian, false, true, false, 0, 180, true, false, true)
 
+CHECK_FILLER_RULES = true
+
 -&gt; do
     BiWind_org.dup
 end.().output("forbidden.BiWind", "Biwind forbidden layer in 0.13um designs")
@@ -823,25 +827,27 @@ end.().output("TGO.f", "Min. ThickGateOx width = 0.86")
     Cont.merged(true, 0).outside(EdgeSeal).ext_not(Cont_SQ)
 end.().output("Cnt.a", "Min.and max. size of Cont = 0.16")
 
--&gt; do
-    Act_density.ext_with_density(0.0 .. 0.35, 'll')
-end.().output("aFil.g", "Min. global Activ coverage = 35.0 %")
+if CHECK_FILLER_RULES
+  -&gt; do
+      Act_density.ext_with_density(0.0 .. 0.35, 'll')
+  end.().output("aFil.g", "Min. global Activ coverage = 35.0 %")
 
--&gt; do
-    Act_density.ext_with_density(0.55 .. 1.0, 'll')
-end.().output("aFil.g1", "Max. global Activ coverage = 55.0 %")
+  -&gt; do
+      Act_density.ext_with_density(0.55 .. 1.0, 'll')
+  end.().output("aFil.g1", "Max. global Activ coverage = 55.0 %")
 
--&gt; do
-    Act_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-end.().output("aFil.g2", "Min. Active coverage ratio for any 800 x 800 µm² chip area = 25.0 %")
+  -&gt; do
+      Act_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+  end.().output("aFil.g2", "Min. Active coverage ratio for any 800 x 800 µm² chip area = 25.0 %")
 
--&gt; do
-    Act_density.ext_with_density(0.65 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-end.().output("aFil.g3", "Max. Active coverage ratio for any 800 x 800 µm² chip area = 65.0 %")
+  -&gt; do
+      Act_density.ext_with_density(0.65 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+  end.().output("aFil.g3", "Max. Active coverage ratio for any 800 x 800 µm² chip area = 65.0 %")
 
--&gt; do
-    Gat_density.ext_with_density(0.0 .. 0.15, 'll')
-end.().output("GFil.g", "Min. global GatPoly density [%] = 15.0")
+  -&gt; do
+      Gat_density.ext_with_density(0.0 .. 0.15, 'll')
+  end.().output("GFil.g", "Min. global GatPoly density [%] = 15.0")
+end
 
 -&gt; do
     TopVia1.ext_or(Vmim).ext_space(420, RBA::Region::Euclidian, true, true, false, 0, 90, true, false, false)
@@ -892,6 +898,7 @@ end.().output("M1.j", "Min. global Metal1 density [%] = 35.0")
     M1_density.ext_with_density(0.6 .. 1.0, 'll')
 end.().output("M1.k", "Max. global Metal1 density [%] = 60.0")
 
+if CHECK_FILLER_RULES
 -&gt; do
     M1_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M1Fil.h", "Min. Metal coverage MM1Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -899,6 +906,7 @@ end.().output("M1Fil.h", "Min. Metal coverage MM1Filler ratio for any 800 x 800 
 -&gt; do
     M1_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M1Fil.k", "Max. Metal coverage MM1Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     M2_density.ext_with_density(0.0 .. 0.35, 'll')
@@ -908,6 +916,7 @@ end.().output("M2.j", "Min. global Metal2 density [%] = 35.0")
     M2_density.ext_with_density(0.6 .. 1.0, 'll')
 end.().output("M2.k", "Max. global Metal2 density [%] = 60.0")
 
+if CHECK_FILLER_RULES
 -&gt; do
     M2_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M2Fil.h", "Min. Metal coverage MM2Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -915,6 +924,7 @@ end.().output("M2Fil.h", "Min. Metal coverage MM2Filler ratio for any 800 x 800 
 -&gt; do
     M2_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M2Fil.k", "Max. Metal coverage MM2Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     M3_density.ext_with_density(0.0 .. 0.35, 'll')
@@ -924,6 +934,7 @@ end.().output("M3.j", "Min. global Metal3 density [%] = 35.0")
     M3_density.ext_with_density(0.6 .. 1.0, 'll')
 end.().output("M3.k", "Max. global Metal3 density [%] = 60.0")
 
+if CHECK_FILLER_RULES
 -&gt; do
     M3_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M3Fil.h", "Min. Metal coverage MM3Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -931,6 +942,7 @@ end.().output("M3Fil.h", "Min. Metal coverage MM3Filler ratio for any 800 x 800 
 -&gt; do
     M3_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M3Fil.k", "Max. Metal coverage MM3Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     M4_density.ext_with_density(0.0 .. 0.35, 'll')
@@ -940,6 +952,7 @@ end.().output("M4.j", "Min. global Metal4 density [%] = 35.0")
     M4_density.ext_with_density(0.6 .. 1.0, 'll')
 end.().output("M4.k", "Max. global Metal4 density [%] = 60.0")
 
+if CHECK_FILLER_RULES
 -&gt; do
     M4_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M4Fil.h", "Min. Metal coverage MM4Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -947,6 +960,7 @@ end.().output("M4Fil.h", "Min. Metal coverage MM4Filler ratio for any 800 x 800 
 -&gt; do
     M4_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M4Fil.k", "Max. Metal coverage MM4Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     M5_density.ext_with_density(0.0 .. 0.35, 'll')
@@ -956,6 +970,7 @@ end.().output("M5.j", "Min. global Metal5 density [%] = 35.0")
     M5_density.ext_with_density(0.6 .. 1.0, 'll')
 end.().output("M5.k", "Max. global Metal5 density [%] = 60.0")
 
+if CHECK_FILLER_RULES
 -&gt; do
     M5_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("M5Fil.h", "Min. Metal coverage MM5Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -971,6 +986,7 @@ end.().output("TM1Fil.h", "Min. Metal coverage MTM1Filler ratio for any 800 x 80
 -&gt; do
     TM1_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("TM1Fil.k", "Max. Metal coverage MTM1Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     TM1_density.ext_with_density(0.0 .. 0.25, 'll')
@@ -980,6 +996,7 @@ end.().output("TM1.c", "Min. global TopMetal1 density [%] = 25.00")
     TM1_density.ext_with_density(0.7 .. 1.0, 'll')
 end.().output("TM1.d", "Max. global TopMetal1 density [%] = 70.00")
 
+if CHECK_FILLER_RULES
 -&gt; do
     TM2_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("TM2Fil.h", "Min. Metal coverage MTM2Filler ratio for any 800 x 800 µm² chip area [%] = 25.0")
@@ -987,6 +1004,7 @@ end.().output("TM2Fil.h", "Min. Metal coverage MTM2Filler ratio for any 800 x 80
 -&gt; do
     TM2_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
 end.().output("TM2Fil.k", "Max. Metal coverage MTM2Filler ratio for any 800 x 800 µm² chip area [%] = 75.0")
+end
 
 -&gt; do
     TM2_density.ext_with_density(0.0 .. 0.25, 'll')

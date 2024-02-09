@@ -81,7 +81,7 @@ class Layer(object):
 
     @property
     def purposeName(self):
-        return self._puyrposeName
+        return self._purposeName
 
     @property
     def purposeNumber(self):

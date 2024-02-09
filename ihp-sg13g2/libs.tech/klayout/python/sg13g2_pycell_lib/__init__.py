@@ -28,6 +28,7 @@ from .sg13_tech import *
 
 # Defines the IHP PCells
 from .ihp import nmos_code
+from .ihp import pmos_code
 from .ihp import cmim_code
 from .ihp import rsil_code
 
@@ -40,7 +41,8 @@ class PyCellLib(pya.Library):
         # TODO: instead of explicitly creating the PCells here we could
         # use introspection to collect the classes defined
         self.layout().register_pcell("nmos", PCellWrapper(nmos_code.nmos(), tech))
-        #self.layout().register_pcell("cmim", PCellWrapper(cmim_code.cmim(), tech))
+        self.layout().register_pcell("pmos", PCellWrapper(pmos_code.pmos(), tech))
+        self.layout().register_pcell("cmim", PCellWrapper(cmim_code.cmim(), tech))
         #self.layout().register_pcell("rsil", PCellWrapper(rsil_code.rsil(), tech))
 
         self.register("IHP PyCells")

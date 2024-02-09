@@ -33,6 +33,7 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 |cap_rfcmim         |Metal-Insulator-Metal capacitor model for RF                                                                                               |
 |dantenna           |Antenna diode symbol. This diode is used to protect against low voltage. The anode of the diode should be connected to the ptap1 resistor. |
 |dpantenna          |Antenna diode symbol. This diode is used to protect against high voltage. The cathode of the diode should be connected to the ntap1 resistor.|
+|pnpMPA             |pnp HBT used for band-gap reference circuit                                                                                                |
 
     
 ## XSCHEM testcases
