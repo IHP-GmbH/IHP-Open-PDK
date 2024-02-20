@@ -1,6 +1,6 @@
 /************************************************************************
 
- Copyright 2023 IHP PDK Authors
+ Copyright 2024 IHP PDK Authors
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 ************************************************************************/
 
 library (sg13g2_stdcell_fast_1p65V_m40C) {
-  comment : "IHP Microelectronics GmbH, 2023";
-  date : "$Date: Wed Jun 21 12:04:50 2023 $";
-  revision : "$Revision: 0.0.2 $";
+  comment : "IHP Microelectronics GmbH, 2024";
+  date : "$Date: Wed Feb 14 12:04:50 2024 $";
+  revision : "$Revision: 0.0.4 $";
   delay_model : table_lookup;
   capacitive_load_unit (1,pf);
   current_unit : "1uA";
@@ -5004,7 +5004,6 @@ library (sg13g2_stdcell_fast_1p65V_m40C) {
   cell (sg13g2_a22oi_1) {
     area : 10.8486;
     cell_footprint : "a22oi";
-    dont_use : true;
     cell_leakage_power : 1461.89;
     leakage_power () {
       value : 766.293;
@@ -5072,7 +5071,7 @@ library (sg13g2_stdcell_fast_1p65V_m40C) {
     }
     pin (Y) {
       direction : "output";
-      function : "!((A1*A2)+B1+B2)";
+      function : "!((A1*A2)+(B1*B2))";
       min_capacitance : 0.001;
       max_capacitance : 0.3;
       timing () {
@@ -27646,7 +27645,7 @@ library (sg13g2_stdcell_fast_1p65V_m40C) {
     }
     ff (IQ,IQN) {
       clear : "RESET_B'";
-      clear_preset_var1 : "L";
+      clear_preset_var1 : "H";
       clear_preset_var2 : "L";
       clocked_on : "CLK";
       next_state : "(SCE*SCD)+(SCE'*D)";
@@ -27685,7 +27684,7 @@ library (sg13g2_stdcell_fast_1p65V_m40C) {
       }
       ff (IQ,IQN) {
         clear : "RESET_B'";
-        clear_preset_var1 : L;
+        clear_preset_var1 : H;
         clear_preset_var2 : L;
         clocked_on : "CLK";
         next_state : "D";
