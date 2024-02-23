@@ -18,16 +18,32 @@
 
 import pya
 
+import math
+
 class Point(object):
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
         self.point = pya.DPoint(x, y)
 
     @classmethod
     def areColinearPoints(cls, p1, p2, p3):
-        raise Exception("Not implemented yet!")
+        """
+        Returns True if these three points are colinear or coincident, and returns False otherwise.
+
+        :param p1: first point.
+        :type p1: Point
+        :param p2: second point.
+        :type p2: Point
+        :param p3: third point.
+        :type p3: Point
+        :return: whether all three points are collinear or coincident
+        :rtype: boolean
+
+        """
+        triangleArea = 0.5 * abs(
+                (p1.point.x * (p2.point.y - p3.point.y)) +
+                (p2.point.x * (p3.point.y - p1.point.y)) +
+                (p3.point.x * (p1.point.y - p2.point.y)))
+        return math.isclose(0.0, triangleArea) or (p1 == p2 and p2 == p3)
 
     def copy(self):
         raise Exception("Not implemented yet!")
@@ -92,3 +108,37 @@ class Point(object):
     def transform(self, trans):
         raise Exception("Not implemented yet!")
 
+    def __eq__(self, other):
+        return self.point == other.point
+
+    @property
+    def x(self):
+        """
+        Returns the value of the x-coordinate for this point
+
+        """
+        return self.point.x
+
+    @x.setter
+    def x(self, value):
+        """
+        Sets the value of the x-coordinate for this point
+
+        """
+        self.point.x = value
+
+    @property
+    def y(self):
+        """
+        Returns the value of the y-coordinate for this point
+
+        """
+        return self.point.y
+
+    @y.setter
+    def y(self, value):
+        """
+        Sets the value of the y-coordinate for this point
+
+        """
+        self.point.y = value

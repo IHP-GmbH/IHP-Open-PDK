@@ -26,9 +26,11 @@ from cni.signaltype import *
 from cni.termtype import *
 from cni.font import *
 from cni.point import *
+from cni.pointlist import *
 from cni.box import *
 from cni.shape import *
 from cni.text import *
+from cni.polygon import *
 from cni.dlogen import *
 
 import pya
@@ -83,7 +85,7 @@ class PCellWrapper(pya.PCellDeclaration):
         # NOTE: the PCellWrapper acts as the "specs" object
         type(impl).defineParamSpecs(self)
 
-    def __call__(self, name, value, description, choices = None):
+    def __call__(self, name, value, description = None, choices = None):
         # NOTE: this is calles from inside defineParamSpecs as we
         # supply the "specs" object through self.
 
