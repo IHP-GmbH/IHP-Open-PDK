@@ -1,4 +1,4 @@
-// Copyright 2023 IHP PDK Authors
+// Copyright 2024 IHP PDK Authors
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -182,11 +182,12 @@ module sg13g2_a22oi_1 (Y, A1, A2, B1, B2);
 	input A1, A2, B1, B2;
 
 	// Function
-	wire int_fwire_0, int_fwire_1;
+	wire int_fwire_0, int_fwire_1, int_fwire_2;
 
-	and (int_fwire_0, A1, A2);
-	or (int_fwire_1, int_fwire_0, B1, B2);
-	not (Y, int_fwire_1);
+	and (int_fwire_0, B1, B2);
+	and (int_fwire_1, A1, A2);
+	or (int_fwire_2, int_fwire_1, int_fwire_0);
+	not (Y, int_fwire_2);
 
 	// Timing
 	specify
@@ -197,6 +198,7 @@ module sg13g2_a22oi_1 (Y, A1, A2, B1, B2);
 	endspecify
 endmodule
 `endcelldefine
+
 
 // type: AND2 
 `timescale 1ns/10ps
@@ -1546,9 +1548,9 @@ module sg13g2_sdfbbp_1 (Q, Q_N, D, SCD, SCE, RESET_B, SET_B, CLK);
 	not (int_fwire_s, delayed_SET_B);
 	not (int_fwire_r, delayed_RESET_B);
 	ihp_dff_sr_err (xcr_0, delayed_CLK, int_fwire_d, int_fwire_s, int_fwire_r);
-	ihp_dff_sr_0 (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_s, int_fwire_r, xcr_0);
+	ihp_dff_sr_1 (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_s, int_fwire_r, xcr_0);
 	buf (Q, int_fwire_IQ);
-	nor (int_fwire_IQN, int_fwire_IQ, int_fwire_s);
+	not (int_fwire_IQN, int_fwire_IQ);
 	buf (Q_N, int_fwire_IQN);
 
 	// Timing
