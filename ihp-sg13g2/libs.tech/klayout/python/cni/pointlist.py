@@ -46,7 +46,8 @@ class PointList(ulist[Point]):
         if self[0] == self[-1]:
             firstPointList = []
             firstPointList.append(self[0])
-            return firstPointList
+            self = firstPointList
+            return self
 
         uniqueList = []
         [uniqueList.append(i) for i in self if i not in uniqueList]
@@ -59,5 +60,6 @@ class PointList(ulist[Point]):
                 if not Point.areColinearPoints(uniqueList[index-1], value, uniqueList[index+1]):
                     nonColinearList.append(value)
 
-        return nonColinearList
+        self = nonColinearList
+        return self
 
