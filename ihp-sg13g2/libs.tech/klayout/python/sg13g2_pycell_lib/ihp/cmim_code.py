@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 ########################################################################
-
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
@@ -41,7 +40,7 @@ class cmim(DloGen):
         specs('Calculate', 'w&l', 'Calculate', ChoiceConstraint(['C', 'w', 'l', 'w&l']))
         specs('model', model, 'Model name')
 
-        C = CbCapCalc('C', -1, Numeric(defLW), Numeric(defLW), 'cmim')
+        C = CbCapCalc('C', 0, Numeric(defLW), Numeric(defLW), 'cmim')
         specs('C', eng_string(C), 'C')
 
         specs('w', defLW, 'Width')
@@ -101,8 +100,8 @@ class cmim(DloGen):
         self.yoffset=GridFix((self.l-l1)/2)
 
         ycont_cnt=cont_over+self.yoffset
-        xcont_cnt=cont_over+self.xoffset
         while ycont_cnt+cont_size+cont_over <= self.l+self.epsilon:
+            xcont_cnt=cont_over+self.xoffset
             while xcont_cnt+cont_size+cont_over <= self.w+self.epsilon:
                 via = Box(xcont_cnt, ycont_cnt, xcont_cnt+cont_size, ycont_cnt+cont_size)
                 Rect(Layer('Vmim'), via)
