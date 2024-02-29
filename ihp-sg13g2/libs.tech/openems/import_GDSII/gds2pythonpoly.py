@@ -148,7 +148,7 @@ if len(sys.argv) >= 2:
               # update bounding box information
               if x<xmin: xmin=x
               if x>xmax: xmax=x
-              if y<xmin: ymin=y
+              if y<ymin: ymin=y
               if y>ymax: ymax=y
             
             # create polygon with vertics written before
