@@ -130,7 +130,6 @@ This section is a summary of all minimum required density rules.
 | Pin.a             | Minimum **Activ** enclosure of **Active_pin**        |
 | Pin.b             | Minimum **GatPoly** enclosure of **GatPoly_pin**     |
 | Pin.c             | Minimum **NWell** enclosure of **NWell_pin**         |
-| ~~Pin.d~~         | Minimum **PSD** enclosure of **PSD_pin**             |
 | Pin.e             | Minimum **Metal1** enclosure of **Metal1_pin**       |
 | Pin.f2            | Minimum **Metal2** enclosure of **Metal2_pin**       |
 | Pin.f3            | Minimum **Metal3** enclosure of **Metal3_pin**       |
