@@ -66,7 +66,7 @@ if __name__ == "__main__":
     if not pdk_root:
         print("setup PDK_ROOT environmental variable to IHP-Open-PDK location")
     else:
-        source_directory=pdk_root + "ihp-sg13g2/libs.tech/qucs/user_lib"
+        source_directory=pdk_root + "/ihp-sg13g2/libs.tech/qucs/user_lib"
 
     username = os.environ.get("USER")
     destination_directory = "/home/" + username + "/.qucs/user_lib"
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     program_name = "openvaf"
     if is_program_installed(program_name):
         command = "openvaf psp103_nqs.va --output " + "/home/" + username + "/.qucs/psp103_nqs.osdi"    
-        directory = pdk_root + "ihp-sg13g2/libs.tech/ngspice/openvaf"
+        directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
         print(f"{program_name} is installed and abot tu run a command {command} in a location: {directory} ")	
         exec_app_in_directory(command, directory)
     else:
