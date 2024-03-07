@@ -1,6 +1,6 @@
 <Qucs Schematic 24.2.0>
 <Properties>
-  <View=-815,-385,3042,1680,1.21,897,828>
+  <View=75,104,1180,753,1.36141,0,0>
   <Grid=10,10,1>
   <DataSet=symbols.dat>
   <DataDisplay=symbols.dpl>
@@ -29,7 +29,7 @@
   <Lib sg13_hv_nmos1 1 360 470 55 -121 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_hv_nmos" 0 "1.0u" 1 "0.45u" 1 "1" 1 "1" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
   <Lib sg13_lv_pmos1 1 620 470 45 -101 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_lv_pmos" 0 "0.35u" 1 "0.34u" 1 "1" 0 "1" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
   <Lib sg13_hv_pmos1 1 860 470 45 -101 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_hv_pmos" 0 "1.0u" 1 "0.45u" 1 "1" 0 "1" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
-  <Lib npn13G1 1 180 610 10 64 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "npn13G2" 0 "1" 1>
+  <Lib npn13G1 1 170 630 10 64 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "npn13G2" 0 "1" 1>
 </Components>
 <Wires>
 </Wires>
