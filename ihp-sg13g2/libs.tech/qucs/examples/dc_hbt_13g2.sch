@@ -1,6 +1,6 @@
 <Qucs Schematic 24.2.0>
 <Properties>
-  <View=-179,16,1708,1026,0.788119,0,0>
+  <View=-201,-94,2082,1128,0.651338,0,0>
   <Grid=10,10,1>
   <DataSet=dc_hbt_13g2.dat>
   <DataDisplay=dc_hbt_13g2.dpl>
