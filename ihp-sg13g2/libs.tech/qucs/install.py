@@ -1,6 +1,6 @@
 ########################################################################
 #
-# Copyright 2023 IHP PDK Authors
+# Copyright 2024 IHP PDK Authors
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ def copy_files(source_dir, destination_dir):
 
 def info():
     msg = """
-    This script copies the Qucs-S user  library files into 
+    This script copies the Qucs-S user library files into 
     /home/$USER/.qucs/user_lib directory. 
     It also creates a symbolic link there and compiles and places 
     PSP103 model in ~/.qucs/ location. 
@@ -85,20 +85,21 @@ if __name__ == "__main__":
     original_file = pdk_root
     symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"
     # Create the symbolic link
-    try:
-        os.symlink(original_file, symbolic_link)
-        print("Symbolic link created successfully.")
-    except OSError as e:
-        print(f"Failed to create symbolic link: {e}")
+    if not os.path.exists(symbolic_link):
+        try:
+            os.symlink(original_file, symbolic_link)
+            print(f"Symbolic link '{symbolic_link}' created successfully.")
+        except OSError as e:
+            print(f"Failed to create symbolic link: {e}")
 
     program_name = "openvaf"
     if is_program_installed(program_name):
         command = "openvaf psp103_nqs.va --output " + "/home/" + username + "/.qucs/psp103_nqs.osdi"    
         directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
-        print(f"{program_name} is installed and abot tu run a command {command} in a location: {directory} ")	
+        print(f"{program_name} is installed and about to run the command '{command}' in a location: {directory} ")	
         exec_app_in_directory(command, directory)
     else:
-    	print(f"{program_name} is not installed.")
+        print(f"{program_name} is not installed.")
     	
 
 
