@@ -1,13 +1,13 @@
 ########################################################################
 #
-# Copyright 2023 IHP PDK Authors
-# 
+# Copyright 2024 IHP PDK Authors
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    https://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,26 +32,38 @@ from cni.shape import *
 from cni.text import *
 from cni.polygon import *
 from cni.dlogen import *
+from cni.transform import *
 
 import pya
 import sys
 
-class TechImpl(object):
-    pass
+class ChoiceConstraint(list):
 
-class Tech(object):
-
-    techsByName = {}
-
-    def register(tech):
-        Tech.techsByName[tech.name()] = tech
-
-    def get(name):
-        return Tech.techsByName[name]
+    def __init__(self, choices, action = REJECT):
+        super().__init__(choices)
 
 
-def ChoiceConstraint(choices, action = ACCEPT):
-    return choices
+class RangeConstraint:
+
+    def __init__(self, low, high, resolution = None, action = REJECT):
+        self.low = low
+        self.high = high
+        self.resolution = resolution
+        self.action = action
+
+        if low is not None:
+            if not isinstance(low, (int, float)):
+                raise Exception(f"Invalid RangeConstraint: low type: '{type(low)})'")
+
+        if high is not None:
+            if not isinstance(high, (int, float)):
+                raise Exception(f"Invalid RangeConstraint: high type: '{type(high)})'")
+
+        if low is not None and high is not None and low > high:
+            raise Exception(f"Invalid RangeConstraint: {low}(low) > {high}(high)")
+
+        if action is not None and type(action) is not int:
+            raise Exception(f"Invalid RangeConstraint: action type: '{type(action)})'")
 
 
 class PyCellContext(object):
@@ -80,12 +92,14 @@ class PCellWrapper(pya.PCellDeclaration):
         self.impl.set_tech(tech)
         self.tech = tech
 
+        Tech.techInUse = tech.getTechParams()['libName']
+
         self.param_decls = []
 
         # NOTE: the PCellWrapper acts as the "specs" object
         type(impl).defineParamSpecs(self)
 
-    def __call__(self, name, value, description = None, choices = None):
+    def __call__(self, name, value, description = None, constraint = None):
         # NOTE: this is calles from inside defineParamSpecs as we
         # supply the "specs" object through self.
 
@@ -101,9 +115,15 @@ class PCellWrapper(pya.PCellDeclaration):
 
         param_decl = pya.PCellParameterDeclaration(name, value_type, description, value)
 
-        if choices is not None:
-            for v in choices:
+        if type(constraint) is ChoiceConstraint:
+            for v in constraint:
                 param_decl.add_choice(repr(v), v)
+        elif type(constraint) is RangeConstraint:
+            if constraint.action is REJECT:
+                if constraint.low is not None:
+                    param_decl.min_value = constraint.low
+                if constraint.high is not None:
+                    param_decl.max_value = constraint.high
 
         self.param_decls.append(param_decl)
 
