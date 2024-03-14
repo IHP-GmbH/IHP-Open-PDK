@@ -1,0 +1,140 @@
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================================
+# --------------- CUSTOM CLASSES ----------------
+#================================================
+
+#=========== CUSTOM READER ===========
+class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
+  def parse_element(sup, element)
+    super
+  rescue StandardError
+    case element
+    when 'C'
+      super("#{sup} C=1e-18", element)
+    when 'R'
+      super("#{sup} R=0", element)
+    else
+      super
+    end
+  end
+
+  # implements the delegate interface:
+  # take and translate the element
+  def element(circuit, ele, name, model, value, nets, params)
+    case ele
+    when 'C'
+      error('Capacitor needs two nodes') if nets.size != 2
+
+      # provide a device class
+      cls = circuit.netlist.device_class_by_name(model)
+      unless cls
+        cls = RBA::DeviceClassCapacitor.new
+        cls.name = model
+        circuit.netlist.add(cls)
+      end
+
+      # create a device
+      device = circuit.create_device(cls, name)
+
+      # and configure the device
+      %w[A B].each_with_index do |t, index|
+        device.connect_terminal(t, nets[index])
+      end
+
+      # Convert Cap L & W & M parameters to --> A & P
+      # parameters in the model are given in micrometer units, so
+      # we need to translate the parameter values from SI to um values:
+      device.set_parameter('A', ((params['W'] || 0.0) * (params['L'] || 0.0)  * (params['M'] || 1.0)) * 1e12)
+      device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0)  * 2e6)
+      device.set_parameter('C', (params['C'] || 0.0))
+
+    when 'R'
+      case nets.size
+      when 3
+        # provide a device class
+        cls = circuit.netlist.device_class_by_name(model)
+        unless cls
+          cls = RBA::DeviceClassResistorWithBulk.new
+          cls.name = model
+          circuit.netlist.add(cls)
+        end
+
+        # create a device
+        device = circuit.create_device(cls, name)
+
+        # and configure the device
+        %w[A B W].each_with_index do |t, index|
+          device.connect_terminal(t, nets[index])
+        end
+
+      when 2
+        # provide a device class
+        cls = circuit.netlist.device_class_by_name(model)
+        unless cls
+          cls = RBA::DeviceClassResistor.new
+          cls.name = model
+          circuit.netlist.add(cls)
+        end
+
+        # create a device
+        device = circuit.create_device(cls, name)
+
+        # and configure the device
+        %w[A B].each_with_index do |t, index|
+          device.connect_terminal(t, nets[index])
+        end
+
+      else
+        error('Resistor needs two or three nodes')
+
+      end
+
+      # parameters in the model are given in micrometer units, so
+      # we need to translate the parameter values from SI to um values:
+      device.set_parameter('W', ((params['W'] || 0.0) * (params['PAR'] || 1.0)) * 1e6)
+      device.set_parameter('L', ((params['L'] || 0.0) * (params['S'] || 1.0)) * 1e6)
+      device.set_parameter('R', ((params['R'] || 0.0) * (params['S'] || 1.0) / (params['PAR'] || 1.0)))
+
+    else
+      return super
+
+    end
+    true
+  end
+end
+
+# 3 terminals resistor device extractor
+class NResistor < RBA::DeviceClassResistor
+  def initialize
+    super
+    enable_parameter('R', false)
+    enable_parameter('W', true)
+    enable_parameter('L', true)
+  end
+end
+
+# MIMCAP device extractor
+class MIMCap < RBA::DeviceClassCapacitor
+  def initialize
+    super
+    enable_parameter('C', false)
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+  end
+end
