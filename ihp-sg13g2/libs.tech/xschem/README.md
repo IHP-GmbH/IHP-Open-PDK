@@ -4,10 +4,19 @@
 The library and configuration file `xschemrc` can be found in the directory `libs.tech/xschem`. It configures 
 the xschem editor to in order to include PDK root directory, library directories and simulation models. Since the configuration script uses 
 `PDK_ROOT` environmental variable, it should be exported before running xschem.
+
+Do it only once:
 ```bash
 export PDK_ROOT=<your_path>/IHP-Open-PDK
-xschem 
+python3 install.py
 ```
+Now you can run xschem and enjoy the examples:
+
+```
+xschem
+```
+
+
 
 # XSCHEM primitives and test benches for IHP Open PDK
 
