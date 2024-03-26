@@ -38,8 +38,36 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   # take and translate the element
   def element(circuit, ele, name, model, value, nets, params)
     case ele
-    when 'C'
-      error('Capacitor needs two nodes') if nets.size != 2
+    # when 'M'
+    #   error('FETs needs 4 nodes') if nets.size != 4
+
+    #   puts nets
+    #   puts params
+
+    #   # provide a device class
+    #   cls = circuit.netlist.device_class_by_name(model)
+    #   unless cls
+    #     cls = RBA::DeviceClassMOS4Transistor.new
+    #     cls.name = model
+    #     circuit.netlist.add(cls)
+    #   end
+
+    #   # create a device
+    #   device = circuit.create_device(cls, name)
+
+    #   # and configure the device
+    #   [ 'D', 'G', 'S', 'B' ].each_with_index do |t,index|
+    #     device.connect_terminal(t, nets[index])
+    #   end
+
+    #   # Get values to be tracked
+    #   device.set_parameter('W', (params['W'] || 0.0))
+    #   device.set_parameter('L', (params['L'] || 0.0))
+    #   device.set_parameter('M', (params['M'] || 0.0))
+    #   # puts params
+
+    when 'C' && model.include?('mim')
+      error('Capacitor needs 2 nodes') if nets.size != 2
 
       # provide a device class
       cls = circuit.netlist.device_class_by_name(model)
@@ -107,9 +135,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
 
       # parameters in the model are given in micrometer units, so
       # we need to translate the parameter values from SI to um values:
-      device.set_parameter('W', ((params['W'] || 0.0) * (params['PAR'] || 1.0)) * 1e6)
-      device.set_parameter('L', ((params['L'] || 0.0) * (params['S'] || 1.0)) * 1e6)
-      device.set_parameter('R', ((params['R'] || 0.0) * (params['S'] || 1.0) / (params['PAR'] || 1.0)))
+      device.set_parameter('L', ((params['L'] || 0.0) * (params['M'] || 1.0)) * 1e6)
+      device.set_parameter('R', ((params['R'] || 0.0) * (params['M'] || 1.0)))
 
     else
       return super
@@ -119,8 +146,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   end
 end
 
-# 3 terminals resistor device extractor
-class NResistor < RBA::DeviceClassResistor
+# 2 terminals resistor device extractor
+class RES2 < RBA::DeviceClassResistor
   def initialize
     super
     enable_parameter('R', false)
@@ -128,6 +155,17 @@ class NResistor < RBA::DeviceClassResistor
     enable_parameter('L', true)
   end
 end
+
+# 3 terminals resistor device extractor
+class RES3 < RBA::DeviceClassResistor
+  def initialize
+    super
+    enable_parameter('R', true)
+    enable_parameter('W', true)
+    enable_parameter('L', true)
+  end
+end
+
 
 # MIMCAP device extractor
 class MIMCap < RBA::DeviceClassCapacitor

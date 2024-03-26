@@ -1,17 +1,18 @@
-# Globalfoundries 180nm MCU LVS Testing
+# SG13G2 LVS Testing
 
-Explains how to test GF180nm LVS rule decks.
+Explains how to test SG13G2 LVS rule decks.
 
 ## Folder Structure
 
 ```text
 📁 testing
  ┣ 📜README.md                       This file to document the regression.
- ┣ 📜Makefile                        To make a full test for GF180nm LVS rule deck.
+ ┣ 📜Makefile                        To make a full test for SG13G2 LVS rule deck.
  ┣ 📜run_regression.py               Main regression script used for LVS testing.
  ┣ 📁testcases                       All testcases used in LVS regression.
  ```
 
+<!-- 
 ## **Prerequisites**
 You need the following set of tools installed to be able to run the regression:
 - Python 3.6+
@@ -45,7 +46,7 @@ Example:
 - `--device_name=<device_name>`         Target specific device.
 
 
-To make a full test for GF180nm LVS rule deck, you could use the following command in testing directory:
+To make a full test for SG13G2 LVS rule deck, you could use the following command in testing directory:
 
 ```bash
 make all
@@ -73,4 +74,4 @@ You could find the regression run results at your run directory if you previousl
 The result is a database file for each device (`<device_name>.lvsdb`) contains LVS extractions and comparison results.
 You could view it on your file using: `klayout <device_name>.gds -mn <device_name>.lvsdb`, or you could view it on your gds file via marker browser option in tools menu using klayout GUI.
 
-You could also find the extracted netlist generated from your design at (`<device_name>.cir`) in your run directory.
+You could also find the extracted netlist generated from your design at (`<device_name>.cir`) in your run directory. -->

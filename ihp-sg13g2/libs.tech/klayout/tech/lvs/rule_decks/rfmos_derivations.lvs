@@ -35,11 +35,9 @@ rfnmos_exclude = nwell_n_iso.join(pwell_block).join(rfmos_exclude)
 
 # rfnmos - LV
 rfngate_lv = ngate_lv_base.and(rfmos_gr).not(rfnmos_exclude)
-rfnmos_sub = ptap_ext.covering(rfngate_lv)
 
 # rfnmos - HV
 rfngate_hv = ngate_hv_base.and(rfmos_gr).not(rfnmos_exclude)
-rfnmoshv_sub = ptap_ext.covering(rfngate_hv)
 
 # ===============
 # --- RF-PMOS ---
@@ -51,8 +49,8 @@ rfpmos_exclude = nbulay_drw.join(rfmos_exclude)
 
 # rfpmos - LV
 rfpgate_lv = pgate_lv_base.and(rfmos_gr).not(rfpmos_exclude)
-rfpmos_sub = ptap_ext.covering(rfpgate_lv).and(nwell_drw)
+rfpmos_sub = ptap.and(ptap_ext.covering(rfpgate_lv).and(nwell_drw))
 
 # rfpmos - HV
 rfpgate_hv = pgate_hv_base.and(rfmos_gr).not(rfpmos_exclude)
-rfpmoshv_sub = ptap_ext.covering(rfpgate_hv).and(nwell_drw)
+rfpmoshv_sub = ptap.and(ptap_ext.covering(rfpgate_hv).and(nwell_drw))

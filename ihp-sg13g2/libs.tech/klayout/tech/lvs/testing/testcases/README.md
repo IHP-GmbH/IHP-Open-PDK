@@ -1,5 +1,4 @@
-# Globalfoundries 180nm MCU LVS Tests
-
+# SG13G2 LVS Tests
 
 ## Folder Structure
 
@@ -11,6 +10,4 @@
     ┣ 📁layout                       Layout gds file for each device.
     ┣ 📁netlist                      Spice netlist file for each device.
  ┣ 📁 extraction_checking            Contains a small test case to be used for testing the LVS switches.
- ┣ 📁 torture                        Contains a few large test cases to test the performance of the rule deck. 
  ```
- 

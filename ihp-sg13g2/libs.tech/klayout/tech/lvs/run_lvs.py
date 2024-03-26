@@ -79,7 +79,7 @@ def check_klayout_version():
             logging.error(
                 "Using this klayout version has not been assessed. Limits are unknown"
             )
-            exit(1)
+            # exit(1)
 
     logging.info(f"Your Klayout version is: {klayout_v_}")
 
@@ -203,7 +203,7 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     if arguments["--lvs_sub"]:
         switches["lvs_sub"] = arguments["--lvs_sub"]
     else:
-        switches["lvs_sub"] = "sg13g2_gnd"
+        switches["lvs_sub"] = "sub!"
 
     if arguments["--verbose"]:
         switches["verbose"] = "true"
