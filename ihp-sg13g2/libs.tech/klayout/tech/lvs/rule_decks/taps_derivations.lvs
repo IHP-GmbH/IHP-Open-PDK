@@ -15,24 +15,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
-#================================
-# ----- DIODE DERIVATIONS -------
-#================================
+#===============================
+# ------ Taps DERIVATIONS ------
+#===============================
 
-logger.info('Starting DIODE DERIVATIONS')
+logger.info('Starting Taps DERIVATIONS')
 
-diode_exclude = gatpoly_drw.join(trans_drw).join(polyres_drw)
-                     .join(extblock_drw).join(nsd_drw).join(recog_esd)
+# ntap1
 
-antenna_d_exc = nwell_drw.join(salblock_drw).join(nbulay_drw).join(pwell_block)
 
-# dantenna diode
-dantenna_exc = psd_drw.join(nsd_block)
-dantenna_n = activ_drw.and(recog_diode).not(antenna_d_exc).not(dantenna_exc)
-dantenna_p = pwell_con.and(recog_diode).not(dantenna_exc)
+# ptap1
 
-# dpantenna diode
-dpantenna_n = activ_drw.and(psd_drw).and(recog_diode).not(antenna_d_exc)
-dpantenna_p = pwell_con.and(recog_diode).and(psd_drw)
 
-# schottky_nbl1 diode
