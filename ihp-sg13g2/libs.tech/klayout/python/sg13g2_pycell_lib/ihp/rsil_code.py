@@ -32,16 +32,9 @@ class rsil(DloGen):
         # define parameters and default values
         techparams = specs.tech.getTechParams()
 
-        SG13_TECHNOLOGY = techparams["techName"]
-        suffix = ""
-        if 'SG13G2' in SG13_TECHNOLOGY :
-            suffix = 'G2'
-        if 'SG13G3' in SG13_TECHNOLOGY :
-            suffix = 'G3'
-
         CDFVersion = techparams['CDFVersion']
         model      = techparams['rsil_model']
-        rspec      = techparams['rsil'+suffix+'_rspec']
+        rspec      = techparams['rsilG2_rspec']
         rkspec     = techparams['rsil_rkspec']
         rzspec     = techparams['rsil_rzspec']
         defL       = techparams['rsil_defL']
@@ -52,11 +45,9 @@ class rsil(DloGen):
         minW       = techparams['rsil_minW']
         minPS      = techparams['rsil_minPS']
         eps        = techparams['epsilon2']
-        if 'SG13G2' in SG13_TECHNOLOGY :
-            defR   = '17.248'
-        else :
-            defR   = '16.923'
-
+        
+        defR   = '17.248'
+        
         specs('cdf_version', CDFVersion, 'CDF Version')
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('Calculate', 'l', 'Calculate', ChoiceConstraint(['R', 'w', 'l']))
@@ -71,7 +62,7 @@ class rsil(DloGen):
         specs('b',  defB, 'Bends')
         specs('ps', defPS, 'Poly Space')
 
-        imax = CbResCurrent(Numeric(defW), eps, 'rsil'+suffix)
+        imax = CbResCurrent(Numeric(defW), Numeric(eps), 'rsilG2')
         specs('Imax', imax, 'Imax')
         specs('bn', 'sub!', 'Bulk node connection')
         specs('Wmin', minW, 'Wmin')
@@ -324,7 +315,7 @@ class rsil(DloGen):
         resistance = CbResCalc('R', 0, l*1e-6, w*1e-6, b, ps*1e-6, Cell)
         labeltext = '{0} r={1:.3f}'.format(Cell, resistance)
         labelpos = Point(w/2, l/2)
-        print(f"w={w}, l={l}, text='{labeltext}'")
+        #print(f"w={w}, l={l}, text='{labeltext}'")
 
         # label scaling. Should always fit into bBox of device
         labelheight = 0.1    # use 1.0 to avoid later multiplication
@@ -335,8 +326,9 @@ class rsil(DloGen):
 
         # lbl
         lbl = dbCreateLabel(self, Layer(textlayer, 'drawing'), labelpos, labeltext, 'centerCenter', rot, Font.EURO_STYLE, labelheight)
-        lsizex = lbl.bbox.getWidth()
-        lsizey = lbl.bbox.getHeight()
-        print(f"lsizex={lsizex}, lsizey={lsizey}")
-        scale = min(w/lsizex, (l+2*poly_cont_len)/lsizey)
+        
+        ## scaling not working!
+        ##lsizex = lbl.bbox.getWidth()
+        #lsizey = lbl.bbox.getHeight()
+        #scale = min(w/lsizex, (l+2*poly_cont_len)/lsizey)
         #SetSGq(lbl scale height)
