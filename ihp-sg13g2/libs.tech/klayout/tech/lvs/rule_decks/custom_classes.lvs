@@ -15,12 +15,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
+$unit = dbu * 1e-6
+
 #================================================
 # --------------- CUSTOM CLASSES ----------------
 #================================================
 
 #=========== CUSTOM READER ===========
+# Custom reader for subcircuit models
 class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
+  # Override parse_element method to handle exceptions gracefully
   def parse_element(sup, element)
     super
   rescue StandardError
@@ -34,125 +38,183 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     end
   end
 
-  # implements the delegate interface:
-  # take and translate the element
+  # Override the element method to handle different types of elements
   def element(circuit, ele, name, model, value, nets, params)
+    if CUSTOM_READER.include?(ele)
+      process_device(ele, circuit, name, model, nets, params)
+    else
+      super
+    end
+    true
+  end
+
+  private
+
+  # Process device element
+  def process_device(ele, circuit, name, model, nets, params)
+    cls = circuit.netlist.device_class_by_name(model)
+    cls ||= create_device_class(ele, circuit, model, nets.size)
+
+    device = circuit.create_device(cls, name)
+    connect_terminals(ele, device, model, nets)
+    map_params(ele, device, model, params)
+  end
+
+  # Create or retrieve the device class based on the model name
+  def create_device_class(ele, circuit, model, num_nets)
+    cls = case ele
+          when 'C'
+            if num_nets == 2
+              RBA::DeviceClassResistor.new
+            else
+              error('Capacitor should have 2 nodes, please recheck')
+              return
+            end
+          when 'R'
+            if num_nets == 3
+              RBA::DeviceClassResistorWithBulk.new
+            elsif num_nets == 2 && model.include?('TAP')
+              RBA::DeviceClassDiode.new
+            elsif num_nets == 2
+              RBA::DeviceClassResistor.new
+            else
+              error('Resistor should have two or three nodes, please recheck')
+              return
+            end
+          when 'XX'
+            DeviceClassNTerminal.new(model, num_nets)
+          else
+            return super
+          end
+    cls.name = model
+    circuit.netlist.add(cls)
+    cls
+  end
+
+  # Connect device terminals
+  def connect_terminals(ele, device, model, nets)
+    term_list = case ele
+                when 'C'
+                  %w[A B]
+                when 'R'
+                  if model.include?('TAP')
+                    %w[A C]
+                  else
+                    nets.size == 3 ? %w[A B W] : %w[A B]
+                  end
+                else
+                  (0...nets.size).map { |i| "#{model}_#{i}" }
+                end
+
+    term_list.each_with_index do |t, index|
+      device.connect_terminal(t, nets[index])
+    end
+  end
+
+  # Map parameters based on the model type
+  def map_params(ele, device, model, params)
     case ele
-    # when 'M'
-    #   error('FETs needs 4 nodes') if nets.size != 4
-
-    #   puts nets
-    #   puts params
-
-    #   # provide a device class
-    #   cls = circuit.netlist.device_class_by_name(model)
-    #   unless cls
-    #     cls = RBA::DeviceClassMOS4Transistor.new
-    #     cls.name = model
-    #     circuit.netlist.add(cls)
-    #   end
-
-    #   # create a device
-    #   device = circuit.create_device(cls, name)
-
-    #   # and configure the device
-    #   [ 'D', 'G', 'S', 'B' ].each_with_index do |t,index|
-    #     device.connect_terminal(t, nets[index])
-    #   end
-
-    #   # Get values to be tracked
-    #   device.set_parameter('W', (params['W'] || 0.0))
-    #   device.set_parameter('L', (params['L'] || 0.0))
-    #   device.set_parameter('M', (params['M'] || 0.0))
-    #   # puts params
-
-    when 'C' && model.include?('mim')
-      error('Capacitor needs 2 nodes') if nets.size != 2
-
-      # provide a device class
-      cls = circuit.netlist.device_class_by_name(model)
-      unless cls
-        cls = RBA::DeviceClassCapacitor.new
-        cls.name = model
-        circuit.netlist.add(cls)
-      end
-
-      # create a device
-      device = circuit.create_device(cls, name)
-
-      # and configure the device
-      %w[A B].each_with_index do |t, index|
-        device.connect_terminal(t, nets[index])
-      end
-
+    when 'C'
       # Convert Cap L & W & M parameters to --> A & P
       # parameters in the model are given in micrometer units, so
       # we need to translate the parameter values from SI to um values:
       device.set_parameter('A', ((params['W'] || 0.0) * (params['L'] || 0.0)  * (params['M'] || 1.0)) * 1e12)
       device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0)  * 2e6)
       device.set_parameter('C', (params['C'] || 0.0))
-
     when 'R'
-      case nets.size
-      when 3
-        # provide a device class
-        cls = circuit.netlist.device_class_by_name(model)
-        unless cls
-          cls = RBA::DeviceClassResistorWithBulk.new
-          cls.name = model
-          circuit.netlist.add(cls)
-        end
-
-        # create a device
-        device = circuit.create_device(cls, name)
-
-        # and configure the device
-        %w[A B W].each_with_index do |t, index|
-          device.connect_terminal(t, nets[index])
-        end
-
-      when 2
-        # provide a device class
-        cls = circuit.netlist.device_class_by_name(model)
-        unless cls
-          cls = RBA::DeviceClassResistor.new
-          cls.name = model
-          circuit.netlist.add(cls)
-        end
-
-        # create a device
-        device = circuit.create_device(cls, name)
-
-        # and configure the device
-        %w[A B].each_with_index do |t, index|
-          device.connect_terminal(t, nets[index])
-        end
-
+      if model.include?('TAP')
+        device.set_parameter('A', ((params['A'] || 0.0) * (params['M'] || 1.0)) * 1e12)
+        device.set_parameter('P', ((params['P'] || 0.0) * (params['M'] || 1.0)) * 1e6 )
       else
-        error('Resistor needs two or three nodes')
-
-      end
-
       # parameters in the model are given in micrometer units, so
       # we need to translate the parameter values from SI to um values:
+      device.set_parameter('W', ((params['W'] || 0.0) * (params['PAR'] || 1.0)) * 1e6)
       device.set_parameter('L', ((params['L'] || 0.0) * (params['M'] || 1.0)) * 1e6)
-      device.set_parameter('R', ((params['R'] || 0.0) * (params['M'] || 1.0)))
-
+      device.set_parameter('R', ((params['R'] || 0.0) * (params['M'] || 1.0) / (params['PAR'] || 1.0)))
+      end
+    when 'L'
+      map_dev_params(device, params, 'w', 's', 'd', 'nr_r')
     else
-      return super
-
+      error("Used #{model} device with prefix #{ele} is not supported, please recheck")
     end
-    true
+  end
+
+  # Helper method to map parameters for a device
+  def map_dev_params(device, params, *keys)
+    keys.each do |key|
+      key_up = key.upcase
+      param = params[key_up]
+      device.set_parameter(key, (params[key_up] || 0.0).round(9))
+    end
   end
 end
+
+#=============== CUSTOM WRITER ===================
+
+# %include globals.lvs
+
+# Custom writer for SPICE netlists
+class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
+  # Write device to SPICE format
+  # @param device [RBA::Device] The device to be written
+  def write_device(device)
+    device_class = device.device_class
+    str = generate_device_prefix(device, device_class)
+    str += generate_device_terminals(device, device_class)
+    str += "#{device_class.name} "
+    str += generate_device_parameters(device, device_class)
+    emit_line(str)
+  end
+
+  private
+
+  # Generate device prefix using the global prefix map
+  def generate_device_prefix(device, device_class)
+    prefix = PREFIX_MAP[device_class.name] || "#{device.id}"
+    "#{prefix}#{device.expanded_name} "
+  end
+
+  # Generate device terminals
+  def generate_device_terminals(device, device_class)
+    terminals = device_class.terminal_definitions.map do |td|
+      net_to_string(device.net_for_terminal(td.id))
+    end
+    "#{terminals.join(' ')} "
+  end
+
+  # Generate device parameters based on device class
+  def generate_device_parameters(device, device_class)
+    if device_class.name.start_with?('ind')
+      generate_parameters(device, 'w', 's', 'd', 'nr_r')
+    else
+      generate_default_parameters(device, device_class)
+    end
+  end
+
+  # Generate parameters with given keys
+  def generate_parameters(device, *keys)
+    parameters = keys.map { |key| "#{key}=#{device.parameter(key)}" }
+    parameters.join(' ')
+  end
+
+  # Generate default parameters for the device
+  def generate_default_parameters(device, device_class)
+    parameters = device_class.parameter_definitions.map do |pd|
+      format('%<name>s=%<value>.12g', name: pd.name, value: device.parameter(pd.id))
+    end
+    parameters.join(' ')
+  end
+end
+
+#===========================================
 
 # 2 terminals resistor device extractor
 class RES2 < RBA::DeviceClassResistor
   def initialize
     super
-    enable_parameter('R', false)
     enable_parameter('W', true)
     enable_parameter('L', true)
+    enable_parameter('R', false)
   end
 end
 
@@ -186,3 +248,8 @@ class Diode2 < RBA::DeviceClassDiode
     enable_parameter('P', true)
   end
 end
+
+#=============== CUSTOM DEVICE ===================
+
+# %include custom_devices.lvs
+

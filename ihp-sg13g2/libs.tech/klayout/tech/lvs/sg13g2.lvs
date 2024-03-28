@@ -88,17 +88,6 @@ SPICE_WITH_COMMENTS = bool_check?($spice_comments)
 
 logger.info("Extracted netlist with comments in details: #{SPICE_WITH_COMMENTS}")
 
-#=== TARGET NETLIST ===
-if $target_netlist
-  logger.info("LVS extracted netlist at: #{$target_netlist}")
-  target_netlist($target_netlist, write_spice(SPICE_WITH_NET_NAMES, SPICE_WITH_COMMENTS), "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime("%d/%m/%Y %H:%M")}")
-else
-  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
-  netlist_path = layout_dir.join("#{source.cell_name}_extracted.cir")
-  target_netlist("#{netlist_path}", write_spice(SPICE_WITH_NET_NAMES, SPICE_WITH_COMMENTS),  "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime("%d/%m/%Y %H:%M")}")
-  logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
-end
-
 #=== EXTRACTION SCALE ===
 DEV_SCALE = bool_check?($scale)
 
@@ -198,6 +187,22 @@ else
   end
 end
 
+# Instantiate a writer using the new delegate
+custom_spice_writer = RBA::NetlistSpiceWriter.new(SubcircuitModelsWriter.new)
+custom_spice_writer.use_net_names = SPICE_WITH_NET_NAMES
+
+if $target_netlist
+  logger.info("LVS extracted netlist at: #{$target_netlist}")
+  target_netlist($target_netlist, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  netlist_path = layout_dir.join("#{source.cell_name}_extracted.cir")
+  target_netlist(netlist_path.to_s, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
+end
+
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
 #================================================
@@ -268,7 +273,7 @@ logger.info('Starting base layers derivations')
 # ------ Taps DERIVATIONS -------
 #================================
 
-# include rule_decks/taps_derivations.lvs
+# %include rule_decks/taps_derivations.lvs
 
 #================================================
 #------------ DEVICES CONNECTIVITY --------------
@@ -328,7 +333,7 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 # ------- Taps EXTRACTIONS ------
 #================================
 
-# include rule_decks/taps_extraction.lvs
+# %include rule_decks/taps_extraction.lvs
 
 #================================================
 #------------- COMPARISON OPTIONS ---------------

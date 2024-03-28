@@ -24,11 +24,12 @@ logger.info('Starting DIODE DERIVATIONS')
 diode_exclude = gatpoly_drw.join(trans_drw).join(polyres_drw)
                      .join(extblock_drw).join(nsd_drw).join(recog_esd)
 
-antenna_d_exc = nwell_drw.join(salblock_drw).join(nbulay_drw).join(pwell_block)
+antenna_d_exc = nwell_drw.join(salblock_drw).join(nbulay_drw)
+                .join(pwell_block).join(diode_exclude)
 
 # dantenna diode
-dantenna_exc = psd_drw.join(nsd_block)
-dantenna_n = activ_drw.and(recog_diode).not(antenna_d_exc).not(dantenna_exc)
+dantenna_exc = psd_drw.join(nsd_block).not(antenna_d_exc)
+dantenna_n = activ_drw.and(recog_diode).not(dantenna_exc)
 dantenna_p = pwell_con.and(recog_diode).not(dantenna_exc)
 
 # dpantenna diode
