@@ -30,7 +30,7 @@ class DeviceClassNTerminal < RBA::DeviceClassResistor
     clear_terminals
 
     # Add parameters for each device based on name
-    if name.downcase.start_with?('r')
+    if name.downcase.start_with?('res')
       add_parameters('w', 'l', 'ps', 'b')
     end
 
@@ -109,7 +109,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     dev, ports, meas_mk, dev_mk = layer_geometry
     measured_regions = dev_mk.merged
     measured_regions.each do |region|
-      if ports.size != @num
+      if ports.size != @num # && !name.start_with?('res')
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
       else
         device = create_device
@@ -144,7 +144,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   None
 
     if name.start_with?('res')
-      width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk, dev_mk)
+      width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk)
 
       device.set_parameter('w', width * $unit)
       device.set_parameter('l', length * $unit)
@@ -153,11 +153,11 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     end
   end
 
-  def calc_res_params(dev, ports, meas_mk, dev_mk)
+  def calc_res_params(dev, ports, meas_mk)
     # Initialize parameters
     width = 0.0
     length = 0.0
-    poly_sp = 0.0
+    poly_sp = 180.0
     bends = 0.0
 
     # Width
@@ -165,17 +165,20 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     width = get_uniq_length(width_edges)
 
     # Length
-    length_edges = dev.edges.not(width_edges)
+    length_edges = dev.edges.interacting(width_edges).not(width_edges)
     length = get_uniq_length(length_edges)
 
-    # poly_space
-    ##TODO
-
     # Bends
-    corners = dev.corners.count
-    bends = (corners - 4) / 2   # no of bends = (all corners - bnds)/2
+    corners = meas_mk.interacting(dev).corners.not_interacting(ports).count
+    bends = corners / 4
 
-    [gap, length, poly_sp, bends]
+    # poly_space between bends
+    if bends > 0
+      poly_sp_polygon = meas_mk.interacting(dev)
+      poly_sp = get_notch_val(poly_sp_polygon, 10*length)
+    end
+
+    [width, length, poly_sp, bends]
   end
 
   def define_and_sort_terminals(device, ports)
@@ -189,7 +192,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   None
 
     # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
-    substrings = %w[straight_heater_doped grating_coupler]
+    substrings = %w[]
 
     # Initialize sorted_ports with a default value
     sorted_ports = nil
@@ -208,32 +211,6 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     (1..@num).each do |i|
       define_terminal(device, @reg_dev.terminal_id("#{name}_#{i}"), 1, sorted_ports[i - 1])
     end
-  end
-
-  def sort_edges(edges)
-    # Sort edges based on their x-coordinate.
-    #
-    # Args:
-    #   edges: Edges to sort.
-    #
-    # Returns:
-    #   Sorted edges.
-    #
-    # Note:
-    #   This function sorts the edges based on the x-coordinate of their starting point.
-    #   It takes an array of edges and returns the sorted array.
-    edge_array = []
-    edges.each do |edge|
-      edge_array << [[edge.x1, edge.y1], [edge.x2, edge.y2]]
-    end
-
-    sorted_edges = edge_array.sort_by { |edge| edge[0][0] }
-
-    sorted_edge_objects = sorted_edges.map do |edge|
-      RBA::Edge.new(edge[0][0], edge[0][1], edge[1][0], edge[1][1])
-    end
-
-    sorted_rba_edges = RBA::Edges.new(sorted_edge_objects)
   end
 
   def sort_polygons(polygons)
@@ -296,6 +273,17 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Extract distance between edges for space check
     proj = RBA::Metrics::Projection
     space_paris = sel_edges.space_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.min
+  end
+
+  def get_notch_val(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
     space_values = []
     space_paris.each do |edge|
       space_values << edge.distance

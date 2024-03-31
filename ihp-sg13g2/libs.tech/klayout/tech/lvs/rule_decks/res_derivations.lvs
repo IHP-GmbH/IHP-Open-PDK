@@ -30,17 +30,20 @@ polyres_exclude = activ_drw.join(nwell_drw).join(thickgateox_drw)
 # ==============
 
 ## polyres
-polyres = gatpoly_drw.and(heatres_drw).and(polyres_drw).and(extblock_drw)
+polyres = polyres_drw.and(heatres_drw).and(extblock_drw).interacting(gatpoly_drw)
 
 ## rhigh
 rhigh_res = polyres.and(psd_drw).and(salblock_drw).and(nsd_drw)
+rhigh_ports = gatpoly_drw.interacting(rhigh_res).not(rhigh_res)
 
 ## rppd
 rppd_res = polyres.and(psd_drw).and(salblock_drw).not(nsd_drw)
+rppd_ports = gatpoly_drw.interacting(rppd_res).not(rppd_res)
 
 ## rsil
 rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
 rsil_res = polyres.and(res_drw).not(rsil_exc)
+rsil_ports = gatpoly_drw.interacting(rsil_res).not(rsil_res)
 
 # ===============
 # ---- METAL ----

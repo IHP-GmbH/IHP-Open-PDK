@@ -15,6 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
+$logger = logger
 $unit = dbu * 1e-6
 
 #================================================
@@ -65,23 +66,25 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     cls = case ele
           when 'C'
             if num_nets == 2
-              RBA::DeviceClassResistor.new
+              RBA::DeviceClassCapacitor.new
             else
               error('Capacitor should have 2 nodes, please recheck')
               return
             end
           when 'R'
-            if num_nets == 3
-              RBA::DeviceClassResistorWithBulk.new
-            elsif num_nets == 2 && model.include?('TAP')
+            if model.downcase.start_with?('res')
+              DeviceClassNTerminal.new(model, num_nets)
+            elsif num_nets == 2 && model.downcase.include?('tap')
               RBA::DeviceClassDiode.new
             elsif num_nets == 2
               RBA::DeviceClassResistor.new
+            elsif num_nets == 3
+              RBA::DeviceClassResistorWithBulk.new
             else
               error('Resistor should have two or three nodes, please recheck')
               return
             end
-          when 'XX'
+          when 'L'
             DeviceClassNTerminal.new(model, num_nets)
           else
             return super
@@ -97,7 +100,9 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
                 when 'C'
                   %w[A B]
                 when 'R'
-                  if model.include?('TAP')
+                  if model.downcase.start_with?('res')
+                    (0...nets.size).map { |i| "#{model}_#{i+1}" }
+                  elsif model.downcase.include?('tap')
                     %w[A C]
                   else
                     nets.size == 3 ? %w[A B W] : %w[A B]
@@ -122,9 +127,11 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0)  * 2e6)
       device.set_parameter('C', (params['C'] || 0.0))
     when 'R'
-      if model.include?('TAP')
+      if model.downcase.include?('tap')
         device.set_parameter('A', ((params['A'] || 0.0) * (params['M'] || 1.0)) * 1e12)
         device.set_parameter('P', ((params['P'] || 0.0) * (params['M'] || 1.0)) * 1e6 )
+      elsif model.downcase.start_with?('res')
+        map_dev_params(device, params, 'w', 'l', 'ps', 'b')
       else
       # parameters in the model are given in micrometer units, so
       # we need to translate the parameter values from SI to um values:
@@ -186,6 +193,8 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
   def generate_device_parameters(device, device_class)
     if device_class.name.start_with?('ind')
       generate_parameters(device, 'w', 's', 'd', 'nr_r')
+    elsif device_class.name.start_with?('res')
+      generate_parameters(device, 'w', 'l', 'b', 'ps')
     else
       generate_default_parameters(device, device_class)
     end
@@ -204,7 +213,7 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
     end
     parameters.join(' ')
   end
-end
+end 
 
 #===========================================
 

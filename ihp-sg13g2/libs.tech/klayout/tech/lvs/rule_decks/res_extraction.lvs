@@ -25,29 +25,31 @@ logger.info('Starting RESISTOR EXTRACTION')
 # ---- POLY ----
 # ==============
 
-##TODO : Resistors will be exctracted using custom device extractor : 
-    # Use same resistor_with_bulk for L, W, R calculations
-    # Extend measurements to cover no of bends & ps 
-# rhigh
-logger.info('Extracting rhigh resistor')
-# extract_devices(resistor('res_rhigh', 1360, RES2), { 'R' => rhigh_res, 'C' => poly_con })
-extract_devices(resistor_with_bulk('rhigh', 1360, RES3), { 'R' => rhigh_res, 'C' => poly_con, 'W' => poly_con })
-# 15% tolerance for rhigh --> rsh [min: 1160, typical: 1360, max: 1560]ohm 
-tolerance('res_rhigh', 'R', :relative => 0.15)
-
-# rppd
-logger.info('Extracting rppd resistor')
-# extract_devices(resistor('res_rppd', 260, RES2), { 'R' => rppd_res, 'C' => poly_con })
-extract_devices(resistor_with_bulk('res_rppd', 260, RES3), { 'R' => rppd_res, 'C' => poly_con, 'W' => poly_con })
-# 10% tolerance for rppd --> rsh [min: 235, typical: 260, max: 285]ohm
-tolerance('res_rppd', 'R', :relative => 0.15)
-
 # rsil
 logger.info('Extracting rsil resistor')
-# extract_devices(resistor('res_rsil', 7, RES2), { 'R' => rsil_res, 'C' => poly_con })
-extract_devices(resistor_with_bulk('res_rppd', 7, RES3), { 'R' => rsil_res, 'C' => poly_con, 'W' => poly_con })
-# 12% tolerance for rsil --> rsh [min: 6.2, typical: 7, max: 7.8]ohm
-tolerance('res_rsil', 'R', :relative => 0.12)
+extract_devices(GeneralNTerminalExtractor.new('res_rsil', 2), {
+                  'seed' => rsil_res,
+                  'ports' => rsil_ports,
+                  'meas_mk' => polyres_drw,
+                  'dev_mk' => polyres_drw.interacting(rsil_res)
+                })
+# rppd
+logger.info('Extracting rppd resistor')
+extract_devices(GeneralNTerminalExtractor.new('res_rppd', 2), {
+                    'seed' => rppd_res,
+                    'ports' => rppd_ports,
+                    'meas_mk' => polyres_drw,
+                    'dev_mk' => polyres_drw.interacting(rppd_res)
+                })
+
+# rhigh
+logger.info('Extracting rhigh resistor')
+extract_devices(GeneralNTerminalExtractor.new('res_rhigh', 2), {
+                  'seed' => rhigh_res,
+                  'ports' => rhigh_ports,
+                  'meas_mk' => polyres_drw,
+                  'dev_mk' => polyres_drw.interacting(rhigh_res)
+                })
 
 # ===============
 # ---- METAL ----
