@@ -33,16 +33,30 @@ bjt_exclude = gatpoly_drw.join(salblock_drw).join(polyres_drw)
 
 npn_exclude = nwell_drw.join(nbulay_drw).join(pwell_block).join(bjt_exclude)
 
-# vnpn general nodes DERIVATIONS
-npn_e = nactiv.and(trans_drw).not(npn_exclude)
-npn_b = pactiv.and(pwell).and(trans_drw).not(npn_exclude)
-npn_c = nactiv.and(trans_drw).not(npn_exclude)
+# npn13G2 nodes DERIVATIONS
+npn13g2_exc = emwihv_drw.join(activ_drw).join(npn_exclude)
+npn13g2_e_ = emwind_drw.and(activ_mask).and(heattrans_drw).and(nsd_block).and(trans_drw).not(npn13g2_exc)
+npn13g2_e = npn13g2_e_.with_bbox_min(0.07.um).with_bbox_max(0.9.um).with_area(0.063.um)
 
-# npn_10p00x10p00 nodes DERIVATIONS
-npn13g2_e = npn_e.with_area(60.nm, 65.nm).interacting(npn_e.edges.with_length(70.nm, 90.nm))
 npn13g2_b = npn_b.interacting(npn_b.extents.interacting(npn13g2_e))
 npn13g2_c = npn_c.interacting(npn_c.extents.interacting(npn13g2_e))
 
+# npn13G2L nodes DERIVATIONS
+npn13g2l_exc = emwihv_drw.join(activ_mask).join(nsd_block).join(npn_exclude)
+npn13g2l_e_ = emwind_drw.and(activ_drw).and(heattrans_drw).and(trans_drw).not(npn13g2l_exc)
+npn13g2l_e = npn13g2l_e_.with_bbox_min(0.07.um).with_bbox_max(1.um, 2.5.um).with_area(0.07.um, 0.175.um)
+
+npn13g2l_e = npn13g2l_e_.with_area(60.nm, 65.nm).interacting(npn_e.edges.with_length(70.nm, 90.nm))
+npn13g2l_b = npn_b.interacting(npn_b.extents.interacting(npn13g2l_e))
+npn13g2l_c = npn_c.interacting(npn_c.extents.interacting(npn13g2l_e))
+
+# npn13G2V nodes DERIVATIONS
+npn13g2v_exc = emwind_drw.join(activ_mask).join(nsd_block).join(npn_exclude)
+npn13g2v_e_ = emwihv_drw.and(activ_drw).and(heattrans_drw).and(trans_drw).not(npn13g2v_exc)
+npn13g2v_e = npn13g2v_e_.with_bbox_min(0.12.um).with_bbox_max(1.um, 5.um).with_area(0.12.um, 0.6.um)
+
+npn13g2v_b = npn_b.interacting(npn_b.extents.interacting(npn13g2v_e))
+npn13g2v_c = npn_c.interacting(npn_c.extents.interacting(npn13g2v_e))
 
 # =============
 # ---- PNP ----

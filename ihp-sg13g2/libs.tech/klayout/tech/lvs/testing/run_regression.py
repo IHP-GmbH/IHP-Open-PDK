@@ -258,6 +258,9 @@ def run_test_case(
     # Switches setup
     if os.path.exists(sw_file):
         switches = " ".join(get_switches(sw_file, device_name))
+    else:
+        # Get switches
+        switches = " -rd lvs_sub=sub!"  # default switch
 
     # Creating run folder structure and copy testcases in it
     pattern_clean = ".".join(os.path.basename(layout_path).split(".")[:-1])
@@ -495,15 +498,17 @@ def main(lvs_dir, output_path, target_device_group):
 
 
 if __name__ == "__main__":
-    # docopt reader
+
+    # docopt setup
     args = docopt(__doc__, version="LVS Regression: 0.2")
 
-    now_str = datetime.utcnow().strftime("lvs_run_%Y_%m_%d_%H_%M_%S")
+    # default run name
+    run_name = datetime.utcnow().strftime("unit_tests_%Y_%m_%d_%H_%M_%S")
 
-    # arguments
+    # args setup
     run_dir = args["--run_dir"]
     if run_dir == "pwd" or run_dir == "" or run_dir is None:
-        output_path = os.path.join(os.path.abspath(os.getcwd()), now_str)
+        output_path = os.path.join(os.path.abspath(os.getcwd()), run_name)
     else:
         output_path = os.path.abspath(run_dir)
 
@@ -518,7 +523,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(os.path.join(output_path, "{}.log".format(run_dir))),
+            logging.FileHandler(os.path.join(output_path, "{}.log".format(run_name))),
             logging.StreamHandler(),
         ],
         format="%(asctime)s | %(levelname)-7s | %(message)s",

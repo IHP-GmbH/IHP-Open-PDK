@@ -16,7 +16,7 @@
 #==========================================================================
 
 $logger = logger
-$unit = dbu * 1e-6
+$unit = dbu
 
 #================================================
 # --------------- CUSTOM CLASSES ----------------
@@ -61,98 +61,170 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     map_params(ele, device, model, params)
   end
 
-  # Create or retrieve the device class based on the model name
+  # Create or retrieve the device class based on the element type, model name, and number of nets.
+  #
+  # @param ele [String] The type of element (C, R, Q, L).
+  # @param circuit [Circuit] The circuit object to which the device class will be added.
+  # @param model [String] The model name of the device class.
+  # @param num_nets [Integer] The number of nets the device class should have.
+  # @return [RBA::DeviceClass] The created or retrieved device class.
   def create_device_class(ele, circuit, model, num_nets)
     cls = case ele
-          when 'C'
-            if num_nets == 2
-              RBA::DeviceClassCapacitor.new
-            else
-              error('Capacitor should have 2 nodes, please recheck')
-              return
-            end
-          when 'R'
-            if model.downcase.start_with?('res')
-              DeviceClassNTerminal.new(model, num_nets)
-            elsif num_nets == 2 && model.downcase.include?('tap')
-              RBA::DeviceClassDiode.new
-            elsif num_nets == 2
-              RBA::DeviceClassResistor.new
-            elsif num_nets == 3
-              RBA::DeviceClassResistorWithBulk.new
-            else
-              error('Resistor should have two or three nodes, please recheck')
-              return
-            end
-          when 'L'
-            DeviceClassNTerminal.new(model, num_nets)
+          when 'C' then create_capacitor(num_nets)
+          when 'R' then create_resistor(model, num_nets)
+          when 'Q' then create_bjt(model, num_nets)
+          when 'L' then create_inductor(model, num_nets)
           else
             return super
           end
+
     cls.name = model
     circuit.netlist.add(cls)
     cls
   end
 
-  # Connect device terminals
+  # Create a capacitor device class.
+  def create_capacitor(num_nets)
+    if num_nets != 2
+      error('Capacitor should have 2 nodes, please recheck')
+      return nil
+    end
+    RBA::DeviceClassCapacitor.new
+  end
+
+  # Create a resistor device class.
+  def create_resistor(model, num_nets)
+    if model.downcase.start_with?('res')
+      create_custom_dev(model, num_nets)
+    elsif num_nets == 2 && model.downcase.include?('tap')
+      RBA::DeviceClassDiode.new
+    elsif num_nets == 2
+      RBA::DeviceClassResistor.new
+    elsif num_nets == 3
+      RBA::DeviceClassResistorWithBulk.new
+    else
+      error('Resistor should have two or three nodes, please recheck')
+      return nil
+    end
+  end
+
+  # Create a bjt device class.
+  def create_bjt(model, num_nets)
+    if model.downcase.include?('pnp')
+      RBA::DeviceClassBJT3Transistor.new
+    else
+      create_custom_dev(model, num_nets)
+    end
+  end
+
+  # Create an inductor device class.
+  def create_custom_dev(model, num_nets)
+    DeviceClassNTerminal.new(model, num_nets)
+  end
+
+  # Connect device terminals based on element type, device, model, and nets.
+  #
+  # @param ele [String] The type of element (C, R, Q).
+  # @param device [RBA::Device] The device object to which terminals will be connected.
+  # @param model [String] The model name of the device.
+  # @param nets [Array<String>] Array of net names to which terminals will be connected.
   def connect_terminals(ele, device, model, nets)
-    term_list = case ele
-                when 'C'
-                  %w[A B]
-                when 'R'
-                  if model.downcase.start_with?('res')
-                    (0...nets.size).map { |i| "#{model}_#{i+1}" }
-                  elsif model.downcase.include?('tap')
-                    %w[A C]
-                  else
-                    nets.size == 3 ? %w[A B W] : %w[A B]
-                  end
-                else
-                  (0...nets.size).map { |i| "#{model}_#{i}" }
-                end
+    term_list = terminal_list_for_element(ele, model, nets)
 
     term_list.each_with_index do |t, index|
       device.connect_terminal(t, nets[index])
     end
   end
 
-  # Map parameters based on the model type
-  def map_params(ele, device, model, params)
+  # Determine terminal list based on element type, model, and nets.
+  def terminal_list_for_element(ele, model, nets)
     case ele
+    when 'Q'
+      model.downcase.include?('pnp') ? %w[C B E] : generate_terminal_names(model, nets.size)
     when 'C'
-      # Convert Cap L & W & M parameters to --> A & P
-      # parameters in the model are given in micrometer units, so
-      # we need to translate the parameter values from SI to um values:
-      device.set_parameter('A', ((params['W'] || 0.0) * (params['L'] || 0.0)  * (params['M'] || 1.0)) * 1e12)
-      device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0)  * 2e6)
-      device.set_parameter('C', (params['C'] || 0.0))
+      %w[A B]
     when 'R'
-      if model.downcase.include?('tap')
-        device.set_parameter('A', ((params['A'] || 0.0) * (params['M'] || 1.0)) * 1e12)
-        device.set_parameter('P', ((params['P'] || 0.0) * (params['M'] || 1.0)) * 1e6 )
-      elsif model.downcase.start_with?('res')
-        map_dev_params(device, params, 'w', 'l', 'ps', 'b')
+      if model.downcase.start_with?('res')
+        generate_terminal_names(model, nets.size)
+      elsif model.downcase.include?('tap')
+        %w[A C]
       else
-      # parameters in the model are given in micrometer units, so
-      # we need to translate the parameter values from SI to um values:
-      device.set_parameter('W', ((params['W'] || 0.0) * (params['PAR'] || 1.0)) * 1e6)
-      device.set_parameter('L', ((params['L'] || 0.0) * (params['M'] || 1.0)) * 1e6)
-      device.set_parameter('R', ((params['R'] || 0.0) * (params['M'] || 1.0) / (params['PAR'] || 1.0)))
+        nets.size == 3 ? %w[A B W] : %w[A B]
       end
-    when 'L'
-      map_dev_params(device, params, 'w', 's', 'd', 'nr_r')
     else
-      error("Used #{model} device with prefix #{ele} is not supported, please recheck")
+      generate_terminal_names(model, nets.size)
     end
   end
 
-  # Helper method to map parameters for a device
-  def map_dev_params(device, params, *keys)
-    keys.each do |key|
-      key_up = key.upcase
-      param = params[key_up]
-      device.set_parameter(key, (params[key_up] || 0.0).round(9))
+  # Generate terminal names based on model and the number of nets.
+  def generate_terminal_names(model, size)
+    (0...size).map { |i| "#{model}_#{i+1}" }
+  end
+
+  # Map parameters based on the model type.
+  #
+  # @param ele [String] The type of element (C, R, Q, L).
+  # @param device [RBA::Device] The device object to which parameters will be mapped.
+  # @param model [String] The model name of the device.
+  # @param params [Hash] Hash containing parameter values.
+  def map_params(ele, device, model, params)
+    case ele
+    when 'Q'
+      map_bjt_params(device, model, params)
+    when 'C'
+      map_capacitor_params(device, params)
+    when 'R'
+      map_resistor_params(device, model, params)
+    when 'L'
+      map_inductor_params(device, params)
+    else
+      error("#{ele} device with model #{model} is not supported, please recheck")
     end
+  end
+
+  # Map parameters for a BJT device.
+  def map_bjt_params(device, model, params)
+    if model.downcase.include?('pnp')
+      device.set_parameter('AE', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
+      device.set_parameter('PE', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('NE', params['M'] || 1.0)
+    else
+      device.set_parameter('WE', (params['WE'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('LE', (params['LE'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('M', params['M'] || 1.0)
+    end
+  end
+
+  # Map parameters for a capacitor device.
+  def map_capacitor_params(device, params)
+    device.set_parameter('A', (params['W'] || 0.0) * (params['L'] || 0.0) * (params['M'] || 1.0) * 1e12)
+    device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0) * 2e6)
+    device.set_parameter('C', params['C'] || 0.0)
+  end
+
+  # Map parameters for a resistor device.
+  def map_resistor_params(device, model, params)
+    if model.downcase.include?('tap')
+      device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
+      device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6 )
+    elsif model.downcase.start_with?('res')
+      device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+      device.set_parameter('l', (params['L'] || 0.0) * 1e6)
+      device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
+      device.set_parameter('b', params['B'] || 0.0)
+    else
+      device.set_parameter('W', (params['W'] || 0.0) * (params['PAR'] || 1.0) * 1e6)
+      device.set_parameter('L', (params['L'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('R', (params['R'] || 0.0) * (params['M'] || 1.0) / (params['PAR'] || 1.0))
+    end
+  end
+
+  # Map parameters for an inductor device.
+  def map_inductor_params(device, params)
+    device.set_parameter('W', params['W'] || 0.0)
+    device.set_parameter('S', params['S'] || 0.0)
+    device.set_parameter('D', params['D'] || 0.0)
+    device.set_parameter('NR_R', params['NR_R'] || 0.0)
   end
 end
 
@@ -191,10 +263,12 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device parameters based on device class
   def generate_device_parameters(device, device_class)
-    if device_class.name.start_with?('ind')
-      generate_parameters(device, 'w', 's', 'd', 'nr_r')
+    if device_class.name.start_with?('npn')
+      generate_parameters(device, 'we', 'le', 'm')
     elsif device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
+    elsif device_class.name.start_with?('ind')
+        generate_parameters(device, 'w', 's', 'd', 'nr_r')
     else
       generate_default_parameters(device, device_class)
     end

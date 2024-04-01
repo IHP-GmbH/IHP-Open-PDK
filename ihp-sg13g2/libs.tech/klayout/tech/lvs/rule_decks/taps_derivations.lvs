@@ -28,7 +28,9 @@ taps_exclude = gatpoly_drw.join(heattrans_drw).join(trans_drw)
 
 # ntap1
 ntap1_exc = psd_drw.join(taps_exclude)
-ntap1_n = nactiv.and(nwell_iso).not(ntap1_exc)
+# ntap1_n = nactiv.and(nwell_iso).not(ntap1_exc)
+# Modified to catch similar structure in pnpMPA-Base node
+ntap1_n = nactiv.and(nwell_iso).extents.not_interacting(ntap1_exc)
 ntap1_p = nwell_iso.covering(ntap1_n)
 
 # ptap1
