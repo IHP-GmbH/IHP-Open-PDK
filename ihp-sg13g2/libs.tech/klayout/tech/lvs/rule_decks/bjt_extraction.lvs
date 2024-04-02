@@ -25,19 +25,37 @@ logger.info('Starting BJT EXTRACTION')
 # ---- NPN ----
 # =============
 
-# logger.info('Starting NPN-BJT EXTRACTION')
+logger.info('Starting NPN-BJT EXTRACTION')
 
-# # npn13G2 BJT
-# ignore_parameter('npn13G2', 'AE')
-# logger.info('Extracting npn13G2 BJT')
-# extract_devices(bjt4('npn13G2'), { 'C' => npn13G2_c.extents,
-#                                            'B' => npn13G2_b.extents,
-#                                            'E' => npn13G2_e,
-#                                            'S' => sub.extents,
-#                                            'tC' => npn13G2_c,
-#                                            'tB' => npn13G2_b,
-#                                            'tE' => npn13G2_e,
-#                                            'tS' => sub })
+# npn13G2 BJT
+logger.info('Extraction of npn13G2 BJT transistor')
+extract_devices(GeneralNTerminalExtractor.new('npn13G2', 3), {
+                  'seed' => emwind_drw.and(npn13G2_e),
+                  'ports' => npn13G2_ports,
+                  'meas_mk' => emwind_drw.and(npn13G2_e),
+                  'dev_mk' => trans_drw.interacting(npn13G2_e),
+                  'sub_mk' => npn_sub,
+                })
+
+# npn13G2L BJT
+logger.info('Extraction of npn13G2L BJT transistor')
+extract_devices(GeneralNTerminalExtractor.new('npn13G2L', 3), {
+                  'seed' => emwind_drw.and(npn13G2l_e),
+                  'ports' => npn13G2l_ports,
+                  'meas_mk' => emwind_drw.and(npn13G2l_e),
+                  'dev_mk' => trans_drw.interacting(npn13G2l_e),
+                  'sub_mk' => npn_sub,
+                })
+
+# npn13G2V BJT
+logger.info('Extraction of npn13G2V BJT transistor')
+extract_devices(GeneralNTerminalExtractor.new('npn13G2V', 3), {
+                  'seed' => emwihv_drw.and(npn13G2v_e),
+                  'ports' => npn13G2v_ports,
+                  'meas_mk' => emwind_drw.and(npn13G2v_e),
+                  'dev_mk' => trans_drw.interacting(npn13G2v_e),
+                  'sub_mk' => npn_sub,
+                })
 
 # =============
 # ---- PNP ----

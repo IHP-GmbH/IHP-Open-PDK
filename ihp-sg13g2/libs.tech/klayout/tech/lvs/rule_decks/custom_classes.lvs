@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -104,7 +106,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       RBA::DeviceClassResistorWithBulk.new
     else
       error('Resistor should have two or three nodes, please recheck')
-      return nil
+      nil
     end
   end
 
@@ -119,7 +121,13 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
 
   # Create an inductor device class.
   def create_custom_dev(model, num_nets)
-    DeviceClassNTerminal.new(model, num_nets)
+    if model.downcase.start_with?('res')
+      DeviceCustomRes.new(model, num_nets)
+    elsif model.downcase.start_with?('npn')
+      DeviceCustomBJT.new(model, num_nets-1)
+    else
+      error("Used #{model} device is not supported yet, please recheck")
+    end
   end
 
   # Connect device terminals based on element type, device, model, and nets.
@@ -140,25 +148,31 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   def terminal_list_for_element(ele, model, nets)
     case ele
     when 'Q'
-      model.downcase.include?('pnp') ? %w[C B E] : generate_terminal_names(model, nets.size)
+      model.downcase.include?('pnp') ? %w[C B E] : gen_term_names_with_sub(model, nets.size)
     when 'C'
       %w[A B]
     when 'R'
       if model.downcase.start_with?('res')
-        generate_terminal_names(model, nets.size)
+        gen_terminal_names(model, nets.size)
       elsif model.downcase.include?('tap')
         %w[A C]
       else
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
     else
-      generate_terminal_names(model, nets.size)
+      gen_terminal_names(model, nets.size)
     end
   end
 
   # Generate terminal names based on model and the number of nets.
-  def generate_terminal_names(model, size)
-    (0...size).map { |i| "#{model}_#{i+1}" }
+  def gen_terminal_names(model, size)
+    (0...size).map { |i| "#{model}_#{i + 1}" }
+  end
+
+  # Generate terminal names based on model and the number of nets.
+  def gen_term_names_with_sub(model, size)
+    names = (0...size-1).map { |i| "#{model}_#{i + 1}" }
+    names << "#{model}_sub" # Add "extra" element
   end
 
   # Map parameters based on the model type.
@@ -189,9 +203,10 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('PE', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
       device.set_parameter('NE', params['M'] || 1.0)
     else
-      device.set_parameter('WE', (params['WE'] || 0.0) * (params['M'] || 1.0) * 1e6)
-      device.set_parameter('LE', (params['LE'] || 0.0) * (params['M'] || 1.0) * 1e6)
-      device.set_parameter('M', params['M'] || 1.0)
+      device.set_parameter('NE', params['M'] || 1.0)
+      device.set_parameter('m', params['M'] || 1.0)
+      device.set_parameter('we', (params['WE'] || 0.0) * 1e6)
+      device.set_parameter('le', (params['LE'] || 0.0) * 1e6)
     end
   end
 
@@ -206,7 +221,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   def map_resistor_params(device, model, params)
     if model.downcase.include?('tap')
       device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6 )
+      device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
     elsif model.downcase.start_with?('res')
       device.set_parameter('w', (params['W'] || 0.0) * 1e6)
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)
@@ -249,7 +264,7 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device prefix using the global prefix map
   def generate_device_prefix(device, device_class)
-    prefix = PREFIX_MAP[device_class.name] || "#{device.id}"
+    prefix = PREFIX_MAP[device_class.name] || device.id.to_s
     "#{prefix}#{device.expanded_name} "
   end
 
@@ -264,11 +279,11 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
   # Generate device parameters based on device class
   def generate_device_parameters(device, device_class)
     if device_class.name.start_with?('npn')
-      generate_parameters(device, 'we', 'le', 'm')
+      generate_parameters(device, 'NE', 'm', 'we', 'le')
     elsif device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
     elsif device_class.name.start_with?('ind')
-        generate_parameters(device, 'w', 's', 'd', 'nr_r')
+      generate_parameters(device, 'w', 's', 'd', 'nr_r')
     else
       generate_default_parameters(device, device_class)
     end
@@ -287,7 +302,7 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
     end
     parameters.join(' ')
   end
-end 
+end
 
 #===========================================
 
@@ -311,7 +326,6 @@ class RES3 < RBA::DeviceClassResistor
   end
 end
 
-
 # MIMCAP device extractor
 class MIMCap < RBA::DeviceClassCapacitor
   def initialize
@@ -321,7 +335,6 @@ class MIMCap < RBA::DeviceClassCapacitor
     enable_parameter('P', true)
   end
 end
-
 
 # MIMCAP device extractor
 class Diode2 < RBA::DeviceClassDiode
@@ -335,4 +348,3 @@ end
 #=============== CUSTOM DEVICE ===================
 
 # %include custom_devices.lvs
-
