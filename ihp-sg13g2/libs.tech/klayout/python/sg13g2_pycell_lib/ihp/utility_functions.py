@@ -48,7 +48,7 @@ def LeQp2(a, b, eps):
     return a <= b*(1-eps)
 
 #***********************************************************************************************************************
-# LeQp23
+# LeQp3
 #***********************************************************************************************************************
 def LeQp3(a, b, c, eps):
 
@@ -58,8 +58,8 @@ def LeQp3(a, b, c, eps):
         b = eng_string_to_float(b)
     if type(c) == str :
         c = eng_string_to_float(c)
-
-    return a >= b-c*eps
+    
+    return a <= b-c*eps
 
 #***********************************************************************************************************************
 # fix
@@ -434,19 +434,13 @@ def CbResCalc(calc, r, l, w, b, ps, cell):
     global techparams
     global SG13_TECHNOLOGY
 
-    suffix = ''
-    if 'SG13G2' in SG13_TECHNOLOGY :
-        suffix = 'G2'
-    if 'SG13G3' in SG13_TECHNOLOGY :
-        suffix = 'G3'
-
+    suffix = 'G2'
+    
     rspec  = Numeric(techparams[cell+suffix+'_rspec']) # specific body res. per sq. (float)
     rkspec = Numeric(techparams[cell+'_rkspec']) # res. per single contact (float)
     rzspec = Numeric(techparams[cell+'_rzspec']) * 1e6 # transition res. per um width between contact area and body (float)
     lwd    = Numeric(techparams[cell+suffix+'_lwd']) * 1e6  # line width delta [um] (both edges, positiv value adds to w)
-    kappa  = 1.85
-    if cell+'_kappa' in techparams :
-        kappa = Numeric(techparams[cell+'_kappa'])
+    kappa  = Numeric(techparams[cell+'_kappa'])
     poly_over_cont = techparams['Cnt_d'] # strcat(cell '_poly_over_cont'))
     cont_size = techparams['Cnt_a'] # techGetSpacingRule(tfId 'minWidth' 'Cont')     # size of contact array [um]
     cont_space = techparams['Cnt_b'] # techGetSpacingRule(tfId 'minSpacing' 'Cont')
@@ -455,7 +449,7 @@ def CbResCalc(calc, r, l, w, b, ps, cell):
 
     # must check for string arguments and convert to float
     if type(r) == str :
-         r=Numeric(r)
+        r=Numeric(r)
     if type(l) == str :
         l=Numeric(l)
     if type(w) == str :
@@ -467,7 +461,7 @@ def CbResCalc(calc, r, l, w, b, ps, cell):
 
     if LeQp3(w, minW, '1u', techparams['epsilon1']) :  # 6.8.03 GG: wmin -> minW,HS: Function'LeQp' 28.9.2004
         w = minW    # avoid divide by zero errors in case of problems ; 21.7.03 GG: eps -> minW
-
+    
     w = w * 1e6 # um (needed for contact calculation);HS 4.10.2004
     l = l * 1e6
     ps = ps * 1e6

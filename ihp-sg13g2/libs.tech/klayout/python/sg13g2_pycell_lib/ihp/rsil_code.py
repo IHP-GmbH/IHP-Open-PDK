@@ -283,7 +283,7 @@ class rsil(DloGen):
                 dbCreateRect(self, locintlayer, Box(xpos1+polyover+distr+i*distc, ypos2+li_poly_over*dir, xpos1+polyover+distr+i*distc+consize, ypos2+(consize+li_poly_over)*dir))
                 
         # **************************************************************
-        #  Metal ans Pin Part
+        #  Metal and Pin Part
         # new metal block   
         ypos1 = ypos2+(li_poly_over-metover)*dir
         ypos2 = ypos2+(consize+li_poly_over+metover)*dir
