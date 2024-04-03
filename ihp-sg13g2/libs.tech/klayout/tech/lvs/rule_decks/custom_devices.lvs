@@ -68,15 +68,6 @@ class DeviceCustomBJT < RBA::DeviceClassBJT4Transistor
 
     add_parameters('NE', 'm', 'we', 'le')
     add_terminals(name, num, 1)
-
-    # combiner=RBA::GenericDeviceCombiner.new
-    # puts combiner
-    # enable_parameter('NE', false)
-    # supports_parallel_combination=true
-    # supports_serial_combination=true
-    # parameter_definitions.each do |param|
-    #   puts param.name
-    # end
   end
 end
 
@@ -102,10 +93,8 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Register device class for extraction.
     if name.downcase.start_with?('res')
       @reg_dev = DeviceCustomRes.new(name, @num)
-    elsif name.downcase.start_with?('npn')
-      @reg_dev = DeviceCustomBJT.new(name, @num)
     else
-      error("Used #{name} device is not supported yet, please recheck")
+      error("Custom-Class for #{name} device is not supported yet, please recheck")
     end
     register_device_class(@reg_dev)
   end
@@ -123,14 +112,14 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     ports = layers[1]
     meas_mk = layers[2]
     dev_mk = layers[3]
-    sub_mk = layers[4]
+    # sub_mk = layers[4]
 
     conn = RBA::Connectivity.new
     conn.connect(dev, dev)
     conn.connect(dev, dev_mk)
     conn.connect(dev, meas_mk)
     conn.connect(ports, dev_mk)
-    conn.connect(sub_mk, dev_mk)
+    # conn.connect(sub_mk, dev_mk)
     conn.connect(meas_mk, dev_mk)
 
     conn
@@ -141,15 +130,17 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #
     # Args:
     #   layer_geometry (Array): Array of layer geometries.
-    dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
-    measured_regions = dev_mk.merged
-    measured_regions.each do |region|
+    dev, ports, meas_mk, dev_mk = layer_geometry
+    meas_regions = dev_mk.merged
+
+    meas_regions.each do |region|
+      # puts ports.size
       if ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
       else
         device = create_device
         set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
-        define_and_sort_terminals(device, ports, sub_mk)
+        define_and_sort_terminals(device, ports)
       end
     end
   end
@@ -162,7 +153,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     define_layer('ports', 'Connect Terminal')
     define_layer('meas_mk', 'Measuring parameters Marker')
     define_layer('dev_mk', 'Device Marker')
-    define_layer('sub_mk', 'Substrate Marker')
+    # define_layer('sub_mk', 'Substrate Marker')
   end
 
   def set_device_parameters(device, _region, dev, ports, meas_mk, _dev_mk)
@@ -186,21 +177,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('l', length * $unit)
       device.set_parameter('ps', poly_sp * $unit)
       device.set_parameter('b', bends)
-
-    elsif name.start_with?('npn')
-      width, length = calc_npn_params(meas_mk)
-
-      device.set_parameter('we', width * $unit)
-      device.set_parameter('le', length * $unit)
-      device.set_parameter('m', 1)
-      device.set_parameter('NE', 1)
     end
   end
 
   def calc_res_params(dev, ports, meas_mk)
-    # Initialize parameters
-    poly_sp = 180.0
-
     # Width
     width_edges = dev.edges.and(ports.edges)
     width = get_uniq_length(width_edges)
@@ -219,31 +199,27 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       poly_sp = get_notch_val(poly_sp_polygon, 10 * length)
     end
 
+    # Default values
+    width ||= 0
+    length ||= 0
+    poly_sp ||= 180.0
+    bends ||= 0
+
     [width, length, poly_sp, bends]
   end
 
-  def calc_npn_params(meas_mk)
-    # Initialize parameters
-
-    meas_edges = meas_mk.edges
-    width, length = get_min_max_length(meas_edges)
-
-    [width, length]
-  end
-
-  def define_and_sort_terminals(device, ports, sub_mk)
+  def define_and_sort_terminals(device, ports)
     # Define and sort terminals based on location.
     #
     # Args:
     #   device: Device object to define terminals for.
     #   ports: Contact layer object containing terminals.
-    #   sub_mk: substrate marker layer object.
     #
     # Returns:
     #   None
 
     # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
-    substrings = %w[npn]
+    substrings = %w[]
 
     # Initialize sorted_ports with a default value
     sorted_ports = nil
@@ -262,10 +238,6 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Defination of terminals
     (1..@num).each do |i|
       define_terminal(device, @reg_dev.terminal_id("#{name}_#{i}"), 1, sorted_ports[i - 1])
-    end
-    # Define sub if exist
-    if name.downcase.start_with?('npn')
-      define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0]) unless sub_mk.nil?
     end
   end
 

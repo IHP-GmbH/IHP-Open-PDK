@@ -278,7 +278,7 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device parameters based on device class
   def generate_device_parameters(device, device_class)
-    if device_class.name.start_with?('npn')
+    if device_class.name.start_with?('XXXXXXXX')
       generate_parameters(device, 'NE', 'm', 'we', 'le')
     elsif device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
@@ -344,6 +344,26 @@ class Diode2 < RBA::DeviceClassDiode
     enable_parameter('P', true)
   end
 end
+
+class BJT4Mod < RBA::DeviceClassBJT4Transistor
+  def initialize
+    super
+    # puts parameter_definition('NE').name
+    clear_parameters
+    # add_parameters('m', 'we', 'le')
+    enable_parameter("AE", false)
+    enable_parameter("PE", false)
+    enable_parameter("NE", false)
+  end
+
+  private
+
+  def add_parameters(*names)
+    names.each { |name| add_parameter(RBA::DeviceParameterDefinition.new(name)) }
+  end
+
+end
+
 
 #=============== CUSTOM DEVICE ===================
 
