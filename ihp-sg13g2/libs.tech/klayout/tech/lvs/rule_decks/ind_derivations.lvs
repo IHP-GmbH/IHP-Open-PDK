@@ -1,0 +1,43 @@
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#===============================
+# ---- Inductor DERIVATIONS ----
+#===============================
+
+logger.info('Starting Inductor DERIVATIONS')
+
+# General
+ind_edges = ind_drw.edges
+ind_core_ = topmetal2_drw.join(topmetal1_drw).and(pwell_block).and(ind_drw).merged
+
+# inductor2
+ind2_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
+ind2_port_la = ind2_ports_.interacting(ind_text.texts("LA"))
+ind2_port_lb = ind2_ports_.interacting(ind_text.texts("LB"))
+ind2_ports = ind2_port_la.join(ind2_port_lb)
+ind2_core = ind_core_.interacting(ind2_port_la, 1).interacting(ind2_port_lb, 1)
+ind2_sub = pwell_block.overlapping(ind2_core).overlapping(ind2_ports)
+
+# inductor3
+ind3_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
+ind3_port_la = ind3_ports_.interacting(ind_text.texts("LA"))
+ind3_port_lb = ind3_ports_.interacting(ind_text.texts("LB"))
+ind3_port_lc = ind3_ports_.interacting(ind_text.texts("LC"))
+ind3_ports = ind3_port_la.join(ind3_port_lb).join(ind3_port_lc)
+ind3_core = ind_core_.interacting(ind3_port_la, 1).interacting(ind3_port_lb, 1).interacting(ind3_port_lc, 1)
+ind3_sub = pwell_block.overlapping(ind3_core).overlapping(ind3_ports)

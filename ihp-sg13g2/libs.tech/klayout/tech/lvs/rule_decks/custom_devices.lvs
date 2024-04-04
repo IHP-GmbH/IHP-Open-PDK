@@ -71,6 +71,21 @@ class DeviceCustomBJT < RBA::DeviceClassBJT4Transistor
   end
 end
 
+class DeviceCustomInd < RBA::DeviceClassInductor
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of class
+
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    add_parameters('w', 's', 'd', 'nr_r')
+    add_terminals(name, num, 1)
+  end
+end
+
 # === GeneralNTerminalExtractor ===
 class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
   # Extraction of N terminal devices - General Class
@@ -93,8 +108,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Register device class for extraction.
     if name.downcase.start_with?('res')
       @reg_dev = DeviceCustomRes.new(name, @num)
+    elsif name.downcase.start_with?('ind')
+      @reg_dev = DeviceCustomInd.new(name, @num)
     else
-      error("Custom-Class for #{name} device is not supported yet, please recheck")
+      raise ArgumentError, "Custom-Class for #{name} device is not supported yet, please recheck"
     end
     register_device_class(@reg_dev)
   end
@@ -112,14 +129,14 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     ports = layers[1]
     meas_mk = layers[2]
     dev_mk = layers[3]
-    # sub_mk = layers[4]
+    sub_mk = layers[4]
 
     conn = RBA::Connectivity.new
     conn.connect(dev, dev)
     conn.connect(dev, dev_mk)
     conn.connect(dev, meas_mk)
     conn.connect(ports, dev_mk)
-    # conn.connect(sub_mk, dev_mk)
+    conn.connect(sub_mk, dev_mk)
     conn.connect(meas_mk, dev_mk)
 
     conn
@@ -130,17 +147,18 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #
     # Args:
     #   layer_geometry (Array): Array of layer geometries.
-    dev, ports, meas_mk, dev_mk = layer_geometry
+    dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
     meas_regions = dev_mk.merged
+    puts "#{name}: #{meas_regions.count}"
+    puts "port_size #{ports.size}"
 
     meas_regions.each do |region|
-      # puts ports.size
       if ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
       else
         device = create_device
         set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
-        define_and_sort_terminals(device, ports)
+        define_and_sort_terminals(device, ports, sub_mk)
       end
     end
   end
@@ -153,10 +171,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     define_layer('ports', 'Connect Terminal')
     define_layer('meas_mk', 'Measuring parameters Marker')
     define_layer('dev_mk', 'Device Marker')
-    # define_layer('sub_mk', 'Substrate Marker')
+    define_layer('sub_mk', 'Substrate Marker')
   end
 
-  def set_device_parameters(device, _region, dev, ports, meas_mk, _dev_mk)
+  def set_device_parameters(device, _region, dev, ports, meas_mk, dev_mk)
     # Set device parameters based on device type.
     #
     # Args:
@@ -177,6 +195,13 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('l', length * $unit)
       device.set_parameter('ps', poly_sp * $unit)
       device.set_parameter('b', bends)
+    elsif name.start_with?('ind')
+      width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk)
+
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('s', space * $unit)
+      device.set_parameter('d', diameter * $unit)
+      device.set_parameter('nr_r', no_turns)
     end
   end
 
@@ -196,7 +221,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # poly_space between bends
     if bends.positive?
       poly_sp_polygon = meas_mk.interacting(dev)
-      poly_sp = get_notch_val(poly_sp_polygon, 10 * length)
+      poly_sp = get_notch_min(poly_sp_polygon, 10 * length)
     end
 
     # Default values
@@ -208,12 +233,48 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     [width, length, poly_sp, bends]
   end
 
-  def define_and_sort_terminals(device, ports)
+  def calc_ind_params(dev, ports, meas_mk, dev_mk)
+
+    # Get upper limit for width, space
+    _, max_mk_len = get_min_max_length(dev_mk.edges)
+
+    # Width
+    width = get_width_val(meas_mk, max_mk_len)
+
+    # space
+    space = get_notch_min(meas_mk, max_mk_len)
+
+    # Turns
+    no_turns_init = meas_mk.merged.count
+    if no_turns_init == 1
+      no_turns = no_turns_init
+    else
+      core_act = meas_mk.merged.not_interacting(ports)
+      no_turns = core_act.count
+    end
+
+    # Diameter
+    diameter = get_notch_max(meas_mk, max_mk_len)
+    if no_turns > 1
+      diameter = diameter - 2 * space - 2 * width
+    end
+
+    # Default values
+    width ||= 0
+    space ||= 0
+    diameter ||= 0
+    no_turns ||= 1
+
+    [width, space, diameter, no_turns]
+  end
+
+  def define_and_sort_terminals(device, ports, sub_mk)
     # Define and sort terminals based on location.
     #
     # Args:
     #   device: Device object to define terminals for.
     #   ports: Contact layer object containing terminals.
+    #   sub_mk: substrate marker layer object.
     #
     # Returns:
     #   None
@@ -238,6 +299,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Defination of terminals
     (1..@num).each do |i|
       define_terminal(device, @reg_dev.terminal_id("#{name}_#{i}"), 1, sorted_ports[i - 1])
+    end
+    # Define sub if exist
+    if name.downcase.start_with?('ind')
+      define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0]) unless sub_mk.nil?
     end
   end
 
@@ -298,10 +363,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     sep_values.min
   end
 
-  def get_space_val(sel_edges, sep_val)
+  def get_space_val(sel_polygon, sep_val)
     # Extract distance between edges for space check
     proj = RBA::Metrics::Projection
-    space_paris = sel_edges.space_check(sep_val, proj)
+    space_paris = sel_polygon.space_check(sep_val, proj)
     space_values = []
     space_paris.each do |edge|
       space_values << edge.distance
@@ -309,7 +374,18 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     space_values.min
   end
 
-  def get_notch_val(sel_polygon, sep_val)
+  def get_width_val(sel_polygon, width_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    width_paris = sel_polygon.width_check(width_val, proj)
+    width_values = []
+    width_paris.each do |edge|
+      width_values << edge.distance
+    end
+    width_values.min
+  end
+
+  def get_notch_min(sel_polygon, sep_val)
     # intra-polygon spacing check
     proj = RBA::Metrics::Projection
     space_paris = sel_polygon.notch_check(sep_val, proj)
@@ -318,6 +394,17 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       space_values << edge.distance
     end
     space_values.min
+  end
+
+  def get_notch_max(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.max
   end
 
   def get_min_max_length(sel_edges)

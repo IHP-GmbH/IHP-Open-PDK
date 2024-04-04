@@ -36,6 +36,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       super("#{sup} C=1e-18", element)
     when 'R'
       super("#{sup} R=0", element)
+    when 'L'
+      super("#{sup} L=0", element)
     else
       super
     end
@@ -75,7 +77,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
           when 'C' then create_capacitor(num_nets)
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
-          when 'L' then create_inductor(model, num_nets)
+          when 'L' then DeviceCustomInd.new(model, num_nets-1)
           else
             return super
           end
@@ -88,7 +90,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   # Create a capacitor device class.
   def create_capacitor(num_nets)
     if num_nets != 2
-      error('Capacitor should have 2 nodes, please recheck')
+      raise ArgumentError, "Capacitor should have 2 nodes, please recheck"
       return nil
     end
     RBA::DeviceClassCapacitor.new
@@ -105,8 +107,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     elsif num_nets == 3
       RBA::DeviceClassResistorWithBulk.new
     else
-      error('Resistor should have two or three nodes, please recheck')
-      nil
+      raise ArgumentError, "Resistor should have two or three nodes, please recheck"
     end
   end
 
@@ -117,16 +118,17 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     else
       create_custom_dev(model, num_nets)
     end
+
   end
 
-  # Create an inductor device class.
+  # Create custom device class.
   def create_custom_dev(model, num_nets)
     if model.downcase.start_with?('res')
       DeviceCustomRes.new(model, num_nets)
     elsif model.downcase.start_with?('npn')
       DeviceCustomBJT.new(model, num_nets-1)
     else
-      error("Used #{model} device is not supported yet, please recheck")
+      raise ArgumentError, "Used #{model} device is not supported yet, please recheck"
     end
   end
 
@@ -159,6 +161,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       else
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
+    when 'L'
+      gen_term_names_with_sub(model, nets.size)
     else
       gen_terminal_names(model, nets.size)
     end
@@ -192,7 +196,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     when 'L'
       map_inductor_params(device, params)
     else
-      error("#{ele} device with model #{model} is not supported, please recheck")
+      raise ArgumentError, "#{ele} device with model #{model} is not supported, please recheck"
     end
   end
 
@@ -236,10 +240,10 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for an inductor device.
   def map_inductor_params(device, params)
-    device.set_parameter('W', params['W'] || 0.0)
-    device.set_parameter('S', params['S'] || 0.0)
-    device.set_parameter('D', params['D'] || 0.0)
-    device.set_parameter('NR_R', params['NR_R'] || 0.0)
+    device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('s', (params['S'] || 0.0) * 1e6)
+    device.set_parameter('d', (params['D'] || 0.0) * 1e6)
+    device.set_parameter('nr_r', params['NR_R'] || 0.0)
   end
 end
 
@@ -278,7 +282,7 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device parameters based on device class
   def generate_device_parameters(device, device_class)
-    if device_class.name.start_with?('XXXXXXXX')
+    if device_class.name.start_with?('XX_npn')
       generate_parameters(device, 'NE', 'm', 'we', 'le')
     elsif device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
