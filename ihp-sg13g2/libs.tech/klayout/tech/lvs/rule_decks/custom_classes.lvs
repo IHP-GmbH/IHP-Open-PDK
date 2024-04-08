@@ -26,18 +26,29 @@ $unit = dbu
 
 #=========== CUSTOM READER ===========
 # Custom reader for subcircuit models
-class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
+class CustomReader < RBA::NetlistSpiceReaderDelegate
+
   # Override parse_element method to handle exceptions gracefully
-  def parse_element(sup, element)
+  def parse_element(line, element)
     super
   rescue StandardError
     case element
     when 'C'
-      super("#{sup} C=1e-18", element)
+      super("#{line} C=1e-18", element)
     when 'R'
-      super("#{sup} R=0", element)
+      super("#{line} R=0", element)
+    when 'D'
+      if line.downcase.include?('diodev')
+        super("#{line}", 'Q')
+      else
+        super("#{line}", element)
+      end
     when 'L'
-      super("#{sup} L=0", element)
+      if line.downcase.include?('inductor3')
+        super("#{line} L=0", 'M')
+      else
+        super("#{line} L=0", element)
+      end
     else
       super
     end
@@ -45,14 +56,14 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
 
   # Override the element method to handle different types of elements
   def element(circuit, ele, name, model, value, nets, params)
-    if CUSTOM_READER.include?(ele)
+    if CUSTOM_READER.include?(ele) && !(ele == 'D' && !model.downcase.include?('diodev'))
       process_device(ele, circuit, name, model, nets, params)
     else
       super
     end
     true
   end
-
+  
   private
 
   # Process device element
@@ -78,6 +89,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
           when 'L' then DeviceCustomInd.new(model, num_nets-1)
+          when 'D' then  RBA::DeviceClassBJT3Transistor.new
           else
             return super
           end
@@ -116,9 +128,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
     if model.downcase.include?('pnp')
       RBA::DeviceClassBJT3Transistor.new
     else
-      create_custom_dev(model, num_nets)
+      RBA::DeviceClassBJT4Transistor.new
     end
-
   end
 
   # Create custom device class.
@@ -150,7 +161,7 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   def terminal_list_for_element(ele, model, nets)
     case ele
     when 'Q'
-      model.downcase.include?('pnp') ? %w[C B E] : gen_term_names_with_sub(model, nets.size)
+      model.downcase.include?('pnp') ? %w[C B E] : %w[C B E S] 
     when 'C'
       %w[A B]
     when 'R'
@@ -161,6 +172,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       else
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
+    when 'D'
+        %w[C B E]
     when 'L'
       gen_term_names_with_sub(model, nets.size)
     else
@@ -193,6 +206,8 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
       map_capacitor_params(device, params)
     when 'R'
       map_resistor_params(device, model, params)
+    when 'D'
+      device.set_parameter('NE', params['M'] || 1.0)
     when 'L'
       map_inductor_params(device, params)
     else
@@ -203,14 +218,13 @@ class SubcircuitModelsReader < RBA::NetlistSpiceReaderDelegate
   # Map parameters for a BJT device.
   def map_bjt_params(device, model, params)
     if model.downcase.include?('pnp')
-      device.set_parameter('AE', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('PE', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('AE', (params['A'] || 0.0)  * (params['M'] || 1.0) * 1e12)
+      device.set_parameter('PE', (params['P'] || 0.0)  * (params['M'] || 1.0) * 1e6)
       device.set_parameter('NE', params['M'] || 1.0)
     else
+      device.set_parameter('AE', ((params['WE'] || 0.0) * (params['LE'] || 1.0)) * (params['M'] || 1.0) * 1e12)
+      device.set_parameter('PE', ((params['WE'] || 0.0) + (params['LE'] || 1.0)) * (params['M'] || 1.0) * 2e6)
       device.set_parameter('NE', params['M'] || 1.0)
-      device.set_parameter('m', params['M'] || 1.0)
-      device.set_parameter('we', (params['WE'] || 0.0) * 1e6)
-      device.set_parameter('le', (params['LE'] || 0.0) * 1e6)
     end
   end
 
@@ -252,7 +266,7 @@ end
 # %include globals.lvs
 
 # Custom writer for SPICE netlists
-class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
+class CustomWriter < RBA::NetlistSpiceWriterDelegate
   # Write device to SPICE format
   # @param device [RBA::Device] The device to be written
   def write_device(device)
@@ -282,10 +296,10 @@ class SubcircuitModelsWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device parameters based on device class
   def generate_device_parameters(device, device_class)
-    if device_class.name.start_with?('XX_npn')
-      generate_parameters(device, 'NE', 'm', 'we', 'le')
-    elsif device_class.name.start_with?('res')
+    if device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
+    elsif device_class.name.start_with?('diodev')
+      generate_parameters(device, 'NE')
     elsif device_class.name.start_with?('ind')
       generate_parameters(device, 'w', 's', 'd', 'nr_r')
     else
@@ -310,7 +324,7 @@ end
 
 #===========================================
 
-# 2 terminals resistor device extractor
+# res2 device extractor
 class RES2 < RBA::DeviceClassResistor
   def initialize
     super
@@ -320,7 +334,7 @@ class RES2 < RBA::DeviceClassResistor
   end
 end
 
-# 3 terminals resistor device extractor
+# res3 device class
 class RES3 < RBA::DeviceClassResistor
   def initialize
     super
@@ -330,7 +344,7 @@ class RES3 < RBA::DeviceClassResistor
   end
 end
 
-# MIMCAP device extractor
+# MIMCAP device class
 class MIMCap < RBA::DeviceClassCapacitor
   def initialize
     super
@@ -340,7 +354,7 @@ class MIMCap < RBA::DeviceClassCapacitor
   end
 end
 
-# MIMCAP device extractor
+# MIMCAP device class
 class Diode2 < RBA::DeviceClassDiode
   def initialize
     super
@@ -348,26 +362,6 @@ class Diode2 < RBA::DeviceClassDiode
     enable_parameter('P', true)
   end
 end
-
-class BJT4Mod < RBA::DeviceClassBJT4Transistor
-  def initialize
-    super
-    # puts parameter_definition('NE').name
-    clear_parameters
-    # add_parameters('m', 'we', 'le')
-    enable_parameter("AE", false)
-    enable_parameter("PE", false)
-    enable_parameter("NE", false)
-  end
-
-  private
-
-  def add_parameters(*names)
-    names.each { |name| add_parameter(RBA::DeviceParameterDefinition.new(name)) }
-  end
-
-end
-
 
 #=============== CUSTOM DEVICE ===================
 

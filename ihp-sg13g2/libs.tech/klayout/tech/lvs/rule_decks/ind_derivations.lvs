@@ -24,20 +24,19 @@ logger.info('Starting Inductor DERIVATIONS')
 # General
 ind_edges = ind_drw.edges
 ind_core_ = topmetal2_drw.join(topmetal1_drw).and(pwell_block).and(ind_drw).merged
+ind_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
+ind_port_la = ind_ports_.interacting(ind_text.texts("LA"))
+ind_port_lb = ind_ports_.interacting(ind_text.texts("LB"))
+ind_port_lc = ind_ports_.interacting(ind_text.texts("LC"))
 
 # inductor2
-ind2_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
-ind2_port_la = ind2_ports_.interacting(ind_text.texts("LA"))
-ind2_port_lb = ind2_ports_.interacting(ind_text.texts("LB"))
-ind2_ports = ind2_port_la.join(ind2_port_lb)
-ind2_core = ind_core_.interacting(ind2_port_la, 1).interacting(ind2_port_lb, 1)
-ind2_sub = pwell_block.overlapping(ind2_core).overlapping(ind2_ports)
+ind2_ports = ind_port_la.join(ind_port_lb)
+ind2_core = ind_core_.interacting(ind_port_la, 1).interacting(ind_port_lb, 1)
+ind2_mk = ind_drw.interacting(ind2_core).interacting(ind2_ports).not_interacting(ind_port_lc)
+ind2_sub = pwell_block.and(ind_drw).interacting(ind2_core)
 
 # inductor3
-ind3_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
-ind3_port_la = ind3_ports_.interacting(ind_text.texts("LA"))
-ind3_port_lb = ind3_ports_.interacting(ind_text.texts("LB"))
-ind3_port_lc = ind3_ports_.interacting(ind_text.texts("LC"))
-ind3_ports = ind3_port_la.join(ind3_port_lb).join(ind3_port_lc)
-ind3_core = ind_core_.interacting(ind3_port_la, 1).interacting(ind3_port_lb, 1).interacting(ind3_port_lc, 1)
-ind3_sub = pwell_block.overlapping(ind3_core).overlapping(ind3_ports)
+ind3_ports = ind_port_la.join(ind_port_lb).join(ind_port_lc)
+ind3_core = ind_core_.interacting(ind_port_la, 1).interacting(ind_port_lb, 1).interacting(ind_port_lc, 1)
+ind3_mk = ind_drw.interacting(ind3_core).interacting(ind3_ports)
+ind3_sub = pwell_block.and(ind_drw).interacting(ind3_core)

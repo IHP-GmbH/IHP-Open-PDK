@@ -27,7 +27,22 @@ extract_devices(GeneralNTerminalExtractor.new('inductor', 2), {
                   'seed' => ind2_core,
                   'ports' => ind2_ports,
                   'meas_mk' => topmetal2_drw.and(ind2_core),
-                  'dev_mk' => ind_drw,
+                  'dev_mk' => ind2_mk,
                   'sub_mk' => ind2_sub,
                 })
+tolerance('inductor', 'w', 0, 0.1)
+tolerance('inductor', 's', 0, 0.1)
 tolerance('inductor', 'd', 0, 0.1)
+
+# ind3
+logger.info('Extracting Inductor3 device')
+extract_devices(GeneralNTerminalExtractor.new('inductor3', 3), {
+                  'seed' => ind3_core,
+                  'ports' => ind3_ports,
+                  'meas_mk' => topmetal2_drw.and(ind3_core),
+                  'dev_mk' => ind3_mk,
+                  'sub_mk' => ind3_sub,
+                })
+tolerance('inductor3', 'w', 0, 0.1)
+tolerance('inductor3', 's', 0, 0.1)
+tolerance('inductor3', 'd', 0, 0.1)

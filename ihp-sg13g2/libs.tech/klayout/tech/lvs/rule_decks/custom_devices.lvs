@@ -35,7 +35,7 @@ module DeviceClassMethods
       ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
       ter.name = terminal_name
     end
-    if sub_en == 1 
+    if sub_en == 1
       terminal_name = "#{name}_sub"
       ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
       ter.name = terminal_name
@@ -76,10 +76,10 @@ class DeviceCustomInd < RBA::DeviceClassInductor
 
   def initialize(name, num)
     # clear terminals and parameters of class
-
     clear_parameters
     clear_terminals
     clear_equivalent_terminal_ids
+    combiner = nil
 
     add_parameters('w', 's', 'd', 'nr_r')
     add_terminals(name, num, 1)
@@ -149,12 +149,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   layer_geometry (Array): Array of layer geometries.
     dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
     meas_regions = dev_mk.merged
-    puts "#{name}: #{meas_regions.count}"
-    puts "port_size #{ports.size}"
-
     meas_regions.each do |region|
       if ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
+        $logger.info("No. of ports exist for #{@name} is #{ports.size}, should be #{@num}")
       else
         device = create_device
         set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
@@ -174,7 +172,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     define_layer('sub_mk', 'Substrate Marker')
   end
 
-  def set_device_parameters(device, _region, dev, ports, meas_mk, dev_mk)
+  def set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
     # Set device parameters based on device type.
     #
     # Args:
@@ -196,7 +194,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('ps', poly_sp * $unit)
       device.set_parameter('b', bends)
     elsif name.start_with?('ind')
-      width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk)
+      width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk, region)
 
       device.set_parameter('w', width * $unit)
       device.set_parameter('s', space * $unit)
@@ -233,31 +231,42 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     [width, length, poly_sp, bends]
   end
 
-  def calc_ind_params(dev, ports, meas_mk, dev_mk)
+  def calc_ind_params(dev, ports, meas_mk, dev_mk, region)
 
     # Get upper limit for width, space
     _, max_mk_len = get_min_max_length(dev_mk.edges)
 
     # Width
-    width = get_width_val(meas_mk, max_mk_len)
+    meas_sel = meas_mk.merged & region
+    width = get_width_val(meas_sel, max_mk_len)
 
     # space
-    space = get_notch_min(meas_mk, max_mk_len)
+    space = get_space_val(meas_sel, max_mk_len, )
 
     # Turns
+    # Calc steps used for no. of turns:
+      # step1: Get count of inductor metal (catch if we have more 1)
+      # Step2: 
     no_turns_init = meas_mk.merged.count
     if no_turns_init == 1
       no_turns = no_turns_init
     else
-      core_act = meas_mk.merged.not_interacting(ports)
-      no_turns = core_act.count
+      no_turns_ = dev.merged.holes.count
+      no_turns = 1 + (no_turns_ - 1) / 2
     end
 
     # Diameter
-    diameter = get_notch_max(meas_mk, max_mk_len)
-    if no_turns > 1
-      diameter = diameter - 2 * space - 2 * width
-    end
+    # Calc steps used for diameter:
+      # step1: Get extent of the inductor core
+      # step2: Exclude edges that touch inductor pins
+      # step3: Get length of the remaining edge (Outer diameter)
+      # step4: Get internal diameter --> din = dout - ((turns -1) * 2s) - (turns * w)
+    diam_extents = dev.extents.edges
+    diam_edge_exc = diam_extents.interacting(ports)
+    diam_edge = diam_extents.not_interacting(diam_edge_exc)
+    diameter = diam_edge.length
+    diameter = diameter - (2 * (no_turns - 1) * space) - (2 * no_turns * width)
+    diameter = diameter < 0 ? 0 : diameter
 
     # Default values
     width ||= 0
@@ -377,11 +386,14 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
   def get_width_val(sel_polygon, width_val)
     # intra-polygon spacing check
     proj = RBA::Metrics::Projection
-    width_paris = sel_polygon.width_check(width_val, proj)
+    width_paris = sel_polygon.width_check(width_val, metrics: proj, min_projection: 10)
     width_values = []
     width_paris.each do |edge|
       width_values << edge.distance
     end
+    # Group the array elements by their occurrences
+    width_values = width_values.reject { |element| element.zero? }
+
     width_values.min
   end
 
@@ -416,3 +428,5 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     lengths.minmax
   end
 end
+
+# -------------------------------------------------------------------

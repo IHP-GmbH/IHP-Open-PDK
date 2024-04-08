@@ -169,7 +169,7 @@ end
 # %include rule_decks/custom_classes.lvs
 
 # Instantiate a reader using the new delegate
-reader = RBA::NetlistSpiceReader.new(SubcircuitModelsReader.new)
+reader = RBA::NetlistSpiceReader.new(CustomReader.new)
 
 #=== GET NETLIST ===
 if $schematic
@@ -188,7 +188,7 @@ else
 end
 
 # Instantiate a writer using the new delegate
-custom_spice_writer = RBA::NetlistSpiceWriter.new(SubcircuitModelsWriter.new)
+custom_spice_writer = RBA::NetlistSpiceWriter.new(CustomWriter.new)
 custom_spice_writer.use_net_names = SPICE_WITH_NET_NAMES
 
 if $target_netlist
@@ -267,7 +267,7 @@ logger.info('Starting base layers derivations')
 # ------ ESD DERIVATIONS --------
 #================================
 
-# include rule_decks/esd_derivations.lvs
+# %include rule_decks/esd_derivations.lvs
 
 #=================================
 # ----- Inductor DERIVATIONS -----
@@ -333,7 +333,7 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 # ------- ESD EXTRACTION --------
 #================================
 
-# include rule_decks/esd_extraction.lvs
+# %include rule_decks/esd_extraction.lvs
 
 #=================================
 # ----- Inductor EXTRACTIONS -----

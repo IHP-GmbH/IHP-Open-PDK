@@ -19,4 +19,71 @@
 # ---- MOS-SAB DERIVATIONS ------
 #================================
 
-logger.info('Starting MOS SAB DERIVATIONS')
+logger.info('Starting ESD DERIVATIONS')
+
+
+# General
+esd_exclude = trans_drw.join(polyres_drw).join(extblock_drw)
+            .join(nsd_drw).join(recog_diode).join(recog_diode)
+            .join(substrate_drw)
+
+diode_esd_exc = gatpoly_drw.join(salblock_drw).join(pwell_block).join(nbulay_drw).join(esd_exclude)
+idiode_esd_exc = gatpoly_drw.join(salblock_drw).join(esd_exclude)
+nw_diode = nwell_n_iso.not_interacting(pwell_block)
+nw_idiode = nwell_iso.interacting(pwell_block)
+
+#======================
+# ----- diode-ESD -----
+#======================
+
+# diodevdd_2kv
+diodevdd_2kv_e = pactiv.and(nw_diode).and(recog_esd).not(diode_esd_exc)
+diodevdd_2kv_b_ = nactiv.and(nw_diode).and(recog_esd)
+diodevdd_2kv_b = diodevdd_2kv_b_.interacting(diodevdd_2kv_b_.extents.interacting(diodevdd_2kv_e, 1, 1))
+diodevdd_2kv_c_ = pactiv.and(pwell).and(recog_esd)
+diodevdd_2kv_c = diodevdd_2kv_c_.interacting(diodevdd_2kv_c_.extents.interacting(diodevdd_2kv_b, 1, 1))
+
+# diodevdd_4kv
+diodevdd_4kv_b = diodevdd_2kv_b_.interacting(diodevdd_2kv_b_.extents.interacting(diodevdd_2kv_e, 2, 2))
+diodevdd_4kv_c = diodevdd_2kv_c_.interacting(diodevdd_2kv_c_.extents.interacting(diodevdd_4kv_b, 1, 1))
+diodevdd_4kv_e = diodevdd_4kv_b.extents.sized(-0.15.um)
+
+# diodevss_2kv
+diodevss_2kv_e = nactiv.and(pwell).and(recog_esd).not(diode_esd_exc)
+diodevss_2kv_b_ = pactiv.and(pwell).and(recog_esd)
+diodevss_2kv_b = diodevss_2kv_b_.interacting(diodevss_2kv_b_.extents.interacting(diodevss_2kv_e, 1, 1))
+diodevss_2kv_c_ = nactiv.and(nw_diode).and(recog_esd)
+diodevss_2kv_c = diodevss_2kv_c_.interacting(diodevss_2kv_c_.extents.interacting(diodevss_2kv_b, 1, 1))
+
+# diodevss_4kv
+diodevss_4kv_b = diodevss_2kv_b_.interacting(diodevss_2kv_b_.extents.interacting(diodevss_2kv_e, 2, 2))
+diodevss_4kv_c = diodevss_2kv_c_.interacting(diodevss_2kv_c_.extents.interacting(diodevss_4kv_b, 1, 1))
+diodevss_4kv_e = diodevss_4kv_b.extents.sized(-0.15.um)
+
+#=======================
+# ----- idiode-ESD -----
+#=======================
+
+# idiodevdd_2kv
+idiodevdd_2kv_e = pactiv.and(nw_idiode).and(recog_esd).not(idiode_esd_exc)
+idiodevdd_2kv_b_ = nactiv.and(nw_idiode).and(recog_esd)
+idiodevdd_2kv_b = idiodevdd_2kv_b_.interacting(idiodevdd_2kv_b_.extents.interacting(idiodevdd_2kv_e, 1, 1))
+idiodevdd_2kv_c_ = pactiv.and(pwell).and(recog_esd)
+idiodevdd_2kv_c = idiodevdd_2kv_c_.interacting(idiodevdd_2kv_c_.extents.interacting(idiodevdd_2kv_b, 1, 1))
+
+# idiodevdd_4kv
+idiodevdd_4kv_b = idiodevdd_2kv_b_.interacting(idiodevdd_2kv_b_.extents.interacting(idiodevdd_2kv_e, 2, 2))
+idiodevdd_4kv_c = idiodevdd_2kv_c_.interacting(idiodevdd_2kv_c_.extents.interacting(idiodevdd_4kv_b, 1, 1))
+idiodevdd_4kv_e = idiodevdd_4kv_b.extents.sized(-0.15.um)
+
+# idiodevss_2kv
+idiodevss_2kv_e = nactiv.and(pwell).and(nbulay_drw).and(recog_esd).not(idiode_esd_exc)
+idiodevss_2kv_b_ = pactiv.and(pwell).and(nbulay_drw).and(recog_esd)
+idiodevss_2kv_b = idiodevss_2kv_b_.interacting(idiodevss_2kv_b_.extents.interacting(idiodevss_2kv_e, 1, 1))
+idiodevss_2kv_c_ = nactiv.and(nwell_iso).and(recog_esd)
+idiodevss_2kv_c = idiodevss_2kv_c_.interacting(idiodevss_2kv_c_.extents.interacting(idiodevss_2kv_b, 1, 1))
+
+# idiodevss_4kv
+idiodevss_4kv_b = idiodevss_2kv_b_.interacting(idiodevss_2kv_b_.extents.interacting(idiodevss_2kv_e, 2, 2))
+idiodevss_4kv_c = idiodevss_2kv_c_.interacting(idiodevss_2kv_c_.extents.interacting(idiodevss_4kv_b, 1, 1))
+idiodevss_4kv_e = idiodevss_4kv_b.extents.sized(-0.15.um)
