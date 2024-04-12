@@ -38,3 +38,7 @@ class Text(Shape):
         # TODO
         pass
 
+    def setDrafting(self, drafting):
+        # TODO
+        pass
+

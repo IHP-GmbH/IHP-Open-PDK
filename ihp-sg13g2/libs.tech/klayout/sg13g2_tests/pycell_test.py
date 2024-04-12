@@ -29,13 +29,16 @@ ly = pya.Layout()
 
 pcellNmos = ly.create_cell("nmos", "IHP PyCells", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellPmos = ly.create_cell("pmos", "IHP PyCells", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
-pcellCmim = ly.create_cell("cmim", "IHP PyCells", { "l": "0.350e-6", "w": "6e-6"})
+pcellCmim = ly.create_cell("cmim", "IHP PyCells", {})
+pcellNpn13G2Base = ly.create_cell("npn13G2_base", "IHP PyCells", {})
+
 #pcell = ly.create_cell("rsil", "IHP PyCells", { "l": "3e-6", "w": "6e-6", "b": 1, "ps": "1e-6", "R": "1e-6"})
 
 top = ly.create_cell("TOP")
 top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(3, 0))))
-top.insert(pya.DCellInstArray(pcellCmim, pya.DTrans(pya.DVector(0, 3))))
+top.insert(pya.DCellInstArray(pcellCmim, pya.DTrans(pya.DVector(3, 3))))
+top.insert(pya.DCellInstArray(pcellNpn13G2Base, pya.DTrans(pya.DVector(0, 6))))
 
 output = "ihp-pycells.gds"
 ly.write(output)

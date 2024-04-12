@@ -1,0 +1,844 @@
+* sg13g2_io
+
+* sg13g2_io_tie
+.subckt sg13g2_io_tie vdd vss
+
+.ends sg13g2_io_tie
+
+* sg13g2_io_inv_x1
+.subckt sg13g2_io_inv_x1 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=0.13um w=3.93um
+Xpmos vdd i nq vdd sg13_lv_pmos l=0.13um w=4.41um
+.ends sg13g2_io_inv_x1
+
+* sg13g2_io_nor2_x1
+.subckt sg13g2_io_nor2_x1 vdd vss nq i0 i1
+Xi0_nmos vss i0 nq vss sg13_lv_nmos l=0.13um w=3.93um
+Xi0_pmos vdd i0 _net0 vdd sg13_lv_pmos l=0.13um w=4.41um
+Xi1_nmos nq i1 vss vss sg13_lv_nmos l=0.13um w=3.93um
+Xi1_pmos _net0 i1 nq vdd sg13_lv_pmos l=0.13um w=4.41um
+.ends sg13g2_io_nor2_x1
+
+* sg13g2_LevelUp
+.subckt sg13g2_LevelUp vdd iovdd vss i o
+Xn_i_inv i_n i vss vss sg13_lv_nmos l=0.13um w=2.75um
+Xp_i_inv i_n i vdd vdd sg13_lv_pmos l=0.13um w=4.75um
+Xn_lvld_n vss i lvld_n vss sg13_hv_nmos l=0.45um w=1.9um
+Xn_lvld lvld i_n vss vss sg13_hv_nmos l=0.45um w=1.9um
+Xp_lvld_n iovdd lvld lvld_n iovdd sg13_hv_pmos l=0.45um w=0.3um
+Xp_lvld lvld lvld_n iovdd iovdd sg13_hv_pmos l=0.45um w=0.3um
+Xn_lvld_n_inv vss lvld_n o vss sg13_hv_nmos l=0.45um w=1.9um
+Xp_lvld_n_inv iovdd lvld_n o iovdd sg13_hv_pmos l=0.45um w=3.9um
+.ends sg13g2_LevelUp
+
+* sg13g2_io_nand2_x1
+.subckt sg13g2_io_nand2_x1 vdd vss nq i0 i1
+Xi0_nmos vss i0 _net0 vss sg13_lv_nmos l=0.13um w=3.93um
+Xi0_pmos vdd i0 nq vdd sg13_lv_pmos l=0.13um w=4.41um
+Xi1_nmos _net0 i1 nq vss sg13_lv_nmos l=0.13um w=3.93um
+Xi1_pmos nq i1 vdd vdd sg13_lv_pmos l=0.13um w=4.41um
+.ends sg13g2_io_nand2_x1
+
+* sg13g2_GateDecode
+.subckt sg13g2_GateDecode vdd vss iovdd core en ngate pgate
+Xtieinst vdd vss sg13g2_io_tie
+Xen_inv vdd vss en en_n sg13g2_io_inv_x1
+Xngate_nor vdd vss ngate_core core en_n sg13g2_io_nor2_x1
+Xngate_levelup vdd iovdd vss ngate_core ngate sg13g2_LevelUp
+Xpgate_nand vdd vss pgate_core core en sg13g2_io_nand2_x1
+Xpgate_levelup vdd iovdd vss pgate_core pgate sg13g2_LevelUp
+.ends sg13g2_GateDecode
+
+* sg13g2_GuardRing_P576W948HFF
+.subckt sg13g2_GuardRing_P576W948HFF conn
+
+.ends sg13g2_GuardRing_P576W948HFF
+
+* sg13g2_GuardRing_P456W948HFF
+.subckt sg13g2_GuardRing_P456W948HFF conn
+
+.ends sg13g2_GuardRing_P456W948HFF
+
+* sg13g2_GuardRing_N1324W456HTF
+.subckt sg13g2_GuardRing_N1324W456HTF conn
+
+.ends sg13g2_GuardRing_N1324W456HTF
+
+* sg13g2_SecondaryProtection
+.subckt sg13g2_SecondaryProtection iovdd iovss pad core
+XR pad core rppd l=2.0um w=1.0um
+Xguard1 iovss sg13g2_GuardRing_P576W948HFF
+XDN iovss core dantenna l=3.1um w=0.64um
+Xguard2 iovss sg13g2_GuardRing_P456W948HFF
+XDP core iovdd dpantenna l=0.64um w=4.98um
+Xguard3 iovdd sg13g2_GuardRing_N1324W456HTF
+.ends sg13g2_SecondaryProtection
+
+* sg13g2_LevelDown
+.subckt sg13g2_LevelDown vdd vss iovdd iovss pad core
+Xn_hvinv vss padres padres_n vss sg13_hv_nmos l=0.45um w=2.65um
+Xp_hvinv vdd padres padres_n vdd sg13_hv_pmos l=0.45um w=4.65um
+Xn_lvinv core padres_n vss vss sg13_lv_nmos l=0.13um w=2.75um
+Xp_lvinv core padres_n vdd vdd sg13_lv_pmos l=0.13um w=4.75um
+Xsecondprot iovdd iovss pad padres sg13g2_SecondaryProtection
+.ends sg13g2_LevelDown
+
+* sg13g2_Corner
+.subckt sg13g2_Corner vss vdd iovss iovdd
+
+.ends sg13g2_Corner
+
+* sg13g2_Filler200
+.subckt sg13g2_Filler200 vss vdd iovss iovdd
+
+.ends sg13g2_Filler200
+
+* sg13g2_Filler400
+.subckt sg13g2_Filler400 vss vdd iovss iovdd
+
+.ends sg13g2_Filler400
+
+* sg13g2_Filler1000
+.subckt sg13g2_Filler1000 vss vdd iovss iovdd
+
+.ends sg13g2_Filler1000
+
+* sg13g2_Filler2000
+.subckt sg13g2_Filler2000 vss vdd iovss iovdd
+
+.ends sg13g2_Filler2000
+
+* sg13g2_Filler4000
+.subckt sg13g2_Filler4000 vss vdd iovss iovdd
+
+.ends sg13g2_Filler4000
+
+* sg13g2_Filler10000
+.subckt sg13g2_Filler10000 vss vdd iovss iovdd
+
+.ends sg13g2_Filler10000
+
+* sg13g2_GuardRing_N7276W2716HFF
+.subckt sg13g2_GuardRing_N7276W2716HFF conn
+
+.ends sg13g2_GuardRing_N7276W2716HFF
+
+* sg13g2_DCNDiode
+.subckt sg13g2_DCNDiode anode cathode guard
+Xdcdiode[0] anode cathode dantenna l=1.26um w=27.78um
+Xdcdiode[1] anode cathode dantenna l=1.26um w=27.78um
+Xguard guard sg13g2_GuardRing_N7276W2716HFF
+.ends sg13g2_DCNDiode
+
+* sg13g2_GuardRing_P7276W2716HFF
+.subckt sg13g2_GuardRing_P7276W2716HFF conn
+
+.ends sg13g2_GuardRing_P7276W2716HFF
+
+* sg13g2_DCPDiode
+.subckt sg13g2_DCPDiode anode cathode guard
+Xdcdiode[0] anode cathode dpantenna l=1.26um w=27.78um
+Xdcdiode[1] anode cathode dpantenna l=1.26um w=27.78um
+Xguard guard sg13g2_GuardRing_P7276W2716HFF
+.ends sg13g2_DCPDiode
+
+* sg13g2_IOPadVss
+.subckt sg13g2_IOPadVss vss vdd iovss iovdd
+Xdcndiode iovss vss iovdd sg13g2_DCNDiode
+Xdcpdiode vss iovdd iovss sg13g2_DCPDiode
+.ends sg13g2_IOPadVss
+
+* sg13g2_GuardRing_N16000W4884HFF
+.subckt sg13g2_GuardRing_N16000W4884HFF conn
+
+.ends sg13g2_GuardRing_N16000W4884HFF
+
+* sg13g2_GuardRing_P15280W4164HFF
+.subckt sg13g2_GuardRing_P15280W4164HFF conn
+
+.ends sg13g2_GuardRing_P15280W4164HFF
+
+* sg13g2_Clamp_N43N43D4R
+.subckt sg13g2_Clamp_N43N43D4R iovss iovdd pad gate
+Xclamp_g0_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g0_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g0_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g0_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g15_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g15_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g15_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g15_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g16_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g16_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g16_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g16_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g17_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g17_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g17_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g17_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g18_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g18_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g18_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g18_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g19_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g19_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g19_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g19_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g20_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g20_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g20_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g20_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g21_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g21_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g21_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g21_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g22_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g22_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g22_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g22_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g23_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g23_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g23_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g23_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g24_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g24_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g24_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g24_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g25_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g25_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g25_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g25_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g26_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g26_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g26_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g26_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g27_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g27_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g27_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g27_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g28_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g28_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g28_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g28_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g29_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g29_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g29_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g29_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g30_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g30_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g30_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g30_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g31_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g31_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g31_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g31_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g32_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g32_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g32_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g32_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g33_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g33_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g33_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g33_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g34_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g34_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g34_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g34_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g35_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g35_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g35_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g35_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g36_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g36_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g36_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g36_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g37_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g37_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g37_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g37_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g38_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g38_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g38_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g38_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g39_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g39_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g39_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g39_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g40_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g40_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g40_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g40_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g41_r0 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g41_r1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g41_r2 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g41_r3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g42_r0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g42_r1 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g42_r2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g42_r3 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+XOuterRing iovdd sg13g2_GuardRing_N16000W4884HFF
+XInnerRing iovss sg13g2_GuardRing_P15280W4164HFF
+XDGATE iovss gate dantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_N43N43D4R
+
+* sg13g2_RCClampResistor
+.subckt sg13g2_RCClampResistor pin1 pin2
+Xres_fing[0] pin1 conn_0_1 rppd l=20.0um w=1.0um
+Xres_fing[1] conn_0_1 conn_1_2 rppd l=20.0um w=1.0um
+Xres_fing[2] conn_1_2 conn_2_3 rppd l=20.0um w=1.0um
+Xres_fing[3] conn_2_3 conn_3_4 rppd l=20.0um w=1.0um
+Xres_fing[4] conn_3_4 conn_4_5 rppd l=20.0um w=1.0um
+Xres_fing[5] conn_4_5 conn_5_6 rppd l=20.0um w=1.0um
+Xres_fing[6] conn_5_6 conn_6_7 rppd l=20.0um w=1.0um
+Xres_fing[7] conn_6_7 conn_7_8 rppd l=20.0um w=1.0um
+Xres_fing[8] conn_7_8 conn_8_9 rppd l=20.0um w=1.0um
+Xres_fing[9] conn_8_9 conn_9_10 rppd l=20.0um w=1.0um
+Xres_fing[10] conn_9_10 conn_10_11 rppd l=20.0um w=1.0um
+Xres_fing[11] conn_10_11 conn_11_12 rppd l=20.0um w=1.0um
+Xres_fing[12] conn_11_12 conn_12_13 rppd l=20.0um w=1.0um
+Xres_fing[13] conn_12_13 conn_13_14 rppd l=20.0um w=1.0um
+Xres_fing[14] conn_13_14 conn_14_15 rppd l=20.0um w=1.0um
+Xres_fing[15] conn_14_15 conn_15_16 rppd l=20.0um w=1.0um
+Xres_fing[16] conn_15_16 conn_16_17 rppd l=20.0um w=1.0um
+Xres_fing[17] conn_16_17 conn_17_18 rppd l=20.0um w=1.0um
+Xres_fing[18] conn_17_18 conn_18_19 rppd l=20.0um w=1.0um
+Xres_fing[19] conn_18_19 conn_19_20 rppd l=20.0um w=1.0um
+Xres_fing[20] conn_19_20 conn_20_21 rppd l=20.0um w=1.0um
+Xres_fing[21] conn_20_21 conn_21_22 rppd l=20.0um w=1.0um
+Xres_fing[22] conn_21_22 conn_22_23 rppd l=20.0um w=1.0um
+Xres_fing[23] conn_22_23 conn_23_24 rppd l=20.0um w=1.0um
+Xres_fing[24] conn_23_24 conn_24_25 rppd l=20.0um w=1.0um
+Xres_fing[25] conn_24_25 pin2 rppd l=20.0um w=1.0um
+.ends sg13g2_RCClampResistor
+
+* sg13g2_GuardRing_P16000W4466HFT
+.subckt sg13g2_GuardRing_P16000W4466HFT conn
+
+.ends sg13g2_GuardRing_P16000W4466HFT
+
+* sg13g2_GuardRing_N9472W2216HTT
+.subckt sg13g2_GuardRing_N9472W2216HTT conn
+
+.ends sg13g2_GuardRing_N9472W2216HTT
+
+* sg13g2_RCClampInverter
+.subckt sg13g2_RCClampInverter supply ground in out
+Xcapmos0_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos1_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos2_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos3_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos4_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos5_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos6_r0 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xnmos0_r0 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos1_r0 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos2_r0 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos3_r0 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos4_r0 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos5_r0 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xcapmos0_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos1_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos2_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos3_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos4_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos5_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xcapmos6_r1 ground in ground ground sg13_hv_nmos l=9.5um w=9.0um
+Xnmos0_r1 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos1_r1 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos2_r1 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos3_r1 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos4_r1 ground in out ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmos5_r1 out in ground ground sg13_hv_nmos l=0.5um w=9.0um
+Xnmosguardring ground sg13g2_GuardRing_P16000W4466HFT
+Xpmos0_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos1_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos2_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos3_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos4_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos5_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos6_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos7_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos8_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos9_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos10_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos11_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos12_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos13_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos14_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos15_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos16_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos17_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos18_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos19_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos20_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos21_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos22_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos23_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos24_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos25_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos26_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos27_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos28_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos29_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos30_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos31_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos32_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos33_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos34_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos35_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos36_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos37_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos38_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos39_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos40_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos41_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos42_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos43_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos44_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos45_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos46_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos47_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos48_r0 supply in out supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmos49_r0 out in supply supply sg13_hv_pmos l=0.5um w=7.0um
+Xpmosguardring supply sg13g2_GuardRing_N9472W2216HTT
+.ends sg13g2_RCClampInverter
+
+* sg13g2_IOPadVdd
+.subckt sg13g2_IOPadVdd vss vdd iovss iovdd
+Xnclamp iovss iovdd vdd ngate sg13g2_Clamp_N43N43D4R
+Xrcres vdd res_cap sg13g2_RCClampResistor
+Xrcinv vdd iovss res_cap ngate sg13g2_RCClampInverter
+Xdcndiode iovss vdd iovdd sg13g2_DCNDiode
+Xdcpdiode vdd iovdd iovss sg13g2_DCPDiode
+.ends sg13g2_IOPadVdd
+
+* sg13g2_IOPadIn
+.subckt sg13g2_IOPadIn vss vdd iovss iovdd p2c pad
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xleveldown vdd vss iovdd iovss pad p2c sg13g2_LevelDown
+.ends sg13g2_IOPadIn
+
+* sg13g2_GuardRing_N16000W1980HFF
+.subckt sg13g2_GuardRing_N16000W1980HFF conn
+
+.ends sg13g2_GuardRing_N16000W1980HFF
+
+* sg13g2_GuardRing_P15280W1260HFF
+.subckt sg13g2_GuardRing_P15280W1260HFF conn
+
+.ends sg13g2_GuardRing_P15280W1260HFF
+
+* sg13g2_Clamp_N2N2D
+.subckt sg13g2_Clamp_N2N2D iovss iovdd pad gate
+Xclamp_g0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+XOuterRing iovdd sg13g2_GuardRing_N16000W1980HFF
+XInnerRing iovss sg13g2_GuardRing_P15280W1260HFF
+XDGATE iovss gate dantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_N2N2D
+
+* sg13g2_GuardRing_P16000W3852HFF
+.subckt sg13g2_GuardRing_P16000W3852HFF conn
+
+.ends sg13g2_GuardRing_P16000W3852HFF
+
+* sg13g2_GuardRing_N15280W3132HTF
+.subckt sg13g2_GuardRing_N15280W3132HTF conn
+
+.ends sg13g2_GuardRing_N15280W3132HTF
+
+* sg13g2_Clamp_P2N2D
+.subckt sg13g2_Clamp_P2N2D iovss iovdd pad gate
+Xclamp_g0_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g0_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+XOuterRing iovss sg13g2_GuardRing_P16000W3852HFF
+XInnerRing iovdd sg13g2_GuardRing_N15280W3132HTF
+XDGATE gate iovdd dpantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_P2N2D
+
+* sg13g2_LevelUpInv
+.subckt sg13g2_LevelUpInv vdd iovdd vss i o
+Xn_i_inv i_n i vss vss sg13_lv_nmos l=0.13um w=2.75um
+Xp_i_inv i_n i vdd vdd sg13_lv_pmos l=0.13um w=4.75um
+Xn_lvld_n vss i_n lvld_n vss sg13_hv_nmos l=0.45um w=1.9um
+Xn_lvld lvld i vss vss sg13_hv_nmos l=0.45um w=1.9um
+Xp_lvld_n iovdd lvld lvld_n iovdd sg13_hv_pmos l=0.45um w=0.3um
+Xp_lvld lvld lvld_n iovdd iovdd sg13_hv_pmos l=0.45um w=0.3um
+Xn_lvld_n_inv vss lvld_n o vss sg13_hv_nmos l=0.45um w=1.9um
+Xp_lvld_n_inv iovdd lvld_n o iovdd sg13_hv_pmos l=0.45um w=3.9um
+.ends sg13g2_LevelUpInv
+
+* sg13g2_GateLevelUpInv
+.subckt sg13g2_GateLevelUpInv vdd vss iovdd core ngate pgate
+Xngate_levelup vdd iovdd vss core ngate sg13g2_LevelUpInv
+Xpgate_levelup vdd iovdd vss core pgate sg13g2_LevelUpInv
+.ends sg13g2_GateLevelUpInv
+
+* sg13g2_IOPadOut4mA
+.subckt sg13g2_IOPadOut4mA vss vdd iovss iovdd c2p pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N2N2D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P2N2D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatelu vdd vss iovdd c2p ngate pgate sg13g2_GateLevelUpInv
+.ends sg13g2_IOPadOut4mA
+
+* sg13g2_Clamp_N8N8D
+.subckt sg13g2_Clamp_N8N8D iovss iovdd pad gate
+Xclamp_g0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+XOuterRing iovdd sg13g2_GuardRing_N16000W1980HFF
+XInnerRing iovss sg13g2_GuardRing_P15280W1260HFF
+XDGATE iovss gate dantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_N8N8D
+
+* sg13g2_Clamp_P8N8D
+.subckt sg13g2_Clamp_P8N8D iovss iovdd pad gate
+Xclamp_g0_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g0_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+XOuterRing iovss sg13g2_GuardRing_P16000W3852HFF
+XInnerRing iovdd sg13g2_GuardRing_N15280W3132HTF
+XDGATE gate iovdd dpantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_P8N8D
+
+* sg13g2_IOPadOut16mA
+.subckt sg13g2_IOPadOut16mA vss vdd iovss iovdd c2p pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N8N8D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P8N8D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatelu vdd vss iovdd c2p ngate pgate sg13g2_GateLevelUpInv
+.ends sg13g2_IOPadOut16mA
+
+* sg13g2_Clamp_N15N15D
+.subckt sg13g2_Clamp_N15N15D iovss iovdd pad gate
+Xclamp_g0 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13 pad gate iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14 iovss gate pad iovss sg13_hv_nmos l=0.6um w=4.4um
+XOuterRing iovdd sg13g2_GuardRing_N16000W1980HFF
+XInnerRing iovss sg13g2_GuardRing_P15280W1260HFF
+XDGATE iovss gate dantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_N15N15D
+
+* sg13g2_Clamp_P15N15D
+.subckt sg13g2_Clamp_P15N15D iovss iovdd pad gate
+Xclamp_g0_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g0_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g8_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g8_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g9_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g9_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g10_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g10_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g11_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g11_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g12_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g12_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g13_r0 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g13_r1 pad gate iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g14_r0 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g14_r1 iovdd gate pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+XOuterRing iovss sg13g2_GuardRing_P16000W3852HFF
+XInnerRing iovdd sg13g2_GuardRing_N15280W3132HTF
+XDGATE gate iovdd dpantenna l=0.64um w=0.3um
+.ends sg13g2_Clamp_P15N15D
+
+* sg13g2_IOPadOut30mA
+.subckt sg13g2_IOPadOut30mA vss vdd iovss iovdd c2p pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N15N15D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P15N15D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatelu vdd vss iovdd c2p ngate pgate sg13g2_GateLevelUpInv
+.ends sg13g2_IOPadOut30mA
+
+* sg13g2_IOPadTriOut4mA
+.subckt sg13g2_IOPadTriOut4mA vss vdd iovss iovdd c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N2N2D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P2N2D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+.ends sg13g2_IOPadTriOut4mA
+
+* sg13g2_IOPadTriOut16mA
+.subckt sg13g2_IOPadTriOut16mA vss vdd iovss iovdd c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N8N8D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P8N8D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+.ends sg13g2_IOPadTriOut16mA
+
+* sg13g2_IOPadTriOut30mA
+.subckt sg13g2_IOPadTriOut30mA vss vdd iovss iovdd c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N15N15D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P15N15D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+.ends sg13g2_IOPadTriOut30mA
+
+* sg13g2_IOPadInOut4mA
+.subckt sg13g2_IOPadInOut4mA vss vdd iovss iovdd p2c c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N2N2D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P2N2D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+Xleveldown vdd vss iovdd iovss pad p2c sg13g2_LevelDown
+.ends sg13g2_IOPadInOut4mA
+
+* sg13g2_IOPadInOut16mA
+.subckt sg13g2_IOPadInOut16mA vss vdd iovss iovdd p2c c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N8N8D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P8N8D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+Xleveldown vdd vss iovdd iovss pad p2c sg13g2_LevelDown
+.ends sg13g2_IOPadInOut16mA
+
+* sg13g2_IOPadInOut30mA
+.subckt sg13g2_IOPadInOut30mA vss vdd iovss iovdd p2c c2p c2p_en pad
+Xnclamp iovss iovdd pad ngate sg13g2_Clamp_N15N15D
+Xpclamp iovss iovdd pad pgate sg13g2_Clamp_P15N15D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xgatedec vdd vss iovdd c2p c2p_en ngate pgate sg13g2_GateDecode
+Xleveldown vdd vss iovdd iovss pad p2c sg13g2_LevelDown
+.ends sg13g2_IOPadInOut30mA
+
+* sg13g2_IOPadIOVss
+.subckt sg13g2_IOPadIOVss vss vdd iovss iovdd
+Xdcndiode iovss iovss iovdd sg13g2_DCNDiode
+Xdcpdiode iovss iovdd iovss sg13g2_DCPDiode
+.ends sg13g2_IOPadIOVss
+
+* sg13g2_GuardRing_N16000W6624HFF
+.subckt sg13g2_GuardRing_N16000W6624HFF conn
+
+.ends sg13g2_GuardRing_N16000W6624HFF
+
+* sg13g2_IOPadIOVdd
+.subckt sg13g2_IOPadIOVdd vss vdd iovss iovdd
+Xnclamp iovss iovdd iovdd ngate sg13g2_Clamp_N43N43D4R
+Xrcres iovdd res_cap sg13g2_RCClampResistor
+Xrcinv iovdd iovss res_cap ngate sg13g2_RCClampInverter
+Xpad_guard iovss sg13g2_GuardRing_N16000W6624HFF
+.ends sg13g2_IOPadIOVdd
+
+* sg13g2_Clamp_N20N0D
+.subckt sg13g2_Clamp_N20N0D iovss iovdd pad
+Xclamp_g0 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g1 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g2 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g3 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g4 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g5 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g6 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g7 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g8 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g9 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g10 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g11 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g12 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g13 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g14 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g15 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g16 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g17 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g18 iovss off pad iovss sg13_hv_nmos l=0.6um w=4.4um
+Xclamp_g19 pad off iovss iovss sg13_hv_nmos l=0.6um w=4.4um
+XOuterRing iovdd sg13g2_GuardRing_N16000W1980HFF
+XInnerRing iovss sg13g2_GuardRing_P15280W1260HFF
+XRoff iovss off rppd l=3.54um w=0.5um
+.ends sg13g2_Clamp_N20N0D
+
+* sg13g2_Clamp_P20N0D
+.subckt sg13g2_Clamp_P20N0D iovss iovdd pad
+Xclamp_g0_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g0_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g1_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g2_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g3_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g4_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g5_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g6_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g7_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g8_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g8_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g9_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g9_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g10_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g10_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g11_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g11_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g12_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g12_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g13_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g13_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g14_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g14_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g15_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g15_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g16_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g16_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g17_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g17_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g18_r0 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g18_r1 iovdd off pad iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g19_r0 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+Xclamp_g19_r1 pad off iovdd iovdd sg13_hv_pmos l=0.6um w=6.66um
+XOuterRing iovss sg13g2_GuardRing_P16000W3852HFF
+XInnerRing iovdd sg13g2_GuardRing_N15280W3132HTF
+XRoff iovdd off rppd l=12.9um w=0.5um
+.ends sg13g2_Clamp_P20N0D
+
+* sg13g2_IOPadAnalog
+.subckt sg13g2_IOPadAnalog vss vdd iovss iovdd pad padres
+Xnclamp iovss iovdd pad sg13g2_Clamp_N20N0D
+Xpclamp iovss iovdd pad sg13g2_Clamp_P20N0D
+Xdcndiode iovss pad iovdd sg13g2_DCNDiode
+Xdcpdiode pad iovdd iovss sg13g2_DCPDiode
+Xsecondprot iovdd iovss pad padres sg13g2_SecondaryProtection
+.ends sg13g2_IOPadAnalog
+
+* sg13g2_Gallery
+.subckt sg13g2_Gallery vdd vss iovdd iopadin_pad iopadout4ma_pad iopadout16ma_pad iopadout30ma_pad iopadtriout4ma_pad iopadtriout16ma_pad iopadtriout30ma_pad iopadinout4ma_pad iopadinout16ma_pad iopadinout30ma_pad iopadin_p2c iopadinout4ma_p2c iopadinout16ma_p2c iopadinout30ma_p2c iopadout4ma_c2p iopadout16ma_c2p iopadout30ma_c2p iopadtriout4ma_c2p iopadtriout16ma_c2p iopadtriout30ma_c2p iopadinout4ma_c2p iopadinout16ma_c2p iopadinout30ma_c2p iopadtriout4ma_c2p_en iopadtriout16ma_c2p_en iopadtriout30ma_c2p_en iopadinout4ma_c2p_en iopadinout16ma_c2p_en iopadinout30ma_c2p_en ana_out ana_outres
+Xcorner vss vdd vss iovdd sg13g2_Corner
+Xfiller200 vss vdd vss iovdd sg13g2_Filler200
+Xfiller400 vss vdd vss iovdd sg13g2_Filler400
+Xfiller1000 vss vdd vss iovdd sg13g2_Filler1000
+Xfiller2000 vss vdd vss iovdd sg13g2_Filler2000
+Xfiller4000 vss vdd vss iovdd sg13g2_Filler4000
+Xfiller10000 vss vdd vss iovdd sg13g2_Filler10000
+Xiopadvss vss vdd vss iovdd sg13g2_IOPadVss
+Xiopadvdd vss vdd vss iovdd sg13g2_IOPadVdd
+Xiopadin vss vdd vss iovdd iopadin_p2c iopadin_pad sg13g2_IOPadIn
+Xiopadout4ma vss vdd vss iovdd iopadout4ma_c2p iopadout4ma_pad sg13g2_IOPadOut4mA
+Xiopadout16ma vss vdd vss iovdd iopadout16ma_c2p iopadout16ma_pad sg13g2_IOPadOut16mA
+Xiopadout30ma vss vdd vss iovdd iopadout30ma_c2p iopadout30ma_pad sg13g2_IOPadOut30mA
+Xiopadtriout4ma vss vdd vss iovdd iopadtriout4ma_c2p iopadtriout4ma_c2p_en iopadtriout4ma_pad sg13g2_IOPadTriOut4mA
+Xiopadtriout16ma vss vdd vss iovdd iopadtriout16ma_c2p iopadtriout16ma_c2p_en iopadtriout16ma_pad sg13g2_IOPadTriOut16mA
+Xiopadtriout30ma vss vdd vss iovdd iopadtriout30ma_c2p iopadtriout30ma_c2p_en iopadtriout30ma_pad sg13g2_IOPadTriOut30mA
+Xiopadinout4ma vss vdd vss iovdd iopadinout4ma_p2c iopadinout4ma_c2p iopadinout4ma_c2p_en iopadinout4ma_pad sg13g2_IOPadInOut4mA
+Xiopadinout16ma vss vdd vss iovdd iopadinout16ma_p2c iopadinout16ma_c2p iopadinout16ma_c2p_en iopadinout16ma_pad sg13g2_IOPadInOut16mA
+Xiopadinout30ma vss vdd vss iovdd iopadinout30ma_p2c iopadinout30ma_c2p iopadinout30ma_c2p_en iopadinout30ma_pad sg13g2_IOPadInOut30mA
+Xiopadiovss vss vdd vss iovdd sg13g2_IOPadIOVss
+Xiopadiovdd vss vdd vss iovdd sg13g2_IOPadIOVdd
+Xiopadanalog vss vdd vss iovdd ana_out ana_outres sg13g2_IOPadAnalog
+Xcorner2 vss vdd vss iovdd sg13g2_Corner
+.ends sg13g2_Gallery
