@@ -38,7 +38,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'R'
       super("#{line} R=0", element)
     when 'D'
-      if line.downcase.include?('diodev')
+      if line.downcase.include?('diodev') || line.downcase.include?('schottky') 
         super("#{line}", 'Q')
       else
         super("#{line}", element)
@@ -56,7 +56,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Override the element method to handle different types of elements
   def element(circuit, ele, name, model, value, nets, params)
-    if CUSTOM_READER.include?(ele) && !(ele == 'D' && !model.downcase.include?('diodev'))
+    if CUSTOM_READER.include?(ele)
       process_device(ele, circuit, name, model, nets, params)
     else
       super
@@ -89,7 +89,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
           when 'L' then DeviceCustomInd.new(model, num_nets-1)
-          when 'D' then  RBA::DeviceClassBJT3Transistor.new
+          when 'D' then  create_diode(model)
           else
             return super
           end
@@ -106,6 +106,17 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       return nil
     end
     RBA::DeviceClassCapacitor.new
+  end
+
+  # Create a diode device class.
+  def create_diode(model)
+    if model.downcase.include?('diodev') || model.downcase.include?('schottky') 
+      Esd3Term.new
+    elsif model.downcase.include?('nmoscl')
+      Esd2Term.new
+    else
+      RBA::DeviceClassDiode.new
+    end
   end
 
   # Create a resistor device class.
@@ -173,7 +184,11 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
     when 'D'
-        %w[C B E]
+      if model.downcase.include?('diodev') || model.downcase.include?('schottky')
+         %w[C B E] 
+      else 
+        %w[A C]
+      end
     when 'L'
       gen_term_names_with_sub(model, nets.size)
     else
@@ -207,7 +222,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'R'
       map_resistor_params(device, model, params)
     when 'D'
-      device.set_parameter('NE', params['M'] || 1.0)
+      map_diode_params(device, model, params)
     when 'L'
       map_inductor_params(device, params)
     else
@@ -225,6 +240,16 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('AE', ((params['WE'] || 0.0) * (params['LE'] || 1.0)) * (params['M'] || 1.0) * 1e12)
       device.set_parameter('PE', ((params['WE'] || 0.0) + (params['LE'] || 1.0)) * (params['M'] || 1.0) * 2e6)
       device.set_parameter('NE', params['M'] || 1.0)
+    end
+  end
+
+  # Map parameters for a diode device.
+  def map_diode_params(device, model, params)
+    if model.downcase.include?('diodev') || model.downcase.include?('schottky') || model.downcase.include?('nmoscl')
+      device.set_parameter('m', params['M'] || 1.0)
+    else
+    device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
+    device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
     end
   end
 
@@ -298,8 +323,8 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
   def generate_device_parameters(device, device_class)
     if device_class.name.start_with?('res')
       generate_parameters(device, 'w', 'l', 'b', 'ps')
-    elsif device_class.name.start_with?('diodev')
-      generate_parameters(device, 'NE')
+    elsif device_class.name.start_with?('diodev') || device_class.name.start_with?('nmoscl') || device_class.name.start_with?('schottky')
+      generate_parameters(device, 'm')
     elsif device_class.name.start_with?('ind')
       generate_parameters(device, 'w', 's', 'd', 'nr_r')
     else
@@ -354,12 +379,32 @@ class MIMCap < RBA::DeviceClassCapacitor
   end
 end
 
-# MIMCAP device class
-class Diode2 < RBA::DeviceClassDiode
+# Diode device class
+class EnDiode < RBA::DeviceClassDiode
   def initialize
     super
     enable_parameter('A', true)
     enable_parameter('P', true)
+  end
+end
+
+# Diode device class
+class Esd3Term < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
+  end
+end
+
+# Diode device class
+class Esd2Term < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
   end
 end
 

@@ -23,11 +23,18 @@ logger.info('Starting DIODE EXTRACTION')
 
 # dantenna diode
 logger.info('Extracting dantenna diode')
-extract_devices(diode('dantenna', Diode2), { 'N' => dantenna_n, 'P' => dantenna_p })
+extract_devices(diode('dantenna', EnDiode), { 'N' => dantenna_n, 'P' => dantenna_p })
 
 # dpantenna diode
 logger.info('Extracting dpantenna diode')
-extract_devices(diode('dpantenna', Diode2), { 'N' => dpantenna_n, 'P' => dpantenna_p })
+extract_devices(diode('dpantenna', EnDiode), { 'N' => dpantenna_n, 'P' => dpantenna_p })
 
 # schottky_nbl1 diode
 logger.info('Extracting schottky_nbl1 diode')
+extract_devices(bjt3('schottky_nbl1', Esd3Term), { 'C' => schottcky_sub,
+                                           'B' => schottcky_n.extents,
+                                           'E' => schottcky_p_1x1,
+                                           'tC' => ptap,
+                                           'tB' => schottcky_n,
+                                           'tE' => schottcky_p_1x1,
+                                        })

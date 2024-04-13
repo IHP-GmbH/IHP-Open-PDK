@@ -129,15 +129,19 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     ports = layers[1]
     meas_mk = layers[2]
     dev_mk = layers[3]
-    sub_mk = layers[4]
 
     conn = RBA::Connectivity.new
     conn.connect(dev, dev)
     conn.connect(dev, dev_mk)
     conn.connect(dev, meas_mk)
     conn.connect(ports, dev_mk)
-    conn.connect(sub_mk, dev_mk)
     conn.connect(meas_mk, dev_mk)
+
+    # Sub connection for ind
+    if name.downcase.include?('ind')
+      sub_mk = layers[4]
+      conn.connect(sub_mk, dev_mk)
+    end
 
     conn
   end
@@ -148,8 +152,8 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Args:
     #   layer_geometry (Array): Array of layer geometries.
     dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
-    meas_regions = dev_mk.merged
-    meas_regions.each do |region|
+
+    dev_mk.merged.each do |region|
       if ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
         $logger.info("No. of ports exist for #{@name} is #{ports.size}, should be #{@num}")
