@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -37,7 +39,7 @@ psd = psd_drw
 nsd_res = nsd_drw.and(psd).interacting(polyres_drw)
 # nsd_all = CHIP.not(psd.join(nsd_block))
 
-# n & p activ 
+# n & p activ
 nactiv  = activ_drw.not(psd.join(nsd_block))
 pactiv  = activ_drw.and(psd)
 
@@ -64,5 +66,5 @@ nsd_fet = nactiv.outside(nwell_n_iso).interacting(ngate).not(ngate).not(res_mk)
 psd_fet = pactiv.and(nwell_n_iso).interacting(pgate).not(pgate).not(res_mk)
 
 # n & p taps (short connections)
-ntap = nactiv.and(nwell_n_iso).not(res_mk).not(recog_diode)
-ptap = pactiv.and(pwell).not(substrate_drw).not(res_mk).not(recog_diode)
+ntap = nactiv.and(nwell_n_iso).not(res_mk).not(recog_diode).not(gatpoly_drw)
+ptap = pactiv.and(pwell).not(substrate_drw).not(res_mk).not(recog_diode).not(gatpoly_drw)

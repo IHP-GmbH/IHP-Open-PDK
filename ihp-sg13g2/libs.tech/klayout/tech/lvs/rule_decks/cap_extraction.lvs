@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -22,7 +24,17 @@
 # === cap_cmim ===
 logger.info('Starting CAP EXTRACTION')
 
-#[cap_carea = 1.5E-15]
+# [cap_carea = 1.5E-15]
 logger.info('Extracting cap_cmim device')
 extract_devices(capacitor('cap_cmim', 1.5e-15, MIMCap),
                 { 'P1' => mim_btm, 'P2' => mim_top })
+
+# === svaricap ===
+logger.info('Extracting sg13_hv_svaricap varactor')
+extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
+                  'seed' => varicap_core,
+                  'ports' => varicap_ports,
+                  'meas_mk' => nwell_iso.and(thickgateox_drw),
+                  'dev_mk' => varicap_dev_mk,
+                  'sub_mk' => varicap_sub
+                })

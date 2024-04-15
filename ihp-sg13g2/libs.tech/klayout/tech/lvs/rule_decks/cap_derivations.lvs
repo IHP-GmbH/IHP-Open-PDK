@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -28,3 +30,18 @@ mim_top = mim_drw.covering(topmetal1_drw).and(metal5_drw).not(mimcap_exclude)
 mim_btm = metal5_drw.covering(mim_top)
 mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
 topvia1_n_cap = topvia1_drw.not(mim_via)
+
+
+# === svaricap ===
+varicap_exc = heattrans_drw.join(trans_drw).join(heatres_drw)
+                .join(polyres_drw).join(salblock_drw).join(extblock_drw)
+                .join(nsd_drw).join(res_drw).join(recog_diode).join(recog_esd)
+                .join(substrate_drw)
+
+varicap_core = ngate_hv_base.and(nwell_iso).not(varicap_exc)
+varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
+                    .and(nwell_iso).not(varicap_exc).sized(-1.nm)
+varicap_poly_port = gatpoly_drw.interacting(varicap_core)
+varicap_ports = varicap_poly_port.join(varicap_diff_port)
+varicap_sub = ptap.and(thickgateox_drw)
+varicap_dev_mk = thickgateox_drw.covering(varicap_core).interacting(varicap_ports)

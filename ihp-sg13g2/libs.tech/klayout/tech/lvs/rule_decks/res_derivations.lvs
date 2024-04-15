@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -22,15 +24,15 @@
 logger.info('Starting RESISTOR DERIVATIONS')
 
 polyres_exclude = activ_drw.join(nwell_drw).join(thickgateox_drw)
-                    .join(heattrans_drw).join(trans_drw).join(nbulay_drw)
-                    .join(nsd_block).join(recog_diode).join(recog_esd)
+         .join(heattrans_drw).join(trans_drw).join(nbulay_drw)
+         .join(nsd_block).join(recog_diode).join(recog_esd)
 
 # ==============
 # ---- POLY ----
 # ==============
 
 ## polyres
-polyres = polyres_drw.and(heatres_drw).and(extblock_drw).interacting(gatpoly_drw)
+polyres = polyres_drw.and(heatres_drw).and(extblock_drw).interacting(gatpoly_drw).not(polyres_exclude)
 
 ## rhigh
 rhigh_res = polyres.and(psd_drw).and(salblock_drw).and(nsd_drw)
