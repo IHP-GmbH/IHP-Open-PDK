@@ -63,3 +63,15 @@ class PointList(ulist[Point]):
         self = nonColinearList
         return self
 
+    def containsPoint(self, point: Point) -> bool:
+        isInside = False;
+
+        # Jordan point in polygon test
+        for i in range(len(self)):
+            j = (i + 1) % len(self)
+            if self[i].y < point.y and self[j].y >= point.y or self[j].y < point.y and self[i].y >= point.y:
+                if (point.y - self[i].y) * (self[j].x - self[i].x) < (point.x - self[i].x) * (self[j].y - self[i].y):
+                    isInside = not isInside;
+
+        return isInside;
+

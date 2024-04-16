@@ -16,52 +16,42 @@
 #
 ########################################################################
 
-from cni.shape import *
-from cni.box import Box
-from cni.layer import Layer
-from cni.tech import Tech
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from cni.ulist import *
+from cni.namemapper import NameMapper
+from cni.transform import Transform
 
-class Rect(Shape):
+import pya
 
-    def __init__(self, layer: Layer, box: Box):
-        self._box = box
-        self._layer = layer
+class PhysicalComponent(ABC):
 
-        super().__init__(box)
-        shape = Shape.cell.shapes(layer.number).insert(box.box)
-        self.set_shape(shape)
-        self._box.setRect(self)
-
+    @abstractmethod
     def addToRegion(self, region: pya.Region):
-        region.insert(self._box.box.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
+        pass
 
+    @abstractmethod
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
-        return Rect(self._layer, self._box.clone(nameMap, netMap))
+        pass
 
+    def fgOr(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+        components1 = ulist[PhysicalComponent]()
+        components1.append(self)
+
+        components2 = ulist[PhysicalComponent]()
+        components2.append(component)
+
+        import cni.geo
+        return cni.geo.fgOr(components1, components2, resultLayer)
+
+    @abstractmethod
     def destroy(self):
-        self._box.destroy()
+        pass
 
+    @abstractmethod
     def moveBy(self, dx: float, dy: float) -> None:
-        self._box.moveBy(dx, dy)
+        pass
 
-    def toString(self) -> str:
-        return "Rect: {}".format(self._box.box.to_s())
-
+    @abstractmethod
     def transform(self, transform: Transform) -> None:
-        self._box.transform(transform)
-
-    @property
-    def bottom(self):
-        return self._box.bottom
-
-    @property
-    def left(self):
-        return self._box.left
-
-    @property
-    def right(self):
-        return self._box.right
-
-    @property
-    def top(self):
-        return self._box.top
+        pass
