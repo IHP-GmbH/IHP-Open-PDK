@@ -31,7 +31,7 @@ pcellNmos = ly.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng":
 pcellPmos = ly.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellCmim = ly.create_cell("cmim", "SG13_dev", {})
 pcellSealring = ly.create_cell("sealring", "SG13_dev", {})
-#pcellNpn13G2Base = ly.create_cell("npn13G2_base", "SG13_dev", {})
+pcellNpn13G2Base = ly.create_cell("npn13G2_base", "SG13_dev", {})
 #pcellNpn13G2 = ly.create_cell("npn13G2", "SG13_dev", {})
 
 #pcell = ly.create_cell("rsil", "SG13_dev", { "l": "3e-6", "w": "6e-6", "b": 1, "ps": "1e-6", "R": "1e-6"})

@@ -28,7 +28,6 @@ class Box(object):
 
     def __init__(self, l = INT_MAX, b = INT_MAX, r = INT_MIN, t = INT_MIN):
         self.box = pya.DBox(l, b, r, t)
-        self.__shape = None
 
     def abut(dir, refBox, align = True):
         raise Exception("Not implemented yet!")
@@ -192,8 +191,9 @@ class Box(object):
     def moveBy(self, dx: float, dy: float) -> None:
         movedBox = pya.DTrans(dx, dy) * self.box
         import cni.shape
-        self.__rect._shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).replace(self.__rect._shape, movedBox)
+        shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).insert(movedBox)
         self.destroy()
+        self.__rect._shape = shape
         self.box = movedBox
 
     def moveTo(destination, loc = Location.CENTER_CENTER):
@@ -295,9 +295,9 @@ class Box(object):
 
         transformedBox = self.box.transformed(transform.transform)
         import cni.shape
-        self.__rect._shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).replace(self.__rect._shape, transformedBox)
-        #TODO: check why next crashes with klayout internal error
-        #self.destroy()
+        shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).insert(transformedBox)
+        self.destroy()
+        self.__rect._shape = shape
         self.box = transformedBox
 
     def upperCenter():
