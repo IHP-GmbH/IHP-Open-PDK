@@ -1,13 +1,13 @@
 ########################################################################
 #
-# Copyright 2023 IHP PDK Authors
-# 
+# Copyright 2024 IHP PDK Authors
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    https://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,8 @@
 from cni.constants import *
 from cni.location import *
 from cni.point import *
+from cni.namemapper import *
+from cni.transform import *
 
 import pya
 
@@ -26,6 +28,7 @@ class Box(object):
 
     def __init__(self, l = INT_MAX, b = INT_MAX, r = INT_MIN, t = INT_MIN):
         self.box = pya.DBox(l, b, r, t)
+        self.__shape = None
 
     def abut(dir, refBox, align = True):
         raise Exception("Not implemented yet!")
@@ -54,11 +57,22 @@ class Box(object):
     def centerRight():
         raise Exception("Not implemented yet!")
 
+    def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
+        return Box(self.box.left, self.box.bottom, self.box.right, self.box.top)
+
     def contains(box, incEdges = True):
         raise Exception("Not implemented yet!")
 
     def containsPoint(p, incEdges = True):
         raise Exception("Not implemented yet!")
+
+    def destroy(self):
+        if not self.box._destroyed():
+            import cni.shape
+            cni.shape.Shape.cell.shapes(self.__rect.getShape().layer).erase(self.__rect.getShape())
+            self.box._destroy()
+        else:
+            pya.Logger.warn(f"Box.destroy: already destroyed!")
 
     def expand(coord):
         raise Exception("Not implemented yet!")
@@ -175,8 +189,12 @@ class Box(object):
     def mirrorY(xCoord = 0):
         raise Exception("Not implemented yet!")
 
-    def moveBy(dx, dy):
-        raise Exception("Not implemented yet!")
+    def moveBy(self, dx: float, dy: float) -> None:
+        movedBox = pya.DTrans(dx, dy) * self.box
+        import cni.shape
+        self.__rect._shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).replace(self.__rect._shape, movedBox)
+        self.destroy()
+        self.box = movedBox
 
     def moveTo(destination, loc = Location.CENTER_CENTER):
         raise Exception("Not implemented yet!")
@@ -247,6 +265,9 @@ class Box(object):
     def setRangeY(range):
         raise Exception("Not implemented yet!")
 
+    def setRect(self, rect):
+        self.__rect = rect
+
     def setRight(v):
         raise Exception("Not implemented yet!")
 
@@ -268,8 +289,16 @@ class Box(object):
     def snapTowards(grid, dir):
         raise Exception("Not implemented yet!")
 
-    def transform(trans):
-        raise Exception("Not implemented yet!")
+    def transform(self, transform: Transform) -> None:
+        if self.__rect is None:
+            raise Exception("No rect set for box!")
+
+        transformedBox = self.box.transformed(transform.transform)
+        import cni.shape
+        self.__rect._shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).replace(self.__rect._shape, transformedBox)
+        #TODO: check why next crashes with klayout internal error
+        #self.destroy()
+        self.box = transformedBox
 
     def upperCenter():
         raise Exception("Not implemented yet!")
@@ -282,17 +311,17 @@ class Box(object):
 
     @property
     def bottom(self):
-        raise Exception("Not implemented yet!")
+        return self.box.bottom
 
     @property
     def left(self):
-        raise Exception("Not implemented yet!")
+        return self.box.left
 
     @property
     def right(self):
-        raise Exception("Not implemented yet!")
+        return self.box.right
 
     @property
     def top(self):
-        raise Exception("Not implemented yet!")
+        return self.box.top
 
