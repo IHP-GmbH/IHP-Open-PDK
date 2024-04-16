@@ -29,6 +29,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'C'
       if line.downcase.include?('varicap')
         super(line.to_s, 'M')
+      elsif line.downcase.include?('rfcmim')
+        super(line.to_s, 'Q')
       else
         super("#{line} C=1e-18", element)
       end
@@ -82,6 +84,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # @return [RBA::DeviceClass] The created or retrieved device class.
   def create_device_class(ele, circuit, model, num_nets)
     cls = case ele
+          when 'M' then MosCustom.new
           when 'C' then create_capacitor(model, num_nets)
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
@@ -103,9 +106,10 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
       DeviceCustomVaractor.new(model, num_nets - 1)
     else
-      raise ArgumentError, 'Capacitor should have 2 nodes, please recheck' if num_nets != 2
+      raise ArgumentError, 'Capacitor should have 2 or 3 nodes, please recheck' unless [2, 3].include?(num_nets)
 
-      RBA::DeviceClassCapacitor.new
+      DeviceCustomMIM.new(model)
+
     end
   end
 
@@ -123,7 +127,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Create a resistor device class.
   def create_resistor(model, num_nets)
     if model.downcase.start_with?('res')
-      create_custom_dev(model, num_nets)
+      DeviceCustomRes.new(model, num_nets)
     elsif num_nets == 2 && model.downcase.include?('tap')
       RBA::DeviceClassDiode.new
     elsif num_nets == 2
@@ -144,17 +148,6 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     end
   end
 
-  # Create custom device class.
-  def create_custom_dev(model, num_nets)
-    if model.downcase.start_with?('res')
-      DeviceCustomRes.new(model, num_nets)
-    elsif model.downcase.start_with?('npn')
-      DeviceCustomBJT.new(model, num_nets - 1)
-    else
-      raise ArgumentError, "Used #{model} device is not supported yet, please recheck"
-    end
-  end
-
   # Connect device terminals based on element type, device, model, and nets.
   #
   # @param ele [String] The type of element (C, R, Q).
@@ -172,13 +165,15 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Determine terminal list based on element type, model, and nets.
   def terminal_list_for_element(ele, model, nets)
     case ele
+    when 'M'
+      %w[D G S B]
     when 'Q'
       model.downcase.include?('pnp') ? %w[C B E] : %w[C B E S]
     when 'C'
-      model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : %w[A B]
+      model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : gen_mim_terms(model)
     when 'R'
       if model.downcase.start_with?('res')
-        gen_terminal_names(model, nets.size)
+        gen_term_names(model, nets.size)
       elsif model.downcase.include?('tap')
         %w[A C]
       else
@@ -193,29 +188,41 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'L'
       gen_term_with_sub(model, nets.size)
     else
-      gen_terminal_names(model, nets.size)
+      gen_term_names(model, nets.size)
     end
   end
 
   # Generate terminal names based on model and the number of nets.
-  def gen_terminal_names(model, size)
+  def gen_term_names(model, size)
     (0...size).map { |i| "#{model}_#{i + 1}" }
   end
 
   # Generate terminal names based on model and the number of nets.
+  def gen_mim_terms(model)
+    terms = %w[mim_top mim_btm]
+
+    return terms unless model.downcase.include?('rfcmim')
+
+    terms << 'mim_sub' # Add sub terminal
+    terms
+  end
+
+  # Generate terminal names based on model and the number of nets.
   def gen_term_with_sub(model, size)
-    names = (0...size - 1).map { |i| "#{model}_#{i + 1}" }
-    names << "#{model}_sub" # Add "extra" element
+    terms = (0...size - 1).map { |i| "#{model}_#{i + 1}" }
+    terms << "#{model}_sub" # Add sub terminal
   end
 
   # Map parameters based on the model type.
   #
-  # @param ele [String] The type of element (C, R, Q, L).
+  # @param ele [String] The type of element (M, C, R, Q, L, D).
   # @param device [RBA::Device] The device object to which parameters will be mapped.
   # @param model [String] The model name of the device.
   # @param params [Hash] Hash containing parameter values.
   def map_params(ele, device, model, params)
     case ele
+    when 'M'
+      map_mos_params(device, params)
     when 'Q'
       map_bjt_params(device, model, params)
     when 'C'
@@ -229,6 +236,14 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     else
       raise ArgumentError, "#{ele} device with model #{model} is not supported, please recheck"
     end
+  end
+
+  # Map parameters for mos devices.
+  def map_mos_params(device, params)
+    device.set_parameter('W', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('L', (params['L'] || 0.0) * 1e6)
+    device.set_parameter('m', params['M'] || 1.0)
+    device.set_parameter('ng', params['NG'] || 1.0)
   end
 
   # Map parameters for a BJT device.
@@ -255,14 +270,12 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for a capacitor device.
   def map_capacitor_params(device, model, params)
-    if model.downcase.include?('varicap')
-      device.set_parameter('w', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
-      device.set_parameter('l', (params['L'] || 0.0) * (params['M'] || 1.0) * 1e6)
-    else
-      device.set_parameter('A', (params['W'] || 0.0) * (params['L'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('P', ((params['W'] || 0.0) + (params['L'] || 0.0)) * (params['M'] || 1.0) * 2e6)
-      device.set_parameter('C', params['C'] || 0.0)
-    end
+    device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('l', (params['L'] || 0.0) * 1e6)
+    device.set_parameter('m', params['M'] || 1.0) if model.downcase.include?('cap_cmim')
+    return unless model.downcase.include?('rfcmim')
+
+    device.set_parameter('wfeed', (params['WFEED'] || 0.0) * 1e6)
   end
 
   # Map parameters for a resistor device.

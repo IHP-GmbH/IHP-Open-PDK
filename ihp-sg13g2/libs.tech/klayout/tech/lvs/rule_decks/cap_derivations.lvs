@@ -23,14 +23,27 @@
 
 logger.info('Starting CAP DERIVATIONS')
 
-# === cap_cmim ===
-mimcap_exclude = nbulay_drw.join(recog_drw).join(recog_esd)
+# === MIMCAP ===
+rfmim_exclude = nbulay_drw.join(recog_drw).join(recog_esd)
+mimcap_exclude = rfmim_exclude.join(pwell_block)
 
-mim_top = mim_drw.covering(topmetal1_drw).and(metal5_drw).not(mimcap_exclude)
-mim_btm = metal5_drw.covering(mim_top)
+mim_top = mim_drw.overlapping(topmetal1_drw).and(metal5_drw)
+mim_btm = metal5_drw.and(mim_drw).sized(0.6.um)
 mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
 topvia1_n_cap = topvia1_drw.not(mim_via)
 
+# === cap_cmim ===
+cmim_top = mim_top.not(mimcap_exclude)
+cmim_btm = mim_btm.covering(cmim_top)
+cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
+
+# === rfcmim ===
+rfmim_area = ptap.extents.and(pwell_block).interacting(mim_drw)
+rfmim_top = mim_top.and(rfmim_area).not(rfmim_exclude)
+rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
+rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
+rfmim_sub = ptap.extents.interacting(rfmim_area)
+rfmeas_mk = metal5_drw.overlapping(rfmim_btm).and(rfmim_area)
 
 # === svaricap ===
 varicap_exc = heattrans_drw.join(trans_drw).join(heatres_drw)

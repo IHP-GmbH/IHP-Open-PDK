@@ -21,18 +21,33 @@
 # -------- CAP EXTRACTION --------
 #=================================
 
-# === cap_cmim ===
 logger.info('Starting CAP EXTRACTION')
 
-# [cap_carea = 1.5E-15]
+# === cap_cmim ===
 logger.info('Extracting cap_cmim device')
-extract_devices(capacitor('cap_cmim', 1.5e-15, MIMCap),
-                { 'P1' => mim_btm, 'P2' => mim_top })
+extract_devices(MIMCAPExtractor.new('cap_cmim'), {
+                  'core' => cmim_top,
+                  'top_mim' => cmim_top,
+                  'btm_mim' => cmim_btm,
+                  'meas_mk' => cmim_dev,
+                  'dev_mk' => cmim_dev,
+                })
+
+# === rfcmim ===
+logger.info('Extracting rfcmim device')
+extract_devices(MIMCAPExtractor.new('rfcmim'), {
+                  'core' => rfmim_top,
+                  'top_mim' => rfmim_top,
+                  'btm_mim' => rfmim_btm,
+                  'dev_mk' => rfmim_area.covering(rfmim_dev),
+                  'meas_mk' => rfmeas_mk,
+                  'sub_mk' => rfmim_sub,
+                })
 
 # === svaricap ===
 logger.info('Extracting sg13_hv_svaricap varactor')
 extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
-                  'seed' => varicap_core,
+                  'core' => varicap_core,
                   'ports' => varicap_ports,
                   'meas_mk' => nwell_iso.and(thickgateox_drw),
                   'dev_mk' => varicap_dev_mk,

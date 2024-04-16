@@ -91,8 +91,8 @@ class DeviceCustomInd < RBA::DeviceClassInductor
   end
 end
 
-# res-custom device calss
-class DeviceCustomVaractor < RBA::DeviceClassMOS4Transistor
+# Varactor-custom device calss
+class DeviceCustomVaractor < RBA::DeviceClassCapacitorWithBulk
   include DeviceClassMethods
 
   def initialize(name, num)
@@ -102,6 +102,19 @@ class DeviceCustomVaractor < RBA::DeviceClassMOS4Transistor
 
     add_parameters('w', 'l')
     add_terminals(name, num, 1)
+  end
+end
+
+# ESD-2term device class
+class MosCustom < RBA::DeviceClassMOS4Transistor
+  def initialize
+    super
+    # clear_parameters
+    self.combiner = MOSDeviceCombiner.new
+
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('ng', 'no. of gates', 1, true))
+    enable_parameter('m', true)
   end
 end
 
@@ -154,6 +167,14 @@ class Esd2Term < RBA::DeviceClassDiode
   end
 end
 
+#=========== CUSTOM COMBINER ===========
+
+# %include custom_combiner.lvs
+
 #=========== CUSTOM EXTRACTOR ===========
 
 # %include custom_extractor.lvs
+
+#========= CUSTOM MIM-EXTRACTOR =========
+
+# %include custom_mim_extractor.lvs

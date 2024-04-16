@@ -46,6 +46,8 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Register device class for extraction.
     if name.downcase.start_with?('res')
       @reg_dev = DeviceCustomRes.new(name, @num)
+    elsif name.downcase.include?('cmim')
+      @reg_dev = DeviceCustomMIM.new(name, @num)
     elsif name.downcase.include?('varicap')
       @reg_dev = DeviceCustomVaractor.new(name, @num)
     elsif name.downcase.start_with?('ind')
@@ -77,7 +79,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     conn.connect(ports, dev_mk)
     conn.connect(meas_mk, dev_mk)
 
-    # Sub connection for ind
+    # Sub connection for some devices
     if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
       sub_mk = layers[4]
       conn.connect(sub_mk, dev_mk)
@@ -109,11 +111,14 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
 
   def define_layers
     # Define layers for extraction.
-    define_layer('seed', 'Seed Layer')
+    define_layer('core', 'core Layer')
     define_layer('ports', 'Connect Terminal')
-    define_layer('meas_mk', 'Measuring parameters Marker')
+    define_layer('meas_mk', 'Measuring parameters marker')
     define_layer('dev_mk', 'Device Marker')
-    define_layer('sub_mk', 'Substrate Marker')
+    # Define sub layer for some devices
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      define_layer('sub_mk', 'Substrate Marker')
+    end
   end
 
   def set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
@@ -136,6 +141,15 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('l', length * $unit)
       device.set_parameter('ps', poly_sp * $unit)
       device.set_parameter('b', bends)
+
+    elsif name.downcase.include?('cmim')
+      width, length, wfeed = calc_cmim_params(dev, ports, meas_mk, dev_mk)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+
+      if name.downcase.include?('rfcmim')
+        device.set_parameter('wfeed', wfeed * $unit)
+      end
 
     elsif name.downcase.include?('varicap')
       width, length = calc_varicap_params(dev, ports, meas_mk, dev_mk)
@@ -179,6 +193,20 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     [width, length, poly_sp, bends]
   end
 
+  def calc_cmim_params(dev, _ports, meas_mk, _dev_mk)
+    
+    # Width & Length
+    width_edges = dev.edges
+    width, length = get_min_max_length(width_edges)
+
+    # Default values
+    width ||= 0
+    length ||= 0
+    wfeed ||= 0
+
+    [width, length, wfeed]
+  end
+
   def calc_varicap_params(dev, _ports, meas_mk, _dev_mk)
     # Width & Length
     width_edges = dev.edges.not_interacting(meas_mk.edges)
@@ -205,7 +233,8 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Turns
     # Calc steps used for no. of turns:
     # step1: Get count of inductor metal (catch if we have more 1)
-    # Step2:
+    # Step2: For more than 1 turns, get number of holes
+    # Step3: Turns = 1 + (holes - 1)/2 
     no_turns_init = meas_mk.merged.count
     if no_turns_init == 1
       no_turns = no_turns_init
@@ -248,7 +277,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   None
 
     # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
-    substrings = %w[varicap]
+    substrings = %w[varicap cmim]
 
     # Initialize sorted_ports with a default value
     sorted_ports = nil
@@ -393,3 +422,4 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     lengths.minmax
   end
 end
+
