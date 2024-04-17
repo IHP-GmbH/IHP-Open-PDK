@@ -32,53 +32,16 @@ module DeviceCombinerMethods
   def same_net(a, b, name)
     a_net = a.net_for_terminal(name)
     b_net = b.net_for_terminal(name)
-    a_net && b_net && a_net.cluster_id == b_net.cluster_id
-  end
-
-  # A helper function to check whether two nets share same diffusion
-  def same_diffusion(a, b, net1, net2)
-    a_net1 = a.net_for_terminal(net1)
-    a_net2 = a.net_for_terminal(net2)
-    b_net1 = b.net_for_terminal(net1)
-    b_net2 = b.net_for_terminal(net2)
-    a_net && b_net && a_net1.cluster_id == b_net2.cluster_id && a_net2.cluster_id == b_net1.cluster_id
+    
+    # same polarity
+    same_po = a_net.cluster_id == b_net.cluster_id
+    a_net && b_net && same_po
   end
 
   # A helper function to check whether two parameters have approximately the same value
   def same_parameter(a, b, name)
     (a.parameter(name) - b.parameter(name)).abs < 1e-9
   end
-end
-
-class MOSDeviceCombiner < RBA::GenericDeviceCombiner
-
-  include DeviceCombinerMethods
-
-  # Method to check and perform device combination
-  def combine_devices(a, b)
-    # Check if G and B terminals have the same net
-    return false unless same_net(a, b, "G") && same_net(a, b, "B")
-
-    # Determine whether m_en or ng_en condition is satisfied
-    m_en = same_net(a, b, "D") && same_net(a, b, "S")
-    ng_en = same_diffusion(a, b, "D", "S")
-
-    # Check if W and L parameters are the same
-    return false unless ["W", "L"].all? { |param| same_parameter(a, b, param) }
-
-    # Combine by summing up 'm' or 'ng' parameter based on condition
-    if m_en
-      a.set_parameter("m", a.parameter("m") + b.parameter("m"))
-    elsif ng_en
-      a.set_parameter("ng", a.parameter("ng") + b.parameter("ng"))
-    end
-
-    # Disconnect the second device and let the system clean it up
-    ["D", "G", "S", "B"].each { |term| b.disconnect_terminal(term) }
-
-    true
-  end
-
 end
 
 class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner

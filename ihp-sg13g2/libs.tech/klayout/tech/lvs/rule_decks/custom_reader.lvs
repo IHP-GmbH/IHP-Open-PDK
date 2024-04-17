@@ -84,7 +84,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # @return [RBA::DeviceClass] The created or retrieved device class.
   def create_device_class(ele, circuit, model, num_nets)
     cls = case ele
-          when 'M' then MosCustom.new
+          when 'M' then RBA::DeviceClassMOS4Transistor.new
           when 'C' then create_capacitor(model, num_nets)
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
@@ -240,10 +240,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for mos devices.
   def map_mos_params(device, params)
-    device.set_parameter('W', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('W', (params['W'] || 0.0)  * (params['M'] || 1.0) * 1e6)
     device.set_parameter('L', (params['L'] || 0.0) * 1e6)
-    device.set_parameter('m', params['M'] || 1.0)
-    device.set_parameter('ng', params['NG'] || 1.0)
   end
 
   # Map parameters for a BJT device.

@@ -30,7 +30,7 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
     str = generate_device_prefix(device, device_class)
     str += generate_device_terminals(device, device_class)
     str += "#{device_class.name} "
-    str += generate_default_parameters(device, device_class)
+    str += generate_device_parameters(device, device_class)
     emit_line(str)
   end
 
@@ -48,6 +48,24 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
       net_to_string(device.net_for_terminal(td.id))
     end
     "#{terminals.join(' ')} "
+  end
+
+  # Generate device parameters based on device class
+  def generate_device_parameters(device, device_class)
+    case device_class.name
+    when /nmos|pmos/
+      generate_parameters(device, 'W', 'L')
+    when /^res/
+      generate_parameters(device, 'w', 'l', 'b', 'ps')
+    when /^diodev|^nmoscl|^schottky/
+      generate_parameters(device, 'm')
+    when /varicap/
+      generate_parameters(device, 'w', 'l')
+    when /^ind/
+      generate_parameters(device, 'w', 's', 'd', 'nr_r')
+    else
+      generate_default_parameters(device, device_class)
+    end
   end
 
   # Generate parameters with given keys
