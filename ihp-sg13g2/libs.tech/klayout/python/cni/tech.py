@@ -16,12 +16,19 @@
 #
 ########################################################################
 
-class TermType(object):
-    INPUT = 1
-    OUTPUT = 2
-    INPUT_OUTPUT = 3
-    SWITCH = 4
-    JUMPER = 5
-    UNUSED = 6
-    TRISTATE = 7
+
+class TechImpl(object):
+    pass
+
+
+class Tech(object):
+
+    techsByName = {}
+    techInUse = ""
+
+    def register(tech):
+        Tech.techsByName[tech.name()] = tech
+
+    def get(name):
+        return Tech.techsByName[name]
 

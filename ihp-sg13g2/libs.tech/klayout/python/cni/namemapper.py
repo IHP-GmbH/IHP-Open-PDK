@@ -16,12 +16,10 @@
 #
 ########################################################################
 
-class TermType(object):
-    INPUT = 1
-    OUTPUT = 2
-    INPUT_OUTPUT = 3
-    SWITCH = 4
-    JUMPER = 5
-    UNUSED = 6
-    TRISTATE = 7
+class NameMapper(object):
 
+    def __init__(self, obj: object = None):
+        if obj is not None:
+            raise Exception("Not implemented yet!")
+
+        self._object = obj
