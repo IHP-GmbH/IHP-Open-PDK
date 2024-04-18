@@ -64,14 +64,24 @@ class PointList(ulist[Point]):
         return self
 
     def containsPoint(self, point: Point) -> bool:
-        isInside = False;
-
         # Jordan point in polygon test
-        for i in range(len(self)):
-            j = (i + 1) % len(self)
-            if self[i].y < point.y and self[j].y >= point.y or self[j].y < point.y and self[i].y >= point.y:
-                if (point.y - self[i].y) * (self[j].x - self[i].x) < (point.x - self[i].x) * (self[j].y - self[i].y):
-                    isInside = not isInside;
+        numVertices = len(self)
+        x, y = point.x, point.y
+        isInside = False
 
-        return isInside;
+        p1 = self[0]
 
+        for i in range(1, numVertices + 1):
+            p2 = self[i % numVertices]
+
+            if y > min(p1.y, p2.y):
+                if y <= max(p1.y, p2.y):
+                    if x <= max(p1.x, p2.x):
+                        x_intersection = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x
+
+                        if p1.x == p2.x or x <= x_intersection:
+                            isInside = not isInside
+
+            p1 = p2
+
+        return isInside
