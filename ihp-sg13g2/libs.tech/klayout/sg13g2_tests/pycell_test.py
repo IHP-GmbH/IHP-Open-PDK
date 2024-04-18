@@ -32,7 +32,7 @@ pcellPmos = ly.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng":
 pcellCmim = ly.create_cell("cmim", "SG13_dev", {})
 pcellSealring = ly.create_cell("sealring", "SG13_dev", {})
 pcellNpn13G2Base = ly.create_cell("npn13G2_base", "SG13_dev", {})
-#pcellNpn13G2 = ly.create_cell("npn13G2", "SG13_dev", {})
+pcellNpn13G2 = ly.create_cell("npn13G2", "SG13_dev", {})
 
 #pcell = ly.create_cell("rsil", "SG13_dev", { "l": "3e-6", "w": "6e-6", "b": 1, "ps": "1e-6", "R": "1e-6"})
 
@@ -41,8 +41,7 @@ top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(3, 0))))
 top.insert(pya.DCellInstArray(pcellCmim, pya.DTrans(pya.DVector(0, -9))))
 top.insert(pya.DCellInstArray(pcellSealring, pya.DTrans(pya.DVector(50, -9))))
-#top.insert(pya.DCellInstArray(pcellNpn13G2Base, pya.DTrans(pya.DVector(10, 0))))
-#top.insert(pya.DCellInstArray(pcellNpn13G2, pya.DTrans(pya.DVector(3, 6))))
+top.insert(pya.DCellInstArray(pcellNpn13G2, pya.DTrans(pya.DVector(3, 8))))
 
 output = "SG13_dev.gds"
 ly.write(output)

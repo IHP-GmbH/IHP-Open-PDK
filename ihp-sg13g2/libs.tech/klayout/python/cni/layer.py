@@ -23,10 +23,11 @@ class Layer(object):
 
     def __init__(self, name, purpose = None):
         namePurpose = name if purpose is None else name + "." + purpose
-        layer, datatype = Layer.tech.stream_layers()[namePurpose]
+        import cni.dlo
+        layer, datatype = cni.dlo.PyCellContext.getCurrentPyCellContext().tech.stream_layers()[namePurpose]
 
         self._name = namePurpose
-        self._number = Layer.layout.layer(layer, datatype, namePurpose)
+        self._number = cni.dlo.PyCellContext.getCurrentPyCellContext().layout.layer(layer, datatype, namePurpose)
         self._purposeName = "" if purpose is None else purpose
 
     def getAttrs(self):
