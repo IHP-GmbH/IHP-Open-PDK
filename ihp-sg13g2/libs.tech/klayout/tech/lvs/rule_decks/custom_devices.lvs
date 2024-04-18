@@ -60,19 +60,32 @@ class DeviceCustomRes < RBA::DeviceClassResistor
   end
 end
 
+# BJT-3term device calss
+class CustomBJT3 < RBA::DeviceClassBJT3Transistor
+
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
+
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
+  end
+end
+
 # BJT-4term device calss
-class DeviceCustomBJT < RBA::DeviceClassBJT4Transistor
+class CustomBJT4 < RBA::DeviceClassBJT4Transistor
   include DeviceClassMethods
 
-  def initialize(name, num)
-    # clear terminals and parameters of class
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
 
-    clear_parameters
-    clear_terminals
-    clear_equivalent_terminal_ids
-
-    add_parameters('NE', 'm', 'we', 'le')
-    add_terminals(name, num, 1)
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
   end
 end
 
@@ -129,6 +142,24 @@ end
 class EnDiode < RBA::DeviceClassDiode
   def initialize
     super
+    self.combiner = DiodeDeviceCombiner.new
+    self.supports_serial_combination=true
+    self.supports_parallel_combination=true
+
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+    enable_parameter('m', true)
+  end
+end
+
+# Taps device class
+class CustomTap < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'Area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'Perimeter', 0, true))
     enable_parameter('A', true)
     enable_parameter('P', true)
   end

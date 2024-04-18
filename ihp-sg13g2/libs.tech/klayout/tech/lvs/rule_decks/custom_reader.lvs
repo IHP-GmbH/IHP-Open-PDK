@@ -120,7 +120,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     elsif model.downcase.include?('nmoscl')
       Esd2Term.new
     else
-      RBA::DeviceClassDiode.new
+      EnDiode.new
     end
   end
 
@@ -142,9 +142,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Create a bjt device class.
   def create_bjt(model, _num_nets)
     if model.downcase.include?('pnp')
-      RBA::DeviceClassBJT3Transistor.new
+      CustomBJT3.new
     else
-      RBA::DeviceClassBJT4Transistor.new
+      CustomBJT4.new
     end
   end
 
@@ -175,13 +175,19 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       if model.downcase.start_with?('res')
         gen_term_names(model, nets.size)
       elsif model.downcase.include?('tap')
-        %w[A C]
+        %w[C A]
       else
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
     when 'D'
-      if model.downcase.include?('diodev') || model.downcase.include?('schottky')
-        %w[C B E]
+      if model.downcase.include?('diodevdd')
+        %w[B E C]
+      elsif model.downcase.include?('diodevss')
+        %w[C E B]
+      elsif model.downcase.include?('schottky')
+        %w[E B C]
+      elsif model.downcase.include?('nmoscl') || model.downcase.include?('antenna')
+        %w[C A]
       else
         %w[A C]
       end
@@ -240,20 +246,21 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for mos devices.
   def map_mos_params(device, params)
-    device.set_parameter('W', (params['W'] || 0.0)  * (params['M'] || 1.0) * 1e6)
+    device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
     device.set_parameter('L', (params['L'] || 0.0) * 1e6)
   end
 
   # Map parameters for a BJT device.
   def map_bjt_params(device, model, params)
     if model.downcase.include?('pnp')
-      device.set_parameter('AE', (params['A'] || 0.0)  * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('PE', (params['P'] || 0.0)  * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('AE', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('PE', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
     else
-      device.set_parameter('AE', ((params['WE'] || 0.0) * (params['LE'] || 1.0)) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('PE', ((params['WE'] || 0.0) + (params['LE'] || 1.0)) * (params['M'] || 1.0) * 2e6)
+      device.set_parameter('AE', (params['AE'] || ((params['WE'] || 0.0) * (params['LE'] || 0.0))) * 1e12)
+      device.set_parameter('PE', (params['PE'] || (((params['WE'] || 0.0) + (params['LE'] || 0.0)) * 2)) * 1e6)
     end
-    device.set_parameter('NE', params['M'] || 1.0)
+    device.set_parameter('NE', params['M'] || params['NE'] || 1.0)
+    device.set_parameter('m',  params['M'] || params['NE'] || 1.0)
   end
 
   # Map parameters for a diode device.
@@ -261,8 +268,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     if model.downcase.include?('diodev') || model.downcase.include?('schottky') || model.downcase.include?('nmoscl')
       device.set_parameter('m', params['M'] || 1.0)
     else
-      device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('A', (params['A'] || 0.0) * 1e12)
+      device.set_parameter('P', (params['P'] || 0.0) * 1e6)
+      device.set_parameter('m', params['M'] || 1.0)
     end
   end
 
@@ -270,7 +278,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_capacitor_params(device, model, params)
     device.set_parameter('w', (params['W'] || 0.0) * 1e6)
     device.set_parameter('l', (params['L'] || 0.0) * 1e6)
-    device.set_parameter('m', params['M'] || 1.0) if model.downcase.include?('cap_cmim')
+    device.set_parameter('m', params['M'] || params['MF'] || 1.0) if model.downcase.include?('cap_cmim')
     return unless model.downcase.include?('rfcmim')
 
     device.set_parameter('wfeed', (params['WFEED'] || 0.0) * 1e6)
@@ -279,8 +287,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Map parameters for a resistor device.
   def map_resistor_params(device, model, params)
     if model.downcase.include?('tap')
+      puts params
       device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('P', (params['P'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('P', (params['P'] || params['PERIM'] || 0.0) * (params['M'] || 1.0) * 1e6)
     elsif model.downcase.start_with?('res')
       device.set_parameter('w', (params['W'] || 0.0) * 1e6)
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)

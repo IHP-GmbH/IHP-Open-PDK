@@ -70,3 +70,54 @@ class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
   end
 
 end
+
+class DiodeDeviceCombiner < RBA::GenericDeviceCombiner
+
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    # Check if mim_top and mim_btm terminals have the same net
+    return false unless same_net(a, b, "A") && same_net(a, b, "C")
+
+    # Check if W and L parameters are the same
+    return false unless same_parameter(a, b, "A") && same_parameter(a, b, "P")
+
+    # Combine by summing up 'm' parameter
+    a.set_parameter("m", a.parameter("m") + b.parameter("m"))
+
+    # Disconnect the second device and let the system clean it up
+    b.disconnect_terminal("A")
+    b.disconnect_terminal("C")
+
+    true
+  end
+end
+
+class BJTDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    bjt3_nets = ["C", "B", "E"]
+    bjt4_nets = ["C", "B", "E", "S"]
+    
+    # Determine the correct nets based on device type (assuming PNP or NPN)
+    bjt_nets = a.device_class.name.downcase.include?('pnp') ? bjt3_nets : bjt4_nets
+
+    # Check if terminals have the same net
+    return false unless bjt_nets.all? { |net| same_net(a, b, net) }
+
+    # Check if W and L parameters are the same
+    return false unless ["AE", "PE"].all? { |param| same_parameter(a, b, param) }
+
+    # Combine parameters
+    a.set_parameter("m", a.parameter("m") + b.parameter("m"))
+    a.set_parameter("NE", a.parameter("NE") + b.parameter("NE"))
+
+    # Disconnect the second device and let the system clean it up
+    bjt_nets.each { |term| b.disconnect_terminal(term) }
+
+    true
+  end
+end
