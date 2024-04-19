@@ -30,6 +30,7 @@ from .sg13_tech import *
 from .ihp import nmos_code
 from .ihp import pmos_code
 from .ihp import cmim_code
+from .ihp import rsil_code
 from .ihp import sealring_code
 from .ihp import npn13G2_base_code
 #from .ihp import npn13G2_code
@@ -45,6 +46,7 @@ class PyCellLib(pya.Library):
         self.layout().register_pcell("nmos", PCellWrapper(nmos_code.nmos(), tech))
         self.layout().register_pcell("pmos", PCellWrapper(pmos_code.pmos(), tech))
         self.layout().register_pcell("cmim", PCellWrapper(cmim_code.cmim(), tech))
+        self.layout().register_pcell("rsil", PCellWrapper(rsil_code.rsil(), tech))
         self.layout().register_pcell("sealring", PCellWrapper(sealring_code.sealring(), tech))
         self.layout().register_pcell("npn13G2_base", PCellWrapper(npn13G2_base_code.npn13G2_base(), tech))
         #self.layout().register_pcell("npn13G2", PCellWrapper(npn13G2_code.npn13G2(), tech))
