@@ -21,8 +21,8 @@ Usage:
     run_lvs.py (--help| -h)
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>) [--thr=<thr>]
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--verbose] [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--scale]
-    [--schematic_simplify] [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets]
+    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--schematic_simplify]
+    [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets] [--verbose] 
 
 Options:
     --help -h                           Print this help message.
@@ -33,16 +33,15 @@ Options:
     --topcell=<topcell_name>            Topcell name to use.
     --run_mode=<run_mode>               Select Allowed klayout mode. (flat, deep). [default: flat]
     --lvs_sub=<sub_name>                Substrate name used in your design.
-    --verbose                           Detailed rule execution log for debugging.
     --no_net_names                      Discard net names in extracted netlist.
     --spice_comments                    Enable netlist comments in extracted netlist.
-    --scale                             Enable scale of 1e6 in extracted netlist.
-    --schematic_simplify                Enable schematic simplification in input netlist.
-    --net_only                          Enable netlist object creation only in extracted netlist.
-    --top_lvl_pins                      Enable top level pins only in extracted netlist.
-    --combine                           Enable netlist combine only in extracted netlist.
-    --purge                             Enable netlist purge all only in extracted netlist.
-    --purge_nets                        Enable netlist purge nets only in extracted netlist.
+    --schematic_simplify                Enable schematic simplification/combination for input netlist.
+    --net_only                          Enable netlist object creation for extracted netlist.
+    --top_lvl_pins                      Enable top level pins only for extracted netlist.
+    --combine                           Enable netlist combination for extracted netlist.
+    --purge                             Enable netlist purge all for extracted netlist.
+    --purge_nets                        Enable netlist purge nets for extracted netlist.
+    --verbose                           Detailed rule execution log for debugging.
 """
 
 from docopt import docopt
@@ -220,11 +219,6 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     else:
         switches["spice_comments"] = "false"
 
-    if arguments["--scale"]:
-        switches["scale"] = "true"
-    else:
-        switches["scale"] = "false"
-
     if arguments["--schematic_simplify"]:
         switches["schematic_simplify"] = "true"
     else:
@@ -318,7 +312,7 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
     layout_base_name = os.path.basename(path).split(".")[0]
     new_sws = sws.copy()
     report_path = os.path.join(run_dir, f"{layout_base_name}.lvsdb")
-    ext_net_path = os.path.join(run_dir, f"{layout_base_name}.cir")
+    ext_net_path = os.path.join(run_dir, f"{layout_base_name}_extracted.cir")
     new_sws["report"] = report_path
     new_sws["target_netlist"] = ext_net_path
 

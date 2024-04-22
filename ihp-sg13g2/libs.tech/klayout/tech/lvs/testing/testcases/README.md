@@ -1,6 +1,11 @@
-# SG13G2 LVS Tests
+SG13G2 LVS Tests
+================
 
-## Folder Structure
+This directory contains the LVS test cases for SG13G2 technology.
+
+
+Folder Structure
+----------------
 
 ```text
 📁 testcases

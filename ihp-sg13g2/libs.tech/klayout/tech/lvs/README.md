@@ -1,7 +1,7 @@
 Klayout-LVS
 ===========
 
-Explains how to use the SG13G2 LVS.
+Explains how to use the SG13G2 LVS rule decks.
 
 # Table of contents
 - [Klayout-LVS](#klayout-lvs)
@@ -13,17 +13,18 @@ Explains how to use the SG13G2 LVS.
     - [CLI](#cli)
       - [Options](#options)
       - [LVS Outputs](#lvs-outputs)
+    - [GUI](#gui)
 
 
 ## Folder Structure
 
 ```text
 📁 lvs
- ┣ 📁testing                        Testing environment directory for SG13G2 LVS. 
- ┣ 📁rule_decks                     All LVS rule decks used in SG13G2.
- ┣ generic_tech.lvs                 Main LVS runset that call all rule decks.
- ┣ 📜README.md                      This file to document the LVS run for SG13G2.
- ┗ 📜run_lvs.py                     Main python script used for SG13G2 LVS.
+ ┣ 📁testing               Testing environment directory for SG13G2 LVS. 
+ ┣ 📁rule_decks            Holds all LVS rule decks used for SG13G2.
+ ┣ sg13g2.lvs              Main LVS runset that call all rule decks.
+ ┣ 📜README.md             This file to document LVS for SG13G2.
+ ┗ 📜run_lvs.py            Main python script used for SG13G2 LVS.
  ```
 
 ## Prerequisites
@@ -36,10 +37,54 @@ You need the following set of tools installed to be able to run SG13G2 LVS:
 
 The following table explains the list of available SG13G2 devices we have supported in our LVS runset.
 
-| Device Category | Device Name | Tested            |
-|-----------------|-------------|-------------------|
-| MOSFET          | nmos        |                   |
-| Capacitors      | cap_cmim    |:white_check_mark: |
+| Device          | Tested           |
+|-----------------|------------------|
+| **MOSFET**      |                  |
+| sg13_lv_nmos    |:white_check_mark:|
+| sg13_hv_nmos    |:white_check_mark:|
+| sg13_lv_pmos    |:white_check_mark:|
+| sg13_hv_pmos    |:white_check_mark:|
+| **RF-MOSFET**   |                  |
+| rfnmos          |:white_check_mark:|
+| rfnmosHV        |:white_check_mark:|
+| rfpmos          |:white_check_mark:|
+| rfpmosHV        |:white_check_mark:|
+| **BJTs**        |                  |
+| npn13G2         |:white_check_mark:|
+| npn13G2L        |:white_check_mark:|
+| npn13G2V        |:white_check_mark:|
+| pnpMPA          |:white_check_mark:|
+| **Diodes**      |                  |
+| dantenna        |:white_check_mark:|
+| dpantenna       |:white_check_mark:|
+| schottky_nbl1   |:white_check_mark:|
+| **Resistors**   |                  |
+| res_rsil        |:white_check_mark:|
+| res_rppd        |:white_check_mark:|
+| res_rhigh       |:white_check_mark:|
+| lvsres          |:white_check_mark:|
+| **Capacitors**  |                  |
+| SVaricap        |:white_check_mark:|
+| cap_cmim        |:white_check_mark:|
+| rfcmim          |:white_check_mark:|
+| **ESD**         |                  |
+| diodevdd_4kv    |:white_check_mark:|
+| diodevdd_2kv    |:white_check_mark:|
+| diodevss_4kv    |:white_check_mark:|
+| diodevss_2kv    |:white_check_mark:|
+| idiodevdd_4kv   |:white_check_mark:|
+| idiodevdd_2kv   |:white_check_mark:|
+| idiodevss_4kv   |:white_check_mark:|
+| idiodevss_2kv   |:white_check_mark:|
+| nmoscl_2        |:white_check_mark:|
+| nmoscl_4        |:white_check_mark:|
+| **Inductors**   |                  |
+| inductor        |:white_check_mark:|
+| inductor3       |:white_check_mark:|
+| **Taps**        |                  |
+| ptap1           |:white_check_mark:|
+| ntap1           |:white_check_mark:|
+
 
 ## Usage
 
@@ -53,48 +98,45 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
     run_lvs.py (--help| -h)
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>) [--thr=<thr>]
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--verbose] [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--scale]
-    [--schematic_simplify] [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets]
+    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--schematic_simplify]
+    [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets] [--verbose]
 ```
 
 #### Options
 
-- `--help -h`                           Print this help message.
+- `--help -h `                        Print this help message.
 
-- `--layout=<layout_path>`              The input GDS file path.
+- `--layout=<layout_path>`            The input GDS file path.
 
-- `--netlist=<netlist_path>`            The input netlist file path.
+- `--netlist=<netlist_path>`          The input netlist file path.
 
-- `--thr=<thr>`                         The number of threads used in run.
+- `--thr=<thr>`                       The number of threads used in run.
 
-- `--run_dir=<run_dir_path>`            Run directory to save all the results [default: pwd]
+- `--run_dir=<run_dir_path>`          Run directory to save all the results [default: pwd]
 
-- `--topcell=<topcell_name>`            Topcell name to use.
+- `--topcell=<topcell_name>`          Topcell name to use.
 
-- `--run_mode=<run_mode>`               Select Allowed klayout mode. (flat, deep). [default: flat]
+- `--run_mode=<run_mode>`             Select Allowed klayout mode. (flat, deep). [default: flat]
 
-- `--verbose`                           Detailed rule execution log for debugging.
+- `--lvs_sub=<sub_name>`              Substrate name used in your design.
 
-- `--lvs_sub=<sub_name>`                Substrate name used in your design.
+- `--no_net_names`                    Discard net names in extracted netlist.
 
-- `--no_net_names`                      Discard net names in extracted netlist.
+- `--spice_comments`                  Enable netlist comments in extracted netlist.
 
-- `--spice_comments`                    Enable netlist comments in extracted netlist.
+- `--schematic_simplify`              Enable schematic simplification/combination for input netlist.
 
-- `--scale`                             Enable scale of 1e6 in extracted netlist.
+- `--net_only`                        Enable netlist object creation for extracted netlist.
 
-- `--schematic_simplify`                Enable schematic simplification in input netlist.
+- `--top_lvl_pins`                    Enable top level pins only for extracted netlist.
 
-- `--net_only`                          Enable netlist object creation only in extracted netlist.
+- `--combine`                         Enable netlist combination for extracted netlist.
 
-- `--top_lvl_pins`                      Enable top level pins only in extracted netlist.
+- `--purge`                           Enable netlist purge all for extracted netlist.
 
-- `--combine`                           Enable netlist combine only in extracted netlist.
+- `--purge_nets`                      Enable netlist purge nets for extracted netlist.
 
-- `--purge`                             Enable netlist purge all only in extracted netlist.
-
-- `--purge_nets`                        Enable netlist purge nets only in extracted netlist.
-
+- `--verbose`                         Detailed rule execution log for debugging.
 
 #### LVS Outputs
 
@@ -108,31 +150,38 @@ You could find the run results at your run directory if you previously specified
  ┗ 📜 <your_design_name>.cir
  ┗ 📜 <your_design_name>.lvsdb
  ```
-<!-- 
-The result is a database file (`<your_design_name>.lvsdb`) contains LVS extractions and comparison results.
-You could view it on your file using: `klayout <input_gds_file> -mn <resut_db_file> `, or you could view it on your gds file via netlist browser option in tools menu using klayout GUI as shown below.
+
+
+The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the marker browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
 
 <p align="center">
-  <img src="../../images/lvs_marker.png" width="60%" >
+  <img src="images/lvs_marker_1.png" width="40%" >
 </p>
 <p align="center">
-  Fig. 1. Klayout GUI netlist browser
+  Fig. 1. Netlist Browser for Klayout-LVS
 </p>
 
 After selecting Netlist Browser option, you could load the database file and visualize the LVS results.
 
 <p align="center">
-  <img src="../../images/lvs_results.png" width="80%" >
+  <img src="images/lvs_marker_2.png" width="70%" >
 </p>
 <p align="center">
-  Fig. 2. Visualization of LVS results on Klayout-GUI
+  Fig. 2. Loading LVS Netlist/database file - 1
 </p>
 
-You can also locate the extracted netlist generated from your design at `<your_design_name>.cir` within the output directory of the run.
+<p align="center">
+  <img src="images/lvs_marker_3.png" width="70%" >
+</p>
+<p align="center">
+  Fig. 3. Loading LVS Netlist/database file - 2
+</p>
+
+Additionally, you can find the extracted netlist generated from your design at (`<device_name>_extracted.cir`) in the output run directory.
 
 ### GUI
 
-The SG13G2 also facilitates LVS execution via Klayout menus, integrated with Klayout through the PDK [installation](../../README.md#installation) as depicted below:
+The SG13G2 also facilitates LVS execution via Klayout menus as depicted below:
 
 <p align="center">
   <img src="../../images/lvs_menus.png" width="60%" >
@@ -143,42 +192,9 @@ The SG13G2 also facilitates LVS execution via Klayout menus, integrated with Kla
 
 Upon executing the LVS using the `Run Klayout LVS` option, the result database will appear on your layout interface, allowing you to verify the outcome of the run similarly as shown above in Fig. 2.
 
-## Demo-Example
+<!-- ## Demo-Example
 
 The example shows a `sg13g2_and2_1` implemented using SG13G2 technology.
-
-### Schematic
-
-Figure 4 displays the device's [schematic](./testing/testcases/unit/lidar_device/lidar.sch) created using xschem.
-
-<p align="center">
-  <img src="../../images/sg13g2_and2_1_sch.png" width="80%" >
-</p>
-<p align="center">
-  Fig. 4. Schematic for `sg13g2_and2_1` standard cell.
-</p>
-
-**Note**: The netlist will be produced in the selected output directory. It is recommended to launch the tool using the following command:
-
-```bash
-xschem sg13g2_and2_1.sch -o .
-```
-
-This command ensures that the output netlist is generated in the current directory.
-
-Following that, you can generate the netlist from this schematic for LVS testing. This can be accomplished by using the 'netlist' option available in the xschem-GUI, as demonstrated in Figure 5.
-
-<p align="center">
-  <img src="../../images/netlist_ext.png" width="100%" >
-</p>
-<p align="center">
-  Fig. 5. Netlist extraction step from xschem for `sg13g2_and2_1`.
-</p>
-
-The following netlist is generated from xschem:
-
-```
-```
 
 ### Layout
 
@@ -203,4 +219,4 @@ Please refer to [Usage](#usage) section for more details.
 
 #### GUI
 
-You could also run the LVS using Klayout-Menus supported for SG13G2 as explained above in Fig. 3. -->
+You could also run the LVS using Klayout-Menus supported for SG13G2 as explained above in Fig. 3. --> -->

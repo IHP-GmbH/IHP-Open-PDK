@@ -287,7 +287,6 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Map parameters for a resistor device.
   def map_resistor_params(device, model, params)
     if model.downcase.include?('tap')
-      puts params
       device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
       device.set_parameter('P', (params['P'] || params['PERIM'] || 0.0) * (params['M'] || 1.0) * 1e6)
     elsif model.downcase.start_with?('res')
@@ -295,6 +294,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)
       device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
       device.set_parameter('b', params['B'] || 0.0)
+      device.set_parameter('m', params['M'] || 1.0)
     else
       device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
       device.set_parameter('L', (params['L'] || 0.0) * (params['S'] || 1.0) * 1e6)

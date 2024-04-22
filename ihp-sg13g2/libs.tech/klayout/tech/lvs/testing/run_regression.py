@@ -19,13 +19,13 @@
 
 Usage:
     run_regression.py (--help| -h)
-    run_regression.py [--device_name=<device_name>] [--mp=<num>] [--run_dir=<run_dir_path>]
+    run_regression.py [--device=<device>] [--run_dir=<run_dir_path>] [--mp=<num>]
 
 Options:
     --help -h                 Print this help message.
     --device=<device>         Select device category you want to run regression on.
-    --mp=<num>                The number of threads used in run.
     --run_dir=<run_dir_path>  Run directory to save all the results [default: pwd]
+    --mp=<num>                The number of threads used in run.
 """
 
 from subprocess import check_call
@@ -537,12 +537,12 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # selected device
-    allowed_devices = ["MOS", "RFMOS", "BJT", "DIODE", "RES", "CAP", "ESD", "TAPS"]
-    target_device_group = args["--device_name"]
+    allowed_devices = ["MOS", "RFMOS", "BJT", "DIODE", "RES", "CAP", "ESD", "TAP", "IND"]
+    target_device_group = args["--device"]
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices are (MOS, RFMOS, BJT, DIODE, RES, CAP, ESD, TAPS) only, please recheck"
+            "Allowed devices are (MOS, RFMOS, BJT, DIODE, RES, CAP, ESD, TAP, IND) only, please recheck"
         )
         exit(1)
 
