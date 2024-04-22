@@ -108,7 +108,7 @@ mxe     =  2.0 / tme1 * (tme2 + sqrt(tme2 * tme2 - tme1 * (x) * (y)));
             SP_S_tau    = -SP_S_eta + ln(SP_S_a * inv_Gf2); \
             `sigma(SP_S_a, SP_S_c, SP_S_tau, SP_S_eta, SP_S_y0) \
             `expl_high(SP_S_y0, SP_S_delta0) \
-            SP_S_delta1 = 1.0 / SP_S_delta0; \
+            SP_S_delta1 = exp(-SP_S_x0); \
             SP_S_temp   = 1.0 / (2.0 + SP_S_y0 * SP_S_y0); \
             SP_S_xi0    = SP_S_y0 * SP_S_y0 * SP_S_temp; \
             SP_S_xi1    = 4.0 * (SP_S_y0 * SP_S_temp * SP_S_temp); \
@@ -142,7 +142,7 @@ mxe     =  2.0 / tme1 * (tme2 + sqrt(tme2 * tme2 - tme1 * (x) * (y)));
             `sigma2(SP_S_a, SP_S_b, SP_S_c, SP_S_tau, SP_S_eta, SP_S_x0) \
             if (SP_S_x0 < `se05) begin \
                 SP_S_delta0 = exp(SP_S_x0); \
-                SP_S_delta1 = 1.0 / SP_S_delta0; \
+                SP_S_delta1 = exp(-SP_S_x0); \
                 SP_S_delta0 = (delta) * SP_S_delta0; \
             end else begin \
                 if (SP_S_x0 > (xn) - `se05) begin \
@@ -188,7 +188,7 @@ mxe     =  2.0 / tme1 * (tme2 + sqrt(tme2 * tme2 - tme1 * (x) * (y)));
         `sigma2(SP_S_a, SP_S_b, SP_S_c, SP_S_tau, SP_S_eta, SP_S_x0) \
         if (SP_S_x0 < `se05) begin \
                         SP_S_delta0 = exp(SP_S_x0); \
-                        SP_S_delta1 = 1.0 / SP_S_delta0; \
+                        SP_S_delta1 = exp(-SP_S_x0); \
                         SP_S_delta0 = (delta) * SP_S_delta0; \
                 end else begin \
                         if (SP_S_x0 > (xn) - `se05) begin \
