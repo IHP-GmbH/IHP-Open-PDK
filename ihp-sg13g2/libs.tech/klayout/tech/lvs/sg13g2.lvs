@@ -15,9 +15,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
-#=================================================================================================================
-# --------------------------------------------- SG13G2 LVS RULE DECK ---------------------------------------------
-#=================================================================================================================
+#===========================================================================================================
+# ------------------------------------------ SG13G2 LVS RULE DECK ------------------------------------------
+#===========================================================================================================
 
 require 'time'
 require 'logger'
@@ -119,13 +119,9 @@ PURGE_NETS = bool_check?($purge_nets)
 logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
 
 # SIMPLIFY
-SIMPLIFY = if NET_ONLY || TOP_LVL_PINS || COMBINE || PURGE || PURGE_NETS
-             false
-           else
-             true
-           end
+NETLIST_SIMPLIFY = bool_check?($netlist_simplify)
 
-logger.info("Selected SIMPLIFY option: #{SIMPLIFY}")
+logger.info("Selected NETLIST_SIMPLIFY option: #{NETLIST_SIMPLIFY}")
 
 #=== PRINT DETAILS ===
 logger.info("Verbose mode: #{$verbose}")
@@ -169,7 +165,7 @@ if $schematic
   schematic($schematic, reader)
   logger.info("Netlist file: #{$schematic}")
 else
-  exts = ["spice", "cdl"]
+  exts = ["spice", "cdl", "cir"]
   candidates = exts.map{|ext| "#{source.cell_name}.#{ext}"}
   netlists = candidates.select{|f| File.exist?(f)}
   if netlists.empty?
@@ -350,7 +346,7 @@ logger.info('Starting SG13G2 LVS comparison section')
 align
 
 #=== NETLIST EXTRACTION ===
-netlist.simplify if SIMPLIFY
+netlist.simplify if NETLIST_SIMPLIFY
 
 #=== NETLIST OPTIONS ===
 netlist if NET_ONLY

@@ -21,8 +21,9 @@ Usage:
     run_lvs.py (--help| -h)
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>) [--thr=<thr>]
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--schematic_simplify]
-    [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets] [--verbose] 
+    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--net_only]
+    [--top_lvl_pins] [--no_simplify] [--combine] [--purge] [--purge_nets] 
+    [--schematic_simplify] [--verbose] 
 
 Options:
     --help -h                           Print this help message.
@@ -35,12 +36,13 @@ Options:
     --lvs_sub=<sub_name>                Substrate name used in your design.
     --no_net_names                      Discard net names in extracted netlist.
     --spice_comments                    Enable netlist comments in extracted netlist.
-    --schematic_simplify                Enable schematic simplification/combination for input netlist.
     --net_only                          Enable netlist object creation for extracted netlist.
     --top_lvl_pins                      Enable top level pins only for extracted netlist.
+    --no_simplify                       Disable layout simplification for extracted netlist.
     --combine                           Enable netlist combination for extracted netlist.
     --purge                             Enable netlist purge all for extracted netlist.
     --purge_nets                        Enable netlist purge nets for extracted netlist.
+    --schematic_simplify                Enable schematic simplification for input netlist.
     --verbose                           Detailed rule execution log for debugging.
 """
 
@@ -204,11 +206,6 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     else:
         switches["lvs_sub"] = "sub!"
 
-    if arguments["--verbose"]:
-        switches["verbose"] = "true"
-    else:
-        switches["verbose"] = "false"
-
     if arguments["--no_net_names"]:
         switches["spice_net_names"] = "false"
     else:
@@ -219,11 +216,6 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     else:
         switches["spice_comments"] = "false"
 
-    if arguments["--schematic_simplify"]:
-        switches["schematic_simplify"] = "true"
-    else:
-        switches["schematic_simplify"] = "false"
-
     if arguments["--net_only"]:
         switches["net_only"] = "true"
     else:
@@ -233,6 +225,11 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
         switches["top_lvl_pins"] = "true"
     else:
         switches["top_lvl_pins"] = "false"
+
+    if arguments["--no_simplify"]:
+        switches["netlist_simplify"] = "false"
+    else:
+        switches["netlist_simplify"] = "true"
 
     if arguments["--combine"]:
         switches["combine"] = "true"
@@ -248,6 +245,16 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
         switches["purge_nets"] = "true"
     else:
         switches["purge_nets"] = "false"
+
+    if arguments["--schematic_simplify"]:
+        switches["schematic_simplify"] = "true"
+    else:
+        switches["schematic_simplify"] = "false"
+
+    if arguments["--verbose"]:
+        switches["verbose"] = "true"
+    else:
+        switches["verbose"] = "false"
 
     switches["topcell"] = get_run_top_cell_name(arguments, layout_path)
     switches["input"] = os.path.abspath(layout_path)

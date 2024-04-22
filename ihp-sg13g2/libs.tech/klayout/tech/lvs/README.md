@@ -11,7 +11,6 @@ Explains how to use the SG13G2 LVS rule decks.
   - [Devices Status](#devices-status)
   - [Usage](#usage)
     - [CLI](#cli)
-      - [Options](#options)
       - [LVS Outputs](#lvs-outputs)
     - [GUI](#gui)
 
@@ -102,7 +101,7 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
     [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets] [--verbose]
 ```
 
-#### Options
+**Options:**
 
 - `--help -h `                        Print this help message.
 
@@ -124,11 +123,11 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--spice_comments`                  Enable netlist comments in extracted netlist.
 
-- `--schematic_simplify`              Enable schematic simplification/combination for input netlist.
-
 - `--net_only`                        Enable netlist object creation for extracted netlist.
 
 - `--top_lvl_pins`                    Enable top level pins only for extracted netlist.
+
+- `--no_simplify`                     Disable layout simplification for extracted netlist.
 
 - `--combine`                         Enable netlist combination for extracted netlist.
 
@@ -136,7 +135,15 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--purge_nets`                      Enable netlist purge nets for extracted netlist.
 
+- `--schematic_simplify`              Enable schematic simplification for input netlist.
+
 - `--verbose`                         Detailed rule execution log for debugging.
+
+**Example:**
+
+```bash
+    python3 run_lvs.py --layout=testing/testcases/unit/mos_devices/layout/sg13_lv_nmos.gds --netlist=testing/testcases/unit/mos_devices/netlist/sg13_lv_nmos.cdl --run_dir=test_nmos
+```
 
 #### LVS Outputs
 
@@ -151,11 +158,10 @@ You could find the run results at your run directory if you previously specified
  ┗ 📜 <your_design_name>.lvsdb
  ```
 
-
 The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the marker browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
 
 <p align="center">
-  <img src="images/lvs_marker_1.png" width="40%" >
+  <img src="images/lvs_marker_1.png" width="50%" >
 </p>
 <p align="center">
   Fig. 1. Netlist Browser for Klayout-LVS
@@ -177,46 +183,36 @@ After selecting Netlist Browser option, you could load the database file and vis
   Fig. 3. Loading LVS Netlist/database file - 2
 </p>
 
+<p align="center">
+  <img src="images/lvs_marker_4.png" width="70%" >
+</p>
+<p align="center">
+  Fig. 4. Visualize LVS results
+</p>
+
 Additionally, you can find the extracted netlist generated from your design at (`<device_name>_extracted.cir`) in the output run directory.
 
 ### GUI
 
 The SG13G2 also facilitates LVS execution via Klayout menus as depicted below:
 
+First, you need to add the LVS menus to your `KLAYOUT_PATH`, you could do that by executing the following command:
+
+```bash
+KLAYOUT_PATH=$PWD/../:$PWD/../.. klayout -e
+```
+
+Then, you will get the LVS menus for SG13G2, you could set your desired options as shown below:
+
+> **_NOTE:_**  You need to select the path of the netlist will be used in the LVS run. If no path is specified, the tool will automatically search for the netlist file in the same directory as the layout file, considering files with the extensions .cdl, .spice, or .cir and has same name of the layout file.
+
 <p align="center">
-  <img src="../../images/lvs_menus.png" width="60%" >
+  <img src="images/lvs_menus.png" width="60%" >
 </p>
 <p align="center">
   Fig. 3. Visualization of LVS results on Klayout-GUI
 </p>
 
-Upon executing the LVS using the `Run Klayout LVS` option, the result database will appear on your layout interface, allowing you to verify the outcome of the run similarly as shown above in Fig. 2.
+Finally, you could run the LVS using `Run Klayout LVS` option.
 
-<!-- ## Demo-Example
-
-The example shows a `sg13g2_and2_1` implemented using SG13G2 technology.
-
-### Layout
-
-Figure 6 displays the device's [layout](./testing/testcases/unit/std_cells/sg13g2_and2_1.gds) created using Klayout.
-
-<p align="center">
-  <img src="../../images/sg13g2_and2_1_layout.png" width="100%" >
-</p>
-<p align="center">
-  Fig. 5. Layout for and2_1 standard cell.
-</p>
-
-### LVS-Testing
-
-#### CLI
-
-```bash
-    python3 run_lvs.py --layout=testing/testcases/unit/std_cells/sg13g2_and2_1.gds --netlist=testing/testcases/unit/std_cells/sg13g2_and2_1.cdl --run_dir=lvs_and2_1_run
-```
-
-Please refer to [Usage](#usage) section for more details.
-
-#### GUI
-
-You could also run the LVS using Klayout-Menus supported for SG13G2 as explained above in Fig. 3. --> -->
+Upon executing the LVS, the result database will appear on your layout interface, allowing you to verify the outcome of the run similarly as shown above in Fig. 4.

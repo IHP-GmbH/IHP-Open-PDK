@@ -96,4 +96,11 @@ After selecting Netlist Browser option, you could load the database file and vis
   Fig. 3. Loading LVS Netlist/database file - 2
 </p>
 
+<p align="center">
+  <img src="../images/lvs_marker_4.png" width="70%" >
+</p>
+<p align="center">
+  Fig. 4. Visualize LVS results
+</p>
+
 Additionally, you can find the extracted netlist generated from your design at (`<device_name>_extracted.cir`) in the output run directory.
