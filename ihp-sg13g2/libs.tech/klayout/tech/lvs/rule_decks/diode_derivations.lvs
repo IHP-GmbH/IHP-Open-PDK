@@ -23,31 +23,41 @@
 
 logger.info('Starting DIODE DERIVATIONS')
 
-diode_exclude = gatpoly_drw.join(trans_drw).join(polyres_drw)
-                     .join(extblock_drw).join(nsd_drw).join(recog_esd)
-                     .join(substrate_drw).join(ind_drw)
+diode_exclude = gatpoly_drw.join(nsd_drw).join(heattrans_drw)
+                    .join(trans_drw).join(emwind_drw).join(emwihv_drw)
+                    .join(heatres_drw).join(polyres_drw).join(mim_drw)
+                    .join(extblock_drw).join(res_drw).join(activ_mask)
+                    .join(recog_esd).join(ind_drw).join(ind_pin)
+                    .join(substrate_drw)
 
-antenna_d_exc = nwell_drw.join(salblock_drw).join(nbulay_drw)
-                .join(pwell_block).join(diode_exclude)
+antenna_d_exc = nwell_drw.join(pwell_block).join(nbulay_drw).join(salblock_drw)
+                .join(nsd_block).join(pwell_blk_holes).join(diode_exclude)
+
+antenna_d_mk = recog_diode.not(antenna_d_exc)
 
 # dantenna diode
-dantenna_exc = psd_drw.join(nsd_block).join(antenna_d_exc)
-dantenna_n = activ_drw.and(recog_diode).not(dantenna_exc)
-dantenna_p = pwell_con.and(recog_diode).not(dantenna_exc)
+dantenna_n = activ_drw.and(antenna_d_mk).not(psd_drw)
+dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
 
 # dpantenna diode
-dpantenna_n = activ_drw.and(psd_drw).and(recog_diode).not(antenna_d_exc)
-dpantenna_p = pwell_con.and(recog_diode).and(psd_drw)
+dpantenna_n = pactiv.and(antenna_d_mk)
+dpantenna_p = pwell.and(antenna_d_mk).covering(dpantenna_n)
 
 # schottky_nbl1 diode
-schottcky_p_ = activ_drw.and(cont_drw).and(metal1_drw).and(thickgateox_drw)
-                        .and(recog_diode).and(nsd_block).and(salblock_drw)
-                        .and(nbulay_drw).not(nwell_drw).not(diode_exclude)
+schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
+                .and(pwell_block).and(ptap_holes).and(nbulay_drw)
+                .and(salblock_drw).and(nsd_block).and(nwell_holes)
+                .not(psd_drw).not(pwell).not(diode_exclude)
+
+schottcky_p_ = cont_drw.and(activ_drw).and(metal1_drw)
+                .and(schottky_mk).not(nwell_drw)
+
+# schottky_nbl1 is a fixed device (0.3um X 1.0 um)
 schottcky_p = schottcky_p_.with_bbox_min(0.3.um).with_bbox_max(1.0.um)
 # Using box with area 1x1 to be used as a reference to (m)
 schottcky_p_1x1 = schottcky_p.middle(as_boxes).sized(0.499.um)
-schottcky_n = activ_drw.and(nwell_iso).and(recog_diode)
-                    .not(nsd_block).not(salblock_drw).not(psd_drw)
-                    .not(diode_exclude)
+schottcky_n = activ_drw.and(nwell_iso).interacting(schottky_mk)
+                    .not(nsd_block).not(salblock_drw).not(diode_exclude)
+# define port for schottcky
 schottcky_n_port = cont_drw.and(schottcky_n).not_interacting(schottcky_p)
 schottcky_sub = ptap.extents.covering(schottcky_p).covering(schottcky_n)

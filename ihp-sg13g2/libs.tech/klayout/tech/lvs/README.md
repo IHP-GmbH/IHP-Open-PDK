@@ -199,8 +199,11 @@ The SG13G2 also facilitates LVS execution via Klayout menus as depicted below:
 First, you need to add the LVS menus to your `KLAYOUT_PATH`, you could do that by executing the following command:
 
 ```bash
-KLAYOUT_PATH=$PWD/../:$PWD/../.. klayout -e
+KLAYOUT_PATH=$PDKPATH/libs.tech/klayout:$PDKPATH/libs.tech/klayout/tech/ klayout -e
 ```
+
+> **_NOTE:_** In this context, `PDKPATH` refers to the path leading to the IHP-Open-PDK/ihp-sg13g2 directory within the current repository.
+
 
 Then, you will get the LVS menus for SG13G2, you could set your desired options as shown below:
 

@@ -37,7 +37,7 @@ pwell = pwell_drw.join(CHIP.not(nwell_drw.join(pwell_block)))
 # psd, nsd active & res
 psd = psd_drw
 nsd_res = nsd_drw.and(psd).interacting(polyres_drw)
-# nsd_all = CHIP.not(psd.join(nsd_block))
+nsd_all = CHIP.not(psd.join(nsd_block)).join(nsd_res)
 
 # n & p activ
 nactiv  = activ_drw.not(psd.join(nsd_block))
@@ -45,8 +45,6 @@ pactiv  = activ_drw.and(psd)
 
 # res/cap exclusion
 res_mk        = polyres_drw.join(res_drw)
-nwell_con     = nwell_drw.not(res_mk)
-pwell_con     = pwell.not(res_mk)
 poly_con      = gatpoly_drw.not(res_mk)
 metal1_con    = metal1_drw.not(metal1_res)
 topmetal1_con = topmetal1_drw.not(ind_drw)
@@ -62,9 +60,15 @@ ngate_hv_base = ngate.and(thickgateox_drw)
 pgate_hv_base = pgate.and(thickgateox_drw)
 
 # S/D FETs
-nsd_fet = nactiv.outside(nwell_n_iso).interacting(ngate).not(ngate).not(res_mk)
-psd_fet = pactiv.and(nwell_n_iso).interacting(pgate).not(pgate).not(res_mk)
+nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
+psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
 
 # n & p taps (short connections)
 ntap = nactiv.and(nwell_n_iso).not(res_mk).not(recog_diode).not(gatpoly_drw)
 ptap = pactiv.and(pwell).not(substrate_drw).not(res_mk).not(recog_diode).not(gatpoly_drw)
+
+# Derived - Layers (Special)
+nwell_holes = nwell_drw.holes
+ptap_holes = ptap.holes
+ntap_holes = ntap.holes
+pwell_blk_holes = pwell_block.holes

@@ -37,7 +37,7 @@ test-LVS-main: test-LVS-MOS test-LVS-RFMOS test-LVS-BJT test-LVS-DIODE test-LVS-
 .ONESHELL:
 test-LVS-%:
 	@echo "========== LVS-$* testing =========="
-	@ python3 run_regression.py --device_name=$*
+	@ python3 run_regression.py --device=$*
 
 #=================================
 # -------- test-LVS-switch -------
