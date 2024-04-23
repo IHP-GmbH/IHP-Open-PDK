@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+-->
+<klayout-macro>
+ <description>Run Klayout LVS</description>
+ <version>0.1</version>
+ <category>lvs</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name/>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>lvs-dsl-xml</dsl-interpreter-name>
+ <text>
+
+require 'yaml'
+
+## reading the parent directory of the current file
+dir_path = File.dirname(File.expand_path(__FILE__))
+run_dir = File.expand_path("..", dir_path)
+
+## reading the loaded gds file path
+layout_path = Pathname.new(RBA::CellView.active.filename)
+
+## read saved options from yaml file
+options = YAML.load(File.read(dir_path + "/lvs_options.yml"))
+
+## reading netlist option to get netlist_path
+if options["netlist"] == ""
+    net_name = layout_path.split()[1].to_s().split(".")[0]
+
+    net_dir = "#{layout_path.split()[0]}/#{net_name}.cdl"
+    unless File.exist?net_dir
+      net_dir = "#{layout_path.split()[0]}/#{net_name}.spice"
+    end
+    unless File.exist?net_dir
+      net_dir = "#{layout_path.split()[0]}/#{net_name}.cir"
+    end
+else  
+    net_dir = options["netlist"]
+end
+
+unless File.exist?net_dir
+  STDERR.puts "The netlist file used #{net_dir} doesn't exist, please recheck"
+  exit
+end
+
+## read the log of lvs run to get output lydb file paths if run_dir option is disables 
+gds_name = layout_path.split()[1].to_s.split(".")[0]
+
+## passing options to lvs run file
+$schematic = net_dir
+
+$lvs_sub = options["sub_name"]
+
+$run_mode = options["run_mode"]
+
+unless options["top_cell_name"] == "" 
+  $topcell = options["top_cell_name"]
+end
+
+$spice_net_names = options["spice_net"]
+
+$spice_comments = options["spice_comment"]
+
+$net_only = options["net_only"]
+
+$top_lvl_pins = options["top_lvl_pins"]
+
+$netlist_simplify = options["netlist_simplify"]
+
+$combine = options["combine"]
+
+$purge = options["purge"]
+
+$purge_nets = options["purge_nets"]
+
+$schematic_simplify = options["schematic_simplify"]
+
+$verbose = options["verbose"]
+
+## include lvs run file
+#%include ../lvs/sg13g2.lvs
+
+</text>
+</klayout-macro>

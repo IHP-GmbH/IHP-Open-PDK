@@ -1,0 +1,55 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================
+# ---- RESISTOR DERIVATIONS -----
+#================================
+
+logger.info('Starting RESISTOR DERIVATIONS')
+
+polyres_exclude = activ_drw.join(nwell_drw).join(thickgateox_drw)
+         .join(heattrans_drw).join(trans_drw).join(nbulay_drw)
+         .join(nsd_block).join(recog_diode).join(recog_esd).join(ind_drw)
+
+# ==============
+# ---- POLY ----
+# ==============
+
+## polyres
+polyres = polyres_drw.and(heatres_drw).and(extblock_drw).interacting(gatpoly_drw).not(polyres_exclude)
+
+## rhigh
+rhigh_res = polyres.and(psd_drw).and(salblock_drw).and(nsd_drw)
+rhigh_ports = gatpoly_drw.interacting(rhigh_res).not(rhigh_res)
+
+## rppd
+rppd_res = polyres.and(psd_drw).and(salblock_drw).not(nsd_drw)
+rppd_ports = gatpoly_drw.interacting(rppd_res).not(rppd_res)
+
+## rsil
+rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
+rsil_res = polyres.and(res_drw).not(rsil_exc)
+rsil_ports = gatpoly_drw.interacting(rsil_res).not(rsil_res)
+
+# ===============
+# ---- METAL ----
+# ===============
+
+# lvsres
+lvsres = metal1_drw.and(metal1_res)
