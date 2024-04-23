@@ -260,7 +260,7 @@ def run_test_case(
         switches = " ".join(get_switches(sw_file, device_name))
     else:
         # Get switches
-        switches = " -rd lvs_sub=sub!"  # default switch
+        switches = " --lvs_sub=sub!"  # default switch
 
     # Creating run folder structure and copy testcases in it
     pattern_clean = ".".join(os.path.basename(layout_path).split(".")[:-1])
@@ -274,9 +274,8 @@ def run_test_case(
 
     # command to run LVS
     call_str = (
-        f"klayout -b -r {lvs_dir}/sg13g2.lvs -rd input={layout_path_run} "
-        f"-rd schematic={device_name}.cdl -rd report={device_name}.lvsdb "
-        f"-rd target_netlist={device_name}_extracted.cir {switches} > {pattern_log} 2>&1"
+        f"python3 {lvs_dir}/run_lvs.py --layout={layout_path_run} "
+        f"--netlist={netlist_path_run} --run_dir={output_loc} {switches} > {pattern_log} 2>&1"
     )
 
     # Starting klayout run
@@ -542,7 +541,7 @@ if __name__ == "__main__":
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices are (MOS, RFMOS, BJT, DIODE, RES, CAP, ESD, TAP, IND) only, please recheck"
+            "Allowed devices are (MOS, RFMOS, BJT, DIODE, RES, CAP, ESD, TAP, IND) only"
         )
         exit(1)
 

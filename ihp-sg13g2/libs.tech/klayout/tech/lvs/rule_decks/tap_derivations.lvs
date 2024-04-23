@@ -23,14 +23,15 @@
 
 logger.info('Starting Taps DERIVATIONS')
 
-taps_exclude = gatpoly_drw.join(heattrans_drw).join(trans_drw)
-                .join(heatres_drw).join(polyres_drw).join(salblock_drw)
-                .join(extblock_drw).join(nsd_drw).join(res_drw)
+taps_exclude = gatpoly_drw.join(nsd_drw).join(heattrans_drw)
+                .join(trans_drw).join(emwind_drw).join(emwihv_drw)
+                .join(heatres_drw).join(salblock_drw).join(polyres_drw)
+                .join(mim_drw).join(extblock_drw).join(res_drw)
                 .join(activ_mask).join(recog_diode).join(recog_esd)
-                .join(ind_drw)
+                .join(ind_drw).join(ind_pin)
 
 # === ntap1 ===
-ntap1_exc = psd_drw.join(taps_exclude)
+ntap1_exc = pwell.join(psd_drw).join(taps_exclude)
 # ntap1_n = nactiv.and(nwell_iso).not(ntap1_exc)
 # Modified to catch similar structure in pnpMPA-Base node
 ntap1_n = nactiv.and(nwell_iso).extents.not_interacting(ntap1_exc)
@@ -39,4 +40,4 @@ ntap1_p = nwell_iso.covering(ntap1_n)
 # === ptap1 ===
 ptap1_exc = nwell_drw.join(nbulay_drw).join(taps_exclude)
 ptap1_n = pactiv.and(pwell).interacting(substrate_drw).not(ptap1_exc)
-ptap1_p = pwell_con.covering(ptap1_n)
+ptap1_p = pwell.covering(ptap1_n)

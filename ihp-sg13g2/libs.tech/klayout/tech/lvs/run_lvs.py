@@ -22,8 +22,8 @@ Usage:
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>) [--thr=<thr>]
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
     [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--net_only]
-    [--top_lvl_pins] [--no_simplify] [--combine] [--purge] [--purge_nets] 
-    [--schematic_simplify] [--verbose] 
+    [--top_lvl_pins] [--no_simplify] [--combine] [--purge] [--purge_nets]
+    [--schematic_simplify] [--verbose]
 
 Options:
     --help -h                           Print this help message.
