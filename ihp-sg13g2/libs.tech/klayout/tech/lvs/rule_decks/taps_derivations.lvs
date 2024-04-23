@@ -1,0 +1,42 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#===============================
+# ------ Taps DERIVATIONS ------
+#===============================
+
+logger.info('Starting Taps DERIVATIONS')
+
+taps_exclude = gatpoly_drw.join(heattrans_drw).join(trans_drw)
+                .join(heatres_drw).join(polyres_drw).join(salblock_drw)
+                .join(extblock_drw).join(nsd_drw).join(res_drw)
+                .join(activ_mask).join(recog_diode).join(recog_esd)
+                .join(ind_drw)
+
+# === ntap1 ===
+ntap1_exc = psd_drw.join(taps_exclude)
+# ntap1_n = nactiv.and(nwell_iso).not(ntap1_exc)
+# Modified to catch similar structure in pnpMPA-Base node
+ntap1_n = nactiv.and(nwell_iso).extents.not_interacting(ntap1_exc)
+ntap1_p = nwell_iso.covering(ntap1_n)
+
+# === ptap1 ===
+ptap1_exc = nwell_drw.join(nbulay_drw).join(taps_exclude)
+ptap1_n = pactiv.and(pwell).interacting(substrate_drw).not(ptap1_exc)
+ptap1_p = pwell_con.covering(ptap1_n)
