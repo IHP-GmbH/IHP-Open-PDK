@@ -32,6 +32,14 @@ You need the following set of tools installed to be able to run SG13G2 LVS:
 - Python 3.9+
 - KLayout 0.28.14+
 
+## Installation
+
+To install the required Python packages, execute the following command:
+
+```bash
+pip install -r ../../../../../requirements.txt
+```
+
 ## Devices Status
 
 The following table explains the list of available SG13G2 devices we have supported in our LVS runset.
@@ -213,7 +221,7 @@ Then, you will get the LVS menus for SG13G2, you could set your desired options 
   <img src="images/lvs_menus.png" width="60%" >
 </p>
 <p align="center">
-  Fig. 3. Visualization of LVS results on Klayout-GUI
+  Fig. 5. Visualization of LVS results on Klayout-GUI
 </p>
 
 Finally, you could run the LVS using `Run Klayout LVS` option.
