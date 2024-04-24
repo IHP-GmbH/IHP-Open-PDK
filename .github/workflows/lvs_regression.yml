@@ -29,24 +29,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  lvs_switch:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { tool: klayout, part: lvs, test: switch }
-
-    name: ${{ matrix.part }} | ${{ matrix.test }}
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-      - name: Testing ${{ matrix.part }} for ${{ matrix.test }}
-        run: |
-          make test-"$(python -c 'print("${{ matrix.part }}".upper())')"-${{ matrix.test }}
-
   build_lvs-matrix:
     runs-on: ubuntu-latest
     outputs:
@@ -73,10 +55,21 @@ jobs:
     name: ${{ matrix.part }} | ${{ matrix.test }}
 
     steps:
+      - name: Installing Klayout
+        run: |
+          sudo apt update -qq -y
+          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.28.14-1_amd64.deb
+          # The dpkg command will fail complaining about missing dependencies.
+          sudo dpkg -i ./klayout_0.28.14-1_amd64.deb || true
+          # The apt install command should install the missing dependencies
+          # needed by KLayout above and finish the install.
+          sudo apt install -f -y
+          # Check that KLayout was successfully installed!
+          klayout -v
+
       - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Testing ${{ matrix.part }} for ${{ matrix.test }}
         run: |
           make test-"$(python -c 'print("${{ matrix.part }}".upper())')"-${{ matrix.test }}
-
