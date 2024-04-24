@@ -23,9 +23,17 @@
 
 logger.info('Starting Inductor DERIVATIONS')
 
+ind_exc = gatpoly_drw.join(pwell).join(nsd_drw)
+            .join(nbulay_drw).join(thickgateox_drw).join(heattrans_drw)
+            .join(emwind_drw).join(emwihv_drw).join(heatres_drw)
+            .join(salblock_drw).join(polyres_drw).join(mim_drw)
+            .join(extblock_drw).join(res_drw).join(activ_mask)
+            .join(recog_diode).join(recog_esd).join(substrate_drw)
+
 # General
 ind_edges = ind_drw.edges
-ind_core_ = topmetal2_drw.join(topmetal1_drw).and(pwell_block).and(ind_drw).merged
+ind_core_ = topmetal2_drw.join(topmetal1_drw).and(pwell_block)
+            .and(ind_drw).merged.not(ind_exc)
 ind_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
 ind_port_la = ind_ports_.interacting(ind_text.texts("LA"))
 ind_port_lb = ind_ports_.interacting(ind_text.texts("LB"))

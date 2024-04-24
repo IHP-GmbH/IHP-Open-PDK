@@ -23,13 +23,15 @@
 
 logger.info('Starting CAP DERIVATIONS')
 
-rfmimcap_exc = gatpoly_drw.join(nsd_drw).join(nsd_block)
-                .join(psd).join(nbulay_drw).join(thickgateox_drw)
-                .join(heattrans_drw).join(trans_drw).join(emwind_drw)
-                .join(emwihv_drw).join(heatres_drw).join(salblock_drw)
-                .join(polyres_drw).join(extblock_drw).join(res_drw)
-                .join(activ_mask).join(pwell_blk_holes).join(recog_diode)
-                .join(recog_esd).join(ind_drw).join(ind_pin).join(substrate_drw)
+cap_exc = nsd_drw.join(heattrans_drw).join(trans_drw)
+            .join(emwind_drw).join(emwihv_drw).join(heatres_drw)
+            .join(salblock_drw).join(polyres_drw).join(extblock_drw)
+            .join(res_drw).join(activ_mask).join(recog_diode)
+            .join(recog_esd).join(ind_drw).join(ind_pin)
+            .join(substrate_drw)
+
+rfmimcap_exc = gatpoly_drw.join(nsd_block).join(psd)
+                .join(nbulay_drw).join(thickgateox_drw).join(cap_exc)
 
 # === MIMCAP ===
 mimcap_exclude = rfmimcap_exc.join(pwell_block).join(ptap_holes)
@@ -45,7 +47,7 @@ cmim_btm = mim_btm.covering(cmim_top)
 cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
 
 # === rfcmim ===
-rfmim_area = pwell_block.and(ptap.extents).interacting(mim_drw)
+rfmim_area = pwell_block.interacting(mim_drw)
 rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
@@ -53,10 +55,8 @@ rfmim_sub = ptap.extents.interacting(rfmim_area)
 rfmeas_mk = metal5_drw.overlapping(rfmim_btm).and(rfmim_area)
 
 # === svaricap ===
-varicap_exc = heattrans_drw.join(trans_drw).join(heatres_drw)
-                .join(polyres_drw).join(salblock_drw).join(extblock_drw)
-                .join(nsd_drw).join(res_drw).join(recog_diode).join(recog_esd)
-                .join(substrate_drw)
+varicap_exc = pwell.join(pwell_block).join(nwell_holes)
+                .join(mim_drw).join(cap_exc)
 
 varicap_core = ngate_hv_base.and(nwell_iso).not(varicap_exc)
 varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
