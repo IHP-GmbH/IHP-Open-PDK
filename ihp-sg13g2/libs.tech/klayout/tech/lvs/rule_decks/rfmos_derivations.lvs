@@ -21,24 +21,19 @@
 
 logger.info('Starting RF-MOSFET DERIVATIONS')
 
-rfmos_exclude = heattrans_drw.join(mos_exclude)
-rfnmos_gr = ptap.holes
-rfpmos_gr = ntap.holes
-ntap_ext = ntap.extents
-
 # ===============
 # --- RF-NMOS ---
 # ===============
 
 logger.info('Starting RF-NMOS DERIVATIONS')
 
-rfnmos_exclude = nwell_n_iso.join(pwell_block).join(rfmos_exclude)
+rfnmos_exclude = nmos_exclude.join(heattrans_drw)
 
 # rfnmos - LV
-rfngate_lv = ngate_lv_base.and(rfnmos_gr).not(rfnmos_exclude)
+rfngate_lv = ngate_lv_base.and(ptap_holes).not(rfnmos_exclude)
 
 # rfnmos - HV
-rfngate_hv = ngate_hv_base.and(rfnmos_gr).not(rfnmos_exclude)
+rfngate_hv = ngate_hv_base.and(ptap_holes).not(rfnmos_exclude)
 
 # ===============
 # --- RF-PMOS ---
@@ -46,11 +41,10 @@ rfngate_hv = ngate_hv_base.and(rfnmos_gr).not(rfnmos_exclude)
 
 logger.info('Starting RF-PMOS DERIVATIONS')
 
-rfpmos_exclude = nbulay_drw.join(rfmos_exclude)
+rfpmos_exclude = pmos_exclude.join(heattrans_drw)
 
 # rfpmos - LV
-rfpgate_lv = pgate_lv_base.and(rfpmos_gr).not(rfpmos_exclude)
-# rfpmos_sub = ptap.and(ntap_ext.covering(rfpgate_lv).and(nwell_drw))
+rfpgate_lv = pgate_lv_base.and(ntap_holes).not(rfpmos_exclude)
 
 # rfpmos - HV
-rfpgate_hv = pgate_hv_base.and(rfpmos_gr).not(rfpmos_exclude)
+rfpgate_hv = pgate_hv_base.and(ntap_holes).not(rfpmos_exclude)

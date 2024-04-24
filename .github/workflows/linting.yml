@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 #==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -17,22 +15,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
-#================================
-# ----- DIODE CONNECTIONS -------
-#================================
+name: code linting
+on:
+  pull_request:
+  # push:
+  workflow_dispatch:
 
-logger.info('Starting LVS DIODE CONNECTIONS')
-
-# dantenna diode
-connect(dantenna_n, cont_drw)
-connect(dantenna_p, pwell)
-
-# dantenna diode
-connect(dpantenna_n, cont_drw)
-connect(dpantenna_p, pwell)
-
-# dantenna diode
-connect(schottcky_p_1x1, schottcky_p)
-connect(schottcky_p, metal1_con)
-connect(schottcky_n, schottcky_n_port)
-connect(schottcky_n_port, metal1_con)
+jobs:
+  lint_python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Lint with flake8
+        run: |
+          make lint_python

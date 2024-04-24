@@ -163,6 +163,17 @@ class EnDiode < RBA::DeviceClassDiode
   end
 end
 
+# schottky device class
+class CustomSchottky < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    self.combiner = SchottckyDeviceCombiner.new
+  end
+end
+
 # Taps device class
 class CustomTap < RBA::DeviceClassDiode
   def initialize

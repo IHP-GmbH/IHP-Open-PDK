@@ -23,9 +23,16 @@
 
 logger.info('Starting CAP DERIVATIONS')
 
+rfmimcap_exc = gatpoly_drw.join(nsd_drw).join(nsd_block)
+                .join(psd).join(nbulay_drw).join(thickgateox_drw)
+                .join(heattrans_drw).join(trans_drw).join(emwind_drw)
+                .join(emwihv_drw).join(heatres_drw).join(salblock_drw)
+                .join(polyres_drw).join(extblock_drw).join(res_drw)
+                .join(activ_mask).join(pwell_blk_holes).join(recog_diode)
+                .join(recog_esd).join(ind_drw).join(ind_pin).join(substrate_drw)
+
 # === MIMCAP ===
-rfmim_exclude = nbulay_drw.join(recog_drw).join(recog_esd)
-mimcap_exclude = rfmim_exclude.join(pwell_block)
+mimcap_exclude = rfmimcap_exc.join(pwell_block).join(ptap_holes)
 
 mim_top = mim_drw.overlapping(topmetal1_drw).and(metal5_drw)
 mim_btm = metal5_drw.and(mim_drw).sized(0.6.um)
@@ -38,8 +45,8 @@ cmim_btm = mim_btm.covering(cmim_top)
 cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
 
 # === rfcmim ===
-rfmim_area = ptap.extents.and(pwell_block).interacting(mim_drw)
-rfmim_top = mim_top.and(rfmim_area).not(rfmim_exclude)
+rfmim_area = pwell_block.and(ptap.extents).interacting(mim_drw)
+rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
 rfmim_sub = ptap.extents.interacting(rfmim_area)
