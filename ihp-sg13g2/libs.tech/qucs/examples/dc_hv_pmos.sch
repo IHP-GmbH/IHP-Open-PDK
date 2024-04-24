@@ -1,6 +1,6 @@
 <Qucs Schematic 24.2.0>
 <Properties>
-  <View=-186,0,1651,1077,0.809276,0,75>
+  <View=-85,-4,1583,976,0.90102,0,0>
   <Grid=10,10,1>
   <DataSet=dc_hv_pmos.dat>
   <DataDisplay=dc_hv_pmos.dpl>
@@ -27,7 +27,7 @@
   <Vdc V1 1 80 870 -61 -26 0 3 "1 V" 1>
   <IProbe Pr1 1 190 710 16 -26 0 1>
   <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerMOShv.lib mos_tt\n.control\npre_osdi ../../.qucs/psp103_nqs.osdi\n.endc" 1 "" 0 "" 0>
-  <Lib sg13_hv_pmos1 1 190 820 45 -101 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_hv_pmos" 0 "1.0u" 1 "0.45u" 1 "1" 0 "1" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
+  <Lib sg13_hv_pmos1 1 190 820 45 -101 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_hv_pmos" 0 "1.0u" 1 "0.45u" 1 "1" 0 "1" 1 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
 </Components>
 <Wires>
   <190 880 190 910 "" 0 0 0 "">
@@ -43,8 +43,8 @@
   <80 900 80 910 "" 0 0 0 "">
 </Wires>
 <Diagrams>
-  <Rect 492 870 986 577 3 #c0c0c0 1 00 1 0 0.2 3 1 -5e-06 5e-06 4.05672e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
-	<"ngspice/i(pr1)" #0000ff 0 3 0 0 0>
+  <Rect 492 870 986 577 3 #c0c0c0 1 00 1 0 0.2 3 1 -5e-07 5e-07 4.34555e-06 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/sw1.i(pr1)" #ff0000 0 3 0 0 0>
   </Rect>
 </Diagrams>
 <Paintings>
