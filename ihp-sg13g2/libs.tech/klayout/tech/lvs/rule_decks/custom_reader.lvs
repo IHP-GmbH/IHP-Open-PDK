@@ -126,7 +126,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Create a resistor device class.
   def create_resistor(model, num_nets)
-    if model.downcase.start_with?('res')
+    if RES_DEV.any? { |res| model.downcase.start_with?(res) }
       DeviceCustomRes.new(model, num_nets)
     elsif num_nets == 2 && model.downcase.include?('tap')
       RBA::DeviceClassDiode.new
@@ -172,7 +172,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'C'
       model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : gen_mim_terms(model)
     when 'R'
-      if model.downcase.start_with?('res')
+      if RES_DEV.any? { |res| model.downcase.start_with?(res) }
         gen_term_names(model, nets.size)
       elsif model.downcase.include?('tap')
         %w[C A]
@@ -288,8 +288,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_resistor_params(device, model, params)
     if model.downcase.include?('tap')
       device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
-      device.set_parameter('P', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
-    elsif model.downcase.start_with?('res')
+      device.set_parameter('P', (params['P'] || params['PERIM'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    elsif RES_DEV.any? { |res| model.downcase.start_with?(res) }
       device.set_parameter('w', (params['W'] || 0.0) * 1e6)
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)
       device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
