@@ -27,7 +27,10 @@ Explains how to use the SG13G2 LVS rule decks.
  ```
 
 ## Prerequisites
+
 You need the following set of tools installed to be able to run SG13G2 LVS:
+
+At a minimum:
 
 - Python 3.9+
 - KLayout 0.28.14+

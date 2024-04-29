@@ -14,6 +14,8 @@ Explains how to test SG13G2 LVS rule decks.
 
 ## Prerequisites
 
+At a minimum:
+
 You need the following set of tools installed to be able to run the regression:
 - Python 3.9+
 - KLayout 0.28.14+
@@ -21,6 +23,14 @@ You need the following set of tools installed to be able to run the regression:
 We have tested this using the following setup:
 - Python 3.9.18
 - KLayout 0.28.16
+
+## Installation
+
+To install the required Python packages, execute the following command:
+
+```bash
+pip install -r ../../../../../../requirements.txt
+```
 
 ## Usage
 
