@@ -64,6 +64,18 @@ module DeviceCombinerMethods
       series_con2 = a_net1.cluster_id == b_net2.cluster_id || a_net2.cluster_id == b_net1.cluster_id
       series_con = series_con1 || series_con2
     end
+
+    # Reroute terminal connections based on cluster IDs
+    if a_net1.cluster_id == b_net1.cluster_id
+      a.connect_terminal(0, b_net2)
+    elsif a_net2.cluster_id == b_net2.cluster_id
+      a.connect_terminal(1, b_net1)
+    elsif a_net1.cluster_id == b_net2.cluster_id
+      a.connect_terminal(0, b_net1)
+    elsif a_net2.cluster_id == b_net1.cluster_id
+      a.connect_terminal(1, b_net2)
+    end
+
     a_net1 && b_net1 && a_net2 && b_net2 && series_con
   end
 
