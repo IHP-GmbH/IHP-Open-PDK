@@ -38,7 +38,7 @@ def ihpAddThermalLayer(self, heatLayer, bbox, addThermalText, label):
     return(pcInst)
 
 def ihpAddThermalResLayer(self, bbox, addThermalText, label):
-    return(ihpAddThermalLayer(self, Layer('HeatTrans'), bbox, addThermalText, label));
+    return(ihpAddThermalLayer(self, Layer('HeatRes'), bbox, addThermalText, label));
 
 def ihpAddThermalMosLayer(self, bbox, addThermalText, label):
     return(ihpAddThermalLayer(self, Layer('HeatTrans'), bbox, addThermalText, label));
