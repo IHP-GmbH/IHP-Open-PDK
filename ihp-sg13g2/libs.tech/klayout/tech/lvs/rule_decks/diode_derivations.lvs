@@ -23,12 +23,12 @@
 
 logger.info('Starting DIODE DERIVATIONS')
 
-diode_exclude = gatpoly_drw.join(nwell_drw).join(nsd_drw)
-                    .join(heattrans_drw).join(trans_drw).join(emwind_drw)
-                    .join(emwihv_drw).join(heatres_drw).join(polyres_drw)
-                    .join(mim_drw).join(extblock_drw).join(res_drw)
-                    .join(activ_mask).join(recog_esd).join(ind_drw)
-                    .join(ind_pin).join(substrate_drw)
+diode_exclude = gatpoly_drw.join(nsd_drw).join(heattrans_drw)
+                .join(trans_drw).join(emwind_drw).join(emwihv_drw)
+                .join(heatres_drw).join(polyres_drw).join(mim_drw)
+                .join(extblock_drw).join(res_drw).join(activ_mask)
+                .join(recog_esd).join(ind_drw).join(ind_pin)
+                .join(substrate_drw)
 
 antenna_d_exc = pwell_block.join(nbulay_drw).join(salblock_drw)
                 .join(nsd_block).join(diode_exclude)
@@ -36,12 +36,12 @@ antenna_d_exc = pwell_block.join(nbulay_drw).join(salblock_drw)
 antenna_d_mk = recog_diode.not(antenna_d_exc)
 
 # ==== dantenna diode ====
-dantenna_n = activ_drw.and(antenna_d_mk).not(psd_drw)
+dantenna_n = activ_drw.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
 dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
 
 # ==== dpantenna diode ====
-dpantenna_n = pactiv.and(antenna_d_mk)
-dpantenna_p = pwell.and(antenna_d_mk).covering(dpantenna_n)
+dpantenna_p = pactiv.and(antenna_d_mk)
+dpantenna_n = nwell_drw.covering(dpantenna_p)
 
 # ==== schottky_nbl1 diode ====
 schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
