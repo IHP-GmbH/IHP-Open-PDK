@@ -296,8 +296,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('b', params['B'] || 0.0)
       device.set_parameter('m', params['M'] || 1.0)
     else
-      device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
-      device.set_parameter('L', (params['L'] || 0.0) * (params['S'] || 1.0) * 1e6)
+      device.set_parameter('W', (params['W'] || params['WIDTH'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('L', (params['L'] || params['LENGTH'] || 0.0) * (params['S'] || 1.0) * 1e6)
       device.set_parameter('R', (params['R'] || 0.0) * (params['S'] || 1.0) / (params['M'] || 1.0))
     end
   end
