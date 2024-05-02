@@ -27,7 +27,10 @@ Explains how to use the SG13G2 LVS rule decks.
  ```
 
 ## Prerequisites
+
 You need the following set of tools installed to be able to run SG13G2 LVS:
+
+At a minimum:
 
 - Python 3.9+
 - KLayout 0.28.14+
@@ -66,9 +69,9 @@ The following table explains the list of available SG13G2 devices we have suppor
 | dpantenna       |:white_check_mark:|
 | schottky_nbl1   |:white_check_mark:|
 | **Resistors**   |                  |
-| res_rsil        |:white_check_mark:|
-| res_rppd        |:white_check_mark:|
-| res_rhigh       |:white_check_mark:|
+| rsil            |:white_check_mark:|
+| rppd            |:white_check_mark:|
+| rhigh           |:white_check_mark:|
 | lvsres          |:white_check_mark:|
 | **Capacitors**  |                  |
 | SVaricap        |:white_check_mark:|
