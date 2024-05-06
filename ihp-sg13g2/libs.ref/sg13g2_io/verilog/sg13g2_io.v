@@ -243,3 +243,52 @@ endmodule
 module sg13g2_IOPadVdd ();
 endmodule
 `endcelldefine
+
+// type: Corner
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Corner ();
+endmodule
+`endcelldefine
+
+// type: Filler200
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler200 ();
+endmodule
+`endcelldefine
+
+// type: Filler400
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler400 ();
+endmodule
+`endcelldefine
+
+// type: Filler1000
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler1000 ();
+endmodule
+`endcelldefine
+
+// type: Filler2000
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler2000 ();
+endmodule
+`endcelldefine
+
+// type: Filler4000
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler4000 ();
+endmodule
+`endcelldefine
+
+// type: Filler10000
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_Filler10000 ();
+endmodule
+`endcelldefine
