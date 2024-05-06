@@ -202,7 +202,7 @@ class rppd(DloGen):
         # Check, if contacts have to be asymmetric
         # Some cases need to have asym contacts:
         # 2 stripes and low ps and are not pushed out of resistor
-        if zerop(contactpush) is 1 and self.ps-2*contoverlay <= psmin and onep(self.b) is 1:
+        if zerop(contactpush) == 1 and self.ps-2*contoverlay <= psmin and onep(self.b) == 1:
             asymcont = True
         else :
             asymcont = False

@@ -27,7 +27,10 @@ Explains how to use the SG13G2 LVS rule decks.
  ```
 
 ## Prerequisites
+
 You need the following set of tools installed to be able to run SG13G2 LVS:
+
+At a minimum:
 
 - Python 3.9+
 - KLayout 0.28.14+
@@ -66,9 +69,9 @@ The following table explains the list of available SG13G2 devices we have suppor
 | dpantenna       |:white_check_mark:|
 | schottky_nbl1   |:white_check_mark:|
 | **Resistors**   |                  |
-| res_rsil        |:white_check_mark:|
-| res_rppd        |:white_check_mark:|
-| res_rhigh       |:white_check_mark:|
+| rsil            |:white_check_mark:|
+| rppd            |:white_check_mark:|
+| rhigh           |:white_check_mark:|
 | lvsres          |:white_check_mark:|
 | **Capacitors**  |                  |
 | SVaricap        |:white_check_mark:|
@@ -166,7 +169,7 @@ You could find the run results at your run directory if you previously specified
  ┗ 📜 <your_design_name>.lvsdb
  ```
 
-The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the marker browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
+The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the netlist browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
 
 <p align="center">
   <img src="images/lvs_marker_1.png" width="50%" >

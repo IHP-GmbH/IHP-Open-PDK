@@ -44,7 +44,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Set up layers and register device class for extraction.
     define_layers
     # Register device class for extraction.
-    if name.downcase.start_with?('res')
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
       @reg_dev = DeviceCustomRes.new(name, @num)
     elsif name.downcase.include?('varicap')
       @reg_dev = DeviceCustomVaractor.new(name, @num)
@@ -133,7 +133,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Returns:
     #   None
 
-    if name.downcase.start_with?('res')
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
       width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk)
       device.set_parameter('w', width * $unit)
       device.set_parameter('l', length * $unit)

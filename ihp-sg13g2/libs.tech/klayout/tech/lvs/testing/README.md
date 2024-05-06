@@ -14,6 +14,8 @@ Explains how to test SG13G2 LVS rule decks.
 
 ## Prerequisites
 
+At a minimum:
+
 You need the following set of tools installed to be able to run the regression:
 - Python 3.9+
 - KLayout 0.28.14+
@@ -21,6 +23,14 @@ You need the following set of tools installed to be able to run the regression:
 We have tested this using the following setup:
 - Python 3.9.18
 - KLayout 0.28.16
+
+## Installation
+
+To install the required Python packages, execute the following command:
+
+```bash
+pip install -r ../../../../../../requirements.txt
+```
 
 ## Usage
 
@@ -71,7 +81,7 @@ You could find the regression run results at your run directory if you previousl
     ┣ 📜 <device_name>.lvsdb
  ```
 
-The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the marker browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
+The outcome includes a database file for each device (`<device_name>.lvsdb`) containing LVS extractions and comparison results. You can view it by opening your gds file with: `klayout <device_name>.gds -mn <device_name>.lvsdb`. Alternatively, you can visualize it on your GDS file using the netlist browser option in the tools menu of the KLayout GUI as illustrated in the following figures.
 
 <p align="center">
   <img src="../images/lvs_marker_1.png" width="40%" >

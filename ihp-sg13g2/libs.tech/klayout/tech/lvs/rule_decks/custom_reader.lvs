@@ -126,7 +126,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Create a resistor device class.
   def create_resistor(model, num_nets)
-    if model.downcase.start_with?('res')
+    if RES_DEV.any? { |res| model.downcase.start_with?(res) }
       DeviceCustomRes.new(model, num_nets)
     elsif num_nets == 2 && model.downcase.include?('tap')
       RBA::DeviceClassDiode.new
@@ -172,7 +172,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'C'
       model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : gen_mim_terms(model)
     when 'R'
-      if model.downcase.start_with?('res')
+      if RES_DEV.any? { |res| model.downcase.start_with?(res) }
         gen_term_names(model, nets.size)
       elsif model.downcase.include?('tap')
         %w[C A]
@@ -186,7 +186,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
         %w[C E B]
       elsif model.downcase.include?('schottky')
         %w[E B C]
-      elsif model.downcase.include?('nmoscl') || model.downcase.include?('antenna')
+      elsif model.downcase.include?('nmoscl')
         %w[C A]
       else
         %w[A C]
@@ -268,8 +268,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     if model.downcase.include?('diodev') || model.downcase.include?('schottky') || model.downcase.include?('nmoscl')
       device.set_parameter('m', params['M'] || 1.0)
     else
-      device.set_parameter('A', (params['A'] || 0.0) * 1e12)
-      device.set_parameter('P', (params['P'] || 0.0) * 1e6)
+      device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('P', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
       device.set_parameter('m', params['M'] || 1.0)
     end
   end
@@ -287,17 +287,17 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Map parameters for a resistor device.
   def map_resistor_params(device, model, params)
     if model.downcase.include?('tap')
-      device.set_parameter('A', (params['A'] || 0.0) * (params['M'] || 1.0) * 1e12)
-      device.set_parameter('P', (params['P'] || params['PERIM'] || 0.0) * (params['M'] || 1.0) * 1e6)
-    elsif model.downcase.start_with?('res')
+      device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('P', (params['P'] || params['PERIM'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    elsif RES_DEV.any? { |res| model.downcase.start_with?(res) }
       device.set_parameter('w', (params['W'] || 0.0) * 1e6)
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)
       device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
       device.set_parameter('b', params['B'] || 0.0)
       device.set_parameter('m', params['M'] || 1.0)
     else
-      device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
-      device.set_parameter('L', (params['L'] || 0.0) * (params['S'] || 1.0) * 1e6)
+      device.set_parameter('W', (params['W'] || params['WIDTH'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('L', (params['L'] || params['LENGTH'] || 0.0) * (params['S'] || 1.0) * 1e6)
       device.set_parameter('R', (params['R'] || 0.0) * (params['S'] || 1.0) / (params['M'] || 1.0))
     end
   end
