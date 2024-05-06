@@ -86,4 +86,2956 @@ library (sg13g2_io_dummy) {
         index_1 ("10, 200");
         index_2 ("500, 30000");
     }
+
+    cell (IOPadVss) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+            is_pad : true;
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+    }
+
+    cell (IOPadVdd) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+            is_pad : true;
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+    }
+
+    cell (sg13g2_IOPadIn) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (pad) {
+            direction : input;
+            is_pad : true;
+            input_voltage : io_input;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+    }
+
+    cell (sg13g2_IOPadOut4mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut8mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut12mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut16mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut20mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut24mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadOut30mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut4mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut8mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut12mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut16mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut20mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut24mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (IOPadTriOut30mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : output;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut4mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut8mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut12mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut16mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut20mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut24mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadInOut30mA) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (p2c) {
+            direction : output;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }pin (c2p) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (c2p_en) {
+            direction : input;
+            input_voltage : core_input;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(c2p)";
+            three_state: "(c2p_en)";
+            is_pad : true;
+            output_voltage : io_output;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "c2p";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : positive_unate;
+                timing_type : three_state_enable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+            timing () {
+                related_pin : "c2p_en";
+                timing_sense : negative_unate;
+                timing_type : three_state_disable;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+                }    }
+
+    cell (sg13g2_IOPadIOVss) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+            is_pad : true;
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+    }
+
+    cell (sg13g2_IOPadIOVdd) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+            is_pad : true;
+        }
+    }
 }
