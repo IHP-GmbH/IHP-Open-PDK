@@ -106,49 +106,69 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 ```bash
     run_lvs.py (--help| -h)
-    run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>) [--thr=<thr>]
+    run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>)
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--schematic_simplify]
-    [--net_only] [--top_lvl_pins] [--combine] [--purge] [--purge_nets] [--verbose]
+    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--net_only]
+    [--no_simplify] [--no_series_res] [--no_parallel_res] [--combine_devices]
+    [--top_lvl_pins] [--purge] [--purge_nets] [--verbose]
 ```
 
 **Options:**
 
-- `--help -h `                        Print this help message.
+- `--help -h `                        Displays this help message.
 
-- `--layout=<layout_path>`            The input GDS file path.
+- `--layout=<layout_path>`            Specifies the file path of the input GDS file.
 
-- `--netlist=<netlist_path>`          The input netlist file path.
+- `--netlist=<netlist_path>`          Specifies the file path of the input netlist file.
 
-- `--thr=<thr>`                       The number of threads used in run.
+- `--run_dir=<run_dir_path>`          Run directory to save all the generated results [default: pwd]
 
-- `--run_dir=<run_dir_path>`          Run directory to save all the results [default: pwd]
+- `--topcell=<topcell_name>`          Specifies the name of the top cell to be used.
 
-- `--topcell=<topcell_name>`          Topcell name to use.
+- `--run_mode=<run_mode>`             Selects the allowed KLayout mode. (flat, deep). [default: flat]
 
-- `--run_mode=<run_mode>`             Select Allowed klayout mode. (flat, deep). [default: flat]
+- `--lvs_sub=<sub_name>`              Sets the substrate name used in your design.
 
-- `--lvs_sub=<sub_name>`              Substrate name used in your design.
+- `--no_net_names`                    Omits net names in the extracted netlist.
 
-- `--no_net_names`                    Discard net names in extracted netlist.
+- `--spice_comments`                  Includes netlist comments in the extracted netlist.
 
-- `--spice_comments`                  Enable netlist comments in extracted netlist.
+- `--net_only`                        Generates netlist objects only in the extracted netlist.
 
-- `--net_only`                        Enable netlist object creation for extracted netlist.
+- `--no_simplify`                     Disables simplification for both layout and schematic netlists.
 
-- `--top_lvl_pins`                    Enable top level pins only for extracted netlist.
+- `--no_series_res`                   Prevents the simplification of series resistors for both layout and schematic netlists.
 
-- `--no_simplify`                     Disable layout simplification for extracted netlist.
+- `--no_parallel_res`                 Avoids simplifying parallel resistors within the extracted netlist.
 
-- `--combine`                         Enable netlist combination for extracted netlist.
+- `--combine_devices`                 Enables device combination for both layout and schematic netlists.
 
-- `--purge`                           Enable netlist purge all for extracted netlist.
+- `--top_lvl_pins`                    Creates pins for top-level circuits in both layout and schematic netlists.
 
-- `--purge_nets`                      Enable netlist purge nets for extracted netlist.
+- `--purge`                           Removes unused nets from both layout and schematic netlists.
 
-- `--schematic_simplify`              Enable schematic simplification for input netlist.
+- `--purge_nets`                      Purges floating nets from both layout and schematic netlists.
 
-- `--verbose`                         Detailed rule execution log for debugging.
+- `--verbose`                         Enables detailed rule execution logs for debugging purposes.
+
+
+---
+**NOTE**
+
+* By utilizing the `no_simplify` option, you can prevent layout simplification for both layout and schematic netlists. Simplification is enabled by default, incorporating steps such as `make_top_level_pins`, `purge`, `combine_devices`, and `purge_nets`.
+<br/>
+
+* When you use the `no_simplify` option to disable simplification, you can then use the `make_top_level_pins`, `purge`, `combine_devices`, and `purge_nets` options individually to fine-tune the behavior according to your needs.
+<br/>
+
+* Series resistors with identical parameters (except length) will combine into one resistor with the total length.
+<br/>
+
+* Parallel resistors will merge into a single resistor with the parameter `m` representing the number of parallel resistors, provided they share identical parameters.
+<br/>
+
+* The options `no_series_res` and `no_parallel_res` are specifically designed to disable layout simplification for resistors exclusively. When specified, they take priority over `combine_devices` option.
+---
 
 **Example:**
 
@@ -218,15 +238,41 @@ KLAYOUT_PATH=$PDKPATH/libs.tech/klayout:$PDKPATH/libs.tech/klayout/tech/ klayout
 
 Then, you will get the LVS menus for SG13G2, you could set your desired options as shown below:
 
-> **_NOTE:_**  You need to select the path of the netlist will be used in the LVS run. If no path is specified, the tool will automatically search for the netlist file in the same directory as the layout file, considering files with the extensions .cdl, .spice, or .cir and has same name of the layout file.
-
 <p align="center">
-  <img src="images/lvs_menus.png" width="60%" >
+  <img src="images/lvs_menus_1.png" width="70%" >
 </p>
 <p align="center">
-  Fig. 5. Visualization of LVS results on Klayout-GUI
+  Fig. 5. Setting up LVS Options-GUI - 1
 </p>
 
-Finally, you could run the LVS using `Run Klayout LVS` option.
+<p align="center">
+  <img src="images/lvs_menus_2.png" width="50%" >
+</p>
+<p align="center">
+  Fig. 6. Setting up LVS Options-GUI - 2
+</p>
+
+---
+**NOTE**
+
+* To utilize the LVS options, an active cell must be present. The currently active cell is automatically chosen as the default for running LVS. You could change it using `Top Cell` option.
+<br/>
+
+* To conduct the LVS comparison, you must specify the path to the schematic netlist via `Netlist Path` option. If no path is provided, the tool will search for the netlist file automatically. It will look for files with extensions such as .cdl, .spice, or .cir in the same directory as the layout file, matching the name of the layout file.
+
+---
+
+For additional details on GUI options, please refer to the [CLI Options section](#cli).
+
+Finally, after setting your option, you could execute the LVS using `Run Klayout LVS` from the dropdown menu.
+
+<p align="center">
+  <img src="images/lvs_menus_3.png" width="70%" >
+</p>
+<p align="center">
+  Fig. 7. Running LVS using Klayout menus
+</p>
 
 Upon executing the LVS, the result database will appear on your layout interface, allowing you to verify the outcome of the run similarly as shown above in Fig. 4.
+
+Additionally, you can find the extracted netlist generated from your design at (`<layout_name>_extracted.cir`) in the same directory as the layout file.
