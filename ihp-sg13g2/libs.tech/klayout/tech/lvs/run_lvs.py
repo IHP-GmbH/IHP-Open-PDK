@@ -198,7 +198,7 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
         exit()
 
     switches = {
-        "lvs_sub": arguments.get("--lvs_sub", "sub!"),
+        "lvs_sub": arguments.get("--lvs_sub") if arguments.get("--lvs_sub") else "sub!",
         "no_net_names": "true" if arguments.get("--no_net_names") else "false",
         "spice_comments": "true" if arguments.get("--spice_comments") else "false",
         "net_only": "true" if arguments.get("--net_only") else "false",
@@ -216,7 +216,7 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     }
 
     return switches
-
+    
 
 def build_switches_string(sws: dict):
     """
