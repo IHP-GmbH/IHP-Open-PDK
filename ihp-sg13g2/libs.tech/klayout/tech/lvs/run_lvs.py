@@ -21,18 +21,17 @@ Usage:
     run_lvs.py (--help| -h)
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>)
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--net_only]
-    [--no_simplify] [--no_series_res] [--no_parallel_res] [--combine_devices]
-    [--top_lvl_pins] [--purge] [--purge_nets] [--verbose]
+    [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
+    [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+    [--purge] [--purge_nets] [--verbose]
 
 Options:
     --help -h                           Displays this help message.
     --layout=<layout_path>              Specifies the file path of the input GDS file.
     --netlist=<netlist_path>            Specifies the file path of the input netlist file.
-    --run_dir=<run_dir_path>            Run directory to save all generated results [default: pwd]
+    --run_dir=<run_dir_path>            Run directory to save all the generated results [default: pwd]
     --topcell=<topcell_name>            Specifies the name of the top cell to be used.
-    --run_mode=<run_mode>               Selects allowed KLayout mode. (flat, deep). [default: flat]
-    --lvs_sub=<sub_name>                Sets the substrate name used in your design.
+    --run_mode=<run_mode>               Selects the allowed KLayout mode. (flat, deep). [default: flat]
     --no_net_names                      Omits net names in the extracted netlist.
     --spice_comments                    Includes netlist comments in the extracted netlist.
     --net_only                          Generates netlist objects only in the extracted netlist.
@@ -198,7 +197,6 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
         exit()
 
     switches = {
-        "lvs_sub": arguments.get("--lvs_sub") if arguments.get("--lvs_sub") else "sub!",
         "no_net_names": "true" if arguments.get("--no_net_names") else "false",
         "spice_comments": "true" if arguments.get("--spice_comments") else "false",
         "net_only": "true" if arguments.get("--net_only") else "false",
