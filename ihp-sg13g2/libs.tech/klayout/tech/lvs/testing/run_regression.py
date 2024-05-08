@@ -51,7 +51,7 @@ SUPPORTED_SW_EXT = "yaml"
 
 def check_klayout_version():
     """
-    check_klayout_version checks klayout version and makes sure it would work with the DRC.
+    Check klayout version and makes sure it would work with the LVS.
     """
     # ======= Checking Klayout version =======
     klayout_v_ = os.popen("klayout -b -v").read()
@@ -69,20 +69,20 @@ def check_klayout_version():
         exit(1)
     elif len(klayout_v_list) >= 2 or len(klayout_v_list) <= 3:
         if klayout_v_list[1] < 28 or (
-            klayout_v_list[1] == 28 and klayout_v_list[2] <= 3
+            klayout_v_list[1] == 28 and klayout_v_list[2] <= 13
         ):
-            logging.error("Prerequisites at a minimum: KLayout 0.28.4")
+            logging.error("Prerequisites at a minimum: KLayout 0.28.14")
             logging.error(
-                "Using this klayout version is not supported in this development."
+                "Using this klayout version has not been assessed. Limits are unknown"
             )
-            exit(1)
+            # exit(1)
 
     logging.info(f"Your Klayout version is: {klayout_v_}")
 
 
 def parse_existing_devices(rule_deck_path, output_path, target_device_group=None):
     """
-    This function collects the rule names from the existing drc rule decks.
+    This function collects the rule names from the existing lvs rule decks.
 
     Parameters
     ----------
@@ -229,7 +229,7 @@ def run_test_case(
     device_name,
 ):
     """
-    This function run a single test case using the correct DRC file.
+    This function run a single test case using the correct LVS file.
 
     Parameters
     ----------
@@ -286,7 +286,7 @@ def run_test_case(
         if len(pattern_results) < 1:
             logging.error("%s generated an exception: %s" % (pattern_clean, e))
             traceback.print_exc()
-            raise Exception("Failed DRC run.")
+            raise Exception("Failed LVS run.")
 
     # dumping log into output to make CI have the log
     if os.path.isfile(pattern_log):

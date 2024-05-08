@@ -34,7 +34,7 @@ module DeviceCombinerMethods
     b_net = b.net_for_terminal(name)
 
     # same polarity
-    same_po = a_net.cluster_id == b_net.cluster_id if a_net && b_net
+    same_po = a_net.expanded_name == b_net.expanded_name if a_net && b_net
     a_net && b_net && same_po
   end
 
@@ -45,11 +45,12 @@ module DeviceCombinerMethods
     b_net1 = b.net_for_terminal(net1)
     b_net2 = b.net_for_terminal(net2)
 
-    if a_net1 && b_net1 && a_net2 && b_net2
-      same_po = a_net1.cluster_id == b_net1.cluster_id && a_net2.cluster_id == b_net2.cluster_id
-      diff_po = a_net1.cluster_id == b_net2.cluster_id && a_net2.cluster_id == b_net1.cluster_id
-    end
-    a_net1 && b_net1 && a_net2 && b_net2 && (same_po || diff_po)
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    same_po = a_net1.expanded_name == b_net1.expanded_name && a_net2.expanded_name == b_net2.expanded_name
+    diff_po = a_net1.expanded_name == b_net2.expanded_name && a_net2.expanded_name == b_net1.expanded_name
+
+    same_po || diff_po
   end
 
   # A helper function to check whether two device connected in series
@@ -59,24 +60,30 @@ module DeviceCombinerMethods
     b_net1 = b.net_for_terminal(net1)
     b_net2 = b.net_for_terminal(net2)
 
-    if a_net1 && b_net1 && a_net2 && b_net2
-      series_con1 = a_net1.cluster_id == b_net1.cluster_id || a_net2.cluster_id == b_net2.cluster_id
-      series_con2 = a_net1.cluster_id == b_net2.cluster_id || a_net2.cluster_id == b_net1.cluster_id
-      series_con = series_con1 || series_con2
-    end
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    series_con_a1 = a_net1.expanded_name == b_net1.expanded_name || a_net1.expanded_name == b_net2.expanded_name
+    series_con_a2 = a_net2.expanded_name == b_net1.expanded_name || a_net2.expanded_name == b_net2.expanded_name
+    series_con = series_con_a1 || series_con_a2
 
     # Reroute terminal connections based on cluster IDs
-    if a_net1.cluster_id == b_net1.cluster_id
-      a.connect_terminal(0, b_net2)
-    elsif a_net2.cluster_id == b_net2.cluster_id
-      a.connect_terminal(1, b_net1)
-    elsif a_net1.cluster_id == b_net2.cluster_id
-      a.connect_terminal(0, b_net1)
-    elsif a_net2.cluster_id == b_net1.cluster_id
-      a.connect_terminal(1, b_net2)
+    if series_con_a1
+      if a_net1.expanded_name == b_net1.expanded_name
+        a.connect_terminal(0, b_net2)
+      else
+        a.connect_terminal(0, b_net1)
+      end
     end
 
-    a_net1 && b_net1 && a_net2 && b_net2 && series_con
+    if series_con_a2
+      if a_net2.expanded_name == b_net1.expanded_name
+        a.connect_terminal(1, b_net2)
+      else
+        a.connect_terminal(1, b_net1)
+      end
+    end
+
+    series_con
   end
 
   # A helper function to check whether two parameters have approximately the same value
@@ -168,12 +175,17 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
     res_nets = [0, 1] # Using id instead of names
 
     # Check if same parameters
-    return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
 
-    # Check if terminals series or parallel
+    # Check if terminals series or parallel (With same params)
     if supp_parallel(a, b, 0, 1)
+      return false unless PARALLEL_RES
+      return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
+
       a.set_parameter('m', a.parameter('m') + b.parameter('m'))
     elsif supp_series(a, b, 0, 1)
+      return false unless SERIES_RES
+      return false unless %w[w ps b m].all? { |param| same_parameter(a, b, param) }
+
       a.set_parameter('l', a.parameter('l') + b.parameter('l'))
     else
       return false
