@@ -24,19 +24,17 @@
 logger.info('Starting RESISTOR DERIVATIONS')
 
 polyres_exclude = activ_drw.join(pwell_block).join(nsd_block)
-                    .join(nbulay_drw).join(thickgateox_drw).join(heattrans_drw)
-                    .join(trans_drw).join(emwind_drw).join(emwihv_drw)
-                    .join(mim_drw).join(activ_mask).join(recog_diode)
-                    .join(recog_esd).join(ind_drw).join(ind_pin)
-                    .join(substrate_drw)
+                    .join(nbulay_drw).join(thickgateox_drw).join(trans_drw)
+                    .join(emwind_drw).join(emwihv_drw).join(activ_mask)
+                    .join(recog_diode).join(recog_esd).join(ind_drw)
+                    .join(ind_pin).join(substrate_drw)
 
 # ==============
 # ---- POLY ----
 # ==============
 
 ## polyres
-polyres_mk = polyres_drw.and(heatres_drw).and(extblock_drw)
-                .interacting(gatpoly_drw).not(polyres_exclude)
+polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly_drw).not(polyres_exclude)
 
 ## rhigh
 rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)

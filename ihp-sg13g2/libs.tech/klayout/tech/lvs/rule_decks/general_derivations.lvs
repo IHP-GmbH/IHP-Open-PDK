@@ -32,7 +32,9 @@ nwell_iso = nwell_drw.and(nbulay_drw)
 nwell_n_iso = nwell_drw.not(nbulay_drw)
 
 # pwell
-pwell = pwell_drw.join(CHIP.not(nwell_drw.join(pwell_block)))
+pwell_pre = pwell_drw.join(CHIP.not(nwell_drw.join(pwell_block).join(digisub_drw)))
+digisub_pre = digisub_drw.sized(-1.nm)
+pwell = pwell_pre.join(digisub_pre)
 
 # psd, nsd active & res
 psd = psd_drw
