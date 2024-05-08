@@ -58,9 +58,11 @@ class DeviceCustomRes < RBA::DeviceClassResistor
     add_parameters('w', 'l', 'ps', 'b')
     add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
 
-    self.combiner = RESDeviceCombiner.new
-    self.supports_serial_combination=true
-    self.supports_parallel_combination=true
+    if SERIES_RES || PARALLEL_RES
+      self.combiner = RESDeviceCombiner.new
+    else
+      self.combiner =nil
+    end
 
     add_terminals(name, num, 0)
   end

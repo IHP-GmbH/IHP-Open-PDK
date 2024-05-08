@@ -1,32 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-# ===================================================================================
-# Copyright (c) 2024, Mabrains LLC
-# Licensed under the GNU Lesser General Public License, Version 3.0 (the "License");
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-
-#                    GNU Lesser General Public License
-#                       Version 3, 29 June 2007
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+#    https://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-# SPDX-License-Identifier: LGPL-3.0
-# ===================================================================================
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
 -->
 <klayout-macro>
- <description>Load PDK options</description>
- <version/>
- <category/>
+ <description>SG13G2 LVS Options</description>
+ <version>0.1</version>
+ <category>lvs</category>
  <prolog/>
  <epilog/>
  <doc/>
@@ -35,304 +29,267 @@
  <priority>0</priority>
  <shortcut/>
  <show-in-menu>true</show-in-menu>
- <group-name>Load PDK options</group-name>
+ <group-name>SG13G2 LVS Options</group-name>
  <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
  <interpreter>ruby</interpreter>
  <dsl-interpreter-name/>
- <text>module MyMacro
-require 'yaml'
-
+ <text>
+ module SG13G2LVSOptions
+  require 'yaml'
   include RBA
 
-  # =====================================================================
-  # -------------------------- Loading Options --------------------------
-  # =====================================================================
-  
-  mw = RBA::MainWindow::instance
-  
-  # create a toolbar sg13g2_menu
-  mw.menu.insert_menu("sg13g2_menu.end", "lvs_menu", "Klayout LVS Options")
-  mw.menu.insert_separator("sg13g2_menu.lvs_menu+", "name2")
+  # Main function to manage LVS options
+  def self.main    
+    # Construct the absolute path to the YAML file
+    yaml_file_path = "#{__dir__}/lvs_options.yml"
 
-  # =====================================================================
-  # ------------------------ Adding LVS Options -------------------------
-  # =====================================================================
+    # Load options from YAML file
+    options = load_options(yaml_file_path)
 
-  # Adding substrate name
-  run_action = RBA::Action::new
-  run_action.title = "Substrate name"
-  run_action.on_triggered do
-    sub_name = RBA::InputDialog::ask_string("Substrate name", "Please enter substrate name", "sub!")
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if sub_name 
-        options["sub_name"] = sub_name
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "SUB_name", run_action)
+    # Create a dialog box for selecting options
+    dialog = create_options_dialog(options, yaml_file_path)
   
-  # Setting run mode
-  run_mode_action = RBA::Action::new
-  run_mode_action.title = "Run mode"
-  run_mode_action.on_triggered do
-  
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      run_mode_select = RBA::InputDialog::ask_item("Run mode", "Select run mode:", ["deep", "flat", "tiling"], 1)
-      if run_mode_select 
-        options["run_mode"] = run_mode_select
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "run_mode", run_mode_action)
+    # Show the dialog box and handle user input
+    if dialog.exec == 1 #RBA::QDialog::Accepted
+      # Get values from the dialog box
+      update_options_from_dialog(options, dialog)
 
-  # Adding netlist path
-  netlist_action = RBA::Action::new
-  netlist_action.title = "Netlist Path"
-  netlist_action.on_triggered do
-    file_filter = "CDL Files (*.cdl);;SPICE Files (*.spice);;Circuit Files (*.cir)"
-    netlist_path = RBA::FileDialog::get_open_file_name("Select File", ".", file_filter)
-    netlist_path = netlist_path.to_s
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if netlist_path
-        options["netlist"] = netlist_path
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "Netlist_path", netlist_action)
-
-  #4 Adding Top cell name
-  top_cell_action = RBA::Action::new
-  top_cell_action.title = "Top_cell name"
-  top_cell_action.on_triggered do
-    top_cell_name = RBA::InputDialog::ask_string("Top cell name", "Please enter Top_cell name", "TOP")
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if top_cell_name 
-        options["top_cell_name"] = top_cell_name
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "TOP_cell_name", top_cell_action)
-  
-  # Setting spice net names
-  spice_net_action = RBA::Action::new
-  spice_net_action.title = "SPICE net name"
-  spice_net_action.checkable=(true)
-  spice_net_action.checked=(true)
-  spice_net_action.on_triggered do
-    
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if spice_net_action.is_checked?
-        options["spice_net"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["spice_net"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "SPICE_net_name", spice_net_action)
-  
-  # Setting spice comments
-  spice_comment_action = RBA::Action::new
-  spice_comment_action.title = "SPICE comments"
-  spice_comment_action.checkable=(true)
-  spice_comment_action.checked=(false)
-  spice_comment_action.on_triggered do
-    
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if spice_comment_action.is_checked?
-        options["spice_comment"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["spice_comment"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "SPICE_comments", spice_comment_action)
-  
-  # Setting netlist only
-  net_only_action = RBA::Action::new
-  net_only_action.title = "Netlist only"
-  net_only_action.checkable=(true)
-  net_only_action.checked=(false)
-  net_only_action.on_triggered do
-      
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if net_only_action.is_checked?
-        options["net_only"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml)}
+      # Save options to YAML file
+      if save_options(yaml_file_path, options)
+        puts "Options saved successfully."
       else
-        options["net_only"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml)}
+        puts "Failed to save options."
       end
+    end
+  end
+ 
+  # Load LVS options from a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the loaded options
+  def self.load_options(yaml_file_path)
+    options = {}
+    if File.exist?(yaml_file_path)
+      begin
+        options = YAML.safe_load(File.read(yaml_file_path))
+      rescue => e
+        puts "Error loading options from YAML file: #{e.message}"
+      end
+    else
+      puts "YAML file not found at #{yaml_file_path}. Using default options."
+      options = set_default_options(yaml_file_path)
+    end
+    options
+  end
+
+  # Set default LVS options and save them to a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the default options
+  def self.set_default_options(yaml_file_path)
+    default_options = {
+      'netlist' => '',
+      'top_cell' => '',
+      'run_mode' => 'flat',
+      'sub_name' => 'sub!',
+      'no_net_names' => false,
+      'spice_comments' => false,
+      'net_only' => false,
+      'no_simplify' => false,
+      'no_series_res' => false,
+      'no_parallel_res' => false,
+      'combine_devices' => false,
+      'top_lvl_pins' => false,
+      'purge' => false,
+      'purge_nets' => false,
+      'verbose' => false,
+    }
+    save_options(yaml_file_path, default_options)
+    default_options
+  end
+
+  # Get all names for top cells
+  #
+  # Returns a list contains all top cell names
+  def self.get_top_cell_names
+    top_cells = []
+    layout = RBA::Layout.new
+    layout.read(Pathname.new(RBA::CellView.active.filename))
+
+    layout.top_cells.each do |cell|
+      top_cells.push(cell.name)
+    end
+    top_cells
+  end
+
+  # Create a dialog box for selecting LVS options
+  #
+  # options        - A hash containing the current options
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a QDialog instance representing the options dialog
+  def self.create_options_dialog(options, yaml_file_path)
+    dialog = RBA::QDialog.new
+    dialog.windowTitle = "LVS Options"
+
+    layout = RBA::QFormLayout.new(dialog)
     
+    layout.addRow('Netlist Path:', create_file_input(options['netlist'], dialog))
+    layout.addRow('Top Cell', create_combo_box(options['top_cell'], get_top_cell_names))
+    layout.addRow('Run Mode:', create_combo_box(options['run_mode'], ['deep', 'flat']))
+    layout.addRow('Substrate Name:', create_line_edit(options['sub_name']))
+    layout.addRow('', create_check_box('No Net Names', options['no_net_names']))
+    layout.addRow('', create_check_box('Spice Comments', options['spice_comments']))
+    layout.addRow('', create_check_box('Netlist Only', options['net_only']))
+    layout.addRow('', create_check_box('No Simplify', options['no_simplify']))
+    layout.addRow('', create_check_box('No Series Resistance', options['no_series_res']))
+    layout.addRow('', create_check_box('No Parallel Resistance', options['no_parallel_res']))
+    layout.addRow('', create_check_box('Combine Devices', options['combine_devices']))
+    layout.addRow('', create_check_box('Top Level Pins', options['top_lvl_pins']))
+    layout.addRow('', create_check_box('Purge', options['purge']))
+    layout.addRow('', create_check_box('Purge Nets', options['purge_nets']))
+    layout.addRow('', create_check_box('Verbose', options['verbose']))
+
+    layout.addRow('', create_buttons(dialog, yaml_file_path))
+
+    dialog
   end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "net_only", net_only_action)
 
-  # Setting top level pins
-  top_lvl_pins_action = RBA::Action::new
-  top_lvl_pins_action.title = "Top level pins"
-  top_lvl_pins_action.checkable=(true)
-  top_lvl_pins_action.checked=(false)
-  top_lvl_pins_action.on_triggered do
-      
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if top_lvl_pins_action.is_checked?
-        options["top_lvl_pins"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml)}
-      else 
-        options["top_lvl_pins"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml)}
-      end
-    
+  # Create a line edit widget
+  #
+  # text - The initial text for the line edit
+  #
+  # Returns a QLineEdit instance
+  def self.create_line_edit(text)
+    line_edit = RBA::QLineEdit.new
+    line_edit.text = text
+    line_edit
   end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "top_lvl_pins", top_lvl_pins_action)
-
-  # Setting Netlist simplification
-  netlist_simplify_action = RBA::Action::new
-  netlist_simplify_action.title = "Netlist simplify"
-  netlist_simplify_action.checkable=(true)
-  netlist_simplify_action.checked=(true)
-  netlist_simplify_action.on_triggered do
-
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if netlist_simplify_action.is_checked?
-        options["netlist_simplify"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["netlist_simplify"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-
+ 
+  # Create a combo box widget
+  #
+  # current_index - The index of the currently selected item
+  # items         - An array containing the items for the combo box
+  #
+  # Returns a QComboBox instance
+  def self.create_combo_box(current_index, items)
+    combo_box = RBA::QComboBox.new
+    items.each { |item| combo_box.addItem(item) }
+    combo_box.currentIndex = items.index(current_index)
+    combo_box
   end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "netlist_simplify", netlist_simplify_action)
-
-  # Setting device combination
-  combine_action = RBA::Action::new
-  combine_action.title = "Devices combine"
-  combine_action.checkable=(true)
-  combine_action.checked=(false)
-  combine_action.on_triggered do
-      
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if combine_action.is_checked?
-        options["combine"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["combine"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "combine", combine_action)
+ 
+  # Create a file input widget
+  #
+  # text   - The initial text for the file input
+  # parent - The parent widget for the file input
+  #
+  # Returns a QWidget instance containing the file input
+  def self.create_file_input(text, parent)
+    file_input = RBA::QLineEdit.new
+    file_input.text = text
   
-  # Setting purge
-  purge_action = RBA::Action::new
-  purge_action.title = "Purge"
-  purge_action.checkable=(true)
-  purge_action.checked=(false)
-  purge_action.on_triggered do
+    browse_button = RBA::QPushButton.new('Browse')
+    browse_button.clicked.connect(Proc.new {
+      file_filter = 'CDL Files (*.cdl);;SPICE Files (*.spice);;Circuit Files (*.cir)'
+      netlist_path = RBA::FileDialog.get_open_file_name('Select File', '.', file_filter)
+      file_input.text = netlist_path.to_s
+    })
+
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+    layout.addWidget(file_input)
+    layout.addWidget(browse_button)
+    
+    container
+  end
+
+  # Create a check box widget
+  #
+  # text    - The text for the check box
+  # checked - A boolean indicating whether the check box is checked
+  #
+  # Returns a QCheckBox instance
+  def self.create_check_box(text, checked)
+    check_box = RBA::QCheckBox.new(text)
+    check_box.checked = checked
+    check_box
+  end
+ 
+  # Create buttons for the options dialog
+  #
+  # dialog        - The options dialog
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a QWidget instance containing the buttons
+  def self.create_buttons(dialog, yaml_file_path)
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
   
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      
-      if purge_action.is_checked?
-        options["purge"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["purge"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "purge", purge_action)
+    ok_button = RBA::QPushButton.new('OK')
+    ok_button.clicked.connect(Proc.new { dialog.accept })
 
-  # Setting purge nets
-  purge_nets_action = RBA::Action::new
-  purge_nets_action.title = "Purge nets"
-  purge_nets_action.checkable=(true)
-  purge_nets_action.checked=(false)
-  purge_nets_action.on_triggered do
-      
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml"))
-      if purge_nets_action.is_checked?
-        options["purge_nets"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["purge_nets"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
+    reset_button = RBA::QPushButton.new('Reset')
+    reset_button.clicked.connect(Proc.new { 
+      if set_default_options(yaml_file_path)
+        dialog.reject
+      else
+        puts "Failed to reset options."
       end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "purge_nets", purge_nets_action)
+    })
+
+    cancel_button = RBA::QPushButton.new('Cancel')
+    cancel_button.clicked.connect(Proc.new { dialog.reject })
   
-  # Setting schematic simplification
-  schematic_simplify_action = RBA::Action::new
-  schematic_simplify_action.title = "Schematic simplify"
-  schematic_simplify_action.checkable=(true)
-  schematic_simplify_action.checked=(false)
-  schematic_simplify_action.on_triggered do
-      
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if schematic_simplify_action.is_checked?
-        options["schematic_simplify"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["schematic_simplify"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
-  end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "schematic_simplify", schematic_simplify_action)
-
-  # Setting verbose mode
-  verbose_action = RBA::Action::new
-  verbose_action.title = "Verbose mode"
-  verbose_action.checkable=(true)
-  verbose_action.checked=(false)
-  verbose_action.on_triggered do
+    layout.addWidget(ok_button)
+    layout.addWidget(reset_button)
+    layout.addWidget(cancel_button)
   
-      options = YAML.load(File.read(__dir__ + "/lvs_options.yml")) 
-      if verbose_action.is_checked?
-        options["verbose"] = true
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      else 
-        options["verbose"] = false
-        File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(options.to_yaml) }
-      end
-    
+    container
   end
-  mw.menu.insert_item("sg13g2_menu.lvs_menu.end", "verbose", verbose_action)
-
-  # =================================
-  # -- Return to defaults on closing
-  # =================================
-
-  mw.on_view_closed do
-    ## write default options 
-    lvs_options = {"sub_name"=&gt;"sub!",
-            "run_mode"=&gt;"flat", 
-            "netlist"=&gt;"" ,
-            "spice_net"=&gt;true,
-            "top_cell_name"=&gt;"",
-            "spice_comment"=&gt;false,
-            "netlist_simplify"=&gt;true,
-            "net_only"=&gt;false,
-            "top_lvl_pins"=&gt;false,
-            "combine"=&gt;false,
-            "purge"=&gt;false,
-            "purge_nets"=&gt;false,
-            "schematic_simplify"=&gt;true,
-            "verbose"=&gt;false,
-              }
-    File.open(__dir__ + "/lvs_options.yml", "w") { |file| file.write(lvs_options.to_yaml) }
+  
+  # Update options hash from the dialog
+  #
+  # options - The options hash to be updated
+  # dialog  - The dialog containing the updated options
+  def self.update_options_from_dialog(options, dialog)
+    options['netlist'] = dialog.layout.itemAt(1).widget.layout.itemAt(0).widget.text
+    options['top_cell'] = dialog.layout.itemAt(3).widget.currentText
+    options['run_mode'] = dialog.layout.itemAt(5).widget.currentText
+    options['sub_name'] = dialog.layout.itemAt(7).widget.text
+    options['no_net_names'] = dialog.layout.itemAt(8).widget.checked
+    options['spice_comments'] = dialog.layout.itemAt(9).widget.checked
+    options['net_only'] = dialog.layout.itemAt(10).widget.checked
+    options['no_simplify'] = dialog.layout.itemAt(11).widget.checked
+    options['no_series_res'] = dialog.layout.itemAt(12).widget.checked
+    options['no_parallel_res'] = dialog.layout.itemAt(13).widget.checked
+    options['combine_devices'] = dialog.layout.itemAt(14).widget.checked
+    options['top_lvl_pins'] = dialog.layout.itemAt(15).widget.checked
+    options['purge'] = dialog.layout.itemAt(16).widget.checked
+    options['purge_nets'] = dialog.layout.itemAt(17).widget.checked
+    options['verbose'] = dialog.layout.itemAt(18).widget.checked
   end
 
+  # Save options to a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  # options        - The options hash to be saved
+  #
+  # Returns true if successful, false otherwise
+  def self.save_options(yaml_file_path, options)
+    begin
+      File.open(yaml_file_path, 'w') { |file| file.write(options.to_yaml) }
+      true
+    rescue => e
+      puts "Error saving options to YAML file: #{e.message}"
+      false
+    end
+  end
 end
+
+SG13G2LVSOptions.main
 
 </text>
 </klayout-macro>

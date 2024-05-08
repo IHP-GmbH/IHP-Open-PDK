@@ -77,7 +77,7 @@ logger.info("Substrate name used: #{$lvs_sub}")
 #=== NET NAMES OPTION ===
 # true: use net names instead of numbers
 # false: use numbers for nets
-SPICE_WITH_NET_NAMES = bool_check?($spice_net_names)
+SPICE_WITH_NET_NAMES = !bool_check?($no_net_names)
 
 logger.info("Extracted netlist with net names: #{SPICE_WITH_NET_NAMES}")
 
@@ -87,11 +87,6 @@ logger.info("Extracted netlist with net names: #{SPICE_WITH_NET_NAMES}")
 SPICE_WITH_COMMENTS = bool_check?($spice_comments)
 
 logger.info("Extracted netlist with comments in details: #{SPICE_WITH_COMMENTS}")
-
-# SCH_SIMPLE
-SCH_SIMPLE = bool_check?($schematic_simplify)
-
-logger.info("Selected SCH_SIMPLE option: #{SCH_SIMPLE}")
 
 # NET_ONLY
 NET_ONLY = bool_check?($net_only)
@@ -104,9 +99,9 @@ TOP_LVL_PINS = bool_check?($top_lvl_pins)
 logger.info("Selected TOP_LVL_PINS option: #{TOP_LVL_PINS}")
 
 # COMBINE
-COMBINE = bool_check?($combine)
+COMBINE_DEVICES = bool_check?($combine_devices)
 
-logger.info("Selected COMBINE option: #{COMBINE}")
+logger.info("Selected COMBINE DEVICES option: #{COMBINE_DEVICES}")
 
 # PURGE
 PURGE = bool_check?($purge)
@@ -119,9 +114,19 @@ PURGE_NETS = bool_check?($purge_nets)
 logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
 
 # SIMPLIFY
-NETLIST_SIMPLIFY = bool_check?($netlist_simplify)
+SIMPLIFY = !bool_check?($no_simplify)
 
-logger.info("Selected NETLIST_SIMPLIFY option: #{NETLIST_SIMPLIFY}")
+logger.info("Selected SIMPLIFY option: #{SIMPLIFY}")
+
+# SIMPLIFY
+SERIES_RES = !bool_check?($no_series_res)
+
+logger.info("Selected SERIES_RES option: #{SERIES_RES}")
+
+# SIMPLIFY
+PARALLEL_RES = !bool_check?($no_parallel_res)
+
+logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
 
 #=== PRINT DETAILS ===
 logger.info("Verbose mode: #{$verbose}")
@@ -133,11 +138,6 @@ end
 
 # === TILING MODE ===
 case $run_mode
-when 'tiling'
-  tiles(500.um)
-  tile_borders(10.um)
-  logger.info('Tiling  mode is enabled.')
-
 when 'deep'
   #=== HIER MODE ===
   deep
@@ -150,7 +150,6 @@ end
 
 # === Tech Switches ===
 
-
 #================================================
 # --------------- CUSTOM CLASSES ----------------
 #================================================
@@ -161,24 +160,27 @@ end
 reader = RBA::NetlistSpiceReader.new(CustomReader.new)
 
 #=== GET NETLIST ===
-if $schematic
-  schematic($schematic, reader)
-  logger.info("Netlist file: #{$schematic}")
-else
-  exts = ["spice", "cdl", "cir"]
-  candidates = exts.map{|ext| "#{source.cell_name}.#{ext}"}
-  netlists = candidates.select{|f| File.exist?(f)}
-  if netlists.empty?
-    error("Netlist not found, tried: #{candidates}")
+unless NET_ONLY
+  if $schematic
+    schematic($schematic, reader)
+    logger.info("Netlist file: #{$schematic}")
   else
-    schematic(netlists[0], reader)
-    logger.info("Netlist file: #{netlists[0]}")
+    exts = %w[spice cdl cir]
+    candidates = exts.map { |ext| "#{source.cell_name}.#{ext}" }
+    netlists = candidates.select { |f| File.exist?(f) }
+    if netlists.empty?
+      error("Netlist not found, tried: #{candidates}")
+    else
+      schematic(netlists[0], reader)
+      logger.info("Netlist file: #{netlists[0]}")
+    end
   end
 end
 
 # Instantiate a writer using the new delegate
 custom_spice_writer = RBA::NetlistSpiceWriter.new(CustomWriter.new)
 custom_spice_writer.use_net_names = SPICE_WITH_NET_NAMES
+custom_spice_writer.with_comments = SPICE_WITH_COMMENTS
 
 if $target_netlist
   logger.info("LVS extracted netlist at: #{$target_netlist}")
@@ -336,36 +338,46 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 
 # %include rule_decks/tap_extraction.lvs
 
-#================================================
-#------------- COMPARISON OPTIONS ---------------
-#================================================
+#==================================================
+# ------------ COMPARISON PREPARATIONS ------------
+#==================================================
 
-logger.info('Starting SG13G2 LVS comparison section')
+logger.info('Starting SG13G2 LVS Options Preparations')
 
-#=== FLATTEN CELLS ===
+# === Extract Netlist Only ===
+netlist if NET_ONLY
+return if NET_ONLY
+
+# === Aligns the extracted netlist vs. the schematic ===
 align
 
-#=== NETLIST EXTRACTION ===
-netlist.simplify if NETLIST_SIMPLIFY
-
 #=== NETLIST OPTIONS ===
-netlist if NET_ONLY
+# SIMPLIFY
+netlist.simplify if SIMPLIFY
+schematic.simplify if SIMPLIFY
 
+# TOP_LVL_PINS
 netlist.make_top_level_pins if TOP_LVL_PINS
+schematic.make_top_level_pins if TOP_LVL_PINS
 
-netlist.combine_devices if COMBINE
+# COMBINE_DEVICES
+netlist.combine_devices if COMBINE_DEVICES
+schematic.combine_devices if COMBINE_DEVICES
 
+# PURGE
 netlist.purge if PURGE
+schematic.purge if PURGE
 
+# PURGE_NETS
 netlist.purge_nets if PURGE_NETS
-
-#=== SCHEMATIC OPTIONS ===
-schematic.simplify if SCH_SIMPLE
+schematic.purge_nets if PURGE_NETS
 
 #=== IGNORE EXTREME VALUES ===
 max_res(1e9)
 min_caps(1e-18)
 
+# === COMPARISON === 
+logger.info('Starting SG13G2 LVS Comparison')
 compare
 
 #================================================
