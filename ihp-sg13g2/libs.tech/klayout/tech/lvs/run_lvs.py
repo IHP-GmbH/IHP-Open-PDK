@@ -29,16 +29,16 @@ Options:
     --help -h                           Displays this help message.
     --layout=<layout_path>              Specifies the file path of the input GDS file.
     --netlist=<netlist_path>            Specifies the file path of the input netlist file.
-    --run_dir=<run_dir_path>            Run directory to save all the generated results [default: pwd]
+    --run_dir=<run_dir_path>            Run directory to save all generated results [default: pwd]
     --topcell=<topcell_name>            Specifies the name of the top cell to be used.
-    --run_mode=<run_mode>               Selects the allowed KLayout mode. (flat, deep). [default: flat]
+    --run_mode=<run_mode>               Selects allowed KLayout mode. (flat, deep). [default: flat]
     --lvs_sub=<sub_name>                Sets the substrate name used in your design.
     --no_net_names                      Omits net names in the extracted netlist.
     --spice_comments                    Includes netlist comments in the extracted netlist.
     --net_only                          Generates netlist objects only in the extracted netlist.
-    --no_simplify                       Disables simplification for both layout and schematic netlists.
-    --no_series_res                     Prevents the simplification of series resistors for both layout and schematic netlists.
-    --no_parallel_res                   Prevents the simplification of parallel resistors for both layout and schematic netlists.
+    --no_simplify                       Disables simplification for both layout and schematic.
+    --no_series_res                     Prevents simplification of series resistors for both layout and schematic.
+    --no_parallel_res                   Prevents simplification of parallel resistors for both layout and schematic.
     --combine_devices                   Enables device combination for both layout and schematic netlists.
     --top_lvl_pins                      Creates pins for top-level circuits in both layout and schematic netlists.
     --purge                             Removes unused nets from both layout and schematic netlists.
@@ -216,7 +216,7 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     }
 
     return switches
-    
+
 
 def build_switches_string(sws: dict):
     """
