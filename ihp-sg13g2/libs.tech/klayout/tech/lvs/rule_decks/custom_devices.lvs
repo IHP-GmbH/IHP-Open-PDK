@@ -110,6 +110,13 @@ class DeviceCustomInd < RBA::DeviceClassInductor
     add_parameters('w', 's', 'd', 'nr_r')
     add_terminals(name, num, 1)
 
+    # 5% tolerance for w,s,d:
+    equal_device_parameters = RBA::EqualDeviceParameters::new(parameter_id('w'), 0.0, 0.05)
+    equal_device_parameters += RBA::EqualDeviceParameters::new(parameter_id('s'), 0.0, 0.05)
+    equal_device_parameters += RBA::EqualDeviceParameters::new(parameter_id('d'), 0.0, 0.05)
+    # applies the compare delegate:
+    self.equal_parameters = equal_device_parameters
+
     self.combiner = nil
     self.supports_serial_combination=false
     self.supports_parallel_combination=false

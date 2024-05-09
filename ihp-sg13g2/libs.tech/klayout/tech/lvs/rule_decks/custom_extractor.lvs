@@ -211,12 +211,16 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Step2: For more than 1 turns, get number of holes
     # Step3: Turns = 1 + (holes - 1)/2 
     no_turns_init = meas_mk.merged.count
-    if no_turns_init == 1
-      no_turns = no_turns_init
-    else
-      no_turns_ = dev.merged.holes.count
-      no_turns = 1 + (no_turns_ - 1) / 2
-    end
+    no_turns = no_turns_init
+
+    ## Old implementation
+    # if no_turns_init == 1
+    #   no_turns = no_turns_init
+    # else
+    #   no_turns_pre1 = dev.merged.holes.count
+    #   no_turns_pre2 = (no_turns_pre1 - 1) / 2
+    #   no_turns = 1 + no_turns_pre2.ceil
+    # end
 
     # Diameter
     # Calc steps used for diameter:

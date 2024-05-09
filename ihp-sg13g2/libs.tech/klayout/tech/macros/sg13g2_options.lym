@@ -56,13 +56,13 @@
 
       # Save options to YAML file
       if save_options(yaml_file_path, options)
-        puts "Options saved successfully."
+        puts "=========== LVS Options saved successfully. ==========="
       else
-        puts "Failed to save options."
+        puts "xxxxxxxxxxx Failed to save LVS options. xxxxxxxxxxx"
       end
     end
   end
- 
+
   # Load LVS options from a YAML file
   #
   # yaml_file_path - The path to the YAML file
@@ -93,7 +93,6 @@
       'netlist' => '',
       'top_cell' => '',
       'run_mode' => 'flat',
-      'sub_name' => 'sub!',
       'no_net_names' => false,
       'spice_comments' => false,
       'net_only' => false,
@@ -139,7 +138,6 @@
     layout.addRow('Netlist Path:', create_file_input(options['netlist'], dialog))
     layout.addRow('Top Cell', create_combo_box(options['top_cell'], get_top_cell_names))
     layout.addRow('Run Mode:', create_combo_box(options['run_mode'], ['deep', 'flat']))
-    layout.addRow('Substrate Name:', create_line_edit(options['sub_name']))
     layout.addRow('', create_check_box('No Net Names', options['no_net_names']))
     layout.addRow('', create_check_box('Spice Comments', options['spice_comments']))
     layout.addRow('', create_check_box('Netlist Only', options['net_only']))
@@ -255,21 +253,21 @@
   # options - The options hash to be updated
   # dialog  - The dialog containing the updated options
   def self.update_options_from_dialog(options, dialog)
+
     options['netlist'] = dialog.layout.itemAt(1).widget.layout.itemAt(0).widget.text
     options['top_cell'] = dialog.layout.itemAt(3).widget.currentText
     options['run_mode'] = dialog.layout.itemAt(5).widget.currentText
-    options['sub_name'] = dialog.layout.itemAt(7).widget.text
-    options['no_net_names'] = dialog.layout.itemAt(8).widget.checked
-    options['spice_comments'] = dialog.layout.itemAt(9).widget.checked
-    options['net_only'] = dialog.layout.itemAt(10).widget.checked
-    options['no_simplify'] = dialog.layout.itemAt(11).widget.checked
-    options['no_series_res'] = dialog.layout.itemAt(12).widget.checked
-    options['no_parallel_res'] = dialog.layout.itemAt(13).widget.checked
-    options['combine_devices'] = dialog.layout.itemAt(14).widget.checked
-    options['top_lvl_pins'] = dialog.layout.itemAt(15).widget.checked
-    options['purge'] = dialog.layout.itemAt(16).widget.checked
-    options['purge_nets'] = dialog.layout.itemAt(17).widget.checked
-    options['verbose'] = dialog.layout.itemAt(18).widget.checked
+    options['no_net_names'] = dialog.layout.itemAt(6).widget.checked
+    options['spice_comments'] = dialog.layout.itemAt(7).widget.checked
+    options['net_only'] = dialog.layout.itemAt(8).widget.checked
+    options['no_simplify'] = dialog.layout.itemAt(9).widget.checked
+    options['no_series_res'] = dialog.layout.itemAt(10).widget.checked
+    options['no_parallel_res'] = dialog.layout.itemAt(11).widget.checked
+    options['combine_devices'] = dialog.layout.itemAt(12).widget.checked
+    options['top_lvl_pins'] = dialog.layout.itemAt(13).widget.checked
+    options['purge'] = dialog.layout.itemAt(14).widget.checked
+    options['purge_nets'] = dialog.layout.itemAt(15).widget.checked
+    options['verbose'] = dialog.layout.itemAt(16).widget.checked
   end
 
   # Save options to a YAML file
