@@ -1,0 +1,757 @@
+************************************************************************
+*
+* Copyright 2024 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+************************************************************************
+
+*.BIPOLAR
+*.RESI = 2000 
+*.RESVAL
+*.CAPVAL
+*.DIOPERI
+*.DIOAREA
+*.EQUATION
+*.SCALE METER
+*.MEGA
+.PARAM
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    DCNDiode
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT DCNDiode anode cathode guard
+*.PININFO anode:B cathode:B guard:B
+DD0 anode cathode dantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    DCPDiode
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT DCPDiode anode cathode guard
+*.PININFO anode:B cathode:B guard:B
+DD0 anode cathode dpantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    inv_x1
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT inv_x1 i nq vdd vss
+*.PININFO i:I nq:O vdd:B vss:B
+MN0 nq i vss vss sg13_lv_nmos m=1 w=3.93u l=130.00n ng=1
+MP0 nq i vdd vdd sg13_lv_pmos m=1 w=4.41u l=130.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    LevelUp
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT LevelUp i iovdd o vdd vss
+*.PININFO i:I o:O iovdd:B vdd:B vss:B
+MN0 net2 i vss vss sg13_lv_nmos m=1 w=2.75u l=130.00n ng=1
+MP0 net2 i vdd vdd sg13_lv_pmos m=1 w=4.75u l=130.00n ng=1
+MN3 o net4 vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MN2 net4 i vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MN1 net3 net2 vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MP3 o net4 iovdd iovdd sg13_hv_pmos m=1 w=3.9u l=450.00n ng=1
+MP2 net3 net4 iovdd iovdd sg13_hv_pmos m=1 w=300.0n l=450.00n ng=1
+MP1 net4 net3 iovdd iovdd sg13_hv_pmos m=1 w=300.0n l=450.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    nor2_x1
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT nor2_x1 i0 i1 nq vdd vss
+*.PININFO i0:I i1:I nq:O vdd:B vss:B
+MN0 nq i0 vss vss sg13_lv_nmos m=1 w=3.93u l=130.00n ng=1
+MN1 nq i1 vss vss sg13_lv_nmos m=1 w=3.93u l=130.00n ng=1
+MP1 net1 i0 vdd vdd sg13_lv_pmos m=1 w=4.41u l=130.00n ng=1
+MP0 nq i1 net1 vdd sg13_lv_pmos m=1 w=4.41u l=130.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    nand2_x1
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT nand2_x1 i0 i1 nq vdd vss
+*.PININFO i0:I i1:I nq:O vdd:B vss:B
+MP1 nq i1 vdd vdd sg13_lv_pmos m=1 w=4.41u l=130.00n ng=1
+MP0 nq i0 vdd vdd sg13_lv_pmos m=1 w=4.41u l=130.00n ng=1
+MN1 net1 i0 vss vss sg13_lv_nmos m=1 w=3.93u l=130.00n ng=1
+MN0 nq i1 net1 vss sg13_lv_nmos m=1 w=3.93u l=130.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    GateDecode
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT GateDecode core en iovdd ngate pgate vdd vss
+*.PININFO core:I en:I ngate:O pgate:O iovdd:B vdd:B vss:B
+XI2 en net3 vdd vss / inv_x1
+XI4 net4 iovdd ngate vdd vss / LevelUp
+XI3 net2 iovdd pgate vdd vss / LevelUp
+XI0 core net3 net4 vdd vss / nor2_x1
+XI1 core en net2 vdd vss / nand2_x1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    SecondaryProtection
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT SecondaryProtection core minus pad plus
+*.PININFO core:B minus:B pad:B plus:B
+RR0 pad core rppd 586.899 m=1 l=2u w=1u ps=180n trise=0.0 b=0
+DD0 minus core dantenna m=1 w=780n l=3.1u a=2.418p p=7.76u
+DD1 core plus dpantenna m=1 w=780.00n l=4.98u a=3.884p p=11.52u
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    LevelDown
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT LevelDown core iovdd iovss pad vdd vss
+*.PININFO core:O iovdd:B iovss:B pad:B vdd:B vss:B
+XI0 net4 iovss pad iovdd / SecondaryProtection
+MP0 net2 net4 vdd vdd sg13_hv_pmos m=1 w=4.65u l=450.00n ng=1
+MN0 net2 net4 vss vss sg13_hv_nmos m=1 w=2.65u l=450.00n ng=1
+MN1 core net2 vss vss sg13_lv_nmos m=1 w=2.75u l=130.00n ng=1
+MP1 core net2 vdd vdd sg13_lv_pmos m=1 w=4.75u l=130.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadInOut30mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadInOut30mA c2p c2p_en iovdd iovss p2c pad vdd vss
+*.PININFO c2p:I c2p_en:I p2c:O iovdd:B iovss:B pad:B vdd:B vss:B
+XI3 iovss pad iovdd / DCNDiode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=66.000u l=600.0n ng=15
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=199.8u l=600.0n ng=30
+XI0 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI1 p2c iovdd iovss pad vdd vss / LevelDown
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    LevelUpInv
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT LevelUpInv i iovdd o vdd vss
+*.PININFO i:I o:O iovdd:B vdd:B vss:B
+MN0 net2 i vss vss sg13_lv_nmos m=1 w=2.75u l=130.00n ng=1
+MP0 net2 i vdd vdd sg13_lv_pmos m=1 w=4.75u l=130.00n ng=1
+MN3 o net4 vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MN2 net4 net2 vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MN1 net3 i vss vss sg13_hv_nmos m=1 w=1.9u l=450.00n ng=1
+MP3 o net4 iovdd iovdd sg13_hv_pmos m=1 w=3.9u l=450.00n ng=1
+MP2 net3 net4 iovdd iovdd sg13_hv_pmos m=1 w=300.0n l=450.00n ng=1
+MP1 net4 net3 iovdd iovdd sg13_hv_pmos m=1 w=300.0n l=450.00n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    GateLevelUpInv
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT GateLevelUpInv core iovdd ngate pgate vdd vss
+*.PININFO core:I ngate:O pgate:O iovdd:B vdd:B vss:B
+XI1 core iovdd pgate vdd vss / LevelUpInv
+XI0 core iovdd ngate vdd vss / LevelUpInv
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadOut4mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadOut4mA c2p iovdd iovss pad vdd vss
+*.PININFO c2p:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI6 c2p iovdd net2 net1 vdd vss / GateLevelUpInv
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=8.8u l=600.0n ng=2
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=26.64u l=600.0n ng=4
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler10000
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler10000 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadVss
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadVss iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+XI2 vss iovdd iovss / DCPDiode
+XI1 iovss vss iovss / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadIOVss
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadIOVss iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+DD2 iovss iovss dantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+DD1 iovss iovdd dpantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadOut16mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadOut16mA c2p iovdd iovss pad vdd vss
+*.PININFO c2p:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI6 c2p iovdd net2 net1 vdd vss / GateLevelUpInv
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=35.2u l=600.0n ng=8
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=106.56u l=600.0n ng=16
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    RCClampResistor
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT RCClampResistor pin1 pin2
+*.PININFO pin1:B pin2:B
+RR29 net15 net16 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR28 net20 net21 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR27 net23 net24 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR26 net26 net27 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR25 net29 pin2 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR24 net17 net18 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR23 net16 net17 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR22 net28 net29 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR21 net25 net26 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR20 net22 net23 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR19 net19 net20 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR18 net27 net28 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR17 net24 net25 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR16 net21 net22 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR15 net18 net19 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR14 net5 net6 rppd 5.239K  m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR13 net8 net9 rppd 5.239K  m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR12 net11 net12 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR11 net14 net15 rppd 5.239K  m=1 l=20u w=1u ps=180n 
++ trise=0.0 b=0
+RR10 net2 net3 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR9 net1 net2 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR8 net13 net14 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR7 net10 net11 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR6 net7 net8 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR5 net4 net5 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR4 net12 net13 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR3 net9 net10 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR2 net6 net7 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR1 net3 net4 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+RR0 pin1 net1 rppd 5.239K m=1 l=20u w=1u ps=180n trise=0.0 
++ b=0
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    Clamp_N43N43D4R
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT Clamp_N43N43D4R gate pad tie
+*.PININFO gate:I pad:B tie:B
+MN0<1> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<2> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<3> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<4> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<5> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<6> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<7> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<8> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<9> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<10> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<11> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<12> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<13> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<14> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<15> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<16> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<17> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<18> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<19> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<20> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<21> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<22> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<23> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<24> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<25> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<26> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<27> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<28> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<29> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<30> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<31> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<32> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<33> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<34> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<35> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<36> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<37> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<38> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<39> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<40> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<41> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<42> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<43> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<44> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<45> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<46> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<47> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<48> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<49> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<50> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<51> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<52> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<53> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<54> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<55> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<56> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<57> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<58> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<59> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<60> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<61> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<62> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<63> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<64> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<65> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<66> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<67> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<68> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<69> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<70> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<71> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<72> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<73> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<74> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<75> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<76> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<77> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<78> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<79> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<80> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<81> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<82> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<83> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<84> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<85> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<86> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<87> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<88> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<89> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<90> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<91> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<92> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<93> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<94> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<95> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<96> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<97> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<98> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<99> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<100> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<101> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<102> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<103> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<104> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<105> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<106> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<107> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<108> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<109> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<110> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<111> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<112> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<113> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<114> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<115> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<116> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<117> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<118> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<119> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<120> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<121> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<122> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<123> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<124> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<125> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<126> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<127> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<128> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<129> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<130> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<131> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<132> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<133> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<134> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<135> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<136> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<137> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<138> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<139> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<140> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<141> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<142> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<143> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<144> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<145> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<146> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<147> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<148> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<149> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<150> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<151> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<152> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<153> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<154> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<155> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<156> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<157> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<158> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<159> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<160> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<161> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<162> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<163> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<164> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<165> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<166> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<167> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<168> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<169> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<170> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<171> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+MN0<172> pad gate tie tie sg13_hv_nmos m=1 w=4.4u l=600.0n ng=1
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    RCClampInverter
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT RCClampInverter in iovss out supply
+*.PININFO in:B iovss:B out:B supply:B
+MN1 iovss in iovss iovss sg13_hv_nmos m=1 w=126.000u l=9.5u ng=14
+MN0 out in iovss iovss sg13_hv_nmos m=1 w=108.000u l=500.0n ng=12
+MP0 out in supply supply sg13_hv_pmos m=1 w=350.000u l=500.0n ng=50
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadIOVdd
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadIOVdd iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+XI2 iovdd net1 / RCClampResistor
+XI0 net2 iovdd iovss / Clamp_N43N43D4R
+XI1 net1 iovss net2 iovdd / RCClampInverter
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadTriOut30mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadTriOut30mA c2p c2p_en iovdd iovss pad vdd vss
+*.PININFO c2p:I c2p_en:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI7 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=66.000u l=600.0n ng=15
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=199.8u l=600.0n ng=30
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadTriOut16mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadTriOut16mA c2p c2p_en iovdd iovss pad vdd vss
+*.PININFO c2p:I c2p_en:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI7 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=35.2u l=600.0n ng=8
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=106.56u l=600.0n ng=16
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadInOut16mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadInOut16mA c2p c2p_en iovdd iovss p2c pad vdd vss
+*.PININFO c2p:I c2p_en:I p2c:O iovdd:B iovss:B pad:B vdd:B vss:B
+XI3 iovss pad iovdd / DCNDiode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=35.2u l=600.0n ng=8
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=106.56u l=600.0n ng=16
+XI0 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI1 p2c iovdd iovss pad vdd vss / LevelDown
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler200
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler200 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler2000
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler2000 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadOut30mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadOut30mA c2p iovdd iovss pad vdd vss
+*.PININFO c2p:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI6 c2p iovdd net2 net1 vdd vss / GateLevelUpInv
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=66.000u l=600.0n ng=15
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=199.8u l=600.0n ng=30
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadInOut4mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadInOut4mA c2p c2p_en iovdd iovss p2c pad vdd vss
+*.PININFO c2p:I c2p_en:I p2c:O iovdd:B iovss:B pad:B vdd:B vss:B
+XI3 iovss pad iovdd / DCNDiode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=8.8u l=600.0n ng=2
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=26.64u l=600.0n ng=4
+XI0 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI1 p2c iovdd iovss pad vdd vss / LevelDown
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    Clamp_N20N0D
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT Clamp_N20N0D iovss pad
+*.PININFO iovss:B pad:B
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=88.000u l=600.0n ng=20
+RR1 iovss net2 rppd 1.959K m=1 l=3.54u w=500n ps=180n 
++ trise=0.0 b=0
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    Clamp_P20N0D
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT Clamp_P20N0D iovdd iovss pad
+*.PININFO iovdd:B iovss:B pad:B
+MP0 pad net2 iovdd iovdd sg13_hv_pmos m=1 w=266.4u l=600.0n ng=40
+RR0 net2 iovdd rppd 6.768K m=1 l=12.9u w=500n ps=180n 
++ trise=0.0 b=0
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadAnalog
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadAnalog iovdd iovss pad padres vdd vss
+*.PININFO iovdd:B iovss:B pad:B padres:B vdd:B vss:B
+XI8 iovss pad / Clamp_N20N0D
+XI9 iovdd iovss pad / Clamp_P20N0D
+XI3 iovss pad iovdd / DCNDiode
+XI2 pad iovdd iovss / DCPDiode
+XI6 padres iovss pad iovdd / SecondaryProtection
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler4000
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler4000 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Corner
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Corner iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler400
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler400 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadTriOut4mA
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadTriOut4mA c2p c2p_en iovdd iovss pad vdd vss
+*.PININFO c2p:I c2p_en:I iovdd:B iovss:B pad:B vdd:B vss:B
+XI7 c2p c2p_en iovdd net2 net1 vdd vss / GateDecode
+XI2 pad iovdd iovss / DCPDiode
+MN0 pad net2 iovss iovss sg13_hv_nmos m=1 w=8.8u l=600.0n ng=2
+MP0 pad net1 iovdd iovdd sg13_hv_pmos m=1 w=26.64u l=600.0n ng=4
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadIn
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadIn iovdd iovss p2c pad vdd vss
+*.PININFO p2c:O iovdd:B iovss:B pad:B vdd:B vss:B
+XI1 p2c iovdd iovss pad vdd vss / LevelDown
+XI2 pad iovdd iovss / DCPDiode
+XI3 iovss pad iovdd / DCNDiode
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_IOPadVdd
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_IOPadVdd iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+DD1 vdd iovdd dpantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+DD0 iovss vdd dantenna m=1 w=1.26u l=27.78u a=35.003p p=58.08u
+.ENDS
+
+************************************************************************
+* Library Name: sg13g2_iocell
+* Cell Name:    sg13g2_Filler1000
+* View Name:    schematic
+************************************************************************
+
+.SUBCKT sg13g2_Filler1000 iovdd iovss vdd vss
+*.PININFO iovdd:B iovss:B vdd:B vss:B
+.ENDS
