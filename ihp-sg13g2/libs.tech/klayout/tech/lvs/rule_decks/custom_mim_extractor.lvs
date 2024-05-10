@@ -161,18 +161,25 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
     #   None
 
     width, length, wfeed = calc_cmim_params(dev, dev_mk, meas_mk)
-    device.set_parameter('w', width * $unit)
-    device.set_parameter('l', length * $unit)
 
-    return unless name.downcase.include?('rfcmim')
+    if name.downcase.include?('rfcmim')
+      device.set_parameter('l', width * $unit)
+      device.set_parameter('w', length * $unit)
+      device.set_parameter('wfeed', wfeed * $unit)
+    else
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+    end
 
-    device.set_parameter('wfeed', wfeed * $unit)
   end
 
   def calc_cmim_params(dev, dev_mk, meas_mk)
     # Width & Length
-    width_edges = dev.edges
-    width, length = get_min_max_length(width_edges)
+    dev_edges = dev.edges
+    width_edges = dev_edges.with_angle(0, false)
+    len_edges = dev_edges.not(width_edges)
+    width = get_uniq_length(width_edges)
+    length = get_uniq_length(len_edges)
 
     # Wfeed
     wfeed_edges = meas_mk.edges.and(dev_mk.edges)

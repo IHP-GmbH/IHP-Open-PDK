@@ -108,9 +108,9 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
     run_lvs.py (--help| -h)
     run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>)
     [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--lvs_sub=<sub_name>] [--no_net_names] [--spice_comments] [--net_only]
-    [--no_simplify] [--no_series_res] [--no_parallel_res] [--combine_devices]
-    [--top_lvl_pins] [--purge] [--purge_nets] [--verbose]
+    [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
+    [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+    [--purge] [--purge_nets] [--verbose]
 ```
 
 **Options:**
@@ -127,8 +127,6 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--run_mode=<run_mode>`             Selects the allowed KLayout mode. (flat, deep). [default: flat]
 
-- `--lvs_sub=<sub_name>`              Sets the substrate name used in your design.
-
 - `--no_net_names`                    Omits net names in the extracted netlist.
 
 - `--spice_comments`                  Includes netlist comments in the extracted netlist.
@@ -137,9 +135,9 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--no_simplify`                     Disables simplification for both layout and schematic netlists.
 
-- `--no_series_res`                   Prevents the simplification of series resistors for both layout and schematic netlists.
+- `--no_series_res`                   Prevents simplification of series resistors for both layout and schematic.
 
-- `--no_parallel_res`                 Avoids simplifying parallel resistors within the extracted netlist.
+- `--no_parallel_res`                 Prevents simplification of parallel resistors for both layout and schematic.
 
 - `--combine_devices`                 Enables device combination for both layout and schematic netlists.
 
