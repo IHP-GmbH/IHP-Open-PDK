@@ -260,7 +260,7 @@ def run_test_case(
         switches = " ".join(get_switches(sw_file, device_name))
     else:
         # Get switches
-        switches = " --lvs_sub=sub!"  # default switch
+        switches = ""  # default switch
 
     # Creating run folder structure and copy testcases in it
     pattern_clean = ".".join(os.path.basename(layout_path).split(".")[:-1])
