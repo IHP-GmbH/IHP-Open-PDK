@@ -1,0 +1,774 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+ Copyright 2024 IHP PDK Authors
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<klayout-macro>
+ <description />
+ <version />
+ <category>drc</category>
+ <prolog />
+ <epilog />
+ <doc />
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut />
+ <show-in-menu>true</show-in-menu>
+ <group-name>drc_scripts</group-name>
+ <menu-path>tools_menu.drc.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+application = RBA::Application.instance
+main_window = application.main_window
+if main_window
+    curr_layout_view = main_window.current_view()
+    unless curr_layout_view
+        layout_path = RBA::FileDialog::ask_open_file_name("Chose your layout file.", ".", "GDSII files (*.GDS *.gds *.GDS.gz *.gds.gz *.GDS2 *.gds2 *.GDS2.gz *.gds2.gz);; All files (*)")
+        main_window.load_layout(layout_path, 1)
+        curr_layout_view = main_window.current_view()
+    end
+end
+active_layout = RBA::CellView::active.layout
+active_cellname = RBA::CellView::active.cell_name
+source(active_layout, active_cellname)
+if active_layout.dbu != 0.001
+    puts "WARNING: Layout dbu value (" + active_layout.dbu.to_s + " ) deviates from rule file dbu value (0.001). This will scale the layout and may not be intended."
+end
+report("design rules: sg13g2 | layout cell: " + active_cellname, "sg13g2.lyrdb")
+
+deep
+
+# Initial definitions of control flow variables
+conditional_enabled = {}
+conditional_enabled[:density] = true
+conditional_enabled[:sanityRules] = true
+
+class DRC::DRCLayer
+    def ext_and(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self &amp; other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_area(constraint)
+        output_layer = self.dup
+        constraint.each do |expression|
+            output_layer.data.min_coherence = true
+            relation = expression[0]
+            value = expression[1]
+            if relation == "&gt;"
+                output_layer = output_layer.with_area((value + @engine.dbu), nil)
+            elsif relation == "&lt;"
+                output_layer = output_layer.with_area(nil, value)
+            elsif relation == "=="
+                output_layer = output_layer.with_area(value)
+            elsif relation == "!="
+                output_layer = output_layer.without_area(value)
+            elsif relation == "&gt;="
+                output_layer = output_layer.with_area(value, nil)
+            elsif relation == "&lt;="
+                output_layer = output_layer.with_area(nil, (value + @engine.dbu))
+            else
+                raise "invalid expression"
+            end
+        end
+        return output_layer
+    end
+
+    def ext_constraint_satisfied(value, constraint)
+        output_bool = true
+        constraint.each do |expression|
+            if expression[0] == "&gt;"
+                output_bool = output_bool &amp;&amp; (value &gt; expression[1])
+            elsif expression[0] == "&lt;"
+                output_bool = output_bool &amp;&amp; (value &lt; expression[1])
+            elsif expression[0] == "=="
+                output_bool = output_bool &amp;&amp; (value == expression[1])
+            elsif expression[0] == "!="
+               output_bool = output_bool &amp;&amp; (value != expression[1])
+            elsif expression[0] == "&gt;="
+                output_bool = output_bool &amp;&amp; (value &gt;= expression[1])
+            elsif expression[0] == "&lt;="
+                output_bool = output_bool &amp;&amp; (value &lt;= expression[1])
+            else
+                raise "invalid expression"
+            end
+        end
+        return output_bool
+    end
+
+    def ext_covering(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self.covering(other.inside(self))
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_fast_separation(other, value)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self.separation(other, value)
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_not(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self - other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_or(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self | other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_rectangles(axis_aligned = false, use_bbox = false, constraint1 = nil, constraint2 = nil, aspect_ratio_constraint = nil, inverted: false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        if ( ( constraint1 &amp;&amp; ( !constraint2 || constraint1.length() &gt; 1 || constraint1[0][0] != "==") ) ||
+             ( constraint2 &amp;&amp; ( constraint2.length() &gt; 1 || constraint2[0][0] != "==" ) ) ||
+             ( constraint1 &amp;&amp; constraint2 &amp;&amp; constraint1[0][1] != constraint2[0][1] ) )
+            raise "ext_rectangle: unsupported options"
+        end
+        square = constraint1 ? true : false
+        shape_filter =
+            if use_bbox
+                @engine.extents
+            elsif axis_aligned
+                @engine.rectangles
+            else
+                @engine.if_all((@engine.corners == 270).count == 4, @engine.corners.count == 4)
+            end
+        if square
+            if use_bbox
+                shape_filter = @engine.if_all((@engine.extents.length == constraint1[0][1]).count == 4)
+            else
+                square_filter = (@engine.length == constraint1[0][1]).count == 4
+                shape_filter = @engine.if_all(shape_filter, square_filter)
+            end
+        end
+        if inverted
+            output_layer = self.drc(! shape_filter)
+        else
+            output_layer = self.drc(shape_filter)
+        end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_fast_space(value)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        output_layer = self.space(value)
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_fast_width(value)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        output_layer = self.width(value)
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_ring
+        holes = self.holes
+        hulls = self.hulls
+        covering = hulls.covering(holes)
+        result = covering.and(self)
+        return result
+    end
+
+    def ext_interacting_with_text(text_layer, text)
+        if text_layer.is_a? Integer
+            text_layer = @engine.labels(text_layer)
+        end
+        initial_merged_semantics = self.data.merged_semantics?
+        self.data.merged_semantics = false
+        result = self.interacting(text_layer.texts(text))
+        self.data.merged_semantics = initial_merged_semantics
+        return result
+    end
+
+    def ext_with_density(range, *args)
+        if self.is_empty?
+            return DRC::DRCLayer::new(@engine, RBA::Region::new())
+        end
+        origin = 'cc'
+        tile_size = nil
+        tile_step = nil
+        arguments = [range]
+        args.each do |a|
+            if a.is_a?(DRC::DRCTileSize)
+                tile_size = a
+                arguments.push(tile_size)
+            elsif a.is_a?(DRC::DRCTileStep)
+                tile_step = a
+                arguments.push(tile_step)
+            elsif a.is_a?(String)
+                origin = a
+            else
+                raise "argument error"
+            end
+        end
+        bbox = @engine.extent.bbox
+        if origin == 'll'
+            origin_x = bbox.left
+            origin_y = bbox.bottom
+            tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
+            arguments.push(tile_origin)
+        elsif origin != 'cc'
+            raise "Unkown origin: 'cc' or 'll' expected"
+        end
+        if tile_size
+            return self.with_density(*arguments)
+        else
+            tile_size = DRC::DRCTileSize::new(bbox.width, bbox.height)
+            tile_count = DRC::DRCTileCount::new(1,2)
+            enlarged_bbox = bbox.enlarged(1.1).to_itype(@engine.dbu)
+            boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox))
+            tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
+            result = self.with_density(*arguments, tile_size, tile_count, tile_boundary)
+            return result.raw.overlapping(DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu))))
+        end
+    end
+end
+Activ = source.polygons("1/0")
+Activ_pin = source.polygons("1/2")
+Activ_filler = source.polygons("1/22")
+BiWind = source.polygons("3/0")
+GatPoly = source.polygons("5/0")
+GatPoly_pin = source.polygons("5/2")
+GatPoly_filler = source.polygons("5/22")
+Cont = source.polygons("6/0")
+Metal1 = source.polygons("8/0")
+Metal1_pin = source.polygons("8/2")
+Metal1_filler = source.polygons("8/22")
+Metal1_slit = source.polygons("8/24")
+Passiv = source.polygons("9/0")
+Metal2 = source.polygons("10/0")
+Metal2_pin = source.polygons("10/2")
+Metal2_filler = source.polygons("10/22")
+Metal2_slit = source.polygons("10/24")
+BasPoly = source.polygons("13/0")
+Via1 = source.polygons("19/0")
+SRAM = source.polygons("25/0")
+TRANS = source.polygons("26/0")
+Via2 = source.polygons("29/0")
+Metal3 = source.polygons("30/0")
+Metal3_pin = source.polygons("30/2")
+Metal3_filler = source.polygons("30/22")
+Metal3_slit = source.polygons("30/24")
+DeepCo = source.polygons("35/0")
+EdgeSeal = source.polygons("39/0")
+ThickGateOx = source.polygons("44/0")
+Via3 = source.polygons("49/0")
+Metal4 = source.polygons("50/0")
+Metal4_pin = source.polygons("50/2")
+Metal4_filler = source.polygons("50/22")
+Metal4_slit = source.polygons("50/24")
+EmPoly = source.polygons("55/0")
+TEXT_0 = source.labels("63/0")
+Via4 = source.polygons("66/0")
+Metal5 = source.polygons("67/0")
+Metal5_pin = source.polygons("67/2")
+Metal5_filler = source.polygons("67/22")
+Metal5_slit = source.polygons("67/24")
+TopVia1 = source.polygons("125/0")
+TopMetal1 = source.polygons("126/0")
+TopMetal1_pin = source.polygons("126/2")
+TopMetal1_filler = source.polygons("126/22")
+TopMetal1_slit = source.polygons("126/24")
+Vmim = source.polygons("129/0")
+TopVia2 = source.polygons("133/0")
+TopMetal2 = source.polygons("134/0")
+TopMetal2_pin = source.polygons("134/2")
+TopMetal2_filler = source.polygons("134/22")
+TopMetal2_slit = source.polygons("134/24")
+ColWind = source.polygons("139/0")
+LBE = source.polygons("157/0")
+
+if conditional_enabled[:sanityRules]
+	PEmWind = source.polygons("11/0")
+	PEmPoly = source.polygons("53/0")
+	LDMOS = source.polygons("57/0")
+	PBiWind = source.polygons("58/0")
+	Flash = source.polygons("71/0")
+end
+
+Activ_Act_a = Activ.ext_fast_width(150)
+Act_density = Activ.ext_or(Activ_filler)
+Gat_density = GatPoly.ext_or(GatPoly_filler)
+Cont_SQ = Cont.ext_rectangles(true, false, [["==", 160]], [["==", 160]], nil)
+ContBar = Cont.ext_area([["&gt;", 0.16*0.16]])
+Act_Nsram = Activ.ext_not(SRAM)
+GP_Nsram = GatPoly.ext_not(SRAM)
+M1_Nsram = Metal1.ext_not(SRAM)
+M2_Nsram = Metal2.ext_not(SRAM)
+M3_Nsram = Metal3.ext_not(SRAM)
+ThickGateOx_TGO_f = ThickGateOx.ext_fast_width(860)
+M4_Nsram = Metal4.ext_not(SRAM)
+M5_Nsram = Metal5.ext_not(SRAM)
+M1_density = Metal1.ext_or(Metal1_filler).ext_not(Metal1_slit)
+M2_density = Metal2.ext_or(Metal2_filler).ext_not(Metal2_slit)
+emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(TEXT_0, "E")
+M3_density = Metal3.ext_or(Metal3_filler).ext_not(Metal3_slit)
+M4_density = Metal4.ext_or(Metal4_filler).ext_not(Metal4_slit)
+M5_density = Metal5.ext_or(Metal5_filler).ext_not(Metal5_slit)
+TM1_density = TopMetal1.ext_or(TopMetal1_filler).ext_not(TopMetal1_slit)
+TM2_density = TopMetal2.ext_or(TopMetal2_filler).ext_not(TopMetal2_slit)
+GP_Nsram_Gat_a = GP_Nsram.ext_fast_width(130)
+GP_Nsram_Gat_b = GP_Nsram.ext_fast_space(180)
+transG2L = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2L").ext_covering(emi2Pin)
+
+-&gt; do
+    Activ_Act_a.dup
+end.().output("Act.a", "Min. Activ width")
+
+-&gt; do
+    Act_Nsram.ext_fast_space(210)
+end.().output("Act.b", "Min. Activ space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    Act_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("AFil.g", "Min. global Activ density [%]")
+	
+	-&gt; do
+	    Act_density.ext_with_density(0.55 .. 1.0, 'll')
+	end.().output("AFil.g1", "Max. global Activ density [%]")
+	
+	-&gt; do
+	    Act_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("AFil.g2", "Min. Activ coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    Act_density.ext_with_density(0.65 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("AFil.g3", "Max. Activ coverage ratio for any 800 x 800 µm² chip area [%]")
+
+end
+
+-&gt; do
+    ThickGateOx_TGO_f.dup
+end.().output("TGO.f", "Min. ThickGateOx width")
+
+-&gt; do
+    GP_Nsram_Gat_a.dup
+end.().output("Gat.a", "Min. GatPoly width")
+
+-&gt; do
+    GP_Nsram_Gat_b.dup
+end.().output("Gat.b", "Min. GatPoly space or notch")
+
+-&gt; do
+    GP_Nsram.ext_fast_separation(Act_Nsram, 70)
+end.().output("Gat.d", "Min. GatPoly space to Activ")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    Gat_density.ext_with_density(0.0 .. 0.15, 'll')
+	end.().output("GFil.g", "Min. global GatPoly density [%]")
+
+end
+
+-&gt; do
+    Cont.merged(true, 0).outside(EdgeSeal).ext_not(ContBar.ext_or(Cont_SQ))
+end.().output("Cnt.a", "Min. and max. Cont width")
+
+-&gt; do
+    Cont.merged(true, 0).outside(EdgeSeal).ext_fast_space(180)
+end.().output("Cnt.b", "Min. Cont space")
+
+-&gt; do
+    Metal1.ext_fast_width(160)
+end.().output("M1.a", "Min. Metal1 width")
+
+-&gt; do
+    M1_Nsram.ext_fast_space(180)
+end.().output("M1.b", "Min. Metal1 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    M1_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("M1.j", "Min. global Metal1 density [%]")
+	
+	-&gt; do
+	    M1_density.ext_with_density(0.6 .. 1.0, 'll')
+	end.().output("M1.k", "Max. global Metal1 density [%]")
+
+end
+
+-&gt; do
+    Metal2.ext_fast_width(200)
+end.().output("M2.a", "Min. Metal2 width")
+
+-&gt; do
+    M2_Nsram.ext_fast_space(210)
+end.().output("M2.b", "Min. Metal2 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    M2_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("M2.j", "Min. global Metal2 density [%]")
+	
+	-&gt; do
+	    M2_density.ext_with_density(0.6 .. 1.0, 'll')
+	end.().output("M2.k", "Max. global Metal2 density [%]")
+
+end
+
+-&gt; do
+    Metal3.ext_fast_width(200)
+end.().output("M3.a", "Min. Metal3 width")
+
+-&gt; do
+    M3_Nsram.ext_fast_space(210)
+end.().output("M3.b", "Min. Metal3 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    M3_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("M3.j", "Min. global Metal3 density [%]")
+	
+	-&gt; do
+	    M3_density.ext_with_density(0.6 .. 1.0, 'll')
+	end.().output("M3.k", "Max. global Metal3 density [%]")
+
+end
+
+-&gt; do
+    Metal4.ext_fast_width(200)
+end.().output("M4.a", "Min. Metal4 width")
+
+-&gt; do
+    M4_Nsram.ext_fast_space(210)
+end.().output("M4.b", "Min. Metal4 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    M4_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("M4.j", "Min. global Metal4 density [%]")
+	
+	-&gt; do
+	    M4_density.ext_with_density(0.6 .. 1.0, 'll')
+	end.().output("M4.k", "Max. global Metal4 density [%]")
+
+end
+
+-&gt; do
+    Metal5.ext_fast_width(200)
+end.().output("M5.a", "Min. Metal5 width")
+
+-&gt; do
+    M5_Nsram.ext_fast_space(210)
+end.().output("M5.b", "Min. Metal5 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    M5_density.ext_with_density(0.0 .. 0.35, 'll')
+	end.().output("M5.j", "Min. global Metal5 density [%]")
+	
+	-&gt; do
+	    M5_density.ext_with_density(0.6 .. 1.0, 'll')
+	end.().output("M5.k", "Max. global Metal5 density [%]")
+	
+	-&gt; do
+	    M1_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M1Fil.h", "Min. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M1_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M1Fil.k", "Max. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M2_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M2Fil.h", "Min. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M2_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M2Fil.k", "Max. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M3_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M3Fil.h", "Min. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M3_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M3Fil.k", "Max. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M4_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M4Fil.h", "Min. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M4_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M4Fil.k", "Max. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M5_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M5Fil.h", "Min. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	
+	-&gt; do
+	    M5_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
+	end.().output("M5Fil.k", "Max. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+
+end
+
+-&gt; do
+    Via1.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+end.().output("V1.a", "Min. and max. Via1 width")
+
+-&gt; do
+    Via1.ext_not(EdgeSeal).ext_fast_space(220)
+end.().output("V1.b", "Min. Via1 space")
+
+-&gt; do
+    Via2.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+end.().output("V2.a", "Min. and max. Via2 width")
+
+-&gt; do
+    Via2.ext_not(EdgeSeal).ext_fast_space(220)
+end.().output("V2.b", "Min. Via2 space")
+
+-&gt; do
+    Via3.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+end.().output("V3.a", "Min. and max. Via3 width")
+
+-&gt; do
+    Via3.ext_not(EdgeSeal).ext_fast_space(220)
+end.().output("V3.b", "Min. Via3 space")
+
+-&gt; do
+    Via4.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+end.().output("V4.a", "Min. and max. Via4 width")
+
+-&gt; do
+    Via4.ext_not(EdgeSeal).ext_fast_space(220)
+end.().output("V4.b", "Min. Via4 space")
+
+-&gt; do
+    Vmim.ext_or(TopVia1.ext_not(EdgeSeal)).ext_rectangles(false, false, [["==", 420]], [["==", 420]], nil, inverted: true)
+end.().output("TV1.a", "Min. and max. TopVia1 width")
+
+-&gt; do
+    TopVia1.ext_or(Vmim).ext_fast_space(420)
+end.().output("TV1.b", "Min. TopVia1 space")
+
+-&gt; do
+    TopMetal1.ext_fast_width(1640)
+end.().output("TM1.a", "Min. TopMetal1 width")
+
+-&gt; do
+    TopMetal1.ext_fast_space(1640)
+end.().output("TM1.b", "Min. TopMetal1 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    TM1_density.ext_with_density(0.0 .. 0.25, 'll')
+	end.().output("TM1.c", "Min. global TopMetal1 density [%]")
+	
+	-&gt; do
+	    TM1_density.ext_with_density(0.7 .. 1.0, 'll')
+	end.().output("TM1.d", "Max. global TopMetal1 density [%]")
+
+end
+
+-&gt; do
+    TopVia2.ext_not(EdgeSeal).ext_rectangles(false, false, [["==", 900]], [["==", 900]], nil, inverted: true)
+end.().output("TV2.a", "Min. and max. TopVia2 width")
+
+-&gt; do
+    TopVia2.ext_fast_space(1060)
+end.().output("TV2.b", "Min. TopVia2 space")
+
+-&gt; do
+    TopMetal2.ext_fast_width(2000)
+end.().output("TM2.a", "Min. TopMetal2 width")
+
+-&gt; do
+    TopMetal2.ext_fast_space(2000)
+end.().output("TM2.b", "Min. TopMetal2 space or notch")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    TM2_density.ext_with_density(0.0 .. 0.25, 'll')
+	end.().output("TM2.c", "Min. global TopMetal2 density [%]")
+	
+	-&gt; do
+	    TM2_density.ext_with_density(0.7 .. 1.0, 'll')
+	end.().output("TM2.d", "Max. global TopMetal2 density [%]")
+
+end
+
+-&gt; do
+    Passiv.ext_fast_width(2100)
+end.().output("Pas.a", "Min. Passiv width")
+
+-&gt; do
+    Passiv.ext_fast_space(3500)
+end.().output("Pas.b", "Min. Passiv space or notch")
+
+if conditional_enabled[:sanityRules]
+	
+	-&gt; do
+	    Activ_pin.ext_not(Activ)
+	end.().output("Pin.a", "Min. Activ enclosure of Activ:pin")
+	
+	-&gt; do
+	    GatPoly_pin.ext_not(GatPoly)
+	end.().output("Pin.b", "Min. GatPoly enclosure of GatPoly:pin")
+	
+	-&gt; do
+	    Metal1_pin.ext_not(Metal1)
+	end.().output("Pin.e", "Min. Metal1 enclosure of Metal1:pin")
+	
+	-&gt; do
+	    Metal2_pin.ext_not(Metal2)
+	end.().output("Pin.f.M2", "Min. Metal2 enclosure of Metal2:pin")
+	
+	-&gt; do
+	    Metal3_pin.ext_not(Metal3)
+	end.().output("Pin.f.M3", "Min. Metal3 enclosure of Metal3:pin")
+	
+	-&gt; do
+	    Metal4_pin.ext_not(Metal4)
+	end.().output("Pin.f.M4", "Min. Metal4 enclosure of Metal4:pin")
+	
+	-&gt; do
+	    Metal5_pin.ext_not(Metal5)
+	end.().output("Pin.f.M5", "Min. Metal5 enclosure of Metal5:pin")
+	
+	-&gt; do
+	    TopMetal1_pin.ext_not(TopMetal1)
+	end.().output("Pin.g", "Min. TopMetal1 enclosure of TopMetal1:pin")
+	
+	-&gt; do
+	    TopMetal2_pin.ext_not(TopMetal2)
+	end.().output("Pin.h", "Min. TopMetal2 enclosure of TopMetal2:pin")
+
+end
+
+-&gt; do
+    LBE.ext_fast_width(100000)
+end.().output("LBE.a", "Min. LBE width")
+
+-&gt; do
+    LBE.drc(width &gt; 1500000)
+end.().output("LBE.b", "Max. LBE width")
+
+-&gt; do
+    LBE.ext_area([["&gt;", 250000.0]])
+end.().output("LBE.b1", "Max. LBE area (µm²)")
+
+-&gt; do
+    LBE.ext_fast_space(100000)
+end.().output("LBE.c", "Min. LBE space or notch")
+
+-&gt; (;lbe_in_seal) do
+    lbe_in_seal = LBE.merged(true, 0).inside(EdgeSeal.holes.merge)
+    lbe_in_seal.ext_fast_separation(EdgeSeal, 150000)
+end.().output("LBE.d", "Min. LBE space to inner edge of EdgeSeal")
+
+-&gt; do
+    LBE.ext_ring.dup
+end.().output("LBE.h", "No LBE ring allowed")
+
+if conditional_enabled[:density]
+	
+	-&gt; do
+	    LBE.ext_with_density(0.2 .. 1.0, 'll')
+	end.().output("LBE.i", "Max. global LBE density [%]")
+
+end
+
+if conditional_enabled[:sanityRules]
+	
+	-&gt; do
+	    BiWind.dup
+	end.().output("forbidden.BiWind", "Forbidden drawn layer BiWind on GDS layer 3/0")
+	
+	-&gt; do
+	    PEmWind.dup
+	end.().output("forbidden.PEmWind", "Forbidden drawn layer PEmWind on GDS layer 11/0")
+	
+	-&gt; do
+	    BasPoly.dup
+	end.().output("forbidden.BasPoly", "Forbidden drawn layer BasPoly on GDS layer 13/0")
+	
+	-&gt; do
+	    DeepCo.dup
+	end.().output("forbidden.DeepCo", "Forbidden drawn layer DeepCo on GDS layer 35/0")
+	
+	-&gt; do
+	    PEmPoly.dup
+	end.().output("forbidden.PEmPoly", "Forbidden drawn layer PEmPoly on GDS layer 53/0")
+	
+	-&gt; do
+	    EmPoly.dup
+	end.().output("forbidden.EmPoly", "Forbidden gen./drawn layer EmPoly on GDS layer 53/0")
+	
+	-&gt; do
+	    LDMOS.dup
+	end.().output("forbidden.LDMOS", "Forbidden drawn layer LDMOS on GDS layer 57/0")
+	
+	-&gt; do
+	    PBiWind.dup
+	end.().output("forbidden.PBiWind", "Forbidden drawn layer PBiWind on GDS layer 58/0")
+	
+	-&gt; do
+	    Flash.dup
+	end.().output("forbidden.Flash", "Forbidden drawn layer Flash on GDS layer 71/0")
+	
+	-&gt; do
+	    ColWind.dup
+	end.().output("forbidden.ColWind", "Forbidden drawn layer ColWind on GDS layer 139/0")
+
+end
+</text>
+</klayout-macro>
