@@ -18,11 +18,11 @@ At a minimum:
 
 You need the following set of tools installed to be able to run the regression:
 - Python 3.9+
-- KLayout 0.28.14+
+- KLayout 0.29.0+
 
 We have tested this using the following setup:
 - Python 3.9.18
-- KLayout 0.28.16
+- KLayout 0.29.0
 
 ## Installation
 
