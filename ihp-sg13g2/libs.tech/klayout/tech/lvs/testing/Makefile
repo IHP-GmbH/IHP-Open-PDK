@@ -44,8 +44,8 @@ test-LVS-%:
 #================================
 
 .ONESHELL:
-test-LVS-stdcells:
-	@echo "========== LVS-stdcells Testing =========="
+test-LVS-cells:
+	@echo "========== SG13G2-Cells Testing =========="
 	@ python3 run_regression_cells.py
 
 #=================================
@@ -57,6 +57,10 @@ test-LVS-switch:
 	@echo "========== LVS-Switch Testing =========="
 	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=deep --run_dir=test_nmos_deep
 	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=flat --run_dir=test_nmos_flat
+
+#==============================
+# -------- LIST DEVICES -------
+#==============================
 
 .ONESHELL:
 list-devices:
