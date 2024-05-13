@@ -14,7 +14,13 @@ This is the sg13g2_io library. The following files are included in this library:
 These files are generated from python scripts of the Chips4Makers based IHP SG13G2
 PDK. The code can be found in the
 [c4m-pdk-ihpsg13g2](https://gitlab.com/Chips4Makers/c4m-pdk-ihpsg13g2.git) repo.
-This library is built from version `0.0.1` of that source code.
+This library is built from version `0.0.3` of that source code.
 The `README.md` file of this project explains how to use the code in there. The whole
 build of the files plus preparation of the files described above for upstreaming can be
 generated with the command `pdm doit patch4upstream`.
+
+It also contains externally contributed files:
+
+* cdl/sg13g2_iocell.cdl: CDL netlist
+* verilog/sg13g2_io.v: verilog netlist
+* liberty/sg13g2_iocell_*lib: liberty files with timing
