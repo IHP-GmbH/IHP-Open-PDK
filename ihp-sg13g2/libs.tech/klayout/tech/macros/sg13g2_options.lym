@@ -113,14 +113,14 @@
   #
   # Returns a list contains all top cell names
   def self.get_top_cell_names
-    top_cells = []
+    cells = []
     layout = RBA::Layout.new
     layout.read(Pathname.new(RBA::CellView.active.filename))
 
-    layout.top_cells.each do |cell|
-      top_cells.push(cell.name)
+    layout.each_cell do |cell|
+      cells.push(cell.name)
     end
-    top_cells
+    cells
   end
 
   # Create a dialog box for selecting LVS options

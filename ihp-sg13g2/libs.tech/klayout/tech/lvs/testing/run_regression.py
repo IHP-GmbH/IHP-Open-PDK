@@ -49,37 +49,6 @@ SUPPORTED_SPICE_EXT = "cdl"
 SUPPORTED_SW_EXT = "yaml"
 
 
-def check_klayout_version():
-    """
-    Check klayout version and makes sure it would work with the LVS.
-    """
-    # ======= Checking Klayout version =======
-    klayout_v_ = os.popen("klayout -b -v").read()
-    klayout_v_ = klayout_v_.split("\n")[0]
-    klayout_v_list = []
-
-    if klayout_v_ == "":
-        logging.error("Klayout is not found. Please make sure klayout is installed.")
-        exit(1)
-    else:
-        klayout_v_list = [int(v) for v in klayout_v_.split(" ")[-1].split(".")]
-
-    if len(klayout_v_list) < 1 or len(klayout_v_list) > 3:
-        logging.error("Was not able to get klayout version properly.")
-        exit(1)
-    elif len(klayout_v_list) >= 2 or len(klayout_v_list) <= 3:
-        if klayout_v_list[1] < 28 or (
-            klayout_v_list[1] == 28 and klayout_v_list[2] <= 13
-        ):
-            logging.error("Prerequisites at a minimum: KLayout 0.28.14")
-            logging.error(
-                "Using this klayout version has not been assessed. Limits are unknown"
-            )
-            # exit(1)
-
-    logging.info(f"Your Klayout version is: {klayout_v_}")
-
-
 def parse_existing_devices(rule_deck_path, output_path, target_device_group=None):
     """
     This function collects the rule names from the existing lvs rule decks.
@@ -479,9 +448,6 @@ def main(lvs_dir, output_path, target_device_group):
 
     # Start of execution time
     t0 = time.time()
-
-    # Check Klayout version
-    check_klayout_version()
 
     # Calling regression function
     run_status = run_regression(lvs_dir, output_path, target_device_group, cpu_count)

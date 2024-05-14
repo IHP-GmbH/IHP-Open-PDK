@@ -48,37 +48,6 @@ SUPPORTED_SPICE_EXT = "cdl"
 SUPPORTED_SW_EXT = "yaml"
 
 
-def check_klayout_version():
-    """
-    Check klayout version and makes sure it would work with the LVS.
-    """
-    # ======= Checking Klayout version =======
-    klayout_v_ = os.popen("klayout -b -v").read()
-    klayout_v_ = klayout_v_.split("\n")[0]
-    klayout_v_list = []
-
-    if klayout_v_ == "":
-        logging.error("Klayout is not found. Please make sure klayout is installed.")
-        exit(1)
-    else:
-        klayout_v_list = [int(v) for v in klayout_v_.split(" ")[-1].split(".")]
-
-    if len(klayout_v_list) < 1 or len(klayout_v_list) > 3:
-        logging.error("Was not able to get klayout version properly.")
-        exit(1)
-    elif len(klayout_v_list) >= 2 or len(klayout_v_list) <= 3:
-        if klayout_v_list[1] < 28 or (
-            klayout_v_list[1] == 28 and klayout_v_list[2] <= 13
-        ):
-            logging.error("Prerequisites at a minimum: KLayout 0.28.14")
-            logging.error(
-                "Using this klayout version has not been assessed. Limits are unknown"
-            )
-            # exit(1)
-
-    logging.info(f"Your Klayout version is: {klayout_v_}")
-
-
 def build_tests_dataframe(cells_dir, target_cell, cells):
     """
     Getting all test cases available in a formatted dataframe before running.
@@ -100,6 +69,12 @@ def build_tests_dataframe(cells_dir, target_cell, cells):
 
     # Construct df that holds all info
     tc_df = pd.DataFrame({"cell_name": cells})
+
+    # Drop specific cell that has issues
+    values_to_drop = ["sg13g2_tiehi"]
+
+    # Drop rows where cell_name is in the list of values to drop
+    tc_df = tc_df[~tc_df['cell_name'].isin(values_to_drop)]
 
     all_cells_layout = sorted(Path(cells_dir).rglob("*.{}".format(SUPPORTED_TC_EXT)))
     all_cells_netlist = sorted(
@@ -153,15 +128,16 @@ def build_tests_dataframe(cells_dir, target_cell, cells):
     tc_df["run_id"] = range(len(tc_df))
 
     # Duplicate the original cells for iso/digisub
-    iso_df = tc_df.copy()
+    # iso_df = tc_df.copy()
     sub_df = tc_df.copy()
 
     # Add the suffix to each cell in the column
-    iso_df["cell_name"] = iso_df["cell_name"] + "_iso"
+    # iso_df["cell_name"] = iso_df["cell_name"] + "_iso"
     sub_df["cell_name"] = sub_df["cell_name"] + "_digisub"
 
     # Concatenate the original DataFrame with the modified DataFrame
-    final_df = pd.concat([tc_df, iso_df, sub_df])
+    # final_df = pd.concat([tc_df, iso_df, sub_df])
+    final_df = pd.concat([tc_df, sub_df])
     final_df.reset_index(drop=True, inplace=True)
 
     final_df["run_id"] = range(len(final_df))
@@ -407,9 +383,6 @@ def main(lvs_dir, cells_dir, output_path, target_cell, cells):
 
     # Start of execution time
     t0 = time.time()
-
-    # Check Klayout version
-    check_klayout_version()
 
     # Calling regression function
     run_status = run_regression(

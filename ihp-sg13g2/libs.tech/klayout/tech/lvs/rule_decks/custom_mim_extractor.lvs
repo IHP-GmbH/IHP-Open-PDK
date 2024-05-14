@@ -33,9 +33,11 @@ class DeviceCustomMIM < RBA::DeviceClassCapacitor
     clear_equivalent_terminal_ids
 
     # Adding params
-    add_parameter(RBA::DeviceParameterDefinition.new('w', 'width', 0, true, 1e-6))
-    add_parameter(RBA::DeviceParameterDefinition.new('l', 'length', 0, true, 1e-6))
-    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true, 1.0))
+    add_parameter(RBA::DeviceParameterDefinition.new('w', 'width', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('l', 'length', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'perimeter', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
 
     # Adding terminals
     ter1 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_top"))
@@ -46,7 +48,7 @@ class DeviceCustomMIM < RBA::DeviceClassCapacitor
     # Adding extra param & terminal for rfcmim
     return unless name.downcase.include?('rfcmim')
 
-    add_parameter(RBA::DeviceParameterDefinition.new('wfeed', 'feed width', 0, true, 1e-6))
+    add_parameter(RBA::DeviceParameterDefinition.new('wfeed', 'feed width', 0, true))
     sub_ter = add_terminal(RBA::DeviceTerminalDefinition.new("mim_sub"))
     sub_ter.name = "mim_sub"
   end
@@ -170,6 +172,8 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('w', width * $unit)
       device.set_parameter('l', length * $unit)
     end
+    device.set_parameter('A', width * length * $unit * $unit)
+    device.set_parameter('P', (width + length) * 2 * $unit)
 
   end
 
