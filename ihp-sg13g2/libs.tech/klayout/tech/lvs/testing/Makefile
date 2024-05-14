@@ -39,6 +39,15 @@ test-LVS-%:
 	@echo "========== LVS-$* testing =========="
 	@ python3 run_regression.py --device=$*
 
+#================================
+# ------ test-LVS-stdcells ------
+#================================
+
+.ONESHELL:
+test-LVS-cells:
+	@echo "========== SG13G2-Cells Testing =========="
+	@ python3 run_regression_cells.py
+
 #=================================
 # -------- test-LVS-switch -------
 #=================================
@@ -48,6 +57,10 @@ test-LVS-switch:
 	@echo "========== LVS-Switch Testing =========="
 	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=deep --run_dir=test_nmos_deep
 	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=flat --run_dir=test_nmos_flat
+
+#==============================
+# -------- LIST DEVICES -------
+#==============================
 
 .ONESHELL:
 list-devices:
@@ -71,6 +84,7 @@ help:
 	@echo "... all                        (the default if no target is provided             )"
 	@echo "... test-LVS                   (To run LVS for all devices with switching test   )"
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
+	@echo "... test-LVS-stdcells          (To run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"

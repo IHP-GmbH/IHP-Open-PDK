@@ -49,37 +49,6 @@ SUPPORTED_SPICE_EXT = "cdl"
 SUPPORTED_SW_EXT = "yaml"
 
 
-def check_klayout_version():
-    """
-    Check klayout version and makes sure it would work with the LVS.
-    """
-    # ======= Checking Klayout version =======
-    klayout_v_ = os.popen("klayout -b -v").read()
-    klayout_v_ = klayout_v_.split("\n")[0]
-    klayout_v_list = []
-
-    if klayout_v_ == "":
-        logging.error("Klayout is not found. Please make sure klayout is installed.")
-        exit(1)
-    else:
-        klayout_v_list = [int(v) for v in klayout_v_.split(" ")[-1].split(".")]
-
-    if len(klayout_v_list) < 1 or len(klayout_v_list) > 3:
-        logging.error("Was not able to get klayout version properly.")
-        exit(1)
-    elif len(klayout_v_list) >= 2 or len(klayout_v_list) <= 3:
-        if klayout_v_list[1] < 28 or (
-            klayout_v_list[1] == 28 and klayout_v_list[2] <= 13
-        ):
-            logging.error("Prerequisites at a minimum: KLayout 0.28.14")
-            logging.error(
-                "Using this klayout version has not been assessed. Limits are unknown"
-            )
-            # exit(1)
-
-    logging.info(f"Your Klayout version is: {klayout_v_}")
-
-
 def parse_existing_devices(rule_deck_path, output_path, target_device_group=None):
     """
     This function collects the rule names from the existing lvs rule decks.
@@ -116,7 +85,7 @@ def parse_existing_devices(rule_deck_path, output_path, target_device_group=None
 
         lvs_files = [table_device_file]
 
-    rules_data = list()
+    dev_data = list()
 
     for runset in lvs_files:
         with open(runset, "r") as f:
@@ -129,11 +98,11 @@ def parse_existing_devices(rule_deck_path, output_path, target_device_group=None
                     )
                     rule_info["device_name"] = line_list[1]
                     rule_info["in_rule_deck"] = 1
-                    rules_data.append(rule_info)
+                    dev_data.append(rule_info)
 
-    df = pd.DataFrame(rules_data)
+    df = pd.DataFrame(dev_data)
     df.drop_duplicates(inplace=True)
-    df.to_csv(os.path.join(output_path, "rule_deck_rules.csv"), index=False)
+    df.to_csv(os.path.join(output_path, "rule_deck_devices.csv"), index=False)
     return df
 
 
@@ -367,7 +336,7 @@ def aggregate_results(results_df: pd.DataFrame, devices_df: pd.DataFrame):
     Parameters
     ----------
     results_df : pd.DataFrame
-        Dataframe that holds the information about the unit test rules.
+        Dataframe that holds the information about the unit test devices.
     devices_df : pd.DataFrame
         Dataframe that holds the information about all the devices implemented in the rule deck.
 
@@ -377,7 +346,7 @@ def aggregate_results(results_df: pd.DataFrame, devices_df: pd.DataFrame):
         A DataFrame that has all data analysis aggregated into one.
     """
     if len(devices_df) < 1 and len(results_df) < 1:
-        logging.error("There are no rules for analysis or run.")
+        logging.error("There are no devices for analysis or run.")
         exit(1)
     elif len(devices_df) < 1 and len(results_df) > 0:
         df = results_df
@@ -410,10 +379,10 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     Returns
     -------
     bool
-        If all regression passed, it returns true. If any of the rules failed it returns false.
+        If all regression passed, it returns true. If any of the devices failed it returns false.
     """
 
-    # Parse Existing Rules
+    # Parse Existing devices
     devices_df = parse_existing_devices(lvs_dir, output_path, target_device_group)
     logging.info(
         "Total number of devices found in rule decks: {}".format(len(devices_df))
@@ -440,7 +409,7 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     # Generate error if there are any missing info or fails.
     df.to_csv(os.path.join(output_path, "all_test_cases_results.csv"), index=False)
 
-    # Check if there any rules that generated false positive or false negative
+    # Check if there any device that generated failure
     failing_results = df[~df["device_status"].isin(["Passed"])]
     logging.info("Failing test cases: \n" + str(failing_results))
 
@@ -467,7 +436,7 @@ def main(lvs_dir, output_path, target_device_group):
     Returns
     -------
     bool
-        If all regression passed, it returns true. If any of the rules failed it returns false.
+        If all regression passed, it returns true. If any of the devices failed it returns false.
     """
 
     # No. of threads
@@ -479,9 +448,6 @@ def main(lvs_dir, output_path, target_device_group):
 
     # Start of execution time
     t0 = time.time()
-
-    # Check Klayout version
-    check_klayout_version()
 
     # Calling regression function
     run_status = run_regression(lvs_dir, output_path, target_device_group, cpu_count)
