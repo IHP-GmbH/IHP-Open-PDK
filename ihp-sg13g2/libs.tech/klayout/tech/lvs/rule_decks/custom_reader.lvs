@@ -24,8 +24,10 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Cleanup sch for R, C elements
   def clean_sch(line, element)
     line = line.delete('[]$\\/')
+
     # Extracting parameters with values
-    valid_params = line.scan(/\b\w+=\S+\b/)
+    valid_params = line.scan(/\b\w+\s*=\s*\S+\b/)
+
     case element
     when 'R'
       # For 2 term res [<nets> <model> <params>]
