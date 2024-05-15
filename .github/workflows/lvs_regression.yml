@@ -58,9 +58,9 @@ jobs:
       - name: Installing Klayout
         run: |
           sudo apt update -qq -y
-          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.28.14-1_amd64.deb
+          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.29.0-1_amd64.deb
           # The dpkg command will fail complaining about missing dependencies.
-          sudo dpkg -i ./klayout_0.28.14-1_amd64.deb || true
+          sudo dpkg -i ./klayout_0.29.0-1_amd64.deb || true
           # The apt install command should install the missing dependencies
           # needed by KLayout above and finish the install.
           sudo apt install -f -y
@@ -73,3 +73,25 @@ jobs:
       - name: Testing ${{ matrix.part }} for ${{ matrix.test }}
         run: |
           make test-"$(python -c 'print("${{ matrix.part }}".upper())')"-${{ matrix.test }}
+
+  lvs_regression_cells:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installing Klayout
+        run: |
+          sudo apt update -qq -y
+          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.29.0-1_amd64.deb
+          # The dpkg command will fail complaining about missing dependencies.
+          sudo dpkg -i ./klayout_0.29.0-1_amd64.deb || true
+          # The apt install command should install the missing dependencies
+          # needed by KLayout above and finish the install.
+          sudo apt install -f -y
+          # Check that KLayout was successfully installed!
+          klayout -v
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Testing LVS for SG13G2 cells
+        run: |
+          make test-LVS-cells

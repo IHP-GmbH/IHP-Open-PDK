@@ -36,10 +36,35 @@
  <text>
  module SG13G2LVSOptions
   require 'yaml'
+  require 'open3'
   include RBA
 
   # Main function to manage LVS options
-  def self.main    
+  def self.main
+
+    # check klayout version
+    klayout_v, _ = Open3.capture2('klayout -b -v')
+    klayout_v = klayout_v.split("\n")[0]
+    klayout_v_list = []
+
+    if klayout_v.empty?
+      raise StandardError, "KLayout is not found. Please make sure KLayout is installed."
+    else
+      klayout_v_arr = klayout_v.split(" ")[-1].scan(/[^.]+/)
+      klayout_v_list = klayout_v_arr.map { |ele| ele.to_i }
+    end
+
+    if klayout_v_list.size &lt; 1 || klayout_v_list.size &gt; 3
+      raise StandardError, "Was not able to get KLayout version properly."
+    elsif klayout_v_list.size &gt;= 2 || klayout_v_list.size &lt;= 3
+      if klayout_v_list[1] &lt; 29
+        puts "Using this KLayout version has not been assessed. Limits are unknown."
+        raise StandardError, "Prerequisites at a minimum: KLayout 0.29.0"
+      end
+    end
+
+    puts "Your KLayout version is: #{klayout_v}"
+
     # Construct the absolute path to the YAML file
     yaml_file_path = "#{__dir__}/lvs_options.yml"
 
@@ -113,14 +138,14 @@
   #
   # Returns a list contains all top cell names
   def self.get_top_cell_names
-    top_cells = []
+    cells = []
     layout = RBA::Layout.new
     layout.read(Pathname.new(RBA::CellView.active.filename))
 
-    layout.top_cells.each do |cell|
-      top_cells.push(cell.name)
+    layout.each_cell do |cell|
+      cells.push(cell.name)
     end
-    top_cells
+    cells
   end
 
   # Create a dialog box for selecting LVS options

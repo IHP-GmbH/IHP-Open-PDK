@@ -19,21 +19,23 @@ Explains how to use the SG13G2 LVS rule decks.
 
 ```text
 📁 lvs
- ┣ 📁testing               Testing environment directory for SG13G2 LVS. 
- ┣ 📁rule_decks            Holds all LVS rule decks used for SG13G2.
- ┣ sg13g2.lvs              Main LVS runset that call all rule decks.
- ┣ 📜README.md             This file to document LVS for SG13G2.
- ┗ 📜run_lvs.py            Main python script used for SG13G2 LVS.
+ ┣ 📁testing               Directory for the SG13G2 LVS testing environment.
+ ┣ 📁rule_decks            Contains all LVS rule decks used for SG13G2.
+ ┣ 📜sg13g2.lvs            Main LVS runset that calls all rule decks.
+ ┣ 📜README.md             Documentation for SG13G2 LVS.
+ ┗ 📜run_lvs.py            Main Python script for SG13G2 LVS run.
  ```
 
 ## Prerequisites
 
 You need the following set of tools installed to be able to run SG13G2 LVS:
 
-At a minimum:
-
 - Python 3.9+
-- KLayout 0.28.14+
+- KLayout 0.29.0+
+
+We have tested this using the following setup:
+- Python 3.9.18
+- KLayout 0.29.0
 
 ## Installation
 
@@ -42,59 +44,6 @@ To install the required Python packages, execute the following command:
 ```bash
 pip install -r ../../../../../requirements.txt
 ```
-
-## Devices Status
-
-The following table explains the list of available SG13G2 devices we have supported in our LVS runset.
-
-| Device          | Tested           |
-|-----------------|------------------|
-| **MOSFET**      |                  |
-| sg13_lv_nmos    |:white_check_mark:|
-| sg13_hv_nmos    |:white_check_mark:|
-| sg13_lv_pmos    |:white_check_mark:|
-| sg13_hv_pmos    |:white_check_mark:|
-| **RF-MOSFET**   |                  |
-| rfnmos          |:white_check_mark:|
-| rfnmosHV        |:white_check_mark:|
-| rfpmos          |:white_check_mark:|
-| rfpmosHV        |:white_check_mark:|
-| **BJTs**        |                  |
-| npn13G2         |:white_check_mark:|
-| npn13G2L        |:white_check_mark:|
-| npn13G2V        |:white_check_mark:|
-| pnpMPA          |:white_check_mark:|
-| **Diodes**      |                  |
-| dantenna        |:white_check_mark:|
-| dpantenna       |:white_check_mark:|
-| schottky_nbl1   |:white_check_mark:|
-| **Resistors**   |                  |
-| rsil            |:white_check_mark:|
-| rppd            |:white_check_mark:|
-| rhigh           |:white_check_mark:|
-| lvsres          |:white_check_mark:|
-| **Capacitors**  |                  |
-| SVaricap        |:white_check_mark:|
-| cap_cmim        |:white_check_mark:|
-| rfcmim          |:white_check_mark:|
-| **ESD**         |                  |
-| diodevdd_4kv    |:white_check_mark:|
-| diodevdd_2kv    |:white_check_mark:|
-| diodevss_4kv    |:white_check_mark:|
-| diodevss_2kv    |:white_check_mark:|
-| idiodevdd_4kv   |:white_check_mark:|
-| idiodevdd_2kv   |:white_check_mark:|
-| idiodevss_4kv   |:white_check_mark:|
-| idiodevss_2kv   |:white_check_mark:|
-| nmoscl_2        |:white_check_mark:|
-| nmoscl_4        |:white_check_mark:|
-| **Inductors**   |                  |
-| inductor        |:white_check_mark:|
-| inductor3       |:white_check_mark:|
-| **Taps**        |                  |
-| ptap1           |:white_check_mark:|
-| ntap1           |:white_check_mark:|
-
 
 ## Usage
 
@@ -115,7 +64,7 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 **Options:**
 
-- `--help -h `                        Displays this help message.
+- `--help -h`                         Displays this help message.
 
 - `--layout=<layout_path>`            Specifies the file path of the input GDS file.
 
