@@ -189,12 +189,13 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     switches = dict()
 
     if arguments["--run_mode"] in ["flat", "deep"]:
-        switches["run_mode"] = arguments["--run_mode"]
+        run_mode = arguments["--run_mode"]
     else:
         logging.error("Allowed klayout modes are (flat , deep) only")
-        exit()
+        exit(1)
 
     switches = {
+        "run_mode": run_mode,
         "no_net_names": "true" if arguments.get("--no_net_names") else "false",
         "spice_comments": "true" if arguments.get("--spice_comments") else "false",
         "net_only": "true" if arguments.get("--net_only") else "false",

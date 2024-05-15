@@ -36,6 +36,7 @@
  <text>
 
 require 'yaml'
+require 'open3'
 
 # Load LVS options from a YAML file
 #
@@ -82,6 +83,29 @@ def set_default_options(yaml_file_path)
   default_options
 end
 
+# check klayout version
+klayout_v, _ = Open3.capture2('klayout -b -v')
+klayout_v = klayout_v.split("\n")[0]
+klayout_v_list = []
+
+if klayout_v.empty?
+  raise StandardError, "KLayout is not found. Please make sure KLayout is installed."
+else
+  klayout_v_arr = klayout_v.split(" ")[-1].scan(/[^.]+/)
+  klayout_v_list = klayout_v_arr.map { |ele| ele.to_i }
+end
+
+if klayout_v_list.size &lt; 1 || klayout_v_list.size &gt; 3
+  raise StandardError, "Was not able to get KLayout version properly."
+elsif klayout_v_list.size &gt;= 2 || klayout_v_list.size &lt;= 3
+  if klayout_v_list[1] &lt; 29
+    puts "Using this KLayout version has not been assessed. Limits are unknown."
+    raise StandardError, "Prerequisites at a minimum: KLayout 0.29.0"
+  end
+end
+puts "Your KLayout version is: #{klayout_v}"
+
+# Get testing dir path
 dir_path = File.dirname(File.expand_path(__FILE__))
 
 ## reading the loaded gds file path
