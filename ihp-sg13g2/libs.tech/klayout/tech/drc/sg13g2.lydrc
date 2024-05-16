@@ -1,29 +1,15 @@
-<?xml version='1.0' encoding='utf-8'?>
-<!--
- Copyright 2023 IHP PDK Authors
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-     https://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <klayout-macro>
- <description />
- <version />
+ <description/>
+ <version/>
  <category>drc</category>
- <prolog />
- <epilog />
- <doc />
+ <prolog/>
+ <epilog/>
+ <doc/>
  <autorun>false</autorun>
  <autorun-early>false</autorun-early>
- <shortcut />
+ <priority>0</priority>
+ <shortcut/>
  <show-in-menu>true</show-in-menu>
  <group-name>drc_scripts</group-name>
  <menu-path>tools_menu.drc.end</menu-path>
@@ -352,10 +338,10 @@ TRANS = TRANS_org.ext_not(NoDRC)
 SRAM = SRAM_org.ext_not(NoDRC)
 LBE = LBE_org.ext_not(NoDRC)
 TopVia1 = NoDRC.ext_or(Vmim_org).ext_or(TopVia1_org.ext_not(NoDRC))
-Activ_Act_a = Activ.width(150)
-ThickGateOx_TGO_f = ThickGateOx.width(860)
-Cont_SQ = Cont.ext_rectangles(true, false, [["==", 160]], [["==", 160]], nil)
-ContBar = Cont.ext_area([["&gt;", (0.16*0.16)*1000.0*1000.0]])
+Activ_Act_a = Activ.width(150.nm)
+ThickGateOx_TGO_f = ThickGateOx.width(860.nm)
+Cont_SQ = Cont.ext_rectangles(true, false, [["==", 160.nm]], [["==", 160.nm]], nil)
+ContBar = Cont.ext_area([["&gt;", (0.16.um*0.16.um)]])
 Act_density = ActFiller.ext_or(Activ)
 Gat_density = GatFiller.ext_or(GatPoly)
 Act_Nsram = Activ.ext_not(SRAM)
@@ -373,8 +359,8 @@ M5_density = M5Filler.ext_or(Metal5).ext_not(M5Slit)
 TM1_density = TopMet1Filler.ext_or(TopMetal1).ext_not(TopMet1Slit)
 TM2_density = TopMet2Filler.ext_or(TopMetal2).ext_not(TopMet2Slit)
 emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(63, "E")
-GP_Nsram_Gat_a = GP_Nsram.width(130)
-GP_Nsram_Gat_b = GP_Nsram.space(180)
+GP_Nsram_Gat_a = GP_Nsram.width(130.nm)
+GP_Nsram_Gat_b = GP_Nsram.space(180.nm)
 transG2L = TRANS.ext_interacting_with_text(63, "npn13G2L").ext_covering(emi2Pin)
 
 -&gt; do
@@ -382,7 +368,7 @@ transG2L = TRANS.ext_interacting_with_text(63, "npn13G2L").ext_covering(emi2Pin)
 end.().output("Act.a", "Min. Activ width = 0.15")
 
 -&gt; do
-    Act_Nsram.space(210)
+    Act_Nsram.space(210.nm)
 end.().output("Act.b", "Act.b: Min. Activ space or notch = 0.21")
 
 -&gt; do
@@ -398,7 +384,7 @@ end.().output("Gat.a", "Min GatPoly width = 0.13")
 end.().output("Gat.b", "Min. GatPoly space or notch = 0.18")
 
 -&gt; do
-    GP_Nsram.separation(Act_Nsram, 70)
+    GP_Nsram.separation(Act_Nsram, 70.nm)
 end.().output("Gat.d", "Min. GatPoly to Activ space = 0.07")
 
 -&gt; do
@@ -406,119 +392,119 @@ end.().output("Gat.d", "Min. GatPoly to Activ space = 0.07")
 end.().output("Cnt.a", "Min.and max. size of Cont = 0.16")
 
 -&gt; do
-    Cont.merged(true, 0).outside(EdgeSeal).space(180)
+    Cont.merged(true, 0).outside(EdgeSeal).space(180.nm)
 end.().output("Cnt.b", "Min. Cont space = 0.18")
 
 -&gt; do
-    Passiv.width(2100)
+    Passiv.width(2100.nm)
 end.().output("Pas.a", "Min. Passiv width = 2.10")
 
 -&gt; do
-    Passiv.space(3500)
+    Passiv.space(3500.nm)
 end.().output("Pas.b", "Min. Passiv space or notch = 3.50")
 
 -&gt; do
-    Metal1.width(160)
+    Metal1.width(160.nm)
 end.().output("M1.a", "Min. width of Metal1 = 0.16")
 
 -&gt; do
-    M1_Nsram.space(180)
+    M1_Nsram.space(180.nm)
 end.().output("M1.b", "Min. Metal1 space or notch = 0.18")
 
 -&gt; do
-    Metal2.width(200)
+    Metal2.width(200.nm)
 end.().output("M2.a", "Min. width of Metal2 = 0.2")
 
 -&gt; do
-    M2_Nsram.space(210)
+    M2_Nsram.space(210.nm)
 end.().output("M2.b", "Min. Metal2 space or notch = 0.21")
 
 -&gt; do
-    Metal3.width(200)
+    Metal3.width(200.nm)
 end.().output("M3.a", "Min. width of Metal3 = 0.2")
 
 -&gt; do
-    M3_Nsram.space(210)
+    M3_Nsram.space(210.nm)
 end.().output("M3.b", "Min. Metal3 space or notch = 0.21")
 
 -&gt; do
-    Metal4.width(200)
+    Metal4.width(200.nm)
 end.().output("M4.a", "Min. width of Metal4 = 0.2")
 
 -&gt; do
-    M4_Nsram.space(210)
+    M4_Nsram.space(210.nm)
 end.().output("M4.b", "Min. Metal4 space or notch = 0.21")
 
 -&gt; do
-    Metal5.width(200)
+    Metal5.width(200.nm)
 end.().output("M5.a", "Min. width of Metal5 = 0.2")
 
 -&gt; do
-    M5_Nsram.space(210)
+    M5_Nsram.space(210.nm)
 end.().output("M5.b", "Min. Metal5 space or notch = 0.21")
 
 -&gt; do
-    Via1.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+    Via1.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190.nm]], [["==", 190.nm]], nil, inverted: true)
 end.().output("Via1.a", "Via1.a: Min. and Maxi. size of Via1 = 0.19")
 
 -&gt; do
-    Via1.ext_not(EdgeSeal).space(220)
+    Via1.ext_not(EdgeSeal).space(220.nm)
 end.().output("Via1.b", "Via1.b: Min. Via1 space = 0.22")
 
 -&gt; do
-    Via2.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+    Via2.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190.nm]], [["==", 190.nm]], nil, inverted: true)
 end.().output("Via2.a", "Via2.a: Min. and Maxi. size of Via2 = 0.19")
 
 -&gt; do
-    Via2.ext_not(EdgeSeal).space(220)
+    Via2.ext_not(EdgeSeal).space(220.nm)
 end.().output("Via2.b", "Via2.b: Min. Via2 space = 0.22")
 
 -&gt; do
-    Via3.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+    Via3.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190.nm]], [["==", 190.nm]], nil, inverted: true)
 end.().output("Via3.a", "Via3.a: Min. and Maxi. size of Via3 = 0.19")
 
 -&gt; do
-    Via3.ext_not(EdgeSeal).space(220)
+    Via3.ext_not(EdgeSeal).space(220.nm)
 end.().output("Via3.b", "Via3.b: Min. Via3 space = 0.22")
 
 -&gt; do
-    Via4.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
+    Via4.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190.nm]], [["==", 190.nm]], nil, inverted: true)
 end.().output("Via4.a", "Via4.a: Min. and Maxi. size of Via4 = 0.19")
 
 -&gt; do
-    Via4.ext_not(EdgeSeal).space(220)
+    Via4.ext_not(EdgeSeal).space(220.nm)
 end.().output("Via4.b", "Via4.b: Min. Via4 space = 0.22")
 
 -&gt; do
-    Vmim.ext_or(TopVia1.ext_not(EdgeSeal)).ext_rectangles(false, false, [["==", 420]], [["==", 420]], nil, inverted: true)
+    Vmim.ext_or(TopVia1.ext_not(EdgeSeal)).ext_rectangles(false, false, [["==", 420.nm]], [["==", 420.nm]], nil, inverted: true)
 end.().output("TV1.a", "Min.and Max. TopVia1 (µm²) = 0.42")
 
 -&gt; do
-    TopVia1.ext_or(Vmim).space(420)
+    TopVia1.ext_or(Vmim).space(420.nm)
 end.().output("TV1.b", "Min. TopVia1 space = 0.42")
 
 -&gt; do
-    TopMetal1.width(1640)
+    TopMetal1.width(1640.nm)
 end.().output("TM1.a", "Min. width of TopMetal1 = 1.64")
 
 -&gt; do
-    TopMetal1.space(1640)
+    TopMetal1.space(1640.nm)
 end.().output("TM1.b", "Min. TopMetal1 space or notch = 1.64")
 
 -&gt; do
-    TopMetal2.width(2000)
+    TopMetal2.width(2000.nm)
 end.().output("TM2.a", "Min. width of TopMetal2 = 2.0")
 
 -&gt; do
-    TopMetal2.space(2000)
+    TopMetal2.space(2000.nm)
 end.().output("TM2.b", "Min. TopMetal2 space or notch = 2.0")
 
 -&gt; do
-    TopVia2.ext_not(EdgeSeal).ext_rectangles(false, false, [["==", 900]], [["==", 900]], nil, inverted: true)
+    TopVia2.ext_not(EdgeSeal).ext_rectangles(false, false, [["==", 900.nm]], [["==", 900.nm]], nil, inverted: true)
 end.().output("TV2.a", "Min.and Max. TopVia2 = 0.90")
 
 -&gt; do
-    TopVia2.space(1060)
+    TopVia2.space(1060.nm)
 end.().output("TV2.b", "Min. TopVia2 space = 1.06")
 
 if conditional_enabled[:density]
@@ -730,24 +716,24 @@ if conditional_enabled[:sanityRules]
 end
 
 -&gt; do
-    LBE.width(100000)
+    LBE.width(100.um)
 end.().output("LBE.a", "LBE.a: Min. width of LBE = 100.0")
 
 -&gt; do
-    LBE.drc(width &gt; 1500000)
+    LBE.drc(width &gt; 1500.um)
 end.().output("LBE.b", "LBE.b: Max. width of LBE = 1500.0")
 
 -&gt; do
-    LBE.ext_area([["&gt;", 250000.0*1000.0*1000.0]])
+    LBE.ext_area([["&gt;", 250000.um2]])
 end.().output("LBE.b1", "LBE.b1: Max allowed LBE area = 250000.0")
 
 -&gt; do
-    LBE.space(100000)
+    LBE.space(100.um)
 end.().output("LBE.c", "LBE.c: Min. LBE space or notch = 100.0")
 
 -&gt; (;lbe_in_seal) do
     lbe_in_seal = LBE.merged(true, 0).inside(EdgeSeal.holes.merge)
-    lbe_in_seal.separation(EdgeSeal, 150000)
+    lbe_in_seal.separation(EdgeSeal, 150.um)
 end.().output("LBE.d", "LBE.d: Min. space of LBE to inner edge of Edge Seal = 150.0")
 
 -&gt; do
