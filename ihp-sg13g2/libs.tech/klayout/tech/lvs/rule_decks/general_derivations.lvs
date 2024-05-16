@@ -32,7 +32,7 @@ nwell_iso = nwell_drw.and(nbulay_drw)
 nwell_n_iso = nwell_drw.not(nbulay_drw)
 
 # pwell
-pwell_pre = pwell_drw.join(CHIP.not(nwell_drw.join(pwell_block).join(digisub_drw)))
+pwell_pre = CHIP.not(nwell_drw).not(pwell_block).not(digisub_drw)
 digisub_pre = digisub_drw.sized(-1.nm).not(nwell_drw).not(pwell_block)
 pwell = pwell_pre.join(digisub_pre)
 
@@ -75,4 +75,4 @@ ptap_holes = ptap.holes
 ntap_holes = ntap.holes
 
 # General pwell
-pwell_deep = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
+pwell_sub = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
