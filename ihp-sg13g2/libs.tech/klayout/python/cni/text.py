@@ -31,7 +31,7 @@ class Text(Shape):
         self._text = text
         self._layer = layer
 
-        self.set_shape(Shape.cell.shapes(layer.number).insert(text))
+        self.set_shape(Shape.getCell().shapes(layer.number).insert(text))
         super().__init__(Box(text.bbox().left, text.bbox().bottom, text.bbox().right, text.bbox().top))
 
     def addToRegion(self, region: pya.Region):
@@ -42,14 +42,14 @@ class Text(Shape):
 
     def destroy(self):
         if not self._text._destroyed():
-            Shape.cell.shapes(self.getShape().layer).erase(self.getShape())
+            Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
             self._text._destroy()
         else:
             pya.Logger.warn(f"Text.destroy: already destroyed!")
 
     def moveBy(self, dx: float, dy: float) -> None:
         movedText = (pya.DTrans(float(dx), float(dy)) * self._text)
-        shape = Shape.cell.shapes(self._shape.layer).insert(movedText)
+        shape = Shape.getCell().shapes(self._shape.layer).insert(movedText)
         self.destroy()
         self._polygon = movedPolygon
         self.set_shape(shape)
@@ -68,7 +68,7 @@ class Text(Shape):
 
     def transform(self, transform: Transform) -> None:
         transformedText = self._text.transformed(transform.transform)
-        shape = Shape.cell.shapes(self.getShape().layer).insert(transformedText)
+        shape = Shape.getCell().shapes(self.getShape().layer).insert(transformedText)
         self.destroy()
         self._text = transformedText
         self.set_shape(shape)

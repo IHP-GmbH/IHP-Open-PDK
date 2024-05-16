@@ -28,7 +28,7 @@ class Rect(Shape):
         self._layer = layer
 
         super().__init__(box)
-        shape = Shape.cell.shapes(layer.number).insert(box.box)
+        shape = Shape.getCell().shapes(layer.number).insert(box.box)
         self.set_shape(shape)
         self._box.setRect(self)
 

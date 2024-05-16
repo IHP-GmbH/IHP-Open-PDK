@@ -35,7 +35,7 @@ from .ihp import rhigh_code
 from .ihp import rppd_code
 from .ihp import sealring_code
 from .ihp import npn13G2_base_code
-#from .ihp import npn13G2_code
+from .ihp import npn13G2_code
 
 class PyCellLib(pya.Library):
     def __init__(self):
@@ -53,7 +53,7 @@ class PyCellLib(pya.Library):
         self.layout().register_pcell("rppd", PCellWrapper(rppd_code.rppd(), tech))
         self.layout().register_pcell("sealring", PCellWrapper(sealring_code.sealring(), tech))
         self.layout().register_pcell("npn13G2_base", PCellWrapper(npn13G2_base_code.npn13G2_base(), tech))
-        #self.layout().register_pcell("npn13G2", PCellWrapper(npn13G2_code.npn13G2(), tech))
+        self.layout().register_pcell("npn13G2", PCellWrapper(npn13G2_code.npn13G2(), tech))
 
         self.register("SG13_dev")
 
