@@ -30,17 +30,21 @@ class sealring(DloGen):
         techparams = specs.tech.getTechParams()
 
         CDFVersion = techparams['CDFVersion']
+        defL       = techparams['sealring_complete_defL']
+        minL       = techparams['sealring_complete_minL']
+        defW       = techparams['sealring_complete_defW']
+        minW       = techparams['sealring_complete_minW']
 
         specs('cdf_version', CDFVersion, 'CDF Version')
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
 
-        specs('l', '150u', 'Length(X-Axis)')
-        specs('w', '150u', 'Width(Y-Axis)')
+        specs('l', defL, 'Length(X-Axis)')
+        specs('w', defW, 'Width(Y-Axis)')
         specs('addLabel', 'nil', 'Add sub! label', ChoiceConstraint(['nil', 't']))
         specs('addSlit', 'nil' , 'Add Slit', ChoiceConstraint(['nil', 't']))
 
-        specs('Lmin', '150u', 'Lmin')
-        specs('Wmin', '150u', 'Wmin')
+        specs('Lmin', minL, 'Lmin')
+        specs('Wmin', minW, 'Wmin')
 
     def setupParams(self, params):
         # process parameter values entered by user
