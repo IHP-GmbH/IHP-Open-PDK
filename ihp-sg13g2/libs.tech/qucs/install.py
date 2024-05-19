@@ -81,6 +81,17 @@ if __name__ == "__main__":
         print(f"Destination directory '{destination_directory}' created.")
     
     copy_files(source_directory, destination_directory)
+    
+    # Copy examples to "Qucs Home" (/home/<username>/.qucs/)
+    print("Copying examples into Qucs-S Home...")
+    source_directory=pdk_root + "/ihp-sg13g2/libs.tech/qucs/examples"
+    destination_directory = "/home/" + username + "/.qucs/IHP-Open-PDK-SG13G2-Examples_prj"
+    
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+        
+    copy_files(source_directory, destination_directory)
+    print("Examples copied")
 
     original_file = pdk_root
     symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"
