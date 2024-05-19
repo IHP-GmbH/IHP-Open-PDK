@@ -92,6 +92,12 @@ if __name__ == "__main__":
         
     copy_files(source_directory, destination_directory)
     print("Examples copied")
+    print("\n\n#############################################")
+    print("              IMPORTANT NOTE")
+    print("#############################################\n")
+    print("Before using the PDK example schematics, you must add the PDK library path to the Qucs-S search path list.\n")
+    print("Please read the instructions provided in " + destination_directory + "/README.txt\n")
+    print("#############################################\n\n")
 
     original_file = pdk_root
     symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"
