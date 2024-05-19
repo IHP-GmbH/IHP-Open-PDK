@@ -29,12 +29,15 @@ CHIP = extent.sized(0.0)
 # === General Derivations ===
 # nwell
 nwell_iso = nwell_drw.and(nbulay_drw)
-nwell_n_iso = nwell_drw.not(nbulay_drw)
+nwell_holes = nwell_drw.holes.not(nwell_drw)
 
 # pwell
 pwell_pre = CHIP.not(nwell_drw).not(pwell_block).not(digisub_drw)
 digisub_pre = digisub_drw.sized(-1.nm).not(nwell_drw).not(pwell_block)
 pwell = pwell_pre.join(digisub_pre)
+
+# General pwell
+pwell_sub = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
 
 # psd, nsd active & res
 psd = psd_drw
@@ -69,14 +72,28 @@ pgate_hv_base = pgate.and(thickgateox_drw)
 nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
 psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
 
-# n & p taps (short connections)
-ntap = nactiv.and(nwell_n_iso).not(res_mk).not(recog_diode).not(gatpoly_drw)
-ptap = pactiv.and(pwell).not(substrate_drw).not(res_mk).not(recog_diode).not(gatpoly_drw)
 
-# Derived - Layers (Special)
-nwell_holes = nwell_drw.holes.not(nwell_drw)
+# n1/p1 taps labels
+ntap1_lbl = text_drw.texts("well")
+ntap1_mk = nwell_drw.interacting(ntap1_lbl)
+
+ptap1_lbl = text_drw.texts("sub!")
+ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
+
+# n & p taps (short connections)
+ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly_drw).not(ntap1_mk)
+ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly_drw)
 ptap_holes = ptap.holes
 ntap_holes = ntap.holes
 
-# General pwell
-pwell_sub = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
+# S/D (salicide)
+nsd_sal = nsd_fet.not(salblock_drw)
+psd_sal = psd_fet.not(salblock_drw)
+
+# n & p taps (salicide)
+ntap_sal = ntap.not(salblock_drw)
+ptap_sal = ptap.not(salblock_drw)
+
+# n/p SD abutted with n/p taps (salicide)
+nsd_ptap_abutt = nsd_sal.edges.and(ptap_sal.edges).extended(:in => 1.nm, :out => 1.nm)
+psd_ntap_abutt = psd_sal.edges.and(ntap_sal.edges).extended(:in => 1.nm, :out => 1.nm)
