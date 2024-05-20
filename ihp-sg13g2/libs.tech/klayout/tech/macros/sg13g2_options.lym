@@ -134,17 +134,25 @@
     default_options
   end
 
-  # Get all names for top cells
+  # Get all names for top cells with the active cell as the first element
   #
-  # Returns a list contains all top cell names
+  # Returns a list containing all top cell names with the active cell as the first element
   def self.get_top_cell_names
     cells = []
     layout = RBA::Layout.new
     layout.read(Pathname.new(RBA::CellView.active.filename))
 
+    active_cellview = RBA::CellView.active
+    active_cell_name = active_cellview.cell.name
+
     layout.each_cell do |cell|
       cells.push(cell.name)
     end
+
+    # Remove the active cell name from the list if it exists and add it to the front
+    cells.delete(active_cell_name)
+    cells.unshift(active_cell_name)
+
     cells
   end
 
