@@ -1,6 +1,6 @@
-<Qucs Schematic 24.2.0>
+<Qucs Schematic 24.2.1>
 <Properties>
-  <View=-201,-94,2082,1128,0.651338,0,0>
+  <View=-147,16,1678,1026,0.852475,0,0>
   <Grid=10,10,1>
   <DataSet=dc_hbt_13g2.dat>
   <DataDisplay=dc_hbt_13g2.dpl>
@@ -43,8 +43,8 @@
   <170 900 170 960 "" 0 0 0 "">
 </Wires>
 <Diagrams>
-  <Rect 437 899 1062 769 3 #c0c0c0 1 00 1 0 0.1 1.5 1 -0.000277029 0.0002 0.00246701 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
-	<"ngspice/i(pr1)" #ff0000 0 3 0 0 0>
+  <Rect 437 899 1062 769 3 #c0c0c0 1 00 1 -1 0.1 1 1 -1 0.2 1 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/sw1.i(pr1)" #ff0000 0 3 0 0 0>
   </Rect>
 </Diagrams>
 <Paintings>

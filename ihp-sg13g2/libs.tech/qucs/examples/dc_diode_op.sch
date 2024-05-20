@@ -1,6 +1,6 @@
-<Qucs Schematic 24.2.0>
+<Qucs Schematic 24.2.1>
 <Properties>
-  <View=-86,-4,1624,1075,1.25348,0,181>
+  <View=-76,-4,1614,1003,0.920856,0,0>
   <Grid=10,10,1>
   <DataSet=dc_diode_op.dat>
   <DataDisplay=dc_diode_op.dpl>
@@ -41,9 +41,9 @@
   <270 590 470 590 "" 0 0 0 "">
 </Wires>
 <Diagrams>
-  <Rect 639 890 831 618 3 #c0c0c0 1 00 1 0 0.1 1 0 0 2e-06 2e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
-	<"ngspice/i(pr1)" #0000ff 2 3 0 0 0>
-	<"ngspice/i(pr2)" #ff0000 2 3 0 0 0>
+  <Rect 639 890 831 618 3 #c0c0c0 1 00 1 -1 0.2 1 0 0 2e-06 2e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/sw1.i(pr1)" #0000ff 2 3 0 0 0>
+	<"ngspice/sw1.i(pr2)" #ff0000 2 3 0 0 0>
   </Rect>
 </Diagrams>
 <Paintings>
