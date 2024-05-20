@@ -22,7 +22,7 @@
 </Symbol>
 <Components>
   <.SW SW1 1 90 280 0 68 0 0 "DC1" 1 "lin" 1 "V2" 1 "0" 1 "10" 1 "301" 1 "false" 0>
-  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_wcs\n.control\nop\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_wcs\n.control\nop\n.endc" 1 "" 0 "" 0>
   <Vdc V2 1 110 800 18 -26 0 1 "1 V" 1>
   <GND * 1 250 950 0 0 0 0>
   <GND * 1 110 950 0 0 0 0>
