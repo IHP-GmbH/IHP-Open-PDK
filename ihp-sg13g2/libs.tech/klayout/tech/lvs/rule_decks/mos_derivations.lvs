@@ -28,7 +28,7 @@ mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
                 .join(polyres_drw).join(extblock_drw).join(res_drw)
                 .join(activ_mask).join(recog_diode).join(recog_esd)
                 .join(ind_drw).join(ind_pin).join(ind_drw)
-                .join(substrate_drw)
+                .join(substrate_drw).join(nsd_block)
 
 # ==============
 # ---- NMOS ----
@@ -36,7 +36,7 @@ mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
 
 logger.info('Starting NMOS DERIVATIONS')
 
-nmos_exclude = nwell_drw.join(psd).join(mos_exclude)
+nmos_exclude = nwell_drw.join(psd_drw).join(mos_exclude)
 
 # for regular FETs
 nmos_exc = nmos_exclude.join(ptap_holes)
@@ -53,7 +53,7 @@ ngate_hv = ngate_hv_base.not(nmos_exc)
 
 logger.info('Starting PMOS DERIVATIONS')
 
-pmos_exclude = pwell.join(nsd_all).join(nwell_holes).join(mos_exclude)
+pmos_exclude = pwell.join(nwell_holes).join(mos_exclude)
 
 # for regular FETs
 pmos_exc = pmos_exclude.join(ntap_holes)

@@ -24,7 +24,14 @@
 logger.info('Starting general LVS derivations')
 
 #=== Global Layers ===
-CHIP = extent.sized(0.0)
+# === CHIP ===
+CHIP = case $run_mode
+when 'deep'
+  extent('*')
+else
+  #=== FLAT MODE ===
+  extent.sized(0.0)
+end
 
 # === General Derivations ===
 # nwell
@@ -32,21 +39,17 @@ nwell_iso = nwell_drw.and(nbulay_drw)
 nwell_holes = nwell_drw.holes.not(nwell_drw)
 
 # pwell
-pwell_pre = CHIP.not(nwell_drw).not(pwell_block).not(digisub_drw)
+pwell_pre_init = CHIP.not(pwell_block).not(digisub_drw)
+pwell_pre = pwell_pre_init.not(nwell_drw)
 digisub_pre = digisub_drw.sized(-1.nm).not(nwell_drw).not(pwell_block)
 pwell = pwell_pre.join(digisub_pre)
 
 # General pwell
-pwell_sub = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
-
-# psd, nsd active & res
-psd = psd_drw
-nsd_res = nsd_drw.and(psd).interacting(polyres_drw)
-nsd_all = CHIP.not(psd.join(nsd_block)).join(nsd_res)
+pwell_sub = pwell_pre_init.not(nbulay_drw.interacting(nwell_holes))
 
 # n & p activ
-nactiv  = activ_drw.not(psd.join(nsd_block))
-pactiv  = activ_drw.and(psd)
+nactiv  = activ_drw.not(psd_drw.join(nsd_block))
+pactiv  = activ_drw.and(psd_drw)
 
 # res/cap exclusion
 res_mk        = polyres_drw.join(res_drw)

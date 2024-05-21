@@ -41,12 +41,12 @@ rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)
 rhigh_ports = gatpoly_drw.interacting(rhigh_res).not(rhigh_res)
 
 ## rppd
-rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_all)
+rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_block).not(nsd_drw)
 rppd_ports = gatpoly_drw.interacting(rppd_res).not(rppd_res)
 
 ## rsil
 rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
-rsil_res = polyres_mk.and(res_drw).and(nsd_all).not(rsil_exc)
+rsil_res = polyres_mk.and(res_drw).not(rsil_exc)
 rsil_ports = gatpoly_drw.interacting(rsil_res).not(rsil_res)
 
 # ===============

@@ -51,6 +51,7 @@ import logging
 import klayout.db
 from datetime import datetime
 from subprocess import check_call
+import time
 
 
 def check_klayout_version():
@@ -365,5 +366,11 @@ if __name__ == "__main__":
         datefmt="%d-%b-%Y %H:%M:%S",
     )
 
+    # Start of execution time
+    t0 = time.time()
+
     # Calling main function
     main(lvs_run_dir, arguments)
+
+    #  End of execution time
+    logging.info("Total execution time {}s".format(time.time() - t0))
