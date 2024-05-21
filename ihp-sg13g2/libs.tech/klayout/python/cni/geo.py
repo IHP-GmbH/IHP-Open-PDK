@@ -26,6 +26,23 @@ from cni.dlo import Tech
 import pya
 
 def fgOr(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComponent], resultLayer: Layer) -> Grouping:
+    """
+    Performs a logical OR operation for lists of physical components comps1
+    and comps2, by selecting those polygon areas which are in either list of physical
+    components. The resulting merged polygon shapes are generated on the resultLayer layer.
+    In addition, these polygon shapes are used to create a Grouping object, which is the return
+    value for this method.
+
+    :param components1: first list of physical component derived objects
+    :type components1: list of PhysicalCompent
+    :param components2: second list of physical component derived objects
+    :type components2: list of PhysicalCompent
+    :param resultLayer: layer where resulting shapes will be generated on
+    :type resultLayer: Layer
+    :return: grouping object
+    :rtype: Grouping
+
+    """
     region1 = pya.Region()
     region2 = pya.Region()
 

@@ -30,25 +30,27 @@ class sealring(DloGen):
         techparams = specs.tech.getTechParams()
 
         CDFVersion = techparams['CDFVersion']
+        defL       = techparams['sealring_complete_defL']
+        minL       = techparams['sealring_complete_minL']
+        defW       = techparams['sealring_complete_defW']
+        minW       = techparams['sealring_complete_minW']
 
         specs('cdf_version', CDFVersion, 'CDF Version')
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
 
-        specs('l', '150u', 'Length(X-Axis)')
-        specs('w', '150u', 'Width(Y-Axis)')
-        specs('wfill', '30u', 'Filler ring width')
+        specs('l', defL, 'Length(X-Axis)')
+        specs('w', defW, 'Width(Y-Axis)')
         specs('addLabel', 'nil', 'Add sub! label', ChoiceConstraint(['nil', 't']))
         specs('addSlit', 'nil' , 'Add Slit', ChoiceConstraint(['nil', 't']))
 
-        specs('Lmin', '150u', 'Lmin')
-        specs('Wmin', '150u', 'Wmin')
+        specs('Lmin', minL, 'Lmin')
+        specs('Wmin', minW, 'Wmin')
 
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
         self.l = params['l']
         self.w = params['w']
-        self.wfill = params['wfill']
         self.addLabel = params['addLabel']
         self.addSlit = params['addSlit']
 
@@ -59,7 +61,6 @@ class sealring(DloGen):
 
         l = self.l
         w = self.w
-        wfill = self.wfill
         addLabel = self.addLabel
         addSlit = self.addSlit
 
@@ -73,7 +74,6 @@ class sealring(DloGen):
 
         w = Numeric(w)*1e6;
         l = Numeric(l)*1e6;
-        wfill = Numeric(wfill)*1e6;
 
         maxMetalWidth = 4.2
         maxMetalLength = maxMetalWidth * 2
@@ -180,59 +180,3 @@ class sealring(DloGen):
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, viaOffset-0.1, l - corner_end, viaOffset + viaWidth - 0.1))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(l - viaOffset+0.1, corner_end, l - viaWidth - viaOffset + 0.1, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - viaOffset+0.1, l - corner_end, w - viaWidth - viaOffset + 0.1))
-
-
-        if wfill > 0. :    # draw fillers
-            distance_edgeseal = self.techparams['MFil_c']
-            id = dbCreatePolygon(self, 'Metal1', PointList([Point(metalOffset, metalOffset), Point(metalOffset, metalOffset+16.8), Point(metalOffset+16.8, metalOffset)]))
-            # ActFiller and GatFiller
-            distance_edgeseal = self.techparams['GFil_d']
-            fillerList = DrawFillers(self, Layer('Activ', 'filler'),   metalOffset-wfill, -wfill+0.8+metalOffset,  l-metalOffset, metalOffset-distance_edgeseal-0.8,  3.4, 3.4,  1.6, 1.6, 'h', 1, True)
-            item_list  = DrawFillers(self, Layer('GatPoly', 'filler'), metalOffset-wfill+1, -wfill+metalOffset,  l-metalOffset-1, metalOffset-distance_edgeseal,  1.4, 5,  3.6, 0,  'h', 1, True)
-            fillerList += item_list
-            item_list = DrawFillers(self, Layer('Activ', 'filler'), metalOffset-wfill+1, metalOffset-0.9,  metalOffset-1.8, w+wfill-metalOffset,  3.4, 3.4,  1.6, 1.6,   'v', 1, True)
-            fillerList += item_list
-            item_list = DrawFillers(self, Layer('GatPoly', 'filler'), metalOffset-wfill+0.2, metalOffset+0.1,  metalOffset-1.0, w+wfill-metalOffset-1.0, 5, 1.4, 0, 3.6, 'v', 1, True)
-            fillerList += item_list
-
-            # M1Filler - M5Filler
-            layers = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']
-            filler_height = self.techparams['MFil_a1']
-            filler_width = self.techparams['MFil_a2']
-            filler_space = 1.2
-            distance_edgeseal = self.techparams['MFil_c']
-            distance_edgeseal = self.techparams['MFil_b']
-            for layer in layers :
-                item_list = DrawFillers(self, Layer(layer, 'filler'), metalOffset-wfill, -wfill+metalOffset, l-metalOffset, metalOffset-distance_edgeseal , filler_width, filler_height, filler_space, filler_space, 'h', 1, True)
-                fillerList += item_list
-                item_list = DrawFillers(self, Layer(layer, 'filler'), metalOffset-wfill, metalOffset+0.8, metalOffset-filler_space, w+wfill-metalOffset, filler_height, filler_width, filler_space, filler_space, 'v', 1, True)
-                fillerList += item_list
-                idlist = DrawFillers(self, Layer(layer, 'filler'), metalOffset, metalOffset, metalOffset+16.8, metalOffset+16.8, filler_height, filler_height, filler_space, filler_space, 'h', 0, True)
-                item_list = dbLayerInside(self, Layer(layer, 'filler'), idlist, id)
-                fillerList += item_list
-                for i in idlist :
-                    dbDeleteObject(i)
-
-            # TopMet1Filler
-            filler_height = self.techparams['TM1Fil_a']
-            filler_width = self.techparams['TM1Fil_a1']
-            filler_space = 3.
-            distance_edgeseal = self.techparams['TM1Fil_c']
-
-            item_list = DrawFillers(self, Layer('TopMetal1', 'filler'), metalOffset-wfill, -wfill+metalOffset,  l-metalOffset, metalOffset-distance_edgeseal,  filler_width, filler_height, filler_space, filler_space, 'h', 1, True)
-            fillerList += item_list
-            item_list = DrawFillers(self, Layer('TopMetal1', 'filler'), metalOffset-wfill, metalOffset+0.8, metalOffset-filler_space, w+wfill-metalOffset, filler_height, filler_width, filler_space, filler_space, 'v', 1, True)
-            fillerList += item_list
-            item_list = dbCreateRect(self, Layer('TopMetal1', 'filler'), Box(metalOffset, metalOffset, metalOffset+5, metalOffset+5))
-            fillerList.append(item_list)
-            # TopMet2Filler
-            item_list = DrawFillers(self, Layer('TopMetal2', 'filler'), metalOffset-wfill, -wfill+metalOffset,  l-metalOffset, metalOffset-distance_edgeseal,  filler_width, filler_height, filler_space, filler_space,  'h', 1, True)
-            fillerList += item_list
-            item_list = DrawFillers(self, Layer('TopMetal2', 'filler'), metalOffset-wfill, metalOffset+0.8, metalOffset-filler_space, w+wfill-metalOffset, filler_height, filler_width, filler_space, filler_space, 'v', 1, True)
-            fillerList += item_list
-            item_list = dbCreateRect(self, Layer('TopMetal2', 'filler'), Box(metalOffset, metalOffset, metalOffset+5, metalOffset+5))
-            fillerList.append(item_list)
-
-            dbDeleteObject(id)
-
-            ihpCopyFig(fillerList, Point(l, w), 'R180')

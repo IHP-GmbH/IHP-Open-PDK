@@ -16,6 +16,8 @@
 #
 ########################################################################
 
+from __future__ import annotations
+
 from cni.constants import *
 from cni.numeric import *
 from cni.orientation import *
@@ -33,6 +35,8 @@ from cni.text import *
 from cni.polygon import *
 from cni.dlogen import *
 from cni.transform import *
+from cni.instance import *
+from cni.paramarray import *
 
 import pya
 import sys
@@ -68,19 +72,46 @@ class RangeConstraint:
 
 class PyCellContext(object):
 
-  def __init__(self, tech, cell):
-    self.tech = tech
-    self.cell = cell
+    # stack of PyCellContext for cell hierarchy
+    _pyCellContexts = []
 
-  def __enter__(self):
-    Layer.tech = self.tech
-    Layer.layout = self.cell.layout()
-    Shape.cell = self.cell
+    @classmethod
+    def getCurrentPyCellContext(cls) -> PyCellContext:
+        if len(cls._pyCellContexts) == 0:
+            raise Exception("No current PyCellContext")
+        return cls._pyCellContexts[-1]
 
-  def __exit__(self, *params):
-    Layer.tech = None
-    Layer.layout = None
-    Shape.cell = None
+    def __init__(self, tech, cell):
+        PyCellContext._pyCellContexts.append(self)
+        self._tech = tech
+        self._cell = cell
+
+    def __enter__(self):
+        Layer.layout = self._cell.layout()
+
+    def __exit__(self, *params):
+        PyCellContext._pyCellContexts.pop()
+        Layer.layout = None
+        self._cell = None
+        self._tech = None
+
+    @property
+    def cell(self):
+        if self._cell is None:
+            raise Exception("Cell not set!")
+        return self._cell
+
+    @property
+    def tech(self):
+        if self._tech is None:
+            raise Exception("Tech not set!")
+        return self._tech
+
+    @property
+    def layout(self):
+        if self._cell is None:
+            raise Exception("Layout not set!")
+        return self._cell.layout()
 
 
 class PCellWrapper(pya.PCellDeclaration):
@@ -89,7 +120,7 @@ class PCellWrapper(pya.PCellDeclaration):
         super(PCellWrapper, self).__init__()
 
         self.impl = impl
-        self.impl.set_tech(tech)
+        self.impl.setTech(tech)
         self.tech = tech
 
         Tech.techInUse = tech.getTechParams()['libName']
