@@ -125,8 +125,10 @@ idiodevss_4kv_tb = cont_drw.and(idiodevss_4kv_b).not_interacting(idiodevss_2kv_e
 nmoscl_exc = esd_exclude.join(pwell_block)
 
 # nmoscl_2
+nmoscl_2_patt = glob_to_case_insensitive_glob("nmoscl_2")
+
 gate_moscl = ngate_hv_base.and(salblock_drw).and(nbulay_drw)
-nmoscl_2_n_ = recog_esd.interacting(text_drw.texts("nmoscl_2"))
+nmoscl_2_n_ = recog_esd.interacting(text_drw.texts(nmoscl_2_patt))
 nmoscl_2_n = nmoscl_2_n_.interacting(gate_moscl, 12)
 nmoscl_2_n_port = nwell_drw.and(nmoscl_2_n)
 nmoscl_2_p_ = ptap.and(nbulay_drw).inside(nmoscl_2_n_)
@@ -134,8 +136,10 @@ nmoscl_2_p_ = ptap.and(nbulay_drw).inside(nmoscl_2_n_)
 nmoscl_2_p =nmoscl_2_p_.middle(as_boxes).sized(0.499.um)
 
 # nmoscl_4
+nmoscl_4_patt = glob_to_case_insensitive_glob("nmoscl_4")
+
 gate_moscl = ngate_hv_base.and(salblock_drw).and(nbulay_drw)
-nmoscl_4_n_ = recog_esd.interacting(text_drw.texts("nmoscl_4"))
+nmoscl_4_n_ = recog_esd.interacting(text_drw.texts(nmoscl_4_patt))
 nmoscl_4_n = nmoscl_4_n_.interacting(gate_moscl, 24)
 nmoscl_4_n_port = nwell_drw.and(nmoscl_4_n)
 nmoscl_4_p_ = ptap.and(nbulay_drw).inside(nmoscl_4_n_)

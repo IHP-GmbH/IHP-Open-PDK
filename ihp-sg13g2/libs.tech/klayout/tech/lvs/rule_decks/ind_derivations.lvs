@@ -31,13 +31,17 @@ ind_exc = gatpoly_drw.join(pwell).join(nsd_drw)
             .join(substrate_drw)
 
 # General
+la_patt = glob_to_case_insensitive_glob("LA")
+lb_patt = glob_to_case_insensitive_glob("LB")
+lc_patt = glob_to_case_insensitive_glob("LC")
+
 ind_edges = ind_drw.edges
 ind_core_ = topmetal2_drw.join(topmetal1_drw).and(pwell_block)
             .and(ind_drw).merged.not(ind_exc)
 ind_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
-ind_port_la = ind_ports_.interacting(ind_text.texts("LA"))
-ind_port_lb = ind_ports_.interacting(ind_text.texts("LB"))
-ind_port_lc = ind_ports_.interacting(ind_text.texts("LC"))
+ind_port_la = ind_ports_.interacting(ind_text.texts(la_patt))
+ind_port_lb = ind_ports_.interacting(ind_text.texts(lb_patt))
+ind_port_lc = ind_ports_.interacting(ind_text.texts(lc_patt))
 
 # inductor2
 ind2_ports = ind_port_la.join(ind_port_lb)

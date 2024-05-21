@@ -27,13 +27,12 @@ logger.info('Starting RF-MOSFET DERIVATIONS')
 
 logger.info('Starting RF-NMOS DERIVATIONS')
 
-rfnmos_exclude = nmos_exclude
 
 # rfnmos - LV
-rfngate_lv = ngate_lv_base.and(ptap_holes).not(rfnmos_exclude)
+rfngate_lv = ngate_lv_base.and(rfnmos_mk).not(rfnmos_exc)
 
 # rfnmos - HV
-rfngate_hv = ngate_hv_base.and(ptap_holes).not(rfnmos_exclude)
+rfngate_hv = ngate_hv_base.and(rfnmoshv_mk).not(rfnmos_exc)
 
 # ===============
 # --- RF-PMOS ---
@@ -41,10 +40,8 @@ rfngate_hv = ngate_hv_base.and(ptap_holes).not(rfnmos_exclude)
 
 logger.info('Starting RF-PMOS DERIVATIONS')
 
-rfpmos_exclude = pmos_exclude
-
 # rfpmos - LV
-rfpgate_lv = pgate_lv_base.and(ntap_holes).not(rfpmos_exclude)
+rfpgate_lv = pgate_lv_base.and(rfpmos_mk).not(rfpmos_exc)
 
 # rfpmos - HV
-rfpgate_hv = pgate_hv_base.and(ntap_holes).not(rfpmos_exclude)
+rfpgate_hv = pgate_hv_base.and(rfpmoshv_mk).not(rfpmos_exc)

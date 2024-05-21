@@ -24,6 +24,18 @@ $unit = dbu
 # --------------- CUSTOM CLASSES ----------------
 #================================================
 
+#=============== UTILS ===============
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    else
+      Regexp.escape(c)
+    end
+  end.join
+end
+
 #=============== CUSTOM READER ===================
 
 # %include custom_reader.lvs
