@@ -19,10 +19,14 @@
 from __future__ import annotations
 from cni.box import *
 from cni.physicalComponent import *
+import pya
 
 class Shape(PhysicalComponent):
 
-    cell = None
+    @classmethod
+    def getCell(cls) -> pya.Cell:
+        import cni.dlo
+        return cni.dlo.PyCellContext.getCurrentPyCellContext().cell
 
     def __init__(self, bbox = None):
         self._shape = None

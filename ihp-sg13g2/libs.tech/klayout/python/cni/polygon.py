@@ -37,13 +37,13 @@ class Polygon(Shape):
 
         self._polygon = pya.DSimplePolygon(pyaPoints, True)
         super().__init__(self._polygon.bbox())
-        self.set_shape(Shape.cell.shapes(arg1.number).insert(self._polygon))
+        self.set_shape(Shape.getCell().shapes(arg1.number).insert(self._polygon))
 
     @__init__.register
     def _(self, arg1: pya.DSimplePolygon, arg2: int) -> None:
         self._polygon = arg1
         super().__init__(self._polygon.bbox())
-        self.set_shape(Shape.cell.shapes(arg2).insert(self._polygon))
+        self.set_shape(Shape.getCell().shapes(arg2).insert(self._polygon))
 
     def addToRegion(self, region: pya.Region):
         region.insert(self._polygon.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
@@ -55,7 +55,7 @@ class Polygon(Shape):
 
     def destroy(self):
         if not self._polygon._destroyed():
-            Shape.cell.shapes(self.getShape().layer).erase(self.getShape())
+            Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
             self._polygon._destroy()
         else:
             pya.Logger.warn(f"Polygon.destroy: already destroyed!")
@@ -68,7 +68,7 @@ class Polygon(Shape):
     def moveBy(self, dx: float, dy: float) -> None:
         movedPolygon = (pya.DTrans(float(dx), float(dy)) * self._polygon).to_itype(Tech.get(Tech.techInUse).
             dataBaseUnits).to_simple_polygon().to_dtype(Tech.get(Tech.techInUse).dataBaseUnits)
-        shape = Shape.cell.shapes(self._shape.layer).insert(movedPolygon)
+        shape = Shape.getCell().shapes(self._shape.layer).insert(movedPolygon)
         self.destroy()
         self._polygon = movedPolygon
         self.set_shape(shape)
@@ -78,7 +78,7 @@ class Polygon(Shape):
 
     def transform(self, transform: Transform) -> None:
         transformedPolygon = self._polygon.transformed(transform.transform)
-        shape = Shape.cell.shapes(self.getShape().layer).insert(transformedPolygon)
+        shape = Shape.getCell().shapes(self.getShape().layer).insert(transformedPolygon)
         self.destroy()
         self._polygon = transformedPolygon
         self.set_shape(shape)

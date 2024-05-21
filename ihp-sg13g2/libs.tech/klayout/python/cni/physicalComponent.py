@@ -35,6 +35,20 @@ class PhysicalComponent(ABC):
         pass
 
     def fgOr(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+        """
+        Performs a logical or operation for this physical component and another physical component,
+        by selecting those polygon areas which are in either physical component. The resulting
+        merged polygon shapes are generated on the resultLayer layer. In addition, these polygon
+        shapes are used to create a Grouping object, which is the return value for this method.
+
+        :param component: physical component derived object
+        :type component: PhysicalCompent
+        :param resultLayer: layer where resulting shapes will be generated on
+        :type resultLayer: Layer
+        :return: grouping object
+        :rtype: Grouping
+
+        """
         components1 = ulist[PhysicalComponent]()
         components1.append(self)
 

@@ -68,7 +68,7 @@ class Box(object):
     def destroy(self):
         if not self.box._destroyed():
             import cni.shape
-            cni.shape.Shape.cell.shapes(self.__rect.getShape().layer).erase(self.__rect.getShape())
+            cni.shape.Shape.getCell().shapes(self.__rect.getShape().layer).erase(self.__rect.getShape())
             self.box._destroy()
         else:
             pya.Logger.warn(f"Box.destroy: already destroyed!")
@@ -191,7 +191,7 @@ class Box(object):
     def moveBy(self, dx: float, dy: float) -> None:
         movedBox = pya.DTrans(dx, dy) * self.box
         import cni.shape
-        shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).insert(movedBox)
+        shape = cni.shape.Shape.getCell().shapes(self.__rect._shape.layer).insert(movedBox)
         self.destroy()
         self.__rect._shape = shape
         self.box = movedBox
@@ -295,7 +295,7 @@ class Box(object):
 
         transformedBox = self.box.transformed(transform.transform)
         import cni.shape
-        shape = cni.shape.Shape.cell.shapes(self.__rect._shape.layer).insert(transformedBox)
+        shape = cni.shape.Shape.getCell().shapes(self.__rect._shape.layer).insert(transformedBox)
         self.destroy()
         self.__rect._shape = shape
         self.box = transformedBox

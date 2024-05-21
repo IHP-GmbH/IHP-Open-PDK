@@ -22,6 +22,7 @@ import pya
 
 import os
 import json
+from xml.dom import minidom
 
 class SG13_Tech(TechImpl):
 
@@ -44,6 +45,37 @@ class SG13_Tech(TechImpl):
             for key, value in layers.items():
                 layer, dataType = value.split(',')
                 self._layers[key] = (int(layer.strip()), int(dataType.strip()))
+
+        lypFilePath = ''
+
+        lypFileEnv = os.getenv('KLAYOUT_LYP_FILE')
+        if lypFileEnv is not None and os.path.exists(lypFileEnv):
+            lypFilePath = lypFileEnv
+        else:
+            lypSuffix = '.lyp'
+            lypFile = techName + lypSuffix
+            lypFilePath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'tech', lypFile))
+
+        if os.path.exists(lypFilePath):
+            dom = minidom.parse(lypFilePath)
+            layerProperties = dom.getElementsByTagName('layer-properties')[0].getElementsByTagName('properties')
+
+            if len(layerProperties) > 0:
+                baseLayerNames = {}
+                self._layers = {}
+
+                for layerProperty in layerProperties:
+                    name = layerProperty.getElementsByTagName('name')[0].firstChild.nodeValue
+                    layer, dataType = layerProperty.getElementsByTagName('source')[0].firstChild.nodeValue.split('/')
+                    self._layers[name] = (int(layer.strip()), int(dataType.strip()))
+
+                    baseLayerNames[name.split('.')[0]] = int(layer.strip())
+
+                for baseLayerName, layer in baseLayerNames.items():
+                    self._layers[baseLayerName] = (layer, 0)
+
+        else:
+            pya.Logger.warn(f"Layer property file '{lypFilePath}' don't exists, use default properties")
 
         if techNameParam not in self._techParams:
             pya.Logger.warn(f"Parameter '{techNameParam}' not found in '{jsonTechFile}', using default '{techName}'")
