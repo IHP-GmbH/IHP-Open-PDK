@@ -47,7 +47,7 @@ class sealring(DloGen):
         specs('Lmin', minL, 'Lmin')
         specs('Wmin', minW, 'Wmin')
 
-        specs('edgeBox', edgeBox, 'EdgeSeal.bounrdary box away from the outer EdgeSeal.drawing')
+        specs('edgeBox', edgeBox, 'EdgeSeal.boundary box away from the outer EdgeSeal.drawing')
 
     def setupParams(self, params):
         # process parameter values entered by user
