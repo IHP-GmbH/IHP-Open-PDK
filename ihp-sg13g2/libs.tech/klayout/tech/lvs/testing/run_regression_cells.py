@@ -70,12 +70,6 @@ def build_tests_dataframe(cells_dir, target_cell, cells):
     # Construct df that holds all info
     tc_df = pd.DataFrame({"cell_name": cells})
 
-    # Drop specific cell that has issues
-    values_to_drop = ["sg13g2_tiehi"]
-
-    # Drop rows where cell_name is in the list of values to drop
-    tc_df = tc_df[~tc_df['cell_name'].isin(values_to_drop)]
-
     all_cells_layout = sorted(Path(cells_dir).rglob("*.{}".format(SUPPORTED_TC_EXT)))
     all_cells_netlist = sorted(
         Path(cells_dir).rglob("*.{}".format(SUPPORTED_SPICE_EXT))
@@ -128,16 +122,15 @@ def build_tests_dataframe(cells_dir, target_cell, cells):
     tc_df["run_id"] = range(len(tc_df))
 
     # Duplicate the original cells for iso/digisub
-    # iso_df = tc_df.copy()
+    iso_df = tc_df.copy()
     sub_df = tc_df.copy()
 
     # Add the suffix to each cell in the column
-    # iso_df["cell_name"] = iso_df["cell_name"] + "_iso"
+    iso_df["cell_name"] = iso_df["cell_name"] + "_iso"
     sub_df["cell_name"] = sub_df["cell_name"] + "_digisub"
 
     # Concatenate the original DataFrame with the modified DataFrame
-    # final_df = pd.concat([tc_df, iso_df, sub_df])
-    final_df = pd.concat([tc_df, sub_df])
+    final_df = pd.concat([tc_df, iso_df, sub_df])
     final_df.reset_index(drop=True, inplace=True)
 
     final_df["run_id"] = range(len(final_df))
