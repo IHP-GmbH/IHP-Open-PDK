@@ -43,8 +43,8 @@ env: $(TOP_DIR)/actions_venv
 
 # Lint python code
 lint_python: env
-	@echo "Running python linting for Klayout-tech directory"
-	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/
+	@echo "Running python linting for Klayout-LVS scripts"
+	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/lvs
 
 #=================================
 # ----- test-LVS_regression ------
