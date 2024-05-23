@@ -29,7 +29,7 @@ logger.info('Starting BJT DERIVATIONS')
 
 logger.info('Starting NPN-BJT DERIVATIONS')
 
-bjt_exclude = gatpoly_drw.join(pwell_block).join(nsd_drw)
+bjt_exclude = gatpoly.join(pwell_block).join(nsd_drw)
                 .join(salblock_drw).join(polyres_drw).join(extblock_drw)
                 .join(res_drw).join(recog_diode).join(recog_esd)
                 .join(ind_drw).join(ind_pin).join(substrate_drw)
@@ -42,11 +42,11 @@ npn_c_exc = emwind_drw.join(emwihv_drw).join(activ_mask)
             .join(nsd_block).join(npn_exclude)
 npn_b_exc = emwind_drw.join(emwihv_drw).join(npn_exclude)
 npn_sub = npn_mk.not(npn_exclude)
-npn_dev = activ_drw.join(activ_mask).and(npn_mk)
+npn_dev = activ.join(activ_mask).and(npn_mk)
 
 # ---------- npn13G2 ----------
 # npn13G2 exclusion layers
-npn13G2_e_exc = activ_drw.join(emwihv_drw).join(npn_exclude)
+npn13G2_e_exc = activ.join(emwihv_drw).join(npn_exclude)
 npn13G2_b_exc = npn_b_exc.join(activ_mask)
 
 # npn13G2 nodes
@@ -54,7 +54,7 @@ npn13G2_e_ = emwind_drw.and(activ_mask).and(nsd_block).and(npn_mk).not(npn13G2_e
 # npn13G2 is a fixed device (0.07um X 0.9um)
 npn13G2_e_pin = npn13G2_e_.with_bbox_min(0.07.um).with_bbox_max(0.9.um).with_area(0.063.um)
 npn13G2_b_pin = nsd_block.and(npn_mk).not(npn13G2_b_exc)
-npn13G2_c_pin = activ_drw.and(npn_mk).not_overlapping(npn_c_exc)
+npn13G2_c_pin = activ.and(npn_mk).not_overlapping(npn_c_exc)
 
 npn13G2_dev = npn_dev.join(nsd_block).extents.covering(npn13G2_e_pin).covering(npn13G2_b_pin).covering(npn13G2_c_pin)
 npn13G2_c = npn13G2_dev.sized(-1.nm)
@@ -67,10 +67,10 @@ npn13G2_te = npn13G2_e
 # ---------- npn13G2L ----------
 # npn13G2L exclusion layers
 npn13G2l_e_exc = activ_mask.join(nsd_block).join(emwihv_drw).join(npn_exclude)
-npn13G2l_b_exc = npn_b_exc.join(activ_drw).join(nsd_block)
+npn13G2l_b_exc = npn_b_exc.join(activ).join(nsd_block)
 
 # npn13G2L nodes
-npn13G2l_e_ = emwind_drw.and(activ_drw).and(npn_mk).not(npn13G2l_e_exc)
+npn13G2l_e_ = emwind_drw.and(activ).and(npn_mk).not(npn13G2l_e_exc)
 # npn13G2L has fixed width (0.07um), Length could vary from 1:2.5 um
 npn13G2l_e_pin = npn13G2l_e_.with_bbox_min(0.07.um).with_bbox_max(1.um, 2.5.um).with_area(0.07.um, 0.175.um)
 npn13G2l_b_pin = activ_mask.and(npn_mk).not(npn13G2l_b_exc)
@@ -89,7 +89,7 @@ npn13G2l_te = npn13G2l_e
 npn13G2v_e_exc = activ_mask.join(nsd_block).join(emwind_drw).join(npn_exclude)
 
 # npn13G2V nodes
-npn13G2v_e_ = emwihv_drw.and(activ_drw).and(npn_mk).not(npn13G2v_e_exc)
+npn13G2v_e_ = emwihv_drw.and(activ).and(npn_mk).not(npn13G2v_e_exc)
 # npn13G2L has fixed width (0.12um), Length could vary from 1:5 um
 npn13G2v_e_pin = npn13G2v_e_.with_bbox_min(0.12.um).with_bbox_max(1.um, 5.um).with_area(0.12.um, 0.6.um)
 npn13G2v_b_pin = npn13G2l_b_pin

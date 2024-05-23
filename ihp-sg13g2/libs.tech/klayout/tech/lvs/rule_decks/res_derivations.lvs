@@ -23,7 +23,7 @@
 
 logger.info('Starting RESISTOR DERIVATIONS')
 
-polyres_exclude = activ_drw.join(pwell_block).join(nsd_block)
+polyres_exclude = activ.join(pwell_block).join(nsd_block)
                     .join(nbulay_drw).join(thickgateox_drw).join(trans_drw)
                     .join(emwind_drw).join(emwihv_drw).join(activ_mask)
                     .join(recog_diode).join(recog_esd).join(ind_drw)
@@ -34,42 +34,42 @@ polyres_exclude = activ_drw.join(pwell_block).join(nsd_block)
 # ==============
 
 ## polyres
-polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly_drw).not(polyres_exclude)
+polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly).not(polyres_exclude)
 
 ## rhigh
 rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)
-rhigh_ports = gatpoly_drw.interacting(rhigh_res).not(rhigh_res)
+rhigh_ports = gatpoly.interacting(rhigh_res).not(rhigh_res)
 
 ## rppd
 rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_block).not(nsd_drw)
-rppd_ports = gatpoly_drw.interacting(rppd_res).not(rppd_res)
+rppd_ports = gatpoly.interacting(rppd_res).not(rppd_res)
 
 ## rsil
 rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
 rsil_res = polyres_mk.and(res_drw).not(rsil_exc)
-rsil_ports = gatpoly_drw.interacting(rsil_res).not(rsil_res)
+rsil_ports = gatpoly.interacting(rsil_res).not(rsil_res)
 
 # ===============
 # ---- METAL ----
 # ===============
 
 # res_metal1
-res_metal1 = metal1_drw.and(metal1_res)
+res_metal1 = metal1.and(metal1_res)
 
 # res_metal2
-res_metal2 = metal2_drw.and(metal2_res)
+res_metal2 = metal2.and(metal2_res)
 
 # res_metal3
-res_metal3 = metal3_drw.and(metal3_res)
+res_metal3 = metal3.and(metal3_res)
 
 # res_metal4
-res_metal4 = metal4_drw.and(metal4_res)
+res_metal4 = metal4.and(metal4_res)
 
 # res_metal5
-res_metal5 = metal5_drw.and(metal5_res)
+res_metal5 = metal5.and(metal5_res)
 
 # res_topmetal1
-res_topmetal1 = topmetal1_drw.and(topmetal1_res)
+res_topmetal1 = topmetal1.and(topmetal1_res)
 
 # res_topmetal2
-res_topmetal2 = topmetal2_drw.and(topmetal2_res)
+res_topmetal2 = topmetal2.and(topmetal2_res)
