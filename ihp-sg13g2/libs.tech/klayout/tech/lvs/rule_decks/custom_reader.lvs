@@ -23,8 +23,6 @@
 class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Cleanup sch for R, C elements
   def clean_sch(line, element)
-    line = line.delete('[]$\\/')
-
     # Extracting parameters with values
     valid_params = line.scan(/\b\w+\s*=\s*\S+\b/)
 
@@ -49,6 +47,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Override parse_element method to handle exceptions gracefully
   def parse_element(line, element)
+    # clean line
+    line = line.delete('[]$\\/')
+
     # Prep sch for R, C
     line = clean_sch(line, element) if %w[R C].include?(element)
 

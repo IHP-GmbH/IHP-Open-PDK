@@ -23,11 +23,11 @@
 
 logger.info('Starting DIODE DERIVATIONS')
 
-diode_exclude = gatpoly_drw.join(nsd_drw)
-                .join(trans_drw).join(emwind_drw).join(emwihv_drw)
-                .join(polyres_drw).join(extblock_drw).join(res_drw)
-                .join(activ_mask).join(recog_esd).join(ind_drw)
-                .join(ind_pin).join(substrate_drw)
+diode_exclude = gatpoly.join(nsd_drw).join(trans_drw)
+                .join(emwind_drw).join(emwihv_drw).join(polyres_drw)
+                .join(extblock_drw).join(res_drw).join(activ_mask)
+                .join(recog_esd).join(ind_drw).join(ind_pin)
+                .join(substrate_drw)
 
 antenna_d_exc = pwell_block.join(salblock_drw)
                 .join(nsd_block).join(diode_exclude)
@@ -35,7 +35,7 @@ antenna_d_exc = pwell_block.join(salblock_drw)
 antenna_d_mk = recog_diode.not(antenna_d_exc)
 
 # ==== dantenna diode ====
-dantenna_n = activ_drw.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
+dantenna_n = activ.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
 dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
 
 # ==== dpantenna diode ====
@@ -48,7 +48,7 @@ schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
                 .and(salblock_drw).and(nsd_block).and(nwell_holes)
                 .not(psd_drw).not(pwell).not(diode_exclude)
 
-schottcky_p_ = cont_drw.and(activ_drw).and(metal1_con)
+schottcky_p_ = cont_drw.and(activ).and(metal1_con)
                 .and(schottky_mk)
 
 # schottky_nbl1 is a fixed device (0.3um X 1.0 um)
@@ -56,9 +56,9 @@ schottcky_p = schottcky_p_.with_bbox_min(0.3.um).with_bbox_max(1.0.um)
 # Using box with area 1x1 to be used as a reference to (m)
 schottcky_p_1x1 = schottcky_p.middle(as_boxes).sized(0.499.um)
 
-schottcky_n = nsd_block.and(activ_drw).covering(schottcky_p)
+schottcky_n = nsd_block.and(activ).covering(schottcky_p)
 
 # define port for schottcky
-schottcky_n_port = activ_drw.interacting(nwell_iso).interacting(schottcky_n).not(schottcky_n.sized(-1.nm))
+schottcky_n_port = activ.interacting(nwell_iso).interacting(schottcky_n).not(schottcky_n.sized(-1.nm))
 schottcky_n_con = cont_drw.and(schottcky_n_port).not_interacting(schottcky_p)
 schottcky_sub = ptap.extents.covering(schottcky_p).covering(schottcky_n)
