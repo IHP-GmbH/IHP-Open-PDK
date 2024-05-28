@@ -1,0 +1,199 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# -------------- CUSTOM COMBINER ----------------
+#================================================
+
+# common methods
+module DeviceCombinerMethods
+  private
+
+  # A helper function to check whether two nets are the same
+  def same_net(a, b, name)
+    a_net = a.net_for_terminal(name)
+    b_net = b.net_for_terminal(name)
+
+    # same polarity
+    same_po = a_net.expanded_name == b_net.expanded_name if a_net && b_net
+    a_net && b_net && same_po
+  end
+
+  # A helper function to check whether two device connected in parallel
+  def supp_parallel(a, b, net1, net2)
+    a_net1 = a.net_for_terminal(net1)
+    a_net2 = a.net_for_terminal(net2)
+    b_net1 = b.net_for_terminal(net1)
+    b_net2 = b.net_for_terminal(net2)
+
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    same_po = a_net1.expanded_name == b_net1.expanded_name && a_net2.expanded_name == b_net2.expanded_name
+    diff_po = a_net1.expanded_name == b_net2.expanded_name && a_net2.expanded_name == b_net1.expanded_name
+
+    same_po || diff_po
+  end
+
+  # A helper function to check whether two device connected in series
+  def supp_series(a, b, net1, net2)
+    a_net1 = a.net_for_terminal(net1)
+    a_net2 = a.net_for_terminal(net2)
+    b_net1 = b.net_for_terminal(net1)
+    b_net2 = b.net_for_terminal(net2)
+
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    series_con_a1 = a_net1.expanded_name == b_net1.expanded_name || a_net1.expanded_name == b_net2.expanded_name
+    series_con_a2 = a_net2.expanded_name == b_net1.expanded_name || a_net2.expanded_name == b_net2.expanded_name
+    series_con = series_con_a1 || series_con_a2
+
+    # Reroute terminal connections based on cluster IDs
+    if series_con_a1
+      if a_net1.expanded_name == b_net1.expanded_name
+        a.connect_terminal(0, b_net2)
+      else
+        a.connect_terminal(0, b_net1)
+      end
+    end
+
+    if series_con_a2
+      if a_net2.expanded_name == b_net1.expanded_name
+        a.connect_terminal(1, b_net2)
+      else
+        a.connect_terminal(1, b_net1)
+      end
+    end
+
+    series_con
+  end
+
+  # A helper function to check whether two parameters have approximately the same value
+  def same_parameter(a, b, name)
+    (a.parameter(name) - b.parameter(name)).abs < 1e-9
+  end
+end
+
+class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    # Check if both devices have the same net
+    return false unless same_net(a, b, 'mim_top') && same_net(a, b, 'mim_btm')
+
+    # Check if parameters are the same
+    return false unless same_parameter(a, b, 'w') && same_parameter(a, b, 'l')
+
+    # Combine by summing up 'm' parameter
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+
+    # Disconnect the second device and let the system clean it up
+    b.disconnect_terminal('mim_top')
+    b.disconnect_terminal('mim_btm')
+
+    # Disconnect mim_sub terminal if present and model name includes 'rfcmim'
+    b.disconnect_terminal('mim_sub') if b.name.downcase.include?('rfcmim')
+
+    true
+  end
+end
+
+class DiodeDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    # Check if both devices have the same net
+    return false unless same_net(a, b, 'A') && same_net(a, b, 'C')
+
+    # Check if parameters are the same
+    return false unless same_parameter(a, b, 'A') && same_parameter(a, b, 'P')
+
+    # Combine by summing up 'm' parameter
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+
+    # Disconnect the second device and let the system clean it up
+    b.disconnect_terminal('A')
+    b.disconnect_terminal('C')
+
+    true
+  end
+end
+
+class BJTDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    bjt3_nets = %w[C B E]
+    bjt4_nets = %w[C B E S]
+
+    # Determine the correct nets based on device type (assuming PNP or NPN)
+    bjt_nets = a.device_class.name.downcase.include?('pnp') ? bjt3_nets : bjt4_nets
+
+    # Check if terminals have the same net
+    return false unless bjt_nets.all? { |net| same_net(a, b, net) }
+
+    # Check if parameters are the same
+    return false unless %w[AE PE].all? { |param| same_parameter(a, b, param) }
+
+    # Combine parameters
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+    a.set_parameter('NE', a.parameter('NE') + b.parameter('NE'))
+
+    # Disconnect the second device and let the system clean it up
+    bjt_nets.each { |term| b.disconnect_terminal(term) }
+
+    true
+  end
+end
+
+class RESDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    res_nets = [0, 1] # Using id instead of names
+
+    # Check if same parameters
+
+    # Check if terminals series or parallel (With same params)
+    if supp_parallel(a, b, 0, 1)
+      return false unless PARALLEL_RES
+      return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
+
+      a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+    elsif supp_series(a, b, 0, 1)
+      return false unless SERIES_RES
+      return false unless %w[w ps b m].all? { |param| same_parameter(a, b, param) }
+
+      a.set_parameter('l', a.parameter('l') + b.parameter('l'))
+    else
+      return false
+    end
+
+    # Disconnect the second device and let the system clean it up
+    res_nets.each { |term| b.disconnect_terminal(term) }
+
+    true
+  end
+end

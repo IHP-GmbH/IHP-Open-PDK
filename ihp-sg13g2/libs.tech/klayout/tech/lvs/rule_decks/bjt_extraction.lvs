@@ -1,0 +1,81 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================
+# ------- BJT EXTRACTION --------
+#================================
+
+logger.info('Starting BJT EXTRACTION')
+
+# =============
+# ---- NPN ----
+# =============
+
+logger.info('Starting NPN-BJT EXTRACTION')
+
+logger.info('Extraction of npn13G2 BJT transistor')
+extract_devices(bjt4('npn13G2', CustomBJT4), {
+                  'C' => npn13G2_c,
+                  'B' => npn13G2_b,
+                  'E' => npn13G2_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2_tc,
+                  'tB' => npn13G2_tb,
+                  'tE' => npn13G2_te,
+                  'tS' => npn_sub
+                })
+
+logger.info('Extraction of npn13G2L BJT transistor')
+extract_devices(bjt4('npn13G2l', CustomBJT4), {
+                  'C' => npn13G2l_c,
+                  'B' => npn13G2l_b,
+                  'E' => npn13G2l_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2l_tc,
+                  'tB' => npn13G2l_tb,
+                  'tE' => npn13G2l_te,
+                  'tS' => npn_sub
+                })
+
+logger.info('Extraction of npn13G2V BJT transistor')
+extract_devices(bjt4('npn13G2v', CustomBJT4), {
+                  'C' => npn13G2v_c,
+                  'B' => npn13G2v_b,
+                  'E' => npn13G2v_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2v_tc,
+                  'tB' => npn13G2v_tb,
+                  'tE' => npn13G2v_te,
+                  'tS' => npn_sub
+                })
+
+# =============
+# ---- PNP ----
+# =============
+
+logger.info('Starting PNP-BJT EXTRACTION')
+
+# pnp_mpa BJT
+logger.info('Extracting pnpMPA BJT')
+extract_devices(bjt3('pnpMPA', CustomBJT3), { 'C' => pnp_mpa_c.extents,
+                                  'B' => pnp_mpa_b.extents,
+                                  'E' => pnp_mpa_e,
+                                  'tC' => pnp_mpa_c,
+                                  'tB' => pnp_mpa_b,
+                                  'tE' => pnp_mpa_e })

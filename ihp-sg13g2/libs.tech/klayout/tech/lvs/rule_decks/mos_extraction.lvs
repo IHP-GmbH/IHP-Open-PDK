@@ -1,0 +1,77 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+# ===============================
+# ------ MOSFET EXTRACTION ------
+# ===============================
+
+logger.info('Starting MOSFET EXTRACTION')
+
+# ==============
+# ---- NMOS ----
+# ==============
+
+
+logger.info('Starting NMOS EXTRACTION')
+
+# nmos - LV
+logger.info('Extraction of NMOS-LV transistor')
+extract_devices(mos4('sg13_lv_nmos'),
+                { 'SD' => nsd_fet,
+                  'G' => ngate_lv,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'W' => pwell })
+
+# nmos - HV
+logger.info('Extraction of NMOS-HV transistor')
+extract_devices(mos4('sg13_hv_nmos'),
+                { 'SD' => nsd_fet,
+                  'G' => ngate_hv,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'W' => pwell })
+
+# ==============
+# ---- PMOS ----
+# ==============
+
+logger.info('Starting PMOS EXTRACTION')
+
+# pmos - LV
+logger.info('Extraction of PMOS-LV transistor')
+extract_devices(mos4('sg13_lv_pmos'),
+                { 'SD' => psd_fet,
+                  'G' => pgate_lv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw })
+
+# pmos - HV
+logger.info('Extraction of PMOS-HV transistor')
+extract_devices(mos4('sg13_hv_pmos'),
+                { 'SD' => psd_fet,
+                  'G' => pgate_hv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw })

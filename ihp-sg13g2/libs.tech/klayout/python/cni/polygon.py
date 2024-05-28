@@ -16,17 +16,70 @@
 #
 ########################################################################
 
+from functools import singledispatchmethod
 from cni.shape import *
 from cni.layer import *
 from cni.pointlist import *
+from cni.tech import Tech
+
+import pya
 
 class Polygon(Shape):
 
-    def __init__(self, layer: Layer, pointList: PointList) -> None:
+    @singledispatchmethod
+    def __init__(self, arg1, arg2 = None):
+        pass
+
+    @__init__.register
+    def _(self, arg1: Layer, arg2: PointList) -> None:
         pyaPoints = []
-        [pyaPoints.append(point.point) for point in pointList]
+        [pyaPoints.append(point.point) for point in arg2]
 
         self._polygon = pya.DSimplePolygon(pyaPoints, True)
-        self.set_shape(Shape.cell.shapes(layer.number).insert(self._polygon))
         super().__init__(self._polygon.bbox())
+        self.set_shape(Shape.getCell().shapes(arg1.number).insert(self._polygon))
+
+    @__init__.register
+    def _(self, arg1: pya.DSimplePolygon, arg2: int) -> None:
+        self._polygon = arg1
+        super().__init__(self._polygon.bbox())
+        self.set_shape(Shape.getCell().shapes(arg2).insert(self._polygon))
+
+    def addToRegion(self, region: pya.Region):
+        region.insert(self._polygon.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
+
+    def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
+        dup = self._polygon.dup();
+        polygon = Polygon(dup, self.getShape().layer)
+        return polygon
+
+    def destroy(self):
+        if not self._polygon._destroyed():
+            Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
+            self._polygon._destroy()
+        else:
+            pya.Logger.warn(f"Polygon.destroy: already destroyed!")
+
+    def getPoints(self) -> PointList:
+        pointList = PointList()
+        [pointList.append(Point(point.x, point.y)) for point in self._polygon.each_point()]
+        return pointList
+
+    def moveBy(self, dx: float, dy: float) -> None:
+        movedPolygon = (pya.DTrans(float(dx), float(dy)) * self._polygon).to_itype(Tech.get(Tech.techInUse).
+            dataBaseUnits).to_simple_polygon().to_dtype(Tech.get(Tech.techInUse).dataBaseUnits)
+        shape = Shape.getCell().shapes(self._shape.layer).insert(movedPolygon)
+        self.destroy()
+        self._polygon = movedPolygon
+        self.set_shape(shape)
+
+    def toString(self) -> str:
+        return "Polygon: {}".format(self._polygon.to_s())
+
+    def transform(self, transform: Transform) -> None:
+        transformedPolygon = self._polygon.transformed(transform.transform)
+        shape = Shape.getCell().shapes(self.getShape().layer).insert(transformedPolygon)
+        self.destroy()
+        self._polygon = transformedPolygon
+        self.set_shape(shape)
 

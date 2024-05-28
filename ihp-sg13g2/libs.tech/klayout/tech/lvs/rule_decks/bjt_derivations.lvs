@@ -1,0 +1,125 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================
+# ------ BJT DERIVATIONS --------
+#================================
+
+logger.info('Starting BJT DERIVATIONS')
+
+# =============
+# ---- NPN ----
+# =============
+
+logger.info('Starting NPN-BJT DERIVATIONS')
+
+bjt_exclude = gatpoly.join(pwell_block).join(nsd_drw)
+                .join(salblock_drw).join(polyres_drw).join(extblock_drw)
+                .join(res_drw).join(recog_diode).join(recog_esd)
+                .join(ind_drw).join(ind_pin).join(substrate_drw)
+
+npn_exclude = nwell_drw.join(psd_drw).join(nbulay_drw).join(bjt_exclude)
+
+# ---------- General NPN ----------
+npn_mk = trans_drw.and(pwell).and(ptap_holes)
+npn_c_exc = emwind_drw.join(emwihv_drw).join(activ_mask)
+            .join(nsd_block).join(npn_exclude)
+npn_b_exc = emwind_drw.join(emwihv_drw).join(npn_exclude)
+npn_sub = npn_mk.not(npn_exclude)
+npn_dev = activ.join(activ_mask).and(npn_mk)
+
+# ---------- npn13G2 ----------
+# npn13G2 exclusion layers
+npn13G2_e_exc = activ.join(emwihv_drw).join(npn_exclude)
+npn13G2_b_exc = npn_b_exc.join(activ_mask)
+
+# npn13G2 nodes
+npn13G2_e_ = emwind_drw.and(activ_mask).and(nsd_block).and(npn_mk).not(npn13G2_e_exc)
+# npn13G2 is a fixed device (0.07um X 0.9um)
+npn13G2_e_pin = npn13G2_e_.with_bbox_min(0.07.um).with_bbox_max(0.9.um).with_area(0.063.um)
+npn13G2_b_pin = nsd_block.and(npn_mk).not(npn13G2_b_exc)
+npn13G2_c_pin = activ.and(npn_mk).not_overlapping(npn_c_exc)
+
+npn13G2_dev = npn_dev.join(nsd_block).extents.covering(npn13G2_e_pin).covering(npn13G2_b_pin).covering(npn13G2_c_pin)
+npn13G2_c = npn13G2_dev.sized(-1.nm)
+npn13G2_tc = npn13G2_dev.not(npn13G2_c).interacting(npn13G2_c_pin)
+npn13G2_b = npn13G2_dev.not(npn13G2_c_pin)
+npn13G2_tb = npn13G2_b.not(npn13G2_e_pin).merged
+npn13G2_e = npn13G2_e_pin
+npn13G2_te = npn13G2_e
+
+# ---------- npn13G2L ----------
+# npn13G2L exclusion layers
+npn13G2l_e_exc = activ_mask.join(nsd_block).join(emwihv_drw).join(npn_exclude)
+npn13G2l_b_exc = npn_b_exc.join(activ).join(nsd_block)
+
+# npn13G2L nodes
+npn13G2l_e_ = emwind_drw.and(activ).and(npn_mk).not(npn13G2l_e_exc)
+# npn13G2L has fixed width (0.07um), Length could vary from 1:2.5 um
+npn13G2l_e_pin = npn13G2l_e_.with_bbox_min(0.07.um).with_bbox_max(1.um, 2.5.um).with_area(0.07.um, 0.175.um)
+npn13G2l_b_pin = activ_mask.and(npn_mk).not(npn13G2l_b_exc)
+npn13G2l_c_pin = npn13G2_c_pin
+
+npn13G2l_dev = npn_dev.covering(npn13G2l_e_pin).covering(npn13G2l_b_pin).covering(npn13G2l_c_pin)
+npn13G2l_c = npn13G2l_dev.sized(1.nm)
+npn13G2l_tc = npn13G2l_c.not(npn13G2l_dev).interacting(npn13G2l_c_pin)
+npn13G2l_b = npn13G2l_dev.not(npn13G2l_c_pin)
+npn13G2l_tb = npn13G2l_b.not(npn13G2l_e_pin).merged
+npn13G2l_e = npn13G2l_e_pin
+npn13G2l_te = npn13G2l_e
+
+# # ---------- npn13G2V ----------
+# npn13G2V exclusion layers
+npn13G2v_e_exc = activ_mask.join(nsd_block).join(emwind_drw).join(npn_exclude)
+
+# npn13G2V nodes
+npn13G2v_e_ = emwihv_drw.and(activ).and(npn_mk).not(npn13G2v_e_exc)
+# npn13G2L has fixed width (0.12um), Length could vary from 1:5 um
+npn13G2v_e_pin = npn13G2v_e_.with_bbox_min(0.12.um).with_bbox_max(1.um, 5.um).with_area(0.12.um, 0.6.um)
+npn13G2v_b_pin = npn13G2l_b_pin
+npn13G2v_c_pin = npn13G2l_c_pin
+
+npn13G2v_dev = npn_dev.covering(npn13G2v_e_pin).covering(npn13G2v_b_pin).covering(npn13G2v_c_pin)
+npn13G2v_c = npn13G2v_dev.sized(1.nm)
+npn13G2v_tc = npn13G2v_c.not(npn13G2v_dev).interacting(npn13G2v_c_pin)
+npn13G2v_b = npn13G2v_dev.not(npn13G2v_c_pin)
+npn13G2v_tb = npn13G2v_b.not(npn13G2v_e_pin).merged
+npn13G2v_e = npn13G2v_e_pin
+npn13G2v_te = npn13G2v_e
+
+# =============
+# ---- PNP ----
+# =============
+
+logger.info('Starting PNP-BJT DERIVATIONS')
+
+pnp_exclude = trans_drw.join(emwind_drw)
+                .join(emwihv_drw).join(nsd_block).join(bjt_exclude)
+
+pnp_mk = ptap_holes.not(pnp_exclude)
+
+# pnp general nodes DERIVATIONS
+pnp_e = pactiv.and(pnp_mk).and(nwell_iso)
+pnp_b = nactiv.and(pnp_mk).and(nwell_iso)
+pnp_c = ptap.interacting(pnp_mk).not(pnp_exclude)
+
+# pnp_mpa nodes DERIVATIONS
+pnp_mpa_e = pnp_e.and(pnp_b.extents).and(pnp_c.extents)
+pnp_mpa_b = pnp_b.interacting(pnp_b.extents.interacting(pnp_mpa_e))
+pnp_mpa_c = pnp_c.interacting(pnp_c.extents.interacting(pnp_mpa_e))

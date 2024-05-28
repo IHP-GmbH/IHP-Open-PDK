@@ -1,0 +1,396 @@
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#===========================================================================================================
+# ------------------------------------------ SG13G2 LVS RULE DECK ------------------------------------------
+#===========================================================================================================
+
+require 'time'
+require 'logger'
+require 'etc'
+
+exec_start_time = Time.now
+
+logger = Logger.new($stdout)
+
+logger.formatter = proc do |_severity, datetime, _progname, msg|
+  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10, 40].strip + ") : #{msg}
+"
+end
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running SG13G2 Klayout LVS runset on #{$input}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $input
+  if $topcell
+    source($input, $topcell)
+  else
+    source($input)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report
+  logger.info("SG13G2 Klayout LVS runset output at: #{$report}")
+  report_lvs($report)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join("#{source.cell_name}.lvsdb").to_s
+  logger.info("SG13G2 Klayout LVS runset output at default location: #{source.cell_name}.lvsdb")
+  report_lvs($report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+  obj.to_s.downcase == 'true'
+end
+
+#=== NET NAMES OPTION ===
+# true: use net names instead of numbers
+# false: use numbers for nets
+SPICE_WITH_NET_NAMES = !bool_check?($no_net_names)
+
+logger.info("Extracted netlist with net names: #{SPICE_WITH_NET_NAMES}")
+
+#=== COMMENTS OPTION ===
+# true: put in comments with details
+# false: no comments
+SPICE_WITH_COMMENTS = bool_check?($spice_comments)
+
+logger.info("Extracted netlist with comments in details: #{SPICE_WITH_COMMENTS}")
+
+# NET_ONLY
+NET_ONLY = bool_check?($net_only)
+
+logger.info("Selected NET_ONLY option: #{NET_ONLY}")
+
+# TOP_LVL_PINS
+TOP_LVL_PINS = bool_check?($top_lvl_pins)
+
+logger.info("Selected TOP_LVL_PINS option: #{TOP_LVL_PINS}")
+
+# COMBINE
+COMBINE_DEVICES = bool_check?($combine_devices)
+
+logger.info("Selected COMBINE DEVICES option: #{COMBINE_DEVICES}")
+
+# PURGE
+PURGE = bool_check?($purge)
+
+logger.info("Selected PURGE option: #{PURGE}")
+
+# PURGE_NETS
+PURGE_NETS = bool_check?($purge_nets)
+
+logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
+
+# SIMPLIFY
+SIMPLIFY = !bool_check?($no_simplify)
+
+logger.info("Selected SIMPLIFY option: #{SIMPLIFY}")
+
+# SIMPLIFY
+SERIES_RES = !bool_check?($no_series_res)
+
+logger.info("Selected SERIES_RES option: #{SERIES_RES}")
+
+# SIMPLIFY
+PARALLEL_RES = !bool_check?($no_parallel_res)
+
+logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
+
+#=== PRINT DETAILS ===
+logger.info("Verbose mode: #{$verbose}")
+if $verbose == 'true'
+  verbose(true)
+else
+  verbose(false)
+end
+
+# === RUN MODE ===
+case $run_mode
+when 'deep'
+  #=== HIER MODE ===
+  deep
+  logger.info('deep  mode is enabled.')
+else
+  #=== FLAT MODE ===
+  flat
+  logger.info('flat  mode is enabled.')
+end
+
+# === Tech Switches ===
+
+#================================================
+# --------------- CUSTOM CLASSES ----------------
+#================================================
+
+# %include rule_decks/custom_classes.lvs
+
+# Instantiate a reader using the new delegate
+reader = RBA::NetlistSpiceReader.new(CustomReader.new)
+
+#=== GET NETLIST ===
+unless NET_ONLY
+  if $schematic
+    schematic($schematic, reader)
+    logger.info("Netlist file: #{$schematic}")
+  else
+    exts = %w[spice cdl cir]
+    candidates = exts.map { |ext| "#{source.cell_name}.#{ext}" }
+    netlists = candidates.select { |f| File.exist?(f) }
+    if netlists.empty?
+      error("Netlist not found, tried: #{candidates}")
+    else
+      schematic(netlists[0], reader)
+      logger.info("Netlist file: #{netlists[0]}")
+    end
+  end
+end
+
+# Instantiate a writer using the new delegate
+custom_spice_writer = RBA::NetlistSpiceWriter.new(CustomWriter.new)
+custom_spice_writer.use_net_names = SPICE_WITH_NET_NAMES
+custom_spice_writer.with_comments = SPICE_WITH_COMMENTS
+
+if $target_netlist
+  logger.info("LVS extracted netlist at: #{$target_netlist}")
+  target_netlist($target_netlist, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  netlist_path = layout_dir.join("#{source.cell_name}_extracted.cir")
+  target_netlist(netlist_path.to_s, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
+end
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+# %include rule_decks/layers_definitions.lvs
+
+#================================================================
+#------------------------- MAIN RUNSET --------------------------
+#================================================================
+
+logger.info('Starting SG13G2 LVS runset')
+
+#================================================
+#------------- LAYERS DERIVATIONS ---------------
+#================================================
+
+logger.info('Starting base layers derivations')
+
+#==================================
+# ------ GENERAL DERIVATIONS ------
+#==================================
+
+# %include rule_decks/general_derivations.lvs
+
+#==================================
+# ------ MOSFET DERIVATIONS -------
+#==================================
+
+# %include rule_decks/mos_derivations.lvs
+
+#==================================
+# ----- RF-MOSFET DERIVATIONS -----
+#==================================
+
+# %include rule_decks/rfmos_derivations.lvs
+
+#================================
+# ------ BJT DERIVATIONS --------
+#================================
+
+# %include rule_decks/bjt_derivations.lvs
+
+#================================
+# ----- DIODE DERIVATIONS -------
+#================================
+
+# %include rule_decks/diode_derivations.lvs
+
+#================================
+# ---- RESISTOR DERIVATIONS -----
+#================================
+
+# %include rule_decks/res_derivations.lvs
+
+#==================================
+# -------- CAP DERIVATIONS --------
+#==================================
+
+# %include rule_decks/cap_derivations.lvs
+
+#================================
+# ------ ESD DERIVATIONS --------
+#================================
+
+# %include rule_decks/esd_derivations.lvs
+
+#=================================
+# ----- Inductor DERIVATIONS -----
+#=================================
+
+# %include rule_decks/ind_derivations.lvs
+
+#================================
+# ------ Taps DERIVATIONS -------
+#================================
+
+# %include rule_decks/tap_derivations.lvs
+
+#================================================
+#------------ DEVICES CONNECTIVITY --------------
+#================================================
+
+# %include rule_decks/devices_connections.lvs
+
+#================================================
+#------------- DEVICES EXTRACTION ---------------
+#================================================
+
+logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
+
+#================================
+# ----- MOSFET EXTRACTION -------
+#================================
+
+# %include rule_decks/mos_extraction.lvs
+
+#================================
+# ---- RF-MOSFET EXTRACTION -----
+#================================
+
+# %include rule_decks/rfmos_extraction.lvs
+
+#================================
+# ------- BJT EXTRACTION --------
+#================================
+
+# %include rule_decks/bjt_extraction.lvs
+
+#================================
+# ------ DIODE EXTRACTION -------
+#================================
+
+# %include rule_decks/diode_extraction.lvs
+
+#================================
+# ---- RESISTOR EXTRACTIONS -----
+#================================
+
+# %include rule_decks/res_extraction.lvs
+
+#==================================
+# --------- CAP EXTRACTION --------
+#==================================
+
+# %include rule_decks/cap_extraction.lvs
+
+#================================
+# ------- ESD EXTRACTION --------
+#================================
+
+# %include rule_decks/esd_extraction.lvs
+
+#=================================
+# ----- Inductor EXTRACTIONS -----
+#=================================
+
+# %include rule_decks/ind_extraction.lvs
+
+#================================
+# ------- Taps EXTRACTIONS ------
+#================================
+
+# %include rule_decks/tap_extraction.lvs
+
+#==================================================
+# ------------ COMPARISON PREPARATIONS ------------
+#==================================================
+
+logger.info('Starting SG13G2 LVS Options Preparations')
+
+# === Extract Netlist Only ===
+netlist if NET_ONLY
+return if NET_ONLY
+
+# === Aligns the extracted netlist vs. the schematic ===
+logger.info('Starting SG13G2 LVS Alignment')
+align
+
+#=== NETLIST OPTIONS ===
+logger.info('Starting SG13G2 LVS Simplification')
+# SIMPLIFY
+netlist.simplify if SIMPLIFY
+schematic.simplify if SIMPLIFY
+
+# TOP_LVL_PINS
+netlist.make_top_level_pins if TOP_LVL_PINS
+schematic.make_top_level_pins if TOP_LVL_PINS
+
+# COMBINE_DEVICES
+netlist.combine_devices if COMBINE_DEVICES
+schematic.combine_devices if COMBINE_DEVICES
+
+# PURGE
+netlist.purge if PURGE
+schematic.purge if PURGE
+
+# PURGE_NETS
+netlist.purge_nets if PURGE_NETS
+schematic.purge_nets if PURGE_NETS
+
+#=== IGNORE EXTREME VALUES ===
+max_res(1e9)
+min_caps(1e-18)
+
+# === COMPARISON === 
+logger.info('Starting SG13G2 LVS Comparison')
+compare
+
+#================================================
+#------------- COMPARISON RESULTS ---------------
+#================================================
+
+if !compare
+  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  logger.error("ERROR : Netlists don't match")
+  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+else
+  logger.info('==========================================')
+  logger.info('INFO : Congratulations! Netlists match.')
+  logger.info('==========================================')
+end
+
+exec_end_time = Time.now
+run_time = exec_end_time - exec_start_time
+logger.info(format('LVS Total Run time %f seconds', run_time))

@@ -23,8 +23,9 @@ T = TypeVar('T')
 class ulist(list[T]):
 
     def __init__(self, items = None) -> None:
-        super().__init__(items)
+        if items is not None:
+            super().__init__(items)
 
-    def append(item) -> None:
+    def append(self, item) -> None:
         super().append(item)
 

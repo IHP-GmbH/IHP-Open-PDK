@@ -1,0 +1,405 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# === GeneralNTerminalExtractor ===
+class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
+  # Extraction of N terminal devices - General Class
+
+  def initialize(name, num)
+    # Initialize the extractor with a device name and number of terminals.
+    #
+    # Args:
+    #   name (String): The name of the device.
+    #   num (Integer): Number of terminals.
+    create
+    self.name = name
+    @num = num
+    @name = name
+  end
+
+  def setup
+    # Set up layers and register device class for extraction.
+    define_layers
+    # Register device class for extraction.
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
+      @reg_dev = DeviceCustomRes.new(name, @num)
+    elsif name.downcase.include?('varicap')
+      @reg_dev = DeviceCustomVaractor.new(name, @num)
+    elsif name.downcase.start_with?('ind')
+      @reg_dev = DeviceCustomInd.new(name, @num)
+    else
+      raise ArgumentError, "Custom-Class for #{name} device is not supported yet, please recheck"
+    end
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    # Establish connectivity between layers.
+    #
+    # Args:
+    #   _layout: Layout object (unused).
+    #   layers (Array): Array of layer objects.
+    #
+    # Returns:
+    #   Connectivity object representing the connections between layers.
+    dev = layers[0]
+    ports = layers[1]
+    meas_mk = layers[2]
+    dev_mk = layers[3]
+
+    conn = RBA::Connectivity.new
+    conn.connect(dev, dev)
+    conn.connect(dev, dev_mk)
+    conn.connect(dev, meas_mk)
+    conn.connect(ports, dev_mk)
+    conn.connect(meas_mk, dev_mk)
+
+    # Sub connection for some devices
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      sub_mk = layers[4]
+      conn.connect(sub_mk, dev_mk)
+    end
+
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    # Extract devices based on layer geometry.
+    #
+    # Args:
+    #   layer_geometry (Array): Array of layer geometries.
+    dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
+
+    dev_mk.merged.each do |region|
+      if ports.size != @num
+        $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
+        $logger.info("No. of ports exist for #{@name} is #{ports.size}, should be #{@num}")
+      else
+        device = create_device
+        set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
+        define_and_sort_terminals(device, ports, sub_mk)
+      end
+    end
+  end
+
+  private
+
+  def define_layers
+    # Define layers for extraction.
+    define_layer('core', 'core Layer')
+    define_layer('ports', 'Connect Terminal')
+    define_layer('meas_mk', 'Measuring parameters marker')
+    define_layer('dev_mk', 'Device Marker')
+    # Define sub layer for some devices
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      define_layer('sub_mk', 'Substrate Marker')
+    end
+  end
+
+  def set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
+    # Set device parameters based on device type.
+    #
+    # Args:
+    #   device: Device object to set parameters for.
+    #   region: Region representing the measured region.
+    #   dev: Device layer object.
+    #   ports: ports layer object.
+    #   meas_mk: Measuring marker layer object.
+    #   dev_mk: main marker layer object.
+    #
+    # Returns:
+    #   None
+
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
+      width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+      device.set_parameter('ps', poly_sp * $unit)
+      device.set_parameter('b', bends)
+
+    elsif name.downcase.include?('varicap')
+      width, length = calc_varicap_params(dev, ports, meas_mk, dev_mk)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+
+    elsif name.downcase.start_with?('ind')
+      width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk, region)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('s', space * $unit)
+      device.set_parameter('d', diameter * $unit)
+      device.set_parameter('nr_r', no_turns)
+    end
+  end
+
+  def calc_res_params(dev, ports, meas_mk)
+    # Width
+    width_edges = dev.edges.and(ports.edges)
+    width = get_uniq_length(width_edges)
+
+    # Length
+    length_edges = dev.edges.interacting(width_edges).not(width_edges)
+    length, _ = get_min_max_length(length_edges)
+
+    # Bends
+    corners = meas_mk.interacting(dev).corners.not_interacting(ports).count
+    bends = corners / 4
+
+    # poly_space between bends
+    if bends.positive?
+      poly_sp_polygon = meas_mk.interacting(dev)
+      poly_sp = get_notch_min(poly_sp_polygon, 10 * length)
+      length = length + width
+    end
+
+    # Default values
+    width ||= 0
+    length ||= 0
+    poly_sp ||= 0
+    bends ||= 0
+
+    [width, length, poly_sp, bends]
+  end
+
+  def calc_varicap_params(dev, _ports, meas_mk, _dev_mk)
+    # Width & Length
+    width_edges = dev.edges.not_interacting(meas_mk.edges)
+    length, width = get_min_max_length(width_edges)
+
+    # Default values
+    width ||= 0
+    length ||= 0
+
+    [width, length]
+  end
+
+  def calc_ind_params(dev, ports, meas_mk, dev_mk, region)
+    # Get upper limit for width, space
+    _, max_mk_len = get_min_max_length(dev_mk.edges)
+
+    # Width
+    meas_sel = meas_mk.merged & region
+    width = get_width_val(meas_sel, max_mk_len)
+
+    # space
+    space = get_space_val(meas_sel, max_mk_len)
+
+    # Turns
+    # Calc steps used for no. of turns:
+    # step1: Get count of inductor metal (catch if we have more 1)
+    # Step2: For more than 1 turns, get number of holes
+    # Step3: Turns = 1 + (holes - 1)/2 
+    no_turns_init = meas_mk.merged.count
+    no_turns = no_turns_init
+
+    ## Old implementation
+    # if no_turns_init == 1
+    #   no_turns = no_turns_init
+    # else
+    #   no_turns_pre1 = dev.merged.holes.count
+    #   no_turns_pre2 = (no_turns_pre1 - 1) / 2
+    #   no_turns = 1 + no_turns_pre2.ceil
+    # end
+
+    # Diameter
+    # Calc steps used for diameter:
+    # step1: Get extent of the inductor core
+    # step2: Exclude edges that touch inductor pins
+    # step3: Get length of the remaining edge (Outer diameter)
+    # step4: Get internal diameter --> din = dout - ((turns -1) * 2s) - (turns * w)
+    diam_extents = dev.extents.edges
+    diam_edge_exc = diam_extents.interacting(ports)
+    diam_edge = diam_extents.not_interacting(diam_edge_exc)
+    diameter = diam_edge.length
+    diameter = diameter - (2 * (no_turns - 1) * space) - (2 * no_turns * width)
+    diameter = diameter.negative? ? 0 : diameter
+
+    # Default values
+    width ||= 0
+    space ||= 0
+    diameter ||= 0
+    no_turns ||= 1
+
+    [width, space, diameter, no_turns]
+  end
+
+  def define_and_sort_terminals(device, ports, sub_mk)
+    # Define and sort terminals based on location.
+    #
+    # Args:
+    #   device: Device object to define terminals for.
+    #   ports: Contact layer object containing terminals.
+    #   sub_mk: substrate marker layer object.
+    #
+    # Returns:
+    #   None
+
+    # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
+    substrings = %w[varicap]
+
+    # Initialize sorted_ports with a default value
+    sorted_ports = nil
+
+    # Iterate over each substring
+    substrings.each do |substring|
+      if name.include?(substring)
+        sorted_ports = ports
+        break # Exit loop if a match is found
+      end
+    end
+
+    # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
+    sorted_ports ||= sort_polygons(ports)
+
+    # Define sub if exist (should be defined before other terminals)
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      else
+        define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0])
+      end
+    end
+
+    # Defination main terminals
+    (1..@num).each do |i|
+      define_terminal(device, @reg_dev.terminal_id("#{name}_#{i}"), 1, sorted_ports[i - 1])
+    end
+  end
+
+  def sort_polygons(polygons)
+    # Sort polygons points.
+    #
+    # Args:
+    #   polygons: Polygons to sort.
+    #
+    # Returns:
+    #   Sorted polygons.
+    #
+    # Note:
+    #   This function sorts the points of the input polygons to be ordered as expected.
+    #   It takes an array of polygons and returns the sorted array.
+    #   The sorting is based on the x-coordinate of the first point of each polygon.
+    con_polygons = []
+
+    polygons.merged.each do |ports_pl|
+      con_edges = []
+      ports_pl.each_edge do |con_ed|
+        con_edges.append([con_ed.x1, con_ed.y1])
+        con_edges.append([con_ed.x2, con_ed.y2])
+      end
+      con_polygons.append(con_edges.uniq)
+    end
+    sorted_ports_polygons = con_polygons.sort_by(&:first)
+    sorted_ports = []
+    sorted_ports_polygons.each do |sorted_pl|
+      ports_pl = RBA::DPolygon.new([RBA::DPoint.new(sorted_pl[0][0], sorted_pl[0][1]),
+                                    RBA::DPoint.new(sorted_pl[1][0], sorted_pl[1][1]),
+                                    RBA::DPoint.new(sorted_pl[2][0], sorted_pl[2][1]),
+                                    RBA::DPoint.new(sorted_pl[3][0], sorted_pl[3][1])])
+      sorted_ports.append(ports_pl)
+    end
+
+    sorted_ports
+  end
+
+  def get_uniq_length(sel_edges)
+    # Extract uniqe length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.uniq!
+    lengths.size == 1 ? lengths[0] : 0.0
+  end
+
+  def get_sep_val(sel_edges, sep_edges, sep_val)
+    # Extract distance between edges for separation check
+    proj = RBA::Metrics::Projection
+    sep_paris = sel_edges.separation_check(sep_edges, sep_val, proj)
+    sep_values = []
+    sep_paris.each do |edge|
+      sep_values << edge.distance
+    end
+    sep_values.min
+  end
+
+  def get_space_val(sel_polygon, sep_val)
+    # Extract distance between edges for space check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.space_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.min
+  end
+
+  def get_width_val(sel_polygon, width_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    width_paris = sel_polygon.width_check(width_val, metrics: proj, min_projection: 10)
+    width_values = []
+    width_paris.each do |edge|
+      width_values << edge.distance
+    end
+    # Group the array elements by their occurrences
+    width_values = width_values.reject(&:zero?)
+
+    width_values.min
+  end
+
+  def get_notch_min(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.min
+  end
+
+  def get_notch_max(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.max
+  end
+
+  def get_min_max_length(sel_edges)
+    # Extract max length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.minmax
+  end
+end
+

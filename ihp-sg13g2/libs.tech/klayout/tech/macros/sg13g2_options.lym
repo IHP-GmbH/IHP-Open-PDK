@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+-->
+<klayout-macro>
+ <description>SG13G2 LVS Options</description>
+ <version>0.1</version>
+ <category>lvs</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>SG13G2 LVS Options</group-name>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>ruby</interpreter>
+ <dsl-interpreter-name/>
+ <text>
+ module SG13G2LVSOptions
+  require 'yaml'
+  require 'open3'
+  include RBA
+
+  # Main function to manage LVS options
+  def self.main
+
+    # check klayout version
+    klayout_v, _ = Open3.capture2('klayout -b -v')
+    klayout_v = klayout_v.split("\n")[0]
+    klayout_v_list = []
+
+    if klayout_v.empty?
+      raise StandardError, "KLayout is not found. Please make sure KLayout is installed."
+    else
+      klayout_v_arr = klayout_v.split(" ")[-1].scan(/[^.]+/)
+      klayout_v_list = klayout_v_arr.map { |ele| ele.to_i }
+    end
+
+    if klayout_v_list.size &lt; 1 || klayout_v_list.size &gt; 3
+      raise StandardError, "Was not able to get KLayout version properly."
+    elsif klayout_v_list.size &gt;= 2 || klayout_v_list.size &lt;= 3
+      if klayout_v_list[1] &lt; 29
+        puts "Using this KLayout version has not been assessed. Limits are unknown."
+        raise StandardError, "Prerequisites at a minimum: KLayout 0.29.0"
+      end
+    end
+
+    puts "Your KLayout version is: #{klayout_v}"
+
+    # Construct the absolute path to the YAML file
+    yaml_file_path = "#{__dir__}/lvs_options.yml"
+
+    # Load options from YAML file
+    options = load_options(yaml_file_path)
+
+    # Create a dialog box for selecting options
+    dialog = create_options_dialog(options, yaml_file_path)
+  
+    # Show the dialog box and handle user input
+    if dialog.exec == 1 #RBA::QDialog::Accepted
+      # Get values from the dialog box
+      update_options_from_dialog(options, dialog)
+
+      # Save options to YAML file
+      if save_options(yaml_file_path, options)
+        puts "=========== LVS Options saved successfully. ==========="
+      else
+        puts "xxxxxxxxxxx Failed to save LVS options. xxxxxxxxxxx"
+      end
+    end
+  end
+
+  # Load LVS options from a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the loaded options
+  def self.load_options(yaml_file_path)
+    options = {}
+    if File.exist?(yaml_file_path)
+      begin
+        options = YAML.safe_load(File.read(yaml_file_path))
+      rescue => e
+        puts "Error loading options from YAML file: #{e.message}"
+      end
+    else
+      puts "YAML file not found at #{yaml_file_path}. Using default options."
+      options = set_default_options(yaml_file_path)
+    end
+    options
+  end
+
+  # Set default LVS options and save them to a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the default options
+  def self.set_default_options(yaml_file_path)
+    default_options = {
+      'netlist' => '',
+      'top_cell' => '',
+      'run_mode' => 'flat',
+      'no_net_names' => false,
+      'spice_comments' => false,
+      'net_only' => false,
+      'no_simplify' => false,
+      'no_series_res' => false,
+      'no_parallel_res' => false,
+      'combine_devices' => false,
+      'top_lvl_pins' => false,
+      'purge' => false,
+      'purge_nets' => false,
+      'verbose' => false,
+    }
+    save_options(yaml_file_path, default_options)
+    default_options
+  end
+
+  # Get all names for top cells with the active cell as the first element
+  #
+  # Returns a list containing all top cell names with the active cell as the first element
+  def self.get_top_cell_names
+    cells = []
+    layout = RBA::Layout.new
+    layout.read(Pathname.new(RBA::CellView.active.filename))
+
+    active_cellview = RBA::CellView.active
+    active_cell_name = active_cellview.cell.name
+
+    layout.each_cell do |cell|
+      cells.push(cell.name)
+    end
+
+    # Remove the active cell name from the list if it exists and add it to the front
+    cells.delete(active_cell_name)
+    cells.unshift(active_cell_name)
+
+    cells
+  end
+
+  # Create a dialog box for selecting LVS options
+  #
+  # options        - A hash containing the current options
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a QDialog instance representing the options dialog
+  def self.create_options_dialog(options, yaml_file_path)
+    dialog = RBA::QDialog.new
+    dialog.windowTitle = "LVS Options"
+
+    layout = RBA::QFormLayout.new(dialog)
+    
+    layout.addRow('Netlist Path:', create_file_input(options['netlist'], dialog))
+    layout.addRow('Top Cell', create_combo_box(options['top_cell'], get_top_cell_names))
+    layout.addRow('Run Mode:', create_combo_box(options['run_mode'], ['deep', 'flat']))
+    layout.addRow('', create_check_box('No Net Names', options['no_net_names']))
+    layout.addRow('', create_check_box('Spice Comments', options['spice_comments']))
+    layout.addRow('', create_check_box('Netlist Only', options['net_only']))
+    layout.addRow('', create_check_box('No Simplify', options['no_simplify']))
+    layout.addRow('', create_check_box('No Series Resistance', options['no_series_res']))
+    layout.addRow('', create_check_box('No Parallel Resistance', options['no_parallel_res']))
+    layout.addRow('', create_check_box('Combine Devices', options['combine_devices']))
+    layout.addRow('', create_check_box('Top Level Pins', options['top_lvl_pins']))
+    layout.addRow('', create_check_box('Purge', options['purge']))
+    layout.addRow('', create_check_box('Purge Nets', options['purge_nets']))
+    layout.addRow('', create_check_box('Verbose', options['verbose']))
+
+    layout.addRow('', create_buttons(dialog, yaml_file_path))
+
+    dialog
+  end
+
+  # Create a line edit widget
+  #
+  # text - The initial text for the line edit
+  #
+  # Returns a QLineEdit instance
+  def self.create_line_edit(text)
+    line_edit = RBA::QLineEdit.new
+    line_edit.text = text
+    line_edit
+  end
+ 
+  # Create a combo box widget
+  #
+  # current_index - The index of the currently selected item
+  # items         - An array containing the items for the combo box
+  #
+  # Returns a QComboBox instance
+  def self.create_combo_box(current_index, items)
+    combo_box = RBA::QComboBox.new
+    items.each { |item| combo_box.addItem(item) }
+    combo_box.currentIndex = items.index(current_index)
+    combo_box
+  end
+ 
+  # Create a file input widget
+  #
+  # text   - The initial text for the file input
+  # parent - The parent widget for the file input
+  #
+  # Returns a QWidget instance containing the file input
+  def self.create_file_input(text, parent)
+    file_input = RBA::QLineEdit.new
+    file_input.text = text
+  
+    browse_button = RBA::QPushButton.new('Browse')
+    browse_button.clicked.connect(Proc.new {
+      file_filter = 'CDL Files (*.cdl);;SPICE Files (*.spice);;Circuit Files (*.cir)'
+      netlist_path = RBA::FileDialog.get_open_file_name('Select File', '.', file_filter)
+      file_input.text = netlist_path.to_s
+    })
+
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+    layout.addWidget(file_input)
+    layout.addWidget(browse_button)
+    
+    container
+  end
+
+  # Create a check box widget
+  #
+  # text    - The text for the check box
+  # checked - A boolean indicating whether the check box is checked
+  #
+  # Returns a QCheckBox instance
+  def self.create_check_box(text, checked)
+    check_box = RBA::QCheckBox.new(text)
+    check_box.checked = checked
+    check_box
+  end
+ 
+  # Create buttons for the options dialog
+  #
+  # dialog        - The options dialog
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a QWidget instance containing the buttons
+  def self.create_buttons(dialog, yaml_file_path)
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+  
+    ok_button = RBA::QPushButton.new('OK')
+    ok_button.clicked.connect(Proc.new { dialog.accept })
+
+    reset_button = RBA::QPushButton.new('Reset')
+    reset_button.clicked.connect(Proc.new { 
+      if set_default_options(yaml_file_path)
+        dialog.reject
+      else
+        puts "Failed to reset options."
+      end
+    })
+
+    cancel_button = RBA::QPushButton.new('Cancel')
+    cancel_button.clicked.connect(Proc.new { dialog.reject })
+  
+    layout.addWidget(ok_button)
+    layout.addWidget(reset_button)
+    layout.addWidget(cancel_button)
+  
+    container
+  end
+  
+  # Update options hash from the dialog
+  #
+  # options - The options hash to be updated
+  # dialog  - The dialog containing the updated options
+  def self.update_options_from_dialog(options, dialog)
+
+    options['netlist'] = dialog.layout.itemAt(1).widget.layout.itemAt(0).widget.text
+    options['top_cell'] = dialog.layout.itemAt(3).widget.currentText
+    options['run_mode'] = dialog.layout.itemAt(5).widget.currentText
+    options['no_net_names'] = dialog.layout.itemAt(6).widget.checked
+    options['spice_comments'] = dialog.layout.itemAt(7).widget.checked
+    options['net_only'] = dialog.layout.itemAt(8).widget.checked
+    options['no_simplify'] = dialog.layout.itemAt(9).widget.checked
+    options['no_series_res'] = dialog.layout.itemAt(10).widget.checked
+    options['no_parallel_res'] = dialog.layout.itemAt(11).widget.checked
+    options['combine_devices'] = dialog.layout.itemAt(12).widget.checked
+    options['top_lvl_pins'] = dialog.layout.itemAt(13).widget.checked
+    options['purge'] = dialog.layout.itemAt(14).widget.checked
+    options['purge_nets'] = dialog.layout.itemAt(15).widget.checked
+    options['verbose'] = dialog.layout.itemAt(16).widget.checked
+  end
+
+  # Save options to a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  # options        - The options hash to be saved
+  #
+  # Returns true if successful, false otherwise
+  def self.save_options(yaml_file_path, options)
+    begin
+      File.open(yaml_file_path, 'w') { |file| file.write(options.to_yaml) }
+      true
+    rescue => e
+      puts "Error saving options to YAML file: #{e.message}"
+      false
+    end
+  end
+end
+
+SG13G2LVSOptions.main
+
+</text>
+</klayout-macro>

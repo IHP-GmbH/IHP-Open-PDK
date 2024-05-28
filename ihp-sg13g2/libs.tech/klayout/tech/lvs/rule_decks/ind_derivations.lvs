@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#===============================
+# ---- Inductor DERIVATIONS ----
+#===============================
+
+logger.info('Starting Inductor DERIVATIONS')
+
+ind_exc = gatpoly.join(nsd_drw).join(nbulay_drw)
+            .join(thickgateox_drw).join(emwind_drw).join(emwihv_drw)
+            .join(salblock_drw).join(polyres_drw).join(mim_drw)
+            .join(extblock_drw).join(res_drw).join(activ_mask)
+            .join(recog_diode).join(recog_esd).join(substrate_drw)
+
+# General
+la_patt = glob_to_case_insensitive_glob("LA")
+lb_patt = glob_to_case_insensitive_glob("LB")
+lc_patt = glob_to_case_insensitive_glob("LC")
+ind2_patt = glob_to_case_insensitive_glob("inductor2*")
+ind3_patt = glob_to_case_insensitive_glob("inductor3*")
+
+ind_edges = ind_drw.edges
+ind_core_ = topmetal2.join(topmetal1).and(ind_drw).merged.not(ind_exc)
+ind_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
+ind_port_la = ind_ports_.interacting(ind_text.texts(la_patt))
+ind_la_tm1 = ind_port_la.and(topmetal1)
+ind_port_lb = ind_ports_.interacting(ind_text.texts(lb_patt))
+ind_lb_tm1 = ind_port_lb.and(topmetal1)
+ind_port_lc = ind_ports_.interacting(ind_text.texts(lc_patt))
+ind_lc_tm2 = ind_port_lc.and(topmetal2)
+
+# inductor2
+ind2_ports = ind_port_la.join(ind_port_lb)
+ind2_core = ind_core_.interacting(ind_port_la, 1).interacting(ind_port_lb, 1)
+ind2_mk_ = ind_drw.interacting(text_drw.texts(ind2_patt))
+ind2_mk = ind2_mk_.interacting(ind2_core).interacting(ind2_ports).not_interacting(ind_port_lc)
+ind2_sub1 = pwell.and(ind_drw).interacting(ind2_core)
+ind2_sub2 = pwell_block.and(ind_drw).interacting(ind2_core).sized(1.nm)
+ind2_well = nwell_drw.and(ind_drw).interacting(ind2_core).sized(-1.nm)
+ind2_sub = ind2_sub1.join(ind2_sub2).join(ind2_well)
+# inductor3
+ind3_ports = ind_la_tm1.join(ind_lb_tm1).join(ind_lc_tm2)
+ind3_core = ind_core_.interacting(ind_lb_tm1, 1).interacting(ind_lb_tm1, 1).interacting(ind_lc_tm2, 1)
+ind3_mk_ = ind_drw.interacting(text_drw.texts(ind3_patt))
+ind3_mk = ind3_mk_.interacting(ind3_core).interacting(ind3_ports)
+ind3_sub1 = pwell.and(ind_drw).interacting(ind3_core)
+ind3_sub2 = pwell_block.and(ind_drw).interacting(ind3_core).sized(1.nm)
+ind3_well = nwell_drw.and(ind_drw).interacting(ind3_core).sized(-1.nm)
+ind3_sub = ind3_sub1.join(ind3_sub2).join(ind3_well)

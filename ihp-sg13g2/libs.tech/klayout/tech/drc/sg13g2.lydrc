@@ -39,14 +39,23 @@ if main_window
         main_window.load_layout(layout_path, 1)
         curr_layout_view = main_window.current_view()
     end
+    active_cellname = RBA::CellView::active.cell_name
+else
+    puts "DRC: batch mode"
+    if $cell
+        active_cellname = $cell
+        puts "Active cell: " + active_cellname
+    else
+        raise("ERROR: 'cell' script variable must be defined on cmd line")
+    end
 end
 active_layout = RBA::CellView::active.layout
-active_cellname = RBA::CellView::active.cell_name
+
 source(active_layout, active_cellname)
 if active_layout.dbu != 0.001
     puts "WARNING: Layout dbu value (" + active_layout.dbu.to_s + " ) deviates from rule file dbu value (0.001). This will scale the layout and may not be intended."
 end
-report("design rules: sg13g2 | layout cell: " + active_cellname, "sg13g2.lyrdb")
+report("design rules: sg13g2 | layout cell: " + active_cellname, "sg13g2_#{active_cellname}.lyrdb", active_cellname)
 
 deep
 

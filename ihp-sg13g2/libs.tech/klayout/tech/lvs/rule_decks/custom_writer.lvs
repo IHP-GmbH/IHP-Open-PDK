@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#=============== CUSTOM WRITER ===================
+
+# %include globals.lvs
+
+# Custom writer for SPICE netlists
+class CustomWriter < RBA::NetlistSpiceWriterDelegate
+  # Write device to SPICE format
+  # @param device [RBA::Device] The device to be written
+  def write_device(device)
+    device_class = device.device_class
+    str = generate_device_prefix(device, device_class)
+    str += generate_device_terminals(device, device_class)
+    str += "#{device_class.name} "
+    str += generate_default_parameters(device, device_class)
+    emit_line(str)
+  end
+
+  private
+
+  # Generate device prefix using the global prefix map
+  def generate_device_prefix(device, device_class)
+    prefix = PREFIX_MAP[device_class.name] || device.id.to_s
+    "#{prefix}#{device.expanded_name} "
+  end
+
+  # Generate device terminals
+  def generate_device_terminals(device, device_class)
+    terminals = device_class.terminal_definitions.map do |td|
+      net_to_string(device.net_for_terminal(td.id))
+    end
+    "#{terminals.join(' ')} "
+  end
+
+  # Generate parameters with given keys
+  def generate_parameters(device, *keys)
+    parameters = keys.map { |key| "#{key}=#{device.parameter(key)}" }
+    parameters.join(' ')
+  end
+
+  # Generate default parameters for the device
+  def generate_default_parameters(device, device_class)
+    parameters = device_class.parameter_definitions.map do |pd|
+      format('%<name>s=%<value>.12g', name: pd.name, value: device.parameter(pd.id))
+    end
+    parameters.join(' ')
+  end
+end

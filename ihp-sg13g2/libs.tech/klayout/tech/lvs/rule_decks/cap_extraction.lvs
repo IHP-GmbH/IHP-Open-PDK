@@ -1,0 +1,55 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#=================================
+# -------- CAP EXTRACTION --------
+#=================================
+
+logger.info('Starting CAP EXTRACTION')
+
+# === cap_cmim ===
+logger.info('Extracting cap_cmim device')
+extract_devices(MIMCAPExtractor.new('cap_cmim'), {
+                  'core' => cmim_top,
+                  'top_mim' => cmim_top,
+                  'btm_mim' => cmim_btm,
+                  'meas_mk' => cmim_dev,
+                  'dev_mk' => cmim_dev,
+                })
+
+# === rfcmim ===
+logger.info('Extracting rfcmim device')
+extract_devices(MIMCAPExtractor.new('rfcmim'), {
+                  'core' => rfmim_top,
+                  'top_mim' => rfmim_top,
+                  'btm_mim' => rfmim_btm,
+                  'dev_mk' => rfmim_area.covering(rfmim_dev),
+                  'meas_mk' => rfmeas_mk,
+                  'sub_mk' => rfmim_sub,
+                })
+
+# === svaricap ===
+logger.info('Extracting sg13_hv_svaricap varactor')
+extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
+                  'core' => varicap_core,
+                  'ports' => varicap_ports,
+                  'meas_mk' => activ,
+                  'dev_mk' => varicap_dev_mk,
+                  'sub_mk' => varicap_sub
+                })

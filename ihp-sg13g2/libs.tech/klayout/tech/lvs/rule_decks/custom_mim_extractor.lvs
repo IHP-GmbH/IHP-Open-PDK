@@ -1,0 +1,245 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# MIM-custom device calss
+class DeviceCustomMIM < RBA::DeviceClassCapacitor
+  def initialize(name)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    # Adding params
+    add_parameter(RBA::DeviceParameterDefinition.new('w', 'width', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('l', 'length', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'perimeter', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    # Adding terminals
+    ter1 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_top"))
+    ter2 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_btm"))
+    ter1.name = "mim_top"
+    ter2.name = "mim_btm"
+
+    # Adding extra param & terminal for rfcmim
+    return unless name.downcase.include?('rfcmim')
+
+    add_parameter(RBA::DeviceParameterDefinition.new('wfeed', 'feed width', 0, true))
+    sub_ter = add_terminal(RBA::DeviceTerminalDefinition.new("mim_sub"))
+    sub_ter.name = "mim_sub"
+  end
+end
+
+# === MIMCAPExtractor ===
+class MIMCAPExtractor < RBA::GenericDeviceExtractor
+  # Extraction of N terminal devices - General Class
+
+  def initialize(name)
+    # Initialize the extractor with a device name and number of terminals.
+    #
+    # Args:
+    #   name (String): The name of the device.
+
+    self.name = name
+    @name = name
+  end
+
+  def setup
+    # Set up layers and register device class for extraction.
+    define_layers
+    # Register device class for extraction.
+    @reg_dev = DeviceCustomMIM.new(name)
+
+    # Disable combination for rfcmim
+    if name.downcase.include?('rfcmim')
+      @reg_dev.combiner = nil 
+    else
+      @reg_dev.combiner = MIMCAPNDeviceCombiner.new
+    end
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    # Establish connectivity between layers.
+    #
+    # Args:
+    #   _layout: Layout object (unused).
+    #   layers (Array): Array of layer objects.
+    #
+    # Returns:
+    #   Connectivity object representing the connections between layers.
+    dev = layers[0]
+    top_mim = layers[1]
+    btm_mim = layers[2]
+    dev_mk = layers[3]
+    meas_mk = layers[4]
+
+    conn = RBA::Connectivity.new
+    conn.connect(dev, dev)
+    conn.connect(dev, dev_mk)
+    conn.connect(dev, meas_mk)
+    conn.connect(top_mim, dev_mk)
+    conn.connect(btm_mim, dev_mk)
+
+    # Sub connection for rfcmim
+    if name.downcase.include?('rfcmim')
+      sub_mk = layers[5]
+      conn.connect(sub_mk, dev_mk)
+    end
+
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    # Extract devices based on layer geometry.
+    #
+    # Args:
+    #   layer_geometry (Array): Array of layer geometries.
+    dev, top_mim, btm_mim, dev_mk, meas_mk, sub_mk = layer_geometry
+
+    dev_mk.merged.each do |_region|
+      if top_mim.size != 1
+        $logger.info("No. of ports exist for #{@name} topmetal is #{top_mim.size}, should be 1")
+      elsif btm_mim.size != 1
+        $logger.info("No. of ports exist for #{@name} btmmetal is #{btm_mim.size}, should be 1")
+      else
+        device = create_device
+        set_device_parameters(device, dev, dev_mk, meas_mk)
+        define_terminals(device, top_mim, btm_mim, sub_mk)
+      end
+    end
+  end
+
+  private
+
+  def define_layers
+    # Define layers for extraction.
+    define_layer('core', 'core Layer')
+    define_layer('top_mim', 'Connect Terminal for top mim')
+    define_layer('btm_mim', 'Connect Terminal for btm mim')
+    define_layer('dev_mk', 'Device Marker')
+    define_layer('meas_mk', 'Measuring parameters marker')
+
+    # Define sub layer for some devices
+    return unless name.downcase.include?('rfcmim')
+
+    define_layer('sub_mk', 'Substrate layer')
+  end
+
+  def set_device_parameters(device, dev, dev_mk, meas_mk)
+    # Set device parameters based on device type.
+    #
+    # Args:
+    #   device: Device object to set parameters for.
+    #   dev: Device layer object.
+    #   dev_mk: device marker layer object.
+    #   meas_mk: meas marker layer object.
+    #
+    # Returns:
+    #   None
+
+    width, length, wfeed = calc_cmim_params(dev, dev_mk, meas_mk)
+
+    if name.downcase.include?('rfcmim')
+      device.set_parameter('l', width * $unit)
+      device.set_parameter('w', length * $unit)
+      device.set_parameter('wfeed', wfeed * $unit)
+    else
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+    end
+    device.set_parameter('A', width * length * $unit * $unit)
+    device.set_parameter('P', (width + length) * 2 * $unit)
+
+  end
+
+  def calc_cmim_params(dev, dev_mk, meas_mk)
+    # Width & Length
+    dev_edges = dev.edges
+    width_edges = dev_edges.with_angle(0, false)
+    len_edges = dev_edges.not(width_edges)
+    width = get_uniq_length(width_edges)
+    length = get_uniq_length(len_edges)
+
+    # Wfeed
+    wfeed_edges = meas_mk.edges.and(dev_mk.edges)
+    wfeed = get_uniq_length(wfeed_edges)
+  
+    # Default values
+    width ||= 0
+    length ||= 0
+    wfeed ||= 0
+
+    [width, length, wfeed]
+  end
+
+  def define_terminals(device, top_mim, btm_mim, sub_mk)
+    # Define terminals based on location.
+    #
+    # Args:
+    #   device: Device object to define terminals for.
+    #   top_mim: Contact layer object containing mim top metal.
+    #   top_mim: Contact layer object containing mim btm metal.
+    #   sub_mk: substrate marker layer object.
+    #
+    # Returns:
+    #   None
+
+    # Define sub if exist (should be defined before other terminals)
+    if name.downcase.include?('rfcmim')
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      else
+        define_terminal(device, @reg_dev.terminal_id("mim_sub"), 5, sub_mk[0])
+      end
+    end
+
+    # Defination main terminals
+    define_terminal(device, @reg_dev.terminal_id("mim_top"), 1, top_mim[0])
+    define_terminal(device, @reg_dev.terminal_id("mim_btm"), 2, btm_mim[0])
+  end
+
+  def get_min_max_length(sel_edges)
+    # Extract max length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.minmax
+  end
+
+  def get_uniq_length(sel_edges)
+    # Extract uniqe length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.uniq!
+    lengths.size == 1 ? lengths[0] : 0.0
+  end
+end

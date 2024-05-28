@@ -23,8 +23,8 @@ XI16 VDD_CORE VSS VDD_CORE VSS /
 + RM_IHPSG13_512x64_c2_1P_BITKIT_CORNER
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_BITKIT_EDGE_LR LWL NW PW VDD VSS
-MN1 VSS LWL VSS VSS nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN0 VSS net9 VSS VSS nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 VSS LWL VSS VSS sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN0 VSS net9 VSS VSS sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_BITKIT_16x2_EDGE_LR A_WL<15> A_WL<14> A_WL<13> A_WL<12> 
 + A_WL<11> A_WL<10> A_WL<9> A_WL<8> A_WL<7> A_WL<6> A_WL<5> A_WL<4> A_WL<3> 
@@ -64,12 +64,12 @@ XI0<0> A_WL<0> VDD_CORE VSS VDD_CORE VSS /
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_BITKIT_CELL BLC_BOT BLC_TOP BLT_BOT BLT_TOP LWL NW PW 
 + RWL VDD VSS
-MN0 NC NT VSS PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN1 NT NC VSS PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN3 NC RWL BLC_TOP PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN2 BLT_BOT LWL NT PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MP1 NT NC VDD NW pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
-MP0 NC NT VDD NW pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
+MN0 NC NT VSS PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 NT NC VSS PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN3 NC RWL BLC_TOP PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN2 BLT_BOT LWL NT PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MP1 NT NC VDD NW sg13_lv_pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
+MP0 NC NT VDD NW sg13_lv_pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
 R1 BLC_BOT BLC_TOP lvsres w=2.6e-07 l=6e-07
 R0 BLT_BOT BLT_TOP lvsres w=2.6e-07 l=6e-07
 R2 RWL LWL lvsres w=2.6e-07 l=6e-07
@@ -159,11 +159,11 @@ XEDGE<0> A_BLC<0> A_BLT<0> VDD_CORE VSS VDD_CORE VSS
 .ENDS
 
 .SUBCKT RSC_IHPSG13_CBUFX4 A Z VDD VSS
-MN0 net9 A VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
+MN0 net9 A VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN1 Z net9 VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MP0 net9 A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP1 Z net9 VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MN1 Z net9 VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MP0 net9 A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z net9 VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_COLDRV13X4 ADDR_COL_I<1> ADDR_COL_I<0> ADDR_COL_O<1> 
 + ADDR_COL_O<0> ADDR_DEC_I<7> ADDR_DEC_I<6> ADDR_DEC_I<5> ADDR_DEC_I<4> 
@@ -196,11 +196,11 @@ XRCLK_DRV RCLK_I RCLK_O VDD VSS / RSC_IHPSG13_CBUFX4
 XWCLK_DRV WCLK_I WCLK_O VDD VSS / RSC_IHPSG13_CBUFX4
 .ENDS
 .SUBCKT RSC_IHPSG13_WLDRVX4 A Z VDD VSS
-MN1 Z net6 VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
+MN1 Z net6 VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 net6 A VSS VSS nmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
-MP1 Z net6 VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
-MP0 net6 A VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MN0 net6 A VSS VSS sg13_lv_nmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z net6 VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MP0 net6 A VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_WLDRV16X4 A<15> A<14> A<13> A<12> A<11> A<10> A<9> A<8> 
 + A<7> A<6> A<5> A<4> A<3> A<2> A<1> A<0> Z<15> Z<14> Z<13> Z<12> Z<11> Z<10> 
@@ -223,76 +223,76 @@ XBUF<1> A<1> Z<1> VDD VSS / RSC_IHPSG13_WLDRVX4
 XBUF<0> A<0> Z<0> VDD VSS / RSC_IHPSG13_WLDRVX4
 .ENDS
 .SUBCKT RSC_IHPSG13_FILLCAP8 VDD VSS
-MN0 vss_r vdd_r VSS VSS nmos m=1 w=4.98u l=130.00n ng=6 nrd=0 
+MN0 vss_r vdd_r VSS VSS sg13_lv_nmos m=1 w=4.98u l=130.00n ng=6 nrd=0 
 + nrs=0
-MP0 vdd_r vss_r VDD VDD pmos m=1 w=6.48u l=385.000n ng=4 nrd=0 
+MP0 vdd_r vss_r VDD VDD sg13_lv_pmos m=1 w=6.48u l=385.000n ng=4 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_LHPQX2 CP D Q VDD VSS
-MN3 QIN CPN net14 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MN2 net14 net10 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN3 QIN CPN net14 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN2 net14 net10 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN5 net21 D VSS VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN5 net21 D VSS VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN6 QIN CP net21 VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 nrs=0
-MN1 net10 QIN VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN6 QIN CP net21 VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 nrs=0
+MN1 net10 QIN VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 CPN CP VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN0 CPN CP VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN4 Q QIN VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MP2 QIN CP net16 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MP0 CPN CP VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN4 Q QIN VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MP2 QIN CP net16 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MP0 CPN CP VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 Q QIN VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP3 net10 QIN VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP4 Q QIN VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP3 net10 QIN VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net16 net10 VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP1 net16 net10 VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP6 QIN CPN net20 VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP6 QIN CPN net20 VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP5 net20 D VDD VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP5 net20 D VDD VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_NAND2X2 A B Z VDD VSS
-MP1 Z B VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MN0 Z B net7 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN1 net7 A VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MP1 Z B VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z B net7 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN1 net7 A VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CINVX4 A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CINVX2 A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_INVX2 A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_NAND3X2 A B C Z VDD VSS
-MP2 Z A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP1 Z B VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z C VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MN1 net12 B net16 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN0 Z C net12 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN2 net16 A VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MP2 Z A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z B VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z C VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN1 net12 B net16 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z C net12 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN2 net16 A VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_NOR3X2 A B C Z VDD VSS
-MP0 net13 A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP2 Z C net10 VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP1 net10 B net13 VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MN1 Z B VSS VSS nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
-MN0 Z C VSS VSS nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
-MN2 Z A VSS VSS nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
+MP0 net13 A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP2 Z C net10 VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP1 net10 B net13 VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN1 Z B VSS VSS sg13_lv_nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z C VSS VSS sg13_lv_nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
+MN2 Z A VSS VSS sg13_lv_nmos m=1 w=875.000n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_FILLCAP4 VDD VSS
-MN0 vss_r vdd_r VSS VSS nmos m=1 w=2.49u l=130.00n ng=3 nrd=0 
+MN0 vss_r vdd_r VSS VSS sg13_lv_nmos m=1 w=2.49u l=130.00n ng=3 nrd=0 
 + nrs=0
-MP0 vdd_r vss_r VDD VDD pmos m=1 w=3.24u l=385.000n ng=2 nrd=0 
+MP0 vdd_r vss_r VDD VDD sg13_lv_pmos m=1 w=3.24u l=385.000n ng=2 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_MET2RES A B
@@ -357,69 +357,69 @@ XSEL ADDR_N_I<3> ADDR_N_I<2> ADDR_N_I<1> ADDR_N_I<0> CS_I ECLK_I ECLK_H<1>
 + WL_O<0> VDD VSS / RM_IHPSG13_512x64_c2_1P_DEC04
 .ENDS
 .SUBCKT RSC_IHPSG13_CINVX8 A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=2.82u l=130.00n ng=4 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=2.82u l=130.00n ng=4 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_DFNQMX2IX1 BE BI CN D QI QIN VDD VSS
-MN15 net026 BI VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN15 net026 BI VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN14 MXI_OUT BE net026 VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN14 MXI_OUT BE net026 VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN1 net025 D VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN1 net025 D VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 MXI_OUT BEN net025 VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN0 MXI_OUT BEN net025 VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN10 QI CNN net21 VSS nmos m=1 w=850.00n l=130.00n ng=1 nrd=0 nrs=0
-MN11 net21 QI_MS VSS VSS nmos m=1 w=850.00n l=130.00n ng=1 
+MN10 QI CNN net21 VSS sg13_lv_nmos m=1 w=850.00n l=130.00n ng=1 nrd=0 nrs=0
+MN11 net21 QI_MS VSS VSS sg13_lv_nmos m=1 w=850.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN7 net30 QI_MS VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN7 net30 QI_MS VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN6 QIN_MS CNN net30 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN6 QIN_MS CNN net30 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN3 QI_MS QIN_MS VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN3 QI_MS QIN_MS VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN12 CNN CN VSS VSS nmos m=1 w=495.000n l=130.00n ng=1 nrd=0 
+MN12 CNN CN VSS VSS sg13_lv_nmos m=1 w=495.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN9 net37 MXI_OUT VSS VSS nmos m=1 w=870.00n l=130.00n ng=1 
+MN9 net37 MXI_OUT VSS VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN8 QIN_MS CN net37 VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN8 QIN_MS CN net37 VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN5 QI CN net25 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MN4 net25 QIN VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN5 QI CN net25 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN4 net25 QIN VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN2 QIN QI VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN2 QIN QI VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN13 BEN BE VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN13 BEN BE VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP15 MXI_OUT BEN net027 VDD pmos m=1 w=985.000n l=130.00n ng=1 
+MP15 MXI_OUT BEN net027 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP14 net027 BI VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 
+MP14 net027 BI VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP1 MXI_OUT BE net024 VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP1 MXI_OUT BE net024 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP0 net024 D VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP0 net024 D VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP13 BEN BE VDD VDD pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 
+MP13 BEN BE VDD VDD sg13_lv_pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP6 QI_MS QIN_MS VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP6 QI_MS QIN_MS VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP3 QI CNN net27 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MP2 net27 QIN VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP3 QI CNN net27 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MP2 net27 QIN VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP10 net36 MXI_OUT VDD VDD pmos m=1 w=975.000n l=130.00n ng=1 
+MP10 net36 MXI_OUT VDD VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP11 QIN_MS CNN net36 VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP11 QIN_MS CNN net36 VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 net32 QI_MS VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP4 net32 QI_MS VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP5 QIN_MS CN net32 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP5 QIN_MS CN net32 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP7 QIN QI VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP7 QIN QI VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP12 CNN CN VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP12 CNN CN VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP9 QI CN net19 VDD pmos m=1 w=990.00n l=130.00n ng=1 nrd=0 nrs=0
-MP8 net19 QI_MS VDD VDD pmos m=1 w=990.00n l=130.00n ng=1 
+MP9 QI CN net19 VDD sg13_lv_pmos m=1 w=990.00n l=130.00n ng=1 nrd=0 nrs=0
+MP8 net19 QI_MS VDD VDD sg13_lv_pmos m=1 w=990.00n l=130.00n ng=1 
 + nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_ROWREG4 ACLK_N_I ADDR_I<3> ADDR_I<2> ADDR_I<1> ADDR_I<0> 
@@ -463,46 +463,46 @@ XI11<2> VDD VSS / RSC_IHPSG13_FILLCAP8
 XI11<1> VDD VSS / RSC_IHPSG13_FILLCAP8
 .ENDS
 .SUBCKT RSC_IHPSG13_CDLYX1 A Z VDD VSS
-MN1 net010 net032 VSS VSS nmos m=1 w=300.0n l=160.00n ng=1 
+MN1 net010 net032 VSS VSS sg13_lv_nmos m=1 w=300.0n l=160.00n ng=1 
 + nrd=0 nrs=0
-MN2 net032 A net014 VSS nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
+MN2 net032 A net014 VSS sg13_lv_nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
 + nrs=0
-MN0 Z net032 net010 VSS nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
+MN0 Z net032 net010 VSS sg13_lv_nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
 + nrs=0
-MN3 net014 A VSS VSS nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
+MN3 net014 A VSS VSS sg13_lv_nmos m=1 w=300.0n l=160.00n ng=1 nrd=0 
 + nrs=0
-MP1 Z net032 net07 VDD pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
+MP1 Z net032 net07 VDD sg13_lv_pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
 + nrs=0
-MP3 net011 A VDD VDD pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
+MP3 net011 A VDD VDD sg13_lv_pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
 + nrs=0
-MP0 net07 net032 VDD VDD pmos m=1 w=720.00n l=160.00n ng=1 
+MP0 net07 net032 VDD VDD sg13_lv_pmos m=1 w=720.00n l=160.00n ng=1 
 + nrd=0 nrs=0
-MP2 net032 A net011 VDD pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
+MP2 net032 A net011 VDD sg13_lv_pmos m=1 w=720.00n l=160.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CDLYX1_DUMMY A Z VDD VSS
-MN0 vss_r vdd_r VSS VSS nmos m=1 w=2.49u l=300.0n ng=3 nrd=0 
+MN0 vss_r vdd_r VSS VSS sg13_lv_nmos m=1 w=2.49u l=300.0n ng=3 nrd=0 
 + nrs=0
-MP0 vdd_r vss_r VDD VDD pmos m=1 w=3.24u l=640.00n ng=2 nrd=0 
+MP0 vdd_r vss_r VDD VDD sg13_lv_pmos m=1 w=3.24u l=640.00n ng=2 nrd=0 
 + nrs=0
 R0 Z A lvsres w=2.6e-07 l=6e-07
 .ENDS
 
 .SUBCKT RSC_IHPSG13_MX2IX1 A0 A1 S ZN VDD VSS
-MP4 SN S VDD VDD pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 nrs=0
-MP3 ZN SN net12 VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 nrs=0
-MP2 net12 A1 VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP4 SN S VDD VDD sg13_lv_pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 nrs=0
+MP3 ZN SN net12 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 nrs=0
+MP2 net12 A1 VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 ZN S net17 VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 nrs=0
-MP0 net17 A0 VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP1 ZN S net17 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 nrs=0
+MP0 net17 A0 VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN5 SN S VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MN3 net13 A1 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN5 SN S VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN3 net13 A1 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN2 ZN S net13 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MN1 net15 A0 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN2 ZN S net13 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN1 net15 A0 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 ZN SN net15 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN0 ZN SN net15 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_DLY_MUX A SEL Z VDD VSS
 XI11 net4 Z VDD VSS / RSC_IHPSG13_CINVX2
@@ -512,191 +512,191 @@ XI20<2> D<1> D<2> VDD VSS / RSC_IHPSG13_CDLYX1
 XI20<1> A D<1> VDD VSS / RSC_IHPSG13_CDLYX1
 .ENDS
 .SUBCKT RSC_IHPSG13_DFNQX2 CN D Q VDD VSS
-MN0 Q QIN_SL VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN0 Q QIN_SL VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN10 QIN_SL CNN net21 VSS nmos m=1 w=850.00n l=130.00n ng=1 nrd=0 
+MN10 QIN_SL CNN net21 VSS sg13_lv_nmos m=1 w=850.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN11 net21 QI_MS VSS VSS nmos m=1 w=850.00n l=130.00n ng=1 
+MN11 net21 QI_MS VSS VSS sg13_lv_nmos m=1 w=850.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN7 net30 QI_MS VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN7 net30 QI_MS VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN6 QIN_MS CNN net30 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN6 QIN_MS CNN net30 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN3 QI_MS QIN_MS VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN3 QI_MS QIN_MS VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN12 CNN CN VSS VSS nmos m=1 w=495.000n l=130.00n ng=1 nrd=0 
+MN12 CNN CN VSS VSS sg13_lv_nmos m=1 w=495.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN9 net37 D VSS VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN9 net37 D VSS VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN8 QIN_MS CN net37 VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN8 QIN_MS CN net37 VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN5 QIN_SL CN net25 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN5 QIN_SL CN net25 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN4 net25 QI_SL VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN4 net25 QI_SL VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN2 QI_SL QIN_SL VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN2 QI_SL QIN_SL VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP0 Q QIN_SL VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 
+MP0 Q QIN_SL VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 
 + nrs=0
-MP6 QI_MS QIN_MS VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP6 QI_MS QIN_MS VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP3 QIN_SL CNN net27 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP3 QIN_SL CNN net27 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP2 net27 QI_SL VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP2 net27 QI_SL VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP10 net36 D VDD VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP10 net36 D VDD VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP11 QIN_MS CNN net36 VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP11 QIN_MS CNN net36 VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 net32 QI_MS VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP4 net32 QI_MS VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP5 QIN_MS CN net32 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP5 QIN_MS CN net32 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP7 QI_SL QIN_SL VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP7 QI_SL QIN_SL VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP12 CNN CN VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP12 CNN CN VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP9 QIN_SL CN net19 VDD pmos m=1 w=990.00n l=130.00n ng=1 nrd=0 
+MP9 QIN_SL CN net19 VDD sg13_lv_pmos m=1 w=990.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP8 net19 QI_MS VDD VDD pmos m=1 w=990.00n l=130.00n ng=1 
+MP8 net19 QI_MS VDD VDD sg13_lv_pmos m=1 w=990.00n l=130.00n ng=1 
 + nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CNAND2X2 A B Z VDD VSS
-MN0 Z B net6 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN1 net6 A VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN0 Z B net6 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN1 net6 A VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 Z B VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z B VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CGATEPX4 CP E Q VDD VSS
-MN1 net08 QIN VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN1 net08 QIN VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN2 net019 net08 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 
+MN2 net019 net08 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN3 QIN CP net019 VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
-MN6 Q net015 VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 
+MN3 QIN CP net019 VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 nrs=0
+MN6 Q net015 VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 
 + nrs=0
-MN5 net015 net08 net018 VSS nmos m=1 w=980.00n l=130.00n ng=1 
+MN5 net015 net08 net018 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MN8 QIN CPN net023 VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN8 QIN CPN net023 VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN7 net023 E VSS VSS nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
+MN7 net023 E VSS VSS sg13_lv_nmos m=1 w=870.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN4 net018 CP VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN4 net018 CP VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 CPN CP VSS VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MP3 net08 QIN VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN0 CPN CP VSS VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MP3 net08 QIN VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP2 QIN CPN net017 VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP2 QIN CPN net017 VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net017 net08 VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 
+MP1 net017 net08 VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP0 CPN CP VDD VDD pmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MP8 QIN CP net024 VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP0 CPN CP VDD VDD sg13_lv_pmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MP8 QIN CP net024 VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP7 net024 E VDD VDD pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
+MP7 net024 E VDD VDD sg13_lv_pmos m=1 w=975.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 net015 CP VDD VDD pmos m=1 w=1.27u l=130.00n ng=1 nrd=0 
+MP4 net015 CP VDD VDD sg13_lv_pmos m=1 w=1.27u l=130.00n ng=1 nrd=0 
 + nrs=0
-MP6 Q net015 VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 
+MP6 Q net015 VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 
 + nrs=0
-MP5 net015 net08 VDD VDD pmos m=1 w=1.27u l=130.00n ng=1 nrd=0 
+MP5 net015 net08 VDD VDD sg13_lv_pmos m=1 w=1.27u l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CBUFX8 A Z VDD VSS
-MP0 net4 A VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
-MP1 Z net4 VDD VDD pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
-MN1 Z net4 VSS VSS nmos m=1 w=2.82u l=130.00n ng=4 nrd=0 nrs=0
-MN0 net4 A VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MP0 net4 A VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MP1 Z net4 VDD VDD sg13_lv_pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
+MN1 Z net4 VSS VSS sg13_lv_nmos m=1 w=2.82u l=130.00n ng=4 nrd=0 nrs=0
+MN0 net4 A VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CDLYX2 A Z VDD VSS
-MN2 net4 A net9 VSS nmos m=1 w=320.00n l=200.0n ng=1 nrd=0 nrs=0
-MN0 Z net4 VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
+MN2 net4 A net9 VSS sg13_lv_nmos m=1 w=320.00n l=200.0n ng=1 nrd=0 nrs=0
+MN0 Z net4 VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN1 net9 A VSS VSS nmos m=1 w=320.00n l=200.0n ng=1 nrd=0 nrs=0
-MP2 net4 A net10 VDD pmos m=1 w=1.2u l=200.0n ng=1 nrd=0 nrs=0
-MP1 net10 A VDD VDD pmos m=1 w=1.2u l=200.0n ng=1 nrd=0 nrs=0
-MP0 Z net4 VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN1 net9 A VSS VSS sg13_lv_nmos m=1 w=320.00n l=200.0n ng=1 nrd=0 nrs=0
+MP2 net4 A net10 VDD sg13_lv_pmos m=1 w=1.2u l=200.0n ng=1 nrd=0 nrs=0
+MP1 net10 A VDD VDD sg13_lv_pmos m=1 w=1.2u l=200.0n ng=1 nrd=0 nrs=0
+MP0 Z net4 VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_MX2X2 A0 A1 S Z VDD VSS
-MP6 Z net010 VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 
+MP6 Z net010 VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 SN S VDD VDD pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 nrs=0
-MP3 net010 SN net12 VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP4 SN S VDD VDD sg13_lv_pmos m=1 w=645.000n l=130.00n ng=1 nrd=0 nrs=0
+MP3 net010 SN net12 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP2 net12 A1 VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP2 net12 A1 VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net010 S net17 VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP1 net010 S net17 VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP0 net17 A0 VDD VDD pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
+MP0 net17 A0 VDD VDD sg13_lv_pmos m=1 w=985.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN6 Z net010 VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
+MN6 Z net010 VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN5 SN S VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 nrs=0
-MN3 net13 A1 VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN5 SN S VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 nrs=0
+MN3 net13 A1 VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN2 net010 S net13 VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN2 net010 S net13 VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN1 net15 A0 VSS VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN1 net15 A0 VSS VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 net010 SN net15 VSS nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
+MN0 net010 SN net15 VSS sg13_lv_nmos m=1 w=560.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_AND2X2 A B Z VDD VSS
-MN3 Z net6 VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN3 Z net6 VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN4 net9 B VSS VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MN6 net6 A net9 VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MP2 Z net6 VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 net6 B VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MN4 net9 B VSS VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MN6 net6 A net9 VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MP2 Z net6 VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 net6 B VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net6 A VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MP1 net6 A VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_TIEL Z VDD VSS
-MN0 Z net2 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN0 Z net2 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP0 net2 net2 VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP0 net2 net2 VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_XOR2X2 A B Z VDD VSS
-MP8 net012 B net7 VDD pmos m=1 w=825.000n l=130.00n ng=1 nrd=0 
+MP8 net012 B net7 VDD sg13_lv_pmos m=1 w=825.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP7 net011 net3 net012 VDD pmos m=1 w=825.000n l=130.00n ng=1 
+MP7 net011 net3 net012 VDD sg13_lv_pmos m=1 w=825.000n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP6 Z net012 VDD VDD pmos m=1 w=1.535u l=130.00n ng=1 nrd=0 
+MP6 Z net012 VDD VDD sg13_lv_pmos m=1 w=1.535u l=130.00n ng=1 nrd=0 
 + nrs=0
-MP2 net7 A VDD VDD pmos m=1 w=825.000n l=130.00n ng=1 nrd=0 
+MP2 net7 A VDD VDD sg13_lv_pmos m=1 w=825.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP4 net011 net7 VDD VDD pmos m=1 w=825.000n l=130.00n ng=1 
+MP4 net011 net7 VDD VDD sg13_lv_pmos m=1 w=825.000n l=130.00n ng=1 
 + nrd=0 nrs=0
-MP5 net3 B VDD VDD pmos m=1 w=580.00n l=130.00n ng=1 nrd=0 
+MP5 net3 B VDD VDD sg13_lv_pmos m=1 w=580.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN7 net012 B net011 VSS nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
+MN7 net012 B net011 VSS sg13_lv_nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN6 net7 net3 net012 VSS nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
+MN6 net7 net3 net012 VSS sg13_lv_nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN5 Z net012 VSS VSS nmos m=1 w=775.000n l=130.00n ng=1 nrd=0 
+MN5 Z net012 VSS VSS sg13_lv_nmos m=1 w=775.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN2 net7 A VSS VSS nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
+MN2 net7 A VSS VSS sg13_lv_nmos m=1 w=555.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN4 net3 B VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN4 net3 B VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN3 net011 net7 VSS VSS nmos m=1 w=555.000n l=130.00n ng=1 
+MN3 net011 net7 VSS VSS sg13_lv_nmos m=1 w=555.000n l=130.00n ng=1 
 + nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_OA12X1 A B C Z VDD VSS
-MN2 net7 C VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN2 net7 C VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN3 Z net17 VSS VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 
+MN3 Z net17 VSS VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN1 net17 B net7 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN0 net17 A net7 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MP0 net24 A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP3 Z net17 VDD VDD pmos m=1 w=905.000n l=130.00n ng=1 nrd=0 
+MN1 net17 B net7 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN0 net17 A net7 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MP0 net24 A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP3 Z net17 VDD VDD sg13_lv_pmos m=1 w=905.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net17 B net24 VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP2 net17 C VDD VDD pmos m=1 w=905.000n l=130.00n ng=1 nrd=0 
+MP1 net17 B net24 VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP2 net17 C VDD VDD sg13_lv_pmos m=1 w=905.000n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_CTRL ACLK_N BIST_CK_I BIST_CS_I BIST_EN BIST_RE_I 
@@ -798,84 +798,84 @@ XI17<1> ADDR_DEC<5> VDD VSS / RSC_IHPSG13_TIEL
 XI17<0> ADDR_DEC<4> VDD VSS / RSC_IHPSG13_TIEL
 .ENDS
 .SUBCKT RSC_IHPSG13_NOR2X2 A B Z VDD VSS
-MP1 Z B net9 VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 net9 A VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MN0 Z B VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN1 Z A VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z B net9 VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 net9 A VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MN0 Z B VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN1 Z A VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CINVX4_WN A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_BLDRV BLC BLC_SEL BLT BLT_SEL PRE_N SEL_P WR_ONE WR_ZERO 
 + VDD VSS
 XCDEC SEL_P WR_ZERO BLC_PMOS_DRIVE VDD VSS / RSC_IHPSG13_NAND2X2
 XTDEC SEL_P WR_ONE BLT_PMOS_DRIVE VDD VSS / RSC_IHPSG13_NAND2X2
-MTWN BLT BLT_NMOS_DRIVE VSS VSS nmos m=1 w=4.82u l=130.00n 
+MTWN BLT BLT_NMOS_DRIVE VSS VSS sg13_lv_nmos m=1 w=4.82u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MCWN BLC BLC_NMOS_DRIVE VSS VSS nmos m=1 w=4.82u l=130.00n 
+MCWN BLC BLC_NMOS_DRIVE VSS VSS sg13_lv_nmos m=1 w=4.82u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MCWP BLC BLC_PMOS_DRIVE VDD VDD pmos m=1 w=1.5u l=130.00n ng=1 
+MCWP BLC BLC_PMOS_DRIVE VDD VDD sg13_lv_pmos m=1 w=1.5u l=130.00n ng=1 
 + nrd=0 nrs=0
-MTWP BLT BLT_PMOS_DRIVE VDD VDD pmos m=1 w=1.5u l=130.00n ng=1 
+MTWP BLT BLT_PMOS_DRIVE VDD VDD sg13_lv_pmos m=1 w=1.5u l=130.00n ng=1 
 + nrd=0 nrs=0
-MTSP BLT_SEL SEL_N BLT VDD pmos m=1 w=1.5u l=130.00n ng=1 nrd=0 
+MTSP BLT_SEL SEL_N BLT VDD sg13_lv_pmos m=1 w=1.5u l=130.00n ng=1 nrd=0 
 + nrs=0
-MTPR BLT PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n ng=2 nrd=0 
+MTPR BLT PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n ng=2 nrd=0 
 + nrs=0
-MCSP BLC_SEL SEL_N BLC VDD pmos m=1 w=1.5u l=130.00n ng=1 nrd=0 
+MCSP BLC_SEL SEL_N BLC VDD sg13_lv_pmos m=1 w=1.5u l=130.00n ng=1 nrd=0 
 + nrs=0
-MCPR BLC PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n ng=2 nrd=0 
+MCPR BLC PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n ng=2 nrd=0 
 + nrs=0
 XI86 SEL_P SEL_N VDD VSS / RSC_IHPSG13_INVX2
 XTINV BLC_PMOS_DRIVE BLT_NMOS_DRIVE VDD VSS / RSC_IHPSG13_INVX2
 XCINV BLT_PMOS_DRIVE BLC_NMOS_DRIVE VDD VSS / RSC_IHPSG13_INVX2
 .ENDS
 .SUBCKT RSC_IHPSG13_TIEH Z VDD VSS
-MN0 net2 net2 VSS VSS nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MN0 net2 net2 VSS VSS sg13_lv_nmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP0 Z net2 VDD VDD pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
+MP0 Z net2 VDD VDD sg13_lv_pmos m=1 w=480.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_MET3RES A B
 R0 B A lvsres w=2.6e-07 l=6e-07
 .ENDS
 .SUBCKT RSC_IHPSG13_DFPQD_MSAFFX2 CP DN DP QN QP VDD VSS
-MN12 SN RN DIFFP VSS nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
-MN13 TAIL CP VSS VSS nmos m=1 w=2.4u l=130.00n ng=2 nrd=0 nrs=0
-MN9 DIFFP DP TAIL VSS nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
-MN10 DIFFN DN TAIL VSS nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
-MN11 RN SN DIFFN VSS nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
-MN19 net33 SN VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN12 SN RN DIFFP VSS sg13_lv_nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
+MN13 TAIL CP VSS VSS sg13_lv_nmos m=1 w=2.4u l=130.00n ng=2 nrd=0 nrs=0
+MN9 DIFFP DP TAIL VSS sg13_lv_nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
+MN10 DIFFN DN TAIL VSS sg13_lv_nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
+MN11 RN SN DIFFN VSS sg13_lv_nmos m=1 w=2.4u l=200.0n ng=2 nrd=0 nrs=0
+MN19 net33 SN VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN20 QN QP net37 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MN18 net37 RN VSS VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
+MN20 QN QP net37 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MN18 net37 RN VSS VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN17 QP QN net33 VSS nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
-MP15 SN RN VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
-MP16 RN CP VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
-MP14 DIFFP CP VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 
+MN17 QP QN net33 VSS sg13_lv_nmos m=1 w=980.00n l=130.00n ng=1 nrd=0 nrs=0
+MP15 SN RN VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
+MP16 RN CP VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
+MP14 DIFFP CP VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP12 RN SN VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
-MP13 DIFFN CP VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 
+MP12 RN SN VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
+MP13 DIFFN CP VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP11 SN CP VDD VDD pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
-MP19 QN QP VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
-MP20 QP SN VDD VDD pmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
-MP18 QN RN VDD VDD pmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
-MP17 QP QN VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MP11 SN CP VDD VDD sg13_lv_pmos m=1 w=800.0n l=130.00n ng=1 nrd=0 nrs=0
+MP19 QN QP VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MP20 QP SN VDD VDD sg13_lv_pmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
+MP18 QN RN VDD VDD sg13_lv_pmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
+MP17 QP QN VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_CBUFX2 A Z VDD VSS
-MN1 Z net4 VSS VSS nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
+MN1 Z net4 VSS VSS sg13_lv_nmos m=1 w=705.000n l=130.00n ng=1 nrd=0 
 + nrs=0
-MN0 net4 A VSS VSS nmos m=1 w=540.00n l=130.00n ng=1 nrd=0 
+MN0 net4 A VSS VSS sg13_lv_nmos m=1 w=540.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 Z net4 VDD VDD pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
-MP0 net4 A VDD VDD pmos m=1 w=1.1u l=130.00n ng=1 nrd=0 nrs=0
+MP1 Z net4 VDD VDD sg13_lv_pmos m=1 w=1.62u l=130.00n ng=1 nrd=0 nrs=0
+MP0 net4 A VDD VDD sg13_lv_pmos m=1 w=1.1u l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RSC_IHPSG13_INVX4 A Z VDD VSS
-MN0 Z A VSS VSS nmos m=1 w=1.96u l=130.00n ng=2 nrd=0 nrs=0
-MP0 Z A VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MN0 Z A VSS VSS sg13_lv_nmos m=1 w=1.96u l=130.00n ng=2 nrd=0 nrs=0
+MP0 Z A VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_COLCTRL2 A_ADDR_DEC<3> A_ADDR_DEC<2> A_ADDR_DEC<1> 
 + A_ADDR_DEC<0> A_BIST_BM_I A_BIST_DW_I A_BIST_EN_I A_BLC<3> A_BLC<2> A_BLC<1> 
@@ -981,13 +981,13 @@ XI17<2> VDD VSS / RSC_IHPSG13_FILLCAP4
 XI17<1> VDD VSS / RSC_IHPSG13_FILLCAP4
 .ENDS
 .SUBCKT RSC_IHPSG13_AND2X4 A B Z VDD VSS
-MN3 Z net6 VSS VSS nmos m=1 w=1.96u l=130.00n ng=2 nrd=0 nrs=0
-MN4 net9 B VSS VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MN6 net6 A net9 VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MP2 Z net6 VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
-MP0 net6 B VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MN3 Z net6 VSS VSS sg13_lv_nmos m=1 w=1.96u l=130.00n ng=2 nrd=0 nrs=0
+MN4 net9 B VSS VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MN6 net6 A net9 VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MP2 Z net6 VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MP0 net6 B VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net6 A VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MP1 net6 A VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_COLCTRL4 A_ADDR_COL A_ADDR_DEC<7> A_ADDR_DEC<6> 
@@ -1231,8 +1231,8 @@ XI16 VDD_CORE VSS VDD_CORE VSS /
 + RM_IHPSG13_512x64_c2_1P_BITKIT_CORNER
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_BITKIT_EDGE_LR A_WL B_WL NW PW VDD VSS
-MN1 VSS A_WL VSS VSS nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN0 VSS B_WL VSS VSS nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 VSS A_WL VSS VSS sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN0 VSS B_WL VSS VSS sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_BITKIT_16x2_EDGE_LR A_WL<15> A_WL<14> A_WL<13> A_WL<12> 
 + A_WL<11> A_WL<10> A_WL<9> A_WL<8> A_WL<7> A_WL<6> A_WL<5> A_WL<4> A_WL<3> 
@@ -1274,14 +1274,14 @@ XI0<0> A_WL<0> B_WL<0> VDD_CORE VSS VDD_CORE VSS /
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_BITKIT_CELL A_BLC_BOT A_BLC_TOP A_BLT_BOT A_BLT_TOP 
 + A_LWL A_RWL B_BLC_BOT B_BLC_TOP B_BLT_BOT B_BLT_TOP B_LWL B_RWL NW PW VDD VSS
-MN5 NC B_RWL B_BLC_BOT PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN4 B_BLT_BOT B_LWL NT PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN0 NC NT VSS PW nmos m=1 w=600.0n l=130.00n ng=2 nrd=0 nrs=0
-MN1 NT NC VSS PW nmos m=1 w=600.0n l=130.00n ng=2 nrd=0 nrs=0
-MN3 NC A_RWL A_BLC_TOP PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MN2 A_BLT_TOP A_LWL NT PW nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
-MP1 NT NC VDD NW pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
-MP0 NC NT VDD NW pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
+MN5 NC B_RWL B_BLC_BOT PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN4 B_BLT_BOT B_LWL NT PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN0 NC NT VSS PW sg13_lv_nmos m=1 w=600.0n l=130.00n ng=2 nrd=0 nrs=0
+MN1 NT NC VSS PW sg13_lv_nmos m=1 w=600.0n l=130.00n ng=2 nrd=0 nrs=0
+MN3 NC A_RWL A_BLC_TOP PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MN2 A_BLT_TOP A_LWL NT PW sg13_lv_nmos m=1 w=300.0n l=130.00n ng=1 nrd=0 nrs=0
+MP1 NT NC VDD NW sg13_lv_pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
+MP0 NC NT VDD NW sg13_lv_pmos m=1 w=150.00n l=130.00n ng=1 nrd=0 nrs=0
 R5 B_RWL B_LWL lvsres w=2.6e-07 l=6e-07
 R4 B_BLC_BOT B_BLC_TOP lvsres w=2.6e-07 l=6e-07
 R3 B_BLT_BOT B_BLT_TOP lvsres w=2.6e-07 l=6e-07
@@ -1440,10 +1440,10 @@ XTAP_BORDER VDD_CORE VSS VDD_CORE VSS /
 .ENDS
 
 .SUBCKT RSC_IHPSG13_CBUFX12 A Z VDD VSS
-MN1 Z net6 VSS VSS nmos m=1 w=4.23u l=130.00n ng=6 nrd=0 nrs=0
-MN0 net6 A VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MP1 Z net6 VDD VDD pmos m=1 w=9.72u l=130.00n ng=6 nrd=0 nrs=0
-MP0 net6 A VDD VDD pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
+MN1 Z net6 VSS VSS sg13_lv_nmos m=1 w=4.23u l=130.00n ng=6 nrd=0 nrs=0
+MN0 net6 A VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MP1 Z net6 VDD VDD sg13_lv_pmos m=1 w=9.72u l=130.00n ng=6 nrd=0 nrs=0
+MP0 net6 A VDD VDD sg13_lv_pmos m=1 w=3.24u l=130.00n ng=2 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_COLDRV13X12 ADDR_COL_I<1> ADDR_COL_I<0> ADDR_COL_O<1> 
 + ADDR_COL_O<0> ADDR_DEC_I<7> ADDR_DEC_I<6> ADDR_DEC_I<5> ADDR_DEC_I<4> 
@@ -1485,10 +1485,10 @@ XI0<2> VDD VSS / RSC_IHPSG13_FILLCAP4
 XI0<1> VDD VSS / RSC_IHPSG13_FILLCAP4
 .ENDS
 .SUBCKT RSC_IHPSG13_WLDRVX12 A Z VDD VSS
-MN1 Z net6 VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MN0 net6 A VSS VSS nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
-MP1 Z net6 VDD VDD pmos m=1 w=9.72u l=130.00n ng=6 nrd=0 nrs=0
-MP0 net6 A VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 Z net6 VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MN0 net6 A VSS VSS sg13_lv_nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
+MP1 Z net6 VDD VDD sg13_lv_pmos m=1 w=9.72u l=130.00n ng=6 nrd=0 nrs=0
+MP0 net6 A VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_WLDRV16X12 A<15> A<14> A<13> A<12> A<11> A<10> A<9> A<8> 
 + A<7> A<6> A<5> A<4> A<3> A<2> A<1> A<0> Z<15> Z<14> Z<13> Z<12> Z<11> Z<10> 
@@ -2299,133 +2299,133 @@ XI14<1> VDD VSS / RSC_IHPSG13_FILLCAP8
 + A_SEL_P<1> A_SEL_P<0> A_WR_ONE A_WR_ZERO B_BLC<3> B_BLC<2> B_BLC<1> B_BLC<0> 
 + B_BLC_SEL B_BLT<3> B_BLT<2> B_BLT<1> B_BLT<0> B_BLT_SEL B_PRE_N B_SEL_P<3> 
 + B_SEL_P<2> B_SEL_P<1> B_SEL_P<0> B_WR_ONE B_WR_ZERO VDD VSS
-MA_CWN<3> A_BLC<3> A_BLC_NMOS_DRIVE<3> VSS VSS nmos m=1 
+MA_CWN<3> A_BLC<3> A_BLC_NMOS_DRIVE<3> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_CWN<2> A_BLC<2> A_BLC_NMOS_DRIVE<2> VSS VSS nmos m=1 
+MA_CWN<2> A_BLC<2> A_BLC_NMOS_DRIVE<2> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_CWN<1> A_BLC<1> A_BLC_NMOS_DRIVE<1> VSS VSS nmos m=1 
+MA_CWN<1> A_BLC<1> A_BLC_NMOS_DRIVE<1> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_CWN<0> A_BLC<0> A_BLC_NMOS_DRIVE<0> VSS VSS nmos m=1 
+MA_CWN<0> A_BLC<0> A_BLC_NMOS_DRIVE<0> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_TWN<3> A_BLT<3> A_BLT_NMOS_DRIVE<3> VSS VSS nmos m=1 
+MA_TWN<3> A_BLT<3> A_BLT_NMOS_DRIVE<3> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_TWN<2> A_BLT<2> A_BLT_NMOS_DRIVE<2> VSS VSS nmos m=1 
+MA_TWN<2> A_BLT<2> A_BLT_NMOS_DRIVE<2> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_TWN<1> A_BLT<1> A_BLT_NMOS_DRIVE<1> VSS VSS nmos m=1 
+MA_TWN<1> A_BLT<1> A_BLT_NMOS_DRIVE<1> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_TWN<0> A_BLT<0> A_BLT_NMOS_DRIVE<0> VSS VSS nmos m=1 
+MA_TWN<0> A_BLT<0> A_BLT_NMOS_DRIVE<0> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_TWN<3> B_BLT<3> B_BLT_NMOS_DRIVE<3> VSS VSS nmos m=1 
+MB_TWN<3> B_BLT<3> B_BLT_NMOS_DRIVE<3> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_TWN<2> B_BLT<2> B_BLT_NMOS_DRIVE<2> VSS VSS nmos m=1 
+MB_TWN<2> B_BLT<2> B_BLT_NMOS_DRIVE<2> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_TWN<1> B_BLT<1> B_BLT_NMOS_DRIVE<1> VSS VSS nmos m=1 
+MB_TWN<1> B_BLT<1> B_BLT_NMOS_DRIVE<1> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_TWN<0> B_BLT<0> B_BLT_NMOS_DRIVE<0> VSS VSS nmos m=1 
+MB_TWN<0> B_BLT<0> B_BLT_NMOS_DRIVE<0> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_CWN<3> B_BLC<3> B_BLC_NMOS_DRIVE<3> VSS VSS nmos m=1 
+MB_CWN<3> B_BLC<3> B_BLC_NMOS_DRIVE<3> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_CWN<2> B_BLC<2> B_BLC_NMOS_DRIVE<2> VSS VSS nmos m=1 
+MB_CWN<2> B_BLC<2> B_BLC_NMOS_DRIVE<2> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_CWN<1> B_BLC<1> B_BLC_NMOS_DRIVE<1> VSS VSS nmos m=1 
+MB_CWN<1> B_BLC<1> B_BLC_NMOS_DRIVE<1> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MB_CWN<0> B_BLC<0> B_BLC_NMOS_DRIVE<0> VSS VSS nmos m=1 
+MB_CWN<0> B_BLC<0> B_BLC_NMOS_DRIVE<0> VSS VSS sg13_lv_nmos m=1 
 + w=4.82u l=130.00n ng=2 nrd=0 nrs=0
-MA_CPR<3> A_BLC<3> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_CPR<3> A_BLC<3> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_CPR<2> A_BLC<2> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_CPR<2> A_BLC<2> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_CPR<1> A_BLC<1> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_CPR<1> A_BLC<1> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_CPR<0> A_BLC<0> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_CPR<0> A_BLC<0> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_TWP<3> A_BLT<3> A_BLT_PMOS_DRIVE<3> VDD VDD pmos m=1 w=1.5u 
+MA_TWP<3> A_BLT<3> A_BLT_PMOS_DRIVE<3> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TWP<2> A_BLT<2> A_BLT_PMOS_DRIVE<2> VDD VDD pmos m=1 w=1.5u 
+MA_TWP<2> A_BLT<2> A_BLT_PMOS_DRIVE<2> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TWP<1> A_BLT<1> A_BLT_PMOS_DRIVE<1> VDD VDD pmos m=1 w=1.5u 
+MA_TWP<1> A_BLT<1> A_BLT_PMOS_DRIVE<1> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TWP<0> A_BLT<0> A_BLT_PMOS_DRIVE<0> VDD VDD pmos m=1 w=1.5u 
+MA_TWP<0> A_BLT<0> A_BLT_PMOS_DRIVE<0> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CWP<3> A_BLC<3> A_BLC_PMOS_DRIVE<3> VDD VDD pmos m=1 w=1.5u 
+MA_CWP<3> A_BLC<3> A_BLC_PMOS_DRIVE<3> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CWP<2> A_BLC<2> A_BLC_PMOS_DRIVE<2> VDD VDD pmos m=1 w=1.5u 
+MA_CWP<2> A_BLC<2> A_BLC_PMOS_DRIVE<2> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CWP<1> A_BLC<1> A_BLC_PMOS_DRIVE<1> VDD VDD pmos m=1 w=1.5u 
+MA_CWP<1> A_BLC<1> A_BLC_PMOS_DRIVE<1> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CWP<0> A_BLC<0> A_BLC_PMOS_DRIVE<0> VDD VDD pmos m=1 w=1.5u 
+MA_CWP<0> A_BLC<0> A_BLC_PMOS_DRIVE<0> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TPR<3> A_BLT<3> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_TPR<3> A_BLT<3> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_TPR<2> A_BLT<2> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_TPR<2> A_BLT<2> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_TPR<1> A_BLT<1> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_TPR<1> A_BLT<1> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_TPR<0> A_BLT<0> A_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MA_TPR<0> A_BLT<0> A_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MA_TSP<3> A_BLT_SEL A_SEL_N<3> A_BLT<3> VDD pmos m=1 w=1.5u 
+MA_TSP<3> A_BLT_SEL A_SEL_N<3> A_BLT<3> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TSP<2> A_BLT_SEL A_SEL_N<2> A_BLT<2> VDD pmos m=1 w=1.5u 
+MA_TSP<2> A_BLT_SEL A_SEL_N<2> A_BLT<2> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TSP<1> A_BLT_SEL A_SEL_N<1> A_BLT<1> VDD pmos m=1 w=1.5u 
+MA_TSP<1> A_BLT_SEL A_SEL_N<1> A_BLT<1> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_TSP<0> A_BLT_SEL A_SEL_N<0> A_BLT<0> VDD pmos m=1 w=1.5u 
+MA_TSP<0> A_BLT_SEL A_SEL_N<0> A_BLT<0> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CSP<3> A_BLC_SEL A_SEL_N<3> A_BLC<3> VDD pmos m=1 w=1.5u 
+MA_CSP<3> A_BLC_SEL A_SEL_N<3> A_BLC<3> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CSP<2> A_BLC_SEL A_SEL_N<2> A_BLC<2> VDD pmos m=1 w=1.5u 
+MA_CSP<2> A_BLC_SEL A_SEL_N<2> A_BLC<2> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CSP<1> A_BLC_SEL A_SEL_N<1> A_BLC<1> VDD pmos m=1 w=1.5u 
+MA_CSP<1> A_BLC_SEL A_SEL_N<1> A_BLC<1> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MA_CSP<0> A_BLC_SEL A_SEL_N<0> A_BLC<0> VDD pmos m=1 w=1.5u 
+MA_CSP<0> A_BLC_SEL A_SEL_N<0> A_BLC<0> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CWP<3> B_BLC<3> B_BLC_PMOS_DRIVE<3> VDD VDD pmos m=1 w=1.5u 
+MB_CWP<3> B_BLC<3> B_BLC_PMOS_DRIVE<3> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CWP<2> B_BLC<2> B_BLC_PMOS_DRIVE<2> VDD VDD pmos m=1 w=1.5u 
+MB_CWP<2> B_BLC<2> B_BLC_PMOS_DRIVE<2> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CWP<1> B_BLC<1> B_BLC_PMOS_DRIVE<1> VDD VDD pmos m=1 w=1.5u 
+MB_CWP<1> B_BLC<1> B_BLC_PMOS_DRIVE<1> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CWP<0> B_BLC<0> B_BLC_PMOS_DRIVE<0> VDD VDD pmos m=1 w=1.5u 
+MB_CWP<0> B_BLC<0> B_BLC_PMOS_DRIVE<0> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TWP<3> B_BLT<3> B_BLT_PMOS_DRIVE<3> VDD VDD pmos m=1 w=1.5u 
+MB_TWP<3> B_BLT<3> B_BLT_PMOS_DRIVE<3> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TWP<2> B_BLT<2> B_BLT_PMOS_DRIVE<2> VDD VDD pmos m=1 w=1.5u 
+MB_TWP<2> B_BLT<2> B_BLT_PMOS_DRIVE<2> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TWP<1> B_BLT<1> B_BLT_PMOS_DRIVE<1> VDD VDD pmos m=1 w=1.5u 
+MB_TWP<1> B_BLT<1> B_BLT_PMOS_DRIVE<1> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TWP<0> B_BLT<0> B_BLT_PMOS_DRIVE<0> VDD VDD pmos m=1 w=1.5u 
+MB_TWP<0> B_BLT<0> B_BLT_PMOS_DRIVE<0> VDD VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TSP<3> B_BLT_SEL B_SEL_N<3> B_BLT<3> VDD pmos m=1 w=1.5u 
+MB_TSP<3> B_BLT_SEL B_SEL_N<3> B_BLT<3> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TSP<2> B_BLT_SEL B_SEL_N<2> B_BLT<2> VDD pmos m=1 w=1.5u 
+MB_TSP<2> B_BLT_SEL B_SEL_N<2> B_BLT<2> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TSP<1> B_BLT_SEL B_SEL_N<1> B_BLT<1> VDD pmos m=1 w=1.5u 
+MB_TSP<1> B_BLT_SEL B_SEL_N<1> B_BLT<1> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TSP<0> B_BLT_SEL B_SEL_N<0> B_BLT<0> VDD pmos m=1 w=1.5u 
+MB_TSP<0> B_BLT_SEL B_SEL_N<0> B_BLT<0> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_TPR<3> B_BLT<3> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_TPR<3> B_BLT<3> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_TPR<2> B_BLT<2> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_TPR<2> B_BLT<2> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_TPR<1> B_BLT<1> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_TPR<1> B_BLT<1> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_TPR<0> B_BLT<0> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_TPR<0> B_BLT<0> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_CSP<3> B_BLC_SEL B_SEL_N<3> B_BLC<3> VDD pmos m=1 w=1.5u 
+MB_CSP<3> B_BLC_SEL B_SEL_N<3> B_BLC<3> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CSP<2> B_BLC_SEL B_SEL_N<2> B_BLC<2> VDD pmos m=1 w=1.5u 
+MB_CSP<2> B_BLC_SEL B_SEL_N<2> B_BLC<2> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CSP<1> B_BLC_SEL B_SEL_N<1> B_BLC<1> VDD pmos m=1 w=1.5u 
+MB_CSP<1> B_BLC_SEL B_SEL_N<1> B_BLC<1> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CSP<0> B_BLC_SEL B_SEL_N<0> B_BLC<0> VDD pmos m=1 w=1.5u 
+MB_CSP<0> B_BLC_SEL B_SEL_N<0> B_BLC<0> VDD sg13_lv_pmos m=1 w=1.5u 
 + l=130.00n ng=1 nrd=0 nrs=0
-MB_CPR<3> B_BLC<3> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_CPR<3> B_BLC<3> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_CPR<2> B_BLC<2> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_CPR<2> B_BLC<2> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_CPR<1> B_BLC<1> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_CPR<1> B_BLC<1> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
-MB_CPR<0> B_BLC<0> B_PRE_N VDD VDD pmos m=1 w=3.000u l=130.00n 
+MB_CPR<0> B_BLC<0> B_PRE_N VDD VDD sg13_lv_pmos m=1 w=3.000u l=130.00n 
 + ng=2 nrd=0 nrs=0
 XA_SEL<3> A_SEL_P<3> A_SEL_N<3> VDD VSS / RSC_IHPSG13_INVX2
 XA_SEL<2> A_SEL_P<2> A_SEL_N<2> VDD VSS / RSC_IHPSG13_INVX2
@@ -2501,13 +2501,13 @@ XB_TDEC<0> B_SEL_P<0> B_WR_ONE B_BLT_PMOS_DRIVE<0> VDD VSS /
 + RSC_IHPSG13_NAND2X2
 .ENDS
 .SUBCKT RSC_IHPSG13_AND2X6 A B Z VDD VSS
-MN3 Z net6 VSS VSS nmos m=1 w=2.94u l=130.00n ng=3 nrd=0 nrs=0
-MN4 net9 B VSS VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MN6 net6 A net9 VSS nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
-MP2 Z net6 VDD VDD pmos m=1 w=4.86u l=130.00n ng=3 nrd=0 nrs=0
-MP0 net6 B VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MN3 Z net6 VSS VSS sg13_lv_nmos m=1 w=2.94u l=130.00n ng=3 nrd=0 nrs=0
+MN4 net9 B VSS VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MN6 net6 A net9 VSS sg13_lv_nmos m=1 w=500.0n l=130.00n ng=1 nrd=0 nrs=0
+MP2 Z net6 VDD VDD sg13_lv_pmos m=1 w=4.86u l=130.00n ng=3 nrd=0 nrs=0
+MP0 net6 B VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
-MP1 net6 A VDD VDD pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
+MP1 net6 A VDD VDD sg13_lv_pmos m=1 w=860.00n l=130.00n ng=1 nrd=0 
 + nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_COLCTRL5 A_ADDR_COL<1> A_ADDR_COL<0> A_ADDR_DEC<7> 
@@ -2964,11 +2964,11 @@ XI0<1> VDD VSS / RSC_IHPSG13_FILLCAP4
 
 
 .SUBCKT RSC_IHPSG13_CBUFX16 A Z VDD VSS
-MN0 net4 A VSS VSS nmos m=1 w=2.115u l=130.00n ng=3 nrd=0 nrs=0
-MN1 Z net4 VSS VSS nmos m=1 w=5.64u l=130.00n ng=8 nrd=0 nrs=0
-MP1 Z net4 VDD VDD pmos m=1 w=13.000u l=130.00n ng=8 nrd=0 
+MN0 net4 A VSS VSS sg13_lv_nmos m=1 w=2.115u l=130.00n ng=3 nrd=0 nrs=0
+MN1 Z net4 VSS VSS sg13_lv_nmos m=1 w=5.64u l=130.00n ng=8 nrd=0 nrs=0
+MP1 Z net4 VDD VDD sg13_lv_pmos m=1 w=13.000u l=130.00n ng=8 nrd=0 
 + nrs=0
-MP0 net4 A VDD VDD pmos m=1 w=4.89u l=130.00n ng=3 nrd=0 nrs=0
+MP0 net4 A VDD VDD sg13_lv_pmos m=1 w=4.89u l=130.00n ng=3 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_COLDRV13X16 ADDR_COL_I<1> ADDR_COL_I<0> ADDR_COL_O<1> 
 + ADDR_COL_O<0> ADDR_DEC_I<7> ADDR_DEC_I<6> ADDR_DEC_I<5> ADDR_DEC_I<4> 
@@ -3007,10 +3007,10 @@ XRCLK_DRV RCLK_I RCLK_O VDD VSS / RSC_IHPSG13_CBUFX16
 XWCLK_DRV WCLK_I WCLK_O VDD VSS / RSC_IHPSG13_CBUFX16
 .ENDS
 .SUBCKT RSC_IHPSG13_WLDRVX16 A Z VDD VSS
-MN1 Z net6 VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MN0 net6 A VSS VSS nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
-MP1 Z net6 VDD VDD pmos m=1 w=12.96u l=130.00n ng=8 nrd=0 nrs=0
-MP0 net6 A VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 Z net6 VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MN0 net6 A VSS VSS sg13_lv_nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
+MP1 Z net6 VDD VDD sg13_lv_pmos m=1 w=12.96u l=130.00n ng=8 nrd=0 nrs=0
+MP0 net6 A VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_1P_WLDRV16X16 A<15> A<14> A<13> A<12> A<11> A<10> A<9> A<8> 
 + A<7> A<6> A<5> A<4> A<3> A<2> A<1> A<0> Z<15> Z<14> Z<13> Z<12> Z<11> Z<10> 
@@ -4595,10 +4595,10 @@ XI1<2> VDD VSS / RSC_IHPSG13_FILLCAP8
 XI1<1> VDD VSS / RSC_IHPSG13_FILLCAP8
 .ENDS
 .SUBCKT RSC_IHPSG13_WLDRVX8 A Z VDD VSS
-MN1 Z net6 VSS VSS nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
-MN0 net6 A VSS VSS nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
-MP1 Z net6 VDD VDD pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
-MP0 net6 A VDD VDD pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
+MN1 Z net6 VSS VSS sg13_lv_nmos m=1 w=1.41u l=130.00n ng=2 nrd=0 nrs=0
+MN0 net6 A VSS VSS sg13_lv_nmos m=1 w=1.8u l=130.00n ng=2 nrd=0 nrs=0
+MP1 Z net6 VDD VDD sg13_lv_pmos m=1 w=6.48u l=130.00n ng=4 nrd=0 nrs=0
+MP0 net6 A VDD VDD sg13_lv_pmos m=1 w=900.0n l=130.00n ng=1 nrd=0 nrs=0
 .ENDS
 .SUBCKT RM_IHPSG13_512x64_c2_2P_WLDRV16X8 A<15> A<14> A<13> A<12> A<11> A<10> A<9> A<8> 
 + A<7> A<6> A<5> A<4> A<3> A<2> A<1> A<0> Z<15> Z<14> Z<13> Z<12> Z<11> Z<10> 

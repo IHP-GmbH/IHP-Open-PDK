@@ -1,0 +1,1856 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+polygons_count = 0
+logger.info('Read in polygons from layers.')
+
+def get_polygons(lay_no, lay_dt)
+  if $run_mode == 'deep'
+    polygons(lay_no, lay_dt)
+  else
+    polygons(lay_no, lay_dt).merged
+  end
+end
+
+nodrc_drw = get_polygons(62, 0)
+count = nodrc_drw.count()
+logger.info("nodrc_drw has #{count} polygons")
+polygons_count += count
+
+activ_drw = get_polygons(1, 0)
+activ_drw = activ_drw.not(nodrc_drw)
+count = activ_drw.count()
+logger.info("activ_drw has #{count} polygons")
+polygons_count += count
+
+activ_filler = get_polygons(1, 22)
+activ_filler = activ_filler.not(nodrc_drw)
+count = activ_filler.count()
+logger.info("activ_filler has #{count} polygons")
+polygons_count += count
+
+# activ org
+activ = activ_drw.join(activ_filler)
+count = activ.count()
+logger.info("activ has #{count} polygons")
+
+activ_pin = get_polygons(1, 2)
+activ_pin = activ_pin.not(nodrc_drw)
+count = activ_pin.count()
+logger.info("activ_pin has #{count} polygons")
+polygons_count += count
+
+activ_mask = get_polygons(1, 20)
+activ_mask = activ_mask.not(nodrc_drw)
+count = activ_mask.count()
+logger.info("activ_mask has #{count} polygons")
+polygons_count += count
+
+activ_nofill = get_polygons(1, 23)
+activ_nofill = activ_nofill.not(nodrc_drw)
+count = activ_nofill.count()
+logger.info("activ_nofill has #{count} polygons")
+polygons_count += count
+
+activ_OPC = get_polygons(1, 26)
+activ_OPC = activ_OPC.not(nodrc_drw)
+count = activ_OPC.count()
+logger.info("activ_OPC has #{count} polygons")
+polygons_count += count
+
+activ_iOPC = get_polygons(1, 27)
+activ_iOPC = activ_iOPC.not(nodrc_drw)
+count = activ_iOPC.count()
+logger.info("activ_iOPC has #{count} polygons")
+polygons_count += count
+
+activ_noqrc = get_polygons(1, 28)
+activ_noqrc = activ_noqrc.not(nodrc_drw)
+count = activ_noqrc.count()
+logger.info("activ_noqrc has #{count} polygons")
+polygons_count += count
+
+biwind_drw = get_polygons(3, 0)
+biwind_drw = biwind_drw.not(nodrc_drw)
+count = biwind_drw.count()
+logger.info("biwind_drw has #{count} polygons")
+polygons_count += count
+
+biwind_OPC = get_polygons(3, 26)
+biwind_OPC = biwind_OPC.not(nodrc_drw)
+count = biwind_OPC.count()
+logger.info("biwind_OPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_drw = get_polygons(5, 0)
+gatpoly_drw = gatpoly_drw.not(nodrc_drw)
+count = gatpoly_drw.count()
+logger.info("gatpoly_drw has #{count} polygons")
+polygons_count += count
+
+gatpoly_filler = get_polygons(5, 22)
+gatpoly_filler = gatpoly_filler.not(nodrc_drw)
+count = gatpoly_filler.count()
+logger.info("gatpoly_filler has #{count} polygons")
+polygons_count += count
+
+# gatpoly org
+gatpoly = gatpoly_drw.join(gatpoly_filler)
+count = gatpoly.count()
+logger.info("gatpoly has #{count} polygons")
+
+gatpoly_pin = get_polygons(5, 2)
+gatpoly_pin = gatpoly_pin.not(nodrc_drw)
+count = gatpoly_pin.count()
+logger.info("gatpoly_pin has #{count} polygons")
+polygons_count += count
+
+gatpoly_nofill = get_polygons(5, 23)
+gatpoly_nofill = gatpoly_nofill.not(nodrc_drw)
+count = gatpoly_nofill.count()
+logger.info("gatpoly_nofill has #{count} polygons")
+polygons_count += count
+
+gatpoly_OPC = get_polygons(5, 26)
+gatpoly_OPC = gatpoly_OPC.not(nodrc_drw)
+count = gatpoly_OPC.count()
+logger.info("gatpoly_OPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_iOPC = get_polygons(5, 27)
+gatpoly_iOPC = gatpoly_iOPC.not(nodrc_drw)
+count = gatpoly_iOPC.count()
+logger.info("gatpoly_iOPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_noqrc = get_polygons(5, 28)
+gatpoly_noqrc = gatpoly_noqrc.not(nodrc_drw)
+count = gatpoly_noqrc.count()
+logger.info("gatpoly_noqrc has #{count} polygons")
+polygons_count += count
+
+cont_drw = get_polygons(6, 0)
+cont_drw = cont_drw.not(nodrc_drw)
+count = cont_drw.count()
+logger.info("cont_drw has #{count} polygons")
+polygons_count += count
+
+cont_OPC = get_polygons(6, 26)
+cont_OPC = cont_OPC.not(nodrc_drw)
+count = cont_OPC.count()
+logger.info("cont_OPC has #{count} polygons")
+polygons_count += count
+
+nsd_drw  = get_polygons(7, 0)
+nsd_drw = nsd_drw.not(nodrc_drw)
+count = nsd_drw.count()
+logger.info("nsd_drw has #{count} polygons")
+polygons_count += count
+
+nsd_block = get_polygons(7, 21)
+nsd_block = nsd_block.not(nodrc_drw)
+count = nsd_block.count()
+logger.info("nsd_block has #{count} polygons")
+polygons_count += count
+
+metal1_drw = get_polygons(8, 0)
+metal1_drw = metal1_drw.not(nodrc_drw)
+count = metal1_drw.count()
+logger.info("metal1_drw has #{count} polygons")
+polygons_count += count
+
+metal1_filler = get_polygons(8, 22)
+metal1_filler = metal1_filler.not(nodrc_drw)
+count = metal1_filler.count()
+logger.info("metal1_filler has #{count} polygons")
+polygons_count += count
+
+metal1_slit = get_polygons(8, 24)
+metal1_slit = metal1_slit.not(nodrc_drw)
+count = metal1_slit.count()
+logger.info("metal1_slit has #{count} polygons")
+polygons_count += count
+
+# metal1 org
+metal1 = metal1_drw.join(metal1_filler).not(metal1_slit)
+count = metal1.count()
+logger.info("metal1 has #{count} polygons")
+
+metal1_pin = get_polygons(8, 2)
+metal1_pin = metal1_pin.not(nodrc_drw)
+count = metal1_pin.count()
+logger.info("metal1_pin has #{count} polygons")
+polygons_count += count
+
+metal1_mask = get_polygons(8, 20)
+metal1_mask = metal1_mask.not(nodrc_drw)
+count = metal1_mask.count()
+logger.info("metal1_mask has #{count} polygons")
+polygons_count += count
+
+metal1_nofill = get_polygons(8, 23)
+metal1_nofill = metal1_nofill.not(nodrc_drw)
+count = metal1_nofill.count()
+logger.info("metal1_nofill has #{count} polygons")
+polygons_count += count
+
+metal1_text = labels(8, 25)
+metal1_text = metal1_text.not(nodrc_drw)
+count = metal1_text.count()
+logger.info("metal1_text has #{count} polygons")
+polygons_count += count
+
+metal1_OPC = get_polygons(8, 26)
+metal1_OPC = metal1_OPC.not(nodrc_drw)
+count = metal1_OPC.count()
+logger.info("metal1_OPC has #{count} polygons")
+polygons_count += count
+
+metal1_noqrc = get_polygons(8, 28)
+metal1_noqrc = metal1_noqrc.not(nodrc_drw)
+count = metal1_noqrc.count()
+logger.info("metal1_noqrc has #{count} polygons")
+polygons_count += count
+
+metal1_res = get_polygons(8, 29)
+metal1_res = metal1_res.not(nodrc_drw)
+count = metal1_res.count()
+logger.info("metal1_res has #{count} polygons")
+polygons_count += count
+
+metal1_iprobe = get_polygons(8, 33)
+metal1_iprobe = metal1_iprobe.not(nodrc_drw)
+count = metal1_iprobe.count()
+logger.info("metal1_iprobe has #{count} polygons")
+polygons_count += count
+
+metal1_diffprb = get_polygons(8, 34)
+metal1_diffprb = metal1_diffprb.not(nodrc_drw)
+count = metal1_diffprb.count()
+logger.info("metal1_diffprb has #{count} polygons")
+polygons_count += count
+
+passiv_drw = get_polygons(9, 0)
+passiv_drw = passiv_drw.not(nodrc_drw)
+count = passiv_drw.count()
+logger.info("passiv_drw has #{count} polygons")
+polygons_count += count
+
+passiv_pin = get_polygons(9, 2)
+passiv_pin = passiv_pin.not(nodrc_drw)
+count = passiv_pin.count()
+logger.info("passiv_pin has #{count} polygons")
+polygons_count += count
+
+passiv_sbump = get_polygons(9, 36)
+passiv_sbump = passiv_sbump.not(nodrc_drw)
+count = passiv_sbump.count()
+logger.info("passiv_sbump has #{count} polygons")
+polygons_count += count
+
+passiv_pillar = get_polygons(9, 35)
+passiv_pillar = passiv_pillar.not(nodrc_drw)
+count = passiv_pillar.count()
+logger.info("passiv_pillar has #{count} polygons")
+polygons_count += count
+
+passiv_pdl = get_polygons(9, 40)
+passiv_pdl = passiv_pdl.not(nodrc_drw)
+count = passiv_pdl.count()
+logger.info("passiv_pdl has #{count} polygons")
+polygons_count += count
+
+metal2_drw = get_polygons(10, 0)
+metal2_drw = metal2_drw.not(nodrc_drw)
+count = metal2_drw.count()
+logger.info("metal2_drw has #{count} polygons")
+polygons_count += count
+
+metal2_filler = get_polygons(10, 22)
+metal2_filler = metal2_filler.not(nodrc_drw)
+count = metal2_filler.count()
+logger.info("metal2_filler has #{count} polygons")
+polygons_count += count
+
+metal2_slit = get_polygons(10, 24)
+metal2_slit = metal2_slit.not(nodrc_drw)
+count = metal2_slit.count()
+logger.info("metal2_slit has #{count} polygons")
+polygons_count += count
+
+# metal2 org
+metal2 = metal2_drw.join(metal2_filler).not(metal2_slit)
+count = metal2.count()
+logger.info("metal2 has #{count} polygons")
+
+metal2_pin = get_polygons(10, 2)
+metal2_pin = metal2_pin.not(nodrc_drw)
+count = metal2_pin.count()
+logger.info("metal2_pin has #{count} polygons")
+polygons_count += count
+
+metal2_mask = get_polygons(10, 20)
+metal2_mask = metal2_mask.not(nodrc_drw)
+count = metal2_mask.count()
+logger.info("metal2_mask has #{count} polygons")
+polygons_count += count
+
+metal2_nofill = get_polygons(10, 23)
+metal2_nofill = metal2_nofill.not(nodrc_drw)
+count = metal2_nofill.count()
+logger.info("metal2_nofill has #{count} polygons")
+polygons_count += count
+
+metal2_text = labels(10, 25)
+metal2_text = metal2_text.not(nodrc_drw)
+count = metal2_text.count()
+logger.info("metal2_text has #{count} polygons")
+polygons_count += count
+
+metal2_OPC = get_polygons(10, 26)
+metal2_OPC = metal2_OPC.not(nodrc_drw)
+count = metal2_OPC.count()
+logger.info("metal2_OPC has #{count} polygons")
+polygons_count += count
+
+metal2_noqrc = get_polygons(10, 28)
+metal2_noqrc = metal2_noqrc.not(nodrc_drw)
+count = metal2_noqrc.count()
+logger.info("metal2_noqrc has #{count} polygons")
+polygons_count += count
+
+metal2_res = get_polygons(10, 29)
+metal2_res = metal2_res.not(nodrc_drw)
+count = metal2_res.count()
+logger.info("metal2_res has #{count} polygons")
+polygons_count += count
+
+metal2_iprobe = get_polygons(10, 33)
+metal2_iprobe = metal2_iprobe.not(nodrc_drw)
+count = metal2_iprobe.count()
+logger.info("metal2_iprobe has #{count} polygons")
+polygons_count += count
+
+metal2_diffprb = get_polygons(10, 34)
+metal2_diffprb = metal2_diffprb.not(nodrc_drw)
+count = metal2_diffprb.count()
+logger.info("metal2_diffprb has #{count} polygons")
+polygons_count += count
+
+baspoly_drw = get_polygons(13, 0)
+baspoly_drw = baspoly_drw.not(nodrc_drw)
+count = baspoly_drw.count()
+logger.info("baspoly_drw has #{count} polygons")
+polygons_count += count
+
+baspoly_pin = get_polygons(13, 2)
+baspoly_pin = baspoly_pin.not(nodrc_drw)
+count = baspoly_pin.count()
+logger.info("baspoly_pin has #{count} polygons")
+polygons_count += count
+
+psd_drw  = get_polygons(14, 0)
+psd_drw = psd_drw.not(nodrc_drw)
+count = psd_drw.count()
+logger.info("psd_drw has #{count} polygons")
+polygons_count += count
+
+nldb_drw = get_polygons(15, 0)
+nldb_drw = nldb_drw.not(nodrc_drw)
+count = nldb_drw.count()
+logger.info("nldb_drw has #{count} polygons")
+polygons_count += count
+
+digibnd_drw = get_polygons(16, 0)
+digibnd_drw = digibnd_drw.not(nodrc_drw)
+count = digibnd_drw.count()
+logger.info("digibnd_drw has #{count} polygons")
+polygons_count += count
+
+via1_drw = get_polygons(19, 0)
+via1_drw = via1_drw.not(nodrc_drw)
+count = via1_drw.count()
+logger.info("via1_drw has #{count} polygons")
+polygons_count += count
+
+backmetal1_drw = get_polygons(20, 0)
+backmetal1_drw = backmetal1_drw.not(nodrc_drw)
+count = backmetal1_drw.count()
+logger.info("backmetal1_drw has #{count} polygons")
+polygons_count += count
+
+backmetal1_pin = get_polygons(20, 2)
+backmetal1_pin = backmetal1_pin.not(nodrc_drw)
+count = backmetal1_pin.count()
+logger.info("backmetal1_pin has #{count} polygons")
+polygons_count += count
+
+backmetal1_mask = get_polygons(20, 20)
+backmetal1_mask = backmetal1_mask.not(nodrc_drw)
+count = backmetal1_mask.count()
+logger.info("backmetal1_mask has #{count} polygons")
+polygons_count += count
+
+backmetal1_filler = get_polygons(20, 22)
+backmetal1_filler = backmetal1_filler.not(nodrc_drw)
+count = backmetal1_filler.count()
+logger.info("backmetal1_filler has #{count} polygons")
+polygons_count += count
+
+backmetal1_nofill = get_polygons(20, 23)
+backmetal1_nofill = backmetal1_nofill.not(nodrc_drw)
+count = backmetal1_nofill.count()
+logger.info("backmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+backmetal1_slit = get_polygons(20, 24)
+backmetal1_slit = backmetal1_slit.not(nodrc_drw)
+count = backmetal1_slit.count()
+logger.info("backmetal1_slit has #{count} polygons")
+polygons_count += count
+
+backmetal1_text = labels(20, 25)
+backmetal1_text = backmetal1_text.not(nodrc_drw)
+count = backmetal1_text.count()
+logger.info("backmetal1_text has #{count} polygons")
+polygons_count += count
+
+backmetal1_OPC = get_polygons(20, 26)
+backmetal1_OPC = backmetal1_OPC.not(nodrc_drw)
+count = backmetal1_OPC.count()
+logger.info("backmetal1_OPC has #{count} polygons")
+polygons_count += count
+
+backmetal1_noqrc = get_polygons(20, 28)
+backmetal1_noqrc = backmetal1_noqrc.not(nodrc_drw)
+count = backmetal1_noqrc.count()
+logger.info("backmetal1_noqrc has #{count} polygons")
+polygons_count += count
+
+backmetal1_res = get_polygons(20, 29)
+backmetal1_res = backmetal1_res.not(nodrc_drw)
+count = backmetal1_res.count()
+logger.info("backmetal1_res has #{count} polygons")
+polygons_count += count
+
+backmetal1_iprobe = get_polygons(20, 33)
+backmetal1_iprobe = backmetal1_iprobe.not(nodrc_drw)
+count = backmetal1_iprobe.count()
+logger.info("backmetal1_iprobe has #{count} polygons")
+polygons_count += count
+
+backmetal1_diffprb = get_polygons(20, 34)
+backmetal1_diffprb = backmetal1_diffprb.not(nodrc_drw)
+count = backmetal1_diffprb.count()
+logger.info("backmetal1_diffprb has #{count} polygons")
+polygons_count += count
+
+backpassiv_drw = get_polygons(23, 0)
+backpassiv_drw = backpassiv_drw.not(nodrc_drw)
+count = backpassiv_drw.count()
+logger.info("backpassiv_drw has #{count} polygons")
+polygons_count += count
+
+res_drw  = get_polygons(24, 0)
+res_drw = res_drw.not(nodrc_drw)
+count = res_drw.count()
+logger.info("res_drw has #{count} polygons")
+polygons_count += count
+
+sram_drw = get_polygons(25, 0)
+sram_drw = sram_drw.not(nodrc_drw)
+count = sram_drw.count()
+logger.info("sram_drw has #{count} polygons")
+polygons_count += count
+
+trans_drw = get_polygons(26, 0)
+trans_drw = trans_drw.not(nodrc_drw)
+count = trans_drw.count()
+logger.info("trans_drw has #{count} polygons")
+polygons_count += count
+
+ind_drw  = get_polygons(27, 0)
+ind_drw = ind_drw.not(nodrc_drw)
+count = ind_drw.count()
+logger.info("ind_drw has #{count} polygons")
+polygons_count += count
+
+ind_pin  = get_polygons(27, 2)
+ind_pin = ind_pin.not(nodrc_drw)
+count = ind_pin.count()
+logger.info("ind_pin has #{count} polygons")
+polygons_count += count
+
+ind_text = labels(27, 25)
+ind_text = ind_text.not(nodrc_drw)
+count = ind_text.count()
+logger.info("ind_text has #{count} polygons")
+polygons_count += count
+
+salblock_drw = get_polygons(28, 0)
+salblock_drw = salblock_drw.not(nodrc_drw)
+count = salblock_drw.count()
+logger.info("salblock_drw has #{count} polygons")
+polygons_count += count
+
+via2_drw = get_polygons(29, 0)
+via2_drw = via2_drw.not(nodrc_drw)
+count = via2_drw.count()
+logger.info("via2_drw has #{count} polygons")
+polygons_count += count
+
+metal3_drw = get_polygons(30, 0)
+metal3_drw = metal3_drw.not(nodrc_drw)
+count = metal3_drw.count()
+logger.info("metal3_drw has #{count} polygons")
+polygons_count += count
+
+metal3_filler = get_polygons(30, 22)
+metal3_filler = metal3_filler.not(nodrc_drw)
+count = metal3_filler.count()
+logger.info("metal3_filler has #{count} polygons")
+polygons_count += count
+
+metal3_slit = get_polygons(30, 24)
+metal3_slit = metal3_slit.not(nodrc_drw)
+count = metal3_slit.count()
+logger.info("metal3_slit has #{count} polygons")
+polygons_count += count
+
+# metal3 org
+metal3 = metal3_drw.join(metal3_filler).not(metal3_slit)
+count = metal3.count()
+logger.info("metal3 has #{count} polygons")
+
+metal3_pin = get_polygons(30, 2)
+metal3_pin = metal3_pin.not(nodrc_drw)
+count = metal3_pin.count()
+logger.info("metal3_pin has #{count} polygons")
+polygons_count += count
+
+metal3_mask = get_polygons(30, 20)
+metal3_mask = metal3_mask.not(nodrc_drw)
+count = metal3_mask.count()
+logger.info("metal3_mask has #{count} polygons")
+polygons_count += count
+
+metal3_nofill = get_polygons(30, 23)
+metal3_nofill = metal3_nofill.not(nodrc_drw)
+count = metal3_nofill.count()
+logger.info("metal3_nofill has #{count} polygons")
+polygons_count += count
+
+metal3_text = labels(30, 25)
+metal3_text = metal3_text.not(nodrc_drw)
+count = metal3_text.count()
+logger.info("metal3_text has #{count} polygons")
+polygons_count += count
+
+metal3_OPC = get_polygons(30, 26)
+metal3_OPC = metal3_OPC.not(nodrc_drw)
+count = metal3_OPC.count()
+logger.info("metal3_OPC has #{count} polygons")
+polygons_count += count
+
+metal3_noqrc = get_polygons(30, 28)
+metal3_noqrc = metal3_noqrc.not(nodrc_drw)
+count = metal3_noqrc.count()
+logger.info("metal3_noqrc has #{count} polygons")
+polygons_count += count
+
+metal3_res = get_polygons(30, 29)
+metal3_res = metal3_res.not(nodrc_drw)
+count = metal3_res.count()
+logger.info("metal3_res has #{count} polygons")
+polygons_count += count
+
+metal3_iprobe = get_polygons(30, 33)
+metal3_iprobe = metal3_iprobe.not(nodrc_drw)
+count = metal3_iprobe.count()
+logger.info("metal3_iprobe has #{count} polygons")
+polygons_count += count
+
+metal3_diffprb = get_polygons(30, 34)
+metal3_diffprb = metal3_diffprb.not(nodrc_drw)
+count = metal3_diffprb.count()
+logger.info("metal3_diffprb has #{count} polygons")
+polygons_count += count
+
+nwell_drw = get_polygons(31, 0)
+nwell_drw = nwell_drw.not(nodrc_drw)
+count = nwell_drw.count()
+logger.info("nwell_drw has #{count} polygons")
+polygons_count += count
+
+nwell_pin = get_polygons(31, 2)
+nwell_pin = nwell_pin.not(nodrc_drw)
+count = nwell_pin.count()
+logger.info("nwell_pin has #{count} polygons")
+polygons_count += count
+
+nbulay_drw = get_polygons(32, 0)
+nbulay_drw = nbulay_drw.not(nodrc_drw)
+count = nbulay_drw.count()
+logger.info("nbulay_drw has #{count} polygons")
+polygons_count += count
+
+nbulay_pin = get_polygons(32, 2)
+nbulay_pin = nbulay_pin.not(nodrc_drw)
+count = nbulay_pin.count()
+logger.info("nbulay_pin has #{count} polygons")
+polygons_count += count
+
+nbulay_block = get_polygons(32, 21)
+nbulay_block = nbulay_block.not(nodrc_drw)
+count = nbulay_block.count()
+logger.info("nbulay_block has #{count} polygons")
+polygons_count += count
+
+emwind_drw = get_polygons(33, 0)
+emwind_drw = emwind_drw.not(nodrc_drw)
+count = emwind_drw.count()
+logger.info("emwind_drw has #{count} polygons")
+polygons_count += count
+
+emwind_OPC = get_polygons(33, 26)
+emwind_OPC = emwind_OPC.not(nodrc_drw)
+count = emwind_OPC.count()
+logger.info("emwind_OPC has #{count} polygons")
+polygons_count += count
+
+deepco_drw = get_polygons(35, 0)
+deepco_drw = deepco_drw.not(nodrc_drw)
+count = deepco_drw.count()
+logger.info("deepco_drw has #{count} polygons")
+polygons_count += count
+
+mim_drw  = get_polygons(36, 0)
+mim_drw = mim_drw.not(nodrc_drw)
+count = mim_drw.count()
+logger.info("mim_drw has #{count} polygons")
+polygons_count += count
+
+edgeseal_drw = get_polygons(39, 0)
+edgeseal_drw = edgeseal_drw.not(nodrc_drw)
+count = edgeseal_drw.count()
+logger.info("edgeseal_drw has #{count} polygons")
+polygons_count += count
+
+substrate_drw = get_polygons(40, 0)
+substrate_drw = substrate_drw.not(nodrc_drw)
+count = substrate_drw.count()
+logger.info("substrate_drw has #{count} polygons")
+polygons_count += count
+
+substrate_text = labels(40, 25)
+substrate_text = substrate_text.not(nodrc_drw)
+count = substrate_text.count()
+logger.info("substrate_text has #{count} polygons")
+polygons_count += count
+
+dfpad_drw = get_polygons(41, 0)
+dfpad_drw = dfpad_drw.not(nodrc_drw)
+count = dfpad_drw.count()
+logger.info("dfpad_drw has #{count} polygons")
+polygons_count += count
+
+dfpad_pillar = get_polygons(41, 35)
+dfpad_pillar = dfpad_pillar.not(nodrc_drw)
+count = dfpad_pillar.count()
+logger.info("dfpad_pillar has #{count} polygons")
+polygons_count += count
+
+dfpad_sbump = get_polygons(41, 36)
+dfpad_sbump = dfpad_sbump.not(nodrc_drw)
+count = dfpad_sbump.count()
+logger.info("dfpad_sbump has #{count} polygons")
+polygons_count += count
+
+thickgateox_drw = get_polygons(44, 0)
+thickgateox_drw = thickgateox_drw.not(nodrc_drw)
+count = thickgateox_drw.count()
+logger.info("thickgateox_drw has #{count} polygons")
+polygons_count += count
+
+pldb_drw = get_polygons(45, 0)
+pldb_drw = pldb_drw.not(nodrc_drw)
+count = pldb_drw.count()
+logger.info("pldb_drw has #{count} polygons")
+polygons_count += count
+
+pwell_drw = get_polygons(46, 0)
+pwell_drw = pwell_drw.not(nodrc_drw)
+count = pwell_drw.count()
+logger.info("pwell_drw has #{count} polygons")
+polygons_count += count
+
+pwell_pin = get_polygons(46, 2)
+pwell_pin = pwell_pin.not(nodrc_drw)
+count = pwell_pin.count()
+logger.info("pwell_pin has #{count} polygons")
+polygons_count += count
+
+pwell_block = get_polygons(46, 21)
+pwell_block = pwell_block.not(nodrc_drw)
+count = pwell_block.count()
+logger.info("pwell_block has #{count} polygons")
+polygons_count += count
+
+ic_drw   = get_polygons(48, 0)
+ic_drw = ic_drw.not(nodrc_drw)
+count = ic_drw.count()
+logger.info("ic_drw has #{count} polygons")
+polygons_count += count
+
+via3_drw = get_polygons(49, 0)
+via3_drw = via3_drw.not(nodrc_drw)
+count = via3_drw.count()
+logger.info("via3_drw has #{count} polygons")
+polygons_count += count
+
+metal4_drw = get_polygons(50, 0)
+metal4_drw = metal4_drw.not(nodrc_drw)
+count = metal4_drw.count()
+logger.info("metal4_drw has #{count} polygons")
+polygons_count += count
+
+metal4_filler = get_polygons(50, 22)
+metal4_filler = metal4_filler.not(nodrc_drw)
+count = metal4_filler.count()
+logger.info("metal4_filler has #{count} polygons")
+polygons_count += count
+
+metal4_slit = get_polygons(50, 24)
+metal4_slit = metal4_slit.not(nodrc_drw)
+count = metal4_slit.count()
+logger.info("metal4_slit has #{count} polygons")
+polygons_count += count
+
+# metal4 org
+metal4 = metal4_drw.join(metal4_filler).not(metal4_slit)
+count = metal4.count()
+logger.info("metal4 has #{count} polygons")
+
+metal4_pin = get_polygons(50, 2)
+metal4_pin = metal4_pin.not(nodrc_drw)
+count = metal4_pin.count()
+logger.info("metal4_pin has #{count} polygons")
+polygons_count += count
+
+metal4_mask = get_polygons(50, 20)
+metal4_mask = metal4_mask.not(nodrc_drw)
+count = metal4_mask.count()
+logger.info("metal4_mask has #{count} polygons")
+polygons_count += count
+
+metal4_nofill = get_polygons(50, 23)
+metal4_nofill = metal4_nofill.not(nodrc_drw)
+count = metal4_nofill.count()
+logger.info("metal4_nofill has #{count} polygons")
+polygons_count += count
+
+metal4_text = labels(50, 25)
+metal4_text = metal4_text.not(nodrc_drw)
+count = metal4_text.count()
+logger.info("metal4_text has #{count} polygons")
+polygons_count += count
+
+metal4_OPC = get_polygons(50, 26)
+metal4_OPC = metal4_OPC.not(nodrc_drw)
+count = metal4_OPC.count()
+logger.info("metal4_OPC has #{count} polygons")
+polygons_count += count
+
+metal4_noqrc = get_polygons(50, 28)
+metal4_noqrc = metal4_noqrc.not(nodrc_drw)
+count = metal4_noqrc.count()
+logger.info("metal4_noqrc has #{count} polygons")
+polygons_count += count
+
+metal4_res = get_polygons(50, 29)
+metal4_res = metal4_res.not(nodrc_drw)
+count = metal4_res.count()
+logger.info("metal4_res has #{count} polygons")
+polygons_count += count
+
+metal4_iprobe = get_polygons(50, 33)
+metal4_iprobe = metal4_iprobe.not(nodrc_drw)
+count = metal4_iprobe.count()
+logger.info("metal4_iprobe has #{count} polygons")
+polygons_count += count
+
+metal4_diffprb = get_polygons(50, 34)
+metal4_diffprb = metal4_diffprb.not(nodrc_drw)
+count = metal4_diffprb.count()
+logger.info("metal4_diffprb has #{count} polygons")
+polygons_count += count
+
+heattrans_drw = get_polygons(51, 0)
+heattrans_drw = heattrans_drw.not(nodrc_drw)
+count = heattrans_drw.count()
+logger.info("heattrans_drw has #{count} polygons")
+polygons_count += count
+
+heatres_drw = get_polygons(52, 0)
+heatres_drw = heatres_drw.not(nodrc_drw)
+count = heatres_drw.count()
+logger.info("heatres_drw has #{count} polygons")
+polygons_count += count
+
+fbe_drw  = get_polygons(54, 0)
+fbe_drw = fbe_drw.not(nodrc_drw)
+count = fbe_drw.count()
+logger.info("fbe_drw has #{count} polygons")
+polygons_count += count
+
+empoly_drw = get_polygons(55, 0)
+empoly_drw = empoly_drw.not(nodrc_drw)
+count = empoly_drw.count()
+logger.info("empoly_drw has #{count} polygons")
+polygons_count += count
+
+digisub_drw = get_polygons(60, 0)
+digisub_drw = digisub_drw.not(nodrc_drw)
+count = digisub_drw.count()
+logger.info("digisub_drw has #{count} polygons")
+polygons_count += count
+
+text_drw = labels(63, 0)
+text_drw = text_drw.not(nodrc_drw)
+count = text_drw.count()
+logger.info("text_drw has #{count} polygons")
+polygons_count += count
+
+via4_drw = get_polygons(66, 0)
+via4_drw = via4_drw.not(nodrc_drw)
+count = via4_drw.count()
+logger.info("via4_drw has #{count} polygons")
+polygons_count += count
+
+metal5_drw = get_polygons(67, 0)
+metal5_drw = metal5_drw.not(nodrc_drw)
+count = metal5_drw.count()
+logger.info("metal5_drw has #{count} polygons")
+polygons_count += count
+
+metal5_filler = get_polygons(67, 22)
+metal5_filler = metal5_filler.not(nodrc_drw)
+count = metal5_filler.count()
+logger.info("metal5_filler has #{count} polygons")
+polygons_count += count
+
+metal5_slit = get_polygons(67, 24)
+metal5_slit = metal5_slit.not(nodrc_drw)
+count = metal5_slit.count()
+logger.info("metal5_slit has #{count} polygons")
+polygons_count += count
+
+# metal5 org
+metal5 = metal5_drw.join(metal5_filler).not(metal5_slit)
+count = metal5.count()
+logger.info("metal5 has #{count} polygons")
+
+metal5_pin = get_polygons(67, 2)
+metal5_pin = metal5_pin.not(nodrc_drw)
+count = metal5_pin.count()
+logger.info("metal5_pin has #{count} polygons")
+polygons_count += count
+
+metal5_mask = get_polygons(67, 20)
+metal5_mask = metal5_mask.not(nodrc_drw)
+count = metal5_mask.count()
+logger.info("metal5_mask has #{count} polygons")
+polygons_count += count
+
+metal5_nofill = get_polygons(67, 23)
+metal5_nofill = metal5_nofill.not(nodrc_drw)
+count = metal5_nofill.count()
+logger.info("metal5_nofill has #{count} polygons")
+polygons_count += count
+
+metal5_text = labels(67, 25)
+metal5_text = metal5_text.not(nodrc_drw)
+count = metal5_text.count()
+logger.info("metal5_text has #{count} polygons")
+polygons_count += count
+
+metal5_OPC = get_polygons(67, 26)
+metal5_OPC = metal5_OPC.not(nodrc_drw)
+count = metal5_OPC.count()
+logger.info("metal5_OPC has #{count} polygons")
+polygons_count += count
+
+metal5_noqrc = get_polygons(67, 28)
+metal5_noqrc = metal5_noqrc.not(nodrc_drw)
+count = metal5_noqrc.count()
+logger.info("metal5_noqrc has #{count} polygons")
+polygons_count += count
+
+metal5_res = get_polygons(67, 29)
+metal5_res = metal5_res.not(nodrc_drw)
+count = metal5_res.count()
+logger.info("metal5_res has #{count} polygons")
+polygons_count += count
+
+metal5_iprobe = get_polygons(67, 33)
+metal5_iprobe = metal5_iprobe.not(nodrc_drw)
+count = metal5_iprobe.count()
+logger.info("metal5_iprobe has #{count} polygons")
+polygons_count += count
+
+metal5_diffprb = get_polygons(67, 34)
+metal5_diffprb = metal5_diffprb.not(nodrc_drw)
+count = metal5_diffprb.count()
+logger.info("metal5_diffprb has #{count} polygons")
+polygons_count += count
+
+radhard_drw = get_polygons(68, 0)
+radhard_drw = radhard_drw.not(nodrc_drw)
+count = radhard_drw.count()
+logger.info("radhard_drw has #{count} polygons")
+polygons_count += count
+
+memcap_drw = get_polygons(69, 0)
+memcap_drw = memcap_drw.not(nodrc_drw)
+count = memcap_drw.count()
+logger.info("memcap_drw has #{count} polygons")
+polygons_count += count
+
+varicap_drw = get_polygons(70, 0)
+varicap_drw = varicap_drw.not(nodrc_drw)
+count = varicap_drw.count()
+logger.info("varicap_drw has #{count} polygons")
+polygons_count += count
+
+intbondvia_drw = get_polygons(72, 0)
+intbondvia_drw = intbondvia_drw.not(nodrc_drw)
+count = intbondvia_drw.count()
+logger.info("intbondvia_drw has #{count} polygons")
+polygons_count += count
+
+intbondmet_drw = get_polygons(73, 0)
+intbondmet_drw = intbondmet_drw.not(nodrc_drw)
+count = intbondmet_drw.count()
+logger.info("intbondmet_drw has #{count} polygons")
+polygons_count += count
+
+devbondvia_drw = get_polygons(74, 0)
+devbondvia_drw = devbondvia_drw.not(nodrc_drw)
+count = devbondvia_drw.count()
+logger.info("devbondvia_drw has #{count} polygons")
+polygons_count += count
+
+devbondmet_drw = get_polygons(75, 0)
+devbondmet_drw = devbondmet_drw.not(nodrc_drw)
+count = devbondmet_drw.count()
+logger.info("devbondmet_drw has #{count} polygons")
+polygons_count += count
+
+devtrench_drw = get_polygons(76, 0)
+devtrench_drw = devtrench_drw.not(nodrc_drw)
+count = devtrench_drw.count()
+logger.info("devtrench_drw has #{count} polygons")
+polygons_count += count
+
+redist_drw = get_polygons(77, 0)
+redist_drw = redist_drw.not(nodrc_drw)
+count = redist_drw.count()
+logger.info("redist_drw has #{count} polygons")
+polygons_count += count
+
+graphbot_drw = get_polygons(78, 0)
+graphbot_drw = graphbot_drw.not(nodrc_drw)
+count = graphbot_drw.count()
+logger.info("graphbot_drw has #{count} polygons")
+polygons_count += count
+
+graphtop_drw = get_polygons(79, 0)
+graphtop_drw = graphtop_drw.not(nodrc_drw)
+count = graphtop_drw.count()
+logger.info("graphtop_drw has #{count} polygons")
+polygons_count += count
+
+antvia1_drw = get_polygons(83, 0)
+antvia1_drw = antvia1_drw.not(nodrc_drw)
+count = antvia1_drw.count()
+logger.info("antvia1_drw has #{count} polygons")
+polygons_count += count
+
+antmetal2_drw = get_polygons(84, 0)
+antmetal2_drw = antmetal2_drw.not(nodrc_drw)
+count = antmetal2_drw.count()
+logger.info("antmetal2_drw has #{count} polygons")
+polygons_count += count
+
+graphcont_drw = get_polygons(85, 0)
+graphcont_drw = graphcont_drw.not(nodrc_drw)
+count = graphcont_drw.count()
+logger.info("graphcont_drw has #{count} polygons")
+polygons_count += count
+
+siwg_drw = get_polygons(86, 0)
+siwg_drw = siwg_drw.not(nodrc_drw)
+count = siwg_drw.count()
+logger.info("siwg_drw has #{count} polygons")
+polygons_count += count
+
+siwg_filler = get_polygons(86, 22)
+siwg_filler = siwg_filler.not(nodrc_drw)
+count = siwg_filler.count()
+logger.info("siwg_filler has #{count} polygons")
+polygons_count += count
+
+siwg_nofill = get_polygons(86, 23)
+siwg_nofill = siwg_nofill.not(nodrc_drw)
+count = siwg_nofill.count()
+logger.info("siwg_nofill has #{count} polygons")
+polygons_count += count
+
+sigrating_drw = get_polygons(87, 0)
+sigrating_drw = sigrating_drw.not(nodrc_drw)
+count = sigrating_drw.count()
+logger.info("sigrating_drw has #{count} polygons")
+polygons_count += count
+
+singrating_drw = get_polygons(88, 0)
+singrating_drw = singrating_drw.not(nodrc_drw)
+count = singrating_drw.count()
+logger.info("singrating_drw has #{count} polygons")
+polygons_count += count
+
+graphpas_drw = get_polygons(89, 0)
+graphpas_drw = graphpas_drw.not(nodrc_drw)
+count = graphpas_drw.count()
+logger.info("graphpas_drw has #{count} polygons")
+polygons_count += count
+
+emwind3_drw = get_polygons(90, 0)
+emwind3_drw = emwind3_drw.not(nodrc_drw)
+count = emwind3_drw.count()
+logger.info("emwind3_drw has #{count} polygons")
+polygons_count += count
+
+emwihv3_drw = get_polygons(91, 0)
+emwihv3_drw = emwihv3_drw.not(nodrc_drw)
+count = emwihv3_drw.count()
+logger.info("emwihv3_drw has #{count} polygons")
+polygons_count += count
+
+redbulay_drw = get_polygons(92, 0)
+redbulay_drw = redbulay_drw.not(nodrc_drw)
+count = redbulay_drw.count()
+logger.info("redbulay_drw has #{count} polygons")
+polygons_count += count
+
+smos_drw = get_polygons(93, 0)
+smos_drw = smos_drw.not(nodrc_drw)
+count = smos_drw.count()
+logger.info("smos_drw has #{count} polygons")
+polygons_count += count
+
+graphpad_drw = get_polygons(97, 0)
+graphpad_drw = graphpad_drw.not(nodrc_drw)
+count = graphpad_drw.count()
+logger.info("graphpad_drw has #{count} polygons")
+polygons_count += count
+
+polimide_drw = get_polygons(98, 0)
+polimide_drw = polimide_drw.not(nodrc_drw)
+count = polimide_drw.count()
+logger.info("polimide_drw has #{count} polygons")
+polygons_count += count
+
+polimide_pin = get_polygons(98, 2)
+polimide_pin = polimide_pin.not(nodrc_drw)
+count = polimide_pin.count()
+logger.info("polimide_pin has #{count} polygons")
+polygons_count += count
+
+recog_drw = get_polygons(99, 0)
+recog_drw = recog_drw.not(nodrc_drw)
+count = recog_drw.count()
+logger.info("recog_drw has #{count} polygons")
+polygons_count += count
+
+recog_pin = get_polygons(99, 2)
+recog_pin = recog_pin.not(nodrc_drw)
+count = recog_pin.count()
+logger.info("recog_pin has #{count} polygons")
+polygons_count += count
+
+recog_esd = get_polygons(99, 30)
+recog_esd = recog_esd.not(nodrc_drw)
+count = recog_esd.count()
+logger.info("recog_esd has #{count} polygons")
+polygons_count += count
+
+recog_diode = get_polygons(99, 31)
+recog_diode = recog_diode.not(nodrc_drw)
+count = recog_diode.count()
+logger.info("recog_diode has #{count} polygons")
+polygons_count += count
+
+recog_tsv = get_polygons(99, 32)
+recog_tsv = recog_tsv.not(nodrc_drw)
+count = recog_tsv.count()
+logger.info("recog_tsv has #{count} polygons")
+polygons_count += count
+
+recog_iprobe = get_polygons(99, 33)
+recog_iprobe = recog_iprobe.not(nodrc_drw)
+count = recog_iprobe.count()
+logger.info("recog_iprobe has #{count} polygons")
+polygons_count += count
+
+recog_diffprb = get_polygons(99, 34)
+recog_diffprb = recog_diffprb.not(nodrc_drw)
+count = recog_diffprb.count()
+logger.info("recog_diffprb has #{count} polygons")
+polygons_count += count
+
+recog_pillar = get_polygons(99, 35)
+recog_pillar = recog_pillar.not(nodrc_drw)
+count = recog_pillar.count()
+logger.info("recog_pillar has #{count} polygons")
+polygons_count += count
+
+recog_sbump = get_polygons(99, 36)
+recog_sbump = recog_sbump.not(nodrc_drw)
+count = recog_sbump.count()
+logger.info("recog_sbump has #{count} polygons")
+polygons_count += count
+
+recog_otp = get_polygons(99, 37)
+recog_otp = recog_otp.not(nodrc_drw)
+count = recog_otp.count()
+logger.info("recog_otp has #{count} polygons")
+polygons_count += count
+
+recog_pdiode = get_polygons(99, 38)
+recog_pdiode = recog_pdiode.not(nodrc_drw)
+count = recog_pdiode.count()
+logger.info("recog_pdiode has #{count} polygons")
+polygons_count += count
+
+recog_mom = get_polygons(99, 39)
+recog_mom = recog_mom.not(nodrc_drw)
+count = recog_mom.count()
+logger.info("recog_mom has #{count} polygons")
+polygons_count += count
+
+recog_pcm = get_polygons(99, 100)
+recog_pcm = recog_pcm.not(nodrc_drw)
+count = recog_pcm.count()
+logger.info("recog_pcm has #{count} polygons")
+polygons_count += count
+
+colopen_drw = get_polygons(101, 0)
+colopen_drw = colopen_drw.not(nodrc_drw)
+count = colopen_drw.count()
+logger.info("colopen_drw has #{count} polygons")
+polygons_count += count
+
+graphmetal1_drw = get_polygons(109, 0)
+graphmetal1_drw = graphmetal1_drw.not(nodrc_drw)
+count = graphmetal1_drw.count()
+logger.info("graphmetal1_drw has #{count} polygons")
+polygons_count += count
+
+graphmetal1_filler = get_polygons(109, 22)
+graphmetal1_filler = graphmetal1_filler.not(nodrc_drw)
+count = graphmetal1_filler.count()
+logger.info("graphmetal1_filler has #{count} polygons")
+polygons_count += count
+
+graphmetal1_nofill = get_polygons(109, 23)
+graphmetal1_nofill = graphmetal1_nofill.not(nodrc_drw)
+count = graphmetal1_nofill.count()
+logger.info("graphmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+graphmetal1_slit = get_polygons(109, 24)
+graphmetal1_slit = graphmetal1_slit.not(nodrc_drw)
+count = graphmetal1_slit.count()
+logger.info("graphmetal1_slit has #{count} polygons")
+polygons_count += count
+
+graphmetal1_OPC = get_polygons(109, 26)
+graphmetal1_OPC = graphmetal1_OPC.not(nodrc_drw)
+count = graphmetal1_OPC.count()
+logger.info("graphmetal1_OPC has #{count} polygons")
+polygons_count += count
+
+graphmet1l_drw = get_polygons(110, 0)
+graphmet1l_drw = graphmet1l_drw.not(nodrc_drw)
+count = graphmet1l_drw.count()
+logger.info("graphmet1l_drw has #{count} polygons")
+polygons_count += count
+
+graphmet1l_filler = get_polygons(110, 22)
+graphmet1l_filler = graphmet1l_filler.not(nodrc_drw)
+count = graphmet1l_filler.count()
+logger.info("graphmet1l_filler has #{count} polygons")
+polygons_count += count
+
+graphmet1l_nofill = get_polygons(110, 23)
+graphmet1l_nofill = graphmet1l_nofill.not(nodrc_drw)
+count = graphmet1l_nofill.count()
+logger.info("graphmet1l_nofill has #{count} polygons")
+polygons_count += count
+
+graphmet1l_slit = get_polygons(110, 24)
+graphmet1l_slit = graphmet1l_slit.not(nodrc_drw)
+count = graphmet1l_slit.count()
+logger.info("graphmet1l_slit has #{count} polygons")
+polygons_count += count
+
+graphmet1l_OPC = get_polygons(110, 26)
+graphmet1l_OPC = graphmet1l_OPC.not(nodrc_drw)
+count = graphmet1l_OPC.count()
+logger.info("graphmet1l_OPC has #{count} polygons")
+polygons_count += count
+
+extblock_drw = get_polygons(111, 0)
+extblock_drw = extblock_drw.not(nodrc_drw)
+count = extblock_drw.count()
+logger.info("extblock_drw has #{count} polygons")
+polygons_count += count
+
+nldd_drw = get_polygons(112, 0)
+nldd_drw = nldd_drw.not(nodrc_drw)
+count = nldd_drw.count()
+logger.info("nldd_drw has #{count} polygons")
+polygons_count += count
+
+pldd_drw = get_polygons(113, 0)
+pldd_drw = pldd_drw.not(nodrc_drw)
+count = pldd_drw.count()
+logger.info("pldd_drw has #{count} polygons")
+polygons_count += count
+
+next_drw = get_polygons(114, 0)
+next_drw = next_drw.not(nodrc_drw)
+count = next_drw.count()
+logger.info("next_drw has #{count} polygons")
+polygons_count += count
+
+pext_drw = get_polygons(115, 0)
+pext_drw = pext_drw.not(nodrc_drw)
+count = pext_drw.count()
+logger.info("pext_drw has #{count} polygons")
+polygons_count += count
+
+nexthv_drw = get_polygons(116, 0)
+nexthv_drw = nexthv_drw.not(nodrc_drw)
+count = nexthv_drw.count()
+logger.info("nexthv_drw has #{count} polygons")
+polygons_count += count
+
+pexthv_drw = get_polygons(117, 0)
+pexthv_drw = pexthv_drw.not(nodrc_drw)
+count = pexthv_drw.count()
+logger.info("pexthv_drw has #{count} polygons")
+polygons_count += count
+
+graphgate_drw = get_polygons(118, 0)
+graphgate_drw = graphgate_drw.not(nodrc_drw)
+count = graphgate_drw.count()
+logger.info("graphgate_drw has #{count} polygons")
+polygons_count += count
+
+sinwg_drw = get_polygons(119, 0)
+sinwg_drw = sinwg_drw.not(nodrc_drw)
+count = sinwg_drw.count()
+logger.info("sinwg_drw has #{count} polygons")
+polygons_count += count
+
+sinwg_filler = get_polygons(119, 22)
+sinwg_filler = sinwg_filler.not(nodrc_drw)
+count = sinwg_filler.count()
+logger.info("sinwg_filler has #{count} polygons")
+polygons_count += count
+
+sinwg_nofill = get_polygons(119, 23)
+sinwg_nofill = sinwg_nofill.not(nodrc_drw)
+count = sinwg_nofill.count()
+logger.info("sinwg_nofill has #{count} polygons")
+polygons_count += count
+
+mempad_drw = get_polygons(124, 0)
+mempad_drw = mempad_drw.not(nodrc_drw)
+count = mempad_drw.count()
+logger.info("mempad_drw has #{count} polygons")
+polygons_count += count
+
+topvia1_drw = get_polygons(125, 0)
+topvia1_drw = topvia1_drw.not(nodrc_drw)
+count = topvia1_drw.count()
+logger.info("topvia1_drw has #{count} polygons")
+polygons_count += count
+
+topmetal1_drw = get_polygons(126, 0)
+topmetal1_drw = topmetal1_drw.not(nodrc_drw)
+count = topmetal1_drw.count()
+logger.info("topmetal1_drw has #{count} polygons")
+polygons_count += count
+
+topmetal1_filler = get_polygons(126, 22)
+topmetal1_filler = topmetal1_filler.not(nodrc_drw)
+count = topmetal1_filler.count()
+logger.info("topmetal1_filler has #{count} polygons")
+polygons_count += count
+
+topmetal1_slit = get_polygons(126, 24)
+topmetal1_slit = topmetal1_slit.not(nodrc_drw)
+count = topmetal1_slit.count()
+logger.info("topmetal1_slit has #{count} polygons")
+polygons_count += count
+
+# topmetal1 org
+topmetal1 = topmetal1_drw.join(topmetal1_filler).not(topmetal1_slit)
+count = topmetal1.count()
+logger.info("topmetal1 has #{count} polygons")
+
+topmetal1_pin = get_polygons(126, 2)
+topmetal1_pin = topmetal1_pin.not(nodrc_drw)
+count = topmetal1_pin.count()
+logger.info("topmetal1_pin has #{count} polygons")
+polygons_count += count
+
+topmetal1_mask = get_polygons(126, 20)
+topmetal1_mask = topmetal1_mask.not(nodrc_drw)
+count = topmetal1_mask.count()
+logger.info("topmetal1_mask has #{count} polygons")
+polygons_count += count
+
+topmetal1_nofill = get_polygons(126, 23)
+topmetal1_nofill = topmetal1_nofill.not(nodrc_drw)
+count = topmetal1_nofill.count()
+logger.info("topmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+topmetal1_text = labels(126, 25)
+topmetal1_text = topmetal1_text.not(nodrc_drw)
+count = topmetal1_text.count()
+logger.info("topmetal1_text has #{count} polygons")
+polygons_count += count
+
+topmetal1_noqrc = get_polygons(126, 28)
+topmetal1_noqrc = topmetal1_noqrc.not(nodrc_drw)
+count = topmetal1_noqrc.count()
+logger.info("topmetal1_noqrc has #{count} polygons")
+polygons_count += count
+
+topmetal1_res = get_polygons(126, 29)
+topmetal1_res = topmetal1_res.not(nodrc_drw)
+count = topmetal1_res.count()
+logger.info("topmetal1_res has #{count} polygons")
+polygons_count += count
+
+topmetal1_iprobe = get_polygons(126, 33)
+topmetal1_iprobe = topmetal1_iprobe.not(nodrc_drw)
+count = topmetal1_iprobe.count()
+logger.info("topmetal1_iprobe has #{count} polygons")
+polygons_count += count
+
+topmetal1_diffprb = get_polygons(126, 34)
+topmetal1_diffprb = topmetal1_diffprb.not(nodrc_drw)
+count = topmetal1_diffprb.count()
+logger.info("topmetal1_diffprb has #{count} polygons")
+polygons_count += count
+
+inldpwl_drw = get_polygons(127, 0)
+inldpwl_drw = inldpwl_drw.not(nodrc_drw)
+count = inldpwl_drw.count()
+logger.info("inldpwl_drw has #{count} polygons")
+polygons_count += count
+
+polyres_drw = get_polygons(128, 0)
+polyres_drw = polyres_drw.not(nodrc_drw)
+count = polyres_drw.count()
+logger.info("polyres_drw has #{count} polygons")
+polygons_count += count
+
+polyres_pin = get_polygons(128, 2)
+polyres_pin = polyres_pin.not(nodrc_drw)
+count = polyres_pin.count()
+logger.info("polyres_pin has #{count} polygons")
+polygons_count += count
+
+vmim_drw = get_polygons(129, 0)
+vmim_drw = vmim_drw.not(nodrc_drw)
+count = vmim_drw.count()
+logger.info("vmim_drw has #{count} polygons")
+polygons_count += count
+
+nbulaycut_drw = get_polygons(131, 0)
+nbulaycut_drw = nbulaycut_drw.not(nodrc_drw)
+count = nbulaycut_drw.count()
+logger.info("nbulaycut_drw has #{count} polygons")
+polygons_count += count
+
+antmetal1_drw = get_polygons(132, 0)
+antmetal1_drw = antmetal1_drw.not(nodrc_drw)
+count = antmetal1_drw.count()
+logger.info("antmetal1_drw has #{count} polygons")
+polygons_count += count
+
+topvia2_drw = get_polygons(133, 0)
+topvia2_drw = topvia2_drw.not(nodrc_drw)
+count = topvia2_drw.count()
+logger.info("topvia2_drw has #{count} polygons")
+polygons_count += count
+
+topmetal2_drw = get_polygons(134, 0)
+topmetal2_drw = topmetal2_drw.not(nodrc_drw)
+count = topmetal2_drw.count()
+logger.info("topmetal2_drw has #{count} polygons")
+polygons_count += count
+
+topmetal2_filler = get_polygons(134, 22)
+topmetal2_filler = topmetal2_filler.not(nodrc_drw)
+count = topmetal2_filler.count()
+logger.info("topmetal2_filler has #{count} polygons")
+polygons_count += count
+
+topmetal2_slit = get_polygons(134, 24)
+topmetal2_slit = topmetal2_slit.not(nodrc_drw)
+count = topmetal2_slit.count()
+logger.info("topmetal2_slit has #{count} polygons")
+polygons_count += count
+
+# topmetal2 org
+topmetal2 = topmetal2_drw.join(topmetal2_filler).not(topmetal2_slit)
+count = topmetal2.count()
+logger.info("topmetal2 has #{count} polygons")
+
+topmetal2_pin = get_polygons(134, 2)
+topmetal2_pin = topmetal2_pin.not(nodrc_drw)
+count = topmetal2_pin.count()
+logger.info("topmetal2_pin has #{count} polygons")
+polygons_count += count
+
+topmetal2_mask = get_polygons(134, 20)
+topmetal2_mask = topmetal2_mask.not(nodrc_drw)
+count = topmetal2_mask.count()
+logger.info("topmetal2_mask has #{count} polygons")
+polygons_count += count
+
+topmetal2_nofill = get_polygons(134, 23)
+topmetal2_nofill = topmetal2_nofill.not(nodrc_drw)
+count = topmetal2_nofill.count()
+logger.info("topmetal2_nofill has #{count} polygons")
+polygons_count += count
+
+topmetal2_text = labels(134, 25)
+topmetal2_text = topmetal2_text.not(nodrc_drw)
+count = topmetal2_text.count()
+logger.info("topmetal2_text has #{count} polygons")
+polygons_count += count
+
+topmetal2_noqrc = get_polygons(134, 28)
+topmetal2_noqrc = topmetal2_noqrc.not(nodrc_drw)
+count = topmetal2_noqrc.count()
+logger.info("topmetal2_noqrc has #{count} polygons")
+polygons_count += count
+
+topmetal2_res = get_polygons(134, 29)
+topmetal2_res = topmetal2_res.not(nodrc_drw)
+count = topmetal2_res.count()
+logger.info("topmetal2_res has #{count} polygons")
+polygons_count += count
+
+topmetal2_iprobe = get_polygons(134, 33)
+topmetal2_iprobe = topmetal2_iprobe.not(nodrc_drw)
+count = topmetal2_iprobe.count()
+logger.info("topmetal2_iprobe has #{count} polygons")
+polygons_count += count
+
+topmetal2_diffprb = get_polygons(134, 34)
+topmetal2_diffprb = topmetal2_diffprb.not(nodrc_drw)
+count = topmetal2_diffprb.count()
+logger.info("topmetal2_diffprb has #{count} polygons")
+polygons_count += count
+
+snsring_drw = get_polygons(135, 0)
+snsring_drw = snsring_drw.not(nodrc_drw)
+count = snsring_drw.count()
+logger.info("snsring_drw has #{count} polygons")
+polygons_count += count
+
+sensor_drw = get_polygons(136, 0)
+sensor_drw = sensor_drw.not(nodrc_drw)
+count = sensor_drw.count()
+logger.info("sensor_drw has #{count} polygons")
+polygons_count += count
+
+snsarms_drw = get_polygons(137, 0)
+snsarms_drw = snsarms_drw.not(nodrc_drw)
+count = snsarms_drw.count()
+logger.info("snsarms_drw has #{count} polygons")
+polygons_count += count
+
+snscmosvia_drw = get_polygons(138, 0)
+snscmosvia_drw = snscmosvia_drw.not(nodrc_drw)
+count = snscmosvia_drw.count()
+logger.info("snscmosvia_drw has #{count} polygons")
+polygons_count += count
+
+colwind_drw = get_polygons(139, 0)
+colwind_drw = colwind_drw.not(nodrc_drw)
+count = colwind_drw.count()
+logger.info("colwind_drw has #{count} polygons")
+polygons_count += count
+
+flm_drw  = get_polygons(142, 0)
+flm_drw = flm_drw.not(nodrc_drw)
+count = flm_drw.count()
+logger.info("flm_drw has #{count} polygons")
+polygons_count += count
+
+hafniumox_drw = get_polygons(143, 0)
+hafniumox_drw = hafniumox_drw.not(nodrc_drw)
+count = hafniumox_drw.count()
+logger.info("hafniumox_drw has #{count} polygons")
+polygons_count += count
+
+memvia_drw = get_polygons(145, 0)
+memvia_drw = memvia_drw.not(nodrc_drw)
+count = memvia_drw.count()
+logger.info("memvia_drw has #{count} polygons")
+polygons_count += count
+
+thinfilmres_drw = get_polygons(146, 0)
+thinfilmres_drw = thinfilmres_drw.not(nodrc_drw)
+count = thinfilmres_drw.count()
+logger.info("thinfilmres_drw has #{count} polygons")
+polygons_count += count
+
+rfmem_drw = get_polygons(147, 0)
+rfmem_drw = rfmem_drw.not(nodrc_drw)
+count = rfmem_drw.count()
+logger.info("rfmem_drw has #{count} polygons")
+polygons_count += count
+
+norcx_drw = get_polygons(148, 0)
+norcx_drw = norcx_drw.not(nodrc_drw)
+count = norcx_drw.count()
+logger.info("norcx_drw has #{count} polygons")
+polygons_count += count
+
+norcx_m2m3 = get_polygons(148, 41)
+norcx_m2m3 = norcx_m2m3.not(nodrc_drw)
+count = norcx_m2m3.count()
+logger.info("norcx_m2m3 has #{count} polygons")
+polygons_count += count
+
+norcx_m2m4 = get_polygons(148, 42)
+norcx_m2m4 = norcx_m2m4.not(nodrc_drw)
+count = norcx_m2m4.count()
+logger.info("norcx_m2m4 has #{count} polygons")
+polygons_count += count
+
+norcx_m2m5 = get_polygons(148, 43)
+norcx_m2m5 = norcx_m2m5.not(nodrc_drw)
+count = norcx_m2m5.count()
+logger.info("norcx_m2m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m2tm1 = get_polygons(148, 44)
+norcx_m2tm1 = norcx_m2tm1.not(nodrc_drw)
+count = norcx_m2tm1.count()
+logger.info("norcx_m2tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m2tm2 = get_polygons(148, 45)
+norcx_m2tm2 = norcx_m2tm2.not(nodrc_drw)
+count = norcx_m2tm2.count()
+logger.info("norcx_m2tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m3m4 = get_polygons(148, 46)
+norcx_m3m4 = norcx_m3m4.not(nodrc_drw)
+count = norcx_m3m4.count()
+logger.info("norcx_m3m4 has #{count} polygons")
+polygons_count += count
+
+norcx_m3m5 = get_polygons(148, 47)
+norcx_m3m5 = norcx_m3m5.not(nodrc_drw)
+count = norcx_m3m5.count()
+logger.info("norcx_m3m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m3tm1 = get_polygons(148, 48)
+norcx_m3tm1 = norcx_m3tm1.not(nodrc_drw)
+count = norcx_m3tm1.count()
+logger.info("norcx_m3tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m3tm2 = get_polygons(148, 49)
+norcx_m3tm2 = norcx_m3tm2.not(nodrc_drw)
+count = norcx_m3tm2.count()
+logger.info("norcx_m3tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m4m5 = get_polygons(148, 50)
+norcx_m4m5 = norcx_m4m5.not(nodrc_drw)
+count = norcx_m4m5.count()
+logger.info("norcx_m4m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m4tm1 = get_polygons(148, 51)
+norcx_m4tm1 = norcx_m4tm1.not(nodrc_drw)
+count = norcx_m4tm1.count()
+logger.info("norcx_m4tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m4tm2 = get_polygons(148, 52)
+norcx_m4tm2 = norcx_m4tm2.not(nodrc_drw)
+count = norcx_m4tm2.count()
+logger.info("norcx_m4tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m5tm1 = get_polygons(148, 53)
+norcx_m5tm1 = norcx_m5tm1.not(nodrc_drw)
+count = norcx_m5tm1.count()
+logger.info("norcx_m5tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m5tm2 = get_polygons(148, 54)
+norcx_m5tm2 = norcx_m5tm2.not(nodrc_drw)
+count = norcx_m5tm2.count()
+logger.info("norcx_m5tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_tm1tm2 = get_polygons(148, 55)
+norcx_tm1tm2 = norcx_tm1tm2.not(nodrc_drw)
+count = norcx_tm1tm2.count()
+logger.info("norcx_tm1tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m1sub = get_polygons(148, 123)
+norcx_m1sub = norcx_m1sub.not(nodrc_drw)
+count = norcx_m1sub.count()
+logger.info("norcx_m1sub has #{count} polygons")
+polygons_count += count
+
+norcx_m2sub = get_polygons(148, 124)
+norcx_m2sub = norcx_m2sub.not(nodrc_drw)
+count = norcx_m2sub.count()
+logger.info("norcx_m2sub has #{count} polygons")
+polygons_count += count
+
+norcx_m3sub = get_polygons(148, 125)
+norcx_m3sub = norcx_m3sub.not(nodrc_drw)
+count = norcx_m3sub.count()
+logger.info("norcx_m3sub has #{count} polygons")
+polygons_count += count
+
+norcx_m4sub = get_polygons(148, 126)
+norcx_m4sub = norcx_m4sub.not(nodrc_drw)
+count = norcx_m4sub.count()
+logger.info("norcx_m4sub has #{count} polygons")
+polygons_count += count
+
+norcx_m5sub = get_polygons(148, 127)
+norcx_m5sub = norcx_m5sub.not(nodrc_drw)
+count = norcx_m5sub.count()
+logger.info("norcx_m5sub has #{count} polygons")
+polygons_count += count
+
+norcx_tm1sub = get_polygons(148, 300)
+norcx_tm1sub = norcx_tm1sub.not(nodrc_drw)
+count = norcx_tm1sub.count()
+logger.info("norcx_tm1sub has #{count} polygons")
+polygons_count += count
+
+norcx_tm2sub = get_polygons(148, 301)
+norcx_tm2sub = norcx_tm2sub.not(nodrc_drw)
+count = norcx_tm2sub.count()
+logger.info("norcx_tm2sub has #{count} polygons")
+polygons_count += count
+
+snsbotvia_drw = get_polygons(149, 0)
+snsbotvia_drw = snsbotvia_drw.not(nodrc_drw)
+count = snsbotvia_drw.count()
+logger.info("snsbotvia_drw has #{count} polygons")
+polygons_count += count
+
+snstopvia_drw = get_polygons(151, 0)
+snstopvia_drw = snstopvia_drw.not(nodrc_drw)
+count = snstopvia_drw.count()
+logger.info("snstopvia_drw has #{count} polygons")
+polygons_count += count
+
+deepvia_drw = get_polygons(152, 0)
+deepvia_drw = deepvia_drw.not(nodrc_drw)
+count = deepvia_drw.count()
+logger.info("deepvia_drw has #{count} polygons")
+polygons_count += count
+
+fgetch_drw = get_polygons(153, 0)
+fgetch_drw = fgetch_drw.not(nodrc_drw)
+count = fgetch_drw.count()
+logger.info("fgetch_drw has #{count} polygons")
+polygons_count += count
+
+ctrgat_drw = get_polygons(154, 0)
+ctrgat_drw = ctrgat_drw.not(nodrc_drw)
+count = ctrgat_drw.count()
+logger.info("ctrgat_drw has #{count} polygons")
+polygons_count += count
+
+fgimp_drw = get_polygons(155, 0)
+fgimp_drw = fgimp_drw.not(nodrc_drw)
+count = fgimp_drw.count()
+logger.info("fgimp_drw has #{count} polygons")
+polygons_count += count
+
+emwihv_drw = get_polygons(156, 0)
+emwihv_drw = emwihv_drw.not(nodrc_drw)
+count = emwihv_drw.count()
+logger.info("emwihv_drw has #{count} polygons")
+polygons_count += count
+
+lbe_drw  = get_polygons(157, 0)
+lbe_drw = lbe_drw.not(nodrc_drw)
+count = lbe_drw.count()
+logger.info("lbe_drw has #{count} polygons")
+polygons_count += count
+
+alcustop_drw = get_polygons(159, 0)
+alcustop_drw = alcustop_drw.not(nodrc_drw)
+count = alcustop_drw.count()
+logger.info("alcustop_drw has #{count} polygons")
+polygons_count += count
+
+nometfiller_drw = get_polygons(160, 0)
+nometfiller_drw = nometfiller_drw.not(nodrc_drw)
+count = nometfiller_drw.count()
+logger.info("nometfiller_drw has #{count} polygons")
+polygons_count += count
+
+prboundary_drw = get_polygons(189, 0)
+prboundary_drw = prboundary_drw.not(nodrc_drw)
+count = prboundary_drw.count()
+logger.info("prboundary_drw has #{count} polygons")
+polygons_count += count
+
+exchange0_drw = get_polygons(190, 0)
+exchange0_drw = exchange0_drw.not(nodrc_drw)
+count = exchange0_drw.count()
+logger.info("exchange0_drw has #{count} polygons")
+polygons_count += count
+
+exchange0_pin = get_polygons(190, 2)
+exchange0_pin = exchange0_pin.not(nodrc_drw)
+count = exchange0_pin.count()
+logger.info("exchange0_pin has #{count} polygons")
+polygons_count += count
+
+exchange0_text = labels(190, 25)
+exchange0_text = exchange0_text.not(nodrc_drw)
+count = exchange0_text.count()
+logger.info("exchange0_text has #{count} polygons")
+polygons_count += count
+
+exchange1_drw = get_polygons(191, 0)
+exchange1_drw = exchange1_drw.not(nodrc_drw)
+count = exchange1_drw.count()
+logger.info("exchange1_drw has #{count} polygons")
+polygons_count += count
+
+exchange1_pin = get_polygons(191, 2)
+exchange1_pin = exchange1_pin.not(nodrc_drw)
+count = exchange1_pin.count()
+logger.info("exchange1_pin has #{count} polygons")
+polygons_count += count
+
+exchange1_text = labels(191, 25)
+exchange1_text = exchange1_text.not(nodrc_drw)
+count = exchange1_text.count()
+logger.info("exchange1_text has #{count} polygons")
+polygons_count += count
+
+exchange2_drw = get_polygons(192, 0)
+exchange2_drw = exchange2_drw.not(nodrc_drw)
+count = exchange2_drw.count()
+logger.info("exchange2_drw has #{count} polygons")
+polygons_count += count
+
+exchange2_pin = get_polygons(192, 2)
+exchange2_pin = exchange2_pin.not(nodrc_drw)
+count = exchange2_pin.count()
+logger.info("exchange2_pin has #{count} polygons")
+polygons_count += count
+
+exchange2_text = labels(192, 25)
+exchange2_text = exchange2_text.not(nodrc_drw)
+count = exchange2_text.count()
+logger.info("exchange2_text has #{count} polygons")
+polygons_count += count
+
+exchange3_drw = get_polygons(193, 0)
+exchange3_drw = exchange3_drw.not(nodrc_drw)
+count = exchange3_drw.count()
+logger.info("exchange3_drw has #{count} polygons")
+polygons_count += count
+
+exchange3_pin = get_polygons(193, 2)
+exchange3_pin = exchange3_pin.not(nodrc_drw)
+count = exchange3_pin.count()
+logger.info("exchange3_pin has #{count} polygons")
+polygons_count += count
+
+exchange3_text = labels(193, 25)
+exchange3_text = exchange3_text.not(nodrc_drw)
+count = exchange3_text.count()
+logger.info("exchange3_text has #{count} polygons")
+polygons_count += count
+
+exchange4_drw = get_polygons(194, 0)
+exchange4_drw = exchange4_drw.not(nodrc_drw)
+count = exchange4_drw.count()
+logger.info("exchange4_drw has #{count} polygons")
+polygons_count += count
+
+exchange4_pin = get_polygons(194, 2)
+exchange4_pin = exchange4_pin.not(nodrc_drw)
+count = exchange4_pin.count()
+logger.info("exchange4_pin has #{count} polygons")
+polygons_count += count
+
+exchange4_text = labels(194, 25)
+exchange4_text = exchange4_text.not(nodrc_drw)
+count = exchange4_text.count()
+logger.info("exchange4_text has #{count} polygons")
+polygons_count += count
+
+isonwell_drw = get_polygons(257, 0)
+isonwell_drw = isonwell_drw.not(nodrc_drw)
+count = isonwell_drw.count()
+logger.info("isonwell_drw has #{count} polygons")
+polygons_count += count
+
+
+logger.info("Total no. of polygons in the design is #{polygons_count}")

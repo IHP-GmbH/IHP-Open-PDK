@@ -1,0 +1,225 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# common methods
+module DeviceClassMethods
+  private
+
+  def add_parameters(*names)
+    names.each { |name| add_parameter(RBA::DeviceParameterDefinition.new(name)) }
+  end
+
+  def add_terminals(name, num, sub_en)
+    (1..num).each do |i|
+      terminal_name = "#{name}_#{i}"
+      ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
+      ter.name = terminal_name
+    end
+    return unless sub_en == 1
+
+    terminal_name = "#{name}_sub"
+    ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
+    ter.name = terminal_name
+  end
+end
+
+# res-custom device calss
+class DeviceCustomRes < RBA::DeviceClassResistor
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+
+    add_parameters('w', 'l', 'ps', 'b')
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    if SERIES_RES || PARALLEL_RES
+      self.combiner = RESDeviceCombiner.new
+    else
+      self.combiner =nil
+    end
+
+    add_terminals(name, num, 0)
+  end
+end
+
+# BJT-3term device calss
+class CustomBJT3 < RBA::DeviceClassBJT3Transistor
+
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
+
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
+  end
+end
+
+# BJT-4term device calss
+class CustomBJT4 < RBA::DeviceClassBJT4Transistor
+  include DeviceClassMethods
+
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
+
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
+  end
+end
+
+# inductor device calss
+class DeviceCustomInd < RBA::DeviceClassInductor
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of class
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    add_parameters('w', 's', 'd', 'nr_r')
+    add_terminals(name, num, 1)
+
+    # 5% tolerance for w,s,d:
+    equal_ind_parameters = RBA::EqualDeviceParameters::new(parameter_id('w'), 0.0, 0.05)
+    equal_ind_parameters += RBA::EqualDeviceParameters::new(parameter_id('s'), 0.0, 0.05)
+    equal_ind_parameters += RBA::EqualDeviceParameters::new(parameter_id('d'), 0.0, 0.05)
+    # applies the compare delegate:
+    self.equal_parameters = equal_ind_parameters
+
+    self.combiner = nil
+    self.supports_serial_combination=false
+    self.supports_parallel_combination=false
+  end
+end
+
+# Varactor-custom device calss
+class DeviceCustomVaractor < RBA::DeviceClassCapacitorWithBulk
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+
+    add_parameters('w', 'l')
+    add_terminals(name, num, 1)
+  end
+end
+
+# res-2term device calss
+class RES2 < RBA::DeviceClassResistor
+  def initialize
+    super
+    enable_parameter('W', true)
+    enable_parameter('L', true)
+    enable_parameter('R', false)
+  end
+end
+
+# Diode device class
+class EnDiode < RBA::DeviceClassDiode
+  def initialize
+    
+    # 1% tolerance for A,P:
+    equal_diode_parameters = RBA::EqualDeviceParameters::new(parameter_id('A'), 0.0, 0.01)
+    equal_diode_parameters += RBA::EqualDeviceParameters::new(parameter_id('P'), 0.0, 0.01)
+    # applies the compare delegate:
+    self.equal_parameters = equal_diode_parameters
+
+    # combiner
+    self.combiner = DiodeDeviceCombiner.new
+    self.supports_serial_combination=true
+    self.supports_parallel_combination=true
+
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+    enable_parameter('m', true)
+  end
+end
+
+# schottky device class
+class CustomSchottky < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    self.combiner = SchottckyDeviceCombiner.new
+  end
+end
+
+# Taps device class
+class CustomTap < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'Area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'Perimeter', 0, true))
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+  end
+end
+
+# ESD-3term device class
+class Esd3Term < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
+  end
+end
+
+# ESD-2term device class
+class Esd2Term < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
+  end
+end
+
+#=========== CUSTOM COMBINER ===========
+
+# %include custom_combiner.lvs
+
+#=========== CUSTOM EXTRACTOR ===========
+
+# %include custom_extractor.lvs
+
+#========= CUSTOM MIM-EXTRACTOR =========
+
+# %include custom_mim_extractor.lvs

@@ -1,0 +1,98 @@
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+name: LVS Regression Testing
+
+# Prevent keeping resources busy when a branch/PR is updated
+# https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - 'ihp-sg13g2/libs.tech/klayout/tech/lvs/**'
+  workflow_dispatch:
+
+jobs:
+  build_lvs-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      lvs_table: ${{ steps.set-matrix.outputs.lvs_table }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          cd ihp-sg13g2/libs.tech/klayout/tech/lvs/rule_decks/
+          lvs_table=`echo '[' ; find -iname '*_extraction.lvs' | awk -F_ '{print $1}' | awk -F/ '{print $2}' | tr '[:lower:]' '[:upper:]' | tr '\n' ','|sed -e 's/^/\"/'| sed -e 's/,$/\"]/'|sed -e 's/,/\", \"/g'`;
+          lvs_table=`echo $lvs_table | jq -c .`
+          echo $lvs_table
+          echo "lvs_table=$lvs_table" >>$GITHUB_OUTPUT
+
+  lvs_regression:
+    needs: build_lvs-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [lvs]
+        test: ${{ fromJson(needs.build_lvs-matrix.outputs.lvs_table) }}
+
+    name: ${{ matrix.part }} | ${{ matrix.test }}
+
+    steps:
+      - name: Installing Klayout
+        run: |
+          sudo apt update -qq -y
+          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.29.0-1_amd64.deb
+          # The dpkg command will fail complaining about missing dependencies.
+          sudo dpkg -i ./klayout_0.29.0-1_amd64.deb || true
+          # The apt install command should install the missing dependencies
+          # needed by KLayout above and finish the install.
+          sudo apt install -f -y
+          # Check that KLayout was successfully installed!
+          klayout -v
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Testing ${{ matrix.part }} for ${{ matrix.test }}
+        run: |
+          make test-"$(python -c 'print("${{ matrix.part }}".upper())')"-${{ matrix.test }}
+
+  lvs_regression_cells:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installing Klayout
+        run: |
+          sudo apt update -qq -y
+          wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.29.0-1_amd64.deb
+          # The dpkg command will fail complaining about missing dependencies.
+          sudo dpkg -i ./klayout_0.29.0-1_amd64.deb || true
+          # The apt install command should install the missing dependencies
+          # needed by KLayout above and finish the install.
+          sudo apt install -f -y
+          # Check that KLayout was successfully installed!
+          klayout -v
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Testing LVS for SG13G2 cells
+        run: |
+          make test-LVS-cells

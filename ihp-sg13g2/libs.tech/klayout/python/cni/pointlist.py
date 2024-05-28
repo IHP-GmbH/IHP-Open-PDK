@@ -49,17 +49,39 @@ class PointList(ulist[Point]):
             self = firstPointList
             return self
 
-        uniqueList = []
-        [uniqueList.append(i) for i in self if i not in uniqueList]
+        pairUniqueList = []
+        [pairUniqueList.append(value) for index, value in enumerate(self) if index == 0 or value != self[index-1]]
 
         nonColinearList = []
-        for index, value in enumerate(uniqueList):
-            if index == 0 or index == len(uniqueList)-1:
+        for index, value in enumerate(pairUniqueList):
+            if index == 0 or index == len(pairUniqueList)-1:
                 nonColinearList.append(value)
             else:
-                if not Point.areColinearPoints(uniqueList[index-1], value, uniqueList[index+1]):
+                if not Point.areColinearPoints(pairUniqueList[index-1], value, pairUniqueList[index+1]):
                     nonColinearList.append(value)
 
         self = nonColinearList
         return self
 
+    def containsPoint(self, point: Point) -> bool:
+        # Jordan point in polygon test
+        numVertices = len(self)
+        x, y = point.x, point.y
+        isInside = False
+
+        p1 = self[0]
+
+        for i in range(1, numVertices + 1):
+            p2 = self[i % numVertices]
+
+            if y > min(p1.y, p2.y):
+                if y <= max(p1.y, p2.y):
+                    if x <= max(p1.x, p2.x):
+                        x_intersection = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x
+
+                        if p1.x == p2.x or x <= x_intersection:
+                            isInside = not isInside
+
+            p1 = p2
+
+        return isInside
