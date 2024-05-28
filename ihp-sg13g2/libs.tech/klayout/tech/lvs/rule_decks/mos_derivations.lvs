@@ -28,7 +28,27 @@ mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
                 .join(polyres_drw).join(extblock_drw).join(res_drw)
                 .join(activ_mask).join(recog_diode).join(recog_esd)
                 .join(ind_drw).join(ind_pin).join(ind_drw)
-                .join(substrate_drw)
+                .join(substrate_drw).join(nsd_block)
+
+# ==== General FETs & RF-FETs =====
+
+rfnmos_exc = nwell_drw.join(psd_drw).join(mos_exclude)
+rfpmos_exc = pwell.join(nwell_holes).join(mos_exclude)
+
+# Get case insensitive patterns for FETs
+rfnmos_patt = glob_to_case_insensitive_glob("rfnmos")
+rfnmoshv_patt = glob_to_case_insensitive_glob("rfnmosHV")
+
+rfpmos_patt = glob_to_case_insensitive_glob("rfpmos")
+rfpmoshv_patt = glob_to_case_insensitive_glob("rfpmosHV")
+
+rfnmos_mk_gen = ptap.join(ptap_holes)
+rfnmos_mk = rfnmos_mk_gen.interacting(text_drw.texts(rfnmos_patt))
+rfnmoshv_mk = rfnmos_mk_gen.interacting(text_drw.texts(rfnmoshv_patt))
+
+rfpmos_mk_gen = ntap.join(ntap_holes)
+rfpmos_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmos_patt))
+rfpmoshv_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmoshv_patt))
 
 # ==============
 # ---- NMOS ----
@@ -36,16 +56,15 @@ mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
 
 logger.info('Starting NMOS DERIVATIONS')
 
-nmos_exclude = nwell_drw.join(psd).join(mos_exclude)
-
 # for regular FETs
-nmos_exc = nmos_exclude.join(ptap_holes)
+nmos_exc = rfnmos_exc.join(rfnmos_mk)
+nmoshv_exc = rfnmos_exc.join(rfnmoshv_mk)
 
 # nmos - LV
 ngate_lv = ngate_lv_base.not(nmos_exc)
 
 # nmos - HV
-ngate_hv = ngate_hv_base.not(nmos_exc)
+ngate_hv = ngate_hv_base.not(nmoshv_exc)
 
 # ==============
 # ---- PMOS ----
@@ -53,13 +72,12 @@ ngate_hv = ngate_hv_base.not(nmos_exc)
 
 logger.info('Starting PMOS DERIVATIONS')
 
-pmos_exclude = pwell.join(nsd_all).join(nwell_holes).join(mos_exclude)
-
 # for regular FETs
-pmos_exc = pmos_exclude.join(ntap_holes)
+pmos_exc = rfpmos_exc.join(rfpmos_mk)
+pmoshv_exc = rfpmos_exc.join(rfpmoshv_mk)
 
 # pmos - LV
 pgate_lv = pgate_lv_base.not(pmos_exc)
 
 # pmos - HV
-pgate_hv = pgate_hv_base.not(pmos_exc)
+pgate_hv = pgate_hv_base.not(pmoshv_exc)

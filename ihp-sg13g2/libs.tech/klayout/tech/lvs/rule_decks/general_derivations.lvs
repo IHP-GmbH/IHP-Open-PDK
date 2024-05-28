@@ -24,7 +24,14 @@
 logger.info('Starting general LVS derivations')
 
 #=== Global Layers ===
-CHIP = extent.sized(0.0)
+# === CHIP ===
+CHIP = case $run_mode
+when 'deep'
+  extent('*')
+else
+  #=== FLAT MODE ===
+  extent.sized(0.0)
+end
 
 # === General Derivations ===
 # nwell
@@ -32,35 +39,30 @@ nwell_iso = nwell_drw.and(nbulay_drw)
 nwell_holes = nwell_drw.holes.not(nwell_drw)
 
 # pwell
-pwell_pre = CHIP.not(nwell_drw).not(pwell_block).not(digisub_drw)
-digisub_pre = digisub_drw.sized(-1.nm).not(nwell_drw).not(pwell_block)
-pwell = pwell_pre.join(digisub_pre)
+pwell_allowed = CHIP.not(pwell_block)
+digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
+pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
 
 # General pwell
-pwell_sub = CHIP.not(digisub_drw).not(pwell_block).not(nbulay_drw.interacting(nwell_holes))
-
-# psd, nsd active & res
-psd = psd_drw
-nsd_res = nsd_drw.and(psd).interacting(polyres_drw)
-nsd_all = CHIP.not(psd.join(nsd_block)).join(nsd_res)
+pwell_sub = pwell_allowed.not(digisub_drw).not(nbulay_drw.interacting(nwell_holes))
 
 # n & p activ
-nactiv  = activ_drw.not(psd.join(nsd_block))
-pactiv  = activ_drw.and(psd)
+nactiv  = activ.not(psd_drw.join(nsd_block))
+pactiv  = activ.and(psd_drw)
 
 # res/cap exclusion
 res_mk        = polyres_drw.join(res_drw)
-poly_con      = gatpoly_drw.not(res_mk)
-metal1_con    = metal1_drw.not(metal1_res)
-metal2_con    = metal2_drw.not(metal2_res)
-metal3_con    = metal3_drw.not(metal3_res)
-metal4_con    = metal4_drw.not(metal4_res)
-metal5_con    = metal5_drw.not(metal5_res)
-topmetal1_con = topmetal1_drw.not(topmetal1_res).not(ind_drw)
-topmetal2_con = topmetal2_drw.not(topmetal2_res).not(ind_drw)
+poly_con      = gatpoly.not(res_mk)
+metal1_con    = metal1.not(metal1_res)
+metal2_con    = metal2.not(metal2_res)
+metal3_con    = metal3.not(metal3_res)
+metal4_con    = metal4.not(metal4_res)
+metal5_con    = metal5.not(metal5_res)
+topmetal1_con = topmetal1.not(topmetal1_res).not(ind_drw)
+topmetal2_con = topmetal2.not(topmetal2_res).not(ind_drw)
 
 # Gate FETs
-tgate   = gatpoly_drw.and(activ_drw).not(res_mk)
+tgate   = gatpoly.and(activ).not(res_mk)
 ngate   = nactiv.and(tgate)
 pgate   = pactiv.and(tgate)
 ngate_lv_base = ngate.not(thickgateox_drw)
@@ -74,15 +76,18 @@ psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(re
 
 
 # n1/p1 taps labels
-ntap1_lbl = text_drw.texts("well")
+well_patt = glob_to_case_insensitive_glob("well")
+sub_patt = glob_to_case_insensitive_glob("sub!")
+
+ntap1_lbl = text_drw.texts(well_patt)
 ntap1_mk = nwell_drw.interacting(ntap1_lbl)
 
-ptap1_lbl = text_drw.texts("sub!")
+ptap1_lbl = text_drw.texts(sub_patt)
 ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
 
 # n & p taps (short connections)
-ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly_drw).not(ntap1_mk)
-ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly_drw)
+ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly).not(ntap1_mk)
+ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly)
 ptap_holes = ptap.holes
 ntap_holes = ntap.holes
 

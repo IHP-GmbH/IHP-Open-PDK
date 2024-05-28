@@ -31,7 +31,7 @@ Options:
     --netlist=<netlist_path>            Specifies the file path of the input netlist file.
     --run_dir=<run_dir_path>            Run directory to save all the generated results [default: pwd]
     --topcell=<topcell_name>            Specifies the name of the top cell to be used.
-    --run_mode=<run_mode>               Selects the allowed KLayout mode. (flat, deep). [default: flat]
+    --run_mode=<run_mode>               Selects the allowed KLayout mode. (flat, deep). [default: deep]
     --no_net_names                      Omits net names in the extracted netlist.
     --spice_comments                    Includes netlist comments in the extracted netlist.
     --net_only                          Generates netlist objects only in the extracted netlist.
@@ -51,6 +51,7 @@ import logging
 import klayout.db
 from datetime import datetime
 from subprocess import check_call
+import time
 
 
 def check_klayout_version():
@@ -109,7 +110,7 @@ def check_layout_type(layout_path):
         )
         exit(1)
 
-    return os.path.abspath(layout_path)
+    return layout_path
 
 
 def get_top_cell_names(gds_path):
@@ -301,7 +302,8 @@ def main(lvs_run_dir: str, arguments: dict):
 
     # Check layout file existence
     layout_path = arguments["--layout"]
-    if not os.path.exists(arguments["--layout"]):
+    layout_path = os.path.abspath(os.path.expanduser(layout_path))
+    if not os.path.exists(layout_path):
         logging.error(
             f"The input GDS file path {layout_path} doesn't exist, please recheck."
         )
@@ -312,7 +314,8 @@ def main(lvs_run_dir: str, arguments: dict):
 
     # Check netlist file existence
     netlist_path = arguments["--netlist"]
-    if not os.path.exists(arguments["--netlist"]):
+    netlist_path = os.path.abspath(os.path.expanduser(netlist_path))
+    if not os.path.exists(netlist_path):
         logging.error(
             f"The input netlist file path {netlist_path} doesn't exist, please recheck."
         )
@@ -365,5 +368,11 @@ if __name__ == "__main__":
         datefmt="%d-%b-%Y %H:%M:%S",
     )
 
+    # Start of execution time
+    t0 = time.time()
+
     # Calling main function
     main(lvs_run_dir, arguments)
+
+    #  End of execution time
+    logging.info("Total execution time {}s".format(time.time() - t0))
