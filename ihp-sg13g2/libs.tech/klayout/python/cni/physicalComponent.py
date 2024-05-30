@@ -58,6 +58,31 @@ class PhysicalComponent(ABC):
         import cni.geo
         return cni.geo.fgOr(components1, components2, resultLayer)
 
+    def fgXor(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+        """
+        Performs a logical xor operation for this physical component and another physical component,
+        by selecting those polygon areas which are in either physical component, but not in both
+        lists of physical components. The resulting merged polygon shapes are generated on the
+        resultLayer layer. In addition, these polygon shapes are used to create a Grouping object,
+        which is the return value for this method.
+
+        :param component: physical component derived object
+        :type component: PhysicalCompent
+        :param resultLayer: layer where resulting shapes will be generated on
+        :type resultLayer: Layer
+        :return: grouping object
+        :rtype: Grouping
+
+        """
+        components1 = ulist[PhysicalComponent]()
+        components1.append(self)
+
+        components2 = ulist[PhysicalComponent]()
+        components2.append(component)
+
+        import cni.geo
+        return cni.geo.fgXor(components1, components2, resultLayer)
+
     @abstractmethod
     def destroy(self):
         pass

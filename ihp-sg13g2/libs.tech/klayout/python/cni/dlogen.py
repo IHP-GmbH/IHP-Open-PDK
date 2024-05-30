@@ -19,13 +19,16 @@
 from cni.rect import *
 from cni.dlo import *
 from cni.grouping import *
+from cni.pin import *
+from cni.term import *
 
 import pya
 
 class Dlo(object):
 
     def __init__(self, libName, cellName, viewName='layout', viewType=None):
-        pass
+        self._pins = {}
+        self._terms = {}
 
     @classmethod
     def exists(cls, dloName : str) -> bool:
@@ -80,12 +83,44 @@ class Dlo(object):
 
         return True
 
+    def findPin(self, name: str) -> Pin:
+        if name == "":
+            if len(self._pins) != 0:
+                return next(iter(self._pins))
+            else:
+                raise Exception(f"No pins defined")
+        else:
+            if name in self._pins:
+                return self._pins[name]
+            else:
+                raise Exception(f"Pin '{name}' don't exists")
+
+
+    def hasPin(self, name: str) -> bool:
+        return name in self._pins
+
+    def hasTerm(self, name: str) -> bool:
+        return name in self._terms
+
+    def findTerm(self, name: str) -> Term:
+        if name == "":
+            if len(self._terms) != 0:
+                return next(iter(self._terms))
+            else:
+                raise Exception(f"No terminals defined")
+        else:
+            if name in self._terms:
+                return self._terms[name]
+            else:
+                raise Exception(f"Terminal '{name}' don't exists")
+
 
 class DloGen(Dlo):
 
     _libName = ''
 
     def __init__(self):
+        super(DloGen, self).__init__('', '')
         self.tech = None
         self.props = {}
 
@@ -102,8 +137,15 @@ class DloGen(Dlo):
     def setTech(self, tech):
         self.tech = tech
 
-    def addPin(self, name, label, box, layer):
-        # simply creates a shape - needs to support other shape types?
-        Rect(layer, box)
+    def addPin(self, pinName : str, termName: str, box : Box, layer: Layer) -> Pin:
+        pin = Pin(pinName, termName)
+        self._pins[pinName] = pin
+
+        if not self.hasTerm(termName):
+            self._terms[termName] = pin.getTerm()
+
+        pin.setBBox(box, layer)
+
+        return pin
 
 
