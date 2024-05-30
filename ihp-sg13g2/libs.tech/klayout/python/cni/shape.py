@@ -42,3 +42,11 @@ class Shape(PhysicalComponent):
 
     def getBBox(self):
         return Box(self._bbox.box.left, self._bbox.box.bottom, self._bbox.box.right, self._bbox.box.top)
+
+    @property
+    def bbox(self):
+        """
+        The bounding box for this Shape
+
+        """
+        return self.getBBox()
