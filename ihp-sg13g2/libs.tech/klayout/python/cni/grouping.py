@@ -30,6 +30,12 @@ class Grouping(PhysicalComponent):
         if components is not None:
             self._components.add(components)
 
+    def __iter__(self):
+        return self._components.__iter__()
+
+    def __next__(self):
+        return self._components.__next__()
+
     def add(self, components: PhysicalComponent) -> None:
         if type(components) is not list:
             self._components.append(components)

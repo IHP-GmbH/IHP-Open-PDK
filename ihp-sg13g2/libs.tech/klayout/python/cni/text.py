@@ -19,20 +19,22 @@
 from cni.box import *
 from cni.shape import *
 from cni.rect import *
+from cni.location import Location
+from cni.transform import Transform
 
 import pya
 
 class Text(Shape):
 
-    def __init__(self, layer, text, point, size):
-        # TODO: size
-        text = pya.DText(text, pya.DTrans(point.getX(), point.getY()), 1, 0)
+    def __init__(self, layer: Layer, text: str, origin: Point, height: float):
+        text = pya.DText(text, pya.DTrans(origin.getX(), origin.getY()), height, 2)
 
         self._text = text
         self._layer = layer
+        self._height = height
 
-        self.set_shape(Shape.getCell().shapes(layer.number).insert(text))
         super().__init__(Box(text.bbox().left, text.bbox().bottom, text.bbox().right, text.bbox().top))
+        self.set_shape(Shape.getCell().shapes(layer.number).insert(text))
 
     def addToRegion(self, region: pya.Region):
         region.insert(self._text)
@@ -51,16 +53,52 @@ class Text(Shape):
         movedText = (pya.DTrans(float(dx), float(dy)) * self._text)
         shape = Shape.getCell().shapes(self._shape.layer).insert(movedText)
         self.destroy()
-        self._polygon = movedPolygon
+        self._text = movedText
         self.set_shape(shape)
 
-    def setAlignment(self, align):
-        # TODO
-        pass
+    def setAlignment(self, location: Location) -> None:
+        width = len(self._text.string) * self._height
+
+        match location:
+            case Location.LOWER_LEFT:
+                self._text.halign = pya.HAlign.HAlignLeft
+                self._text.valign = pya.VAlign.VAlignBottom
+            case Location.CENTER_LEFT:
+                self._text.halign = pya.HAlign.HAlignLeft
+                self._text.valign = pya.VAlign.VAlignCenter
+            case Location.UPPER_LEFT:
+                self._text.halign = pya.HAlign.HAlignLeft
+                self._text.valign = pya.VAlign.VAlignTop
+            case Location.LOWER_CENTER:
+                self._text.halign = pya.HAlign.HAlignCenter
+                self._text.valign = pya.VAlign.VAlignBottom
+            case Location.CENTER_CENTER:
+                self._text.halign = pya.HAlign.HAlignCenter
+                self._text.valign = pya.VAlign.VAlignCenter
+            case Location.UPPER_CENTER:
+                self._text.halign = pya.HAlign.HAlignCenter
+                self._text.valign = pya.VAlign.VAlignTop
+            case Location.LOWER_RIGHT:
+                self._text.halign = pya.HAlign.HAlignRight
+                self._text.valign = pya.VAlign.VAlignBottom
+            case Location.CENTER_RIGHT:
+                self._text.halign = pya.HAlign.HAlignRight
+                self._text.valign = pya.VAlign.VAlignCenter
+            case Location.UPPER_RIGHT:
+                self._text.halign = pya.HAlign.HAlignRight
+                self._text.valign = pya.VAlign.VAlignTop
+
+        layer = self.getShape().layer
+
+        Shape.getCell().shapes(layer).erase(self.getShape())
+        self.set_shape(Shape.getCell().shapes(layer).insert(self._text))
 
     def setOrientation(self, orient):
-        # TODO
-        pass
+        x = self._text.x
+        y = self._text.y
+        self.moveBy(-x, -y)
+        self.transform(Transform(0.0, 0.0, orient))
+        self.moveBy(x, y)
 
     def setDrafting(self, drafting):
         # TODO

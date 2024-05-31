@@ -37,6 +37,8 @@ from cni.dlogen import *
 from cni.transform import *
 from cni.instance import *
 from cni.paramarray import *
+from cni.pin import *
+from cni.term import *
 
 import pya
 import sys
@@ -81,10 +83,11 @@ class PyCellContext(object):
             raise Exception("No current PyCellContext")
         return cls._pyCellContexts[-1]
 
-    def __init__(self, tech, cell):
+    def __init__(self, tech, cell, impl):
         PyCellContext._pyCellContexts.append(self)
         self._tech = tech
         self._cell = cell
+        self._impl = impl
 
     def __enter__(self):
         Layer.layout = self._cell.layout()
@@ -94,6 +97,7 @@ class PyCellContext(object):
         Layer.layout = None
         self._cell = None
         self._tech = None
+        self._impl = None
 
     @property
     def cell(self):
@@ -113,14 +117,20 @@ class PyCellContext(object):
             raise Exception("Layout not set!")
         return self._cell.layout()
 
+    @property
+    def impl(self):
+        if self._impl is None:
+            raise Exception("Impl not set!")
+        return self._impl
+
 
 class PCellWrapper(pya.PCellDeclaration):
 
     def __init__(self, impl, tech):
         super(PCellWrapper, self).__init__()
 
-        self.impl = impl
-        self.impl.setTech(tech)
+        self._impl = impl
+        self._impl.setTech(tech)
         self.tech = tech
 
         Tech.techInUse = tech.getTechParams()['libName']
@@ -175,8 +185,8 @@ class PCellWrapper(pya.PCellDeclaration):
     def produce(self, layout, layers, parameters, cell):
         params = self.params_as_hash(parameters)
 
-        with (PyCellContext(self.tech, cell)):
-            self.impl.setupParams(params)
-            self.impl.genLayout()
+        with (PyCellContext(self.tech, cell, self._impl)):
+            self._impl.setupParams(params)
+            self._impl.genLayout()
 
 
