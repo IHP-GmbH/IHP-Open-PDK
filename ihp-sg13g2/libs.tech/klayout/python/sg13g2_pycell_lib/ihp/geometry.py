@@ -118,7 +118,6 @@ def dbLayerAndList(layerId, shapes):
 def dbLayerXor(layerId, id1, id2):
     if type(layerId) == str :
         layerId = Layer(layerId)
-
     xorId = id1.fgXor(id2, layerId)
 
     return xorId
@@ -126,13 +125,11 @@ def dbLayerXor(layerId, id1, id2):
 #***********************************************************************************************************************
 # dbLayerXorList
 #***********************************************************************************************************************
-def dbLayerXorList(layerId, shapes):
+def dbLayerXorList(layerId, shapes1, shapes2):
     if type(layerId) == str :
         layerId = Layer(layerId)
 
-    xorId = shapes[0]
-    for id in shapes[1:] :
-        xorId = fgXor(xorId, id, layerId)
+    xorId = fgXor(ulist(shapes1), ulist(shapes2), layerId)
 
     return xorId
 

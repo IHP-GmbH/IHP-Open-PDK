@@ -89,7 +89,13 @@ class Box(object):
         raise Exception("Not implemented yet!")
 
     def fix(self):
-        # is that function supposed for normalize the order?
+        if self.box.left > self.box.right or self.box.bottom > self.box.top:
+            fixedBox = pya.DBox(
+                    min(self.box.left, self.box.right),
+                    min(self.box.bottom, self.box.top),
+                    max(self.box.left, self.box.right),
+                    max(self.box.bottom, self.box.top))
+            self.box.assign(fixedBox)
         return self
 
     def getArea():
