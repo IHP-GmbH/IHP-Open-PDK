@@ -94,6 +94,7 @@ class nmos(DloGen):
         poly_layer = Layer('GatPoly')
         poly_layer_pin = Layer('GatPoly', 'pin')
         locint_layer = Layer('Cont')
+        text_layer = Layer('TEXT', 'drawing')
 
         #*************************************************************************
         #*
@@ -187,6 +188,9 @@ class nmos(DloGen):
             
             ihpAddThermalMosLayer(self, Box(xpoly_beg, ypoly_beg+diffoffset, xpoly_end, ypoly_end+diffoffset), True, Cell)
                 
+            if i == 1 :
+                dbCreateLabel(self, text_layer, Point((xpoly_beg+xpoly_end)/2, (ypoly_beg+ypoly_end)/2+diffoffset), 'nmos', 'centerCenter', 'R90', Font.EURO_STYLE, 0.1)
+            
             if onep(i) :
                 MkPin(self, 'G', 2, Box(xpoly_beg, ypoly_beg+diffoffset, xpoly_end, ypoly_end+diffoffset), poly_layer_pin)
                 

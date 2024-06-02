@@ -34,6 +34,7 @@ class sealring(DloGen):
         minL       = techparams['sealring_complete_minL']
         defW       = techparams['sealring_complete_defW']
         minW       = techparams['sealring_complete_minW']
+        edgeBox    = techparams['sealring_complete_edgeBox']
 
         specs('cdf_version', CDFVersion, 'CDF Version')
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
@@ -46,6 +47,8 @@ class sealring(DloGen):
         specs('Lmin', minL, 'Lmin')
         specs('Wmin', minW, 'Wmin')
 
+        specs('edgeBox', edgeBox, 'EdgeSeal.boundary box away from the outer EdgeSeal.drawing')
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -53,14 +56,13 @@ class sealring(DloGen):
         self.w = params['w']
         self.addLabel = params['addLabel']
         self.addSlit = params['addSlit']
+        self.edgeBox = params['edgeBox']
 
     def genLayout(self):
         techparams = self.tech.getTechParams()
         self.techparams = techparams
         self.epsilon = techparams['epsilon1']
 
-        l = self.l
-        w = self.w
         addLabel = self.addLabel
         addSlit = self.addSlit
 
@@ -72,20 +74,23 @@ class sealring(DloGen):
 
         # PCell Code
 
-        w = Numeric(w)*1e6;
-        l = Numeric(l)*1e6;
+        edgeBox = Numeric(self.edgeBox) * 1e6
+        w = Numeric(self.w) * 1e6 + edgeBox * 2;
+        l = Numeric(self.l) * 1e6 + edgeBox * 2;
 
         maxMetalWidth = 4.2
         maxMetalLength = maxMetalWidth * 2
         corner_width = 4.2
-        metalOffset = 3 + corner_width
-        viaOffset = 5.1 + corner_width
+        metalOffset = 3 + corner_width + edgeBox
+        viaOffset = 5.1 + corner_width + edgeBox
         corner_length = corner_width * 2
-        corner_starty = 0   # start at the bottom right
         corner_steps = 4
-        corner_end = 28.2   # end of the bottom right and top left
-        corner_startx = corner_end - (corner_end - corner_width * (corner_steps + 1))
+        corner_end = 28.2 + edgeBox   # end of the bottom right and top left
+        corner_startx = 0 + corner_end - (corner_end - corner_width * (corner_steps + 1))
+        corner_starty = 0   # start at the bottom right
         metal_startx = corner_end - (corner_end - maxMetalWidth * (corner_steps + 1)) + metalOffset
+        edgeBox_startx = 0
+        edgeBox_starty = 0
 
         # Sealring Corner
         layers = ['Activ', 'pSD', 'EdgeSeal', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']
@@ -95,16 +100,16 @@ class sealring(DloGen):
         groupId   = list()
 
         # Passiv
-        layerobj = dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_startx, corner_starty, corner_end, corner_width))
+        layerobj = dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_startx + edgeBox, corner_starty + edgeBox, corner_end + edgeBox, corner_width + edgeBox))
         item_list.append(layerobj)
-        layerobj = generateCorner(self, corner_startx, corner_starty, corner_width, corner_length, corner_steps, corner_end, 0, 'Passiv')
+        layerobj = generateCorner(self, corner_startx + edgeBox, corner_starty + edgeBox, corner_width, corner_length, corner_steps, corner_end, 0, 'Passiv')
         item_list += layerobj
         groupId = combineLayerAndDelete(self, item_list, groupId, 'Passiv')
 
         item_list = []
 
         # Metals
-        for layer in layers :
+        for layer in layers:
             layerobj = generateCorner(self, metal_startx, corner_starty, maxMetalWidth, maxMetalLength, corner_steps, corner_end, metalOffset, layer)
             groupId = combineLayerAndDelete(self, layerobj, groupId, layer)
 
@@ -151,10 +156,10 @@ class sealring(DloGen):
         # end PCell Code
 
         # Straight Lines
-        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(0.0, corner_end, corner_width, w - corner_end))
-        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, 0.0, l - corner_end, corner_width))
-        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(l, corner_end, l - corner_width, w - corner_end))
-        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, w, l - corner_end, w - corner_width))
+        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(edgeBox, corner_end, corner_width + edgeBox, w - corner_end))
+        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, edgeBox, l - corner_end, corner_width + edgeBox))
+        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
+        dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
 
         for layer in layers :
             dbCreateRect(self, Layer(layer, 'drawing'), Box(metalOffset, corner_end, metalOffset + corner_width, w - corner_end))
@@ -180,3 +185,7 @@ class sealring(DloGen):
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, viaOffset-0.1, l - corner_end, viaOffset + viaWidth - 0.1))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(l - viaOffset+0.1, corner_end, l - viaWidth - viaOffset + 0.1, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - viaOffset+0.1, l - corner_end, w - viaWidth - viaOffset + 0.1))
+
+        # EdgeSeal box around sealring
+        dbCreateRect(self, Layer('EdgeSeal', 'boundary'),
+            Box(edgeBox_startx, edgeBox_starty, w, l))
