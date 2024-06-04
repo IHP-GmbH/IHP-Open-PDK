@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -67,23 +67,25 @@ write dc_diode_op.raw
 wrdata dc_diode.csv I(Vmda) I(Vmdp)
 .endc
 "}
-C {sg13g2_pr/dantenna.sym} -350 10 2 0 {name=XD1
-model=dantenna
-l=780n
-w=780n
-}
 C {devices/title.sym} -360 130 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -470 -260 0 0 {name=h5
 descr="Load IV curve" 
 tclcommand="xschem raw_read $netlist_dir/dc_diode_op.raw dc"
 }
 C {devices/gnd.sym} -170 50 0 0 {name=l3 lab=GND}
-C {sg13g2_pr/dpantenna.sym} -170 10 2 0 {name=XD2
-model=dpantenna
-l=780n
-w=780n
-}
 C {devices/gnd.sym} -350 50 0 0 {name=l1 lab=GND}
 C {devices/vsource.sym} -500 -10 0 0 {name=V1 value=0.7}
 C {devices/ammeter.sym} -350 -60 0 0 {name=Vmda}
 C {devices/ammeter.sym} -170 -60 0 0 {name=Vmdp}
+C {sg13g2_pr/dantenna.sym} -170 10 2 0 {name=D1
+model=dantenna
+l=780n
+w=780n
+spiceprefix=X
+}
+C {sg13g2_pr/dpantenna.sym} -350 10 2 0 {name=D2
+model=dpantenna
+l=780n
+w=780n
+spiceprefix=X
+}

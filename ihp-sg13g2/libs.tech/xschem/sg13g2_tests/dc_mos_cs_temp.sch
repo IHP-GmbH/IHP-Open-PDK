@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -38,9 +38,7 @@ N -20 50 30 50 {
 lab=GND}
 N 80 50 80 140 {
 lab=GND}
-N -70 50 -60 50 {
-lab=Vgs1}
-N -130 50 -70 50 {
+N -90 50 -60 50 {
 lab=Vgs1}
 N -20 0 -20 20 {
 lab=Vgs1}
@@ -50,11 +48,7 @@ N 240 50 290 50 {
 lab=GND}
 N 290 50 290 140 {
 lab=GND}
-N 190 50 200 50 {
-lab=Vgs2}
-N 130 50 190 50 {
-lab=Vgs2}
-N 240 0 240 20 {
+N 170 50 200 50 {
 lab=Vgs2}
 N 640 80 640 140 {
 lab=GND}
@@ -62,9 +56,7 @@ N 640 50 690 50 {
 lab=GND}
 N 690 50 690 140 {
 lab=GND}
-N 590 50 600 50 {
-lab=Vgs3}
-N 530 50 590 50 {
+N 560 50 600 50 {
 lab=Vgs3}
 N 640 0 640 20 {
 lab=Vgs3}
@@ -74,11 +66,7 @@ N 870 50 920 50 {
 lab=GND}
 N 920 50 920 140 {
 lab=GND}
-N 820 50 830 50 {
-lab=Vgs4}
-N 760 50 820 50 {
-lab=Vgs4}
-N 870 0 870 20 {
+N 790 50 830 50 {
 lab=Vgs4}
 N -90 0 -20 0 {
 lab=Vgs1}
@@ -90,7 +78,7 @@ N -20 -40 -20 0 {
 lab=Vgs1}
 N 240 -120 240 -100 {
 lab=GND}
-N 240 -40 240 0 {
+N 240 -10 240 20 {
 lab=Vgs2}
 N 640 -30 640 0 {
 lab=Vgs3}
@@ -98,7 +86,7 @@ N 640 -110 640 -90 {
 lab=GND}
 N 870 -110 870 -90 {
 lab=GND}
-N 870 -30 870 0 {
+N 870 -10 870 20 {
 lab=Vgs4}
 N 560 0 560 50 {
 lab=Vgs3}
@@ -114,6 +102,18 @@ N 170 -10 240 -10 {
 lab=Vgs2}
 N 30 50 30 140 {
 lab=GND}
+N -130 50 -90 50 {
+lab=Vgs1}
+N 530 50 560 50 {
+lab=Vgs3}
+N 760 50 790 50 {
+lab=Vgs4}
+N 870 -30 870 -10 {
+lab=Vgs4}
+N 130 50 170 50 {
+lab=Vgs2}
+N 240 -40 240 -10 {
+lab=Vgs2}
 C {devices/code_shown.sym} -320 -630 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
@@ -125,7 +125,7 @@ value="
 .savecurrents
 .param temp=27
 .control
-* pre_osdi ./psp103_nqs.osdi
+pre_osdi ./psp103_nqs.osdi
 save all 
 dc temp -40 125 1
 write mos_temp.raw

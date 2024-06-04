@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -125,15 +125,6 @@ C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Autho
 C {devices/launcher.sym} -210 -300 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/ac_lv_nmosrf.raw ac"}
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M1
-L=0.35u
-W=1.0u
-ng=1
-m=1
-rfmode=1
-model=sg13_lv_nmos
-spiceprefix=X
-}
 C {sg13g2_pr/rppd.sym} 220 -110 3 0 {name=R1
 W=0.2e-6
 L=0.5e-5
@@ -186,4 +177,13 @@ spiceprefix=X
 m=1
 R=7.0
 Imax=0.3e-6
+}
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M1
+l=0.35u
+w=1.0u
+ng=1
+m=1
+rfmode=1
+model=sg13_lv_nmos
+spiceprefix=X
 }

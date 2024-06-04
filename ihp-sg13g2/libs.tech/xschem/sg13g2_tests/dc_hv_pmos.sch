@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,19 +6,20 @@ V {}
 S {}
 E {}
 B 2 150 -510 950 -110 {flags=graph
-y1=0
-y2=1.1e-05
+y1=-1.1e-05
+y2=0
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=0
-x2=-2
+x1=-2
+x2=0
 divx=5
 subdivx=1
-node=i(vds)
-color=4
+node="i(vds)
+i(vd)"
+color="4 4"
 dataset=-1
 unitx=1
 logx=0
