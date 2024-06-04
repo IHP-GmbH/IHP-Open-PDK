@@ -35,7 +35,7 @@ class PointList(ulist[Point]):
         last points are coincident, then only the first point is returned
 
         :param isClose: Whether represented shape is closed
-        :type p1: boolean
+        :type isClose: boolean
         :return: see description above
         :rtype: PointList
         """

@@ -69,9 +69,50 @@ def fgAnd():
   pass
 
 
-def fgXor():
-  # TODO: implement
-  pass
+def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComponent], resultLayer: Layer) -> Grouping:
+    """
+    Performs a logical XOR operation for lists of physical components comps1
+    and comps2, by selecting those polygon areas which are in either list of physical
+    components, but not in both lists of physical components. The resulting merged polygon shapes
+    are generated on the resultLayer layer. In addition, these polygon shapes are used to create a
+    Grouping object, which is the return value for this method.
+
+    :param components1: first list of physical component derived objects
+    :type components1: list of PhysicalCompent
+    :param components2: second list of physical component derived objects
+    :type components2: list of PhysicalCompent
+    :param resultLayer: layer where resulting shapes will be generated on
+    :type resultLayer: Layer
+    :return: grouping object
+    :rtype: Grouping
+
+    """
+    region1 = pya.Region()
+    region2 = pya.Region()
+
+    [component.addToRegion(region1) for component in components1]
+    [component.addToRegion(region2) for component in components2]
+
+    #for item in region1:
+    #    print(f"region 1 type={type(item)}, {item.to_s()}")
+
+    #for item in region2:
+    #    print(f"region 2 type={type(item)}, {item.to_s()}")
+
+    xorRegion = region1.xor(region2)
+
+    grouping = Grouping()
+
+    for poly in xorRegion.each():
+        pointList = PointList()
+        for point in poly.to_simple_polygon().to_dtype(Tech.get(Tech.techInUse).dataBaseUnits).each_point():
+            pointList.append(Point(point.x, point.y))
+
+        polygon = Polygon(resultLayer, pointList)
+        grouping.add(polygon)
+        #[print(f"{item.x}, {item.y}") for item in pointList]
+
+    return grouping
 
 
 def fgNot():
