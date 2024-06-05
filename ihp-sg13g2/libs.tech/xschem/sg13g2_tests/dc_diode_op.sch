@@ -77,15 +77,15 @@ C {devices/gnd.sym} -350 50 0 0 {name=l1 lab=GND}
 C {devices/vsource.sym} -500 -10 0 0 {name=V1 value=0.7}
 C {devices/ammeter.sym} -350 -60 0 0 {name=Vmda}
 C {devices/ammeter.sym} -170 -60 0 0 {name=Vmdp}
-C {sg13g2_pr/dantenna.sym} -170 10 2 0 {name=D1
-model=dantenna
-l=780n
-w=780n
-spiceprefix=X
-}
 C {sg13g2_pr/dpantenna.sym} -350 10 2 0 {name=D2
 model=dpantenna
-l=780n
-w=780n
+l=0.78u
+w=0.78u
+spiceprefix=X
+}
+C {sg13g2_pr/dantenna.sym} -170 10 2 0 {name=D1
+model=dantenna
+l=0.78u
+w=0.78u
 spiceprefix=X
 }

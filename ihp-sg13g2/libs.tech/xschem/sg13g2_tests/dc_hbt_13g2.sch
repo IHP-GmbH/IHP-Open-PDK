@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 -280 -540 520 -140 {flags=graph
 
-y2=0.0026
+y2=0.017
 ypos1=0
 ypos2=2
 divy=5
@@ -24,7 +24,7 @@ logx=0
 logy=0
 color=4
 node=i(Vc)
-y1=-5.5e-05
+y1=-0.00023
 rainbow=0}
 T {Nx - number of emitters} -210 110 0 0 0.2 0.2 {}
 N -300 60 -300 80 {
@@ -76,9 +76,10 @@ C {devices/launcher.sym} 70 -70 0 0 {name=h5
 descr="load waves" 
 tclcommand="xschem raw_read $netlist_dir/test_npn_13G2.raw dc"
 }
+C {devices/isource.sym} -300 30 2 0 {name=I0 value=1u}
+C {devices/ammeter.sym} -110 -80 1 0 {name=Vc}
 C {sg13g2_pr/npn13G2.sym} -190 -10 0 0 {name=Q1
 model=npn13G2
 spiceprefix=X
-Nx=1}
-C {devices/isource.sym} -300 30 2 0 {name=I0 value=1u}
-C {devices/ammeter.sym} -110 -80 1 0 {name=Vc}
+Nx=1
+le=0.9e-6}

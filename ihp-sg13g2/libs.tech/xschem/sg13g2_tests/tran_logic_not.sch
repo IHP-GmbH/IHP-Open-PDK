@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -68,7 +68,7 @@ N -230 -80 -230 -30 {
 lab=in}
 N -160 -50 -160 -30 {
 lab=out}
-C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
+C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
 .lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
