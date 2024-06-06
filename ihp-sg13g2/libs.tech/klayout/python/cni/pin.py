@@ -16,10 +16,14 @@
 #
 ########################################################################
 
+from functools import singledispatchmethod
+
 from cni.shape import Shape
 from cni.term import Term
 from cni.box import Box
 from cni.layer import Layer
+from cni.ulist import ulist
+
 import pya
 
 class Pin(object):
@@ -46,6 +50,7 @@ class Pin(object):
         self._name = pinName
         self._term = None
         self._bbox = None
+        self._shapes = []
 
         import cni.dlo
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
@@ -59,6 +64,25 @@ class Pin(object):
             self._term = Term(termName)
 
         self._term.addPin(self)
+
+        if shape is not None:
+            self._shapes.append(shape)
+
+    @singledispatchmethod
+    def addShape(self, arg):
+        pass
+
+    @addShape.register
+    def _(self, arg: Shape) -> None:
+        shapes = ulist[Shape]()
+        shapes.append(arg)
+        self.addShape(shapes)
+
+    @addShape.register
+    def _(self, arg: list) -> None:
+        for shape in arg:
+            shape.setPin(self)
+            self._shapes.append(shape)
 
     def getName(self) -> str:
         """

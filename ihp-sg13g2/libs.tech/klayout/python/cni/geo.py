@@ -93,12 +93,6 @@ def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComp
     [component.addToRegion(region1) for component in components1]
     [component.addToRegion(region2) for component in components2]
 
-    #for item in region1:
-    #    print(f"region 1 type={type(item)}, {item.to_s()}")
-
-    #for item in region2:
-    #    print(f"region 2 type={type(item)}, {item.to_s()}")
-
     xorRegion = region1.xor(region2)
 
     grouping = Grouping()
@@ -110,7 +104,6 @@ def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComp
 
         polygon = Polygon(resultLayer, pointList)
         grouping.add(polygon)
-        #[print(f"{item.x}, {item.y}") for item in pointList]
 
     return grouping
 

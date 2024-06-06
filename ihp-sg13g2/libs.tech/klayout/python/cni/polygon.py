@@ -27,7 +27,7 @@ import pya
 class Polygon(Shape):
 
     @singledispatchmethod
-    def __init__(self, arg1, arg2 = None):
+    def __init__(self, arg1, arg2, arg3 = None):
         pass
 
     @__init__.register
@@ -36,13 +36,13 @@ class Polygon(Shape):
         [pyaPoints.append(point.point) for point in arg2]
 
         self._polygon = pya.DSimplePolygon(pyaPoints, True)
-        super().__init__(self._polygon.bbox())
+        super().__init__(arg1, self._polygon.bbox())
         self.set_shape(Shape.getCell().shapes(arg1.number).insert(self._polygon))
 
     @__init__.register
-    def _(self, arg1: pya.DSimplePolygon, arg2: int) -> None:
+    def _(self, arg1: pya.DSimplePolygon, arg2: int, arg3: Layer) -> None:
         self._polygon = arg1
-        super().__init__(self._polygon.bbox())
+        super().__init__(arg3, self._polygon.bbox())
         self.set_shape(Shape.getCell().shapes(arg2).insert(self._polygon))
 
     def addToRegion(self, region: pya.Region):
@@ -50,7 +50,7 @@ class Polygon(Shape):
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         dup = self._polygon.dup();
-        polygon = Polygon(dup, self.getShape().layer)
+        polygon = Polygon(dup, self.getShape().layer, self.layer)
         return polygon
 
     def destroy(self):
