@@ -19,6 +19,10 @@
 from __future__ import annotations
 from cni.box import *
 from cni.physicalComponent import *
+from cni.layer import *
+from cni.shapefilter import *
+from cni.constants import *
+
 import pya
 
 class Shape(PhysicalComponent):
@@ -28,9 +32,12 @@ class Shape(PhysicalComponent):
         import cni.dlo
         return cni.dlo.PyCellContext.getCurrentPyCellContext().cell
 
-    def __init__(self, bbox = None):
+    def __init__(self, layer: Layer, bbox: Box):
         self._shape = None
+        self._layer = layer
         self._bbox = bbox
+        self._net = None
+        self._pin = None
 
     def set_shape(self, shape: Shape):
         self._shape = shape
@@ -40,8 +47,29 @@ class Shape(PhysicalComponent):
             raise Exception(f"Shape.getShape no shape set {hex(id(self))}: {hex(id(self._shape))}")
         return self._shape
 
-    def getBBox(self):
-        return Box(self._bbox.box.left, self._bbox.box.bottom, self._bbox.box.right, self._bbox.box.top)
+    def getBBox(self, filter: ShapeFilter = ShapeFilter()) -> Box:
+        if type(filter) is Layer and self._layer.getLayerName() == filter.getLayerName():
+            return Box(self._bbox.box.left, self._bbox.box.bottom, self._bbox.box.right, self._bbox.box.top)
+
+        if filter.isIncluded(self._layer):
+            return Box(self._bbox.box.left, self._bbox.box.bottom, self._bbox.box.right, self._bbox.box.top)
+        else:
+            return Box(INT_MAX, INT_MAX, INT_MIN, INT_MIN)
+
+    def getLayer(self) -> Layer:
+        return self._layer
+
+    def getNet(self) -> Net:
+        return self._net
+
+    def getPin(self) -> Pin:
+        return self._pin
+
+    def setPin(self, pin: Pin) -> None:
+        if self._pin is not None:
+            raise Exception("Shape already associated to a pin")
+
+        self._pin = pin
 
     @property
     def bbox(self):
@@ -50,3 +78,11 @@ class Shape(PhysicalComponent):
 
         """
         return self.getBBox()
+
+    @property
+    def layer(self):
+        """
+        The Layer associated with this Shape
+
+        """
+        return self.getLayer()

@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import List
 
 from cni.termtype import TermType
+from cni.net import Net
 
 class Term(object):
     """
@@ -39,9 +40,24 @@ class Term(object):
     """
 
     def __init__(self, termName: str, termType: TermType = TermType.INPUT_OUTPUT):
+        import cni.dlo
+        impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
+
+        if termName == "":
+            raise Exception("Empty terminal name given")
+
+        if impl.hasTerm(termName):
+            raise Exception(f"Term {termName} already defined")
+
         self._name = termName
         self._type = termType
         self._pins = []
+        self._net = None
+
+        if impl.hasNet(termName):
+            self._net = impl.findNet(termName)
+        else:
+            self._net = Net(termName)
 
     def addPin(self, pin: Pin) -> None:
         self._pins.append(pin)
@@ -55,6 +71,20 @@ class Term(object):
 
         """
         return self._name
+
+    def getNet(self) -> Net:
+        """
+        Returns the net associated with this Term terminal object. If there is no associated net,
+        then an exception is raised.
+
+        :return: The associated net
+        :rtype: Net
+
+        """
+        if self._net is None:
+            raise Exception(f"No net associated for terminal {termName}")
+
+        return self._net
 
     def getPins(self) -> list[Pin]:
         """
