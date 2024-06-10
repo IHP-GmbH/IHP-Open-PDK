@@ -28,7 +28,9 @@ from .sg13_tech import *
 
 # Defines the IHP PCells
 from .ihp import nmos_code
+from .ihp import hv_nmos_code
 from .ihp import pmos_code
+from .ihp import hv_pmos_code
 from .ihp import cmim_code
 from .ihp import rsil_code
 from .ihp import rhigh_code
@@ -36,6 +38,7 @@ from .ihp import rppd_code
 from .ihp import sealring_code
 from .ihp import npn13G2_base_code
 from .ihp import npn13G2_code
+from .ihp import via_stack
 
 class PyCellLib(pya.Library):
     def __init__(self):
@@ -46,7 +49,9 @@ class PyCellLib(pya.Library):
         # TODO: instead of explicitly creating the PCells here we could
         # use introspection to collect the classes defined
         self.layout().register_pcell("nmos", PCellWrapper(nmos_code.nmos(), tech))
+        self.layout().register_pcell("hv_nmos", PCellWrapper(hv_nmos_code.hv_nmos(), tech))
         self.layout().register_pcell("pmos", PCellWrapper(pmos_code.pmos(), tech))
+        self.layout().register_pcell("hv_pmos", PCellWrapper(hv_pmos_code.pmos(), tech))
         self.layout().register_pcell("cmim", PCellWrapper(cmim_code.cmim(), tech))
         self.layout().register_pcell("rsil", PCellWrapper(rsil_code.rsil(), tech))
         self.layout().register_pcell("rhigh", PCellWrapper(rhigh_code.rhigh(), tech))
@@ -54,6 +59,7 @@ class PyCellLib(pya.Library):
         self.layout().register_pcell("sealring", PCellWrapper(sealring_code.sealring(), tech))
         self.layout().register_pcell("npn13G2_base", PCellWrapper(npn13G2_base_code.npn13G2_base(), tech))
         self.layout().register_pcell("npn13G2", PCellWrapper(npn13G2_code.npn13G2(), tech))
+        self.layout().register_pcell("via_stack", PCellWrapper(via_stack.via_stack(), tech))
 
         self.register("SG13_dev")
 
