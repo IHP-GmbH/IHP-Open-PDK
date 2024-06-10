@@ -231,7 +231,7 @@ class npn13G2V(DloGen):
         dbDeleteObject(outer)
         dbDeleteObject(inner)
 
-        pcLabelText = 'Ae={Ae:.4f}um2'.format(Ae=Nx*le*we);
+        pcLabelText = 'Ae={0:d}*{1:.2f}*{2:.2f}'.format(int(Nx), le, we)
         pcLabelHeight = 0.35
         pcInst = dbCreateLabel(self, l_text, Point(1.5, 1.0), pcLabelText, 'lowerLeft', 'R90', Font.EURO_STYLE, pcLabelHeight)
         pcInst.setDrafting(True)
@@ -241,12 +241,12 @@ class npn13G2V(DloGen):
         pcInst = dbCreateLabel(self, l_text, Point(1.75, 1.0), pcLabelText, 'lowerLeft', 'R0', Font.EURO_STYLE, pcLabelHeight)
         pcInst.setDrafting(True)
 
-        if Nx > 1 :
+        if self.Nx > 1 :
             id = dbCreateRect(self, l_met1, Box(4.395, 1.45, 5.685, 2.1))
-            for cnt in range(Nx) :
-                groupId = ihpCopyFig(groupId, self, Box(2.34, 0), 'R0')
-                if cnt != Nx-1 :
-                    id = dbCopyShape(id, self, Layer(2.34, 0), 'R0')
+            for cnt in range(1, self.Nx) :
+                groupId = ihpCopyFig(groupId, Point(2.34, 0), 'R0')
+                if cnt != self.Nx-1 :
+                    id = dbCopyShape(id, Point(2.34, 0), 'R0')
 
 
         MkPin(self, 'C', 1, Box((emWindOrigin_x-Col_Metal1_distance-Col_Metal1_width), (4.1+le), (emWindOrigin_x+we+Col_Metal1_distance+Col_Metal1_width), (4.1+le+0.65)), 'Metal1')
