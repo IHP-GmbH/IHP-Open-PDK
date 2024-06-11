@@ -126,6 +126,12 @@ class PyCellContext(object):
             raise Exception("Impl not set!")
         return self._impl
 
+    @property
+    def cell(self):
+        if self._cell is None:
+            raise Exception("Cell not set!")
+        return self._cell
+
 
 class PCellWrapper(pya.PCellDeclaration):
 
@@ -191,6 +197,7 @@ class PCellWrapper(pya.PCellDeclaration):
         params = self.params_as_hash(parameters)
 
         with (PyCellContext(self.tech, cell, self._impl)):
+            self._impl.addCellContext(cell)
             self._impl.setupParams(params)
             self._impl.genLayout()
 
