@@ -180,7 +180,7 @@ class npn13G2L(DloGen):
         dbDeleteObject(inner)
 
         pcLayer = 'TEXT'
-        pcLabelText = 'Ae={Ae}um2'.format(Ae=Nx*1*le*we);
+        pcLabelText = 'Ae={0:d}*{1:d}*{2:.2f}*{3:.2f}'.format(int(Nx), 1, le, we)
         pcLabelHeight = 0.35
         pcInst = dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(1.5, 1.0), pcLabelText, 'lowerLeft', 'R90', Font.EURO_STYLE, pcLabelHeight)
         pcInst.setDrafting(True)
