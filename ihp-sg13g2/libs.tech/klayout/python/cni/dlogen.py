@@ -29,6 +29,7 @@ class Dlo(object):
     def __init__(self, libName, cellName, viewName='layout', viewType=None):
         self._pins = {}
         self._terms = {}
+        self._nets = {}
 
     @classmethod
     def exists(cls, dloName : str) -> bool:
@@ -102,6 +103,9 @@ class Dlo(object):
     def hasTerm(self, name: str) -> bool:
         return name in self._terms
 
+    def hasNet(self, name: str) -> bool:
+        return name in self._nets
+
     def findTerm(self, name: str) -> Term:
         if name == "":
             if len(self._terms) != 0:
@@ -141,8 +145,14 @@ class DloGen(Dlo):
         pin = Pin(pinName, termName)
         self._pins[pinName] = pin
 
+        term = pin.getTerm()
         if not self.hasTerm(termName):
-            self._terms[termName] = pin.getTerm()
+            self._terms[termName] = term
+
+        # Note: The net associated with a terminal has the same name.
+        net = term.getNet()
+        if not self.hasNet(termName):
+            self._nets[termName] = net
 
         pin.setBBox(box, layer)
 

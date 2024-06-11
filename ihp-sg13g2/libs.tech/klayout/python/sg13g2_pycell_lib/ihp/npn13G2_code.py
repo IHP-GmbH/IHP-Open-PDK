@@ -162,7 +162,7 @@ class npn13G2(DloGen):
         MkPin(self, 'E', 3, Box(-0.71-le/2, (0.32+we/2+leoffset+bipwinyoffset+empolyyoffset), stretchX+0.71+le/2, (-0.335-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal2', 'pin'))
 
         pcLayer = 'TEXT'
-        pcLabelText = 'Ae={Ae}um2'.format(Ae=Nx*Ny*le*we)
+        pcLabelText = 'Ae={0:d}*{1:d}*{2:.2f}*{3:.2f}'.format(int(Nx), int(Ny), le, we)
         pcLabelHeight = 0.35
         pcInst = dbCreateLabel(self, Layer(pcLayer, pcPurpose), Point(-1.977, -2.546), pcLabelText, 'lowerLeft', 'R90', Font.EURO_STYLE, pcLabelHeight)
         #setSGq(pcInst, "normalLabel", labelType)

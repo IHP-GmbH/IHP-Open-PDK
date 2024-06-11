@@ -33,7 +33,7 @@ class Text(Shape):
         self._layer = layer
         self._height = height
 
-        super().__init__(Box(text.bbox().left, text.bbox().bottom, text.bbox().right, text.bbox().top))
+        super().__init__(layer, Box(text.bbox().left, text.bbox().bottom, text.bbox().right, text.bbox().top))
         self.set_shape(Shape.getCell().shapes(layer.number).insert(text))
 
     def addToRegion(self, region: pya.Region):

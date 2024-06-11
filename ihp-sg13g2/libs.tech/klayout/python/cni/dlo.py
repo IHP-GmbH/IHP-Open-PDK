@@ -39,6 +39,9 @@ from cni.instance import *
 from cni.paramarray import *
 from cni.pin import *
 from cni.term import *
+from cni.path import *
+from cni.shapefilter import *
+from cni.net import *
 
 import pya
 import sys
@@ -150,6 +153,8 @@ class PCellWrapper(pya.PCellDeclaration):
             value_type = pya.PCellParameterDeclaration.TypeInt
         elif type(value) is str:
             value_type = pya.PCellParameterDeclaration.TypeString
+        elif type(value) is bool:
+            value_type = pya.PCellParameterDeclaration.TypeBoolean
         else:
             print(f"Invalid parameter type for parameter {name} (value is {repr(value)})")
             assert(False)
