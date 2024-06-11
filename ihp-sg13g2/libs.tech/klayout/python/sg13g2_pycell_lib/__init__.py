@@ -35,9 +35,9 @@ import importlib
 
 moduleNames = [
         'nmos_code',
-        'hv_nmos_code'
+        'hv_nmos_code',
         'pmos_code',
-        'hv_pmos_code'
+        'hv_pmos_code',
         'cmim_code',
         'rsil_code',
         'rhigh_code',
@@ -53,6 +53,7 @@ moduleNames = [
         'inductor3_code',
         'inductor3_sc_code',
         'inductor3_sp_code'
+
 ]
 
 class PyCellLib(pya.Library):
