@@ -16,6 +16,10 @@
 #
 ########################################################################
 
+import pya
+import os
+import sys
+
 from cni.dlo import Tech
 from cni.dlo import PCellWrapper
 
@@ -31,7 +35,9 @@ import importlib
 
 moduleNames = [
         'nmos_code',
+        'nmosHV_code',
         'pmos_code',
+        'pmosHV_code',
         'cmim_code',
         'rsil_code',
         'rhigh_code',
@@ -47,6 +53,7 @@ moduleNames = [
         'inductor3_code',
         'inductor3_sc_code',
         'inductor3_sp_code'
+
 ]
 
 class PyCellLib(pya.Library):
