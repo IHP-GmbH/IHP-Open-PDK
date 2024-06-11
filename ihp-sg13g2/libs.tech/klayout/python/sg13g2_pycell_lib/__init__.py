@@ -35,9 +35,9 @@ import importlib
 
 moduleNames = [
         'nmos_code',
-        'hv_nmos_code',
+        'nmosHV_code',
         'pmos_code',
-        'hv_pmos_code',
+        'pmosHV_code',
         'cmim_code',
         'rsil_code',
         'rhigh_code',
