@@ -17,7 +17,6 @@
 ########################################################################
 
 from cni.rect import *
-from cni.dlo import *
 from cni.grouping import *
 from cni.pin import *
 from cni.term import *
@@ -26,10 +25,15 @@ import pya
 
 class Dlo(object):
 
+    class _CellContext:
+        def __init__(self):
+            self.pins = {}
+            self.terms = {}
+            self.nets = {}
+
+
     def __init__(self, libName, cellName, viewName='layout', viewType=None):
-        self._pins = {}
-        self._terms = {}
-        self._nets = {}
+        self._cellContexts = {}
 
     @classmethod
     def exists(cls, dloName : str) -> bool:
@@ -85,38 +89,61 @@ class Dlo(object):
         return True
 
     def findPin(self, name: str) -> Pin:
+        cellContext = self._getCurrentCellContext()
+
         if name == "":
-            if len(self._pins) != 0:
-                return next(iter(self._pins))
+            if len(cellContext.pins) != 0:
+                return next(iter(cellContext.pins))
             else:
                 raise Exception(f"No pins defined")
         else:
-            if name in self._pins:
-                return self._pins[name]
+            if name in cellContext.pins:
+                return cellContext.pins[name]
             else:
                 raise Exception(f"Pin '{name}' don't exists")
 
 
     def hasPin(self, name: str) -> bool:
-        return name in self._pins
+        cellContext = self._getCurrentCellContext()
+        return name in cellContext.pins
 
     def hasTerm(self, name: str) -> bool:
-        return name in self._terms
+        cellContext = self._getCurrentCellContext()
+        return name in cellContext.terms
 
     def hasNet(self, name: str) -> bool:
-        return name in self._nets
+        cellContext = self._getCurrentCellContext()
+        return name in cellContext.nets
 
     def findTerm(self, name: str) -> Term:
+        cellContext = self._getCurrentCellContext()
+
         if name == "":
-            if len(self._terms) != 0:
-                return next(iter(self._terms))
+            if len(cellContext.terms) != 0:
+                return next(iter(cellContext.terms))
             else:
                 raise Exception(f"No terminals defined")
         else:
-            if name in self._terms:
-                return self._terms[name]
+            if name in cellContext.terms:
+                return cellContext.terms[name]
             else:
                 raise Exception(f"Terminal '{name}' don't exists")
+
+    def _getCurrentCellContext(self):
+        import cni.dlo
+        cell = cni.dlo.PyCellContext.getCurrentPyCellContext().cell
+        cellContext = self._cellContexts.get(cell)
+
+        if cellContext is None:
+            raise Exception("No current cell context")
+
+        return cellContext
+
+    def addCellContext(self, cell):
+        if cell in self._cellContexts:
+            self._cellContexts.pop(cell)
+
+        self._cellContexts[cell] = Dlo._CellContext()
 
 
 class DloGen(Dlo):
@@ -143,16 +170,18 @@ class DloGen(Dlo):
 
     def addPin(self, pinName : str, termName: str, box : Box, layer: Layer) -> Pin:
         pin = Pin(pinName, termName)
-        self._pins[pinName] = pin
+
+        cellContext = self._getCurrentCellContext()
+        cellContext.pins[pinName] = pin
 
         term = pin.getTerm()
         if not self.hasTerm(termName):
-            self._terms[termName] = term
+            cellContext.terms[termName] = term
 
         # Note: The net associated with a terminal has the same name.
         net = term.getNet()
         if not self.hasNet(termName):
-            self._nets[termName] = net
+            cellContext.nets[termName] = net
 
         pin.setBBox(box, layer)
 
