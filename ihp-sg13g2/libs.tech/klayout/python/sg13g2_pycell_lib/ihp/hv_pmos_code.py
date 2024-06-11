@@ -24,7 +24,7 @@ from .utility_functions import *
 
 import math
 
-class pmos(DloGen):
+class hv_pmos(DloGen):
 
     @classmethod
     def defineParamSpecs(self, specs):
