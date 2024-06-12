@@ -42,7 +42,7 @@ class npn13G2(DloGen):
         specs('le', '0.9u', "Emitter Length")
         specs('we', '0.07u', "Emitter Width")
         specs('STI', '0.44u', 'STI')
-        specs('baspolyx', '0.30u', 'baspolyx')
+        specs('baspolyx', '0.3u', 'baspolyx')
         specs('bipwinx', '0.07u', 'bipwinx')
         specs('bipwiny', '0.1u', 'bipwiny')
         specs('empolyx', '0.15u', 'empolyx')
@@ -96,37 +96,38 @@ class npn13G2(DloGen):
         le = Numeric(le)*1e6
         we = Numeric(we)*1e6
 
-        a = le
+        tmp = le
         le = we
-        we = a
+        we = tmp
+        
         ActivShift = 0.01
         ActivShift = 0.0
-        PWellBlockShift = -0.01
+        
+        # for multiplied npn: le has to be bigger
         stepX = 1.85
         stretchX = stepX*(Nx-1)
         bipwinyoffset = (2 * (bipwiny - 0.1) - 0) / 2
         empolyyoffset = (2 * (empolyy - 0.18)) / 2
 
-        if le <  0.5 :
-            leoffset = 0
-        else :
-            leoffset = 0
-
+        leoffset = 0 # ((le - 0.07) / 2)
+        
         name = self.masterLib + '/' + self.masterCell +'/' + self.masterView
+        # Draw inner part as a subCell
         if Dlo.exists(name) :
             pcMaster = Instance(name)
             params = pcMaster.getParams()
-            params['le'] = self.le
+            params['le'] = self.we
             params['Nx'] = self.Nx
-            params['we'] = self.we
+            params['we'] = self.le
             pcMaster.setParams(params)
             pcMaster.setOrientation(strToOrient(self.masterOrient))
             pcMaster.setOrigin(Point(0, 0))
         else :
             print('(OA) Design "' + name + '" was not found')
 
-        pcLayer = 'TRANS'
         pcPurpose = 'drawing'
+        
+        pcLayer = 'TRANS'
         dbCreatePolygon(self, Layer(pcLayer, pcPurpose), PointList([Point(stretchX+2.45, (2.43 + we/2 + leoffset + bipwinyoffset + empolyyoffset)),
                                                                     Point(-2.45, (2.43 + we/2 + leoffset + bipwinyoffset + empolyyoffset)),
                                                                     Point(-2.45, (-1.98 - we/2 - leoffset - bipwinyoffset - empolyyoffset)),
