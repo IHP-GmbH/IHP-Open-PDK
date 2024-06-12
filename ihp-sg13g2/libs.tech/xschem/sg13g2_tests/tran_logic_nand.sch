@@ -153,7 +153,7 @@ value="
 pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
-meas tran tdelay TRIG v(b) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
+meas tran tdelay TRIG v(b) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
 write tran_logic_nand.raw
 .endc
 "}
@@ -169,16 +169,16 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/tran_logic_nand.raw tran"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 80 40 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} -70 -190 0 0 {name=M2
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos
@@ -187,16 +187,16 @@ spiceprefix=X
 C {devices/lab_pin.sym} -190 40 0 0 {name=p1 sig_type=std_logic lab=A}
 C {devices/lab_pin.sym} 240 -90 2 0 {name=p2 sig_type=std_logic lab=out}
 C {sg13g2_pr/sg13_lv_pmos.sym} 160 -190 0 0 {name=M3
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 80 -40 2 1 {name=M4
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos

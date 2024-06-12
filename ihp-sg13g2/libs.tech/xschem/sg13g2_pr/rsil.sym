@@ -16,15 +16,16 @@ v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {type=res
-format="@spiceprefix@name @pinlist @model w=@W l=@L m=@m b=@b"
+format="@spiceprefix@name @pinlist @model w=@w l=@l m=@m b=@b"
 template="name=R1
-W=0.5e-6
-L=0.5e-6
+w=0.5e-6
+l=0.5e-6
 model=rsil
 spiceprefix=X
 b=0
 m=1
 "
+drc="res_drc @name @symname @model @w @l"
 }
 V {}
 S {}
@@ -42,10 +43,10 @@ L 4 -7.5 -17.5 0 -20 {}
 L 4 0 -30 0 -20 {}
 B 5 -2.5 27.5 2.5 32.5 {name=M dir=inout propag=1 pinnumber=2}
 B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 pinnumber=1}
-T {W/L = @W / @L} 15 -3.75 0 0 0.2 0.2 {layer=13}
+T {w/l = @w / @l} 15 -3.75 0 0 0.2 0.2 {layer=13}
 T {@model} 15 -16.25 0 0 0.2 0.2 {}
 T {@spiceprefix@name} 15 -28.75 0 0 0.2 0.2 {}
-T {tcleval(R=[ ev \{ ( 9.0e-6 / @W + 7.0 * ( (@b + 1)*@L + ( 1.081*( @W + 1.0e-8 ) + 0.18e-6 )*@b ) / ( @W + 1.0e-8 ) ) / @m \} ] )} 15 30 0 0 0.2 0.2 {layer=13}
+T {tcleval(R=[ ev \{ ( 9.0e-6 / @w + 7.0 * ( (@b + 1)*@l + ( 1.081*( @w + 1.0e-8 ) + 0.18e-6 )*@b ) / ( @w + 1.0e-8 ) ) / @m \} ] )} 15 30 0 0 0.2 0.2 {layer=13}
 T {} 15 20 0 0 0.2 0.2 {}
 T {b=@b} 15 6.25 0 0 0.2 0.2 {layer=13}
 T {m=@m} 15 16.25 0 0 0.2 0.2 {layer=13}

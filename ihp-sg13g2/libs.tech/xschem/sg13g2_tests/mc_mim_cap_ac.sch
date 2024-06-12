@@ -76,4 +76,4 @@ m=1}
 C {devices/gnd.sym} 420 -270 0 0 {name=l5 lab=GND}
 C {devices/lab_pin.sym} 100 -440 1 0 {name=p1 sig_type=std_logic lab=in}
 C {devices/lab_pin.sym} 420 -430 1 0 {name=p2 sig_type=std_logic lab=out}
-C {sg13g2_pr/cap_cmim.sym} 260 -420 1 0 {name=C1 model=cap_cmim W=7.0e-6 L=7.0e-6 MF=1 spiceprefix=X}
+C {sg13g2_pr/cap_cmim.sym} 260 -420 1 0 {name=C1 model=cap_cmim w=7.0e-6 l=7.0e-6 MF=1 spiceprefix=X}

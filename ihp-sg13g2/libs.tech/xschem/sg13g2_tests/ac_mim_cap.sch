@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 * Copyright 2021 Stefan Frederik Schippers
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,8 +39,8 @@ dataset=-1
 unitx=1
 logx=1
 logy=1
-y1=-1.4
-y2=-2.5e-07
+y1=-0.26
+y2=-7.3e-07
 color=4
 node=mag
 rainbow=1}
@@ -92,8 +92,8 @@ m=1}
 C {devices/gnd.sym} 690 -230 0 0 {name=l5 lab=GND}
 C {devices/lab_pin.sym} 370 -400 1 0 {name=p1 sig_type=std_logic lab=in}
 C {devices/lab_pin.sym} 690 -390 1 0 {name=p2 sig_type=std_logic lab=out}
-C {sg13g2_pr/cap_cmim.sym} 530 -380 1 0 {name=C1 model=cap_cmim W=7.0e-6 L=7.0e-6 MF=1 spiceprefix=X}
 C {devices/launcher.sym} 200 -740 0 0 {name=h5
 descr="load waves" 
 tclcommand="xschem raw_read $netlist_dir/ac_mim_cap.raw ac"
 }
+C {sg13g2_pr/cap_cmim.sym} 530 -380 1 0 {name=C1 model=cap_cmim w=10.0e-6 l=70.0e-6 m=1 spiceprefix=X}

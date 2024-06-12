@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 * Copyright 2021 Stefan Frederik Schippers
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,4 +101,9 @@ C {devices/launcher.sym} 780 -450 0 0 {name=h5
 descr="load waves" 
 tclcommand="xschem raw_read $netlist_dir/test_mim_cap.raw tran"
 }
-C {sg13g2_pr/cap_cmim.sym} 40 -220 0 0 {name=C2 model=cap_cmim W=7.0e-6 L=7.0e-6 MF=1 spiceprefix=X}
+C {sg13g2_pr/cap_cmim.sym} 40 -220 0 0 {name=C2
+model=cap_cmim
+w=7.0e-6
+l=7.0e-6
+m=1
+spiceprefix=X}
