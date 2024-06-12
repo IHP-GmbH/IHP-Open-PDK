@@ -98,16 +98,16 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/dc_logic_not.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 0 30 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 -70 0 0 {name=M2
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos

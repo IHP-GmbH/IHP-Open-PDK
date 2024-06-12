@@ -1,4 +1,4 @@
-v {xschem version=3.1.0 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,15 @@ v {xschem version=3.1.0 file_version=1.2
 }
 G {}
 K {type=vertical_npn
-format="@spiceprefix@name @pinlist @model Nx=@Nx"
+lvs_format="@spiceprefix@name @pinlist @model le=@le we=70.0n m=@Nx"
+format="@spiceprefix@name @pinlist @model Nx=@Nx le=@le"
 template="name=Q1
 model=npn13G2v
 spiceprefix=X
-Nx=1"
+Nx=1
+le=1.0e-6
+"
+drc="hbt_drc @name @symname @model @Nx @le"
 }
 V {}
 S {}
@@ -34,7 +38,8 @@ B 5 -22.5 -2.5 -17.5 2.5 {name=B dir=in pinnumber=1}
 B 5 17.5 27.5 22.5 32.5 {name=E dir=inout pinnumber=2}
 B 5 17.5 -2.5 22.5 2.5 {name=S dir=in pinnumber=1}
 P 4 4 20 30 13.75 13.75 3.75 23.75 20 30 {fill=true}
-T {Nx=@Nx} 22.5 11.25 0 0 0.2 0.2 {layer=13}
+T {Nx=@Nx} 22.5 1.25 0 0 0.2 0.2 {layer=13}
 T {@model} 22.5 -15 0 0 0.2 0.2 {}
 T {S} 10 -5 0 0 0.2 0.2 {}
 T {@spiceprefix@name} 22.5 -27.5 0 0 0.2 0.2 {}
+T {le=@le} 22.5 11.25 0 0 0.2 0.2 {layer=13}

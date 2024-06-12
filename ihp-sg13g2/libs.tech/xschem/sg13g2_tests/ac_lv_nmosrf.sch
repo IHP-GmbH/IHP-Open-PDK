@@ -125,60 +125,56 @@ C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Autho
 C {devices/launcher.sym} -210 -300 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/ac_lv_nmosrf.raw ac"}
-C {sg13g2_pr/rppd.sym} 220 -110 3 0 {name=R1
-W=0.2e-6
-L=0.5e-5
-model=rppd
-spiceprefix=X
-m=1
-R=7.0
-Imax=0.3e-6
-}
 C {devices/lab_pin.sym} 150 -110 1 0 {name=p1 sig_type=std_logic lab=Vout1}
-C {sg13g2_pr/rppd.sym} 80 -40 3 0 {name=R2
-W=0.2e-6
-L=0.5e-5
-model=rppd
-spiceprefix=X
-m=1
-R=7.0
-Imax=0.3e-6
-}
 C {devices/gnd.sym} -170 60 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} -300 60 0 0 {name=l7 lab=GND}
 C {devices/vsource.sym} -300 10 0 0 {name=Vgs1 value="dc 0.75 ac 0.01 "}
 C {devices/vsource.sym} -40 -30 0 0 {name=Vds2 value=1.5}
 C {devices/gnd.sym} -40 60 0 0 {name=l8 lab=GND}
 C {devices/gnd.sym} -120 60 0 0 {name=l9 lab=GND}
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 2 1 {name=M2
-L=0.35u
-W=1.0u
+C {devices/lab_pin.sym} -180 -100 1 0 {name=p2 sig_type=std_logic lab=Vout2}
+C {sg13g2_pr/rppd.sym} -250 -30 3 0 {name=R1
+w=0.5e-6
+l=0.5e-6
+model=rppd
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rppd.sym} -110 -100 3 0 {name=R2
+w=0.5e-6
+l=0.5e-6
+model=rppd
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rppd.sym} 80 -40 3 0 {name=R3
+w=0.5e-6
+l=0.5e-6
+model=rppd
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rppd.sym} 220 -110 3 0 {name=R4
+w=0.5e-6
+l=0.5e-6
+model=rppd
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 2 1 {name=M1
+l=0.35u
+w=1.0u
 ng=1
 m=1
 rfmode=0
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/rppd.sym} -110 -100 3 0 {name=R3
-W=0.2e-6
-L=0.5e-5
-model=rppd
-spiceprefix=X
-m=1
-R=7.0
-Imax=0.3e-6
-}
-C {devices/lab_pin.sym} -180 -100 1 0 {name=p2 sig_type=std_logic lab=Vout2}
-C {sg13g2_pr/rppd.sym} -250 -30 3 0 {name=R4
-W=0.2e-6
-L=0.5e-5
-model=rppd
-spiceprefix=X
-m=1
-R=7.0
-Imax=0.3e-6
-}
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M2
 l=0.35u
 w=1.0u
 ng=1
