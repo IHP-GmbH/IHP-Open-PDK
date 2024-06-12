@@ -97,7 +97,7 @@ C {devices/gnd.sym} 420 90 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 420 -40 0 0 {name=Vrh}
 C {sg13g2_pr/rsil.sym} 90 40 0 0 {name=R1
 w=0.5e-6
-l=0.5e-6
+l=1.5e-6
 model=rsil
 spiceprefix=X
 b=0

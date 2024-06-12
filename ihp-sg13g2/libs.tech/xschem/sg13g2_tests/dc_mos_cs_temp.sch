@@ -140,8 +140,8 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -40 50 2 1 {name=M1
-L=1.0u
-W=2.0u
+l=1.0u
+w=2.0u
 ng=1
 m=1
 model=sg13_lv_nmos
@@ -152,8 +152,8 @@ C {devices/gnd.sym} 240 140 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} 290 140 0 0 {name=l7 lab=GND}
 C {devices/lab_pin.sym} 130 50 0 0 {name=p5 sig_type=std_logic lab=Vgs2}
 C {sg13g2_pr/sg13_hv_nmos.sym} 220 50 2 1 {name=M2
-L=1.0u
-W=2.0u
+l=1.0u
+w=2.0u
 ng=1
 m=1
 model=sg13_hv_nmos
@@ -166,16 +166,16 @@ C {devices/gnd.sym} 870 140 0 0 {name=l10 lab=GND}
 C {devices/gnd.sym} 920 140 0 0 {name=l11 lab=GND}
 C {devices/lab_pin.sym} 760 50 0 0 {name=p9 sig_type=std_logic lab=Vgs4}
 C {sg13g2_pr/sg13_lv_pmos.sym} 620 50 2 1 {name=M3
-L=1.0u
-W=2.0u
+l=1.0u
+w=2.0u
 ng=1
 m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_hv_pmos.sym} 850 50 2 1 {name=M4
-L=1.0u
-W=2.0u
+l=1.0u
+w=2.0u
 ng=1
 m=1
 model=sg13_hv_pmos

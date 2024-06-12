@@ -81,7 +81,7 @@ value="
 pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
-meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
+meas tran tdelay TRIG v(in) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
 write tran_logic_not.raw
 .endc
 "}
@@ -97,16 +97,16 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/tran_logic_not.raw tran"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -180 20 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} -180 -80 0 0 {name=M2
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos

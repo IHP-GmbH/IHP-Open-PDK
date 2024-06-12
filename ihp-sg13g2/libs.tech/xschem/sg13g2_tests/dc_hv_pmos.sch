@@ -78,8 +78,8 @@ descr="load waves"
 tclcommand="xschem raw_read $netlist_dir/dc_hv_pmos.raw dc"
 }
 C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_hv_pmos

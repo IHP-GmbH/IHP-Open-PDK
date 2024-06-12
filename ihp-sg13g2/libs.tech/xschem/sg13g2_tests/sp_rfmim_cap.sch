@@ -169,7 +169,7 @@ tclcommand="xschem raw_read $netlist_dir/sp_rfmim_cap.raw ac"
 C {devices/gnd.sym} 530 -230 0 0 {name=l2 lab=GND}
 C {sg13g2_pr/cap_rfcmim.sym} 530 -380 3 0 {name=C1 
 model=cap_rfcmim
-w=1.0e-6
-l=1.0e-6
+w=2.0e-6
+l=2.0e-6
 wfeed=5.0e-6
 spiceprefix=X}
