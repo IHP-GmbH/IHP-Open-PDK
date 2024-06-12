@@ -51,6 +51,7 @@ class Pin(object):
         self._term = None
         self._bbox = None
         self._shapes = []
+        self._layers = []
 
         import cni.dlo
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
@@ -95,8 +96,7 @@ class Pin(object):
 
     def setBBox(self, box: Box, layer: Layer) -> None:
         self._bbox = box
-        text = pya.DText(self._name, pya.DTrans(box.left, box.bottom + (box.top-box.bottom) * 0.05), (box.top-box.bottom) * 0.8, 2)
-        Shape.getCell().shapes(layer.number).insert(text)
+        self._layers.append(layer)
 
     def getBBox(self) -> Box:
         return self._bbox

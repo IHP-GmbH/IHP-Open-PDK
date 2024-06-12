@@ -29,40 +29,40 @@ class Box(object):
     def __init__(self, l = INT_MAX, b = INT_MAX, r = INT_MIN, t = INT_MIN):
         self.box = pya.DBox(l, b, r, t)
 
-    def abut(dir, refBox, align = True):
+    def abut(self, dir, refBox, align = True):
         raise Exception("Not implemented yet!")
 
-    def alignEdge(dir, refBox, refDir=None, offset=None):
+    def alignEdge(self, dir, refBox, refDir=None, offset=None):
         raise Exception("Not implemented yet!")
 
-    def alignEdgeToCoord(dir, coord):
+    def alignEdgeToCoord(self, dir, coord):
         raise Exception("Not implemented yet!")
 
-    def alignEdgeToPoint(dir, point):
+    def alignEdgeToPoint(self, dir, point):
         raise Exception("Not implemented yet!")
 
-    def alignLocation(loc, refBox, refLoc=None, offset=None):
+    def alignLocation(self, loc, refBox, refLoc=None, offset=None):
         raise Exception("Not implemented yet!")
 
-    def alignLocationToPoint(loc, pt):
+    def alignLocationToPoint(self, loc, pt):
         raise Exception("Not implemented yet!")
 
-    def centerCenter():
+    def centerCenter(self):
         raise Exception("Not implemented yet!")
 
-    def centerLeft():
+    def centerLeft(self):
         raise Exception("Not implemented yet!")
 
-    def centerRight():
+    def centerRight(self):
         raise Exception("Not implemented yet!")
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         return Box(self.box.left, self.box.bottom, self.box.right, self.box.top)
 
-    def contains(box, incEdges = True):
+    def contains(self, box, incEdges = True):
         raise Exception("Not implemented yet!")
 
-    def containsPoint(p, incEdges = True):
+    def containsPoint(self, p, incEdges = True):
         raise Exception("Not implemented yet!")
 
     def destroy(self):
@@ -73,19 +73,19 @@ class Box(object):
         else:
             pya.Logger.warn(f"Box.destroy: already destroyed!")
 
-    def expand(coord):
+    def expand(self, coord):
         raise Exception("Not implemented yet!")
 
-    def expandDir(dir, coord):
+    def expandDir(self, dir, coord):
         raise Exception("Not implemented yet!")
 
-    def expandForMinArea(dir, minArea, grid = None):
+    def expandForMinArea(self, dir, minArea, grid = None):
         raise Exception("Not implemented yet!")
 
-    def expandForMinWidth(dir, minWidth, grid = None):
+    def expandForMinWidth(self, dir, minWidth, grid = None):
         raise Exception("Not implemented yet!")
 
-    def expandToGrid(grid, dir = None):
+    def expandToGrid(self, grid, dir = None):
         raise Exception("Not implemented yet!")
 
     def fix(self):
@@ -98,100 +98,101 @@ class Box(object):
             self.box.assign(fixedBox)
         return self
 
-    def getArea():
+    def getArea(self):
         raise Exception("Not implemented yet!")
 
-    def getCenter():
+    def getCenter(self):
+        center = self.box.center()
+        return Point(center.x, center.y)
+
+    def getCenterX(self):
         raise Exception("Not implemented yet!")
 
-    def getCenterX():
+    def getCenterY(self):
         raise Exception("Not implemented yet!")
 
-    def getCenterY():
+    def getCoord(self, dir):
         raise Exception("Not implemented yet!")
 
-    def getCoord(dir):
-        raise Exception("Not implemented yet!")
-
-    def getDimension(dir):
+    def getDimension(self, dir):
         raise Exception("Not implemented yet!")
 
     def getHeight(self):
         return self.box.top - self.box.bottom
 
-    def getLeft():
+    def getLeft(self):
         raise Exception("Not implemented yet!")
 
-    def getLocationPoint(loc):
+    def getLocationPoint(self, loc):
         raise Exception("Not implemented yet!")
 
-    def getLocationPoint(dir):
+    def getLocationPoint(self, dir):
         raise Exception("Not implemented yet!")
 
-    def getPoints():
+    def getPoints(self):
         raise Exception("Not implemented yet!")
 
-    def getRange(dir):
+    def getRange(self, dir):
         raise Exception("Not implemented yet!")
 
-    def getRangeX():
+    def getRangeX(self):
         raise Exception("Not implemented yet!")
 
-    def getRangeY():
+    def getRangeY(self):
         raise Exception("Not implemented yet!")
 
-    def getRight():
+    def getRight(self):
         raise Exception("Not implemented yet!")
 
-    def getSpacing(dir, refBox):
+    def getSpacing(self, dir, refBox):
         raise Exception("Not implemented yet!")
 
-    def getTop():
+    def getTop(self):
         raise Exception("Not implemented yet!")
 
     def getWidth(self):
         return self.box.right - self.box.left
 
-    def hasNoArea():
+    def hasNoArea(self):
         raise Exception("Not implemented yet!")
 
-    def init():
+    def init(self):
         raise Exception("Not implemented yet!")
 
-    def intersect(box):
+    def intersect(self, box):
         raise Exception("Not implemented yet!")
 
-    def intersect(box, dir):
+    def intersect(self, box, dir):
         raise Exception("Not implemented yet!")
 
-    def isInverted():
+    def isInverted(self):
         raise Exception("Not implemented yet!")
 
-    def isNormal():
+    def isNormal(self):
         raise Exception("Not implemented yet!")
 
-    def limit(point):
+    def limit(self, point):
         raise Exception("Not implemented yet!")
 
-    def lowerCenter():
+    def lowerCenter(self):
         raise Exception("Not implemented yet!")
 
     def lowerLeft(self):
         return Point(self.box.left, self.box.bottom)
 
-    def lowerRight():
+    def lowerRight(self):
         raise Exception("Not implemented yet!")
 
-    def merge(box, dir):
+    def merge(self, box, dir):
         raise Exception("Not implemented yet!")
 
-    def mergePoint(p):
+    def mergePoint(self, p):
         raise Exception("Not implemented yet!")
 
-    def mirrorX(yCoord = 0):
+    def mirrorX(self, yCoord = 0):
         raise Exception("Not implemented yet!")
 
-    def mirrorY(xCoord = 0):
+    def mirrorY(self, xCoord = 0):
         raise Exception("Not implemented yet!")
 
     def moveBy(self, dx: float, dy: float) -> None:
@@ -202,97 +203,97 @@ class Box(object):
         self.__rect._shape = shape
         self.box = movedBox
 
-    def moveTo(destination, loc = Location.CENTER_CENTER):
+    def moveTo(self, destination, loc = Location.CENTER_CENTER):
         raise Exception("Not implemented yet!")
 
-    def moveTowards(dir, d):
+    def moveTowards(self, dir, d):
         raise Exception("Not implemented yet!")
 
-    def overlaps(box, incEdges = True):
+    def overlaps(self, box, incEdges = True):
         raise Exception("Not implemented yet!")
 
-    def place(dir, refBox, distance, align = True):
+    def place(self, dir, refBox, distance, align = True):
         raise Exception("Not implemented yet!")
 
-    def removeRegion(box):
+    def removeRegion(self, box):
         raise Exception("Not implemented yet!")
 
-    def rotate90(origin = None):
+    def rotate90(self, origin = None):
         raise Exception("Not implemented yet!")
 
-    def rotate180(origin = None):
+    def rotate180(self, origin = None):
         raise Exception("Not implemented yet!")
 
-    def rotate270(origin = None):
+    def rotate270(self, origin = None):
         raise Exception("Not implemented yet!")
 
-    def set(b):
+    def set(self, b):
         raise Exception("Not implemented yet!")
 
-    def set(b, dir = None):
+    def set(self, b, dir = None):
         raise Exception("Not implemented yet!")
 
-    def set(lowerLeft, upperRight):
+    def set(self, lowerLeft, upperRight):
         raise Exception("Not implemented yet!")
 
-    def set(left, bottom, right, top):
+    def set(self, left, bottom, right, top):
         raise Exception("Not implemented yet!")
 
-    def setBottom(v):
+    def setBottom(self, v):
         raise Exception("Not implemented yet!")
 
-    def setCenter(point):
+    def setCenter(self, point):
         raise Exception("Not implemented yet!")
 
-    def setCenterY(v):
+    def setCenterY(self, v):
         raise Exception("Not implemented yet!")
 
-    def setCoord(dir, coord):
+    def setCoord(self, dir, coord):
         raise Exception("Not implemented yet!")
 
-    def setDimension(coord, dir):
+    def setDimension(self, coord, dir):
         raise Exception("Not implemented yet!")
 
-    def setBottom(v):
+    def setBottom(self, v):
         raise Exception("Not implemented yet!")
 
-    def setHeight(height):
+    def setHeight(self, height):
         raise Exception("Not implemented yet!")
 
-    def setLocationPoint(loc, pt):
+    def setLocationPoint(self, loc, pt):
         raise Exception("Not implemented yet!")
 
-    def setRange(dir, range):
+    def setRange(self, dir, range):
         raise Exception("Not implemented yet!")
 
-    def setRangeX(range):
+    def setRangeX(self, range):
         raise Exception("Not implemented yet!")
 
-    def setRangeY(range):
+    def setRangeY(self, range):
         raise Exception("Not implemented yet!")
 
     def setRect(self, rect):
         self.__rect = rect
 
-    def setRight(v):
+    def setRight(self, v):
         raise Exception("Not implemented yet!")
 
-    def setTop(v):
+    def setTop(self, v):
         raise Exception("Not implemented yet!")
 
-    def setWidth(width):
+    def setWidth(self, width):
         raise Exception("Not implemented yet!")
 
-    def snap(grid, snapType = None):
+    def snap(self, grid, snapType = None):
         raise Exception("Not implemented yet!")
 
-    def snapX(grid, snapType = None):
+    def snapX(self, grid, snapType = None):
         raise Exception("Not implemented yet!")
 
-    def snapY(grid, snapType = None):
+    def snapY(self, grid, snapType = None):
         raise Exception("Not implemented yet!")
 
-    def snapTowards(grid, dir):
+    def snapTowards(self, grid, dir):
         raise Exception("Not implemented yet!")
 
     def transform(self, transform: Transform) -> None:
@@ -306,10 +307,10 @@ class Box(object):
         self.__rect._shape = shape
         self.box = transformedBox
 
-    def upperCenter():
+    def upperCenter(self):
         raise Exception("Not implemented yet!")
 
-    def upperLeft():
+    def upperLeft(self):
         raise Exception("Not implemented yet!")
 
     def upperRight(self):
