@@ -168,13 +168,11 @@ class via_stack(DloGen):
             if layer == 'TopMetal1':
                 if columns * via_size + (columns - 1) * 2 * via_sep < TopMetal1_min:
                     via_enc = (TopMetal1_min - Topvia1_size)/2
-                dbCreateRect(self, layer, Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
             elif layer == 'TopMetal2':
                 if columns * via_size + (columns - 1) * 2 * via_sep < TopMetal2_min:
                     via_enc = (TopMetal2_min - Topvia2_size) / 2
-                dbCreateRect(self, layer, Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
-            else:
-                dbCreateRect(self, layer, Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
+
+            dbCreateRect(self, layer, Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
 
             #via draw
             if layer != b_layer:
