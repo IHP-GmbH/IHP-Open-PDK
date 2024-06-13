@@ -315,20 +315,26 @@ class DRC::DRCLayer
         if origin == 'll'
             origin_x = bbox.left
             origin_y = bbox.bottom
+            if tile_size and tile_step and (tile_size.get[0] != tile_step.get[0] or tile_size.get[1] != tile_step.get[1])
+              origin_x = bbox.left + tile_step.get[0]/2
+              origin_y = bbox.bottom + tile_step.get[1]/2
+            end
             tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
             arguments.push(tile_origin)
         elsif origin != 'cc'
             raise "Unknown origin: 'cc' or 'll' expected"
         end
         if tile_size
-            return merged_layer.with_density(*arguments)
+            boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu)))
+            tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
+            return merged_layer.with_density(*arguments, tile_boundary, @engine.padding_ignore)
         else
             tile_size = DRC::DRCTileSize::new(bbox.width, bbox.height)
             tile_count = DRC::DRCTileCount::new(1,2)
             enlarged_bbox = bbox.enlarged(1.1).to_itype(@engine.dbu)
             boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox))
             tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
-            result = merged_layer.with_density(*arguments, tile_size, tile_count, tile_boundary)
+            result = merged_layer.with_density(*arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
             return result.raw.overlapping(DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu))))
         end
     end
