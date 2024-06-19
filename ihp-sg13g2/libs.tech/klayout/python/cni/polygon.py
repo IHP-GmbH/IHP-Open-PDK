@@ -45,8 +45,9 @@ class Polygon(Shape):
         super().__init__(arg3, self._polygon.bbox())
         self.set_shape(Shape.getCell().shapes(arg2).insert(self._polygon))
 
-    def addToRegion(self, region: pya.Region):
-        region.insert(self._polygon.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
+    def addToRegion(self, region: pya.Region, filter: ShapeFilter):
+        if filter.isIncluded(self._shape.layer):
+            region.insert(self._polygon.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         dup = self._polygon.dup();

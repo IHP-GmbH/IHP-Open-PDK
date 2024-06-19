@@ -32,8 +32,9 @@ class Rect(Shape):
         self.set_shape(shape)
         self._box.setRect(self)
 
-    def addToRegion(self, region: pya.Region):
-        region.insert(self._box.box.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
+    def addToRegion(self, region: pya.Region, filter: ShapeFilter):
+        if filter.isIncluded(self._layer):
+            region.insert(self._box.box.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         return Rect(self._layer, self._box.clone(nameMap, netMap))
