@@ -39,10 +39,12 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * SPICE Netlist
     * Verilog
 * IO cellset
+    * CDL
     * GDSII
     * LEF
-    * Liberty (dummy)
+    * Liberty
     * SPICE Netlist
+    * Verilog
 * SRAM cellset
     * CDL
     * GDSII
@@ -53,11 +55,8 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII
 * KLayout tool data:
     * layer property and tech files
-    * DRC rules (minimal set)
-    * PyCells
-       * initial version of the wrapper API
-       * sample cells
-* Pcells (for reference only) `libs.tech/pycell`
+    * DRC rules (minimal/maximal set)
+    * PyCells (1st priority) 
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * Qucs-S: primitive device symbols, settings and testbenches
