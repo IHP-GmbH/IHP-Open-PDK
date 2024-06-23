@@ -30,14 +30,14 @@
  <interpreter>dsl</interpreter>
  <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
  <text># Supported variables that can be set using "-rd &lt;name&gt;=&lt;value&gt;" on the command line:
-# logfile - path to the log file [default: no log file]
-# gdsfile - path to the GDS layout to check (required in batch mode)
-# cell    - name of the cell to check (required in batch mode)
-# outfile - path to the report database [default: sg13g2_minimal.lyrdb in the script directory]
+# log_file    - path to the log file [default: no log file]
+# in_gds      - path to the GDS layout to check (required in batch mode)
+# cell        - name of the cell to check
+# report_file - path to the report database [default: sg13g2_minimal.lyrdb in the script directory]
 
 # to set logfile: -rd logfile="sg13g2_minimal.log"
-if $logfile
-    log_file($logfile)
+if $log_file
+    log_file($log_file)
 end
 
 application = RBA::Application.instance
@@ -49,30 +49,27 @@ if main_window
         main_window.load_layout(layout_path, 1)
         curr_layout_view = main_window.current_view()
     end
+    active_layout = RBA::CellView::active.layout
     active_cellname = RBA::CellView::active.cell_name
+    source(active_layout, active_cellname)
 else
     log("DRC: batch mode")
+    # to set input layout: -rd in_gds="path to GDS file"
     # to set cell: -rd cell="topcell"
     if $cell
         active_cellname = $cell
         log("Active cell: " + active_cellname)
+        source($in_gds, active_cellname)
+        active_layout = source.layout
     else
-        raise("'cell' script variable must be defined on command line")
+        source($in_gds)
+        active_layout = source.layout
+        active_cellname = source.cell_name
     end
 end
 
-active_layout = RBA::CellView::active.layout
-
-unless active_layout or $gdsfile
-    raise("layout file must be defined on command line or via 'gdsfile' script variable")
-end
-
-# to set input layout: -rd gdsfile="path to GDS file"
-if $gdsfile
-    source($gdsfile, active_cellname)
-    active_layout = source.layout
-else
-    source(active_layout, active_cellname)
+unless active_layout or $in_gds
+    raise("layout file must be defined on command line or via 'in_gds' script variable")
 end
 
 if active_layout.dbu != 0.001
@@ -80,13 +77,27 @@ if active_layout.dbu != 0.001
 end
 
 report_file = __dir__ + "/sg13g2_minimal.lyrdb"
-# to set report file: -rd outfile="sg13g2_minimal.lyrdb"
-if $outfile
-    report_file = File.expand_path($outfile)
+# to set report file: -rd report_file="sg13g2_minimal.lyrdb"
+if $report_file
+    report_file = File.expand_path($report_file)
 end
+
 report("design rules: sg13g2_minimal | layout cell: " + active_cellname, report_file)
 
 deep
+
+$drc_error_count = 0
+
+class DRC::DRCLayer
+    unless method_defined?(:original_output)
+        alias_method :original_output, :output
+    end
+
+    def output(*args)
+        $drc_error_count += self.count()
+        original_output(*args)
+    end
+end
 
 # Initial definitions of control flow variables
 # Strings from the command line have to be converted
@@ -113,28 +124,35 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_area(constraint)
-        output_layer = self.dup
+    def ext_with_area(constraint)
+        lower_bound = nil
+        upper_bound = nil
+        output_layer = nil
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
         constraint.each do |expression|
-            output_layer.data.min_coherence = true
             relation = expression[0]
             value = expression[1]
             if relation == "&gt;"
-                output_layer = output_layer.with_area((value + @engine.dbu), nil)
+                lower_bound = value + 1e-6
             elsif relation == "&lt;"
-                output_layer = output_layer.with_area(nil, value)
+                upper_bound = value
             elsif relation == "=="
-                output_layer = output_layer.with_area(value)
+                output_layer = self.with_area(value)
             elsif relation == "!="
-                output_layer = output_layer.without_area(value)
+                output_layer = self.without_area(value)
             elsif relation == "&gt;="
-                output_layer = output_layer.with_area(value, nil)
+                lower_bound = value
             elsif relation == "&lt;="
-                output_layer = output_layer.with_area(nil, (value + @engine.dbu))
+                upper_bound = value + 1e-6
             else
                 raise "invalid expression"
             end
         end
+        if lower_bound or upper_bound
+            output_layer = self.with_area(lower_bound, upper_bound)
+        end
+        self.data.min_coherence = self_min_coherence_state
         return output_layer
     end
 
@@ -197,12 +215,18 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_or(other)
+    def ext_or(other, *further_layers)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
         other.data.min_coherence = true
         output_layer = self.join(other)
+        further_layers.each do |further_layer|
+            further_layer_min_coherence_state = further_layer.data.min_coherence?
+            further_layer.data.min_coherence = true
+            output_layer = output_layer.join(further_layer)
+            further_layer.data.min_coherence = further_layer_min_coherence_state
+        end
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         return output_layer
@@ -264,14 +288,6 @@ class DRC::DRCLayer
         else
             return output_layer
         end
-    end
-
-    def ext_ring
-        holes = self.holes
-        hulls = self.hulls
-        covering = hulls.covering(holes)
-        result = covering.and(self)
-        return result
     end
 
     def ext_interacting_with_text(text_layer, text)
@@ -366,8 +382,6 @@ Metal3 = source.polygons("30/0")
 Metal3_pin = source.polygons("30/2")
 Metal3_filler = source.polygons("30/22")
 Metal3_slit = source.polygons("30/24")
-NWell = source.polygons("31/0")
-NWell_pin = source.polygons("31/2")
 DeepCo = source.polygons("35/0")
 EdgeSeal = source.polygons("39/0")
 ThickGateOx = source.polygons("44/0")
@@ -405,19 +419,27 @@ if $sanityRules
 	Flash = source.polygons("71/0")
 end
 
-Activ_Act_a = Activ.ext_fast_width(150)
+Activ_Act_a = Activ.ext_fast_width(0.15.um)
 Act_density = Activ.ext_or(Activ_filler)
 Gat_density = GatPoly.ext_or(GatPoly_filler)
-Cont_SQ = Cont.ext_rectangles(true, false, [["==", 160]], [["==", 160]], nil)
-ContBar = Cont.ext_area([["&gt;", 0.16*0.16]])
+Cont_SQ = Cont.ext_rectangles(true, false, [["==", 0.16.um]], [["==", 0.16.um]], nil)
+ContBar = Cont.ext_with_area([["&gt;", (0.16*0.16).um2]])
 Act_Nsram = Activ.ext_not(SRAM)
 GP_Nsram = GatPoly.ext_not(SRAM)
 M1_Nsram = Metal1.ext_not(SRAM)
 M2_Nsram = Metal2.ext_not(SRAM)
 M3_Nsram = Metal3.ext_not(SRAM)
-ThickGateOx_TGO_f = ThickGateOx.ext_fast_width(860, polygon_output: true)
+Via1_edgC1_out = Via1.ext_not(EdgeSeal)
+Via2_edgC1_out = Via2.ext_not(EdgeSeal)
+Cont_outside_EdgeSeal = Cont.outside(EdgeSeal)
+ThickGateOx_TGO_f = ThickGateOx.ext_fast_width(0.86.um, polygon_output: true)
+Via3_edgC1_out = Via3.ext_not(EdgeSeal)
 M4_Nsram = Metal4.ext_not(SRAM)
+Via4_edgC1_out = Via4.ext_not(EdgeSeal)
 M5_Nsram = Metal5.ext_not(SRAM)
+TopVia1_edgC1_out = TopVia1.ext_not(EdgeSeal)
+TopVia1_or_Vmim = TopVia1.ext_or(Vmim)
+TopVia2_edgC1_out = TopVia2.ext_not(EdgeSeal)
 M1_density = Metal1.ext_or(Metal1_filler).ext_not(Metal1_slit)
 M2_density = Metal2.ext_or(Metal2_filler).ext_not(Metal2_slit)
 emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(TEXT_0, "E")
@@ -426,329 +448,331 @@ M4_density = Metal4.ext_or(Metal4_filler).ext_not(Metal4_slit)
 M5_density = Metal5.ext_or(Metal5_filler).ext_not(Metal5_slit)
 TM1_density = TopMetal1.ext_or(TopMetal1_filler).ext_not(TopMetal1_slit)
 TM2_density = TopMetal2.ext_or(TopMetal2_filler).ext_not(TopMetal2_slit)
-GP_Nsram_Gat_a = GP_Nsram.ext_fast_width(130, polygon_output: true)
-GP_Nsram_Gat_b = GP_Nsram.ext_fast_space(180, polygon_output: true)
+GP_Nsram_Gat_a = GP_Nsram.ext_fast_width(0.13.um, polygon_output: true)
+GP_Nsram_Gat_b = GP_Nsram.ext_fast_space(0.18.um, polygon_output: true)
 transG2L = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2L").ext_covering(emi2Pin)
 -&gt; do
     Activ_Act_a.dup
-end.().output("Act.a", "Min. Activ width")
+end.().output("Act.a", "Min. Activ width = 0.15")
 -&gt; do
-    Act_Nsram.ext_fast_space(210)
-end.().output("Act.b", "Min. Activ space or notch")
+    Act_Nsram.ext_fast_space(0.21.um)
+end.().output("Act.b", "Min. Activ space or notch = 0.21")
 
 if $density
 	-&gt; do
 	    Act_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("AFil.g", "Min. global Activ density [%]")
+	end.().output("AFil.g", "Min. global Activ density [%] = 35.00")
 	-&gt; do
 	    Act_density.ext_with_density(0.55 .. 1.0, 'll')
-	end.().output("AFil.g1", "Max. global Activ density [%]")
+	end.().output("AFil.g1", "Max. global Activ density [%] = 55.00")
 	-&gt; do
-	    Act_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("AFil.g2", "Min. Activ coverage ratio for any 800 x 800 µm² chip area [%]")
+	    Act_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("AFil.g2", "Min. Activ coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    Act_density.ext_with_density(0.65 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("AFil.g3", "Max. Activ coverage ratio for any 800 x 800 µm² chip area [%]")
+	    Act_density.ext_with_density(0.65 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("AFil.g3", "Max. Activ coverage ratio for any 800 x 800 µm² chip area [%] = 65.00")
 end
 
 -&gt; do
     ThickGateOx_TGO_f.dup
-end.().output("TGO.f", "Min. ThickGateOx width")
+end.().output("TGO.f", "Min. ThickGateOx width = 0.86")
 -&gt; do
     GP_Nsram_Gat_a.dup
-end.().output("Gat.a", "Min. GatPoly width")
+end.().output("Gat.a", "Min. GatPoly width = 0.13")
 -&gt; do
     GP_Nsram_Gat_b.dup
-end.().output("Gat.b", "Min. GatPoly space or notch")
+end.().output("Gat.b", "Min. GatPoly space or notch = 0.18")
 -&gt; do
-    GP_Nsram.ext_fast_separation(Act_Nsram, 70)
-end.().output("Gat.d", "Min. GatPoly space to Activ")
+    GP_Nsram.ext_fast_separation(Act_Nsram, 0.07.um)
+end.().output("Gat.d", "Min. GatPoly space to Activ = 0.07")
 
 if $density
 	-&gt; do
 	    Gat_density.ext_with_density(0.0 .. 0.15, 'll')
-	end.().output("GFil.g", "Min. global GatPoly density [%]")
+	end.().output("GFil.g", "Min. global GatPoly density [%] = 15.00")
 end
 
 -&gt; do
-    Cont.merged(true, 0).outside(EdgeSeal).ext_not(ContBar.ext_or(Cont_SQ))
-end.().output("Cnt.a", "Min. and max. Cont width")
+    Cont_outside_EdgeSeal.ext_not(ContBar.ext_or(Cont_SQ))
+end.().output("Cnt.a", "Min. and max. Cont width = 0.16")
 -&gt; do
-    Cont.merged(true, 0).outside(EdgeSeal).ext_fast_space(180)
-end.().output("Cnt.b", "Min. Cont space")
+    Cont_outside_EdgeSeal.ext_fast_space(0.18.um)
+end.().output("Cnt.b", "Min. Cont space = 0.18")
 -&gt; do
-    Metal1.ext_fast_width(160)
-end.().output("M1.a", "Min. Metal1 width")
+    Metal1.ext_fast_width(0.16.um)
+end.().output("M1.a", "Min. Metal1 width = 0.16")
 -&gt; do
-    M1_Nsram.ext_fast_space(180)
-end.().output("M1.b", "Min. Metal1 space or notch")
+    M1_Nsram.ext_fast_space(0.18.um)
+end.().output("M1.b", "Min. Metal1 space or notch = 0.18")
 
 if $density
 	-&gt; do
 	    M1_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("M1.j", "Min. global Metal1 density [%]")
+	end.().output("M1.j", "Min. global Metal1 density [%] = 35.0")
 	-&gt; do
 	    M1_density.ext_with_density(0.6 .. 1.0, 'll')
-	end.().output("M1.k", "Max. global Metal1 density [%]")
+	end.().output("M1.k", "Max. global Metal1 density [%] = 60.0")
 end
 
 -&gt; do
-    Metal2.ext_fast_width(200)
-end.().output("M2.a", "Min. Metal2 width")
+    Metal2.ext_fast_width(0.2.um)
+end.().output("M2.a", "Min. Metal2 width = 0.20")
 -&gt; do
-    M2_Nsram.ext_fast_space(210)
-end.().output("M2.b", "Min. Metal2 space or notch")
+    M2_Nsram.ext_fast_space(0.21.um)
+end.().output("M2.b", "Min. Metal2 space or notch = 0.21")
 
 if $density
 	-&gt; do
 	    M2_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("M2.j", "Min. global Metal2 density [%]")
+	end.().output("M2.j", "Min. global Metal2 density [%] = 35.00")
 	-&gt; do
 	    M2_density.ext_with_density(0.6 .. 1.0, 'll')
-	end.().output("M2.k", "Max. global Metal2 density [%]")
+	end.().output("M2.k", "Max. global Metal2 density [%] = 60.00")
 end
 
 -&gt; do
-    Metal3.ext_fast_width(200)
-end.().output("M3.a", "Min. Metal3 width")
+    Metal3.ext_fast_width(0.2.um)
+end.().output("M3.a", "Min. Metal3 width = 0.20")
 -&gt; do
-    M3_Nsram.ext_fast_space(210)
-end.().output("M3.b", "Min. Metal3 space or notch")
+    M3_Nsram.ext_fast_space(0.21.um)
+end.().output("M3.b", "Min. Metal3 space or notch = 0.21")
 
 if $density
 	-&gt; do
 	    M3_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("M3.j", "Min. global Metal3 density [%]")
+	end.().output("M3.j", "Min. global Metal3 density [%] = 35.00")
 	-&gt; do
 	    M3_density.ext_with_density(0.6 .. 1.0, 'll')
-	end.().output("M3.k", "Max. global Metal3 density [%]")
+	end.().output("M3.k", "Max. global Metal3 density [%] = 60.00")
 end
 
 -&gt; do
-    Metal4.ext_fast_width(200)
-end.().output("M4.a", "Min. Metal4 width")
+    Metal4.ext_fast_width(0.2.um)
+end.().output("M4.a", "Min. Metal4 width = 0.20")
 -&gt; do
-    M4_Nsram.ext_fast_space(210)
-end.().output("M4.b", "Min. Metal4 space or notch")
+    M4_Nsram.ext_fast_space(0.21.um)
+end.().output("M4.b", "Min. Metal4 space or notch = 0.21")
 
 if $density
 	-&gt; do
 	    M4_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("M4.j", "Min. global Metal4 density [%]")
+	end.().output("M4.j", "Min. global Metal4 density [%] = 35.00")
 	-&gt; do
 	    M4_density.ext_with_density(0.6 .. 1.0, 'll')
-	end.().output("M4.k", "Max. global Metal4 density [%]")
+	end.().output("M4.k", "Max. global Metal4 density [%] = 60.00")
 end
 
 -&gt; do
-    Metal5.ext_fast_width(200)
-end.().output("M5.a", "Min. Metal5 width")
+    Metal5.ext_fast_width(0.2.um)
+end.().output("M5.a", "Min. Metal5 width = 0.20")
 -&gt; do
-    M5_Nsram.ext_fast_space(210)
-end.().output("M5.b", "Min. Metal5 space or notch")
+    M5_Nsram.ext_fast_space(0.21.um)
+end.().output("M5.b", "Min. Metal5 space or notch = 0.21")
 
 if $density
 	-&gt; do
 	    M5_density.ext_with_density(0.0 .. 0.35, 'll')
-	end.().output("M5.j", "Min. global Metal5 density [%]")
+	end.().output("M5.j", "Min. global Metal5 density [%] = 35.00")
 	-&gt; do
 	    M5_density.ext_with_density(0.6 .. 1.0, 'll')
-	end.().output("M5.k", "Max. global Metal5 density [%]")
+	end.().output("M5.k", "Max. global Metal5 density [%] = 60.00")
 	-&gt; do
-	    M1_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M1Fil.h", "Min. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M1_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M1Fil.h", "Min. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    M1_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M1Fil.k", "Max. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M1_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M1Fil.k", "Max. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] = 75.00")
 	-&gt; do
-	    M2_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M2Fil.h", "Min. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M2_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M2Fil.h", "Min. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    M2_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M2Fil.k", "Max. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M2_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M2Fil.k", "Max. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] = 75.00")
 	-&gt; do
-	    M3_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M3Fil.h", "Min. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M3_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M3Fil.h", "Min. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    M3_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M3Fil.k", "Max. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M3_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M3Fil.k", "Max. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] = 75.00")
 	-&gt; do
-	    M4_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M4Fil.h", "Min. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M4_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M4Fil.h", "Min. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    M4_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M4Fil.k", "Max. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M4_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M4Fil.k", "Max. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] = 75.00")
 	-&gt; do
-	    M5_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M5Fil.h", "Min. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M5_density.ext_with_density(0.0 .. 0.25, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M5Fil.h", "Min. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00")
 	-&gt; do
-	    M5_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0), tile_step(400.0))
-	end.().output("M5Fil.k", "Max. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%]")
+	    M5_density.ext_with_density(0.75 .. 1.0, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	end.().output("M5Fil.k", "Max. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] = 75.00")
 end
 
 -&gt; do
-    Via1.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
-end.().output("V1.a", "Min. and max. Via1 width")
+    Via1_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+end.().output("V1.a", "Min. and max. Via1 width = 0.19")
 -&gt; do
-    Via1.ext_not(EdgeSeal).ext_fast_space(220)
-end.().output("V1.b", "Min. Via1 space")
+    Via1_edgC1_out.ext_fast_space(0.22.um)
+end.().output("V1.b", "Min. Via1 space = 0.22")
 -&gt; do
-    Via2.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
-end.().output("V2.a", "Min. and max. Via2 width")
+    Via2_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+end.().output("V2.a", "Min. and max. Via2 width = 0.19")
 -&gt; do
-    Via2.ext_not(EdgeSeal).ext_fast_space(220)
-end.().output("V2.b", "Min. Via2 space")
+    Via2_edgC1_out.ext_fast_space(0.22.um)
+end.().output("V2.b", "Min. Via2 space = 0.22")
 -&gt; do
-    Via3.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
-end.().output("V3.a", "Min. and max. Via3 width")
+    Via3_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+end.().output("V3.a", "Min. and max. Via3 width = 0.19")
 -&gt; do
-    Via3.ext_not(EdgeSeal).ext_fast_space(220)
-end.().output("V3.b", "Min. Via3 space")
+    Via3_edgC1_out.ext_fast_space(0.22.um)
+end.().output("V3.b", "Min. Via3 space = 0.22")
 -&gt; do
-    Via4.ext_not(EdgeSeal).merged(true, 0).outside(transG2L).ext_rectangles(false, false, [["==", 190]], [["==", 190]], nil, inverted: true)
-end.().output("V4.a", "Min. and max. Via4 width")
+    Via4_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+end.().output("V4.a", "Min. and max. Via4 width = 0.19")
 -&gt; do
-    Via4.ext_not(EdgeSeal).ext_fast_space(220)
-end.().output("V4.b", "Min. Via4 space")
+    Via4_edgC1_out.ext_fast_space(0.22.um)
+end.().output("V4.b", "Min. Via4 space = 0.22")
 -&gt; do
-    Vmim.ext_or(TopVia1.ext_not(EdgeSeal)).ext_rectangles(false, false, [["==", 420]], [["==", 420]], nil, inverted: true)
-end.().output("TV1.a", "Min. and max. TopVia1 width")
+    TopVia1_edgC1_out.ext_or(Vmim).ext_rectangles(false, false, [["==", 0.42.um]], [["==", 0.42.um]], nil, inverted: true)
+end.().output("TV1.a", "Min. and max. TopVia1 width = 0.42")
 -&gt; do
-    TopVia1.ext_or(Vmim).ext_fast_space(420)
-end.().output("TV1.b", "Min. TopVia1 space")
+    TopVia1_or_Vmim.ext_fast_space(0.42.um)
+end.().output("TV1.b", "Min. TopVia1 space = 0.42")
 -&gt; do
-    TopMetal1.ext_fast_width(1640)
-end.().output("TM1.a", "Min. TopMetal1 width")
+    TopMetal1.ext_fast_width(1.64.um)
+end.().output("TM1.a", "Min. TopMetal1 width = 1.64")
 -&gt; do
-    TopMetal1.ext_fast_space(1640)
-end.().output("TM1.b", "Min. TopMetal1 space or notch")
+    TopMetal1.ext_fast_space(1.64.um)
+end.().output("TM1.b", "Min. TopMetal1 space or notch = 1.64")
 
 if $density
 	-&gt; do
 	    TM1_density.ext_with_density(0.0 .. 0.25, 'll')
-	end.().output("TM1.c", "Min. global TopMetal1 density [%]")
+	end.().output("TM1.c", "Min. global TopMetal1 density [%] = 25.00")
 	-&gt; do
 	    TM1_density.ext_with_density(0.7 .. 1.0, 'll')
-	end.().output("TM1.d", "Max. global TopMetal1 density [%]")
+	end.().output("TM1.d", "Max. global TopMetal1 density [%] = 70.00")
 end
 
 -&gt; do
-    TopVia2.ext_not(EdgeSeal).ext_rectangles(false, false, [["==", 900]], [["==", 900]], nil, inverted: true)
-end.().output("TV2.a", "Min. and max. TopVia2 width")
+    TopVia2_edgC1_out.ext_rectangles(false, false, [["==", 0.9.um]], [["==", 0.9.um]], nil, inverted: true)
+end.().output("TV2.a", "Min. and max. TopVia2 width = 0.90")
 -&gt; do
-    TopVia2.ext_fast_space(1060)
-end.().output("TV2.b", "Min. TopVia2 space")
+    TopVia2.ext_fast_space(1.06.um)
+end.().output("TV2.b", "Min. TopVia2 space = 1.06")
 -&gt; do
-    TopMetal2.ext_fast_width(2000)
-end.().output("TM2.a", "Min. TopMetal2 width")
+    TopMetal2.ext_fast_width(2.0.um)
+end.().output("TM2.a", "Min. TopMetal2 width = 2.00")
 -&gt; do
-    TopMetal2.ext_fast_space(2000)
-end.().output("TM2.b", "Min. TopMetal2 space or notch")
+    TopMetal2.ext_fast_space(2.0.um)
+end.().output("TM2.b", "Min. TopMetal2 space or notch = 2.00")
 
 if $density
 	-&gt; do
 	    TM2_density.ext_with_density(0.0 .. 0.25, 'll')
-	end.().output("TM2.c", "Min. global TopMetal2 density [%]")
+	end.().output("TM2.c", "Min. global TopMetal2 density [%] = 25.00")
 	-&gt; do
 	    TM2_density.ext_with_density(0.7 .. 1.0, 'll')
-	end.().output("TM2.d", "Max. global TopMetal2 density [%]")
+	end.().output("TM2.d", "Max. global TopMetal2 density [%] = 70.00")
 end
 
 -&gt; do
-    Passiv.ext_fast_width(2100)
-end.().output("Pas.a", "Min. Passiv width")
+    Passiv.ext_fast_width(2.1.um)
+end.().output("Pas.a", "Min. Passiv width = 2.10")
 -&gt; do
-    Passiv.ext_fast_space(3500)
-end.().output("Pas.b", "Min. Passiv space or notch")
+    Passiv.ext_fast_space(3.5.um)
+end.().output("Pas.b", "Min. Passiv space or notch = 3.50")
 
 if $sanityRules
 	-&gt; do
 	    Activ_pin.ext_not(Activ)
-	end.().output("Pin.a", "Min. Activ enclosure of Activ:pin")
+	end.().output("Pin.a", "Min. Activ enclosure of Activ:pin = 0.00")
 	-&gt; do
 	    GatPoly_pin.ext_not(GatPoly)
-	end.().output("Pin.b", "Min. GatPoly enclosure of GatPoly:pin")
+	end.().output("Pin.b", "Min. GatPoly enclosure of GatPoly:pin = 0.00")
 	-&gt; do
 	    Metal1_pin.ext_not(Metal1)
-	end.().output("Pin.e", "Min. Metal1 enclosure of Metal1:pin")
+	end.().output("Pin.e", "Min. Metal1 enclosure of Metal1:pin = 0.00")
 	-&gt; do
 	    Metal2_pin.ext_not(Metal2)
-	end.().output("Pin.f.M2", "Min. Metal2 enclosure of Metal2:pin")
+	end.().output("Pin.f.M2", "Min. Metal2 enclosure of Metal2:pin = 0.00")
 	-&gt; do
 	    Metal3_pin.ext_not(Metal3)
-	end.().output("Pin.f.M3", "Min. Metal3 enclosure of Metal3:pin")
+	end.().output("Pin.f.M3", "Min. Metal3 enclosure of Metal3:pin = 0.00")
 	-&gt; do
 	    Metal4_pin.ext_not(Metal4)
-	end.().output("Pin.f.M4", "Min. Metal4 enclosure of Metal4:pin")
+	end.().output("Pin.f.M4", "Min. Metal4 enclosure of Metal4:pin = 0.00")
 	-&gt; do
 	    Metal5_pin.ext_not(Metal5)
-	end.().output("Pin.f.M5", "Min. Metal5 enclosure of Metal5:pin")
+	end.().output("Pin.f.M5", "Min. Metal5 enclosure of Metal5:pin = 0.00")
 	-&gt; do
 	    TopMetal1_pin.ext_not(TopMetal1)
-	end.().output("Pin.g", "Min. TopMetal1 enclosure of TopMetal1:pin")
+	end.().output("Pin.g", "Min. TopMetal1 enclosure of TopMetal1:pin = 0.00")
 	-&gt; do
 	    TopMetal2_pin.ext_not(TopMetal2)
-	end.().output("Pin.h", "Min. TopMetal2 enclosure of TopMetal2:pin")
+	end.().output("Pin.h", "Min. TopMetal2 enclosure of TopMetal2:pin = 0.00")
 end
 
 -&gt; do
-    LBE.ext_fast_width(100000)
-end.().output("LBE.a", "Min. LBE width")
+    LBE.ext_fast_width(100.0.um)
+end.().output("LBE.a", "Min. LBE width = 100.00")
 -&gt; do
-    LBE.drc((width(projection) &gt; 1500000).polygons)
-end.().output("LBE.b", "Max. LBE width")
+    LBE.drc((width(projection) &gt; 1500.0.um).polygons)
+end.().output("LBE.b", "Max. LBE width = 1500.00")
 -&gt; do
-    LBE.ext_area([["&gt;", 250000.0]])
-end.().output("LBE.b1", "Max. LBE area (µm²)")
+    LBE.ext_with_area([["&gt;", 250000.0.um2]])
+end.().output("LBE.b1", "Max. LBE area (µm²) = 250000.00")
 -&gt; do
-    LBE.ext_fast_space(100000)
-end.().output("LBE.c", "Min. LBE space or notch")
+    LBE.ext_fast_space(100.0.um)
+end.().output("LBE.c", "Min. LBE space or notch = 100.00")
 -&gt; (;lbe_in_seal) do
-    lbe_in_seal = LBE.merged(true, 0).inside(EdgeSeal.holes.merge)
-    lbe_in_seal.ext_fast_separation(EdgeSeal, 150000)
-end.().output("LBE.d", "Min. LBE space to inner edge of EdgeSeal")
+    lbe_in_seal = LBE.inside(EdgeSeal.holes.merge)
+    lbe_in_seal.ext_fast_separation(EdgeSeal, 150.0.um)
+end.().output("LBE.d", "Min. LBE space to inner edge of EdgeSeal = 150.00")
 -&gt; do
-    LBE.ext_ring.dup
+    LBE.with_holes.dup
 end.().output("LBE.h", "No LBE ring allowed")
 
 if $density
 	-&gt; do
 	    LBE.ext_with_density(0.2 .. 1.0, 'll')
-	end.().output("LBE.i", "Max. global LBE density [%]")
+	end.().output("LBE.i", "Max. global LBE density [%] = 20.00")
 end
 
 
 if $sanityRules
 	-&gt; do
 	    BiWind.dup
-	end.().output("forbidden.BiWind", "Forbidden drawn layer BiWind on GDS layer 3/0")
+	end.().output("forbidden.BiWind", "Forbidden drawn layer BiWind on GDS layer 3/0 = 3/0")
 	-&gt; do
 	    PEmWind.dup
-	end.().output("forbidden.PEmWind", "Forbidden drawn layer PEmWind on GDS layer 11/0")
+	end.().output("forbidden.PEmWind", "Forbidden drawn layer PEmWind on GDS layer 11/0 = 11/0")
 	-&gt; do
 	    BasPoly.dup
-	end.().output("forbidden.BasPoly", "Forbidden drawn layer BasPoly on GDS layer 13/0")
+	end.().output("forbidden.BasPoly", "Forbidden drawn layer BasPoly on GDS layer 13/0 = 13/0")
 	-&gt; do
 	    DeepCo.dup
-	end.().output("forbidden.DeepCo", "Forbidden drawn layer DeepCo on GDS layer 35/0")
+	end.().output("forbidden.DeepCo", "Forbidden drawn layer DeepCo on GDS layer 35/0 = 35/0")
 	-&gt; do
 	    PEmPoly.dup
-	end.().output("forbidden.PEmPoly", "Forbidden drawn layer PEmPoly on GDS layer 53/0")
+	end.().output("forbidden.PEmPoly", "Forbidden drawn layer PEmPoly on GDS layer 53/0 = 53/0")
 	-&gt; do
 	    EmPoly.dup
-	end.().output("forbidden.EmPoly", "Forbidden gen./drawn layer EmPoly on GDS layer 53/0")
+	end.().output("forbidden.EmPoly", "Forbidden gen./drawn layer EmPoly on GDS layer 53/0 = 53/0")
 	-&gt; do
 	    LDMOS.dup
-	end.().output("forbidden.LDMOS", "Forbidden drawn layer LDMOS on GDS layer 57/0")
+	end.().output("forbidden.LDMOS", "Forbidden drawn layer LDMOS on GDS layer 57/0 = 57/0")
 	-&gt; do
 	    PBiWind.dup
-	end.().output("forbidden.PBiWind", "Forbidden drawn layer PBiWind on GDS layer 58/0")
+	end.().output("forbidden.PBiWind", "Forbidden drawn layer PBiWind on GDS layer 58/0 = 58/0")
 	-&gt; do
 	    Flash.dup
-	end.().output("forbidden.Flash", "Forbidden drawn layer Flash on GDS layer 71/0")
+	end.().output("forbidden.Flash", "Forbidden drawn layer Flash on GDS layer 71/0 = 71/0")
 	-&gt; do
 	    ColWind.dup
-	end.().output("forbidden.ColWind", "Forbidden drawn layer ColWind on GDS layer 139/0")
+	end.().output("forbidden.ColWind", "Forbidden drawn layer ColWind on GDS layer 139/0 = 139/0")
 end
+
+puts("Number of DRC errors: #{$drc_error_count}")
 </text>
 </klayout-macro>
