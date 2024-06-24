@@ -36,8 +36,9 @@ class Text(Shape):
         super().__init__(layer, Box(text.bbox().left, text.bbox().bottom, text.bbox().right, text.bbox().top))
         self.set_shape(Shape.getCell().shapes(layer.number).insert(text))
 
-    def addToRegion(self, region: pya.Region):
-        region.insert(self._text)
+    def addToRegion(self, region: pya.Region, filter: ShapeFilter):
+        if filter.isIncluded(self.getShape().layer):
+            region.insert(self._text)
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         return Text(self._layer, self._text.dup())

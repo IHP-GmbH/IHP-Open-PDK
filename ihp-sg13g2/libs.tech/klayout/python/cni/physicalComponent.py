@@ -83,6 +83,86 @@ class PhysicalComponent(ABC):
         import cni.geo
         return cni.geo.fgXor(components1, components2, resultLayer)
 
+    def fgAnd(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+        """
+        Performs a logical and operation for this physical component and the component physical
+        component, by selecting those polygon areas which are in both physical components. The
+        resulting polygon shapes are generated on the resultLayer layer. In addition, these polygon
+        shapes are used to create a Grouping object, which is the return value for this method. If
+        there are no polygon shapes, then this Grouping object is empty.
+
+        :param component: physical component derived object
+        :type component: PhysicalCompent
+        :param resultLayer: layer where resulting shapes will be generated on
+        :type resultLayer: Layer
+        :return: grouping object
+        :rtype: Grouping
+
+        """
+        components1 = ulist[PhysicalComponent]()
+        components1.append(self)
+
+        components2 = ulist[PhysicalComponent]()
+        components2.append(component)
+
+        import cni.geo
+        return cni.geo.fgAnd(components1, components2, resultLayer)
+
+    def fgNot(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+        """
+        Performs a logical not operation for this physical component and another physical component,
+        by selecting those polygon areas contained in this physical component which are not
+        contained in the component physical component. The resulting polygon shapes are generated on
+        the resultLayer layer. In addition, these polygon shapes are used to create a Grouping
+        object, which is the return value for this method. If there are no polygon shapes generated,
+        then this Grouping object will be empty.
+
+        :param component: physical component derived object
+        :type component: PhysicalCompent
+        :param resultLayer: layer where resulting shapes will be generated on
+        :type resultLayer: Layer
+        :return: grouping object
+        :rtype: Grouping
+
+        """
+        components1 = ulist[PhysicalComponent]()
+        components1.append(self)
+
+        components2 = ulist[PhysicalComponent]()
+        components2.append(component)
+
+        import cni.geo
+        return cni.geo.fgNot(components1, components2, resultLayer)
+
+    def fgSize(self, filter: ShapeFilter, sizeValue: float, resultLayer: Layer, grid: float = None) -> Grouping:
+        """
+        Expands or shrinks all polygon areas contained in this physical component, according to the
+        sizeValue parameter value. If this sizeValue parameter is positive, then the polygon edges
+        are expanded outward by that amount. If this sizeValue parameter is negative, then the
+        polygon edges are shrunk inward by that amount. The resulting polygon shapes are generated
+        on the resultLayer layer. In addition, these polygon shapes are used to create a Grouping
+        object, which is the return value for this method. If the grid parameter is specified, then
+        the points of the physical components are snapped with grid value to the nearest grid point.
+
+        :param filter: layer filter to use
+        :type filter: ShapeFilter
+        :param sizeValue: value for sizing (bias)
+        :type sizeValue: float
+        :param resultLayer: layer where resulting shapes will be generated on
+        :type resultLayer: Layer
+        :param grid: optional value for snapping
+        :type grid: float
+        :return: grouping object
+        :rtype: Grouping
+
+        """
+
+        components = ulist[PhysicalComponent]()
+        components.append(self)
+
+        import cni.geo
+        return cni.geo.fgSize(components, filter, sizeValue, resultLayer, grid)
+
     @abstractmethod
     def destroy(self):
         pass

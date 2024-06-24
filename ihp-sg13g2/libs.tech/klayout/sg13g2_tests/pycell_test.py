@@ -25,27 +25,27 @@
 #
 # KLAYOUT_PATH=$(pwd)/.. klayout ihp-pycells.gds -e
 
-ly = pya.Layout()
+layout = pya.Layout()
 
-pcellNmos = ly.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
-pcellPmos = ly.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
-pcellCmim = ly.create_cell("cmim", "SG13_dev", {})
-pcellSealring = ly.create_cell("sealring", "SG13_dev", {})
-pcellNpn13G2Base = ly.create_cell("npn13G2_base", "SG13_dev", {})
-pcellNpn13G2 = ly.create_cell("npn13G2", "SG13_dev", {})
-pcellNpn13G2L = ly.create_cell("npn13G2L", "SG13_dev", {})
-pcellNpn13G2V = ly.create_cell("npn13G2V", "SG13_dev", {})
-pcellRsil = ly.create_cell("rsil", "SG13_dev", {})
-pcellRhigh = ly.create_cell("rhigh", "SG13_dev", {})
-pcellRppd = ly.create_cell("rppd", "SG13_dev", {})
-pcellInductor2 = ly.create_cell("inductor2", "SG13_dev", {})
-pcellInductor2_sc = ly.create_cell("inductor2_sc", "SG13_dev", {})
-pcellInductor2_sp = ly.create_cell("inductor2_sp", "SG13_dev", {})
-pcellInductor3 = ly.create_cell("inductor3", "SG13_dev", {})
-pcellInductor3_sc = ly.create_cell("inductor3_sc", "SG13_dev", {})
-pcellInductor3_sp = ly.create_cell("inductor3_sp", "SG13_dev", {})
+pcellNmos = layout.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
+pcellPmos = layout.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
+pcellCmim = layout.create_cell("cmim", "SG13_dev", {})
+pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
+pcellNpn13G2Base = layout.create_cell("npn13G2_base", "SG13_dev", {})
+pcellNpn13G2 = layout.create_cell("npn13G2", "SG13_dev", {})
+pcellNpn13G2L = layout.create_cell("npn13G2L", "SG13_dev", {})
+pcellNpn13G2V = layout.create_cell("npn13G2V", "SG13_dev", {})
+pcellRsil = layout.create_cell("rsil", "SG13_dev", {})
+pcellRhigh = layout.create_cell("rhigh", "SG13_dev", {})
+pcellRppd = layout.create_cell("rppd", "SG13_dev", {})
+pcellInductor2 = layout.create_cell("inductor2", "SG13_dev", {})
+pcellInductor2_sc = layout.create_cell("inductor2_sc", "SG13_dev", {})
+pcellInductor2_sp = layout.create_cell("inductor2_sp", "SG13_dev", {})
+pcellInductor3 = layout.create_cell("inductor3", "SG13_dev", {})
+pcellInductor3_sc = layout.create_cell("inductor3_sc", "SG13_dev", {})
+pcellInductor3_sp = layout.create_cell("inductor3_sp", "SG13_dev", {})
 
-top = ly.create_cell("TOP")
+top = layout.create_cell("TOP")
 top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(4, 0))))
 top.insert(pya.DCellInstArray(pcellNpn13G2, pya.DTrans(pya.DVector(11, 3.1))))
@@ -64,7 +64,7 @@ top.insert(pya.DCellInstArray(pcellInductor3_sp, pya.DTrans(pya.DVector(255, -19
 top.insert(pya.DCellInstArray(pcellSealring, pya.DTrans(pya.DVector(310, -190))))
 
 output = "SG13_dev.gds"
-ly.write(output)
+layout.write(output)
 
 print("IHP PyCells layout written to: " + output)
 

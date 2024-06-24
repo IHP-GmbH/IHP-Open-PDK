@@ -42,8 +42,8 @@ class Grouping(PhysicalComponent):
         else:
             self._components.extend(components)
 
-    def addToRegion(self, region: pya.Region):
-        [component.addToRegion(region) for component in self._components]
+    def addToRegion(self, region: pya.Region, filter: ShapeFilter):
+        [component.addToRegion(region, filter) for component in self._components]
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
         components = []
