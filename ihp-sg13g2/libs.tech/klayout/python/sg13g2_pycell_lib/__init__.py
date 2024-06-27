@@ -61,7 +61,7 @@ moduleNames = [
 
 class PyCellLib(pya.Library):
     def __init__(self):
-        self.description = "SG13_dev"
+        self.description = "IHP SG13G2 Pcells"
 
         tech = Tech.get('SG13_dev')
 
