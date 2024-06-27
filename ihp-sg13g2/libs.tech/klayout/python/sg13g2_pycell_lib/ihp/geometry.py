@@ -1148,14 +1148,14 @@ def DrawFillers(self, layer, xl, yl, xh, yh, ws, hs, dx, dy, dir, offset, retlis
 #***********************************************************************************************************************
 # generateCorner
 #***********************************************************************************************************************
-def generateCorner(self, corner_startx, corner_starty, corner_width, corner_length, corner_steps, corner_end, offset, layer):
+def generateCorner(self, corner_startx, corner_starty, corner_width, corner_length, corner_steps, corner_end, offset, layer, data_type='drawing'):
     item_list = list()
-    for cnt in range(corner_steps) :
-        rect = dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_startx - corner_width * (cnt + 1), corner_starty + offset + (corner_length - corner_width) * cnt,
+    for cnt in range(corner_steps):
+        rect = dbCreateRect(self, Layer(layer, data_type), Box(corner_startx - corner_width * (cnt + 1), corner_starty + offset + (corner_length - corner_width) * cnt,
                                                                    corner_startx - corner_width * cnt, corner_starty+corner_length + offset  + (corner_length-corner_width) * cnt))
         cons(item_list, rect)
 
-    rect = dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_startx - corner_width * (corner_steps + 1), corner_starty + offset  + (corner_length - corner_width) * corner_steps,
+    rect = dbCreateRect(self, Layer(layer, data_type), Box(corner_startx - corner_width * (corner_steps + 1), corner_starty + offset  + (corner_length - corner_width) * corner_steps,
                                                                corner_startx - corner_width * corner_steps, corner_end))
     cons(item_list, rect)
 
@@ -1164,9 +1164,9 @@ def generateCorner(self, corner_startx, corner_starty, corner_width, corner_leng
 #***********************************************************************************************************************
 # combineLayerAndDelete
 #***********************************************************************************************************************
-def combineLayerAndDelete(self, item_list, groupId, layer):
+def combineLayerAndDelete(self, item_list, groupId, layer, data_type='drawing'):
 
-    shapes = dbLayerOrList(Layer(layer, 'drawing'), item_list)
+    shapes = dbLayerOrList(Layer(layer, data_type), item_list)
 
     size = len(shapes.getComps())
     for i in range(size) :

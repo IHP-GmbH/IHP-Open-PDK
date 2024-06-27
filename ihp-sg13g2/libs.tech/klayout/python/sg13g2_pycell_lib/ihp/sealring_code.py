@@ -83,9 +83,9 @@ class sealring(DloGen):
         corner_width = 4.2
         metalOffset = 3 + corner_width + edgeBox
         viaOffset = 5.1 + corner_width + edgeBox
-        corner_length = corner_width * 2
         corner_steps = 4
-        corner_end = 28.2 + edgeBox   # end of the bottom right and top left
+        corner_length = 28.2
+        corner_end = corner_length + edgeBox   # end of the bottom right and top left
         corner_startx = 0 + corner_end - (corner_end - corner_width * (corner_steps + 1))
         corner_starty = 0   # start at the bottom right
         metal_startx = corner_end - (corner_end - maxMetalWidth * (corner_steps + 1)) + metalOffset
@@ -94,7 +94,8 @@ class sealring(DloGen):
 
         # Sealring Corner
         layers = ['Activ', 'pSD', 'EdgeSeal', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']
-        vias = ['Cont', 'Via1', 'Via2', 'Via3', 'Via4', 'TopVia1', 'TopVia2']
+        vias = {'Cont': cont_size, 'Via1': vian_size, 'Via2': vian_size, 'Via3': vian_size, 'Via4': vian_size, 'TopVia1': TV1_size, 'TopVia2': TV2_size}
+        nofills = ['Activ', 'GatPoly', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']
 
         item_list = list()
         groupId   = list()
@@ -102,7 +103,7 @@ class sealring(DloGen):
         # Passiv
         layerobj = dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_startx + edgeBox, corner_starty + edgeBox, corner_end + edgeBox, corner_width + edgeBox))
         item_list.append(layerobj)
-        layerobj = generateCorner(self, corner_startx + edgeBox, corner_starty + edgeBox, corner_width, corner_length, corner_steps, corner_end, 0, 'Passiv')
+        layerobj = generateCorner(self, corner_startx + edgeBox, corner_starty + edgeBox, corner_width, corner_width * 2, corner_steps, corner_end, 0, 'Passiv')
         item_list += layerobj
         groupId = combineLayerAndDelete(self, item_list, groupId, 'Passiv')
 
@@ -114,19 +115,8 @@ class sealring(DloGen):
             groupId = combineLayerAndDelete(self, layerobj, groupId, layer)
 
         # Vias
-        for layer in vias :
-            if layer == 'TopVia1' :
-                viaWidth = TV1_size
-                viaLength = 4.2
-            elif layer == 'TopVia2' :
-                viaWidth = TV2_size
-                viaLength = 4.2
-            elif layer == 'Cont' :
-                viaWidth = cont_size
-                viaLength = 4.2
-            else :
-                viaWidth = vian_size
-                viaLength = 4.2
+        for (layer, viaWidth) in vias.items():
+            viaLength = 4.2
 
             via_startx = corner_end - (corner_end - maxMetalWidth * (corner_steps + 1)) + metalOffset - maxMetalWidth/2-0.1
             layerobj = dbCreateRect(self, layer, Box(via_startx, viaOffset, via_startx+viaWidth, viaOffset+viaLength))
@@ -161,25 +151,14 @@ class sealring(DloGen):
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
 
-        for layer in layers :
+        for layer in layers:
             dbCreateRect(self, Layer(layer, 'drawing'), Box(metalOffset, corner_end, metalOffset + corner_width, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, metalOffset, l - corner_end, metalOffset + corner_width))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(l - metalOffset, corner_end, l - corner_width - metalOffset, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - metalOffset, l - corner_end, w - corner_width - metalOffset))
 
-        for layer in vias :
-            if layer == 'TopVia1' :
-                viaWidth = TV1_size
-                viaLength = 4.2
-            elif layer == 'TopVia2' :
-                viaWidth = TV2_size
-                viaLength = 4.2
-            elif layer == 'Cont' :
-                viaWidth = cont_size
-                viaLength = 4.2
-            else :
-                viaWidth = vian_size
-                viaLength = 4.2
+        for (layer, viaWidth) in vias.items():
+            viaLength = 4.2
 
             dbCreateRect(self, Layer(layer, 'drawing'), Box(viaOffset-0.1, corner_end, viaOffset + viaWidth - 0.1, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, viaOffset-0.1, l - corner_end, viaOffset + viaWidth - 0.1))
@@ -187,5 +166,22 @@ class sealring(DloGen):
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - viaOffset+0.1, l - corner_end, w - viaWidth - viaOffset + 0.1))
 
         # EdgeSeal box around sealring
-        dbCreateRect(self, Layer('EdgeSeal', 'boundary'),
-            Box(edgeBox_startx, edgeBox_starty, w, l))
+        dbCreateRect(self, Layer('EdgeSeal', 'boundary'), Box(edgeBox_startx, edgeBox_starty, w, l))
+        # prBoundary box around sealring
+        dbCreateRect(self, Layer('prBoundary', 'drawing'), Box(edgeBox_startx, edgeBox_starty, w, l))
+
+        for nofill in nofills:
+            nofills_shapes = []
+            layerobj = dbCreateRect(self, Layer(nofill, 'nofill'), Box(edgeBox_startx, edgeBox_starty, edgeBox + corner_width, l))
+            cons(nofills_shapes, layerobj)
+            layerobj = dbCreateRect(self, Layer(nofill, 'nofill'), Box(edgeBox, edgeBox, edgeBox + corner_width * 2, edgeBox + corner_length))
+            cons(nofills_shapes, layerobj)
+            layerobj = dbCreateRect(self, Layer(nofill, 'nofill'), Box(edgeBox, edgeBox, edgeBox + corner_length, edgeBox + corner_width * 2))
+            cons(nofills_shapes, layerobj)
+            layerobj = dbCreateRect(self, Layer(nofill, 'nofill'), Box(edgeBox, edgeBox, edgeBox + corner_length / 2, edgeBox + corner_length / 2))
+            cons(nofills_shapes, layerobj)
+            groupId = combineLayerAndDelete(self, nofills_shapes, groupId, nofill, 'nofill')
+
+            ihpCopyFig(groupId, Point(l, w), 'R180')
+            ihpCopyFig(groupId, Point(l, 0), 'R90')
+            ihpCopyFig(groupId, Point(0, w), 'R270')
