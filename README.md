@@ -56,6 +56,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * KLayout tool data:
     * layer property and tech files
     * DRC rules (minimal/maximal set)
+    * LVS rules
     * PyCells (1st priority) 
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
