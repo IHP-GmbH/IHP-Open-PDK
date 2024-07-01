@@ -26,7 +26,7 @@
   <Vdc V2 1 370 820 -61 -26 0 3 "1 V" 1>
   <Vdc V1 1 80 870 -61 -26 0 3 "1 V" 1>
   <IProbe Pr1 1 190 710 16 -26 0 1>
-  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerMOSlv.lib mos_tt\n.control\npre_osdi ../../.qucs/psp103_nqs.osdi\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerMOSlv.lib mos_tt\n.control\npre_osdi ~/.qucs/psp103_nqs.osdi\n.endc" 1 "" 0 "" 0>
   <Lib sg13_lv_pmos1 1 190 820 45 -101 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "sg13_lv_pmos" 0 "0.35u" 1 "0.34u" 1 "1" 0 "1" 1 "0" 0 "0" 0 "0" 0 "0" 0 "0" 0 "0.346e-6" 0 "0.38e-6" 0 "0.15e-6" 0 "0" 0 "1" 0>
 </Components>
 <Wires>

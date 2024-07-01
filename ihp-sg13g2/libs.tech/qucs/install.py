@@ -81,6 +81,23 @@ if __name__ == "__main__":
         print(f"Destination directory '{destination_directory}' created.")
     
     copy_files(source_directory, destination_directory)
+    
+    # Copy examples to "Qucs Home" (/home/<username>/.qucs/)
+    print("Copying examples into Qucs-S Home...")
+    source_directory=pdk_root + "/ihp-sg13g2/libs.tech/qucs/examples"
+    destination_directory = "/home/" + username + "/.qucs/IHP-Open-PDK-SG13G2-Examples_prj"
+    
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+        
+    copy_files(source_directory, destination_directory)
+    print("Examples copied")
+    print("\n\n#############################################")
+    print("              IMPORTANT NOTE")
+    print("#############################################\n")
+    print("Before using the PDK example schematics, you must add the PDK library path to the Qucs-S search path list.\n")
+    print("Please read the instructions provided in " + destination_directory + "/README.txt\n")
+    print("#############################################\n\n")
 
     original_file = pdk_root
     symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"

@@ -16,7 +16,7 @@
 <Symbol>
 </Symbol>
 <Components>
-  <INCLSCR INCLSCR1 1 120 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_typ\n.LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerCAP.lib cap_typ\n.control\n\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 120 50 -60 16 0 0 ".LIB ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_typ\n.LIB ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerCAP.lib cap_typ\n.control\n\n.endc" 1 "" 0 "" 0>
   <.AC AC1 1 70 190 0 40 0 0 "log" 1 "100k" 1 "300 GHz" 1 "101" 1 "no" 0>
   <GND * 1 360 650 0 0 0 0>
   <Vac V1 1 70 570 18 -26 0 1 "1 V" 1 "1 kHz" 0 "0" 0 "0" 0 "0" 0 "0" 0>

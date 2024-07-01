@@ -1,6 +1,6 @@
-<Qucs Schematic 24.2.0>
+<Qucs Schematic 24.2.1>
 <Properties>
-  <View=-201,-94,2082,1128,0.651338,0,0>
+  <View=-147,16,1678,1026,0.852475,0,0>
   <Grid=10,10,1>
   <DataSet=dc_hbt_13g2.dat>
   <DataDisplay=dc_hbt_13g2.dpl>
@@ -16,7 +16,7 @@
 <Symbol>
 </Symbol>
 <Components>
-  <INCLSCR INCLSCR1 1 160 70 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerHBT.lib hbt_typ\n" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 160 70 -60 16 0 0 ".LIB ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerHBT.lib hbt_typ\n" 1 "" 0 "" 0>
   <.DC DC1 1 40 160 0 46 0 0 "26.85" 0 "0.001" 0 "1 pA" 0 "1 uV" 0 "no" 0 "150" 0 "no" 0 "none" 0 "CroutLU" 0>
   <.SW SW1 1 50 250 0 77 0 0 "DC1" 1 "lin" 1 "V2" 1 "0" 1 "1.5" 1 "301" 1 "false" 0>
   <.SW SW2 1 50 470 0 77 0 0 "SW1" 1 "lin" 1 "I1" 1 "0" 1 "5u" 1 "10" 1 "false" 0>
@@ -43,8 +43,8 @@
   <170 900 170 960 "" 0 0 0 "">
 </Wires>
 <Diagrams>
-  <Rect 437 899 1062 769 3 #c0c0c0 1 00 1 0 0.1 1.5 1 -0.000277029 0.0002 0.00246701 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
-	<"ngspice/i(pr1)" #ff0000 0 3 0 0 0>
+  <Rect 437 899 1062 769 3 #c0c0c0 1 00 1 -1 0.1 1 1 -1 0.2 1 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/sw1.i(pr1)" #ff0000 0 3 0 0 0>
   </Rect>
 </Diagrams>
 <Paintings>

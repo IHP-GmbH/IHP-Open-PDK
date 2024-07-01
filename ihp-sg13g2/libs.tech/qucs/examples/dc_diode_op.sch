@@ -1,6 +1,6 @@
-<Qucs Schematic 24.2.0>
+<Qucs Schematic 24.2.1>
 <Properties>
-  <View=-86,-4,1624,1075,1.25348,0,181>
+  <View=-76,-4,1614,1003,0.920856,0,0>
   <Grid=10,10,1>
   <DataSet=dc_diode_op.dat>
   <DataDisplay=dc_diode_op.dpl>
@@ -19,7 +19,7 @@
   <.SW SW1 1 90 280 0 68 0 0 "DC1" 1 "lin" 1 "V2" 1 "0" 1 "1" 1 "301" 1 "false" 0>
   <GND * 1 270 840 0 0 0 0>
   <IProbe Pr1 1 270 640 -37 -26 0 3>
-  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".INCLUDE ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/diodes.lib\n.control\npre_osdi ../../.qucs/psp103_nqs.osdi\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".INCLUDE ~/.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/diodes.lib\n.control\npre_osdi ~/.qucs/psp103_nqs.osdi\n.endc" 1 "" 0 "" 0>
   <.DC DC1 1 90 180 0 41 0 0 "26.85" 0 "0.001" 0 "1 pA" 0 "1 uV" 0 "no" 0 "150" 0 "no" 0 "none" 0 "CroutLU" 0>
   <GND * 1 120 840 0 0 0 0>
   <Vdc V2 1 120 750 18 -26 0 1 "1 V" 1>
@@ -41,9 +41,9 @@
   <270 590 470 590 "" 0 0 0 "">
 </Wires>
 <Diagrams>
-  <Rect 639 890 831 618 3 #c0c0c0 1 00 1 0 0.1 1 0 0 2e-06 2e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
-	<"ngspice/i(pr1)" #0000ff 2 3 0 0 0>
-	<"ngspice/i(pr2)" #ff0000 2 3 0 0 0>
+  <Rect 639 890 831 618 3 #c0c0c0 1 00 1 -1 0.2 1 0 0 2e-06 2e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/sw1.i(pr1)" #0000ff 2 3 0 0 0>
+	<"ngspice/sw1.i(pr2)" #ff0000 2 3 0 0 0>
   </Rect>
 </Diagrams>
 <Paintings>
