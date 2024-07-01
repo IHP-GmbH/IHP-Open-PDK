@@ -61,6 +61,7 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * Qucs-S: primitive device symbols, settings and testbenches
+* Digital: stdcells
 * OpenEMS: tutorials, scripts, documentation
 * SG13G2 Process specification & Layout Rules
 * MOS/HBT Measurements in MDM format
