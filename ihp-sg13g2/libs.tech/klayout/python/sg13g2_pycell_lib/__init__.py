@@ -54,8 +54,7 @@ moduleNames = [
         'inductor3_sc_code',
         'inductor3_sp_code',
         'dantenna_code',
-        'dpantenna_code',
-        'via_stack_code'
+        'dpantenna_code'
 
 ]
 
