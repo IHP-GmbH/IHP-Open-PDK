@@ -8,11 +8,9 @@ E {}
 N 40 -120 40 -90 {
 lab=#net1}
 N -30 0 -30 20 {
-lab=xxx}
+lab=nq}
 N 40 0 120 0 {
-lab=xxx}
-N 120 0 120 20 {
-lab=xxx}
+lab=nq}
 N -30 90 -30 110 {
 lab=vss}
 N 40 110 120 110 {
@@ -20,9 +18,9 @@ lab=vss}
 N 120 100 120 110 {
 lab=vss}
 N 40 -20 40 0 {
-lab=xxx}
+lab=nq}
 N -30 0 40 0 {
-lab=xxx}
+lab=nq}
 N 40 -200 40 -180 {
 lab=vdd}
 N 40 -150 100 -150 {
@@ -49,8 +47,6 @@ N -50 -60 -0 -60 {
 lab=i0}
 N -120 50 -70 50 {
 lab=i1}
-N 50 50 80 50 {
-lab=i0}
 N -30 50 0 50 {
 lab=vss}
 N 0 50 -0 90 {
@@ -60,17 +56,17 @@ lab=vss}
 N -30 80 -30 90 {
 lab=vss}
 N 120 50 150 50 {
-lab=vss}
-N 150 50 150 100 {
-lab=vss}
+lab=#net2}
 N 120 100 150 100 {
 lab=vss}
-N 120 80 120 100 {
-lab=vss}
 N 40 -20 210 -20 {
-lab=xxx}
+lab=nq}
 N 40 -30 40 -20 {
-lab=xxx}
+lab=nq}
+N 120 80 120 100 {}
+N 50 50 80 50 {}
+N 120 0 120 20 {}
+N 150 50 150 100 {}
 C {sg13g2_pr/sg13_lv_nmos.sym} -50 50 2 1 {name=M1
 l=0.13u
 w=3.93u
@@ -87,7 +83,7 @@ m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_lv_nmos.sym} 100 50 0 0 {name=M3
+C {sg13g2_pr/sg13_lv_nmos.sym} 100 50 2 1 {name=M3
 l=0.13u
 w=3.93u
 ng=1
