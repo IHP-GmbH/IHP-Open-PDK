@@ -611,18 +611,33 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
     "#{terminals.join(' ')} "
   end
 
-  # Generate parameters with given keys
-  def generate_parameters(device, *keys)
-    parameters = keys.map { |key| "#{key}=#{device.parameter(key)}" }
-    parameters.join(' ')
+  # Determine the unit for each parameter
+  def get_unit(key)
+    case key
+    when 'W', 'L', 'w', 'wfeed', 'l', 's', 'd', 'ps'
+      'u'  # micrometers
+    when 'AS', 'AD', 'AE', 'AB', 'AC', 'A'
+      'p'  # picometers (these are areas um^2)
+    when 'PS', 'PD', 'PE', 'PB', 'PC', 'P', 'Perim'
+      'u'  # micrometers (perimeters)
+    else
+      ''  # no unit
+    end
   end
 
   # Generate default parameters for the device
   def generate_default_parameters(device, device_class)
     parameters = device_class.parameter_definitions.map do |pd|
-      format('%<name>s=%<value>.12g', name: pd.name, value: device.parameter(pd.id))
+      unit = get_unit(pd.name)
+      value = device.parameter(pd.id)
+      if value && value > 0
+        format('%<name>s=%<value>.12g%<unit>s', name: pd.name, value: value, unit: unit)
+      elsif value
+        format('%<name>s=%<value>.12g', name: pd.name, value: value)
+      end
     end
-    parameters.join(' ')
+    # Use compact to remove any nil values
+    parameters.compact.join(' ')
   end
 end
 
