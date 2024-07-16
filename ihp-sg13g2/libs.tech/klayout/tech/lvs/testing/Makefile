@@ -32,7 +32,9 @@ test-LVS: test-LVS-switch  test-LVS-main
 #=================================
 
 .ONESHELL:
-test-LVS-main: test-LVS-MOS test-LVS-RFMOS test-LVS-BJT test-LVS-DIODE test-LVS-RES test-LVS-CAP test-LVS-ESD test-LVS-IND test-LVS-TAP
+test-LVS-main:
+	@echo "========== LVS-$* testing =========="
+	@ python3 run_regression.py
 
 .ONESHELL:
 test-LVS-%:
