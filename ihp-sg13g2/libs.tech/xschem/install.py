@@ -39,10 +39,10 @@ def is_program_installed(program_name):
 
 def info():
     msg = """
-    This script compiles and places 
-    PSP103 model in ./simulations/ location. 
-    Please make sure that you have set up the PDK_ROOT env variable
-    export PDK_ROOT=your_location/IHP-Open-PDK 
+    This script:
+    - compiles and places PSP103 model in ../ngspice/openvaf/ location. 
+    - creates a symlink to the ../ngspice/.spiceinit file in your $HOME directory
+    Please make sure that you have set up the PDK_ROOT env variable export PDK_ROOT=your_location/IHP-Open-PDK 
     """
     print(msg)
 
@@ -57,16 +57,12 @@ if __name__ == "__main__":
         source_directory=pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
 
     username = os.environ.get("USER")
-    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/xschem/simulations"
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
     
     # Check if the source directory exists
     if not os.path.exists(source_directory):
         print(f"Source directory '{source_directory}' does not exist.")
     
-    # Check if the destination directory exists, if not, create it
-    if not os.path.exists(destination_directory):
-        os.makedirs(destination_directory)
-        print(f"Destination directory '{destination_directory}' created.")
     
     program_name = "openvaf"
     if is_program_installed(program_name):
@@ -77,6 +73,15 @@ if __name__ == "__main__":
         print(f"{program_name} is not installed.")
     	
 
+    original_file =  pdk_root + "/ihp-sg13g2/libs.tech/ngspice/.spiceinit"
+    symbolic_link = "/home/" + username + "/.spiceinit"
+    # Create the symbolic link
+    if not os.path.exists(symbolic_link):
+        try:
+            os.symlink(original_file, symbolic_link)
+            print(f"Symbolic link '{symbolic_link}' created successfully.")
+        except OSError as e:
+            print(f"Failed to create symbolic link: {e}")
 
 
  	

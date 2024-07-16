@@ -1,6 +1,6 @@
 <Qucs Schematic 24.2.0>
 <Properties>
-  <View=-288,-4,1765,1119,1.04363,0,0>
+  <View=-143,-4,1620,1016,0.890196,0,0>
   <Grid=10,10,1>
   <DataSet=resistors.dat>
   <DataDisplay=resistors.dpl>
@@ -22,7 +22,7 @@
 </Symbol>
 <Components>
   <.SW SW1 1 90 280 0 68 0 0 "DC1" 1 "lin" 1 "V2" 1 "0" 1 "10" 1 "301" 1 "false" 0>
-  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_wcs\n.control\nop\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 "\n.LIB cornerRES.lib res_wcs\n" 1 "" 0 "" 0>
   <Vdc V2 1 110 800 18 -26 0 1 "1 V" 1>
   <GND * 1 250 950 0 0 0 0>
   <GND * 1 110 950 0 0 0 0>
@@ -43,7 +43,6 @@
   <GND * 1 1040 920 0 0 0 0>
   <Idc I1 1 790 890 18 -26 0 1 "1 mA" 1>
   <Idc I2 1 1040 890 18 -26 0 1 "1 mA" 1>
-  <.DC DC1 1 90 180 0 41 0 0 "26.85" 0 "0.001" 0 "1 pA" 0 "1 uV" 0 "yes" 1 "150" 0 "no" 0 "none" 0 "CroutLU" 0>
 </Components>
 <Wires>
   <110 830 110 950 "" 0 0 0 "">
@@ -71,7 +70,7 @@
 <Diagrams>
   <Rect 553 615 857 473 3 #c0c0c0 1 00 1 0 0.5 10 1 -0.622632 1 7 1 0 0.1 0.525694 315 0 225 1 0 0 "" "" "">
 	<"ngspice/v(div2)" #ff0000 2 3 0 0 0>
-	  <Mkr 5.01661 503 -225 3 0 0>
+	  <Mkr 5 503 -225 3 0 0>
 	<"ngspice/i(pr1)" #ff0000 2 3 0 0 0>
 	<"ngspice/v(div1)" #ff00ff 2 3 0 0 0>
 	<"ngspice/v(div3)" #00ff00 2 3 0 0 0>

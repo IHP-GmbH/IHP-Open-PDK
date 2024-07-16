@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -72,14 +72,12 @@ lab=in}
 C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} -360 -260 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 dc Vin 0 1.8 1m
 let gain = -deriv(V(out))/10

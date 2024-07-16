@@ -6,15 +6,15 @@ V {}
 S {}
 E {}
 B 2 240 -350 1040 50 {flags=graph
-y1=-2.4e-11
-y2=0.00015
+y1=-6.4e-14
+y2=7.9e-06
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
 x1=0
-x2=3
+x2=1.2
 divx=5
 subdivx=1
 node=i(vd)
@@ -48,17 +48,15 @@ N -110 0 -20 0 {
 lab=#net1}
 C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
-value=".lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
+value=".lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} -300 -320 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 op
-*reset 
-dc Vds 0 3 0.01 Vgs 0. 0.9 0.1
+dc Vds 0 1.2 0.01 Vgs 0.3 0.5 0.05
 write dc_lv_nmos.raw
 .endc
 "}
@@ -76,8 +74,8 @@ tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
 C {devices/ammeter.sym} 80 -70 1 0 {name=Vd}
 C {sg13g2_pr/sg13_lv_nmos.sym} 0 0 2 1 {name=M1
 l=0.13u
-w=12.7u
-ng=2
+w=1.0u
+ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X

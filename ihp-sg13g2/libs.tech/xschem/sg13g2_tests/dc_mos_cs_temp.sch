@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 250 -620 1050 -220 {flags=graph
-y1=-1.5
-y2=1
+y1=-1.3
+y2=0.92
 ypos1=0
 ypos2=2
 
@@ -35,8 +35,6 @@ vgs1"}
 N -20 80 -20 140 {
 lab=GND}
 N -20 50 30 50 {
-lab=GND}
-N 80 50 80 140 {
 lab=GND}
 N -90 50 -60 50 {
 lab=Vgs1}
@@ -117,15 +115,13 @@ lab=Vgs2}
 C {devices/code_shown.sym} -320 -630 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} -310 -510 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.savecurrents
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 dc temp -40 125 1
 write mos_temp.raw
@@ -133,7 +129,6 @@ wrdata mos_temp.csv Vgs1 Vgs2 Vgs3 Vgs4
 .endc
 "}
 C {devices/gnd.sym} -20 140 0 0 {name=l1 lab=GND}
-C {devices/gnd.sym} 80 140 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} -210 -250 0 0 {name=h5
 descr="load waves Ctrl + left click" 

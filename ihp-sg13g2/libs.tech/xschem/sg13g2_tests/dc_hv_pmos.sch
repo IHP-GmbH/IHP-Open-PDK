@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 150 -510 950 -110 {flags=graph
 y1=-1.1e-05
-y2=0
+y2=-0
 ypos1=0
 ypos2=2
 divy=5
@@ -17,14 +17,14 @@ x1=-2
 x2=0
 divx=5
 subdivx=1
-node="i(vds)
-i(vd)"
-color="4 4"
+
+
 dataset=-1
 unitx=1
 logx=0
 logy=0
-}
+color=4
+node=i(vd)}
 N -110 70 -110 90 {
 lab=GND}
 N -110 -0 -110 10 {
@@ -50,20 +50,17 @@ lab=#net3}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
-save all 
-op
+save all
+op 
 print I(Vd)
-reset 
 dc Vds 0 -2 -0.01 Vgs -0.45 -1.1 -0.05
 write dc_hv_pmos.raw
-*plot all
 .endc
 "}
 C {devices/gnd.sym} 20 90 0 0 {name=l1 lab=GND}
