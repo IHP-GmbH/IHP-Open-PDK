@@ -7,8 +7,8 @@ S {}
 E {}
 L 4 -240 -300 -220 -300 {}
 B 2 360 -410 1160 -10 {flags=graph
-y1=0.0088
-y2=0.022
+y1=0.0014
+y2=0.0015
 ypos1=0
 ypos2=2
 divy=10
@@ -98,14 +98,13 @@ lab=Vout2}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ 
+.lib cornerMOSlv.lib mos_tt
+.lib cornerRES.lib res_typ 
 "}
 C {devices/code_shown.sym} 1190 -310 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 ac dec 1001 10meg 10000meg 
 let vd1 = abs(Vout1)
@@ -117,8 +116,8 @@ write ac_lv_nmosrf.raw
 "}
 C {devices/gnd.sym} 160 50 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} 30 50 0 0 {name=l2 lab=GND}
-C {devices/vsource.sym} 30 0 0 0 {name=Vgs value="dc 0.75 ac 0.01 "}
-C {devices/vsource.sym} 290 -40 0 0 {name=Vds value=1.5}
+C {devices/vsource.sym} 30 0 0 0 {name=Vgs value="dc 0.45 ac 0.01 "}
+C {devices/vsource.sym} 290 -40 0 0 {name=Vds value=1.2}
 C {devices/gnd.sym} 290 50 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 210 50 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
@@ -128,8 +127,8 @@ tclcommand="xschem raw_read $netlist_dir/ac_lv_nmosrf.raw ac"}
 C {devices/lab_pin.sym} 150 -110 1 0 {name=p1 sig_type=std_logic lab=Vout1}
 C {devices/gnd.sym} -170 60 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} -300 60 0 0 {name=l7 lab=GND}
-C {devices/vsource.sym} -300 10 0 0 {name=Vgs1 value="dc 0.75 ac 0.01 "}
-C {devices/vsource.sym} -40 -30 0 0 {name=Vds2 value=1.5}
+C {devices/vsource.sym} -300 10 0 0 {name=Vgs1 value="dc 0.45 ac 0.01 "}
+C {devices/vsource.sym} -40 -30 0 0 {name=Vds2 value=1.2}
 C {devices/gnd.sym} -40 60 0 0 {name=l8 lab=GND}
 C {devices/gnd.sym} -120 60 0 0 {name=l9 lab=GND}
 C {devices/lab_pin.sym} -180 -100 1 0 {name=p2 sig_type=std_logic lab=Vout2}

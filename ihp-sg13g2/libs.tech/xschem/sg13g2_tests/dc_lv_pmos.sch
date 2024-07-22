@@ -6,18 +6,18 @@ V {}
 S {}
 E {}
 B 2 150 -510 950 -110 {flags=graph
-y1=-1.4e-11
-y2=5.2e-05
+y1=-5e-05
+y2=1.4e-11
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=0
-x2=-2
+x1=-1.2
+x2=0
 divx=5
 subdivx=1
-node=i(vds)
+node=i(vd)
 color=4
 dataset=-1
 unitx=1
@@ -53,20 +53,14 @@ lab=#net3}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
-save all 
-op
-print I(Vd)
-*reset 
-dc Vds 0 -2 -0.01 Vgs -0.45 -1.1 -0.05
+dc Vds 0 -1.2 -0.01 Vgs -0.35 -1.1 -0.05
 write dc_lv_pmos.raw
-*plot all
 .endc
 "}
 C {devices/gnd.sym} 20 90 0 0 {name=l1 lab=GND}
@@ -82,7 +76,7 @@ tclcommand="xschem raw_read $netlist_dir/dc_lv_pmos.raw dc"
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 0 2 1 {name=M1
 l=0.45u
-w=5.0u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos

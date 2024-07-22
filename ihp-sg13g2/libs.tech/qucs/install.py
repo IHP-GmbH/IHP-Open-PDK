@@ -49,10 +49,9 @@ def copy_files(source_dir, destination_dir):
 
 def info():
     msg = """
-    This script copies the Qucs-S user library files into 
-    /home/$USER/.qucs/user_lib directory. 
-    It also creates a symbolic link there and compiles and places 
-    PSP103 model in ~/.qucs/ location. 
+    This script:
+    - copies the Qucs-S user library files into /home/$USER/.qucs/user_lib directory. 
+    - compiles and copy PSP103 model in ../ngspice/openvaf location
     Please make sure that you have set up the PDK_ROOT env variable
     export PDK_ROOT=your_location/IHP-Open-PDK 
     """
@@ -82,8 +81,39 @@ if __name__ == "__main__":
     
     copy_files(source_directory, destination_directory)
 
-    original_file = pdk_root
-    symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"
+
+     # Copy examples to "Qucs Home" (/home/<username>/.qucs/)
+    print("Copying examples into Qucs-S Home...")
+    source_directory=pdk_root + "/ihp-sg13g2/libs.tech/qucs/examples"
+    destination_directory = "/home/" + username + "/.qucs/IHP-Open-PDK-SG13G2-Examples_prj"
+
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+
+    copy_files(source_directory, destination_directory)
+    print("Examples copied")
+    print("\n\n#############################################")
+    print("              IMPORTANT NOTE")
+    print("#############################################\n")
+    print("Before using the PDK example schematics, you must add the PDK library path to the Qucs-S search path list.\n")
+    print("Please read the instructions provided in " + destination_directory + "/README.txt\n")
+    print("#############################################\n\n")
+
+
+   
+    source_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
+    program_name = "openvaf"
+    if is_program_installed(program_name):
+        command = "openvaf psp103_nqs.va --output " + destination_directory + "/psp103_nqs.osdi"    
+        print(f"{program_name} is installed and about to run the command '{command}' in a location: {source_directory} ")	
+        exec_app_in_directory(command, source_directory)
+    else:
+        print(f"{program_name} is not installed.")
+    	
+
+    original_file =  pdk_root + "/ihp-sg13g2/libs.tech/ngspice/.spiceinit"
+    symbolic_link = "/home/" + username + "/.spiceinit"
     # Create the symbolic link
     if not os.path.exists(symbolic_link):
         try:
@@ -92,18 +122,12 @@ if __name__ == "__main__":
         except OSError as e:
             print(f"Failed to create symbolic link: {e}")
 
-    program_name = "openvaf"
-    if is_program_installed(program_name):
-        command = "openvaf psp103_nqs.va --output " + "/home/" + username + "/.qucs/psp103_nqs.osdi"    
-        directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
-        print(f"{program_name} is installed and about to run the command '{command}' in a location: {directory} ")	
-        exec_app_in_directory(command, directory)
-    else:
-        print(f"{program_name} is not installed.")
-    	
-
-
-
- 	
-
-
+    original_file =  pdk_root
+    symbolic_link = "/home/" + username + "/.qucs/IHP-Open-PDK-main"
+    # Create the symbolic link
+    if not os.path.exists(symbolic_link):
+        try:
+            os.symlink(original_file, symbolic_link)
+            print(f"Symbolic link '{symbolic_link}' created successfully.")
+        except OSError as e:
+            print(f"Failed to create symbolic link: {e}")

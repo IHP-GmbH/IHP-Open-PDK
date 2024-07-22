@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -28,8 +28,7 @@ lab=Vgs}
 C {devices/code_shown.sym} 260 110 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt_stat
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt_stat
+.lib cornerMOShv.lib mos_tt_stat
 
 "}
 C {devices/code_shown.sym} -300 -440 0 0 {name=NGSPICE only_toplevel=true 
@@ -39,7 +38,6 @@ value="
 .param temp=27
 
 .control
-pre_osdi ./psp103_nqs.osdi
 
 let mc_runs = 1000
 let run = 0
