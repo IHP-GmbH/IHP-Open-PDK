@@ -37,8 +37,7 @@ class npn13G2L(DloGen):
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('model', model, 'Model name')
 
-        specs('Nx', 1, 'x-Multiplier', RangeConstraint(1, 4))
-        specs('Ny', 1, 'y-Multiplier', ChoiceConstraint([1]))
+        specs('Nx', 2, 'x-Multiplier', RangeConstraint(1, 4))
         specs('le', '1.0u', "Emitter Length")
         specs('we', '0.07u', "Emitter Width")
 
@@ -92,10 +91,10 @@ class npn13G2L(DloGen):
         pcPurpose = 'drawing'
 
         id = dbCreateRect(self,Layer('EmWind', 'drawing'), Box(emWindOrigin_x, emWindOrigin_y, emWindOrigin_x + we, emWindOrigin_y + le))
-
-        ihpAddThermalBjtLayer(self, Box((emWindOrigin_x - 0.05), (emWindOrigin_y - 0.05), (emWindOrigin_x + we + 0.05), (emWindOrigin_y + le + 0.05)), True, Cell)
-
         groupId = list()
+        groupId.append(id)
+
+        id = ihpAddThermalBjtLayer(self, Box((emWindOrigin_x - 0.05), (emWindOrigin_y - 0.05), (emWindOrigin_x + we + 0.05), (emWindOrigin_y + le + 0.05)), True, Cell)
         groupId.append(id)
 
         masks = Grouping()
@@ -145,6 +144,7 @@ class npn13G2L(DloGen):
         id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(emWindOrigin_x + we + Col_Metal1_distance, 2.82, emWindOrigin_x + we + Col_Metal1_distance + Col_Metal1_width, 4.1 + le))
         groupId.append(id)
         id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 4.1 + le, emWindOrigin_x + we + Col_Metal1_distance + Col_Metal1_width, 4.1 + le + 0.65))
+        id.col = True
         groupId.append(id)
 
         # Basis
@@ -152,13 +152,15 @@ class npn13G2L(DloGen):
         groupId.append(id)
         id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(emWindOrigin_x + we + Bas_Metal1_distance, 2.1, emWindOrigin_x + we + Bas_Metal1_distance + Bas_Metal1_width, 3.38+le))
         groupId.append(id)
-        id = dbCreateRect(self, Layer('Metal2', 'drawing'), Box(emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width, 1.45, emWindOrigin_x + we + Bas_Metal1_distance + Bas_Metal1_width, 2.1))
+        id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width, 1.45, emWindOrigin_x + we + Bas_Metal1_distance + Bas_Metal1_width, 2.1))
+        id.base = True
         groupId.append(id)
 
         # Emitter
         id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(emWindOrigin_x - Emi_Metal1_enc_hori, emWindOrigin_y - Emi_Metal1_enc_vert, emWindOrigin_x + we + Emi_Metal1_enc_hori, emWindOrigin_y + le + Emi_Metal1_enc_vert))
         groupId.append(id)
         id = dbCreateRect(self, Layer('Metal2', 'drawing'), Box(emWindOrigin_x - Col_Metal1_distance  - Col_Metal1_width, 2.9, emWindOrigin_x + Col_Metal1_distance + Col_Metal1_width + we, 3.3+le))
+        id.emi = True
         groupId.append(id)
 
         # Draw Guardring
@@ -191,11 +193,22 @@ class npn13G2L(DloGen):
 
         if self.Nx > 1 :
             id = dbCreateRect(self, Layer('Metal1', 'drawing'), Box(4.415, 1.45, 6.185, 2.1))
+            id.base = True
             for cnt in range(1, self.Nx) :
                 groupId = ihpCopyFig(groupId, Point(2.8, 0), 'R0')
                 if cnt != self.Nx-1 :
                     id = dbCopyShape(id, Point(2.8, 0), 'R0')
 
-        MkPin(self, 'C', 1, Box((emWindOrigin_x-Col_Metal1_distance-Col_Metal1_width), (4.1+le), (emWindOrigin_x+we+Col_Metal1_distance+Col_Metal1_width), (4.1+le+0.65)), 'Metal1')
-        MkPin(self, 'B', 2, Box((emWindOrigin_x-Bas_Metal1_distance-Bas_Metal1_width), 1.45, (emWindOrigin_x+we+Bas_Metal1_distance+Bas_Metal1_width), 2.1), 'Metal1')
-        MkPin(self, 'E', 3, Box((emWindOrigin_x-Col_Metal1_distance-Col_Metal1_width), 2.9, (emWindOrigin_x+Col_Metal1_distance+Col_Metal1_width+we), (3.3+le)), 'Metal2')
+
+        groupCol = Grouping();
+        [groupCol.add(id) for id in self.getShapes() if id.col]
+
+        groupBase = Grouping();
+        [groupBase.add(id) for id in self.getShapes() if id.base]
+
+        groupEmi = Grouping();
+        [groupEmi.add(id) for id in self.getShapes() if id.emi]
+
+        MkPin(self, 'C', 1, groupCol.getBBox(), 'Metal1')
+        MkPin(self, 'B', 2, groupBase.getBBox(), 'Metal1')
+        MkPin(self, 'E', 3, groupEmi.getBBox(), 'Metal2')
