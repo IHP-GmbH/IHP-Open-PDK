@@ -12,7 +12,7 @@ lab=#net2}
 N -320 20 -130 20 {
 lab=#net3}
 N 170 20 460 20 {
-lab=xxx}
+lab=pgate}
 N 360 -200 450 -200 {
 lab=ngate}
 N -670 -210 -600 -210 {

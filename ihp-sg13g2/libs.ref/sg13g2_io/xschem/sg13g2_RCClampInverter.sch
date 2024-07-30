@@ -876,215 +876,215 @@ lab=out}
 N 465 20 905 20 {
 lab=out}
 N -515 -110 -450 -110 {
-lab=xxx}
+lab=in}
 N -515 -215 -515 -110 {
-lab=xxx}
+lab=in}
 N -515 -470 -435 -470 {
-lab=xxx}
+lab=in}
 N -515 -340 -440 -340 {
-lab=xxx}
+lab=in}
 N -515 -470 -515 -340 {
-lab=xxx}
+lab=in}
 N -515 50 -440 50 {
-lab=xxx}
+lab=in}
 N -515 -15 -515 50 {
-lab=xxx}
+lab=in}
 N 2470 -215 2610 -215 {
-lab=xxx}
+lab=in}
 N -515 -340 -515 -215 {
-lab=xxx}
+lab=in}
 N 2610 -340 2610 -215 {
-lab=xxx}
+lab=in}
 N -330 -215 -330 -120 {
-lab=xxx}
+lab=in}
 N -515 -215 -330 -215 {
-lab=xxx}
+lab=in}
 N -190 -215 -190 -120 {
-lab=xxx}
+lab=in}
 N -300 -215 -190 -215 {
-lab=xxx}
+lab=in}
 N -80 -215 -80 -120 {
-lab=xxx}
+lab=in}
 N -175 -215 -80 -215 {
-lab=xxx}
+lab=in}
 N 30 -215 30 -120 {
-lab=xxx}
+lab=in}
 N -45 -215 30 -215 {
-lab=xxx}
+lab=in}
 N 130 -215 130 -120 {
-lab=xxx}
+lab=in}
 N 75 -215 130 -215 {
-lab=xxx}
+lab=in}
 N 250 -215 250 -120 {
-lab=xxx}
+lab=in}
 N 215 -215 250 -215 {
-lab=xxx}
+lab=in}
 N -300 -340 -300 -215 {
-lab=xxx}
+lab=in}
 N -330 -215 -300 -215 {
-lab=xxx}
+lab=in}
 N -175 -340 -175 -215 {
-lab=xxx}
+lab=in}
 N -190 -215 -175 -215 {
-lab=xxx}
+lab=in}
 N -45 -340 -45 -215 {
-lab=xxx}
+lab=in}
 N -80 -215 -45 -215 {
-lab=xxx}
+lab=in}
 N 75 -340 75 -215 {
-lab=xxx}
+lab=in}
 N 30 -215 75 -215 {
-lab=xxx}
+lab=in}
 N 215 -340 215 -215 {
-lab=xxx}
+lab=in}
 N 130 -215 215 -215 {
-lab=xxx}
+lab=in}
 N 335 -340 335 -215 {
-lab=xxx}
+lab=in}
 N 250 -215 335 -215 {
-lab=xxx}
+lab=in}
 N 455 -340 455 -215 {
-lab=xxx}
+lab=in}
 N 335 -215 455 -215 {
-lab=xxx}
+lab=in}
 N 575 -340 575 -215 {
-lab=xxx}
+lab=in}
 N 455 -215 575 -215 {
-lab=xxx}
+lab=in}
 N -515 -110 -515 -15 {
-lab=xxx}
+lab=in}
 N 425 -15 425 50 {
-lab=xxx}
+lab=in}
 N 260 -15 425 -15 {
-lab=xxx}
+lab=in}
 N 1740 -15 1885 -15 {
-lab=xxx}
+lab=in}
 N 1885 -15 1885 50 {
-lab=xxx}
+lab=in}
 N 1740 -15 1740 50 {
-lab=xxx}
+lab=in}
 N 1600 -15 1740 -15 {
-lab=xxx}
+lab=in}
 N 1600 -15 1600 50 {
-lab=xxx}
+lab=in}
 N 1470 -15 1600 -15 {
-lab=xxx}
+lab=in}
 N 1470 -15 1470 50 {
-lab=xxx}
+lab=in}
 N 1345 -15 1470 -15 {
-lab=xxx}
+lab=in}
 N 1345 -15 1345 50 {
-lab=xxx}
+lab=in}
 N 1225 -15 1345 -15 {
-lab=xxx}
+lab=in}
 N 1225 -15 1225 50 {
-lab=xxx}
+lab=in}
 N 1090 -15 1225 -15 {
-lab=xxx}
+lab=in}
 N 1090 -15 1090 50 {
-lab=xxx}
+lab=in}
 N 940 -15 1090 -15 {
-lab=xxx}
+lab=in}
 N 940 -15 940 50 {
-lab=xxx}
+lab=in}
 N 795 -15 940 -15 {
-lab=xxx}
+lab=in}
 N 795 -15 795 50 {
-lab=xxx}
+lab=in}
 N 670 -15 795 -15 {
-lab=xxx}
+lab=in}
 N 670 -15 670 50 {
-lab=xxx}
+lab=in}
 N 550 -15 670 -15 {
-lab=xxx}
+lab=in}
 N 550 -15 550 50 {
-lab=xxx}
+lab=in}
 N 425 -15 550 -15 {
-lab=xxx}
+lab=in}
 N 260 -15 260 40 {
-lab=xxx}
+lab=in}
 N 140 -15 260 -15 {
-lab=xxx}
+lab=in}
 N 140 -15 140 40 {
-lab=xxx}
+lab=in}
 N 40 -15 140 -15 {
-lab=xxx}
+lab=in}
 N 40 -15 40 40 {
-lab=xxx}
+lab=in}
 N -70 -15 40 -15 {
-lab=xxx}
+lab=in}
 N -70 -15 -70 40 {
-lab=xxx}
+lab=in}
 N -180 -15 -70 -15 {
-lab=xxx}
+lab=in}
 N -180 -15 -180 40 {
-lab=xxx}
+lab=in}
 N -320 -15 -180 -15 {
-lab=xxx}
+lab=in}
 N -320 -15 -320 40 {
-lab=xxx}
+lab=in}
 N -515 -15 -320 -15 {
-lab=xxx}
+lab=in}
 N 715 -340 715 -215 {
-lab=xxx}
+lab=in}
 N 575 -215 715 -215 {
-lab=xxx}
+lab=in}
 N 830 -340 830 -215 {
-lab=xxx}
+lab=in}
 N 715 -215 830 -215 {
-lab=xxx}
+lab=in}
 N 970 -340 970 -215 {
-lab=xxx}
+lab=in}
 N 830 -215 970 -215 {
-lab=xxx}
+lab=in}
 N 1095 -340 1095 -215 {
-lab=xxx}
+lab=in}
 N 970 -215 1095 -215 {
-lab=xxx}
+lab=in}
 N 1225 -340 1225 -215 {
-lab=xxx}
+lab=in}
 N 1095 -215 1225 -215 {
-lab=xxx}
+lab=in}
 N 1345 -340 1345 -215 {
-lab=xxx}
+lab=in}
 N 1225 -215 1345 -215 {
-lab=xxx}
+lab=in}
 N 1485 -340 1485 -215 {
-lab=xxx}
+lab=in}
 N 1345 -215 1485 -215 {
-lab=xxx}
+lab=in}
 N 1605 -340 1605 -215 {
-lab=xxx}
+lab=in}
 N 1485 -215 1605 -215 {
-lab=xxx}
+lab=in}
 N 1725 -340 1725 -215 {
-lab=xxx}
+lab=in}
 N 1605 -215 1725 -215 {
-lab=xxx}
+lab=in}
 N 1845 -340 1845 -215 {
-lab=xxx}
+lab=in}
 N 1725 -215 1845 -215 {
-lab=xxx}
+lab=in}
 N 1985 -340 1985 -215 {
-lab=xxx}
+lab=in}
 N 1845 -215 1985 -215 {
-lab=xxx}
+lab=in}
 N 2110 -340 2110 -215 {
-lab=xxx}
+lab=in}
 N 1985 -215 2110 -215 {
-lab=xxx}
+lab=in}
 N 2230 -340 2230 -215 {
-lab=xxx}
+lab=in}
 N 2110 -215 2230 -215 {
-lab=xxx}
+lab=in}
 N 2350 -340 2350 -215 {
-lab=xxx}
+lab=in}
 N 2230 -215 2350 -215 {
-lab=xxx}
+lab=in}
 N 2470 -340 2470 -215 {
-lab=xxx}
+lab=in}
 N 2350 -215 2470 -215 {
-lab=xxx}
+lab=in}
 N 2475 -400 2615 -400 {
 lab=#net1}
 N 2615 -470 2615 -400 {
@@ -1190,7 +1190,7 @@ lab=out}
 N 905 -285 905 -130 {
 lab=out}
 N -590 -110 -515 -110 {
-lab=xxx}
+lab=in}
 N 825 -605 825 -540 {
 lab=supply}
 N 760 -540 825 -540 {
@@ -1803,7 +1803,7 @@ m=1
 model=sg13_hv_pmos
 spiceprefix=X
 }
-C {devices/iopin.sym} 825 -605 0 0 {name=supply lab=supply}
-C {devices/iopin.sym} 390 225 0 0 {name=ground lab=ground}
+C {devices/iopin.sym} 825 -605 3 0 {name=supply lab=supply}
+C {devices/iopin.sym} 390 225 1 0 {name=ground lab=ground}
 C {devices/opin.sym} 1120 -130 0 0 {name=out lab=out}
 C {devices/ipin.sym} -585 -110 0 0 {name=in lab=in}
