@@ -1,6 +1,6 @@
 <Qucs Schematic 24.2.0>
 <Properties>
-  <View=-603,-96,2362,1375,0.827406,84,45>
+  <View=52,-2,1670,973,1.22451,269,33>
   <Grid=10,10,1>
   <DataSet=ac_mim_cap.dat>
   <DataDisplay=ac_mim_cap.dpl>
@@ -16,18 +16,17 @@
 <Symbol>
 </Symbol>
 <Components>
-  <INCLSCR INCLSCR1 1 120 50 -60 16 0 0 ".LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerRES.lib res_typ\n.LIB ../../.qucs/IHP-Open-PDK-main/ihp-sg13g2/libs.tech/ngspice/models/cornerCAP.lib cap_typ\n.control\n\n.endc" 1 "" 0 "" 0>
+  <INCLSCR INCLSCR1 1 120 50 -60 16 0 0 "\n.LIB cornerRES.lib res_typ\n.LIB cornerCAP.lib cap_typ\n" 1 "" 0 "" 0>
   <.AC AC1 1 70 190 0 40 0 0 "log" 1 "100k" 1 "300 GHz" 1 "101" 1 "no" 0>
   <GND * 1 360 650 0 0 0 0>
   <Vac V1 1 70 570 18 -26 0 1 "1 V" 1 "1 kHz" 0 "0" 0 "0" 0 "0" 0 "0" 0>
   <GND * 1 70 650 0 0 0 0>
-  <Lib cap_cmim1 1 360 590 -120 -49 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_cmim" 0 "70u" 1 "70u" 1>
   <GND * 1 360 930 0 0 0 0>
   <GND * 1 330 930 0 0 0 0>
   <Lib cap_rfcmim1 1 370 860 50 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_rfcmim" 0 "70u" 1 "70u" 1>
   <Lib rhigh1 1 240 500 -26 -122 0 1 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "10u" 1 "1" 1>
   <Lib rhigh2 1 240 780 -26 -122 0 1 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "10u" 1 "1" 1>
-  <Lib rhigh3 1 -360 600 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "0.5u" 1 "1" 1>
+  <Lib cap_cmim1 1 360 590 -120 -49 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_cmim" 0 "70u" 1 "70u" 1>
 </Components>
 <Wires>
   <360 610 360 650 "" 0 0 0 "">

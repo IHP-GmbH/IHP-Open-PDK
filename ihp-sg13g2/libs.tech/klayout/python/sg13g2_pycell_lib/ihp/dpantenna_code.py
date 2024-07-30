@@ -52,14 +52,13 @@ class dpantenna(DloGen):
         self.techparams = self.tech.getTechParams()
         self.epsilon = self.techparams['epsilon1']
 
-        typ = 'P'
         metall_layer = Layer('Metal1')
-        ndiff_layer = Layer('Activ')
         pdiff_layer = Layer('Activ')
         pdiffx_layer = Layer('pSD')
         cont_layer = Layer('Cont')
         diods_layer = Layer('Recog', 'diode')
-        textlayer = Layer('TEXT')
+        text_layer = Layer('TEXT')
+        nwell_layer = Layer('NWell')
         cont_size = self.techparams['Cnt_a']
         cont_dist = self.techparams['Cnt_b']
         cont_diff_over = self.techparams['Cnt_c']
@@ -67,6 +66,7 @@ class dpantenna(DloGen):
         wmin = Numeric(self.techparams['dpantenna_minW']) * 1e6
         lmin = Numeric(self.techparams['dpantenna_minL']) * 1e6
         diods_over = Numeric(self.techparams['dpantenna_dov']) * 1e6
+        NW_c = self.techparams['NW_c']
 
         dbReplaceProp(self, 'pin#', 2)
 
@@ -80,7 +80,7 @@ class dpantenna(DloGen):
             hiGetAttention()
             print('L < ' + str(lmin))
 
-        dbCreateLabel(self, textlayer, Point(w / 2, l / 2), 'dpant', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+        dbCreateLabel(self, text_layer, Point(w / 2, l / 2), 'dpant', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
 
         bBox = DrawContArray(self, cont_layer, Box(0, 0, w, l), cont_size, cont_dist, cont_diff_over)
 
@@ -88,11 +88,10 @@ class dpantenna(DloGen):
 
         MkPin(self, 'MINUS', 1, bBox, metall_layer)
 
-        if typ == 'N':
-            dbCreateRect(self, ndiff_layer, Box(0, 0, w, l))
-        else:
-            dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
-            dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w + pdiffx_over, l + pdiffx_over))
+        pdiffRect = dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
+        dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w + pdiffx_over, l + pdiffx_over))
 
         if addRecLayer == 't':
             dbCreateRect(self, diods_layer, Box(-diods_over, -diods_over, w + diods_over, l + diods_over))
+
+        dbLayerSize(nwell_layer, [pdiffRect], NW_c)
