@@ -47,9 +47,9 @@ N 910 -250 990 -250 {
 lab=vdd}
 N 910 -360 910 -250 {
 lab=vdd}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCNDiode.sym} 670 -340 0 0 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCPDiode.sym} 1090 -360 0 0 {name=x2}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_LevelDown.sym} 710 -180 0 0 {name=x3}
+C {sg13g2_DCNDiode.sym} 670 -340 0 0 {name=x1}
+C {sg13g2_DCPDiode.sym} 1090 -360 0 0 {name=x2}
+C {sg13g2_LevelDown.sym} 710 -180 0 0 {name=x3}
 C {devices/iopin.sym} 750 -290 0 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 670 -290 0 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 670 -60 0 0 {name=vss lab=vss}

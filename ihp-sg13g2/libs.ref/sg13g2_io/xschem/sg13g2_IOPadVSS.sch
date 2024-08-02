@@ -35,8 +35,8 @@ N -400 10 -350 10 {
 lab=iovss}
 N 150 -120 240 -120 {
 lab=xxx}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCNDiode.sym} -170 10 2 1 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCPDiode.sym} 200 30 0 0 {name=x2}
+C {sg13g2_DCNDiode.sym} -170 10 2 1 {name=x1}
+C {sg13g2_DCPDiode.sym} 200 30 0 0 {name=x2}
 C {devices/iopin.sym} -400 10 0 0 {name=iovss lab=iovss}
 C {devices/iopin.sym} 50 -60 0 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 10 90 0 0 {name=vss lab=vss}

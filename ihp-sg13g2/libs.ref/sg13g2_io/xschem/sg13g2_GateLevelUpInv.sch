@@ -49,8 +49,8 @@ N 1410 -400 1410 -310 {
 lab=vss}
 N 1030 -400 1410 -400 {
 lab=vss}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_LevelUpInv.sym} 1050 -510 0 0 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_LevelUpInv.sym} 1520 -510 0 0 {name=x2}
+C {sg13g2_LevelUpInv.sym} 1050 -510 0 0 {name=x1}
+C {sg13g2_LevelUpInv.sym} 1520 -510 0 0 {name=x2}
 C {devices/iopin.sym} 1180 -690 3 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 1530 -680 3 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 810 -510 2 0 {name=core lab=core}

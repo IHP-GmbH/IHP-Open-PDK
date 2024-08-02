@@ -106,7 +106,7 @@ m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_SecondaryProtection.sym} -280 -20 0 0 {}
+C {sg13g2_SecondaryProtection.sym} -280 -20 0 0 {}
 C {devices/iopin.sym} 80 -140 0 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 80 140 0 0 {name=vss lab=vss}
 C {devices/iopin.sym} -270 -130 0 0 {name=iovdd lab=iovdd}

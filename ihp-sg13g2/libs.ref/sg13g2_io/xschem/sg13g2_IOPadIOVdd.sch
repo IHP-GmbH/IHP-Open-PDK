@@ -45,9 +45,9 @@ N 1610 -50 1910 -50 {
 lab=iovss}
 N 1990 -320 1990 -290 {}
 N 2030 0 2030 30 {}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_N43N43D4R.sym} 1960 -150 0 0 {}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_RCClampResistor.sym} 2330 -160 0 1 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_RCClampInverter.sym} 1600 -150 0 0 {name=x2}
+C {sg13g2_Clamp_N43N43D4R.sym} 1960 -150 0 0 {}
+C {sg13g2_RCClampResistor.sym} 2330 -160 0 1 {name=x1}
+C {sg13g2_RCClampInverter.sym} 1600 -150 0 0 {name=x2}
 C {devices/iopin.sym} 1910 30 1 0 {name=iovss lab=iovss}
 C {devices/iopin.sym} 1890 -320 3 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 2030 30 1 0 {name=vss lab=vss}

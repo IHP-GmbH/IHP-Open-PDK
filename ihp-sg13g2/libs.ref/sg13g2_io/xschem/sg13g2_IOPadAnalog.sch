@@ -91,11 +91,11 @@ N 3220 -670 3220 -630 {
 lab=vdd}
 N 3340 -200 3340 -170 {
 lab=iovss}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCNDiode.sym} 3090 -430 0 0 {name=x3}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCPDiode.sym} 3090 -310 0 0 {name=x4}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_SecondaryProtection.sym} 3530 -390 0 0 {}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_N20N0D.sym} 2660 -530 0 0 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_P20N0D.sym} 2660 -280 2 1 {name=x2}
+C {sg13g2_DCNDiode.sym} 3090 -430 0 0 {name=x3}
+C {sg13g2_DCPDiode.sym} 3090 -310 0 0 {name=x4}
+C {sg13g2_SecondaryProtection.sym} 3530 -390 0 0 {}
+C {sg13g2_Clamp_N20N0D.sym} 2660 -530 0 0 {name=x1}
+C {sg13g2_Clamp_P20N0D.sym} 2660 -280 2 1 {name=x2}
 C {devices/iopin.sym} 3740 -380 0 0 {name=padres lab=padres}
 C {devices/iopin.sym} 3230 -170 1 0 {name=iovss lab=iovss}
 C {devices/iopin.sym} 3090 -670 3 0 {name=iovdd lab=iovdd}

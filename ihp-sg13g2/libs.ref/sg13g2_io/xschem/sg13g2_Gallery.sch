@@ -149,7 +149,7 @@ N 3070 -60 3130 -60 {
 lab=vss}
 N 3490 -100 3490 -60 {
 lab=vss}
-N 3390 -60 3490 -60 {
+N 3420 -60 3490 -60 {
 lab=vss}
 N 3550 -100 3550 -60 {
 lab=vss}
@@ -245,9 +245,9 @@ N 2610 -490 2610 -430 {
 lab=vss}
 N 2570 -430 2610 -430 {
 lab=vss}
-N 3390 -60 3390 20 {
+N 3420 -60 3420 20 {
 lab=vss}
-N 3130 -60 3390 -60 {
+N 3130 -60 3420 -60 {
 lab=vss}
 N 3080 -770 3080 -690 {
 lab=iovdd}
@@ -363,24 +363,24 @@ N 5330 -580 5430 -580 {
 lab=ana_out}
 N 5330 -560 5430 -560 {
 lab=ana_out}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadVSS.sym} 2590 -550 0 0 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadVdd.sym} 2970 -550 0 0 {name=x2}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadOut4mA.sym} 3380 -550 0 0 {name=x3}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadOut16mA.sym} 3800 -550 0 0 {name=x4}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadOut30mA.sym} 4190 -550 0 0 {name=x5}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadTriOut4mA.sym} 2650 -190 0 0 {name=x6}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadTriOut16mA.sym} 3100 -190 0 0 {name=x7}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadTriOut30mA.sym} 3520 -190 0 0 {name=x8}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadInOut4mA.sym} 3990 -190 0 0 {name=x9}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadInOut16mA.sym} 4420 -190 0 0 {name=x10}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadInOut30mA.sym} 4820 -200 0 0 {name=x11}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadIOVss.sym} 4550 -560 0 0 {name=x12}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadIOVdd.sym} 4880 -560 0 0 {name=x13}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadAnalog.sym} 5180 -570 0 0 {name=x14}
+C {sg13g2_IOPadVSS.sym} 2590 -550 0 0 {name=x1}
+C {sg13g2_IOPadVdd.sym} 2970 -550 0 0 {name=x2}
+C {sg13g2_IOPadOut4mA.sym} 3380 -550 0 0 {name=x3}
+C {sg13g2_IOPadOut16mA.sym} 3800 -550 0 0 {name=x4}
+C {sg13g2_IOPadOut30mA.sym} 4190 -550 0 0 {name=x5}
+C {sg13g2_IOPadTriOut4mA.sym} 2650 -190 0 0 {name=x6}
+C {sg13g2_IOPadTriOut16mA.sym} 3100 -190 0 0 {name=x7}
+C {sg13g2_IOPadTriOut30mA.sym} 3520 -190 0 0 {name=x8}
+C {sg13g2_IOPadInOut4mA.sym} 3990 -190 0 0 {name=x9}
+C {sg13g2_IOPadInOut16mA.sym} 4420 -190 0 0 {name=x10}
+C {sg13g2_IOPadInOut30mA.sym} 4820 -200 0 0 {name=x11}
+C {sg13g2_IOPadIOVss.sym} 4550 -560 0 0 {name=x12}
+C {sg13g2_IOPadIOVdd.sym} 4880 -560 0 0 {name=x13}
+C {sg13g2_IOPadAnalog.sym} 5180 -570 0 0 {name=x14}
 C {devices/iopin.sym} 2870 -820 3 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 3080 -830 3 0 {name=iovdd lab=iovdd}
-C {devices/iopin.sym} 3390 20 1 0 {name=vss lab=vss}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_IOPadIn.sym} 2670 -860 0 0 {name=x15}
+C {devices/iopin.sym} 3420 20 1 0 {name=vss lab=vss}
+C {sg13g2_IOPadIn.sym} 2670 -860 0 0 {name=x15}
 C {devices/iopin.sym} 2850 -990 3 0 {name=iopadin_pad lab=iopadin_pad}
 C {devices/iopin.sym} 3530 -850 3 0 {name=iopadout4ma_pad lab=iopadout4ma_pad}
 C {devices/iopin.sym} 3950 -800 3 0 {name=iopadout16ma_pad lab=iopadout16ma_pad}

@@ -93,11 +93,11 @@ N -210 -340 -120 -340 {
 lab=vdd}
 N 260 -350 260 -280 {
 lab=iovdd}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_io_inv_x1.sym} -450 -210 0 0 {name=x1}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_io_nor2_x1.sym} -120 -200 0 0 {name=x2}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_LevelUp.sym} 20 20 0 0 {name=x3}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_io_nand2_x1.sym} -410 20 0 0 {name=x4}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_LevelUp.sym} 210 -200 0 0 {name=x5}
+C {sg13g2_io_inv_x1.sym} -450 -210 0 0 {name=x1}
+C {sg13g2_io_nor2_x1.sym} -120 -200 0 0 {name=x2}
+C {sg13g2_LevelUp.sym} 20 20 0 0 {name=x3}
+C {sg13g2_io_nand2_x1.sym} -410 20 0 0 {name=x4}
+C {sg13g2_LevelUp.sym} 210 -200 0 0 {name=x5}
 C {devices/ipin.sym} -720 -210 0 0 {name=en lab=en}
 C {devices/ipin.sym} -740 40 0 0 {name=core lab=core}
 C {devices/iopin.sym} -220 200 0 0 {name=vss lab=vss}

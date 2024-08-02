@@ -37,10 +37,10 @@ N 520 -290 520 -250 {
 lab=vdd}
 N 300 -250 520 -250 {
 lab=vdd}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_N43N43D4R.sym} 670 -40 0 0 {}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_RCClampResistor.sym} -80 -50 0 0 {name=x6}
+C {sg13g2_Clamp_N43N43D4R.sym} 670 -40 0 0 {}
+C {sg13g2_RCClampResistor.sym} -80 -50 0 0 {name=x6}
 C {devices/iopin.sym} 520 -290 0 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 680 -190 0 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 320 60 0 0 {name=vss lab=vss}
 C {devices/iopin.sym} 680 80 0 0 {name=iovss lab=iovss}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_RCClampInverter.sym} 280 -40 0 0 {name=x1}
+C {sg13g2_RCClampInverter.sym} 280 -40 0 0 {name=x1}

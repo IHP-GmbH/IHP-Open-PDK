@@ -83,15 +83,15 @@ N 1470 -130 1760 -130 {
 lab=iovss}
 N 1470 -270 1470 -250 {
 lab=iovdd}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCNDiode.sym} 2040 -130 0 0 {name=x8}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_DCPDiode.sym} 2020 30 0 0 {name=x9}
+C {sg13g2_DCNDiode.sym} 2040 -130 0 0 {name=x8}
+C {sg13g2_DCPDiode.sym} 2020 30 0 0 {name=x9}
 C {devices/iopin.sym} 1850 170 1 0 {name=iovss lab=iovss}
 C {devices/iopin.sym} 2280 -190 0 0 {name=pad lab=pad}
 C {devices/iopin.sym} 1070 70 1 0 {name=vss lab=vss}
 C {devices/iopin.sym} 840 -70 2 0 {name=c2p lab=c2p}
 C {devices/iopin.sym} 1070 -250 3 0 {name=vdd lab=vdd}
 C {devices/iopin.sym} 1350 -330 3 0 {name=iovdd lab=iovdd}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_GateDecode.sym} 1090 -90 0 0 {name=x1}
+C {sg13g2_GateDecode.sym} 1090 -90 0 0 {name=x1}
 C {devices/iopin.sym} 850 -110 2 0 {name=c2p_en lab=c2p_en}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_N15N15D.sym} 1470 -190 0 0 {name=x2}
-C {/home/prabhat.dubey/OPEN_Source_IHP_PDK/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/xschem/sg13g2_Clamp_P15N15D.sym} 1470 30 0 0 {name=x3}
+C {sg13g2_Clamp_N15N15D.sym} 1470 -190 0 0 {name=x2}
+C {sg13g2_Clamp_P15N15D.sym} 1470 30 0 0 {name=x3}
