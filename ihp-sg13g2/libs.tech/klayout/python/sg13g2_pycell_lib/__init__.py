@@ -26,12 +26,15 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
+
 import pya
 import os
 import sys
 import inspect
 import re
 import importlib
+import pathlib
+import tempfile
 
 moduleNames = [
         'nmos_code',
@@ -58,19 +61,68 @@ moduleNames = [
 
 ]
 
+
+"""
+List of names of defines used for 'conditional compilation' in a C-style manner of PyCell code:
+If such a name is the name of a defined environment variable an '#ifdef name' expression evaluates
+to True, otherwise False, e.g.:
+
+#ifdef name
+    ...some_code...
+#else
+    ...some_other_code...
+#endif
+
+Addionally the list of names can also be defined as a comma-separated list of values of the environment
+variable 'IHP_PYCELL_DEFINES'. Both lists will be merged.
+"""
+
+defines = [
+        'KLAYOUT',
+        'DEBUG',
+]
+
+
 class PyCellLib(pya.Library):
     def __init__(self):
         self.description = "IHP SG13G2 Pcells"
 
         tech = Tech.get('SG13_dev')
 
+        definesSet = []
+
+        ihpPyCellDefines = os.getenv('IHP_PYCELL_DEFINES')
+        if ihpPyCellDefines is not None:
+            ihpPyCellDefines = ihpPyCellDefines.split(',')
+            for ihpPyCellDefine in ihpPyCellDefines:
+                if ihpPyCellDefine not in defines:
+                    defines.append(ihpPyCellDefine)
+
+        for define in defines:
+            if os.getenv(define) is not None and define not in definesSet:
+                definesSet.append(define)
+
+        module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
+        preProcessor = getattr(module, "preprocessor")
+
         for moduleName in moduleNames:
-            module = importlib.import_module(f"{__name__}.ihp." + moduleName)
+            modulePath = os.path.join(os.path.dirname(__file__), 'ihp', f"{moduleName}.py")
+            modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
+
+            pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
+            pyPreProcessor.parse()
+
+            spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[moduleName] = module
+            spec.loader.exec_module(module)
 
             match = re.fullmatch(r'^(\S+)_code$', moduleName)
             if match:
                 func = getattr(module, f"{match.group(1)}")
                 self.layout().register_pcell(match.group(1), PCellWrapper(func(), tech))
+
+            pathlib.Path.unlink(modulePreProcPath)
 
         self.register("SG13_dev")
 
