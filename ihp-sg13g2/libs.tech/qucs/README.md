@@ -1,10 +1,11 @@
-# Using Qucs-s with IHP-Open-PDK
+# Using Qucs-S with IHP-Open-PDK
 
-In order to work with Qucs-s run the following script:
+> make sure that you have set up the `PDK_ROOT` env variable
 
-````
+In order to work with Qucs-S run the following script:
+```
 python3 install.py
-````
+```
 
-Then run Qucs-s and try out the examples. 
+Then run Qucs-S and try out the examples. 
 
