@@ -122,7 +122,7 @@ class PyCellLib(pya.Library):
                 func = getattr(module, f"{match.group(1)}")
                 self.layout().register_pcell(match.group(1), PCellWrapper(func(), tech))
 
-            pathlib.Path.unlink(modulePreProcPath)
+            os.remove(modulePreProcPath)
 
         self.register("SG13_dev")
 
