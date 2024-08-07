@@ -26,9 +26,10 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
-
 import pya
+
 import os
+import io
 import sys
 import inspect
 import re
@@ -63,9 +64,7 @@ moduleNames = [
 
 
 """
-List of names of defines used for 'conditional compilation' in a C-style manner of PyCell code:
-If such a name is the name of a defined environment variable an '#ifdef name' expression evaluates
-to True, otherwise False, e.g.:
+Support for 'conditional compilation' in a C-style manner of PyCell code:
 
 #ifdef name
     ...some_code...
@@ -73,15 +72,9 @@ to True, otherwise False, e.g.:
     ...some_other_code...
 #endif
 
-Addionally the list of names can also be defined as a comma-separated list of values of the environment
-variable 'IHP_PYCELL_DEFINES'. Both lists will be merged.
+If an environment variable 'name' can be found the #ifdef-block will be executed, the #else-block
+otherwise
 """
-
-defines = [
-        'KLAYOUT',
-        'DEBUG',
-]
-
 
 class PyCellLib(pya.Library):
     def __init__(self):
@@ -89,24 +82,31 @@ class PyCellLib(pya.Library):
 
         tech = Tech.get('SG13_dev')
 
-        definesSet = []
-
-        ihpPyCellDefines = os.getenv('IHP_PYCELL_DEFINES')
-        if ihpPyCellDefines is not None:
-            ihpPyCellDefines = ihpPyCellDefines.split(',')
-            for ihpPyCellDefine in ihpPyCellDefines:
-                if ihpPyCellDefine not in defines:
-                    defines.append(ihpPyCellDefine)
-
-        for define in defines:
-            if os.getenv(define) is not None and define not in definesSet:
-                definesSet.append(define)
-
         module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
         preProcessor = getattr(module, "preprocessor")
 
         for moduleName in moduleNames:
+            defines = []
+            definesSet = []
+
             modulePath = os.path.join(os.path.dirname(__file__), 'ihp', f"{moduleName}.py")
+            moduleFile = io.open(modulePath, 'r', encoding=sys.stdin.encoding)
+
+            try:
+                for line in moduleFile:
+                    match = re.match(r'^#ifdef\s+(\w+)', line)
+                    if match:
+                        define = match.group(1)
+                        if define not in defines:
+                            defines.append(define)
+
+            finally:
+                moduleFile.close()
+
+            for define in defines:
+                if os.getenv(define) is not None:
+                    definesSet.append(define)
+
             modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
 
             pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
