@@ -1540,4 +1540,78 @@ library (sg13g2_io_dummy) {
             voltage_name : "iovdd";
         }
     }
+    cell (sg13g2_IOPadAnalog) {
+        area: 14400;
+        dont_touch : true;
+        dont_use : true;
+        timing_model_type : abstracted;
+        pad_cell : true;
+        pg_pin (vss) {
+            pg_type : primary_ground;
+            voltage_name : "vss";
+        }
+        pg_pin (vdd) {
+            pg_type : primary_power;
+            voltage_name : "vdd";
+        }
+        pg_pin (iovss) {
+            pg_type : primary_ground;
+            voltage_name : "iovss";
+        }
+        pg_pin (iovdd) {
+            pg_type : primary_power;
+            voltage_name : "iovdd";
+        }
+        pin (pad) {
+            direction : inout;
+            function : "(pad)";
+            output_voltage : core_output;
+            related_ground_pin : vss;
+            related_power_pin : vdd;
+            max_capacitance : 500;
+            max_transition : 200;
+            timing () {
+                related_pin : "pad";
+                timing_type : combinational;
+                cell_rise (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                rise_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+                cell_fall (delay_template_2x2) {
+                    values ( \
+                        "1000, 1000", \
+                        "1000, 1000" \
+                    );
+                }
+                fall_transition (delay_template_2x2) {
+                    values ( \
+                        "200, 200", \
+                        "200, 200" \
+                    );
+                }
+            }
+        }
+        pin (padres) {
+            direction : inout;
+            is_pad : false;
+            input_voltage : io_input;
+            related_ground_pin : iovss;
+            related_power_pin : iovdd;
+            max_transition : 200;
+            capacitance : 15.0;
+            rise_capacitance : 15.0;
+            rise_capacitance_range (12.0, 15.0);
+            fall_capacitance : 15.0;
+            fall_capacitance_range (12.0, 15.0);
+        }
+    }
+
 }
