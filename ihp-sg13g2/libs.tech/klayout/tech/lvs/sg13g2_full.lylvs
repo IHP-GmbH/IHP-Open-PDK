@@ -55,9 +55,17 @@ exec_start_time = Time.now
 
 logger = Logger.new($stdout)
 
+# Cross-platform memory usage retrieval
+def get_memory_usage
+  if Gem.win_platform?
+    `tasklist /FI "PID eq #{Process.pid}" /FO LIST`.lines.find { |line| line.include?("Mem Usage") }.strip
+  else
+    `ps -o rss= -p #{Process.pid}`.strip + " KB"
+  end
+end
+
 logger.formatter = proc do |_severity, datetime, _progname, msg|
-  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10, 40].strip + ") : #{msg}
-"
+  "#{datetime}: Memory Usage (" + get_memory_usage + ") : #{msg}\n"
 end
 
 #================================================
