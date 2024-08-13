@@ -112,6 +112,110 @@ else
     $sanityRules = true
 end
 
+class DRC::DRCEngine
+    def space_width_separation_overlap_check(value,
+                                             error_edge_pairs_90,
+                                             error_edge_pairs_180,
+                                             inverse_error_edge_pairs_90 = nil,
+                                             inverse_error_edge_pairs_180 = nil,
+                                             options = {})
+        consider_intersecting_edges   = options.fetch(:consider_intersecting_edges, false)
+        consider_touch_points         = options.fetch(:consider_touch_points, false)
+        ignore_non_axis_aligned_edges = options.fetch(:ignore_non_axis_aligned_edges, false)
+        min_angle                     = options.fetch(:min_angle, 0)
+        max_angle                     = options.fetch(:max_angle, 90)
+        include_min_angle             = options.fetch(:include_min_angle, true)
+        include_max_angle             = options.fetch(:include_max_angle, false)
+        area_of_right_angle = value**2/2
+        errors_ep = RBA::EdgePairs::new()
+        touch_point_errors_ep = RBA::EdgePairs::new()
+        intersecting_edges_errors_ep = RBA::EdgePairs::new()
+        intersecting_edges_error_candidates = Hash.new()
+        no_touch_point_error = Hash.new()
+        error_edge_pairs_90.data.each do |edge_pair|
+            ip = nil
+            if edge_pair.first.p1 == edge_pair.second.p1 or
+               edge_pair.first.p1 == edge_pair.second.p2
+                ip = edge_pair.first.p1
+            elsif edge_pair.first.p2 == edge_pair.second.p1 or
+                  edge_pair.first.p2 == edge_pair.second.p2
+                ip = edge_pair.first.p2
+            end
+            if ip
+                intersecting_edges_error_candidates[ip] = edge_pair
+                if !edge_pair.first.is_degenerate? and !edge_pair.second.is_degenerate?
+                    if (edge_pair.first.contains?(edge_pair.second.p1) and
+                       edge_pair.first.contains?(edge_pair.second.p2)) or
+                       (edge_pair.second.contains?(edge_pair.first.p1) and
+                       edge_pair.second.contains?(edge_pair.first.p2))
+                        no_touch_point_error[ip] = true
+                    end
+                end
+            else
+                errors_ep.insert(edge_pair)
+            end
+        end
+        if consider_intersecting_edges or consider_touch_points
+            touch_point_candidates = Hash.new()
+            touch_point_errors = Hash.new()
+            if inverse_error_edge_pairs_90 and inverse_error_edge_pairs_180
+                (inverse_error_edge_pairs_90 + inverse_error_edge_pairs_180).data.each do |edge_pair|
+                    ip = edge_pair.first.intersection_point(edge_pair.second)
+                    if ip
+                        if touch_point_candidates[ip]
+                            touch_point_errors[ip] = true
+                            touch_point_candidates.delete(ip)
+                        elsif !no_touch_point_error[ip]
+                            touch_point_candidates[ip] = edge_pair
+                        end
+                    end
+                end
+            end
+            touch_point_candidates = Hash.new()
+            (error_edge_pairs_90 + error_edge_pairs_180).data.each do |edge_pair|
+                ip = nil
+                if edge_pair.first.p1 == edge_pair.second.p1 or
+                   edge_pair.first.p1 == edge_pair.second.p2
+                    ip = edge_pair.first.p1
+                elsif edge_pair.first.p2 == edge_pair.second.p1 or
+                      edge_pair.first.p2 == edge_pair.second.p2
+                    ip = edge_pair.first.p2
+                end
+                if ip
+                    if edge_pair.area == area_of_right_angle or max_angle == 180
+                        intersecting_edges_error_candidates[ip] = edge_pair
+                    end
+                    if touch_point_errors[ip]
+                        touch_point_errors_ep.insert(edge_pair)
+                        intersecting_edges_error_candidates.delete(ip)
+                    elsif touch_point_candidates[ip]
+                        touch_point_errors_ep.insert(edge_pair)
+                        touch_point_errors_ep.insert(touch_point_candidates[ip])
+                        touch_point_candidates.delete(ip)
+                        intersecting_edges_error_candidates.delete(ip)
+                    elsif !no_touch_point_error[ip]
+                        touch_point_candidates[ip] = edge_pair
+                    end
+                end
+            end
+            if consider_intersecting_edges
+                intersecting_edges_errors_ep = RBA::EdgePairs::new(intersecting_edges_error_candidates.values)
+                if max_angle != 180
+                    intersecting_edges_errors_ep = intersecting_edges_errors_ep.with_internal_angle(min_angle, max_angle, false, include_min_angle, include_max_angle)
+                end
+                errors_ep = errors_ep + intersecting_edges_errors_ep
+            end
+        end
+        if ignore_non_axis_aligned_edges
+            errors_ep = errors_ep.with_angle_both(RBA::Edges::OrthoEdges, false)
+        end
+        if consider_touch_points
+            errors_ep = errors_ep + touch_point_errors_ep
+        end
+        return DRC::DRCLayer::new(self, errors_ep)
+    end
+end
+
 class DRC::DRCLayer
     def ext_and(other)
         self_min_coherence_state = self.data.min_coherence?
@@ -189,12 +293,96 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_fast_separation(other, value, polygon_output: false)
+    def ext_separation(other,
+                       value,
+                       metric=RBA::Region::Euclidian,
+                       consider_intersecting_edges=false,
+                       consider_touch_points=false,
+                       ignore_non_axis_aligned_edges=false,
+                       min_angle=0,
+                       max_angle=90,
+                       include_min_angle=true,
+                       include_max_angle=false,
+                       polygons=false)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
         other.data.min_coherence = true
-        output_layer = self.separation(other, value)
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.separation_check(other.data, value, false, metric, 90, 1, nil))
+        error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
+            self.data.separation_check(other.data, value, false, metric, 180, nil, 1))
+        width_error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.width_check(value, false, metric, 90, 1, nil) +
+            other.data.width_check(value, false, metric, 90, 1, nil))
+        width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
+            self.data.width_check(value, false, metric, 180, nil, 1) +
+            other.data.width_check(value, false, metric, 180, nil, 1))
+        separation_errors = @engine.space_width_separation_overlap_check(
+            value,
+            error_edge_pairs_90,
+            error_edge_pairs_180,
+            width_error_edge_pairs_90,
+            width_error_edge_pairs_180,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygons
+            return separation_errors.polygons.merge(true, 0)
+        else
+            return separation_errors
+        end
+    end
+
+    def ext_fast_separation(other,
+                            value,
+                            metric: @engine.euclidian,
+                            consider_intersecting_edges: true,
+                            consider_touch_points: true,
+                            ignore_non_axis_aligned_edges: false,
+                            min_angle: 0,
+                            max_angle: 90,
+                            include_min_angle: true,
+                            include_max_angle: false,
+                            polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self.separation(other, value, metric, @engine.angle_limit(max_angle))
+        if !consider_intersecting_edges and !consider_touch_points
+            output_layer = output_layer.with_distance(1, nil)
+            if ignore_non_axis_aligned_edges
+                output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+            end
+        elsif consider_intersecting_edges ^ consider_touch_points
+            candidate_layer1 = self.interacting(output_layer.edges)
+            candidate_layer2 = other.interacting(output_layer.edges)
+            output_layer = candidate_layer1.ext_separation(
+                candidate_layer2,
+                value,
+                metric,
+                consider_intersecting_edges,
+                consider_touch_points,
+                ignore_non_axis_aligned_edges,
+                min_angle,
+                max_angle,
+                include_min_angle,
+                include_max_angle,
+                false)
+        end
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         if polygon_output
@@ -266,10 +454,81 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_fast_space(value, polygon_output: false)
+    def ext_space(value,
+                  metric=RBA::Region::Euclidian,
+                  consider_intersecting_edges=false,
+                  consider_touch_points=false,
+                  ignore_non_axis_aligned_edges=false,
+                  min_angle=0,
+                  max_angle=90,
+                  include_min_angle=true,
+                  include_max_angle=false,
+                  polygons=false)
         self_min_coherence_state = self.data.min_coherence?
         self.data.min_coherence = true
-        output_layer = self.space(value)
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.space_check(value, false, metric, 90, 1, nil))
+        error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.space_check(value, false, metric, 180, nil, 1))
+        width_error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.width_check(value, false, metric, 90, 1, nil))
+        width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.width_check(value, false, metric, 180, nil, 1))
+        space_errors = @engine.space_width_separation_overlap_check(
+            value,
+            error_edge_pairs_90,
+            error_edge_pairs_180,
+            width_error_edge_pairs_90,
+            width_error_edge_pairs_180,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        if polygons
+            return space_errors.polygons.merge(true, 0)
+        else
+            return space_errors
+        end
+    end
+
+    def ext_fast_space(value,
+                       metric: @engine.euclidian,
+                       consider_intersecting_edges: true,
+                       consider_touch_points: true,
+                       ignore_non_axis_aligned_edges: false,
+                       min_angle: 0,
+                       max_angle: 90,
+                       include_min_angle: true,
+                       include_max_angle: false,
+                       polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        output_layer = self.space(value, metric, @engine.angle_limit(max_angle))
+        if !consider_intersecting_edges and !consider_touch_points
+            output_layer = output_layer.with_distance(1, nil)
+            if ignore_non_axis_aligned_edges
+                output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+            end
+        elsif consider_intersecting_edges ^ consider_touch_points
+            candidate_layer = self.interacting(output_layer.edges)
+            output_layer = candidate_layer.ext_space(
+                value,
+                metric,
+                consider_intersecting_edges,
+                consider_touch_points,
+                ignore_non_axis_aligned_edges,
+                min_angle,
+                max_angle,
+                include_min_angle,
+                include_max_angle,
+                false)
+        end
         self.data.min_coherence = self_min_coherence_state
         if polygon_output
             return output_layer.polygons.merge(true, 0)
@@ -449,7 +708,7 @@ M5_density = Metal5.ext_or(Metal5_filler).ext_not(Metal5_slit)
 TM1_density = TopMetal1.ext_or(TopMetal1_filler).ext_not(TopMetal1_slit)
 TM2_density = TopMetal2.ext_or(TopMetal2_filler).ext_not(TopMetal2_slit)
 GP_Nsram_Gat_a = GP_Nsram.ext_fast_width(0.13.um, polygon_output: true)
-GP_Nsram_Gat_b = GP_Nsram.ext_fast_space(0.18.um, polygon_output: true)
+GP_Nsram_Gat_b = GP_Nsram.ext_fast_space(0.18.um, consider_intersecting_edges: false, polygon_output: true)
 transG2L = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2L").ext_covering(emi2Pin)
 -&gt; do
     Activ_Act_a.dup
@@ -496,13 +755,13 @@ end
     Cont_outside_EdgeSeal.ext_not(ContBar.ext_or(Cont_SQ))
 end.().output("Cnt.a", "Min. and max. Cont width = 0.16")
 -&gt; do
-    Cont_outside_EdgeSeal.ext_fast_space(0.18.um)
+    Cont_outside_EdgeSeal.ext_fast_space(0.18.um, consider_intersecting_edges: false)
 end.().output("Cnt.b", "Min. Cont space = 0.18")
 -&gt; do
     Metal1.ext_fast_width(0.16.um)
 end.().output("M1.a", "Min. Metal1 width = 0.16")
 -&gt; do
-    M1_Nsram.ext_fast_space(0.18.um)
+    M1_Nsram.ext_fast_space(0.18.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("M1.b", "Min. Metal1 space or notch = 0.18")
 
 if $density
@@ -518,7 +777,7 @@ end
     Metal2.ext_fast_width(0.2.um)
 end.().output("M2.a", "Min. Metal2 width = 0.20")
 -&gt; do
-    M2_Nsram.ext_fast_space(0.21.um)
+    M2_Nsram.ext_fast_space(0.21.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("M2.b", "Min. Metal2 space or notch = 0.21")
 
 if $density
@@ -534,7 +793,7 @@ end
     Metal3.ext_fast_width(0.2.um)
 end.().output("M3.a", "Min. Metal3 width = 0.20")
 -&gt; do
-    M3_Nsram.ext_fast_space(0.21.um)
+    M3_Nsram.ext_fast_space(0.21.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("M3.b", "Min. Metal3 space or notch = 0.21")
 
 if $density
@@ -550,7 +809,7 @@ end
     Metal4.ext_fast_width(0.2.um)
 end.().output("M4.a", "Min. Metal4 width = 0.20")
 -&gt; do
-    M4_Nsram.ext_fast_space(0.21.um)
+    M4_Nsram.ext_fast_space(0.21.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("M4.b", "Min. Metal4 space or notch = 0.21")
 
 if $density
@@ -566,7 +825,7 @@ end
     Metal5.ext_fast_width(0.2.um)
 end.().output("M5.a", "Min. Metal5 width = 0.20")
 -&gt; do
-    M5_Nsram.ext_fast_space(0.21.um)
+    M5_Nsram.ext_fast_space(0.21.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("M5.b", "Min. Metal5 space or notch = 0.21")
 
 if $density
@@ -612,25 +871,25 @@ end
     Via1_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V1.a", "Min. and max. Via1 width = 0.19")
 -&gt; do
-    Via1_edgC1_out.ext_fast_space(0.22.um)
+    Via1_edgC1_out.ext_fast_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V1.b", "Min. Via1 space = 0.22")
 -&gt; do
     Via2_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V2.a", "Min. and max. Via2 width = 0.19")
 -&gt; do
-    Via2_edgC1_out.ext_fast_space(0.22.um)
+    Via2_edgC1_out.ext_fast_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V2.b", "Min. Via2 space = 0.22")
 -&gt; do
     Via3_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V3.a", "Min. and max. Via3 width = 0.19")
 -&gt; do
-    Via3_edgC1_out.ext_fast_space(0.22.um)
+    Via3_edgC1_out.ext_fast_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V3.b", "Min. Via3 space = 0.22")
 -&gt; do
     Via4_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V4.a", "Min. and max. Via4 width = 0.19")
 -&gt; do
-    Via4_edgC1_out.ext_fast_space(0.22.um)
+    Via4_edgC1_out.ext_fast_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V4.b", "Min. Via4 space = 0.22")
 -&gt; do
     TopVia1_edgC1_out.ext_or(Vmim).ext_rectangles(false, false, [["==", 0.42.um]], [["==", 0.42.um]], nil, inverted: true)
@@ -723,11 +982,11 @@ end.().output("LBE.b", "Max. LBE width = 1500.00")
     LBE.ext_with_area([["&gt;", 250000.0.um2]])
 end.().output("LBE.b1", "Max. LBE area (µm²) = 250000.00")
 -&gt; do
-    LBE.ext_fast_space(100.0.um)
+    LBE.ext_fast_space(100.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("LBE.c", "Min. LBE space or notch = 100.00")
 -&gt; (;lbe_in_seal) do
     lbe_in_seal = LBE.inside(EdgeSeal.holes.merge)
-    lbe_in_seal.ext_fast_separation(EdgeSeal, 150.0.um)
+    lbe_in_seal.ext_fast_separation(EdgeSeal, 150.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
 end.().output("LBE.d", "Min. LBE space to inner edge of EdgeSeal = 150.00")
 -&gt; do
     LBE.with_holes.dup
