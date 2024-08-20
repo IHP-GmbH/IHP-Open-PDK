@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -579,7 +579,7 @@ m=1
 model=sg13_hv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/rppd.sym} 1490 90 0 0 {name=R1
+C {sg13g2_pr/rppd.sym} 1490 90 0 0 {name=Rp1
 w=0.5e-6
 l=3.54e-6
 model=rppd

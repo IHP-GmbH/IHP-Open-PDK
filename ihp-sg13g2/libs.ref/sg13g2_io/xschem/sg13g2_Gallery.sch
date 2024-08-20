@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -88,8 +88,6 @@ lab=vss}
 N 4860 -500 4860 -430 {
 lab=vss}
 N 4570 -430 4860 -430 {
-lab=vss}
-N 4570 -490 4570 -430 {
 lab=vss}
 N 4530 -430 4570 -430 {
 lab=vss}
@@ -362,7 +360,9 @@ lab=iopadinout30ma_c2p_en}
 N 5330 -580 5430 -580 {
 lab=ana_out}
 N 5330 -560 5430 -560 {
-lab=ana_out}
+lab=ana_outres}
+N 4570 -500 4570 -430 {
+lab=vss}
 C {sg13g2_IOPadVSS.sym} 2590 -550 0 0 {name=x1}
 C {sg13g2_IOPadVdd.sym} 2970 -550 0 0 {name=x2}
 C {sg13g2_IOPadOut4mA.sym} 3380 -550 0 0 {name=x3}

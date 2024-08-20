@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -71,7 +71,7 @@ lab=out}
 C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib cornerMOSlv.lib mos_ss
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} 160 -70 0 0 {name=NGSPICE only_toplevel=true 
 value="

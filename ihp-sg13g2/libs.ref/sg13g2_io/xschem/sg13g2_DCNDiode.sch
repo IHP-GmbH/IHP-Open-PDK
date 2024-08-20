@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -26,7 +26,7 @@ lab=anode}
 N -140 -20 -140 30 {
 lab=anode}
 N -20 140 40 140 {
-lab=xxx}
+lab=guard}
 N -180 30 -180 50 {
 lab=anode}
 C {sg13g2_pr/dantenna.sym} -70 -20 1 0 {name=D1
@@ -37,8 +37,8 @@ spiceprefix=X
 }
 C {sg13g2_pr/dantenna.sym} -80 90 1 0 {name=D2
 model=dantenna
-l=1.26u
-w=27.78u
+w=1.26u
+l=27.78u
 spiceprefix=X
 }
 C {devices/iopin.sym} 50 30 0 0 {name=cathode lab=cathode}

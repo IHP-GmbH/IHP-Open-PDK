@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -21,7 +21,7 @@ N 2030 -90 2120 -90 {
 lab=iovdd}
 N 2250 -90 2250 -60 {
 lab=iovdd}
-N 2120 -90 2250 -90 {
+N 2140 -90 2250 -90 {
 lab=iovdd}
 N 1870 -350 1870 -320 {
 lab=iovdd}
@@ -127,15 +127,15 @@ N 2270 -90 2370 -90 {
 lab=iovdd}
 N 2490 -90 2490 -60 {
 lab=iovdd}
-N 2370 -90 2490 -90 {
+N 2390 -90 2490 -90 {
 lab=iovdd}
 N 2620 -90 2620 -60 {
 lab=iovdd}
-N 2490 -90 2620 -90 {
+N 2510 -90 2620 -90 {
 lab=iovdd}
 N 2740 -90 2740 -60 {
 lab=iovdd}
-N 2620 -90 2740 -90 {
+N 2640 -90 2740 -90 {
 lab=iovdd}
 N 2740 -30 2760 -30 {
 lab=iovdd}
@@ -701,6 +701,30 @@ N 2000 30 2070 30 {
 lab=pad}
 N 2720 60 2720 120 {
 lab=iovss}
+N 2620 -30 2640 -30 {
+lab=iovdd}
+N 2640 -90 2640 -30 {
+lab=iovdd}
+N 2620 -90 2640 -90 {
+lab=iovdd}
+N 2490 -30 2510 -30 {
+lab=iovdd}
+N 2510 -90 2510 -30 {
+lab=iovdd}
+N 2490 -90 2510 -90 {
+lab=iovdd}
+N 2370 -30 2390 -30 {
+lab=iovdd}
+N 2390 -90 2390 -30 {
+lab=iovdd}
+N 2370 -90 2390 -90 {
+lab=iovdd}
+N 2120 -30 2140 -30 {
+lab=iovdd}
+N 2140 -90 2140 -30 {
+lab=iovdd}
+N 2120 -90 2140 -90 {
+lab=iovdd}
 C {sg13g2_pr/sg13_hv_pmos.sym} 1850 -30 0 0 {name=M1
 l=0.6u
 w=6.66u

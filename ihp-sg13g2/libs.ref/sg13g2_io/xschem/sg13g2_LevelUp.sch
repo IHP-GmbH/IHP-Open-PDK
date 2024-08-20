@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -17,14 +17,14 @@ N -200 -10 -160 -10 {
 lab=i}
 N -160 -60 -160 -10 {
 lab=i}
-N -90 -120 -90 -90 {
+N -90 -100 -90 -90 {
 lab=vdd}
-N -90 70 -90 110 {
+N -90 90 -90 110 {
 lab=vss}
 N 70 -10 70 20 {
 lab=lvld}
 N 220 -0 220 20 {
-lab=#net1}
+lab=lvld_n}
 N 390 -10 390 20 {
 lab=o}
 N -90 -10 -0 -10 {
@@ -94,25 +94,25 @@ lab=iovdd}
 N 390 -140 430 -140 {
 lab=iovdd}
 N 320 -70 350 -70 {
-lab=#net1}
+lab=lvld_n}
 N 320 0 320 50 {
-lab=#net1}
+lab=lvld_n}
 N 320 50 350 50 {
-lab=#net1}
+lab=lvld_n}
 N 220 -0 320 0 {
-lab=#net1}
+lab=lvld_n}
 N 220 -30 220 -0 {
-lab=#net1}
+lab=lvld_n}
 N 320 -70 320 0 {
-lab=#net1}
+lab=lvld_n}
 N 10 -80 30 -80 {
-lab=#net1}
+lab=lvld_n}
 N 10 -80 10 -30 {
-lab=#net1}
+lab=lvld_n}
 N 10 -30 220 -30 {
-lab=#net1}
+lab=lvld_n}
 N 220 -50 220 -30 {
-lab=#net1}
+lab=lvld_n}
 N 70 -10 150 -10 {
 lab=lvld}
 N 70 -50 70 -10 {
@@ -139,6 +139,22 @@ N -160 100 180 100 {
 lab=i}
 N 180 50 180 100 {
 lab=i}
+N -90 -60 -70 -60 {
+lab=vdd}
+N -70 -100 -70 -60 {
+lab=vdd}
+N -90 -100 -70 -100 {
+lab=vdd}
+N -90 -120 -90 -100 {
+lab=vdd}
+N -90 40 -70 40 {
+lab=vss}
+N -70 40 -70 90 {
+lab=vss}
+N -90 90 -70 90 {
+lab=vss}
+N -90 70 -90 90 {
+lab=vss}
 C {sg13g2_pr/sg13_lv_nmos.sym} -110 40 2 1 {name=M1
 l=0.13u
 w=2.75u

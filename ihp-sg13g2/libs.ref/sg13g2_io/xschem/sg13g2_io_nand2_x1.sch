@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,15 +6,15 @@ V {}
 S {}
 E {}
 N -20 -160 -20 -110 {
-lab=xxx}
+lab=nq}
 N 60 -110 190 -110 {
-lab=xxx}
+lab=nq}
 N 190 -160 190 -110 {
-lab=xxx}
+lab=nq}
 N 60 -90 60 -70 {
-lab=xxx}
+lab=nq}
 N -20 -110 60 -110 {
-lab=xxx}
+lab=nq}
 N 60 -10 60 40 {
 lab=#net1}
 N -20 -250 -20 -220 {
@@ -80,17 +80,9 @@ lab=i1}
 N 90 -190 90 -130 {
 lab=i1}
 N 60 -90 300 -90 {
-lab=xxx}
+lab=nq}
 N 60 -110 60 -90 {
-lab=xxx}
-C {sg13g2_pr/sg13_lv_nmos.sym} 40 -40 2 1 {name=M1
-l=0.13u
-w=3.93u
-ng=1
-m=1
-model=sg13_lv_nmos
-spiceprefix=X
-}
+lab=nq}
 C {sg13g2_pr/sg13_lv_pmos.sym} 170 -190 0 0 {name=M2
 l=0.13u
 w=4.41u
