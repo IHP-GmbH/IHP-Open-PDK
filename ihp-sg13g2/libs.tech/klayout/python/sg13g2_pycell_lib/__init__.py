@@ -27,6 +27,7 @@ from cni.dlo import PCellWrapper
 from .sg13_tech import *
 
 import pya
+import psutil
 
 import os
 import io
@@ -59,7 +60,6 @@ moduleNames = [
         'inductor3_sp_code',
         'dantenna_code',
         'dpantenna_code'
-
 ]
 
 
@@ -72,8 +72,18 @@ Support for 'conditional compilation' in a C-style manner of PyCell code:
     ...some_other_code...
 #endif
 
-If an environment variable 'name' can be found the #ifdef-block will be executed, the #else-block
-otherwise
+The #ifdef-block is executed (name is considered as defined) if
+  1. An environment variable 'name' can be found case-insentive, or
+  2. The name can be found case-insentive as part of a process name of the process chain beginnig at
+     the current process upwards through all parent processes.
+otherwise the #else-block is executed
+
+The current process chain will be dumped if the environment variable 'IHP_PYCELL_LIB_PRINT_PROCESS_TREE'
+is set.
+
+The list of names which are used in an #ifdef-statement and are considered as 'defined' will be dumped
+if the environment variable 'IHP_PYCELL_LIB_PRINT_PROCESS_TREE' is set.
+
 """
 
 class PyCellLib(pya.Library):
@@ -82,8 +92,35 @@ class PyCellLib(pya.Library):
 
         tech = Tech.get('SG13_dev')
 
+        processNames = []
+        parent = None
+
+        p = psutil.Process()
+        with p.oneshot():
+            processNames.append(p.name().lower())
+            parent = p.parent()
+
+        maxDepth = 10;
+        while parent is not None and maxDepth > 0:
+            maxDepth -= 1
+            with parent.oneshot():
+                processNames.append(parent.name().lower())
+                parent = parent.parent()
+
+        if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
+            processChain = ''
+            isFirst = True
+            for processName in reversed(processNames):
+                if not isFirst:
+                    processChain += ' <- '
+                processChain += "'" + processName + "'"
+                isFirst = False
+            print(f'Current process chain: {processChain}')
+
         module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
         preProcessor = getattr(module, "preprocessor")
+
+        definesSetToPrint = []
 
         for moduleName in moduleNames:
             defines = []
@@ -103,26 +140,50 @@ class PyCellLib(pya.Library):
             finally:
                 moduleFile.close()
 
+            envs = []
+            for env in os.environ:
+                envs.append(env.lower())
+
             for define in defines:
-                if os.getenv(define) is not None:
-                    definesSet.append(define)
+                locDefine = define.lower()
+                for processName in processNames:
+                    if processName.find(locDefine) != -1:
+                        definesSet.append(define)
+                else:
+                    if locDefine in envs:
+                        definesSet.append(define)
 
-            modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
+            for defineSet in definesSet:
+                definesSetToPrint.append(defineSet)
 
-            pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
-            pyPreProcessor.parse()
+            modulePreProcPath = None
 
-            spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[moduleName] = module
-            spec.loader.exec_module(module)
+            if len(defines) > 0:
+                modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
+
+                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
+                pyPreProcessor.parse()
+
+                spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[moduleName] = module
+
+                try:
+                    spec.loader.exec_module(module)
+                except Exception:
+                    sys.exit(1)
+
+                os.remove(modulePreProcPath)
+            else:
+                module = importlib.import_module(f"{__name__}.ihp." + moduleName)
 
             match = re.fullmatch(r'^(\S+)_code$', moduleName)
             if match:
                 func = getattr(module, f"{match.group(1)}")
-                self.layout().register_pcell(match.group(1), PCellWrapper(func(), tech))
+                self.layout().register_pcell(match.group(1), PCellWrapper(func(), tech, modulePreProcPath, modulePath))
 
-            os.remove(modulePreProcPath)
+        if os.getenv('IHP_PYCELL_LIB_PRINT_DEFINES_SET') is not None:
+            print(f"Current defines set: {definesSetToPrint}")
 
         self.register("SG13_dev")
 
