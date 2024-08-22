@@ -45,7 +45,7 @@ class npn13G2V(DloGen):
         specs('Iarea', '0.41m', 'Ic,max/squm@Uce=2V')
         specs('area', '1', 'Area Factor')
         specs('bn', 'sub!', 'Bulk node connection')
-        specs('Vbe', '', 'Base-emitter voltag')
+        specs('Vbe', '', 'Base-emitter voltage')
         specs('Vce', '', 'Collector-emitter voltage')
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
