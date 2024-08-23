@@ -1,0 +1,181 @@
+//======================================================================================
+//======================================================================================
+// Filename: JUNCAP200_parlist.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA) and 2012-2015 Delft University of Technology 
+//  Licensed under the Educational Community License, Version 2.0 (the "License"); you
+//  may not use this file except in compliance with the License. You may obtain a copy
+//  of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 200.5.0, August 2016
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+        //  --------------------------------------------------------------------------------------------------------------
+        //  JUNCAP2 - Reduced parameter list
+        //  --------------------------------------------------------------------------------------------------------------
+
+                `MPRco(IMAX           ,1000.0     ,"A"        ,`IMAX_cliplow     ,inf              ,"Maximum current up to which forward current behaves exponentially")
+                `MPRco(TRJ            ,21.0       ,"C"        ,`TRJ_cliplow      ,inf              ,"Reference temperature")
+                `MPRcc(FREV           ,1.0e3      ,""         ,`FREV_cliplow     ,`FREV_cliphigh   ,"Coefficient for reverse breakdown current limitation")
+
+        // Parameters for source-bulk junction
+        `ifdef JUNCAP_StandAlone
+                `MPRco(CJORBOT        ,1.0e-3     ,"Fm^-2"    ,`CJORBOT_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-area of bottom component")
+                `MPRco(CJORSTI        ,1.0e-9     ,"Fm^-1"    ,`CJORSTI_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-length of STI-edge component")
+                `MPRco(CJORGAT        ,1.0e-9     ,"Fm^-1"    ,`CJORGAT_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-length of gate-edge component")
+                `MPRco(VBIRBOT        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of bottom component")
+                `MPRco(VBIRSTI        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of STI-edge component")
+                `MPRco(VBIRGAT        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of gate-edge component")
+                `MPRcc(PBOT           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of bottom component")
+                `MPRcc(PSTI           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of STI-edge component")
+                `MPRcc(PGAT           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of gate-edge component")
+                `MPRnb(PHIGBOT        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of bottom component")
+                `MPRnb(PHIGSTI        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of STI-edge component")
+                `MPRnb(PHIGGAT        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of gate-edge component")
+                `MPRco(IDSATRBOT      ,1.0e-12    ,"Am^-2"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of bottom component")
+                `MPRco(IDSATRSTI      ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of STI-edge component")
+                `MPRco(IDSATRGAT      ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of gate-edge component")
+                `MPRco(CSRHBOT        ,1.0e2      ,"Am^-3"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of bottom component")
+                `MPRco(CSRHSTI        ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of STI-edge component")
+                `MPRco(CSRHGAT        ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of gate-edge component")
+                `MPRco(XJUNSTI        ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf              ,"Junction depth of STI-edge component")
+                `MPRco(XJUNGAT        ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf              ,"Junction depth of gate-edge component")
+                `MPRco(CTATBOT        ,1.0e2      ,"Am^-3"    ,`CTAT_cliplow     ,inf              ,"Trap-assisted tunneling prefactor of bottom component")
+                `MPRco(CTATSTI        ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf              ,"Trap-assisted tunneling prefactor of STI-edge component")
+                `MPRco(CTATGAT        ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf              ,"Trap-assisted tunneling prefactor of gate-edge component")
+                `MPRco(MEFFTATBOT     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf              ,"Effective mass (in units of m0) for trap-assisted tunneling of bottom component")
+                `MPRco(MEFFTATSTI     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf              ,"Effective mass (in units of m0) for trap-assisted tunneling of STI-edge component")
+                `MPRco(MEFFTATGAT     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf              ,"Effective mass (in units of m0) for trap-assisted tunneling of gate-edge component")
+                `MPRco(CBBTBOT        ,1.0e-12    ,"AV^-3"    ,`CBBT_cliplow     ,inf              ,"Band-to-band tunneling prefactor of bottom component")
+                `MPRco(CBBTSTI        ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf              ,"Band-to-band tunneling prefactor of STI-edge component")
+                `MPRco(CBBTGAT        ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf              ,"Band-to-band tunneling prefactor of gate-edge component")
+                `MPRnb(FBBTRBOT       ,1.0e9      ,"Vm^-1"                                         ,"Normalization field at the reference temperature for band-to-band tunneling of bottom component")
+                `MPRnb(FBBTRSTI       ,1.0e9      ,"Vm^-1"                                         ,"Normalization field at the reference temperature for band-to-band tunneling of STI-edge component")
+                `MPRnb(FBBTRGAT       ,1.0e9      ,"Vm^-1"                                         ,"Normalization field at the reference temperature for band-to-band tunneling of gate-edge component")
+                `MPRnb(STFBBTBOT      ,-1.0e-3    ,"K^-1"                                          ,"Temperature scaling parameter for band-to-band tunneling of bottom component")
+                `MPRnb(STFBBTSTI      ,-1.0e-3    ,"K^-1"                                          ,"Temperature scaling parameter for band-to-band tunneling of STI-edge component")
+                `MPRnb(STFBBTGAT      ,-1.0e-3    ,"K^-1"                                          ,"Temperature scaling parameter for band-to-band tunneling of gate-edge component")
+                `MPRco(VBRBOT         ,10.0       ,"V"        ,`VBR_cliplow      ,inf              ,"Breakdown voltage of bottom component")
+                `MPRco(VBRSTI         ,10.0       ,"V"        ,`VBR_cliplow      ,inf              ,"Breakdown voltage of STI-edge component")
+                `MPRco(VBRGAT         ,10.0       ,"V"        ,`VBR_cliplow      ,inf              ,"Breakdown voltage of gate-edge component")
+                `MPRco(PBRBOT         ,4.0        ,"V"        ,`PBR_cliplow      ,inf              ,"Breakdown onset tuning parameter of bottom component")
+                `MPRco(PBRSTI         ,4.0        ,"V"        ,`PBR_cliplow      ,inf              ,"Breakdown onset tuning parameter of STI-edge component")
+                `MPRco(PBRGAT         ,4.0        ,"V"        ,`PBR_cliplow      ,inf              ,"Breakdown onset tuning parameter of gate-edge component")
+        `else // JUNCAP_StandAlone
+                `MPRco(CJORBOT        ,1.0e-3     ,"Fm^-2"    ,`CJORBOT_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-area of bottom component for source-bulk junction")
+                `MPRco(CJORSTI        ,1.0e-9     ,"Fm^-1"    ,`CJORSTI_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-length of STI-edge component for source-bulk junction")
+                `MPRco(CJORGAT        ,1.0e-9     ,"Fm^-1"    ,`CJORGAT_cliplow  ,inf              ,"Zero-bias capacitance per unit-of-length of gate-edge component for source-bulk junction")
+                `MPRco(VBIRBOT        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of bottom component for source-bulk junction")
+                `MPRco(VBIRSTI        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of STI-edge component for source-bulk junction")
+                `MPRco(VBIRGAT        ,1.0        ,"V"        ,`VBIR_cliplow     ,inf              ,"Built-in voltage at the reference temperature of gate-edge component for source-bulk junction")
+                `MPRcc(PBOT           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of bottom component for source-bulk junction")
+                `MPRcc(PSTI           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of STI-edge component for source-bulk junction")
+                `MPRcc(PGAT           ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh      ,"Grading coefficient of gate-edge component for source-bulk junction")
+                `MPRnb(PHIGBOT        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of bottom component for source-bulk junction")
+                `MPRnb(PHIGSTI        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of STI-edge component for source-bulk junction")
+                `MPRnb(PHIGGAT        ,1.16       ,"V"                                             ,"Zero-temperature bandgap voltage of gate-edge component for source-bulk junction")
+                `MPRco(IDSATRBOT      ,1.0e-12    ,"Am^-2"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of bottom component for source-bulk junction")
+                `MPRco(IDSATRSTI      ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of STI-edge component for source-bulk junction")
+                `MPRco(IDSATRGAT      ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf              ,"Saturation current density at the reference temperature of gate-edge component for source-bulk junction")
+                `MPRco(CSRHBOT        ,1.0e2      ,"Am^-3"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of bottom component for source-bulk junction")
+                `MPRco(CSRHSTI        ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of STI-edge component for source-bulk junction")
+                `MPRco(CSRHGAT        ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf              ,"Shockley-Read-Hall prefactor of gate-edge component for source-bulk junction")
+                `MPRco(XJUNSTI        ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf              ,"Junction depth of STI-edge component for source-bulk junction")
+                `MPRco(XJUNGAT        ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf           ,"Junction depth of gate-edge component for source-bulk junction")
+                `MPRco(CTATBOT        ,1.0e2      ,"Am^-3"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of bottom component for source-bulk junction")
+                `MPRco(CTATSTI        ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of STI-edge component for source-bulk junction")
+                `MPRco(CTATGAT        ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of gate-edge component for source-bulk junction")
+                `MPRco(MEFFTATBOT     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of bottom component for source-bulk junction")
+                `MPRco(MEFFTATSTI     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of STI-edge component for source-bulk junction")
+                `MPRco(MEFFTATGAT     ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of gate-edge component for source-bulk junction")
+                `MPRco(CBBTBOT        ,1.0e-12    ,"AV^-3"    ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of bottom component for source-bulk junction")
+                `MPRco(CBBTSTI        ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of STI-edge component for source-bulk junction")
+                `MPRco(CBBTGAT        ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of gate-edge component for source-bulk junction")
+                `MPRnb(FBBTRBOT       ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of bottom component for source-bulk junction")
+                `MPRnb(FBBTRSTI       ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of STI-edge component for source-bulk junction")
+                `MPRnb(FBBTRGAT       ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of gate-edge component for source-bulk junction")
+                `MPRnb(STFBBTBOT      ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of bottom component for source-bulk junction")
+                `MPRnb(STFBBTSTI      ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of STI-edge component for source-bulk junction")
+                `MPRnb(STFBBTGAT      ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of gate-edge component for source-bulk junction")
+                `MPRco(VBRBOT         ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of bottom component for source-bulk junction")
+                `MPRco(VBRSTI         ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of STI-edge component for source-bulk junction")
+                `MPRco(VBRGAT         ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of gate-edge component for source-bulk junction")
+                `MPRco(PBRBOT         ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of bottom component for source-bulk junction")
+                `MPRco(PBRSTI         ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of STI-edge component for source-bulk junction")
+                `MPRco(PBRGAT         ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of gate-edge component for source-bulk junction")
+        `endif // JUNCAP_StandAlone
+
+        // Parameters for drain-bulk junction
+        `ifdef JUNCAP_StandAlone
+                // do nothing
+        `else // JUNCAP_StandAlone
+                `MPRco(CJORBOTD       ,1.0e-3     ,"Fm^-2"    ,`CJORBOT_cliplow  ,inf           ,"Zero-bias capacitance per unit-of-area of bottom component for drain-bulk junction")
+                `MPRco(CJORSTID       ,1.0e-9     ,"Fm^-1"    ,`CJORSTI_cliplow  ,inf           ,"Zero-bias capacitance per unit-of-length of STI-edge component for drain-bulk junction")
+                `MPRco(CJORGATD       ,1.0e-9     ,"Fm^-1"    ,`CJORGAT_cliplow  ,inf           ,"Zero-bias capacitance per unit-of-length of gate-edge component for drain-bulk junction")
+                `MPRco(VBIRBOTD       ,1.0        ,"V"        ,`VBIR_cliplow     ,inf           ,"Built-in voltage at the reference temperature of bottom component for drain-bulk junction")
+                `MPRco(VBIRSTID       ,1.0        ,"V"        ,`VBIR_cliplow     ,inf           ,"Built-in voltage at the reference temperature of STI-edge component for drain-bulk junction")
+                `MPRco(VBIRGATD       ,1.0        ,"V"        ,`VBIR_cliplow     ,inf           ,"Built-in voltage at the reference temperature of gate-edge component for drain-bulk junction")
+                `MPRcc(PBOTD          ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh   ,"Grading coefficient of bottom component for drain-bulk junction")
+                `MPRcc(PSTID          ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh   ,"Grading coefficient of STI-edge component for drain-bulk junction")
+                `MPRcc(PGATD          ,0.5        ,""         ,`P_cliplow        ,`P_cliphigh   ,"Grading coefficient of gate-edge component for drain-bulk junction")
+                 `MPRnb(PHIGBOTD       ,1.16       ,"V"                                          ,"Zero-temperature bandgap voltage of bottom component for drain-bulk junction")
+                 `MPRnb(PHIGSTID       ,1.16       ,"V"                                          ,"Zero-temperature bandgap voltage of STI-edge component for drain-bulk junction")
+                `MPRnb(PHIGGATD       ,1.16       ,"V"                                          ,"Zero-temperature bandgap voltage of gate-edge component for drain-bulk junction")
+                `MPRco(IDSATRBOTD     ,1.0e-12    ,"Am^-2"    ,`IDSATR_cliplow   ,inf           ,"Saturation current density at the reference temperature of bottom component for drain-bulk junction")
+                `MPRco(IDSATRSTID     ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf           ,"Saturation current density at the reference temperature of STI-edge component for drain-bulk junction")
+                `MPRco(IDSATRGATD     ,1.0e-18    ,"Am^-1"    ,`IDSATR_cliplow   ,inf           ,"Saturation current density at the reference temperature of gate-edge component for drain-bulk junction")
+                `MPRco(CSRHBOTD       ,1.0e2      ,"Am^-3"    ,`CSRH_cliplow     ,inf           ,"Shockley-Read-Hall prefactor of bottom component for drain-bulk junction")
+                `MPRco(CSRHSTID       ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf           ,"Shockley-Read-Hall prefactor of STI-edge component for drain-bulk junction")
+                `MPRco(CSRHGATD       ,1.0e-4     ,"Am^-2"    ,`CSRH_cliplow     ,inf           ,"Shockley-Read-Hall prefactor of gate-edge component for drain-bulk junction")
+                `MPRco(XJUNSTID       ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf           ,"Junction depth of STI-edge component for drain-bulk junction")
+                `MPRco(XJUNGATD       ,1.0e-7     ,"m"        ,`XJUN_cliplow     ,inf           ,"Junction depth of gate-edge component for drain-bulk junction")
+                `MPRco(CTATBOTD       ,1.0e2      ,"Am^-3"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of bottom component for drain-bulk junction")
+                `MPRco(CTATSTID       ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of STI-edge component for drain-bulk junction")
+                `MPRco(CTATGATD       ,1.0e-4     ,"Am^-2"    ,`CTAT_cliplow     ,inf           ,"Trap-assisted tunneling prefactor of gate-edge component for drain-bulk junction")
+                `MPRco(MEFFTATBOTD    ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of bottom component for drain-bulk junction")
+                `MPRco(MEFFTATSTID    ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of STI-edge component for drain-bulk junction")
+                `MPRco(MEFFTATGATD    ,0.25       ,""         ,`MEFFTAT_cliplow  ,inf           ,"Effective mass (in units of m0) for trap-assisted tunneling of gate-edge component for drain-bulk junction")
+                `MPRco(CBBTBOTD       ,1.0e-12    ,"AV^-3"    ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of bottom component for drain-bulk junction")
+                `MPRco(CBBTSTID       ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of STI-edge component for drain-bulk junction")
+                `MPRco(CBBTGATD       ,1.0e-18    ,"AV^-3m"   ,`CBBT_cliplow     ,inf           ,"Band-to-band tunneling prefactor of gate-edge component for drain-bulk junction")
+                `MPRnb(FBBTRBOTD      ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of bottom component for drain-bulk junction")
+                `MPRnb(FBBTRSTID      ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of STI-edge component for drain-bulk junction")
+                `MPRnb(FBBTRGATD      ,1.0e9      ,"Vm^-1"                                      ,"Normalization field at the reference temperature for band-to-band tunneling of gate-edge component for drain-bulk junction")
+                `MPRnb(STFBBTBOTD     ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of bottom component for drain-bulk junction")
+                `MPRnb(STFBBTSTID     ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of STI-edge component for drain-bulk junction")
+                `MPRnb(STFBBTGATD     ,-1.0e-3    ,"K^-1"                                       ,"Temperature scaling parameter for band-to-band tunneling of gate-edge component for drain-bulk junction")
+                `MPRco(VBRBOTD        ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of bottom component for drain-bulk junction")
+                `MPRco(VBRSTID        ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of STI-edge component for drain-bulk junction")
+                `MPRco(VBRGATD        ,10.0       ,"V"        ,`VBR_cliplow      ,inf           ,"Breakdown voltage of gate-edge component for drain-bulk junction")
+                `MPRco(PBRBOTD        ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of bottom component for drain-bulk junction")
+                `MPRco(PBRSTID        ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of STI-edge component for drain-bulk junction")
+                `MPRco(PBRGATD        ,4.0        ,"V"        ,`PBR_cliplow      ,inf           ,"Breakdown onset tuning parameter of gate-edge component for drain-bulk junction")
+        `endif // JUNCAP_StandAlone
+
+        // JUNCAP2-express parameters
+                `MPRcc(SWJUNEXP       ,0.0        ,""         ,0.0               ,1.0           ,"Flag for JUNCAP-express; 0=full model, 1=express model") 
+        `ifdef JUNCAP_StandAlone
+                `MPRco(VJUNREF        ,2.5        ,"V"        ,`VJUNREF_cliplow  ,inf           ,"Typical maximum junction voltage; usually about 2*VSUP")
+                `MPRco(FJUNQ          ,0.03       ,""         ,`FJUNQ_cliplow    ,inf           ,"Fraction below which junction capacitance components are considered negligible")
+                `else // JUNCAP_StandAlone
+                `MPRco(VJUNREF        ,2.5        ,"V"        ,`VJUNREF_cliplow  ,inf           ,"Typical maximum source-bulk junction voltage; usually about 2*VSUP")
+                `MPRco(FJUNQ          ,0.03       ,""         ,`FJUNQ_cliplow    ,inf           ,"Fraction below which source-bulk junction capacitance components are considered negligible")
+                `MPRco(VJUNREFD       ,2.5        ,"V"        ,`VJUNREF_cliplow  ,inf           ,"Typical maximum drain-bulk junction voltage; usually about 2*VSUP")
+                `MPRco(FJUNQD         ,0.03       ,""         ,`FJUNQ_cliplow    ,inf           ,"Fraction below which drain-bulk junction capacitance components are considered negligible")
+        `endif // JUNCAP_StandAlone

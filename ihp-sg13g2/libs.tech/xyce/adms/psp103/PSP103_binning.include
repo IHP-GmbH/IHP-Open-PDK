@@ -1,0 +1,192 @@
+//======================================================================================
+//======================================================================================
+// Filename: PSP103_binning.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+//  2004-2011 Arizona State University Licensed under the Educational Community License,
+//  Version 2.0 (the "License"); you may not use this file except in compliance with the
+//  License. You may obtain a copy of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+                        // auxiliary variables
+                        iLEWE        =  iLE * iWE;
+                        iiLE         =  LE / `LEN;
+                        iiWE         =  WE / `WEN;
+                        iiLEWE       =  iiLE * iiWE;
+                        iiiLEWE      =  iiWE / iiLE;
+
+                        // auxiliary variables for COX only
+                        iiLEcv       =  LEcv / `LEN;
+                        iiWEcv       =  WEcv / `WEN;
+                        iiLEWEcv     =  iiLEcv * iiWEcv;
+
+                        // auxiliary variables for CGOV only
+                        iLEcv        = `LEN / LEcv;
+                        iiiLEWEcv    =  iiWEcv / iiLEcv;
+
+                        // auxiliary variables for CGBOV only
+                        iiLcv        =  Lcv / `LEN;
+                        iiWcv        =  Wcv / `WEN;
+                        iiLWcv       =  iiLcv * iiWcv;
+
+                        // auxiliary variables for CFR only
+                        iLcv         =  `LEN / Lcv;
+                        iiiLWcv      =   iiWcv / iiLcv;
+
+                        // Process parameters
+                        VFB_p        =  POVFB + iLE * PLVFB + iWE * PWVFB + iLEWE * PLWVFB;
+                        STVFB_p      =  POSTVFB + iLE * PLSTVFB + iWE * PWSTVFB + iLEWE * PLWSTVFB;
+                        ST2VFB_p     =  POST2VFB;
+                        TOX_p        =  POTOX;
+                        EPSROX_p     =  POEPSROX;
+                        NEFF_p       =  PONEFF + iLE * PLNEFF + iWE * PWNEFF + iLEWE * PLWNEFF;
+                        FACNEFFAC_p  =  POFACNEFFAC + iLE * PLFACNEFFAC + iWE * PWFACNEFFAC + iLEWE * PLWFACNEFFAC;
+                        GFACNUD_p    =  POGFACNUD + PLGFACNUD * iLE + PWGFACNUD * iWE + PLWGFACNUD * iLE * iWE;
+                        VSBNUD_p     =  POVSBNUD;
+                        DVSBNUD_p    =  PODVSBNUD;
+                        VNSUB_p      =  POVNSUB;
+                        NSLP_p       =  PONSLP;
+                        DNSUB_p      =  PODNSUB;
+                        DPHIB_p      =  PODPHIB + iLE * PLDPHIB + iWE * PWDPHIB + iLEWE * PLWDPHIB;
+                        DELVTAC_p    =  PODELVTAC + iLE * PLDELVTAC + iWE * PWDELVTAC + iLEWE * PLWDELVTAC;
+                        NP_p         =  PONP + iLE * PLNP + iWE * PWNP + iLEWE * PLWNP;
+                        TOXOV_p      =  POTOXOV;
+                        TOXOVD_p     =  POTOXOVD;
+                        NOV_p        =  PONOV + iLE * PLNOV + iWE * PWNOV + iLEWE * PLWNOV;
+                        NOVD_p       =  PONOVD + iLE * PLNOVD + iWE * PWNOVD + iLEWE * PLWNOVD;
+
+                        // Interface states parameters
+                        CT_p         =  POCT + iLE * PLCT + iWE * PWCT + iLEWE * PLWCT;
+                        CTG_p        =  POCTG;
+                        CTB_p        =  POCTB;
+                        STCT_p       =  POSTCT;
+
+                        // DIBL parameters
+                        CF_p         =  POCF + iLE * PLCF + iWE * PWCF + iLEWE * PLWCF;
+                        CFD_p        =  POCFD;
+                        CFB_p        =  POCFB;
+
+                        // Subthreshold slope parameters of short channel transistor
+                        PSCE_p       =  POPSCE + iLE * PLPSCE + iWE * PWPSCE + iLEWE * PLWPSCE;
+                        PSCEB_p      =  POPSCEB;
+                        PSCED_p      =  POPSCED;
+
+                        // Mobility parameters
+                        BETN_p       =  iiWE * iLE * (POBETN + iLE * PLBETN + iWE * PWBETN + iLEWE * PLWBETN);
+                        STBET_p      =  POSTBET + iLE * PLSTBET + iWE * PWSTBET + iLEWE * PLWSTBET;
+                        MUE_p        =  POMUE + iLE * PLMUE + iWE * PWMUE + iLEWE * PLWMUE;
+                        STMUE_p      =  POSTMUE;
+                        THEMU_p      =  POTHEMU;
+                        STTHEMU_p    =  POSTTHEMU;
+                        CS_p         =  POCS + iLE * PLCS + iWE * PWCS + iLEWE * PLWCS;
+                        STCS_p       =  POSTCS;
+                        THECS_p      =  POTHECS;
+                        STTHECS_p    =  POSTTHECS;
+                        XCOR_p       =  POXCOR + iLE * PLXCOR + iWE * PWXCOR + iLEWE * PLWXCOR;
+                        STXCOR_p     =  POSTXCOR;
+                        FETA_p       =  POFETA;
+
+                        // Series resistance parameters
+                        RS_p         =  PORS + iLE * PLRS + iWE * PWRS + iLEWE * PLWRS;
+                        STRS_p       =  POSTRS;
+                        RSB_p        =  PORSB;
+                        RSG_p        =  PORSG;
+
+                        // Velocity saturation parameters
+                        THESAT_p     =  POTHESAT + iLE * PLTHESAT + iWE * PWTHESAT + iLEWE * PLWTHESAT;
+                        STTHESAT_p   =  POSTTHESAT + iLE * PLSTTHESAT + iWE * PWSTTHESAT + iLEWE * PLWSTTHESAT;
+                        THESATB_p    =  POTHESATB + iLE * PLTHESATB + iWE * PWTHESATB + iLEWE * PLWTHESATB;
+                        THESATG_p    =  POTHESATG + iLE * PLTHESATG + iWE * PWTHESATG + iLEWE * PLWTHESATG;
+
+                        // Saturation voltage parameters
+                        AX_p         =  POAX + iLE * PLAX + iWE * PWAX + iLEWE * PLWAX;
+
+                        // Channel length modulation (CLM) parameters
+                        ALP_p        =  POALP + iLE * PLALP + iWE * PWALP + iLEWE * PLWALP;
+                        ALP1_p       =  POALP1 + iLE * PLALP1 + iWE * PWALP1 + iLEWE * PLWALP1;
+                        ALP2_p       =  POALP2 + iLE * PLALP2 + iWE * PWALP2 + iLEWE * PLWALP2;
+                        VP_p         =  POVP;
+
+                        // Impact ionization parameters
+                        A1_p         =  POA1 + iLE * PLA1 + iWE * PWA1 + iLEWE * PLWA1;
+                        A2_p         =  POA2;
+                        STA2_p       =  POSTA2;
+                        A3_p         =  POA3 + iLE * PLA3 + iWE * PWA3 + iLEWE * PLWA3;
+                        A4_p         =  POA4 + iLE * PLA4 + iWE * PWA4 + iLEWE * PLWA4;
+                        GCO_p        =  POGCO;
+
+                        // Gate current parameters
+                        IGINV_p      =  POIGINV + iiLE * PLIGINV + iiWE * PWIGINV + iiLEWE * PLWIGINV;
+                        IGOV_p       =  POIGOV + iLE * PLIGOV + iiWE * PWIGOV + iiiLEWE * PLWIGOV;
+                        IGOVD_p      =  POIGOVD + iLE * PLIGOVD + iiWE * PWIGOVD + iiiLEWE * PLWIGOVD;
+                        STIG_p       =  POSTIG;
+                        GC2_p        =  POGC2;
+                        GC3_p        =  POGC3;
+                        CHIB_p       =  POCHIB;
+
+                        // Gate-induced drain leakage (GIDL) parameters
+                        AGIDL_p      =  POAGIDL + iLE * PLAGIDL + iiWE * PWAGIDL + iiiLEWE * PLWAGIDL;
+                        AGIDLD_p     =  POAGIDLD + iLE * PLAGIDLD + iiWE * PWAGIDLD + iiiLEWE * PLWAGIDLD;
+                        BGIDL_p      =  POBGIDL;
+                        BGIDLD_p     =  POBGIDLD;
+                        STBGIDL_p    =  POSTBGIDL;
+                        STBGIDLD_p   =  POSTBGIDLD;
+                        CGIDL_p      =  POCGIDL;
+                        CGIDLD_p     =  POCGIDLD;
+
+                        // Charge model parameters
+                        COX_p        =  POCOX + iiLEcv * PLCOX + iiWEcv * PWCOX + iiLEWEcv * PLWCOX;
+                        CGOV_p       =  POCGOV + iLEcv * PLCGOV + iiWEcv * PWCGOV + iiiLEWEcv * PLWCGOV;
+                        CGOVD_p      =  POCGOVD + iLEcv * PLCGOVD + iiWEcv * PWCGOVD + iiiLEWEcv * PLWCGOVD;
+                        CGBOV_p      =  POCGBOV + iiLcv * PLCGBOV + iiWcv * PWCGBOV + iiLWcv * PLWCGBOV;
+                        CFR_p        =  POCFR + iLcv * PLCFR + iiWcv * PWCFR + iiiLWcv * PLWCFR;
+                        CFRD_p       =  POCFRD + iLcv * PLCFRD + iiWcv * PWCFRD + iiiLWcv * PLWCFRD;
+
+                        // Noise model parameters
+                        FNT_p        =  POFNT;
+                        FNTEXC_p     =  iLE * iLE * (POFNTEXC + iLE * PLFNTEXC + iWE * PWFNTEXC + iLEWE * PLWFNTEXC);
+                        NFA_p        =  PONFA + iLE * PLNFA + iWE * PWNFA + iLEWE * PLWNFA;
+                        NFB_p        =  PONFB + iLE * PLNFB + iWE * PWNFB + iLEWE * PLWNFB;
+                        NFC_p        =  PONFC + iLE * PLNFC + iWE * PWNFC + iLEWE * PLWNFC;
+                        EF_p         =  POEF;
+
+                        // Edge transistor: PSP 103.4
+                        VFBEDGE_p    =  POVFBEDGE;
+                        STVFBEDGE_p  =  POSTVFBEDGE + iLE * PLSTVFBEDGE + iWE * PWSTVFBEDGE + iLEWE * PLWSTVFBEDGE;
+                        DPHIBEDGE_p  =  PODPHIBEDGE + iLE * PLDPHIBEDGE + iWE * PWDPHIBEDGE + iLEWE * PLWDPHIBEDGE;
+                        NEFFEDGE_p   =  PONEFFEDGE + iLE * PLNEFFEDGE + iWE * PWNEFFEDGE + iLEWE * PLWNEFFEDGE;
+                        CTEDGE_p     =  POCTEDGE + iLE * PLCTEDGE + iWE * PWCTEDGE + iLEWE * PLWCTEDGE;
+                        BETNEDGE_p   =  iLE * (POBETNEDGE + iLE * PLBETNEDGE + iWE * PWBETNEDGE + iLEWE * PLWBETNEDGE);
+                        STBETEDGE_p  =  POSTBETEDGE + iLE * PLSTBETEDGE + iWE * PWSTBETEDGE + iLEWE * PLWSTBETEDGE;
+                        PSCEEDGE_p   =  POPSCEEDGE + iLE * PLPSCEEDGE + iWE * PWPSCEEDGE + iLEWE * PLWPSCEEDGE;
+                        PSCEBEDGE_p  =  POPSCEBEDGE;
+                        PSCEDEDGE_p  =  POPSCEDEDGE;
+                        CFEDGE_p     =  POCFEDGE + iLE * PLCFEDGE + iWE * PWCFEDGE + iLEWE * PLWCFEDGE;
+                        CFDEDGE_p    =  POCFDEDGE;
+                        CFBEDGE_p    =  POCFBEDGE;
+                        FNTEDGE_p    =  POFNTEDGE;
+                        NFAEDGE_p    =  PONFAEDGE + iLE * PLNFAEDGE + iWE * PWNFAEDGE + iLEWE * PLWNFAEDGE;
+                        NFBEDGE_p    =  PONFBEDGE + iLE * PLNFBEDGE + iWE * PWNFBEDGE + iLEWE * PLWNFBEDGE;
+                        NFCEDGE_p    =  PONFCEDGE + iLE * PLNFCEDGE + iWE * PWNFCEDGE + iLEWE * PLWNFCEDGE;
+                        EFEDGE_p     =  POEFEDGE;
+
+                        // Well proximity effect parameters
+                        KVTHOWE      =  POKVTHOWE + iLE * PLKVTHOWE + iWE * PWKVTHOWE + iLEWE * PLWKVTHOWE;
+                        KUOWE        =  POKUOWE + iLE * PLKUOWE + iWE * PWKUOWE + iLEWE * PLWKUOWE;
