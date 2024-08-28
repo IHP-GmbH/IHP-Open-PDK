@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 460 -320 1260 80 {flags=graph
-y1=-1.2e-12
-y2=0.00011
+y1=-2.7e-12
+y2=0.00023
 ypos1=0
 ypos2=2
 divy=5
@@ -57,7 +57,7 @@ lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/vsource.sym} -300 50 0 0 {name=Vgs value=0.0}
 C {devices/vsource.sym} -40 10 0 0 {name=Vds value=0}
-C {devices/launcher.sym} 540 150 0 0 {name=h1
+C {devices/launcher.sym} 550 160 0 0 {name=h1
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
 }
@@ -138,7 +138,7 @@ write dc_lv_nmos.raw
 "}
 C {sg13g2_pr/sg13_lv_nmos.sym} -190 10 2 1 {name=M2
 l=0.13u
-w=1.0u
+w=2.0u
 ng=1
 m=1
 model=sg13_lv_nmos
