@@ -262,20 +262,21 @@ format="tcleval( @value )"
 value="
 .lib cornerMOSlv.lib mos_tt
 .lib cornerMOShv.lib mos_tt
-.include $::SG13G2_MODELS/diodes.lib
+.lib cornerRES.lib res_typ
+.include diodes.lib
 
-.include $::SG13G2_MODELS/resistors_mod.lib
-.include $::SG13G2_MODELS/resistors_parm.lib
+
+
 
 
 
 "}
 C {devices/code_shown.sym} -1030 -780 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.param temp=127
+.param temp=27
 .control
 save all 
-tran 2u 100u
+tran 1u 100u
 meas tran tdelay TRIG v(pad_res) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
 write tran_io_Gallery.raw
 

@@ -5,7 +5,7 @@ K {}
 V {}
 S {}
 E {}
-B 2 500 -250 1300 150 {flags=graph
+B 2 820 -200 1620 200 {flags=graph
 y1=-0.0651089
 y2=2.58689
 ypos1=0
@@ -25,7 +25,7 @@ logx=0
 logy=0
 color=4
 node=out}
-B 2 500 -670 1300 -270 {flags=graph
+B 2 820 -620 1620 -220 {flags=graph
 y1=0
 y2=1.8
 ypos1=0
@@ -46,7 +46,27 @@ unitx=1
 logx=0
 logy=0
 }
-B 2 500 -1080 1300 -680 {}
+B 2 820 -1030 1620 -630 {flags=graph
+y1=0
+y2=1.8
+ypos1=0
+ypos2=2
+divy=5
+subdivy=1
+unity=1
+x1=0
+x2=2e-08
+divx=5
+subdivx=1
+xlabmag=1.0
+ylabmag=1.0
+node=b
+
+dataset=-1
+unitx=1
+logx=0
+logy=0
+color=7}
 N 60 -30 60 30 {
 lab=GND}
 N 410 -50 410 130 {
@@ -90,7 +110,7 @@ value="
 "}
 C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.param temp=127
+.param temp=27
 .control
 save all 
 tran 50p 20n

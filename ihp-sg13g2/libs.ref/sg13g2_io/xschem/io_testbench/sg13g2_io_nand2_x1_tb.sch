@@ -102,7 +102,7 @@ value="
 "}
 C {devices/code_shown.sym} -330 -540 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.param temp=127
+.param temp=27
 .control
 save all 
 tran 50p 20n
