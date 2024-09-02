@@ -141,29 +141,16 @@ N 180 -290 230 -290 {
 lab=#net1}
 N 100 -140 100 -90 {
 lab=out}
-C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib cornerMOSlv.lib mos_ff
-"}
-C {devices/code_shown.sym} -330 -530 0 0 {name=NGSPICE only_toplevel=true 
-value="
-.param temp=127
-.control
-save all 
-tran 50p 20n
-meas tran tdelay TRIG v(b) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
-write tran_logic_nand.raw
-.endc
-"}
+N 240 -130 260 -130 {
+lab=in}
 C {devices/gnd.sym} 100 130 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -170 130 0 0 {name=l2 lab=GND}
-C {devices/vsource.sym} -170 90 0 0 {name=VinA value="dc 0 ac 0 pulse(0, 1.2, 2n, 100p, 100p, 4n, 6n ) "}
+C {devices/vsource.sym} -170 90 0 0 {name=VinA value="dc 0 ac 0 pulse(0 1.2 2n 100p 100p 4n 6n ) "}
 C {devices/vsource.sym} 410 -80 0 0 {name=Vdd value=1.2}
 C {devices/gnd.sym} 410 130 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 150 130 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -270 -610 0 0 {name=h5
+C {devices/launcher.sym} 570 190 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/tran_logic_nand.raw tran"
 }
@@ -203,5 +190,79 @@ spiceprefix=X
 }
 C {devices/gnd.sym} 200 40 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} -270 50 0 0 {name=l7 lab=GND}
-C {devices/vsource.sym} -270 10 0 0 {name=VinB value="dc 0 ac 0 pulse(0, 1.2, 0, 100p, 100p, 2n, 4n ) "}
+C {devices/vsource.sym} -270 10 0 0 {name=VinB value="dc 0 ac 0 pulse(0 1.2 0 100p 100p 2n 4n ) "}
 C {devices/lab_pin.sym} -290 -40 0 0 {name=p3 sig_type=std_logic lab=B}
+C {devices/lab_pin.sym} 240 -130 0 0 {name=p4 sig_type=std_logic lab=in}
+C {simulator_commands_shown.sym} -820 -850 0 0 {name=Simulator
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.tran 50p 20n
+.measure tran_cont tdelaytp TRIG  v(a)=0.9 Fall=1 TARG v(out)=0.9 rise=1
+.print tran format=raw file=tran_logic_nand.raw V(out) V(a) V(b)
+"
+"}
+C {launcher.sym} -740 -690 0 0 {name=h1
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSPNQS103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -810 -970 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+)"}
+C {simulator_commands_shown.sym} -780 -450 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerMOSlv.lib mos_tt
+"}
+C {launcher.sym} -700 -140 0 0 {name=h2
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -770 -350 0 0 {name=Simulator1
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+tran 50p 20n
+meas tran tdelay TRIG v(a) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
+write tran_logic_nand.raw
+.endc
+"}

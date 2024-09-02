@@ -7,14 +7,14 @@ S {}
 E {}
 B 2 -290 -610 510 -210 {flags=graph
 
-y2=0.00084
+y2=0.0065
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
 x1=0
-x2=0
+x2=1
 divx=5
 subdivx=1
 
@@ -24,10 +24,12 @@ logx=0
 logy=0
 
 
-y1=8.3e-08
+y1=0
 rainbow=0
-color=4
-node=i(vrh)}
+color="7 8 4"
+node="i(vrh)
+i(vppd)
+i(vsil)"}
 N -290 120 -290 180 {
 lab=GND}
 N -290 -20 -290 60 {
@@ -56,11 +58,6 @@ N -60 -20 90 -20 {
 lab=Vcc}
 N 90 -20 270 -20 {
 lab=Vcc}
-C {devices/code_shown.sym} -300 -110 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ_stat
-"}
 C {devices/gnd.sym} -60 180 0 0 {name=l1 lab=GND}
 C {devices/vsource.sym} -290 90 0 0 {name=Vres value=1.5}
 C {devices/gnd.sym} -290 180 0 0 {name=l3 lab=GND}
@@ -77,7 +74,7 @@ C {devices/gnd.sym} 270 180 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 270 50 0 0 {name=Vrh}
 C {sg13g2_pr/rsil.sym} -60 130 0 0 {name=R1
 w=0.5e-6
-l=\{Lparm\}
+l=10e-6
 model=rsil
 spiceprefix=X
 b=0
@@ -99,22 +96,17 @@ spiceprefix=X
 b=0
 m=1
 }
-C {simulator_commands_shown.sym} 540 -550 0 0 {name=Simulator
-simulator=Xyce
+C {simulator_commands_shown.sym} 1020 -300 0 0 {name=Simulator1
+simulator=xyce
 only_toplevel=false 
 value="
-.param Lparm=10u
-.SAMPLING
-+useExpr=true
-.options SAMPLES numsamples=200 SAMPLE_TYPE=MC 
-.op
-*.dc Vres 1 1 0.1
-*.step lparm 10u 100u 20u
-.PRINT  dc format=raw file=dc_res_temp.raw   I(Vrh) 
-"
+.preprocess replaceground true
+.option temp=27
+.dc Vres 0 1 1m
+.print dc format=raw file=dc_res_temp.raw I(Vsil) I(Vppd) I(Vrh)
 "}
-C {launcher.sym} 610 -320 0 0 {name=h1
-descr=Simulate with Xyce
+C {launcher.sym} 1170 -100 0 0 {name=h2
+descr=SimulateXyce
 tclcommand="
 # Setup the default simulation commands if not already set up
 # for example by already launched simulations.
@@ -123,7 +115,7 @@ set_sim_defaults
 # Change the Xyce command. In the spice category there are currently
 # 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
 # you can get the number by querying $sim(spice,n)
-set sim(spice,3,cmd) \{Xyce -plugin /.../.../... \\"$N\\"\}
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSPNQS103_VA.so \\"$N\\"\}
 
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3
@@ -131,4 +123,47 @@ set sim(spice,default) 3
 # run netlist and simulation
 xschem netlist
 simulate
+"}
+C {simulator_commands_shown.sym} 960 -420 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
+)"}
+C {simulator_commands_shown.sym} 570 -420 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerRES.lib res_typ
+"}
+C {launcher.sym} 640 -90 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 560 -310 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+save all 
+dc Vres 0 1 1m
+write dc_res_temp.raw
+.endc
 "}

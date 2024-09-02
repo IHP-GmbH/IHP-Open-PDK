@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -53,25 +53,6 @@ N 210 -80 230 -80 {
 lab=Vdp}
 C {devices/gnd.sym} -220 60 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -500 60 0 0 {name=l2 lab=GND}
-C {devices/code_shown.sym} -510 -160 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.include $::SG13G2_MODELS/diodes.lib
-"}
-C {devices/code_shown.sym} 320 -230 0 0 {name=NGSPICE only_toplevel=true 
-value="
-.param temp=27
-.control
-save all 
-op
-print Vd 
-reset 
-dc temp -40 125 1
-write dc_diode_temp.raw
-wrdata dc_diode_temp.csv Vd Vdp
-
-.endc
-"}
 C {devices/lab_pin.sym} -200 -80 0 1 {name=p1 sig_type=std_logic lab=Vd}
 C {sg13g2_pr/dantenna.sym} -220 -10 2 0 {name=XD1
 model=dantenna
@@ -93,3 +74,75 @@ model=dpantenna
 l=780n
 w=780n
 }
+C {simulator_commands_shown.sym} 880 -510 0 0 {name=Simulator1
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.dc temp -40 125 1
+.print dc format=raw file=dc_diode_temp.raw V(Vd) V(Vdp)
+"}
+C {launcher.sym} 1030 -310 0 0 {name=h2
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSPNQS103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 820 -630 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.include $::SG13G2_MODELS_XYCE/diodes.lib
+)"}
+C {simulator_commands_shown.sym} 430 -630 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.include diodes.lib
+"}
+C {launcher.sym} 500 -300 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 420 -520 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+save all 
+dc temp -40 125 1
+write dc_diode_temp.raw
+wrdata dc_diode_temp.csv Vd Vdp
+.endc
+"}
