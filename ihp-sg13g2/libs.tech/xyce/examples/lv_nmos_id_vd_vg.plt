@@ -1,5 +1,5 @@
 #set terminal postscript eps color
-#set output "nmos_id_vd_vg.eps"
+#set output "lv_nmos_id_vd_vg.eps"
 
 set title "Id=f(Vds) Vg=0...1.5V Temp: 27degC"
 
