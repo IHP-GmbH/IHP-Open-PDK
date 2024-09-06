@@ -10,4 +10,4 @@ set format y "%.1s%c"
 set xlabel "Vgs [V]"
 set ylabel "Id [A]"
 set logscale y
-plot 'nmos_id_vg_vb.cir.prn' using 2:(-$3) t "Id" w lp
+plot 'lv_nmos_id_vg_vb.cir.prn' using 2:(-$3) t "Id" w lp
