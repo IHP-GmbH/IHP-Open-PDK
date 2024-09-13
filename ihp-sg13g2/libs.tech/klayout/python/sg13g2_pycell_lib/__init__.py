@@ -20,7 +20,7 @@ import pya
 import os
 import sys
 
-from cni.dlo import Tech
+from cni.tech import Tech
 from cni.dlo import PCellWrapper
 
 # Creates the SG13_dev technology
@@ -82,7 +82,7 @@ The current process chain will be dumped if the environment variable 'IHP_PYCELL
 is set.
 
 The list of names which are used in an #ifdef-statement and are considered as 'defined' will be dumped
-if the environment variable 'IHP_PYCELL_LIB_PRINT_PROCESS_TREE' is set.
+if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
 
 """
 
