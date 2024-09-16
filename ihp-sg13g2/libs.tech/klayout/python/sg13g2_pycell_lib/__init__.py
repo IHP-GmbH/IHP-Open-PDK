@@ -26,8 +26,9 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
+import pypreprocessor.pypreprocessor as preProcessor
+
 import pya
-import psutil
 
 import os
 import io
@@ -62,6 +63,60 @@ moduleNames = [
         'dpantenna_code'
 ]
 
+def getProcessNames():
+    processNames = []
+    maxDepth = 10
+
+    if sys.platform.startswith('win'):
+        process = pya.QProcess()
+        powershellCmd = (
+            "Get-CimInstance Win32_Process | "
+            "Select-Object ProcessId, ParentProcessId, Name | "
+            "Format-Table -HideTableHeaders"
+        )
+        process.start("powershell", ["-Command", powershellCmd])
+        process.waitForFinished()
+        output = process.readAllStandardOutput().decode()
+
+        # Parse the output into a list of tuples (pid, ppid, name)
+        processList = []
+        for line in output.splitlines():
+            parts = line.split()
+            if len(parts) >= 3:
+                pid = int(parts[0])
+                ppid = int(parts[1])
+                name = ' '.join(parts[2:])
+                processList.append((pid, ppid, name))
+
+        processDict = {pid: (ppid, name) for pid, ppid, name in processList}
+        currentPid = os.getpid()
+
+        while currentPid in processDict and maxDepth > 0:
+            maxDepth -= 1
+            ppid, name = processDict[currentPid]
+            processNames.append(name.lower())
+            if ppid == currentPid or ppid == 0:
+                break
+            currentPid = ppid
+
+    else:
+        import psutil
+
+        parent = None
+
+        p = psutil.Process()
+        with p.oneshot():
+            processNames.append(p.name().lower())
+            parent = p.parent()
+
+        while parent is not None and maxDepth > 0:
+            maxDepth -= 1
+            with parent.oneshot():
+                processNames.append(parent.name().lower())
+                parent = parent.parent()
+
+    return processNames
+
 
 """
 Support for 'conditional compilation' in a C-style manner of PyCell code:
@@ -85,27 +140,13 @@ The list of names which are used in an #ifdef-statement and are considered as 'd
 if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
 
 """
-
 class PyCellLib(pya.Library):
     def __init__(self):
         self.description = "IHP SG13G2 Pcells"
 
         tech = Tech.get('SG13_dev')
 
-        processNames = []
-        parent = None
-
-        p = psutil.Process()
-        with p.oneshot():
-            processNames.append(p.name().lower())
-            parent = p.parent()
-
-        maxDepth = 10;
-        while parent is not None and maxDepth > 0:
-            maxDepth -= 1
-            with parent.oneshot():
-                processNames.append(parent.name().lower())
-                parent = parent.parent()
+        processNames = getProcessNames()
 
         if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
             processChain = ''
@@ -116,9 +157,6 @@ class PyCellLib(pya.Library):
                 processChain += "'" + processName + "'"
                 isFirst = False
             print(f'Current process chain: {processChain}')
-
-        module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
-        preProcessor = getattr(module, "preprocessor")
 
         definesSetToPrint = []
 
