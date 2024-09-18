@@ -25,7 +25,7 @@
   <GND * 1 290 960 0 0 0 0>
   <GND * 1 70 960 0 0 0 0>
   <Idc I1 1 70 910 18 -26 0 1 "0" 1>
-  <Lib npn13G1 1 170 850 10 64 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "npn13G2" 0 "1" 1>
+  <Lib npn13G1 1 170 850 10 64 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_nonlinear_components" 0 "npn13G2" 0 "1" 1>
   <INCLSCR INCLSCR1 1 100 100 -60 16 0 0 ".LIB cornerHBT.lib hbt_typ\n" 1 "" 0 "" 0>
 </Components>
 <Wires>
