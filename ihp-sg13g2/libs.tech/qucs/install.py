@@ -54,13 +54,20 @@ def info():
     - copies the Qucs-S user library files into $HOME/[.qucs|QucsWorkspace]/user_lib directory. 
     - compiles and copies PSP103 model in ../ngspice/openvaf location
     Please make sure that you have set up the PDK_ROOT env variable
-    export PDK_ROOT=<path_to_IHP-Open-PDK>"""
+    export PDK_ROOT=<path_to_IHP-Open-PDK>
+    """
     print(msg)
 
 
 if __name__ == "__main__":
     # Example usage:
     info()
+    
+    # Check if 'Qucs-S' tool is available
+    program_name = "qucs-s"
+    if not is_program_installed(program_name):
+        logging.error(f"{program_name} is not installed.")
+        exit(1)
     
     # Check if PDK_ROOT env variable exists
     pdk_root = os.environ.get("PDK_ROOT")
@@ -80,7 +87,7 @@ if __name__ == "__main__":
     # Supporting two variants of Qucs-S default workspace
     for qucs_workspace in ['/.qucs/', '/QucsWorkspace/']:
     
-        print(f"\nPreparing $HOME{qucs_workspace} directory ...")
+        print(f"Preparing $HOME{qucs_workspace} directory ...")
         print("#############################################\n")
         
         destination_directory = userhome + qucs_workspace + "user_lib"
