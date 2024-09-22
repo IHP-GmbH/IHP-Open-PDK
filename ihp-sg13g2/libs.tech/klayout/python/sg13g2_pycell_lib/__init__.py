@@ -26,8 +26,6 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
-import pypreprocessor.pypreprocessor as preProcessor
-
 import pya
 
 import os
@@ -36,6 +34,7 @@ import sys
 import inspect
 import re
 import importlib
+import importlib.util
 import pathlib
 import tempfile
 
@@ -158,6 +157,9 @@ class PyCellLib(pya.Library):
                 isFirst = False
             print(f'Current process chain: {processChain}')
 
+        module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
+        preProcessor = getattr(module, "preprocessor")
+
         definesSetToPrint = []
 
         for moduleName in moduleNames:
@@ -199,7 +201,7 @@ class PyCellLib(pya.Library):
             if len(defines) > 0:
                 modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
 
-                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
+                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=False)
                 pyPreProcessor.parse()
 
                 spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
