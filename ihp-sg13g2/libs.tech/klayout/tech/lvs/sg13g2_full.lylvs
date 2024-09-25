@@ -56,9 +56,14 @@ exec_start_time = Time.now
 logger = Logger.new($stdout)
 
 # Cross-platform memory usage retrieval
+require 'win32ole'
+
 def get_memory_usage
   if Gem.win_platform?
-    `tasklist /FI "PID eq #{Process.pid}" /FO LIST`.lines.find { |line| line.include?("Mem Usage") }.strip
+    wmi = WIN32OLE.connect("winmgmts://")
+    processes = wmi.ExecQuery("select * from Win32_Process where ProcessId = #{Process.pid}")
+    process = processes.each.next # Get the first result
+    "#{process.WorkingSetSize.to_i / 1024} KB"
   else
     `ps -o rss= -p #{Process.pid}`.strip + " KB"
   end
