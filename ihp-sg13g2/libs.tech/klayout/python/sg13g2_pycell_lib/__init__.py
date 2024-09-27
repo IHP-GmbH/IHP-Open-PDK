@@ -26,6 +26,8 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
+from pypreprocessor.pypreprocessor import preprocessor as preProcessor
+
 import pya
 
 import os
@@ -37,6 +39,7 @@ import importlib
 import importlib.util
 import pathlib
 import tempfile
+import traceback
 
 moduleNames = [
         'nmos_code',
@@ -171,11 +174,13 @@ class PyCellLib(pya.Library):
 
             try:
                 for line in moduleFile:
-                    match = re.match(r'^#ifdef\s+(\w+)', line)
+                    match = re.match(r'^#ifdef\s+\w+', line)
                     if match:
-                        define = match.group(1)
-                        if define not in defines:
-                            defines.append(define)
+                        splittedLine = line.split()
+                        for i, define in enumerate(splittedLine):
+                            if i % 2 == 1:
+                                if define not in defines:
+                                    defines.append(define)
 
             finally:
                 moduleFile.close()
@@ -210,7 +215,11 @@ class PyCellLib(pya.Library):
 
                 try:
                     spec.loader.exec_module(module)
-                except Exception:
+                except:
+                    trace = traceback.format_exc().splitlines()
+                    for line in trace:
+                        print(line.replace(modulePreProcPath, modulePath))
+
                     sys.exit(1)
 
                 os.remove(modulePreProcPath)
