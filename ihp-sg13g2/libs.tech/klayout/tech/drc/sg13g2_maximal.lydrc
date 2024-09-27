@@ -42,10 +42,13 @@ end
 
 application = RBA::Application.instance
 main_window = application.main_window
-if main_window
+if main_window and not $in_gds
     curr_layout_view = main_window.current_view()
     unless curr_layout_view
         layout_path = RBA::FileDialog::ask_open_file_name("Chose your layout file.", ".", "GDSII files (*.GDS *.gds *.GDS.gz *.gds.gz *.GDS2 *.gds2 *.GDS2.gz *.gds2.gz);; All files (*)")
+        unless layout_path
+            return
+        end
         main_window.load_layout(layout_path, 1)
         curr_layout_view = main_window.current_view()
     end
@@ -94,7 +97,9 @@ class DRC::DRCLayer
     end
 
     def output(*args)
-        $drc_error_count += self.count()
+        count = self.count()
+        $drc_error_count += count
+        puts("Rule %s: %d error(s)" % [args[0], count])
         original_output(*args)
     end
 end
@@ -128,12 +133,12 @@ else
 end
 
 class DRC::DRCEngine
-    def space_width_separation_overlap_check(dbu_value,
-                                             error_edge_pairs_90,
-                                             error_edge_pairs_180,
-                                             inverse_error_edge_pairs_90 = nil,
-                                             inverse_error_edge_pairs_180 = nil,
-                                             options = {})
+    def find_intersecting_edges_errors(dbu_value,
+                                       error_edge_pairs_90,
+                                       error_edge_pairs_180,
+                                       inverse_error_edge_pairs_90 = nil,
+                                       inverse_error_edge_pairs_180 = nil,
+                                       options = {})
         consider_intersecting_edges   = options.fetch(:consider_intersecting_edges, false)
         consider_touch_points         = options.fetch(:consider_touch_points, false)
         ignore_non_axis_aligned_edges = options.fetch(:ignore_non_axis_aligned_edges, false)
@@ -168,8 +173,6 @@ class DRC::DRCEngine
                         no_touch_point_error[ip] = true
                     end
                 end
-            else
-                errors_ep.insert(edge_pair)
             end
         end
         if consider_intersecting_edges or consider_touch_points
@@ -471,17 +474,17 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_separation(other,
-                       value,
-                       metric=RBA::Region::Euclidian,
-                       consider_intersecting_edges=false,
-                       consider_touch_points=false,
-                       ignore_non_axis_aligned_edges=false,
-                       min_angle=0,
-                       max_angle=90,
-                       include_min_angle=true,
-                       include_max_angle=false,
-                       polygons=false)
+    def ext_separation_at_intersecting_edges(other,
+                                             value,
+                                             metric=RBA::Region::Euclidian,
+                                             consider_intersecting_edges=false,
+                                             consider_touch_points=false,
+                                             ignore_non_axis_aligned_edges=false,
+                                             min_angle=0,
+                                             max_angle=90,
+                                             include_min_angle=true,
+                                             include_max_angle=false,
+                                             polygons=false)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
@@ -504,7 +507,7 @@ class DRC::DRCLayer
         width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
             self.data.width_check(dbu_value, false, metric, 180, nil, 1) +
             other.data.width_check(dbu_value, false, metric, 180, nil, 1))
-        separation_errors = @engine.space_width_separation_overlap_check(
+        separation_errors = @engine.find_intersecting_edges_errors(
             dbu_value,
             error_edge_pairs_90,
             error_edge_pairs_180,
@@ -551,9 +554,11 @@ class DRC::DRCLayer
                 output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
             end
         elsif consider_intersecting_edges ^ consider_touch_points
-            candidate_layer1 = self.interacting(output_layer.edges)
-            candidate_layer2 = other.interacting(output_layer.edges)
-            output_layer = candidate_layer1.ext_separation(
+            intersecting_edges_errors = output_layer.with_distance(0).edges
+            candidate_layer1 = self.interacting(intersecting_edges_errors)
+            candidate_layer2 = other.interacting(intersecting_edges_errors)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer1.ext_separation_at_intersecting_edges(
                 candidate_layer2,
                 value,
                 metric,
@@ -621,17 +626,17 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_overlap(other,
-                    value,
-                    metric=RBA::Region::Euclidian,
-                    consider_intersecting_edges=false,
-                    consider_touch_points=false,
-                    ignore_non_axis_aligned_edges=false,
-                    min_angle=0,
-                    max_angle=90,
-                    include_min_angle=true,
-                    include_max_angle=false,
-                    polygons=false)
+    def ext_overlap_at_intersecting_edges(other,
+                                          value,
+                                          metric=RBA::Region::Euclidian,
+                                          consider_intersecting_edges=false,
+                                          consider_touch_points=false,
+                                          ignore_non_axis_aligned_edges=false,
+                                          min_angle=0,
+                                          max_angle=90,
+                                          include_min_angle=true,
+                                          include_max_angle=false,
+                                          polygons=false)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
@@ -648,7 +653,7 @@ class DRC::DRCLayer
             self.data.overlap_check(other.data, dbu_value, false, metric, 90, 1, nil))
         error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
             self.data.overlap_check(other.data, dbu_value, false, metric, 180, nil, 1))
-        overlap_errors = @engine.space_width_separation_overlap_check(
+        overlap_errors = @engine.find_intersecting_edges_errors(
             dbu_value,
             error_edge_pairs_90,
             error_edge_pairs_180,
@@ -713,9 +718,11 @@ class DRC::DRCLayer
                 output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
             end
         elsif consider_intersecting_edges ^ consider_touch_points
-            candidate_layer1 = self.interacting(output_layer.edges)
-            candidate_layer2 = other.interacting(output_layer.edges)
-            output_layer = candidate_layer1.ext_overlap(
+            intersecting_edges_errors = output_layer.with_distance(0).edges
+            candidate_layer1 = self.interacting(intersecting_edges_errors)
+            candidate_layer2 = other.interacting(intersecting_edges_errors)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer1.ext_overlap_at_intersecting_edges(
                 candidate_layer2,
                 value,
                 metric,
@@ -837,16 +844,16 @@ class DRC::DRCLayer
         return output_layer
     end
 
-    def ext_space(value,
-                  metric=RBA::Region::Euclidian,
-                  consider_intersecting_edges=false,
-                  consider_touch_points=false,
-                  ignore_non_axis_aligned_edges=false,
-                  min_angle=0,
-                  max_angle=90,
-                  include_min_angle=true,
-                  include_max_angle=false,
-                  polygons=false)
+    def ext_space_at_intersecting_edges(value,
+                                        metric=RBA::Region::Euclidian,
+                                        consider_intersecting_edges=false,
+                                        consider_touch_points=false,
+                                        ignore_non_axis_aligned_edges=false,
+                                        min_angle=0,
+                                        max_angle=90,
+                                        include_min_angle=true,
+                                        include_max_angle=false,
+                                        polygons=false)
         self_min_coherence_state = self.data.min_coherence?
         self.data.min_coherence = true
         if metric.is_a?(DRC::DRCMetrics)
@@ -861,7 +868,7 @@ class DRC::DRCLayer
         error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 180, nil, 1))
         width_error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 90, 1, nil))
         width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 180, nil, 1))
-        space_errors = @engine.space_width_separation_overlap_check(
+        space_errors = @engine.find_intersecting_edges_errors(
             dbu_value,
             error_edge_pairs_90,
             error_edge_pairs_180,
@@ -904,8 +911,9 @@ class DRC::DRCLayer
                 output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
             end
         elsif consider_intersecting_edges ^ consider_touch_points
-            candidate_layer = self.interacting(output_layer.edges)
-            output_layer = candidate_layer.ext_space(
+            candidate_layer = self.interacting(output_layer.with_distance(0).edges)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer.ext_space_at_intersecting_edges(
                 value,
                 metric,
                 consider_intersecting_edges,
@@ -925,7 +933,7 @@ class DRC::DRCLayer
         end
     end
 
-    def ext_width(value,
+    def ext_width_at_intersecting_edges(value,
                   metric=RBA::Region::Euclidian,
                   consider_intersecting_edges=false,
                   consider_touch_points=false,
@@ -949,7 +957,7 @@ class DRC::DRCLayer
         error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 180, nil, 1))
         space_error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 90, 1, nil))
         space_error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 180, nil, 1))
-        width_errors = @engine.space_width_separation_overlap_check(
+        width_errors = @engine.find_intersecting_edges_errors(
             dbu_value,
             error_edge_pairs_90,
             error_edge_pairs_180,
@@ -998,8 +1006,9 @@ class DRC::DRCLayer
                 output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
             end
         elsif consider_intersecting_edges ^ consider_touch_points
-            candidate_layer = self.interacting(output_layer.edges)
-            output_layer = candidate_layer.ext_width(
+            candidate_layer = self.interacting(output_layer.with_distance(0).edges)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer.ext_width_at_intersecting_edges(
                 value,
                 metric,
                 consider_intersecting_edges,
