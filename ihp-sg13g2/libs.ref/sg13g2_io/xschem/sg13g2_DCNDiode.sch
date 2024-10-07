@@ -37,8 +37,8 @@ spiceprefix=X
 }
 C {sg13g2_pr/dantenna.sym} -80 90 1 0 {name=D2
 model=dantenna
-w=1.26u
-l=27.78u
+w=27.78u
+l=1.26u 
 spiceprefix=X
 }
 C {devices/iopin.sym} 50 30 0 0 {name=cathode lab=cathode}

@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -34,10 +34,10 @@ lab=iovss}
 N -400 10 -350 10 {
 lab=iovss}
 N 150 -120 240 -120 {
-lab=xxx}
+lab=vdd}
 C {sg13g2_DCNDiode.sym} -170 10 2 1 {name=x1}
 C {sg13g2_DCPDiode.sym} 200 30 0 0 {name=x2}
-C {devices/iopin.sym} -400 10 0 0 {name=iovss lab=iovss}
+C {devices/iopin.sym} -400 10 2 0 {name=iovss lab=iovss}
 C {devices/iopin.sym} 50 -60 0 0 {name=iovdd lab=iovdd}
 C {devices/iopin.sym} 10 90 0 0 {name=vss lab=vss}
 C {devices/iopin.sym} 240 -120 0 0 {name=vdd lab=vdd}

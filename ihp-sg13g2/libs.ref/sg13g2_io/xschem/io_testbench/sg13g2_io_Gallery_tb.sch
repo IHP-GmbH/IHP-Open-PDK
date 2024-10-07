@@ -276,7 +276,7 @@ value="
 .param temp=27
 .control
 save all 
-tran 1u 100u
+tran 2u 100u
 meas tran tdelay TRIG v(pad_res) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
 write tran_io_Gallery.raw
 

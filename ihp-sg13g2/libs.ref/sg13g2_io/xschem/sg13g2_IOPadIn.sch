@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,47 +6,59 @@ V {}
 S {}
 E {}
 N 910 -360 940 -360 {
-lab=vdd}
+lab=pad}
 N 820 -320 860 -320 {
-lab=#net1}
+lab=iovdd}
 N 860 -460 860 -320 {
-lab=#net1}
+lab=iovdd}
 N 860 -460 1300 -460 {
-lab=#net1}
+lab=iovdd}
 N 1300 -460 1300 -380 {
-lab=#net1}
+lab=iovdd}
 N 1240 -380 1300 -380 {
-lab=#net1}
+lab=iovdd}
 N 1240 -340 1360 -340 {
-lab=#net2}
+lab=iovss}
 N 1360 -500 1360 -340 {
-lab=#net2}
+lab=iovss}
 N 500 -500 1360 -500 {
-lab=#net2}
+lab=iovss}
 N 500 -500 500 -340 {
-lab=#net2}
+lab=iovss}
 N 500 -340 520 -340 {
-lab=#net2}
+lab=iovss}
 N 860 -180 910 -180 {
-lab=vdd}
+lab=pad}
 N 910 -250 910 -180 {
-lab=vdd}
+lab=pad}
 N 820 -360 910 -360 {
-lab=vdd}
+lab=pad}
 N 510 -180 560 -180 {
 lab=p2c}
 N 670 -100 670 -60 {
 lab=vss}
-N 750 -100 750 -60 {
+N 750 -80 750 -60 {
 lab=iovss}
 N 670 -290 670 -260 {
 lab=vdd}
-N 750 -290 750 -260 {
+N 750 -270 750 -260 {
 lab=iovdd}
 N 910 -250 990 -250 {
-lab=vdd}
+lab=pad}
 N 910 -360 910 -250 {
-lab=vdd}
+lab=pad}
+N 750 -80 1360 -80 {
+lab=iovss}
+N 750 -100 750 -80 {
+lab=iovss}
+N 1360 -340 1360 -80 {
+lab=iovss}
+N 750 -270 860 -270 {
+lab=iovdd}
+N 750 -290 750 -270 {
+lab=iovdd}
+N 860 -320 860 -270 {
+lab=iovdd}
 C {sg13g2_DCNDiode.sym} 670 -340 0 0 {name=x1}
 C {sg13g2_DCPDiode.sym} 1090 -360 0 0 {name=x2}
 C {sg13g2_LevelDown.sym} 710 -180 0 0 {name=x3}
