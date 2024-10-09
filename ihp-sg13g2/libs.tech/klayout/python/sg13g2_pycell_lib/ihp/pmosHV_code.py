@@ -70,36 +70,35 @@ class pmosHV(DloGen):
         ng = self.ng
         l = self.l
 
-        typ = 'P'
-        hv = True
-
         ndiff_layer = Layer('Activ', 'drawing')     # 1
         pdiff_layer = Layer('Activ', 'drawing')     # 1
         poly_layer = Layer('GatPoly', 'drawing')    # 5
+        poly_layer_pin = Layer('GatPoly', 'pin')
         locint_layer = Layer('Cont', 'drawing')     # 6
         metall_layer = Layer('Metal1', 'drawing')   # 8
+        metall_layer_pin = Layer('Metal1', 'pin')
         pdiffx_layer = Layer('pSD', 'drawing')      # 14
         well_layer = Layer('NWell', 'drawing')      # 31
         tgo_layer = Layer('ThickGateOx', 'drawing') # 44
-        textlayer = Layer('TEXT', 'drawing')        # 63
+        text_layer = Layer('TEXT', 'drawing')        # 63
 
         endcap = self.techparams['M1_c1']
         cont_size = self.techparams['Cnt_a']
         cont_dist = self.techparams['Cnt_b']
         cont_Activ_overRec = self.techparams['Cnt_c']
         cont_metall_over = self.techparams['M1_c']
-        psd_pActiv_over = self.techparams['pSD_c']
-        nwell_pActiv_over = self.techparams['NW_c']
-        gatpoly_Activ_over = self.techparams['Gat_c']
+        psd_pActiv_over = self.techparams['pSD_c']    # pSD enc. of p+-Activ in nwell
+        nwell_pActiv_over = self.techparams['NW_c1']  # NWell enc. of pActiv
+        gatpoly_Activ_over = self.techparams['Gat_c'] # poly overlap of Activ (endcap)
         gatpoly_cont_dist = self.techparams['Cnt_f']
-        smallw_gatpoly_cont_dist = cont_Activ_overRec+self.techparams['Gat_d']
-        psd_PFET_over = self.techparams['pSD_i']
-        pdiffx_poly_over_orth = 0.48
+        smallw_gatpoly_cont_dist = cont_Activ_overRec+self.techparams['Gat_d'] # for w < contActMin -> poly dogbone sep. to gate
+        psd_PFET_over = self.techparams['pSD_i1']     # pSD enc. of Gate
+        
         wmin = Numeric(self.techparams['pmosHV_minW'])
         lmin = Numeric(self.techparams['pmosHV_minL'])
         contActMin = 2*cont_Activ_overRec+cont_size
-        thGateOxGat = self.techparams['TGO_c']
-        thGateOxAct = self.techparams['TGO_a']
+        thGateOxGat = self.techparams['TGO_c'] # Overlay over GatPoly
+        thGateOxAct = self.techparams['TGO_a'] # Overlay over Active
 
         dbReplaceProp(self, 'pin#', 5)
 
@@ -109,12 +108,6 @@ class pmosHV(DloGen):
         w = w/ng
         w = GridFix(w)
         l = GridFix(l)
-
-        # additional Text for label
-        if hv :
-            labelhv = 'HV'
-        else :
-            labelhv = ''
 
         if w < contActMin-self.epsilon :
             gatpoly_cont_dist = smallw_gatpoly_cont_dist
@@ -179,14 +172,11 @@ class pmosHV(DloGen):
         dbCreateRect(self, metall_layer, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2))
 
         if w > contActMin :
-            MkPin(self, 'S', 3, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer)
+            MkPin(self, 'S', 3, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer_pin)
         else :
-            MkPin(self, 'S', 3, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer)
+            MkPin(self, 'S', 3, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer_pin)
 
-        if typ == 'N' :
-            dbCreateRect(self, ndiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
-        else :  # typ == 'P'
-            dbCreateRect(self, pdiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
+        dbCreateRect(self, pdiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
 
         for i in range(1, int(ng)+1) :
             # draw the poly line
@@ -200,10 +190,10 @@ class pmosHV(DloGen):
             ihpAddThermalMosLayer(self, Box(xpoly_beg, ypoly_beg+diffoffset, xpoly_end, ypoly_end+diffoffset), True, 'pmos')
 
             if i == 1 :
-                dbCreateLabel(self, textlayer, Point((xpoly_beg+xpoly_end)/2, (ypoly_beg+ypoly_end)/2+diffoffset), 'pmos'+labelhv, 'centerCenter', 'R90', Font.EURO_STYLE, 0.1)
+                dbCreateLabel(self, text_layer, Point((xpoly_beg+xpoly_end)/2, (ypoly_beg+ypoly_end)/2+diffoffset), 'pmosHV', 'centerCenter', 'R90', Font.EURO_STYLE, 0.1)
 
             if onep(i) :
-                MkPin(self, 'G', 2, Box(xpoly_beg, ypoly_beg+diffoffset, xpoly_end, ypoly_end+diffoffset), poly_layer)
+                MkPin(self, 'G', 2, Box(xpoly_beg, ypoly_beg+diffoffset, xpoly_end, ypoly_end+diffoffset), poly_layer_pin)
 
             # draw the second cont row
             xcont_beg = xpoly_end+gatpoly_cont_dist
@@ -218,32 +208,42 @@ class pmosHV(DloGen):
 
             if onep(i) :
                 if w > contActMin :
-                    MkPin(self, 'D', 1, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer)
+                    MkPin(self, 'D', 1, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer_pin)
                 else :
-                    MkPin(self, 'D', 1, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer)
+                    MkPin(self, 'D', 1, Box(xcont_beg-cont_metall_over, yMet1, xcont_end+cont_metall_over, yMet2), metall_layer_pin)
 
 
-            if typ == 'N' :
-                dbCreateRect(self, ndiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
-            else :
-                dbCreateRect(self, pdiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
+            dbCreateRect(self, pdiff_layer, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec))
         # for i 1 ng
 
         # now finish drawing the diffusion
         xdiff_end = xcont_end+cont_Activ_overRec
-        if typ == 'N' :
-            dbCreateRect(self, ndiff_layer, Box(xdiff_beg, ydiff_beg+diffoffset, xdiff_end, ydiff_end+diffoffset))
-        else :
-            dbCreateRect(self, pdiff_layer,  Box(xdiff_beg, ydiff_beg+diffoffset, xdiff_end, ydiff_end+diffoffset))
-            dbCreateRect(self, pdiffx_layer, Box(xdiff_beg-psd_pActiv_over, ypoly_beg-psd_PFET_over+gatpoly_Activ_over+diffoffset, xdiff_end+psd_pActiv_over, ypoly_end+psd_PFET_over-gatpoly_Activ_over+diffoffset))
-            # draw minimum nWell
-            nwell_offset = max(0, GridFix((contActMin-w)/2+0.5*self.grid))
-            dbCreateRect(self, well_layer, Box(xdiff_beg-nwell_pActiv_over, ydiff_beg-nwell_pActiv_over+diffoffset-nwell_offset, xdiff_end+nwell_pActiv_over, ydiff_end+nwell_pActiv_over+diffoffset+nwell_offset))
+        
+        dbCreateRect(self, pdiff_layer,  Box(xdiff_beg, ydiff_beg+diffoffset, xdiff_end, ydiff_end+diffoffset))
+        dbCreateRect(self, pdiffx_layer, Box(xdiff_beg-psd_pActiv_over, ypoly_beg-psd_PFET_over+gatpoly_Activ_over+diffoffset, xdiff_end+psd_pActiv_over, ypoly_end+psd_PFET_over-gatpoly_Activ_over+diffoffset))
+        
+        # draw minimum nWell
+        nwell_offset = max(0, GridFix((contActMin-w)/2+0.5*self.grid))
+        dbCreateRect(self, well_layer, Box(xdiff_beg-nwell_pActiv_over, ydiff_beg-nwell_pActiv_over+diffoffset-nwell_offset,
+                                           xdiff_end+nwell_pActiv_over, ydiff_end+nwell_pActiv_over+diffoffset+nwell_offset))
 
         # B-Pin
         MkPin(self, 'B', 4, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec), Layer('Substrate', 'drawing'))
 
         # draw Thick Gate Oxide
-        if hv :
-            dbCreateRect(self, Layer('ThickGateOx', 'drawing'), Box(xdiff_beg-thGateOxAct, ydiff_beg-gatpoly_Activ_over-thGateOxGat, xdiff_end+thGateOxAct, ydiff_end+gatpoly_Activ_over+thGateOxGat))
-
+        
+        # first get standard values
+        x1 = xdiff_beg-thGateOxAct
+        x2 = xdiff_end+thGateOxAct
+        y1 = ydiff_beg-gatpoly_Activ_over-thGateOxGat
+        y2 = ydiff_end+gatpoly_Activ_over+thGateOxGat
+        # now check, if NWell is drawn bigger
+        if nwell_pActiv_over > thGateOxAct :
+            x1 = xdiff_beg-nwell_pActiv_over
+            x2 = xdiff_end+nwell_pActiv_over
+        if (nwell_pActiv_over+diffoffset-nwell_offset) > (gatpoly_Activ_over-thGateOxGat) :
+            y1 = ydiff_beg-nwell_pActiv_over+diffoffset-nwell_offset
+            y2 = ydiff_end+nwell_pActiv_over+diffoffset+nwell_offset
+        
+        dbCreateRect(self, tgo_layer, Box(x1, y1, x2, y2))
+        

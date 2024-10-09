@@ -20,14 +20,15 @@ import pya
 import os
 import sys
 
-from cni.dlo import Tech
+from cni.tech import Tech
 from cni.dlo import PCellWrapper
 
 # Creates the SG13_dev technology
 from .sg13_tech import *
 
+from pypreprocessor.pypreprocessor import preprocessor as preProcessor
+
 import pya
-import psutil
 
 import os
 import io
@@ -35,8 +36,10 @@ import sys
 import inspect
 import re
 import importlib
+import importlib.util
 import pathlib
 import tempfile
+import traceback
 
 moduleNames = [
         'nmos_code',
@@ -62,6 +65,60 @@ moduleNames = [
         'dpantenna_code'
 ]
 
+def getProcessNames():
+    processNames = []
+    maxDepth = 10
+
+    if sys.platform.startswith('win'):
+        process = pya.QProcess()
+        powershellCmd = (
+            "Get-CimInstance Win32_Process | "
+            "Select-Object ProcessId, ParentProcessId, Name | "
+            "Format-Table -HideTableHeaders"
+        )
+        process.start("powershell", ["-Command", powershellCmd])
+        process.waitForFinished()
+        output = process.readAllStandardOutput().decode()
+
+        # Parse the output into a list of tuples (pid, ppid, name)
+        processList = []
+        for line in output.splitlines():
+            parts = line.split()
+            if len(parts) >= 3:
+                pid = int(parts[0])
+                ppid = int(parts[1])
+                name = ' '.join(parts[2:])
+                processList.append((pid, ppid, name))
+
+        processDict = {pid: (ppid, name) for pid, ppid, name in processList}
+        currentPid = os.getpid()
+
+        while currentPid in processDict and maxDepth > 0:
+            maxDepth -= 1
+            ppid, name = processDict[currentPid]
+            processNames.append(name.lower())
+            if ppid == currentPid or ppid == 0:
+                break
+            currentPid = ppid
+
+    else:
+        import psutil
+
+        parent = None
+
+        p = psutil.Process()
+        with p.oneshot():
+            processNames.append(p.name().lower())
+            parent = p.parent()
+
+        while parent is not None and maxDepth > 0:
+            maxDepth -= 1
+            with parent.oneshot():
+                processNames.append(parent.name().lower())
+                parent = parent.parent()
+
+    return processNames
+
 
 """
 Support for 'conditional compilation' in a C-style manner of PyCell code:
@@ -82,30 +139,16 @@ The current process chain will be dumped if the environment variable 'IHP_PYCELL
 is set.
 
 The list of names which are used in an #ifdef-statement and are considered as 'defined' will be dumped
-if the environment variable 'IHP_PYCELL_LIB_PRINT_PROCESS_TREE' is set.
+if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
 
 """
-
 class PyCellLib(pya.Library):
     def __init__(self):
         self.description = "IHP SG13G2 Pcells"
 
         tech = Tech.get('SG13_dev')
 
-        processNames = []
-        parent = None
-
-        p = psutil.Process()
-        with p.oneshot():
-            processNames.append(p.name().lower())
-            parent = p.parent()
-
-        maxDepth = 10;
-        while parent is not None and maxDepth > 0:
-            maxDepth -= 1
-            with parent.oneshot():
-                processNames.append(parent.name().lower())
-                parent = parent.parent()
+        processNames = getProcessNames()
 
         if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
             processChain = ''
@@ -131,11 +174,13 @@ class PyCellLib(pya.Library):
 
             try:
                 for line in moduleFile:
-                    match = re.match(r'^#ifdef\s+(\w+)', line)
+                    match = re.match(r'^#ifdef\s+\w+', line)
                     if match:
-                        define = match.group(1)
-                        if define not in defines:
-                            defines.append(define)
+                        splittedLine = line.split()
+                        for i, define in enumerate(splittedLine):
+                            if i % 2 == 1:
+                                if define not in defines:
+                                    defines.append(define)
 
             finally:
                 moduleFile.close()
@@ -161,7 +206,7 @@ class PyCellLib(pya.Library):
             if len(defines) > 0:
                 modulePreProcPath = os.path.join(tempfile.gettempdir(), f"{moduleName}_pre.py")
 
-                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=True)
+                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=False)
                 pyPreProcessor.parse()
 
                 spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
@@ -170,7 +215,11 @@ class PyCellLib(pya.Library):
 
                 try:
                     spec.loader.exec_module(module)
-                except Exception:
+                except:
+                    trace = traceback.format_exc().splitlines()
+                    for line in trace:
+                        print(line.replace(modulePreProcPath, modulePath))
+
                     sys.exit(1)
 
                 os.remove(modulePreProcPath)

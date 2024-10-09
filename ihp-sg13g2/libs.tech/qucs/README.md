@@ -4,7 +4,7 @@
 
 In order to work with Qucs-S run the following script:
 ```
-python3 install.py
+./install.py
 ```
 
 Then run Qucs-S and try out the examples. 
