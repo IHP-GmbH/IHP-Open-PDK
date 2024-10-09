@@ -28,17 +28,17 @@
   <GND * 1 110 950 0 0 0 0>
   <IProbe Pr1 1 180 690 -26 16 0 0>
   <GND * 1 420 950 0 0 0 0>
-  <Lib rppd2 1 580 1060 -110 -196 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "2" 1>
-  <Lib rsil3 1 250 750 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
-  <Lib rppd1 1 580 920 -110 -196 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
-  <Lib rsil2 1 250 890 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
+  <Lib rppd2 1 580 1060 -110 -196 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "2" 1>
+  <Lib rsil3 1 250 750 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
+  <Lib rppd1 1 580 920 -110 -196 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
+  <Lib rsil2 1 250 890 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
   <GND * 1 610 950 0 0 0 0>
-  <Lib rhigh1 1 610 760 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
-  <Lib rhigh2 1 610 890 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "50u" 1 "1" 1>
-  <Lib ntap1 1 890 880 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ntap1" 0>
+  <Lib rhigh1 1 610 760 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
+  <Lib rhigh2 1 610 890 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "50u" 1 "1" 1>
+  <Lib ntap1 1 890 880 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "ntap1" 0>
   <GND * 1 890 920 0 0 0 0>
   <GND * 1 790 920 0 0 0 0>
-  <Lib ptap1 1 1120 880 50 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0>
+  <Lib ptap1 1 1120 880 50 -26 0 0 "<userhome>/<qucs_workspace>/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0>
   <GND * 1 1120 920 0 0 0 0>
   <GND * 1 1040 920 0 0 0 0>
   <Idc I1 1 790 890 18 -26 0 1 "1 mA" 1>
