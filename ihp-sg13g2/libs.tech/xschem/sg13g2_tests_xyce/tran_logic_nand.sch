@@ -141,8 +141,6 @@ N 180 -290 230 -290 {
 lab=#net1}
 N 100 -140 100 -90 {
 lab=out}
-N 240 -130 260 -130 {
-lab=in}
 C {devices/gnd.sym} 100 130 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -170 130 0 0 {name=l2 lab=GND}
 C {devices/vsource.sym} -170 90 0 0 {name=VinA value="dc 0 ac 0 pulse(0 1.2 2n 100p 100p 4n 6n ) "}
@@ -192,7 +190,6 @@ C {devices/gnd.sym} 200 40 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} -270 50 0 0 {name=l7 lab=GND}
 C {devices/vsource.sym} -270 10 0 0 {name=VinB value="dc 0 ac 0 pulse(0 1.2 0 100p 100p 2n 4n ) "}
 C {devices/lab_pin.sym} -290 -40 0 0 {name=p3 sig_type=std_logic lab=B}
-C {devices/lab_pin.sym} 240 -130 0 0 {name=p4 sig_type=std_logic lab=in}
 C {simulator_commands_shown.sym} -820 -850 0 0 {name=Simulator
 simulator=xyce
 only_toplevel=false 
