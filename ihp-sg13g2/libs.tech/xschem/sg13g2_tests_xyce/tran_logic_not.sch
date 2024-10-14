@@ -41,7 +41,7 @@ lab=#net1}
 N 620 20 620 40 {
 lab=out}
 N 620 -130 620 -60 {
-lab=#net2}
+lab=#net1}
 N 670 -130 880 -130 {
 lab=#net1}
 N 880 -130 880 40 {
@@ -62,12 +62,12 @@ N 320 20 340 20 {
 lab=in}
 N 340 20 550 20 {
 lab=in}
-N 640 0 690 0 {
-lab=#net3}
 N 550 -30 550 20 {
 lab=in}
 N 620 0 620 20 {
 lab=out}
+N 620 -130 670 -130 {
+lab=#net1}
 C {devices/gnd.sym} 620 160 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} 340 160 0 0 {name=l2 lab=GND}
 C {devices/vsource.sym} 340 110 0 0 {name=Vin value="pulse(0.0 1.2 0.0 100p 100p 2n 4n)"}
