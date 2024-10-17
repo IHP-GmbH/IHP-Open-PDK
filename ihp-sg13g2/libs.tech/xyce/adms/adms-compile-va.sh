@@ -5,7 +5,7 @@
 # License: New BSD
 
 
-cd ./adms/psp103/
+cd ./psp103/
 buildxyceplugin psp103.va ../../plugins
 rm *.la *.log
 rm -rfd .libs/
