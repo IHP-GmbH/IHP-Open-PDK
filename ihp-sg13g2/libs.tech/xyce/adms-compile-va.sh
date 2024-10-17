@@ -6,7 +6,7 @@
 
 
 cd ./adms/psp103/
-buildxyceplugin psp103_nqs.va ../../plugins
+buildxyceplugin psp103.va ../../plugins
 rm *.la *.log
 rm -rfd .libs/
 cd ..

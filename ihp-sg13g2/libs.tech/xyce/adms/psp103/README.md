@@ -1,9 +1,8 @@
-# Compilation and installation of the psp_103 model for ngspice
+# Compilation and installation of the psp_103 model for XYCE
 
-
-First download from [here](https://openvaf.semimod.de/download/) and install (copy) the binary `openvaf` into  `/usr/local/bin/` directory and then execute the following:
 
 ```
-openvaf psp103_nqs.va
-mv psp103_nqs.osdi ../../xschem/simulations/
+buildxyceplugin psp103.va .
+cp Xyce_Plugin_PSP103_VA.so ../xschem/simulations/
+mv Xyce_Plugin_PSP103_VA.so ../xschem/examples/
 ```

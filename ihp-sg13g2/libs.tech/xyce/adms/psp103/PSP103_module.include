@@ -128,7 +128,7 @@ electrical BD;
 `IPRcz(SCB            ,0.0        ,""                                   ,"Integral of the second distribution function for scattered well dopants")
 `IPRcz(SCC            ,0.0        ,""                                   ,"Integral of the third distribution function for scattered well dopants")
 `IPRnb(SC             ,0.0        ,"m"                                  ,"Distance between OD-edge and nearest well edge")
-`IPRco(NF             ,1.0        ,""         ,1.0         ,inf         ,"Number of fingers")
+`IPIco(NF             ,1          ,""         ,1           ,inf         ,"Number of fingers")
 `IPRcc(NGCON          ,1.0        ,""         ,1.0         ,2.0         ,"Number of gate contacts")
 `IPRnb(XGW            ,1.0e-7     ,"m"                                  ,"Distance from the gate contact to the channel edge")
 `IPRnb(NRS            ,0.0        ,""                                   ,"Number of squares of source diffusion")
@@ -1159,6 +1159,7 @@ analog begin
         // Declaration of local variables
         real Invsa, Invsb, Invsaref, Invsbref, Kstressu0, rhobeta, rhobetaref, Kstressvth0;
         real temp0, temp00, templ, tempw, Lx, Wx, loop, tmpa, tmpb;
+        real z1, z2, wmin, NF_r;
 
         // Instance variables
         NF_i        =  1.0;
@@ -1178,15 +1179,19 @@ analog begin
         ABDRAIN_i   =  ABDRAIN;
         LSDRAIN_i   =  LSDRAIN;
         LGDRAIN_i   =  LGDRAIN;
+`ifdef __XYCE__
+        `PSP103geoUpdate(AS, AD, PS, PD, NF, AS_i, AD_i, PS_i, PD_i)
+`else
         AS_i        =  AS;
         PS_i        =  PS;
         AD_i        =  AD;
         PD_i        =  PD;
+`endif
         JW_i        =  JW;
 
         // Clipping of the instance parameters
         if ((SWGEO_i == 1) || (SWGEO_i == 2)) begin
-            NF_i        = `CLIP_LOW(NF, 1.0);
+            NF_i        = `CLIP_LOW(NF, 1);
             NF_i        =  floor(NF_i + 0.5); // round to nearest integer
             invNF       =  1.0 / NF_i;
         end

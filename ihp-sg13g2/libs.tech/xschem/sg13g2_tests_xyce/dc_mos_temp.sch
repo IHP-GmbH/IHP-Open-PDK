@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 150 -520 950 -120 {flags=graph
 y1=-2e-05
-y2=9.5e-05
+y2=9.2e-05
 ypos1=0
 ypos2=2
 
@@ -102,22 +102,6 @@ N 390 110 420 110 {
 lab=Vgsp}
 N 390 -100 400 -100 {
 lab=Vdsp}
-C {devices/code_shown.sym} -330 -530 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib cornerMOSlv.lib mos_tt
-.lib cornerMOShv.lib mos_tt
-"}
-C {devices/code_shown.sym} -320 -410 0 0 {name=NGSPICE only_toplevel=true 
-value="
-.param temp=27
-.control
-save all
-dc temp -40 125 1
-write mos_temp.raw
-wrdata mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
-.endc
-"}
 C {devices/gnd.sym} -20 200 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -280 200 0 0 {name=l2 lab=GND}
 C {devices/vsource.sym} -280 150 0 0 {name=Vgs value=0.75}
@@ -125,7 +109,7 @@ C {devices/vsource.sym} -280 -30 0 0 {name=Vds value=1.2}
 C {devices/gnd.sym} -280 60 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 30 200 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -220 -150 0 0 {name=h5
+C {devices/launcher.sym} -170 -320 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
@@ -187,3 +171,78 @@ C {devices/vsource.sym} 390 -30 0 0 {name=Vds2 value=-1.5}
 C {devices/gnd.sym} 390 60 0 0 {name=l13 lab=GND}
 C {devices/lab_pin.sym} 420 110 2 0 {name=p11 sig_type=std_logic lab=Vgsp}
 C {devices/lab_pin.sym} 400 -100 2 0 {name=p12 sig_type=std_logic lab=Vdsp}
+C {simulator_commands_shown.sym} 260 -830 0 0 {name=Simulator1
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.dc  temp -40 125 1
+.print dc format=raw file=mos_temp.raw i(Vm1) i(Vm2) i(Vm3) i(Vm4)
+"
+"}
+C {launcher.sym} 350 -640 0 0 {name=h2
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 190 -970 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
+)"}
+C {simulator_commands_shown.sym} -260 -970 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
+"}
+C {launcher.sym} -180 -640 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -260 -840 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+save all
+dc temp -40 125 1
+write mos_temp.raw
+wrdata mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
+.endc
+"}

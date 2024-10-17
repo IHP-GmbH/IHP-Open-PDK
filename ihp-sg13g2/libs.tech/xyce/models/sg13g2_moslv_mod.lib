@@ -71,56 +71,19 @@
 * include the model parameters
 .include sg13g2_moslv_parm.lib
 
-*.if (as <= 1e-50)
-*    .if (floor(floor(ng/2+0.501)*2+0.001) != ng)
-YPSPNQS103_VA M1 d g s b sg13g2_lv_nmos_psp w='w/ng' l=l mult='ng*m'
-+ as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'
-+ ad='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'
-+ ps='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'
-+ pd='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'
+YPSP103_VA M1 d g s b sg13g2_lv_nmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult='ng*m'
 + dta=trise
 + ngcon=2
-*    .else
-*        YPSPNQS103_VA M1 d g s b sg13g2_lv_nmos_psp w='w/ng' l=l mult='ng*m'
-*          + as='max(w/ng,wmin)*(2*z1+max(0,(ng-2)/2)*z2)/ng'
-*          + ad='max(w/ng,wmin)*z2/2'
-*          + ps='2*(max(w/ng,wmin)*(2+max(ng-2,0)/2)+2*z1+max(ng-2,0)/2*z2)/ng'
-*          + pd='max(w/ng,wmin)+z2'
-*          + dta=trise
-*          + ngcon=2
-*    .endif
-*.else
-*    YPSPNQS103_VA M1 d g s b sg13g2_lv_nmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult='ng*m'
-*      + dta=trise
-*      + ngcon=2
-*.endif
 .ends
+
 
 .subckt sg13_lv_pmos d g s b
 + w=0.35u l=0.28u ng=1 m=1 as=0 ad=0 pd=0 ps=0 trise=0 z1=0.34e-6 z2=0.38e-6 wmin=0.15e-6 rfmode=0 pre_layout=1
 
+* include the model parameters
 .include sg13g2_moslv_parm.lib
-*.if (as <= 1e-50)
-*    .if (floor(floor(ng/2+0.501)*2+0.001) != ng)
-YPSPNQS103_VA M1 d g s b sg13g2_lv_pmos_psp w='w/ng' l=l mult='ng*m'
-+ as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'
-+ ad='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)/ng'
-+ ps='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'
-+ pd='2*(max(w/ng,wmin)*((ng-1)/2+1)+z1+(ng-1)/2*z2)/ng'
+
+YPSP103_VA M1 d g s b sg13g2_lv_pmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult='ng*m'
 + dta=trise
 + ngcon=2
-*    .else
-*        YPSPNQS103_VA M1 d g s b sg13g2_lv_pmos_psp w='w/ng' l=l mult='ng*m'
-*          + as='max(w/ng,wmin)*(2*z1+max(0,(ng-2)/2)*z2)/ng'
-*          + ad='max(w/ng,wmin)*z2/2'
-*          + ps='2*(max(w/ng,wmin)*(2+max(ng-2,0)/2)+2*z1+max(ng-2,0)/2*z2)/ng'
-*          + pd='max(w/ng,wmin)+z2'
-*          + dta=trise
-*          + ngcon=2
-*    .endif
-*.else
-*    YPSPNQS103_VA M1 d g s b sg13g2_lv_pmos_psp w='w/ng' l=l as='as/ng' ad='ad/ng' pd='pd/ng' ps='ps/ng' mult='ng*m'
-*      + dta=trise
-*      + ngcon=2
-*.endif
 .ends

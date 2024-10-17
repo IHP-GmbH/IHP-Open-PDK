@@ -72,8 +72,8 @@ only_toplevel=false
 value="
 .preprocess replaceground true
 .option temp=27
-.step  vgs 0.0 0.8 0.05
-.dc vds 0 1.2 0.01
+.step  vgs 0.3 1.5 0.05
+.dc vds 0 3.0 0.01
 .print dc format=raw file=dc_hv_nmos.raw i(Vd)
 "
 "}
@@ -87,7 +87,7 @@ set_sim_defaults
 # Change the Xyce command. In the spice category there are currently
 # 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
 # you can get the number by querying $sim(spice,n)
-set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSPNQS103_VA.so \\"$N\\"\}
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
 
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3
