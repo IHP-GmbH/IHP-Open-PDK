@@ -148,10 +148,12 @@ class PyCellLib(pya.Library):
 
         tech = Tech.get('SG13_dev')
 
+        processNames = getProcessNames()
+
         if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
             processChain = ''
             isFirst = True
-            for processName in reversed(getProcessNames()):
+            for processName in reversed(processNames):
                 if not isFirst:
                     processChain += ' <- '
                 processChain += "'" + processName + "'"
