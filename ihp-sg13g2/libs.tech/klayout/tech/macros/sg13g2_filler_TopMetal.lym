@@ -111,15 +111,28 @@
 	LBE = source.input("157/0")
 	NoMetFiller = source.input("160/0")
 
+
 	# Paramter
 	width = 5.0
 	height = 10.0
 	distance = 3.0
 
+	if $fill_cell_width
+		width = $fill_cell_width
+	end
+
+	if $fill_cell_height
+		height = $fill_cell_height
+	end
+
+	if $fill_cell_distance
+		distance = $fill_cell_distance
+	end
+
 	# Create filler cell
 	pattern_tm1 = fill_pattern("TM1_FILL_CELL").shape(126, 22, box(0.0, 0.0, width, height))
 	pattern_tm2 = fill_pattern("TM2_FILL_CELL").shape(134, 22, box(0.0, 0.0, width, height))
-	 
+
 	# Define noFill exclusion layer
 	TM1Fil_c = TopMetal1.dup
 	TM1Fil_c.size(3.0, 3.0, "square_limit")
