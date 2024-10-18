@@ -1,0 +1,20 @@
+VBIC AC gain Test h21 = f(Ic) Vce=1V
+
+vce 1 0 dc 1.0
+vgain 1 c dc 0.0
+f 0 2 vgain -2
+l 2 b 1g
+c 2 0 1g
+ib 0 b dc 0.0 ac 1.0
+ic 0 c 0.01
+XQ1 C B 0 S t npn13G2 nx=4
+
+.step dec ic 50u 5m 4
+*.op
+.ac dec 10 100Meg 1000g
+.print ac format=gnuplot idb(vgain)
+.measure ac FT when idb(vgain)=0
+
+.lib ../models/cornerHBT.lib hbt_typ
+
+.end

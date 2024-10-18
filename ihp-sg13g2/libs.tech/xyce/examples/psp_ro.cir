@@ -1,0 +1,33 @@
+* PSP models
+* simple 5-stage ring oscillator
+
+* Path to the models
+.lib ../models/cornerMOSlv.lib mos_tt
+
+* the voltage sources: 
+Vdd vdd 0 DC 1.2
+*V1 in 0 pulse(0 1.2 0p 200p 100p 1n 20n)
+Vmeas vss 0 0
+
+Xnot1 in vdd vss in2 not1
+Xnot2 in2 vdd vss in3 not1
+Xnot3 in3 vdd vss in4 not1
+Xnot4 in4 vdd vss in5 not1
+Xnot5 in5 vdd vss in not1
+
+*Rout out 0 1k
+
+.subckt not1 a vdd vss z
+xm01   z a     vdd     vdd sg13_lv_pmos  l=0.13u  w=1u  as=0.26235p  ad=0.26235p  ps=2.51u   pd=2.51u
+xm02   z a     vss     vss sg13_lv_nmos  l=0.13u  w=0.5u as=0.131175p ad=0.131175p ps=1.52u   pd=1.52u
+c3  a     vss   0.384f
+c2  z     vss   0.576f
+.ends
+
+.ic v(in5)=1.2
+* simulation command: 
+.tran 1p 2n uic
+
+.print tran v(in) 
+
+.end

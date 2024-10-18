@@ -1,0 +1,125 @@
+//======================================================================================
+//======================================================================================
+// Filename: PSP103_nqs_macrodefs.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+//  2004-2011 Arizona State University Licensed under the Educational Community License,
+//  Version 2.0 (the "License"); you may not use this file except in compliance with the
+//  License. You may obtain a copy of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+//////////////////////////////////////////
+//
+// Macros used in PSP-NQS
+//
+//////////////////////////////////////////
+
+// Function to calculate bulk charge from surface potential
+`define PhiToQb(phi,Qb_tmp) \
+if (abs(phi) <= margin_ac) \
+        Qb_tmp     = -0.70710678 * phi * Gf_ac * (1.0 - `oneSixth * phi * (1.0 - `oneSixth * phi)); \
+else begin \
+        `expl((-phi), temp) \
+        Qb_tmp     =  Gf_ac * sqrt(temp + phi - 1.0); \
+        if (phi > margin_ac) \
+                Qb_tmp     = -Qb_tmp; \
+end
+
+// Function used in fq-macro
+`define PhiTod2Qis(xphi,d2Qis) \
+if (abs(xphi) <= margin_ac) begin \
+        Qb_tmp     = -0.70710678 * xphi * Gf_ac * (1.0 - `oneSixth * xphi * (1.0 - `oneSixth * xphi)); \
+        dQbs       = -0.70710678 * Gf_ac * (1.0 - `oneThird * xphi * (1.0 - 0.25 * xphi)); \
+        d2Qis      = -0.235702 * Gf_ac * (1.0 - 0.5 * xphi); \
+end else begin \
+        `expl((-xphi),temp) \
+        Qb_tmp     =  Gf_ac * sqrt(temp + xphi - 1.0); \
+        if (xphi > margin_ac) \
+                Qb_tmp     = -Qb_tmp; \
+        dQbs       =  0.5 * Gf_ac * Gf_ac * (1.0 - temp) / Qb_tmp; \
+        d2Qis      = (dQbs * dQbs - 0.5 * Gf_ac * Gf_ac) / Qb_tmp + dQbs; \
+end
+
+
+// Function used in QiToPhi
+`define sps(sp, xg) \
+if (abs(xg) <= marginp) begin \
+        sp         = xg / a_factrp; \
+end else begin \
+        if (xg < -marginp) begin \
+                NQS_yg     =  -xg; \
+                NQS_z      =  1.25 * NQS_yg / a_factrp; \
+                NQS_eta    =  (NQS_z + 10.0 - sqrt((NQS_z - 6.0) * (NQS_z - 6.0) + 64.0)) * 0.5; \
+                NQS_a      =  (NQS_yg - NQS_eta) * (NQS_yg - NQS_eta) + Gp2 * (NQS_eta + 1.0); \
+                NQS_c      =  2.0 * (NQS_yg - NQS_eta) - Gp2; \
+                NQS_tau    =  ln(NQS_a / Gp2) - NQS_eta; \
+                `sigma(NQS_a, NQS_c, NQS_tau, NQS_eta, NQS_y0) \
+                `expl(NQS_y0, NQS_D0) \
+                NQS_xi     =  1.0 - Gp2 * NQS_D0 * 0.5;  \
+                NQS_p      =  2.0 * (NQS_yg - NQS_y0) + Gp2 * (NQS_D0 - 1.0); \
+                NQS_q      =  (NQS_yg - NQS_y0) * (NQS_yg - NQS_y0) + Gp2 * (NQS_y0 + 1.0 - NQS_D0); \
+                NQS_temp   =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
+                NQS_w      =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
+                sp         =  -(NQS_y0 + NQS_w); \
+        end else begin \
+                NQS_xg1    =  1.0 / ( 1.25 + 7.32464877560822e-01 * Gp); \
+                NQS_A_fac  =  (1.25 * a_factrp * NQS_xg1 - 1.0) * NQS_xg1; \
+                NQS_xbar   =  xg / a_factrp * (1.0 + NQS_A_fac * xg); \
+                `expl(-NQS_xbar, NQS_temp)   \
+                NQS_w      =  1.0 - NQS_temp; \
+                NQS_x0     =  xg + Gp2 * 0.5 - Gp * sqrt(xg + Gp2 * 0.25 - NQS_w); \
+                `expl((-NQS_x0), NQS_D0) \
+                NQS_xi     =  1.0 - Gp2 * 0.5 * NQS_D0; \
+                NQS_p      =  2.0 * (xg - NQS_x0) + Gp2 * (1.0 - NQS_D0); \
+                NQS_q      =  (xg - NQS_x0) * (xg - NQS_x0) - Gp2 * (NQS_x0 - 1.0 + NQS_D0); \
+                NQS_temp   =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
+                NQS_u      =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
+                sp         =  NQS_x0 + NQS_u; \
+        end \
+end
+
+
+// Function to calculate surface potential from inversion charge
+`define QiToPhi(Qi,xg,xphi) \
+        temp       =  Qi / pd + xg; \
+        `sps(xphi,temp)
+
+// Calculation of fk
+`define fq(Qi,xg,dQy,d2Qy,fk) \
+        `QiToPhi(Qi, xg, xphi) \
+        `PhiTod2Qis(xphi, d2Qis) \
+        dQis       =  pd - dQbs; \
+        dQis_1     =  1.0 / dQis; \
+        fQi        =  Qi * dQis_1 - 1.0; \
+        dfQi       =  (1.0 - Qi * d2Qis * dQis_1 * dQis_1) * dQis_1; \
+        fk0        =  dfQi * dQy * dQy + fQi * d2Qy; \
+        dpsy2      =  dQy * dQy * dQis_1 * dQis_1; \
+        zsat_nqs   =  thesat2 * dpsy2; \
+        if (CHNL_TYPE == `PMOS) \
+                zsat_nqs   =  zsat_nqs / (1.0 + thesat1_ac * dps_ac); \
+        temp       =  sqrt(1.0 + 2.0 * zsat_nqs); \
+        Fvsat      =  2.0 / (1.0 + temp); \
+        temp1      =  d2Qy - dpsy2 * d2Qis; \
+        fk         =  Fvsat * (fk0 - zsat_nqs * fQi * temp1 * Fvsat / temp);
+
+// Interpolation of surface potential along channel
+`define Phiy(y) \
+        x_m_ac + H_ac * (1.0 - sqrt(1.0 - 2.0 * dps_ac / H_ac * ((y) - ym))) * inv_phit1

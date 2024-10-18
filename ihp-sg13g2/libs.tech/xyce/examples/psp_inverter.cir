@@ -1,0 +1,29 @@
+* PSP models
+* simple inverter
+
+* Path to the models
+.lib ../models/cornerMOSlv.lib mos_tt
+
+* the voltage sources: 
+Vdd vdd 0 DC 1.2
+V1 in 0 pulse(0 1.2 0p 200p 100p 1n 2n)
+Vmeas vss 0 0
+
+Xnot1 in vdd vss out not1
+Rout out 0 10k
+
+.subckt not1 a vdd vss z
+xm01   z a     vdd     vdd sg13_lv_pmos  l=0.13u  w=1u  as=0.26235p  ad=0.26235p  ps=2.51u   pd=2.51u
+xm02   z a     vss     vss sg13_lv_nmos  l=0.13u  w=0.5u as=0.131175p ad=0.131175p ps=1.52u   pd=1.52u
+c3  a     vss   0.384f
+c2  z     vss   0.576f
+.ends
+
+* simulation command: 
+.tran 10ps 10ns
+*.dc V1 0 'vcc' 'vcc/100'
+.print tran format=gnuplot v(in) v(out)
+*plot dc1.out
+*plot dc1.i(Vmeas)
+
+.end

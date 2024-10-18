@@ -1,0 +1,82 @@
+*******************************************************************************
+* pnpMPA section
+*******************************************************************************
+* 16.03.15 A.R.: update
+* 20.12.22 GGF update
+
+*simulator lang=spectre
+
+* SPECTRE-Parameter pnpMPA
+*--------------------------------------------------
+* Testfield: T323
+* Technology: SG13
+* Lot: PQA701
+* Wafer: 17
+* DUT: diode_pp=pnpMPA
+* Temperature range: -40C ... +125C
+* Date: Q4/22
+* Remarks:
+* DC Measurements at T=27C, T=-40C and T=125C (2013), 2022 only T=27C
+* CV Measurements at T=27C
+*
+*--------------------------------------------------------------------------
+*
+parameters isc0 = 2.576e-023  ikr0 = 3.882e-007  rc0 = 1.489e+004  
++ is_0 =  3.8e-019
++ bf_0 = 1.659
++ cje_0 = 8.716e-016
++ ccb0 = 76.28e-018
++ re_0 = 20
++ rb0 = 24.86
++ sgp_mpa_is =1
++ sgp_mpa_bf =1
++ sgp_mpa_cje =1
++ sgp_mpa_cjc =1
++ sgp_mpa_re =1
++ sgp_mpa_rb =1
+
+
+inline subckt pnpMPA E B C
+parameters a=204f p=1.96u ac=5.98p pc=9.8u DEV_A=a*1e12 DEV_P=p*1e6 sub_A=ac*1e12 sub_P=pc*1e6
+*
+pnpMPA (C B E C) pnpMPA_mod area = DEV_A
+model pnpMPA_mod bjt
++ type = pnp
++ tnom = 27
++ is = is_0*sgp_mpa_is
++ nf = 1.015
++ ise = 1e-022
++ ne = 1
++ bf = bf_0*sgp_mpa_bf
++ ikf = 0.0004695
++ vaf = 100
++ nr = 1
++ isc = (isc0*(sub_A))/(DEV_A)
++ nc = 1
++ br = 5.781e-005
++ ikr = (ikr0*(sub_A))/(DEV_A)
++ var = 150
++ rb = rb0*sgp_mpa_rb
++ irb = 1e-015
++ rbm = 0.9*rb0
++ re = re_0*sgp_mpa_re
++ rc = (rc0/(sub_A))*(DEV_A)
++ cje = cje_0*sgp_mpa_cje
++ vje = 0.61
++ mje = 0.3213
++ cjc = ccb0*(sub_A/DEV_A)*sgp_mpa_cjc
++ vjc = 0.5111
++ mjc = 0.455
++ cjs = 0
++ vjs = 0.95
++ mjs = 0.5
++ xtb = 2.44
++ xti = 2.538
++ eg = 1.17
++ trm1 = 0.001
++ trm2 = 0
++ trc1 = -0.01121
++ trc2 = 3.02E-005
++ tre1 = 0
++ tre2 = 0
+ends pnpMPA

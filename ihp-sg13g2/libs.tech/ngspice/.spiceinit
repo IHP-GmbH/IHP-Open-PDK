@@ -1,0 +1,29 @@
+*  a custom spiceinit file for IHP-Open-PDK 
+
+* export PDK_ROOT and PDK environmental variables first and add it to your .bashrc
+* export PDK_ROOT= installation_specific_directory/IHP-Open-PDK
+* export PDK=ihp-sg13g2 
+
+setcs sourcepath = (  $sourcepath $PDK_ROOT/$PDK/libs.tech/ngspice/models $PDK_ROOT/ihp-sg13g2/libs.ref/sg13g2_stdcell/spice )
+*echo $sourcepath
+
+*option tnom=28
+*option list
+
+* KLU solver still do not work correctly for every simulation
+*option klu
+
+*option node
+*option opts
+*option warn=1
+*option maxwarns=10
+
+* this option produces error in the AC/SP simulation
+*option savecurrents
+
+set ngbehavior=hsa
+*set noinit
+
+* add OSDI 
+osdi  '$PDK_ROOT/$PDK/libs.tech/ngspice/openvaf/psp103_nqs.osdi'
+

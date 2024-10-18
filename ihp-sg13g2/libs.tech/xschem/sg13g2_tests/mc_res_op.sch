@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -91,8 +91,8 @@ C {devices/gnd.sym} 760 100 0 0 {name=l2 lab=GND}
 C {devices/ammeter.sym} 760 -30 0 0 {name=Vppd}
 C {devices/gnd.sym} 940 100 0 0 {name=l4 lab=GND}
 C {sg13g2_pr/rhigh.sym} 940 50 0 0 {name=R3
-W=1.0e-6
-L=1.0e-6
+w=1.0e-6
+l=1.0e-6
 model=rhigh
 spiceprefix=X
 m=1
@@ -101,8 +101,8 @@ Imax=0.11e-4
 }
 C {devices/ammeter.sym} 940 -30 0 0 {name=Vrh}
 C {sg13g2_pr/rsil.sym} 610 50 0 0 {name=R1
-W=0.5e-6
-L=0.5e-5
+w=0.5e-6
+l=0.5e-5
 model=rsil
 spiceprefix=X
 m=1
@@ -110,8 +110,8 @@ R=7.0
 Imax=0.3e-6
 }
 C {sg13g2_pr/rppd.sym} 760 50 0 0 {name=R2
-W=0.5e-6
-L=0.5e-6
+w=0.5e-6
+l=0.5e-6
 model=rppd
 spiceprefix=X
 m=1

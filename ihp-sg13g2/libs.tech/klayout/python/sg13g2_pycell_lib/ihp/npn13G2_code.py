@@ -42,7 +42,7 @@ class npn13G2(DloGen):
         specs('le', '0.9u', "Emitter Length")
         specs('we', '0.07u', "Emitter Width")
         specs('STI', '0.44u', 'STI')
-        specs('baspolyx', '0.30u', 'baspolyx')
+        specs('baspolyx', '0.3u', 'baspolyx')
         specs('bipwinx', '0.07u', 'bipwinx')
         specs('bipwiny', '0.1u', 'bipwiny')
         specs('empolyx', '0.15u', 'empolyx')
@@ -52,7 +52,7 @@ class npn13G2(DloGen):
         specs('Iarea', '3m', 'Ic,max/squm@Uce=2V')
         specs('area', '1', 'Area Factor')
         specs('bn', 'sub!', 'Bulk node connection')
-        specs('Vbe', '', 'Base-emitter voltag')
+        specs('Vbe', '', 'Base-emitter voltage')
         specs('Vce', '', 'Collector-emitter voltage')
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
@@ -96,37 +96,38 @@ class npn13G2(DloGen):
         le = Numeric(le)*1e6
         we = Numeric(we)*1e6
 
-        a = le
+        tmp = le
         le = we
-        we = a
+        we = tmp
+        
         ActivShift = 0.01
         ActivShift = 0.0
-        PWellBlockShift = -0.01
+        
+        # for multiplied npn: le has to be bigger
         stepX = 1.85
         stretchX = stepX*(Nx-1)
         bipwinyoffset = (2 * (bipwiny - 0.1) - 0) / 2
         empolyyoffset = (2 * (empolyy - 0.18)) / 2
 
-        if le <  0.5 :
-            leoffset = 0
-        else :
-            leoffset = 0
-
+        leoffset = 0 # ((le - 0.07) / 2)
+        
         name = self.masterLib + '/' + self.masterCell +'/' + self.masterView
+        # Draw inner part as a subCell
         if Dlo.exists(name) :
             pcMaster = Instance(name)
             params = pcMaster.getParams()
-            params['le'] = self.le
+            params['le'] = self.we
             params['Nx'] = self.Nx
-            params['we'] = self.we
+            params['we'] = self.le
             pcMaster.setParams(params)
             pcMaster.setOrientation(strToOrient(self.masterOrient))
             pcMaster.setOrigin(Point(0, 0))
         else :
             print('(OA) Design "' + name + '" was not found')
 
-        pcLayer = 'TRANS'
         pcPurpose = 'drawing'
+        
+        pcLayer = 'TRANS'
         dbCreatePolygon(self, Layer(pcLayer, pcPurpose), PointList([Point(stretchX+2.45, (2.43 + we/2 + leoffset + bipwinyoffset + empolyyoffset)),
                                                                     Point(-2.45, (2.43 + we/2 + leoffset + bipwinyoffset + empolyyoffset)),
                                                                     Point(-2.45, (-1.98 - we/2 - leoffset - bipwinyoffset - empolyyoffset)),
@@ -162,7 +163,7 @@ class npn13G2(DloGen):
         MkPin(self, 'E', 3, Box(-0.71-le/2, (0.32+we/2+leoffset+bipwinyoffset+empolyyoffset), stretchX+0.71+le/2, (-0.335-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal2', 'pin'))
 
         pcLayer = 'TEXT'
-        pcLabelText = 'Ae={Ae}um2'.format(Ae=Nx*Ny*le*we)
+        pcLabelText = 'Ae={0:d}*{1:d}*{2:.2f}*{3:.2f}'.format(int(Nx), int(Ny), le, we)
         pcLabelHeight = 0.35
         pcInst = dbCreateLabel(self, Layer(pcLayer, pcPurpose), Point(-1.977, -2.546), pcLabelText, 'lowerLeft', 'R90', Font.EURO_STYLE, pcLabelHeight)
         #setSGq(pcInst, "normalLabel", labelType)

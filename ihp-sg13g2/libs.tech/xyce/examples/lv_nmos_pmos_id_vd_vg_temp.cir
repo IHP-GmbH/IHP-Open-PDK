@@ -1,0 +1,40 @@
+***  NMOS and PMOS transistors PSP 103.8 (Id-Vgs, Vbs) (Id-Vds, Vgs) (Id-Vgs, T)  ***
+
+X1  d g s b sg13_lv_nmos w=1u l=0.13u mult=1
+
+vgsn 1 0 3.5
+vdsn 2 0 0.1
+vssn 3 0 0
+vbsn 4 0 0
+
+X1  d g s b sg13_lv_pmos w=1u l=0.13u mult=1
+
+vgsp 11 0 -3.5
+vdsp 22 0 -0.1
+vssp 33 0 0
+vbsp 44 0 0
+
+* PSP modelparameters for PSP 103.3
+.lib ../models/cornerMOSlv.lib mos_tt
+
+* NMOS
+.dc vgsn 0 1.5 0.05 vbsn 0 -1.5 -0.3
+.print dc format=gnuplot vssn#branch ylabel 'Id vs. Vgs, Vbs 0 ... -1.5'
+.print dc format=gnuplot abs(vssn#branch) ylog ylabel 'Id vs. Vgs, Vbs 0 ... -1.5'
+*.dc vdsn 0 1.6 0.01 vgsn 0 1.6 0.2
+*.print dc format=gnuplot vssn#branch ylabel 'Id vs. Vds, Vgs 0 ... 1.6'
+*.dc vgsn 0 1.5 0.05 temp -40 160 40
+*.print dc format=gnuplot vssn#branch ylabel 'Id vs. Vds, Temp. -40 ... 160'
+*.print dc format=gnuplot abs(vssn#branch) ylog ylabel 'Id vs. Vds, Temp. -40 ... 160'
+
+* PMOS
+.dc vgsp 0 -1.5 -0.05 vbsp 0 1.5 0.3
+.print dc format=gnuplot vssp#branch ylabel 'Id vs. Vgs, Vbs 0 ... 1.5'
+.print dc format=gnuplot abs(vssp#branch) ylog ylabel 'Id vs. Vgs, Vbs 0 ... 1.5'
+*.dc vdsp 0 -1.6 -0.01 vgsp 0 -1.6 -0.2
+*.print dc format=gnuplot vssp#branch ylabel 'Id vs. Vds, Vgs 0 ... -1.6'
+*.dc vgsp 0 -1.5 -0.05 temp -40 160 40
+*.print dc format=gnuplot vssp#branch ylabel 'Id vs. Vds, Temp. -40 ... 160'
+*.print dc format=gnuplot abs(vssp#branch) ylog ylabel 'Id vs. Vds, Temp. -40 ... 160'
+
+.end

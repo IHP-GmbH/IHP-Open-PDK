@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -105,16 +105,14 @@ lab=Vdsp}
 C {devices/code_shown.sym} -330 -530 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} -320 -410 0 0 {name=NGSPICE only_toplevel=true 
 value="
-.savecurrents
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
-save all 
+save all
 dc temp -40 125 1
 write mos_temp.raw
 wrdata mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
@@ -123,7 +121,7 @@ wrdata mos_temp.csv I(Vm1) I(Vm2) I(Vm3) I(Vm4)
 C {devices/gnd.sym} -20 200 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -280 200 0 0 {name=l2 lab=GND}
 C {devices/vsource.sym} -280 150 0 0 {name=Vgs value=0.75}
-C {devices/vsource.sym} -280 -30 0 0 {name=Vds value=1.5}
+C {devices/vsource.sym} -280 -30 0 0 {name=Vds value=1.2}
 C {devices/gnd.sym} -280 60 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 30 200 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
@@ -132,8 +130,8 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -40 110 2 1 {name=M1
-L=0.35u
-W=1.0u
+l=0.35u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
@@ -150,8 +148,8 @@ C {devices/lab_pin.sym} 80 110 0 0 {name=p5 sig_type=std_logic lab=Vgs}
 C {devices/ammeter.sym} 190 30 0 0 {name=Vm2}
 C {devices/lab_pin.sym} 190 -20 2 0 {name=p6 sig_type=std_logic lab=Vds}
 C {sg13g2_pr/sg13_hv_nmos.sym} 170 110 2 1 {name=M2
-L=0.35u
-W=1.0u
+l=0.35u
+w=1.0u
 ng=1
 m=1
 model=sg13_hv_nmos
@@ -168,16 +166,16 @@ C {devices/lab_pin.sym} 760 110 0 0 {name=p9 sig_type=std_logic lab=Vgsp}
 C {devices/ammeter.sym} 870 30 0 0 {name=Vm4}
 C {devices/lab_pin.sym} 870 -20 2 0 {name=p10 sig_type=std_logic lab=Vdsp}
 C {sg13g2_pr/sg13_lv_pmos.sym} 640 110 2 1 {name=M3
-L=0.35u
-W=1.0u
+l=0.35u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_hv_pmos.sym} 850 110 2 1 {name=M4
-L=0.35u
-W=1.0u
+l=0.35u
+w=1.0u
 ng=1
 m=1
 model=sg13_hv_pmos

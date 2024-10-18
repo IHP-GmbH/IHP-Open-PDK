@@ -351,8 +351,8 @@ def strToAlignt(value):
     if value == 'upperCenter' :
         return Location.UPPER_CENTER
 
-    if value == 'lowerCenter' :
-        return Location.LOWER_CENTER
+    if value == 'lowerRight' :
+        return Location.LOWER_RIGHT
 
     if value == 'centerRight' :
         return Location.CENTER_RIGHT

@@ -1,0 +1,207 @@
+//======================================================================================
+//======================================================================================
+// Filename: PSP103_InitNQS.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+//  2004-2011 Arizona State University Licensed under the Educational Community License,
+//  Version 2.0 (the "License"); you may not use this file except in compliance with the
+//  License. You may obtain a copy of the License at
+//  http://opensource.org/licenses/ECL-2.0
+//  Unless required by applicable law or agreed to in writing, software distributed under
+//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+//  ANY KIND, either express or implied. See the License for the specific language
+//  governing permissions and limitations under the License.
+//
+//
+//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+                /////////////////////////////////////////////////////////////////////////////
+                //
+                //  Computing initial (dc) values for internal nodes.
+                //  This code is independent of internal-node voltages
+                //
+                /////////////////////////////////////////////////////////////////////////////
+
+                        Qp1_0       =  0.0;
+                        Qp2_0       =  0.0;
+                        Qp3_0       =  0.0;
+                        Qp4_0       =  0.0;
+                        Qp5_0       =  0.0;
+                        Qp6_0       =  0.0;
+                        Qp7_0       =  0.0;
+                        Qp8_0       =  0.0;
+                        Qp9_0       =  0.0;
+                        fk1          =  0.0;
+                        fk2          =  0.0;
+                        fk3          =  0.0;
+                        fk4          =  0.0;
+                        fk5          =  0.0;
+                        fk6          =  0.0;
+                        fk7          =  0.0;
+                        fk8          =  0.0;
+                        fk9          =  0.0;
+                        if (SWNQS_i != 0) begin
+                                dQis         =  0.0;
+                                dQy          =  0.0;
+                                dfQi         =  0.0;
+                                fQi          =  0.0;
+                                d2Qy         =  0.0;
+
+                                Qp1          =  0.0;
+                                Qp2          =  0.0;
+                                Qp3          =  0.0;
+                                Qp4          =  0.0;
+                                Qp5          =  0.0;
+                                Qp6          =  0.0;
+                                Qp7          =  0.0;
+                                Qp8          =  0.0;
+                                Qp9          =  0.0;
+
+                                phi_p1       =  0.0;
+                                phi_p2       =  0.0;
+                                phi_p3       =  0.0;
+                                phi_p4       =  0.0;
+                                phi_p5       =  0.0;
+                                phi_p6       =  0.0;
+                                phi_p7       =  0.0;
+                                phi_p8       =  0.0;
+                                phi_p9       =  0.0;
+
+                                // Setting initial values for charge along the channel
+                                // from interpolated DC-solution
+                                if (xg_ac > 0) begin
+                                        if (SWNQS_i == 1) begin
+
+                                                phi_p1      = `Phiy(0.5);
+                                                `PhiToQb(phi_p1,Qb_tmp)
+                                                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp;
+
+                                        end else if (SWNQS_i == 2) begin
+                                                phi_p1      = `Phiy(`oneThird);
+                                                `PhiToQb(phi_p1,Qb_tmp)
+                                                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp;
+
+                                                phi_p2      = `Phiy(`twoThirds);
+                                                `PhiToQb(phi_p2,Qb_tmp)
+                                                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp;
+
+                                                if (sigVds < 0) begin
+                                                        `swap(Qp1_0, Qp2_0)
+                                                end
+                                        end else if (SWNQS_i == 3) begin
+                                                phi_p1      = `Phiy(0.25);
+                                                `PhiToQb(phi_p1,Qb_tmp)
+                                                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp;
+
+                                                phi_p2      = `Phiy(0.5);
+                                                `PhiToQb(phi_p2,Qb_tmp)
+                                                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp;
+
+                                                phi_p3      = `Phiy(0.75);
+                                                `PhiToQb(phi_p3,Qb_tmp)
+                                                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp;
+
+                                                if (sigVds < 0) begin
+                                                        `swap(Qp1_0, Qp3_0)
+                                                end
+                                        end else if (SWNQS_i == 5) begin
+                                                phi_p1      = `Phiy(`oneSixth);
+                                                `PhiToQb(phi_p1,Qb_tmp)
+                                                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp;
+
+                                                phi_p2      = `Phiy(`oneThird);
+                                                `PhiToQb(phi_p2,Qb_tmp)
+                                                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp;
+
+                                                phi_p3      = `Phiy(0.5);
+                                                `PhiToQb(phi_p3,Qb_tmp)
+                                                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp;
+
+                                                phi_p4      = `Phiy(`twoThirds);
+                                                `PhiToQb(phi_p4,Qb_tmp)
+                                                Qp4_0       = -pd * (xg_ac - phi_p4) - Qb_tmp;
+
+                                                phi_p5      = `Phiy(0.8333333333333333);
+                                                `PhiToQb(phi_p5,Qb_tmp)
+                                                Qp5_0       = -pd * (xg_ac - phi_p5) - Qb_tmp;
+
+                                                if (sigVds < 0) begin
+                                                        `swap(Qp1_0, Qp5_0)
+                                                        `swap(Qp2_0, Qp4_0)
+                                                end
+                                        end else if (SWNQS_i == 9) begin
+                                                phi_p1      = `Phiy(0.1);
+                                                `PhiToQb(phi_p1,Qb_tmp)
+                                                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp;
+
+                                                phi_p2      = `Phiy(0.2);
+                                                `PhiToQb(phi_p2,Qb_tmp)
+                                                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp;
+
+                                                phi_p3      = `Phiy(0.3);
+                                                `PhiToQb(phi_p3,Qb_tmp)
+                                                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp;
+
+                                                phi_p4      = `Phiy(0.4);
+                                                `PhiToQb(phi_p4,Qb_tmp)
+                                                Qp4_0       = -pd * (xg_ac - phi_p4) - Qb_tmp;
+
+                                                phi_p5      = `Phiy(0.5);
+                                                `PhiToQb(phi_p5,Qb_tmp)
+                                                Qp5_0       = -pd * (xg_ac - phi_p5) - Qb_tmp;
+
+                                                phi_p6      = `Phiy(0.6);
+                                                `PhiToQb(phi_p6,Qb_tmp)
+                                                Qp6_0       = -pd * (xg_ac - phi_p6) - Qb_tmp;
+
+                                                phi_p7      = `Phiy(0.7);
+                                                `PhiToQb(phi_p7,Qb_tmp)
+                                                Qp7_0       = -pd * (xg_ac - phi_p7) - Qb_tmp;
+
+                                                phi_p8      = `Phiy(0.8);
+                                                `PhiToQb(phi_p8,Qb_tmp)
+                                                Qp8_0       = -pd * (xg_ac - phi_p8) - Qb_tmp;
+
+                                                phi_p9      = `Phiy(0.9);
+                                                `PhiToQb(phi_p9,Qb_tmp)
+                                                Qp9_0       = -pd * (xg_ac - phi_p9) - Qb_tmp;
+
+                                                if (sigVds < 0) begin
+                                                        `swap(Qp1_0, Qp9_0)
+                                                        `swap(Qp2_0, Qp8_0)
+                                                        `swap(Qp3_0, Qp7_0)
+                                                        `swap(Qp4_0, Qp6_0)
+                                                end
+                                        end
+                                end // (x_g >0)
+                        end // (SWNQS_i != 0)
+
+                        x_sp        =  0.0;
+                        x_dp        =  0.0;
+                        Qp0         =  0.0;
+                        QpN         =  0.0;
+                        if (SWNQS_i != 0.0) begin
+                                x_sp        =  x_m_ac - sigVds * 0.5 * dps_ac * inv_phit1;
+                                x_dp        =  x_m_ac + sigVds * 0.5 * dps_ac * inv_phit1;
+                                Qp0         =  0.0;
+                                QpN         =  0.0;
+                                if (x_sp > 0) begin
+                                        `PhiToQb(x_sp, QbSIGN)
+                                        Qp0         =  -pd * (xg_ac - x_sp) - QbSIGN;
+                                end
+                                if (x_dp > 0) begin
+                                        `PhiToQb(x_dp, QbSIGN)
+                                        QpN         =  -pd * (xg_ac - x_dp) - QbSIGN;
+                                end
+                        end

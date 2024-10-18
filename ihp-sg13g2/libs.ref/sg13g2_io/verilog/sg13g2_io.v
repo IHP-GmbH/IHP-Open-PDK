@@ -72,7 +72,7 @@ module sg13g2_IOPadIn (pad, p2c);
 
 	// Timing
 	specify
-		(p2c => pad) = 0;
+		(pad => p2c) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -89,7 +89,7 @@ module sg13g2_IOPadOut4mA (pad, c2p);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -106,7 +106,7 @@ module sg13g2_IOPadOut16mA (pad, c2p);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -123,7 +123,7 @@ module sg13g2_IOPadOut30mA (pad, c2p);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -141,7 +141,8 @@ module sg13g2_IOPadTriOut4mA (pad, c2p, c2p_en);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -159,7 +160,8 @@ module sg13g2_IOPadTriOut16mA (pad, c2p, c2p_en);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -177,7 +179,8 @@ module sg13g2_IOPadTriOut30mA (pad, c2p, c2p_en);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -197,8 +200,9 @@ module sg13g2_IOPadInOut4mA (pad, c2p, c2p_en, p2c);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
-		(p2c => pad) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
+		(pad => p2c) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -218,8 +222,9 @@ module sg13g2_IOPadInOut16mA (pad, c2p, c2p_en, p2c);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
-		(p2c => pad) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
+		(pad => p2c) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -239,8 +244,9 @@ module sg13g2_IOPadInOut30mA (pad, c2p, c2p_en, p2c);
 
 	// Timing
 	specify
-		(pad => c2p) = 0;
-		(p2c => pad) = 0;
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
+		(pad => p2c) = 0;
 	endspecify
 endmodule
 `endcelldefine

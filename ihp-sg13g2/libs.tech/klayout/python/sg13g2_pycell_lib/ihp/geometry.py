@@ -23,7 +23,6 @@ from cni.geo import fgOr
 from cni.geo import fgAnd
 from cni.geo import fgXor
 from cni.geo import fgNot
-from cni.geo import fgMerge
 from .utility_functions import *
 from math import *
 
@@ -118,7 +117,6 @@ def dbLayerAndList(layerId, shapes):
 def dbLayerXor(layerId, id1, id2):
     if type(layerId) == str :
         layerId = Layer(layerId)
-
     xorId = id1.fgXor(id2, layerId)
 
     return xorId
@@ -126,13 +124,11 @@ def dbLayerXor(layerId, id1, id2):
 #***********************************************************************************************************************
 # dbLayerXorList
 #***********************************************************************************************************************
-def dbLayerXorList(layerId, shapes):
+def dbLayerXorList(layerId, shapes1, shapes2):
     if type(layerId) == str :
         layerId = Layer(layerId)
 
-    xorId = shapes[0]
-    for id in shapes[1:] :
-        xorId = fgXor(xorId, id, layerId)
+    xorId = fgXor(ulist(shapes1), ulist(shapes2), layerId)
 
     return xorId
 
@@ -173,9 +169,12 @@ def dbLayerMerge(self, layerId):
     return mergeId
 
 #***********************************************************************************************************************
-# dbCopyShape
+# dbLayerSize
 #***********************************************************************************************************************
-def dbLayerSize(self, layerId, shapes, size, numPoints, grid = 0) :
+def dbLayerSize(layerId, shapes, size, grid = 0) :
+    if type(layerId) == str :
+        layerId = Layer(layerId)
+
     for id in shapes :
         id.fgSize(ShapeFilter(), size, layerId, grid)
 

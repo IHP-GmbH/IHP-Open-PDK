@@ -8,7 +8,7 @@ the xschem editor to in order to include PDK root directory, library directories
 Do it only once:
 ```bash
 export PDK_ROOT=<your_path>/IHP-Open-PDK
-python3 install.py
+./install.py
 ```
 Now you can run xschem and enjoy the examples:
 

@@ -1,0 +1,151 @@
+
+======================================================================================
+======================================================================================
+                      Silicon Integration Initiative (Si2)
+                    Compact Model Coalition In-Code Statement
+
+  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
+  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
+  2004-2011 Arizona State University Licensed under the Educational Community License,
+  Version 2.0 (the "License"); you may not use this file except in compliance with the
+  License. You may obtain a copy of the License at
+  http://opensource.org/licenses/ECL-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+  ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+  This work is licensed under the Creative Commons Attribution 4.0 International License.
+  To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/ or
+  send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+  CMC In-Code Statement Revision: 103.6.0 (PSP), 12/14/2017
+                                  200.5.0 (JUNCAP),09/09/2016
+
+======================================================================================
+======================================================================================
+
+  Authors: G.D.J. Smit, A.J. Scholten, and D.B.M. Klaassen (NXP Semiconductors)
+           O. Rozeau, S. Martinie, T. Poiroux, J.C. Barbé (CEA-Leti)
+
+  Former contributers:
+           G. Gildenblat, W. Yao, Z. Zhu, X. Li and W. Wu (Arizona State University)
+           R. van Langevelde (Philips Research)
+           R. van der Toorn (Delft University of Technology)
+
+  The most recent version of the model code, the documentation, and contact
+  information can be found on:
+
+       http://www.cea.fr/cea-tech/leti/pspsupport
+       
+======================================================================================
+======================================================================================
+
+This package consists of the following files:
+
+     - releasenotesPSP103.txt         This file
+
+     - psp103.va                      Main file for PSP model
+     - psp103t.va                     Main file for PSP model with self heating
+     - psp103_nqs.va                  Main file for PSP model with NQS-effects
+     - juncap200.va                   Main file for JUNCAP2 stand-alone model
+
+     - Common103_macrodefs.include    Common macro definitions
+     - PSP103_macrodefs.include       Macro definitions for PSP
+     - PSP103_module.include          Actual model code for intrinsic MOS model
+     - PSP103_SPCalculation.include   Surface potential and related calculations
+     - PSP103_binning.include         Geometry scaling equation for binning
+     - PSP103_binpars.include         Parameterlist for global PSP binning model
+     - PSP103_nqs_macrodefs.include   Macro definitions for PSP-NQS
+     - PSP103_InitNQS.include         PSP-NQS initialization code
+     - PSP103_ChargesNQS.include      Calculation of NQS-charge contributions
+     - JUNCAP200_macrodefs.include    Macro definitions for JUNCAP2 model
+     - JUNCAP200_parlist.include      JUNCAP2 parameter list
+     - JUNCAP200_varlist1.include     JUNCAP2 variable declarations
+     - JUNCAP200_varlist2.include     JUNCAP2 variable declarations
+     - JUNCAP200_InitModel.include    JUNCAP2 model initialization code
+
+======================================================================================
+======================================================================================
+
+Usage
+-----
+
+Depending which model one wants to use, one should compile one of the four .va-files
+(psp103.va, psp103t.va, psp103_nqs.va, and juncap200.va). The module names are
+"PSP103VA", "PSP103TVA", and "PSPNQS103VA" (for QS, self heating, and NQS,
+respectively), and "JUNCAP200" for the JUNCAP2-model.
+
+
+======================================================================================
+======================================================================================
+
+Release notes vA-code of PSP 103.6.0 (December 2017)
+---------------------------------------------------------
+
+Changes include 2 bug fixes, new modeling of interface states, new parameter for edge
+scaling rules and new clipping values of local parameters:
+    - Induced gate noise: clipped value of migid in line with c_igid
+    - Thermal noise of edge transistor: bug fix to avoid possible division by zero
+      during the calculation of redge.
+    - Improvement of gm/Id in weak inversion: new model of interface states.
+    - Addition of new parameter NSUBEDGELEXP: exponent for channel length dependence
+      of edge transistor substrate doping.
+    - Minimum values of calculated local parameters NOV and NOVD in global mode: now in
+      lines with minimum values of local model parameters.
+
+- PSP103_macrodefs.include:
+    - Calculation of phit0 is cancelled, temperature dependence of interface states is
+      now calculated using the variable CT_T: lines 356 to 359
+
+- PSP103_module.include:
+    - Addition of new local parameters related to the new model of interface states 
+      CTG, CTB and STCT: lines 181 to 185
+    - Addition of new global parameters related to the new model of interface states 
+      CTGO, CTBO and STCTO: lines 392 to 400
+    - Addition of new global parameter related to edge transistor doping NSUBEDGELEXP:
+      line 552
+    - Addition of new variable declarations CTG_p, CTB_p, STCT_p, CT_i, CTG_i, CTB_i,
+      STCT_i, CT_T, tf_ct, migid0: lines 732 to 777
+    - Cancelling of the variable declaration phit0. This variable is not used.
+    - New variable declarations for OP info related to interface states model: lines
+      908 to 910
+    - Calculation of CTG_p, CTB_p, STCT_p: lines 1238 to 1240 and lines 1379 to 1383
+    - Addition of an exponent parameter NSUBEDGELEXP in calculation of NEFFEDGE_p: 
+      line 1490
+    - Calculation of CTG_i, CTB_i and STCT_i: lines 1621 to 1623
+    - modification of min clipping values of NOV_i and NOVD_i, now in line with local
+      parameters: lines 1618 and 1619
+    - Addition of new variable declarations xgct, xsct0, xbct, xsbstar, xsct, dCTG,
+      and ct_fact in section evaluateblock: line 2045
+
+    - Modification of a condition: line 2750
+        "if (SWIGN_i == 1) begin" is replaced by
+        "if ((SWIGN_i == 1) && (nt > 0.0)) begin"
+    - Changing of variable: migid is replaced by migid0, lines 2754, 2758 and 2764
+    - New calculation of migid: "migid = c_igid * sqid / sqig;", line 2767
+    - New calculation of redge to avoid division by zero: lines 2814 to 2818
+    - Affectation of variables for OP info related to the new model of interface states
+      lp_ctg, lp_ctb, lp_stct: lines 3117 to 3119
+
+- PSP103_SPCalculation.include:
+    - Modification of calculation of phit1 and inv_phit1 including new model of
+      interface states: lines 74 to 91
+
+- PSP103_binpars.include:
+    - Addition of new binning parameters related to the new model of interface states
+      POCTG, POCTB and POSTCT: lines 84 to 91
+
+- PSP103_binning.include:
+    - Addition of local parameter calculation related to the new model of interface
+      states CTG_p, CTB_p, STCT_p: lines 73 to 77
+
+PSP 103.6.0 is backwards compatible with the previous version, PSP 103.5.0
+
+
+======================================================================================
+======================================================================================
+
+The authors want to thank Laurent Lemaitre and Colin McAndrew (Freescale)
+for their help with ADMS and the implementation of the model code. Geoffrey
+Coram (Analog Devices) is acknowledged for input concerning the Verilog-A
+implementation of the model.

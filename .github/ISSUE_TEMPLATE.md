@@ -1,7 +1,5 @@
 ## Environment
 
-- Klayout Version:
-- OS/Platform:
 
 ## Expected Behavior
 
