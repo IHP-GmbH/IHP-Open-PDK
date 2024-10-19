@@ -6,14 +6,16 @@ export PYTHONPYCACHEPREFIX=/tmp
 
 Support for 'conditional compilation' in a C-style manner of PyCell code:
 
-#ifdef name
-    ...some code...
-#else
-    ...some other code...
-#endif
+```
+    #ifdef name (|| name)*
+        ...some code...
+    #else
+        ...some other code...
+    #endif
+```
 
 The #ifdef-block is executed (name is considered as defined) if
-  1. An environment variable 'name' can be found case-insentive, or
+  1. An environment variable name can be found case-insentive, or
   2. The name can be found case-insentive as part of a process name of the process chain beginnig at
      the current process upwards through all parent processes.
 otherwise the #else-block is executed
