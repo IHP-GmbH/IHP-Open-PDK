@@ -117,6 +117,8 @@ def getProcessNames():
                 processNames.append(parent.name().lower())
                 parent = parent.parent()
 
+    assert len(processNames) > 0
+
     return processNames
 
 
@@ -148,9 +150,10 @@ class PyCellLib(pya.Library):
 
         tech = Tech.get('SG13_dev')
 
-        processNames = getProcessNames()
+        processNames = []
 
         if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
+            processNames = getProcessNames()
             processChain = ''
             isFirst = True
             for processName in reversed(processNames):
@@ -159,6 +162,7 @@ class PyCellLib(pya.Library):
                 processChain += "'" + processName + "'"
                 isFirst = False
             print(f'Current process chain: {processChain}')
+
 
         module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
         preProcessor = getattr(module, "preprocessor")
@@ -190,6 +194,9 @@ class PyCellLib(pya.Library):
                 envs.append(env.lower())
 
             for define in defines:
+                if len(processNames) == 0:
+                    processNames = getProcessNames()
+
                 locDefine = define.lower()
                 for processName in processNames:
                     if processName.find(locDefine) != -1:
