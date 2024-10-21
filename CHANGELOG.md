@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased] - 2024-10-07
+## [Unreleased] - 2024-10-14
 
 ### Added
 - Xschem install script: added Python shebang line
@@ -174,6 +174,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     - OpenROAD, OpenROAD flow scripts, Qucs-S added as supported EDA tools.
 
 ### Fixed
+- Stdcells LEF: USE ANALOG changed to USE SIGNAL
 - pnpMPA: fixed pin order in model, updated xschem symbol and testbench
 - libs.ref: sg13g2_io: verilog: Fix specify syntax
     - The input and output definition in the Verilog specify block were positioned in the wrong order (output to input). Change and also implement the tri-state better.
