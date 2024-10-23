@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -68,27 +68,25 @@ N -230 -80 -230 -30 {
 lab=in}
 N -160 -50 -160 -30 {
 lab=out}
-C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
+C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} 160 -70 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
-meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
+meas tran tdelay TRIG v(in) VAl=0.9 FALl=1 TARG v(out) VAl=0.9 RISE=1
 write tran_logic_not.raw
 .endc
 "}
 C {devices/gnd.sym} -160 110 0 0 {name=l1 lab=GND}
 C {devices/gnd.sym} -440 110 0 0 {name=l2 lab=GND}
-C {devices/vsource.sym} -440 60 0 0 {name=Vin value="dc 0 ac 0 pulse(0, 1.8, 0, 100p, 100p, 2n, 4n ) "}
-C {devices/vsource.sym} 100 20 0 0 {name=Vdd value=1.8}
+C {devices/vsource.sym} -440 60 0 0 {name=Vin value="dc 0 ac 0 pulse(0, 1.2, 0, 100p, 100p, 2n, 4n ) "}
+C {devices/vsource.sym} 100 20 0 0 {name=Vdd value=1.2}
 C {devices/gnd.sym} 100 110 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} -110 110 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
@@ -97,16 +95,16 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/tran_logic_not.raw tran"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} -180 20 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} -180 -80 0 0 {name=M2
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos

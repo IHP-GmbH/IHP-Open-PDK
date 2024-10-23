@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 -280 -540 520 -140 {flags=graph
-y1=0.4
-y2=0.7
+y1=0.65
+y2=0.9
 ypos1=0
 ypos2=2
 divy=5

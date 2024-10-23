@@ -39,10 +39,12 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * SPICE Netlist
     * Verilog
 * IO cellset
+    * CDL
     * GDSII
     * LEF
-    * Liberty (dummy)
+    * Liberty
     * SPICE Netlist
+    * Verilog
 * SRAM cellset
     * CDL
     * GDSII
@@ -53,13 +55,14 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII
 * KLayout tool data:
     * layer property and tech files
-    * DRC rules (minimal set)
-    * PyCells
-       * initial version of the wrapper API
-       * sample cells
-* Pcells (for reference only) `libs.tech/pycell`
+    * DRC rules (minimal/maximal set)
+    * LVS rules
+    * PyCells (1st priority)
+    * XSection initial settings
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
+* Qucs-S: primitive device symbols, settings and testbenches
+* Digital: stdcells
 * OpenEMS: tutorials, scripts, documentation
 * SG13G2 Process specification & Layout Rules
 * MOS/HBT Measurements in MDM format
@@ -83,6 +86,13 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * Source: https://github.com/KLayout/klayout
 * OpenEMS
     * Source: https://github.com/thliebig/openEMS-Project
+* OpenROAD
+    * Source: https://github.com/The-OpenROAD-Project/OpenROAD
+* OpenROAD-flow-scripts
+    * Source: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+ 
+## Tool versions (tested with)
+[versions.txt](versions.txt)
 
 ## Contributing
 
@@ -105,7 +115,7 @@ The IHP Open Source PDK is released under the [Apache 2.0 license](LICENSE).
 
 The copyright details are:
     
-    Copyright 2023 IHP PDK Authors
+    Copyright 2024 IHP PDK Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

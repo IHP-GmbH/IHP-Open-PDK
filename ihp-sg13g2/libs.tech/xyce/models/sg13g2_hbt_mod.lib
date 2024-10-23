@@ -1,0 +1,464 @@
+*#######################################################################
+*
+* Copyright 2024 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+      
+* SPICE-Parameter HBT-Transistor (nom.)
+*
+* Model:                                VBIC (Rev.1.15)
+* Date:                                 25.05.18
+* Lot:                                  EDJ802
+* WAFER:                                02
+* CHIP Nr:                              3.3
+* Emitter size (mask):                  Nx *(0.07 x 0.90) µm^2 with Nx = 1 - 10
+* Maximum collector-to-emitter voltage: 1.6
+* Measurement data:                     T356_EDJ802_W02_3.3
+* Meas. Range forward gummel:           vbe = (0.3 - 1.04)V
+* Meas. Range forward output:           vce = (0.4 - 2.0)V
+* Nom. Temperature  (TNOM):             27 grd C
+* Meas. Temperature (TEMP):             27 grd C
+* Valid range for model                 
+* ic: <(0.003*Nx) A  vbe :(0.65 - 0.96) V  vce :(0.4 - 2.0) V
+* Temp: -40°C - +125°C
+* Valid numbers: NX = 1 - 10
+* ________________________________________________________________________
+
+.subckt npn13G2 c b e bn t
+.param Nx=1 dtemp=0
++Ny=1 le=0.96e-6 we=0.12e-6
++El=le*1e6
++selft=1
+
+*Yvbic13_4t_va vbic1 c b e s1 npn13G2_NX_vbic
+Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
+
+*.model npn13G2_NX_vbic vbic13_4t_va
+.model npn13G2_NX_vbic npn
++ level = 12
+*+ vbe_max = 1.6
+*+ vbc_max = 5.1
+*+ vce_max = 1.6
++ tnom = 27
++ cbeo = '8.00E-16*(Nx*0.25)**0.975'
++ cje = '8.418E-15*(Nx*0.25)**0.975*vbic_cje'
++ pe = 0.92
++ me = 0.12
++ aje = -0.50
++ wbe = 1.00
++ cbco = '2.36E-15*(Nx*0.25)'
++ cjc = '1.53E-15*(Nx*0.25)*vbic_cjc'
++ pc = 0.558
++ mc = 0.12
++ ajc = -0.50
++ cjep = '3.56E-15*(Nx*0.25)*vbic_cjc'
++ cjcp = '4.56E-15*(Nx*0.25)**0.8*vbic_cjcp'
++ ps = 0.46
++ ms = 0.23
++ ajs = -0.50
++ fc = 0.80
++ vef = 189
++ ver = 5.3
++ is = '4.81E-17*(Nx*0.25)*vbic_is'
++ nf = 1.018
++ ibei = '1.9E-19*(Nx*0.25)*vbic_ibei'
++ nei = 1.066
++ iben = '4.00E-16*(Nx*0.25)'
++ nen = 2.00
++ ikf = '0.009*(Nx*0.25)'
++ nr = 1.01
++ ibci = '1.50E-20*(Nx*0.25)'
++ nci = 1.103
++ ibcn = '1.00E-15*(Nx*0.25)'
++ ncn = 1.96
++ ikr = '0.01*(Nx*0.25)'
++ wsp = 1
++ isp = '4.00E-20*(Nx*0.25)'
++ nfp = 1.04
++ ibcip = '2.00E-15*(Nx*0.25)**0.7'
++ ncip = 1.00
++ ibcnp = '5.00E-15*(Nx*0.25)'
++ ncnp = 1.50
++ ikp = '.00E-04*(Nx*0.25)'
++ ibeip = '4.00E-19*(Nx*0.25)'
++ ibenp = '2.00E-14*(Nx*0.25)'
++ re = '7.13E+00*(4/Nx)**1*vbic_re'
++ rcx = '1.3E+01*(4/Nx)**1*vbic_rcx'
++ rci = '1.29E+01*(4/Nx)**1'
++ qco = 1.00E-18
++ vo = 0.80
++ gamm = 2.25E-14
++ hrcf = 1000
++ rbx = '6.93E+00*(4/Nx)**0.95*vbic_rbx'
++ rbi = '2.20E+01*(4/Nx)**0.95*vbic_rbx'
++ rbp = '5.5*(4/Nx)'
++ rs = 1
++ avc1 = 2.40
++ avc2 = 10.81
++ tf = '2.08E-13*vbic_tf*((temper+273)/300)**0.7'
++ qtf = 1.00E-18
++ xtf = 10.0
++ vtf = 20.0
++ itf = '0.585*(Nx*0.25)'
++ tr = 3.50E-13
++ td = '2.80E-13*(Nx*0.25)**0'
++ cth = '1.60E-12*(Nx*0.25)**0.95'
++ rth = '1*selft*3.26E+03*(4/Nx)**0.9'
++ ea = 1.056
++ eaie = 1.056
++ eaic = 1.12
++ eais = 1.12
++ eane = 1.12
++ eanc = 1.12
++ eans = 1.12
++ xre = -0.42
++ xrb = 0.90
++ xrc = 0.245
++ xrs = 1.50
++ xvo = 1.50
++ xis = 2.30
++ xii = 3.30
++ xin = 3.30
++ tnf = 0.00015
++ tavc = -0.00188
++ kfn = '6.00E-9*(4/Nx)'
++ afn = 1.80
++ bfn = 1.00
+
+Rsub s1 bn R = '300+100*Nx'
+Rt t 0 R = 1e9
+Csub s1 bn C = '2.30E-14-(1.50E-15*Nx)'
+.ends npn13G2
+
+*--------------------npn13g2l----------------------------------------------------
+
+* Model:                                VBIC (Rev.1.15)
+* Date:                                 25.05.18
+* Lot:                                  EDJ802
+* WAFER:                                02
+* CHIP Nr:                              3.3
+* Device:                               npn13g2l_VBIC_Q118
+* Emitter size (mask):                  Nx *(0.07 x El) µm^2 with Nx = 1 - 4, El = 1 - 2.5 
+* Maximum collector-to-emitter voltage: 1.6
+* Measurement data:                     T356_EDJ802_W02_3.3
+* Meas. Range forward gummel:           vbe = (0.3 - 1.04)V
+* Meas. Range forward output:           vce = (0.4 - 2.0)V
+* Nom. Temperature  (TNOM):             27 grd C
+* Meas. Temperature (TEMP):             27 grd C
+* Valid range for model
+* ic: <(...Nx*El) A  vbe :(0.65 - 0.96) V  vce :(0.4 - 2.0) V
+* Temp: -40°C - +125°C
+* Valid numbers: Nx = 1 - 4, El = 1 - 2.5
+* model card checked with SPECTRE 10.x and ADS2009U1
+* ________________________________________________________________________
+
+.subckt npn13G2l c b e bn t
+.param Nx=1 le=2.50e-6 dtemp=0
++Ny=1 we=0.12e-6
++El=le*1e6
++selft=1
+
+*Yvbic13_4t_va vbic1 c b e s1 npn13G2l_NX_vbic
+Qnpn13G21 c b e s1 t npn13G21_NX_vbic dtemp=dtemp m=1
+
+*.model npn13G2l_NX_vbic vbic13_4t_va
+.model npn13G21_NX_vbic npn
++ level = 12
+*+ vbe_max = 1.6
+*+ vbc_max = 5.1
+*+ vce_max = 1.6
++ tnom = 27
++ cbeo = '1.92E-15*(El/2.5)**0.85*(Nx*0.25)**0.95'
++ cje = '2.166E-14*(El/2.5)**0.85*(Nx*0.25)**0.95*vbic_cje'
++ pe = 0.92
++ me = 0.12
++ aje = -0.50
++ wbe = 1.00
++ cbco = '6.33E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
++ cjc = '3.83E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ pc = 0.558
++ mc = 0.12
++ ajc = -0.50
++ cjep = '7.77E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjcp = '8.36E-15*(El/2.5)**0.55*(Nx*0.25)**0.8*vbic_cjcp'
++ ps = 0.46
++ ms = 0.23
++ ajs = -0.50
++ fc = 0.80
++ vef = 189
++ ver = 5.3
++ is = '7.50E-17*(El/2.5)**0.85*(Nx*0.25)*vbic_is'
++ nf = 1.004
++ ibei = '2.01E-19*(El/2.5)**0.85*(Nx*0.25)*vbic_ibei'
++ nei = 1.035
++ iben = '1.20E-15*(El/2.5)**0.85*(Nx*0.25)'
++ nen = 2.00
++ ikf = '0.032*(El/2.5)*(Nx*0.25)'
++ nr = 1.01
++ ibci = '3.00E-19*(El/2.5)*(Nx*0.25)'
++ nci = 1.050
++ ibcn = '1.00E-15*(El/2.5)*(Nx*0.25)'
++ ncn = 1.70
++ ikr = '0.01*(El/2.5)*(Nx*0.25)'
++ wsp = 1
++ isp = '4.00E-20*(El/2.5)*(Nx*0.25)'
++ nfp = 1.04
++ ibcip = '2.00E-15*(El/2.5)*(Nx*0.25)**0.7'
++ ncip = 1.00
++ ibcnp = '5.00E-15*(El/2.5)*(Nx*0.25)'
++ ncnp = 1.50
++ ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
++ ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
++ ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
++ re = '3.19E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
++ rcx = '3.90E+00*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ rci = '7.50E+00*(2.5/El)**0.85*(4/Nx)**1'
++ qco = 1.00E-18
++ vo = 0.80
++ gamm = 3.00E-14
++ hrcf = 1000
++ rbx = '2.54E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
++ rbi = '7.26E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
++ rbp = '15.0*(2.5/El)**0.7*(4/Nx)'
++ rs = '1*(2.5/El)*(4/Nx)'
++ avc1 = 2.40
++ avc2 = 10.81
++ tf = '2.31E-13*(El/2.5)**0.15*vbic_tf*((temper+273)/300)**0.7'
++ qtf = 1.00E-18
++ xtf = 10.0
++ vtf = 20.0
++ itf = '1.658*(El/2.5)*(Nx*0.25)'
++ tr = 5.00E-13
++ td = '2.8e-13*(El/2.5)'
++ cth = '4.18E-12*(El/2.5)**0.8*(Nx*0.25)**0.8'
++ rth = 'selft*1.63E+03*(2.5/El)**0.85*(4/Nx)**0.8'
++ ea = 1.045
++ eaie = 1.078
++ eaic = 1.12
++ eais = 1.12
++ eane = 1.12
++ eanc = 1.12
++ eans = 1.12
++ xre = -0.42
++ xrb = 0.90
++ xrc = 0.420
++ xrs = 1.50
++ xvo = 1.50
++ xis = 2.30
++ xii = 3.30
++ xin = 3.30
++ tnf = 0.00015
++ tavc = -0.00188
++ kfn = '3.00E-9*(2.5/El)*(4/Nx)'
++ afn = 1.80
++ bfn = 1.00
+
+Rsub s1 bn R = '(300+(400*Nx))*(El/2.5)**0.5'
+Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
+Rt t 0 R = 1e9
+.ends npn13G2l
+
+*--------------------npn13g2v----------------------------------------------------
+
+* Model:                                VBIC (Rev.1.15)
+* Date:                                 25.05.18
+* Lot:                                  EDJ802
+* WAFER:                                02
+* CHIP Nr:                              3.3
+* Device:                               npn13g2v_VBIC_Q118
+* Emitter size (mask):                  Nx *(0.12 x El) µm^2 with Nx = 1 - 4, El = 1.0 - 5.0 
+* Maximum collector-to-emitter voltage: 2.5
+* Measurement data:                     T356_EDJ802_W02_3.3
+* Meas. Range forward gummel:           vbe = (0.3 - 1.0)V
+* Meas. Range forward output:           vce = (0 - 3.0)V
+* Nom. Temperature  (TNOM):             27 grd C
+* Meas. Temperature (TEMP):             27 grd C
+* Valid range for model
+* ic: <(0.50*Nx*El) A  vbe :(0.65 - 0.84) V  vce :(0.8 - 2.3) V
+* Temp: -40°C - +125°C
+* Valid numbers: Nx = 1 - 4, El = 1 - 5
+* model card checked with SPECTRE 10.x and ADS2009U1
+* ________________________________________________________________________
+
+.subckt npn13G2v c b e bn t
+.param Nx=1 le=2.50e-6 dtemp=0
++Ny=1 we=0.12e-6
++El=le*1e6
++selft=1
+
+*Yvbic13_4t_va vbic1 c b e s1 npn13G2v_NX_vbic
+Qnpn13G21 c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
+
+*.model npn13G2v_NX_vbic vbic13_4t_va
+.model npn13G2v_NX_vbic npn
++ level = 12
+*+ vbe_max = 1.6
+*+ vbc_max = 7.0
+*+ vce_max = 2.2
++ tnom = 27
++ cbeo = '2.28E-15*(El/2.5)**0.94*(Nx*0.25)**0.95'
++ cje = '2.594E-14*(El/2.5)**0.94*(Nx*0.25)**0.95*vbic_cje'
++ pe = 0.88
++ me = 0.13
++ aje = -0.50
++ wbe = 1.00
++ cbco = '4.37E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
++ cjc = '2.52E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ pc = 0.397
++ mc = 0.09
++ ajc = -0.50
++ cjep = '6.48E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjcp = '7.60E-15*(El/2.5)**0.65*(Nx*0.25)**0.5*vbic_cjcp'
++ ps = 0.31
++ ms = 0.16
++ ajs = -0.50
++ fc = 0.80
++ vef = 189
++ ver = 5.3
++ is = '1.22E-16*(El/2.5)**0.8*(Nx*0.25)*vbic_is'
++ nf = 1.016
++ ibei = '3.02E-19*(El/2.5)**0.925*(Nx*0.25)*vbic_ibei'
++ nei = 1.043
++ iben = '1.44E-15*(El/2.5)**0.925*(Nx*0.25)'
++ nen = 2.00
++ ikf = '0.022*(El/2.5)*(Nx*0.25)'
++ nr = 1.01
++ ibci = '7.50E-19*(El/2.5)*(Nx*0.25)'
++ nci = 1.050
++ ibcn = '1.00E-15*(El/2.5)*(Nx*0.25)'
++ ncn = 1.70
++ ikr = '0.01*(El/2.5)*(Nx*0.25)'
++ wsp = 1
++ isp = '4.00E-20*(El/2.5)*(Nx*0.25)'
++ nfp = 1.04
++ ibcip = '2.00E-15*(El/2.5)*(Nx*0.25)**0.7'
++ ncip = 1.00
++ ibcnp = '5.00E-15*(El/2.5)*(Nx*0.25)'
++ ncnp = 1.50
++ ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
++ ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
++ ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
++ re = '3.30E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
++ rcx = '1.30E+01*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ rci = '1.53E+02*(2.5/El)**0.9*(4/Nx)'
++ qco = 1.00E-18
++ vo = 2.40
++ gamm = 3.30E-12
++ hrcf = 1000
++ rbx = '1.54E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
++ rbi = '6.60E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
++ rbp = '6.5*(2.5/El)**0.75*(4/Nx)'
++ rs = '1*(2.5/El)*(4/Nx)'
++ avc1 = 2.40
++ avc2 = 17.14
++ tf = '4.10E-13*(El/2.5)**0*vbic_tf*((temper+273)/300)**0.7'
++ qtf = 1.00E-18
++ xtf = 60.0
++ vtf = 20.0
++ itf = '0.390*(El/2.5)*(Nx*0.25)'
++ tr = 1.50E-12
++ td = '5.60E-13*(El/2.5)'
++ cth = '4.40E-12*(El/2.5)**1*(Nx*0.25)**0.8'
++ rth = 'selft*1.55E+03*(2.5/El)**1*(4/Nx)**0.88'
++ ea = 1.030
++ eaie = 1.056
++ eaic = 1.12
++ eais = 1.12
++ eane = 1.12
++ eanc = 1.12
++ eans = 1.12
++ xre = -0.35
++ xrb = 0.90
++ xrc = 0.175
++ xrs = 1.50
++ xvo = 1.50
++ xis = 2.70
++ xii = 3.00
++ xin = 3.00
++ tnf = 0.00015
++ tavc = -0.00075
++ kfn = '6.00E-7*(2.5/El)*(4/Nx)'
++ afn = 2.20
++ bfn = 1.00
+
+Rsub s1 bn R = '(300+(400*Nx))*(El/2.5)**0.85'
+Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
+Rt t 0 R = 1e9
+.ends npn13G2v
+
+*******************************************************************************
+* pnpMPA section
+*******************************************************************************
+*--------------------------------------------------
+* Testfield: T323
+* Technology: SG13
+* Lot: PQA701
+* Wafer: 17
+* DUT: diode_pp=pnpMPA
+* Temperature range: -40C ... +125C
+* Date: 21.10.2022
+* DC Measurements at T=27C, T=-40C and T=125C (2013), 2022 only T=27C
+* CV Measurements at T=27C
+*
+*--------------------------------------------------------------------------
+*
+.param ccb0 = 970e-018  isc0 = 2e-023  ikr0 = 4e-007  rc0 = 1e+003  rb0 = 700
+*
+.subckt pnpMPA e b c
+.param a=2p p=6u ac=13.33p pc=14.64u
++ dev_a=a*1e12 dev_p=p*1e6 sub_a=ac*1e12 sub_p=pc*1e6
+
+QpnpMPA e b c pnpMPA_mod area=dev_a
+
+.model pnpMPA_mod pnp
++ level = 1
++ tnom = 27
++ is = '1.660E-19*sgp_mpa_is'
++ nf = 1.015
++ ise = 1e-022
++ ne = 1
++ bf = '1.10*sgp_mpa_bf'
++ ikf = 0.0003
++ vaf = 100
++ nr = 1
++ isc = '(isc0*(sub_a))/(dev_a)'
++ nc = 1
++ br = 0.00015
++ ikr = '(ikr0*(sub_a))/(dev_a)'
++ var = 150
++ rb = 'rb0*sgp_mpa_rb'
++ irb = 1e-015
++ rbm = '0.9*rb0*sgp_mpa_rb'
++ re = '20*sgp_mpa_re'
++ rc = '(rc0/(sub_a))*(dev_a)*sgp_mpa_rc'
++ cje = '1.72e-015*sgp_mpa_cje'
++ vje = 0.46
++ mje = 0.126
++ cjc = '((ccb0*(sub_a))/(dev_a))*sgp_mpa_cjc'
++ vjc = 0.58
++ mjc = 0.3
++ cjs = 0
++ vjs = 0.95
++ mjs = 0.5
++ xtb = 2.44
++ xti = 2.54
++ eg = 1.17
++ trm1 = 0.001
++ trm2 = 0
++ trc1 = -0.01121
++ trc2 = 3.02E-005
++ tre1 = 0
++ tre2 = 0
+.ends pnpMPA

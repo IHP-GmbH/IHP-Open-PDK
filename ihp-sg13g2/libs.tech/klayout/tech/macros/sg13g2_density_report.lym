@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Density Report</description>
+ <version>0.1</version>
+ <category>misc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>Run Density Report</group-name>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text># layer inputs
+
+###################### Layer assignment #######################
+
+# total area limited by prBoundary
+# HACK: use 235/4 since we currently have no prBoundary (189/0) drawn
+prBoundary = input("235/4")
+
+
+# Activ
+activ_draw = input("1/0")
+activ_fill = input("1/22")
+
+# GatPoly
+GatPoly_draw = input("5/0")
+GatPoly_fill = input("5/22")
+
+# metal1
+metal1_draw = input("8/0")
+metal1_fill = input("8/22")
+
+# metal2
+metal2_draw = input("10/0")
+metal2_fill = input("10/22")
+
+# metal3
+metal3_draw = input("30/0")
+metal3_fill = input("30/22")
+
+# metal4
+metal4_draw = input("50/0")
+metal4_fill = input("50/22")
+
+# metal5
+metal5_draw = input("67/0")
+metal5_fill = input("67/22")
+
+# TopMetal1
+TopMetal1_draw = input("126/0")
+TopMetal1_fill = input("126/22")
+
+# TopMetal2
+TopMetal2_draw = input("134/0")
+TopMetal2_fill = input("134/22")
+
+
+###################### area calculation ########################
+
+# total
+area_total = prBoundary.area.round(3)
+
+# Activ
+area_activ_fill = activ_fill.area.round(3)
+area_activ_draw = activ_draw.area.round(3)
+area_activ  = area_activ_fill + area_activ_draw
+tf_activ = (area_activ/area_total*100.0).round(3)
+
+# GatPoly
+area_GatPoly_fill = GatPoly_fill.area.round(3)
+area_GatPoly_draw = GatPoly_draw.area.round(3)
+area_GatPoly  = area_GatPoly_fill + area_GatPoly_draw
+tf_GatPoly = (area_GatPoly/area_total*100.0).round(3)
+
+# metal 1
+area_metal1_fill = metal1_fill.area.round(3)
+area_metal1_draw = metal1_draw.area.round(3)
+area_metal1  = area_metal1_fill + area_metal1_draw
+tf_metal1 = (area_metal1/area_total*100.0).round(3)
+
+# metal 2
+area_metal2_fill = metal2_fill.area.round(3)
+area_metal2_draw = metal2_draw.area.round(3)
+area_metal2  = area_metal2_fill + area_metal2_draw
+tf_metal2 = (area_metal2/area_total*100.0).round(3)
+
+# metal 3
+area_metal3_fill = metal3_fill.area.round(3)
+area_metal3_draw = metal3_draw.area.round(3)
+area_metal3  = area_metal3_fill + area_metal3_draw
+tf_metal3 = (area_metal3/area_total*100.0).round(3)
+
+# metal 4
+area_metal4_fill = metal4_fill.area.round(3)
+area_metal4_draw = metal4_draw.area.round(3)
+area_metal4  = area_metal4_fill + area_metal4_draw
+tf_metal4 = (area_metal4/area_total*100.0).round(3)
+
+# metal 5
+area_metal5_fill = metal5_fill.area.round(3)
+area_metal5_draw = metal5_draw.area.round(3)
+area_metal5  = area_metal5_fill + area_metal5_draw
+tf_metal5 = (area_metal5/area_total*100.0).round(3)
+
+# TopMetal 1
+area_TopMetal1_fill = TopMetal1_fill.area.round(3)
+area_TopMetal1_draw = TopMetal1_draw.area.round(3)
+area_TopMetal1  = area_TopMetal1_fill + area_TopMetal1_draw
+tf_TopMetal1 = (area_TopMetal1/area_total*100.0).round(3)
+
+# TopMetal 2
+area_TopMetal2_fill = TopMetal2_fill.area.round(3)
+area_TopMetal2_draw = TopMetal2_draw.area.round(3)
+area_TopMetal2  = area_TopMetal2_fill + area_TopMetal2_draw
+tf_TopMetal2 = (area_TopMetal2/area_total*100.0).round(3)
+
+
+# output
+puts "Layer areas and percetages"
+puts "------------------------------------------------\n\n"
+
+puts "Total Area = #{area_total}um^2\n\n"
+
+# Activ
+puts "Activ Area = #{area_activ}um^2"
+puts "Activ %    = #{tf_activ}% Min = 35 Max = 55\n\n"
+
+# GatPoly
+puts "GatPoly Area = #{area_GatPoly}um^2"
+puts "GatPoly %    = #{tf_GatPoly}% Min = 15\n\n"
+
+# metal 1
+puts "Metal1 Area = #{area_metal1}um^2"
+puts "Metal1 %    = #{tf_metal1}% Min = 35 Max = 60\n\n"
+
+# metal 2
+puts "Metal2 Area = #{area_metal2}um^2"
+puts "Metal2 %    = #{tf_metal2}% Min = 35 Max = 60\n\n"
+
+# metal 3
+puts "Metal3 Area = #{area_metal3}um^2"
+puts "Metal3 %    = #{tf_metal3}% Min = 35 Max = 60\n\n"
+
+# metal 4
+puts "Metal4 Area = #{area_metal4}um^2"
+puts "Metal4 %    = #{tf_metal4}% Min = 35 Max = 60\n\n"
+
+# metal 5
+puts "Metal5 Area = #{area_metal5}um^2"
+puts "Metal5 %    = #{tf_metal5}% Min = 35 Max = 60\n\n"
+
+# TopMetal 1
+puts "TopMetal1 Area = #{area_TopMetal1}um^2"
+puts "TopMetal1 %    = #{tf_TopMetal1}% Min = 25 Max = 70\n\n"
+
+# TopMetal 2
+puts "TopMetal2 Area = #{area_TopMetal2}um^2"
+puts "TopMetal2 %    = #{tf_TopMetal2}% Min = 25 Max = 70\n\n"
+</text>
+</klayout-macro>

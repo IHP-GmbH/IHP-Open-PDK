@@ -1,0 +1,4687 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+# For batch mode run:
+
+  ## klayout -b -r sg13g2_full.lylvs -rd in_gds=<layout_path> -rd cdl_file=<schematic_path> -rd report_file=<report_path> -rd target_netlist=<extracted_netlist_path> <options> 
+
+  ## Example : klayout -b -r sg13g2_full.lylvs -rd in_gds=sg13_lv_nmos.gds -rd cdl_file=sg13_lv_nmos.cdl -rd report_file=sg13_lv_nmos.lvsdb -rd target_netlist=sg13_lv_nmos_extracted.cir -rd run_mode=deep -rd no_net_names=false -rd spice_comments=false -rd net_only=false -rd top_lvl_pins=false -rd no_simplify=false -rd no_series_res=false -rd no_parallel_res=false -rd combine_devices=false -rd purge=false -rd purge_nets=false -rd verbose=false -rd topcell=sg13_lv_nmos
+
+-->
+
+<klayout-macro>
+ <description>Run Klayout LVS</description>
+ <version>0.1</version>
+ <category>lvs</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>Run Klayout LVS</group-name>
+ <menu-path>tools_menu.lvs.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>lvs-dsl-xml</dsl-interpreter-name>
+ <text>
+ <![CDATA[
+#===========================================================================================================
+# ------------------------------------------ SG13G2 LVS RULE DECK ------------------------------------------
+#===========================================================================================================
+
+require 'time'
+require 'logger'
+require 'etc'
+
+exec_start_time = Time.now
+
+logger = Logger.new($stdout)
+
+def get_memory_usage
+  if Gem.win_platform?
+    # Cross-platform memory usage retrieval
+    require 'win32ole'
+    wmi = WIN32OLE.connect("winmgmts://")
+    processes = wmi.ExecQuery("select * from Win32_Process where ProcessId = #{Process.pid}")
+    process = processes.each.next # Get the first result
+    "#{process.WorkingSetSize.to_i / 1024} KB"
+  else
+    `ps -o rss= -p #{Process.pid}`.strip + " KB"
+  end
+end
+
+logger.formatter = proc do |_severity, datetime, _progname, msg|
+  "#{datetime}: Memory Usage (" + get_memory_usage + ") : #{msg}\n"
+end
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running SG13G2 Klayout LVS runset on #{$in_gds}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $in_gds
+  if $topcell
+    source($in_gds, $topcell)
+  else
+    source($in_gds)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report_file
+  logger.info("SG13G2 Klayout LVS runset output at: #{$report_file}")
+  report_lvs($report_file)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join("#{source.cell_name}.lvsdb").to_s
+  logger.info("SG13G2 Klayout LVS runset output at default location: #{source.cell_name}.lvsdb")
+  report_lvs($report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+  obj.to_s.downcase == 'true'
+end
+
+#=== NET NAMES OPTION ===
+# true: use net names instead of numbers
+# false: use numbers for nets
+SPICE_WITH_NET_NAMES = !bool_check?($no_net_names)
+
+logger.info("Extracted netlist with net names: #{SPICE_WITH_NET_NAMES}")
+
+#=== COMMENTS OPTION ===
+# true: put in comments with details
+# false: no comments
+SPICE_WITH_COMMENTS = bool_check?($spice_comments)
+
+logger.info("Extracted netlist with comments in details: #{SPICE_WITH_COMMENTS}")
+
+# NET_ONLY
+NET_ONLY = bool_check?($net_only)
+
+logger.info("Selected NET_ONLY option: #{NET_ONLY}")
+
+# TOP_LVL_PINS
+TOP_LVL_PINS = bool_check?($top_lvl_pins)
+
+logger.info("Selected TOP_LVL_PINS option: #{TOP_LVL_PINS}")
+
+# COMBINE
+COMBINE_DEVICES = bool_check?($combine_devices)
+
+logger.info("Selected COMBINE DEVICES option: #{COMBINE_DEVICES}")
+
+# PURGE
+PURGE = bool_check?($purge)
+
+logger.info("Selected PURGE option: #{PURGE}")
+
+# PURGE_NETS
+PURGE_NETS = bool_check?($purge_nets)
+
+logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
+
+# SIMPLIFY
+SIMPLIFY = !bool_check?($no_simplify)
+
+logger.info("Selected SIMPLIFY option: #{SIMPLIFY}")
+
+# SIMPLIFY
+SERIES_RES = !bool_check?($no_series_res)
+
+logger.info("Selected SERIES_RES option: #{SERIES_RES}")
+
+# SIMPLIFY
+PARALLEL_RES = !bool_check?($no_parallel_res)
+
+logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
+
+#=== PRINT DETAILS ===
+logger.info("Verbose mode: #{$verbose}")
+if $verbose == 'true'
+  verbose(true)
+else
+  verbose(false)
+end
+
+# === RUN MODE ===
+case $run_mode
+when 'deep'
+  #=== HIER MODE ===
+  deep
+  logger.info('deep  mode is enabled.')
+else
+  #=== FLAT MODE ===
+  flat
+  logger.info('flat  mode is enabled.')
+end
+
+# === Tech Switches ===
+
+#================================================
+# --------------- CUSTOM CLASSES ----------------
+#================================================
+
+$logger = logger
+$unit = dbu
+
+#=============== UTILS ===============
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c  # Keep wildcard characters as they are
+    else
+      Regexp.escape(c)
+    end
+  end.join
+  
+  pattern
+end
+
+#================================================
+# ---------------- CUSTOM READER ----------------
+#================================================
+
+# Custom reader for subcircuit models
+class CustomReader < RBA::NetlistSpiceReaderDelegate
+  # Cleanup sch for R, C elements
+  def clean_sch(line, element)
+    # Extracting parameters with values
+    valid_params = line.scan(/\b\w+\s*=\s*\S+\b/)
+
+    case element
+    when 'R'
+      # For 2 term res [<nets> <model> <params>]
+      num_terms = 3
+    when 'C'
+      # Determine number of terms based on component type
+      num_terms =
+        if line.downcase.include?('varicap')
+          5
+        elsif line.downcase.include?('rfcmim')
+          4
+        else
+          3
+        end
+    end
+    line_no_param = line.split(' ').take(num_terms).join(' ')
+    "#{line_no_param.strip} #{valid_params.join(' ')}"
+  end
+
+  # Override parse_element method to handle exceptions gracefully
+  def parse_element(line, element)
+    # clean line
+    line = line.delete('[]$\\/')
+
+    # Prep sch for R, C
+    line = clean_sch(line, element) if %w[R C].include?(element)
+
+    super
+  rescue StandardError
+    case element
+    when 'C'
+      if line.downcase.include?('varicap')
+        super(line.to_s, 'M')
+      elsif line.downcase.include?('rfcmim')
+        super(line.to_s, 'Q')
+      else
+        super("#{line} C=1e-18", element)
+      end
+    when 'R'
+      super("#{line} R=0", element)
+    when 'D'
+      if line.downcase.include?('diodev') || line.downcase.include?('schottky')
+        super(line.to_s, 'Q')
+      else
+        super(line.to_s, element)
+      end
+    when 'L'
+      if line.downcase.include?('inductor3')
+        super("#{line} L=0", 'M')
+      else
+        super("#{line} L=0", element)
+      end
+    else
+      super
+    end
+  end
+
+  # Override the element method to handle different types of elements
+  def element(circuit, ele, name, model, value, nets, params)
+    if CUSTOM_READER.include?(ele)
+      process_device(ele, circuit, name, model, nets, params)
+    else
+      super
+    end
+    true
+  end
+
+  private
+
+  # Process device element
+  def process_device(ele, circuit, name, model, nets, params)
+    cls = circuit.netlist.device_class_by_name(model)
+    cls ||= create_device_class(ele, circuit, model, nets.size)
+
+    device = circuit.create_device(cls, name)
+    connect_terminals(ele, device, model, nets)
+    map_params(ele, device, model, params)
+  end
+
+  # Create or retrieve the device class based on the element type, model name, and number of nets.
+  #
+  # @param ele [String] The type of element (C, R, Q, L).
+  # @param circuit [Circuit] The circuit object to which the device class will be added.
+  # @param model [String] The model name of the device class.
+  # @param num_nets [Integer] The number of nets the device class should have.
+  # @return [RBA::DeviceClass] The created or retrieved device class.
+  def create_device_class(ele, circuit, model, num_nets)
+    cls = case ele
+          when 'M' then RBA::DeviceClassMOS4Transistor.new
+          when 'C' then create_capacitor(model, num_nets)
+          when 'R' then create_resistor(model, num_nets)
+          when 'Q' then create_bjt(model, num_nets)
+          when 'L' then DeviceCustomInd.new(model, num_nets - 1)
+          when 'D' then create_diode(model)
+          else
+            return super
+          end
+
+    cls.name = model
+    circuit.netlist.add(cls)
+    cls
+  end
+
+  # Create a capacitor device class.
+  def create_capacitor(model, num_nets)
+    if model.downcase.include?('varicap')
+      raise ArgumentError, 'Varicap should have 4 nodes, please recheck' unless num_nets == 4
+
+      DeviceCustomVaractor.new(model, num_nets - 1)
+    else
+      raise ArgumentError, 'Capacitor should have 2 or 3 nodes, please recheck' unless [2, 3].include?(num_nets)
+
+      DeviceCustomMIM.new(model)
+
+    end
+  end
+
+  # Create a diode device class.
+  def create_diode(model)
+    if model.downcase.include?('diodev') || model.downcase.include?('schottky')
+      Esd3Term.new
+    elsif model.downcase.include?('nmoscl')
+      Esd2Term.new
+    else
+      EnDiode.new
+    end
+  end
+
+  # Create a resistor device class.
+  def create_resistor(model, num_nets)
+    if RES_DEV.any? { |res| model.downcase.start_with?(res) }
+      DeviceCustomRes.new(model, num_nets)
+    elsif num_nets == 2 && model.downcase.include?('tap')
+      RBA::DeviceClassDiode.new
+    elsif num_nets == 2
+      RBA::DeviceClassResistor.new
+    elsif num_nets == 3
+      RBA::DeviceClassResistorWithBulk.new
+    else
+      raise ArgumentError, 'Resistor should have two or three nodes, please recheck'
+    end
+  end
+
+  # Create a bjt device class.
+  def create_bjt(model, _num_nets)
+    if model.downcase.include?('pnp')
+      CustomBJT3.new
+    else
+      CustomBJT4.new
+    end
+  end
+
+  # Connect device terminals based on element type, device, model, and nets.
+  #
+  # @param ele [String] The type of element (C, R, Q).
+  # @param device [RBA::Device] The device object to which terminals will be connected.
+  # @param model [String] The model name of the device.
+  # @param nets [Array<String>] Array of net names to which terminals will be connected.
+  def connect_terminals(ele, device, model, nets)
+    term_list = terminal_list_for_element(ele, model, nets)
+
+    term_list.each_with_index do |t, index|
+      device.connect_terminal(t, nets[index])
+    end
+  end
+
+  # Determine terminal list based on element type, model, and nets.
+  def terminal_list_for_element(ele, model, nets)
+    case ele
+    when 'M'
+      %w[D G S B]
+    when 'Q'
+      model.downcase.include?('pnp') ? %w[C B E] : %w[C B E S]
+    when 'C'
+      model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : gen_mim_terms(model)
+    when 'R'
+      if RES_DEV.any? { |res| model.downcase.start_with?(res) }
+        gen_term_names(model, nets.size)
+      elsif model.downcase.include?('tap')
+        %w[C A]
+      else
+        nets.size == 3 ? %w[A B W] : %w[A B]
+      end
+    when 'D'
+      if model.downcase.include?('diodevdd')
+        %w[B E C]
+      elsif model.downcase.include?('diodevss')
+        %w[C E B]
+      elsif model.downcase.include?('schottky')
+        %w[E B C]
+      elsif model.downcase.include?('nmoscl')
+        %w[C A]
+      else
+        %w[A C]
+      end
+    when 'L'
+      gen_term_with_sub(model, nets.size)
+    else
+      gen_term_names(model, nets.size)
+    end
+  end
+
+  # Generate terminal names based on model and the number of nets.
+  def gen_term_names(model, size)
+    (0...size).map { |i| "#{model}_#{i + 1}" }
+  end
+
+  # Generate terminal names based on model and the number of nets.
+  def gen_mim_terms(model)
+    terms = %w[mim_top mim_btm]
+
+    return terms unless model.downcase.include?('rfcmim')
+
+    terms << 'mim_sub' # Add sub terminal
+    terms
+  end
+
+  # Generate terminal names based on model and the number of nets.
+  def gen_term_with_sub(model, size)
+    terms = (0...size - 1).map { |i| "#{model}_#{i + 1}" }
+    terms << "#{model}_sub" # Add sub terminal
+  end
+
+  # Map parameters based on the model type.
+  #
+  # @param ele [String] The type of element (M, C, R, Q, L, D).
+  # @param device [RBA::Device] The device object to which parameters will be mapped.
+  # @param model [String] The model name of the device.
+  # @param params [Hash] Hash containing parameter values.
+  def map_params(ele, device, model, params)
+    case ele
+    when 'M'
+      map_mos_params(device, params)
+    when 'Q'
+      map_bjt_params(device, model, params)
+    when 'C'
+      map_capacitor_params(device, model, params)
+    when 'R'
+      map_resistor_params(device, model, params)
+    when 'D'
+      map_diode_params(device, model, params)
+    when 'L'
+      map_inductor_params(device, params)
+    else
+      raise ArgumentError, "#{ele} device with model #{model} is not supported, please recheck"
+    end
+  end
+
+  # Map parameters for mos devices.
+  def map_mos_params(device, params)
+    device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
+    device.set_parameter('L', (params['L'] || 0.0) * 1e6)
+  end
+
+  # Map parameters for a BJT device.
+  def map_bjt_params(device, model, params)
+    if model.downcase.include?('pnp')
+      device.set_parameter('AE', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('PE', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    else
+      device.set_parameter('AE', (params['AE'] || ((params['WE'] || 0.0) * (params['LE'] || 0.0))) * 1e12)
+      device.set_parameter('PE', (params['PE'] || (((params['WE'] || 0.0) + (params['LE'] || 0.0)) * 2)) * 1e6)
+    end
+    device.set_parameter('NE', params['M'] || params['NE'] || 1.0)
+    device.set_parameter('m',  params['M'] || params['NE'] || 1.0)
+  end
+
+  # Map parameters for a diode device.
+  def map_diode_params(device, model, params)
+    unless model.downcase.include?('diodev') || model.downcase.include?('schottky') || model.downcase.include?('nmoscl')
+      device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('P', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    end
+    device.set_parameter('m', params['M'] || 1.0)
+  end
+
+  # Map parameters for a capacitor device.
+  def map_capacitor_params(device, model, params)
+    device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('l', (params['L'] || 0.0) * 1e6)
+    device.set_parameter('m', params['M'] || params['MF'] || 1.0) if model.downcase.include?('cap_cmim')
+
+    if model.downcase.include?('mim')
+      device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('P', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    end
+    return unless model.downcase.include?('rfcmim')
+
+    device.set_parameter('wfeed', (params['WFEED'] || 0.0) * 1e6)
+  end
+
+  # Map parameters for a resistor device.
+  def map_resistor_params(device, model, params)
+    if model.downcase.include?('tap')
+      device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
+      device.set_parameter('P',
+                           (params['P'] || params['PERIM'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+    elsif RES_DEV.any? { |res| model.downcase.start_with?(res) }
+      device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+      device.set_parameter('l', (params['L'] || 0.0) * 1e6)
+      device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
+      device.set_parameter('b', params['B'] || 0.0)
+      device.set_parameter('m', params['M'] || 1.0)
+    else
+      device.set_parameter('W', (params['W'] || params['WIDTH'] || 0.0) * (params['M'] || 1.0) * 1e6)
+      device.set_parameter('L', (params['L'] || params['LENGTH'] || 0.0) * (params['S'] || 1.0) * 1e6)
+      device.set_parameter('R', (params['R'] || 0.0) * (params['S'] || 1.0) / (params['M'] || 1.0))
+    end
+  end
+
+  # Map parameters for an inductor device.
+  def map_inductor_params(device, params)
+    device.set_parameter('w', (params['W'] || 0.0) * 1e6)
+    device.set_parameter('s', (params['S'] || 0.0) * 1e6)
+    device.set_parameter('d', (params['D'] || 0.0) * 1e6)
+    device.set_parameter('nr_r', params['NR_R'] || 0.0)
+  end
+end
+
+#================================================
+# ---------------- CUSTOM WRITER ----------------
+#================================================
+
+#==============================
+# --------- Varaibles ---------
+#==============================
+
+# Prefix for each device
+PREFIX_MAP = {
+  'sg13_lv_nmos' => 'M',
+  'sg13_hv_nmos' => 'M',
+  'sg13_lv_pmos' => 'M',
+  'sg13_hv_pmos' => 'M',
+  'rfnmos' => 'M',
+  'rfnmosHV' => 'M',
+  'rfpmos' => 'M',
+  'rfpmosHV' => 'M',
+  'npn13G2' => 'Q',
+  'npn13G2L' => 'Q',
+  'npn13G2V' => 'Q',
+  'pnpMPA' => 'Q',
+  'dantenna' => 'D',
+  'dpantenna' => 'D',
+  'schottky_nbl1' => 'D',
+  'rsil' => 'R',
+  'rppd' => 'R',
+  'rhigh' => 'R',
+  'lvsres' => 'R',
+  'SVaricap' => 'C',
+  'cap_cmim' => 'C',
+  'rfcmim' => 'C',
+  'diodevss_4kv' => 'D',
+  'diodevss_2kv' => 'D',
+  'diodevdd_4kv' => 'D',
+  'diodevdd_2kv' => 'D',
+  'idiodevss_4kv' => 'D',
+  'idiodevss_2kv' => 'D',
+  'idiodevdd_4kv' => 'D',
+  'idiodevdd_2kv' => 'D',
+  'nmoscl_2' => 'D',
+  'nmoscl_4' => 'D',
+  'ptap1' => 'R',
+  'ntap1' => 'R',
+  'inductor2' => 'L',
+  'inductor3' => 'L'
+}.freeze
+
+# Prefix for devices will be customized
+CUSTOM_READER = %w[M C R Q L D].freeze
+
+# List of poly-resistors
+RES_DEV = ['rsil', 'rppd', 'rhigh']
+
+# Custom writer for SPICE netlists
+class CustomWriter < RBA::NetlistSpiceWriterDelegate
+  # Write device to SPICE format
+  # @param device [RBA::Device] The device to be written
+  def write_device(device)
+    device_class = device.device_class
+    str = generate_device_prefix(device, device_class)
+    str += generate_device_terminals(device, device_class)
+    str += "#{device_class.name} "
+    str += generate_default_parameters(device, device_class)
+    emit_line(str)
+  end
+
+  private
+
+  # Generate device prefix using the global prefix map
+  def generate_device_prefix(device, device_class)
+    prefix = PREFIX_MAP[device_class.name] || device.id.to_s
+    "#{prefix}#{device.expanded_name} "
+  end
+
+  # Generate device terminals
+  def generate_device_terminals(device, device_class)
+    terminals = device_class.terminal_definitions.map do |td|
+      net_to_string(device.net_for_terminal(td.id))
+    end
+    "#{terminals.join(' ')} "
+  end
+
+  # Determine the unit for each parameter
+  def get_unit(key)
+    case key
+    when 'W', 'L', 'w', 'wfeed', 'l', 's', 'd', 'ps'
+      'u'  # micrometers
+    when 'AS', 'AD', 'AE', 'AB', 'AC', 'A'
+      'p'  # picometers (these are areas um^2)
+    when 'PS', 'PD', 'PE', 'PB', 'PC', 'P', 'Perim'
+      'u'  # micrometers (perimeters)
+    else
+      ''  # no unit
+    end
+  end
+
+  # Generate default parameters for the device
+  def generate_default_parameters(device, device_class)
+    parameters = device_class.parameter_definitions.map do |pd|
+      unit = get_unit(pd.name)
+      value = device.parameter(pd.id)
+      if value && value > 0
+        format('%<name>s=%<value>.12g%<unit>s', name: pd.name, value: value, unit: unit)
+      elsif value
+        format('%<name>s=%<value>.12g', name: pd.name, value: value)
+      end
+    end
+    # Use compact to remove any nil values
+    parameters.compact.join(' ')
+  end
+end
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# common methods
+module DeviceClassMethods
+  private
+
+  def add_parameters(*names)
+    names.each { |name| add_parameter(RBA::DeviceParameterDefinition.new(name)) }
+  end
+
+  def add_terminals(name, num, sub_en)
+    (1..num).each do |i|
+      terminal_name = "#{name}_#{i}"
+      ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
+      ter.name = terminal_name
+    end
+    return unless sub_en == 1
+
+    terminal_name = "#{name}_sub"
+    ter = add_terminal(RBA::DeviceTerminalDefinition.new(terminal_name))
+    ter.name = terminal_name
+  end
+end
+
+# res-custom device calss
+class DeviceCustomRes < RBA::DeviceClassResistor
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+
+    add_parameters('w', 'l', 'ps', 'b')
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    if SERIES_RES || PARALLEL_RES
+      self.combiner = RESDeviceCombiner.new
+    else
+      self.combiner =nil
+    end
+
+    add_terminals(name, num, 0)
+  end
+end
+
+# BJT-3term device calss
+class CustomBJT3 < RBA::DeviceClassBJT3Transistor
+
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
+
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
+  end
+end
+
+# BJT-4term device calss
+class CustomBJT4 < RBA::DeviceClassBJT4Transistor
+  include DeviceClassMethods
+
+  def initialize
+    super
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    self.combiner = BJTDeviceCombiner.new
+
+    enable_parameter('AE', true)
+    enable_parameter('PE', true)
+    enable_parameter('NE', true)
+  end
+end
+
+# inductor device calss
+class DeviceCustomInd < RBA::DeviceClassInductor
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of class
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    add_parameters('w', 's', 'd', 'nr_r')
+    add_terminals(name, num, 1)
+
+    # 5% tolerance for w,s,d:
+    equal_ind_parameters = RBA::EqualDeviceParameters::new(parameter_id('w'), 0.0, 0.05)
+    equal_ind_parameters += RBA::EqualDeviceParameters::new(parameter_id('s'), 0.0, 0.05)
+    equal_ind_parameters += RBA::EqualDeviceParameters::new(parameter_id('d'), 0.0, 0.05)
+    # applies the compare delegate:
+    self.equal_parameters = equal_ind_parameters
+
+    self.combiner = nil
+    self.supports_serial_combination=false
+    self.supports_parallel_combination=false
+  end
+end
+
+# Varactor-custom device calss
+class DeviceCustomVaractor < RBA::DeviceClassCapacitorWithBulk
+  include DeviceClassMethods
+
+  def initialize(name, num)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+
+    add_parameters('w', 'l')
+    add_terminals(name, num, 1)
+  end
+end
+
+# res-2term device calss
+class RES2 < RBA::DeviceClassResistor
+  def initialize
+    super
+    enable_parameter('W', true)
+    enable_parameter('L', true)
+    enable_parameter('R', false)
+  end
+end
+
+# Diode device class
+class EnDiode < RBA::DeviceClassDiode
+  def initialize
+    
+    # 1% tolerance for A,P:
+    equal_diode_parameters = RBA::EqualDeviceParameters::new(parameter_id('A'), 0.0, 0.01)
+    equal_diode_parameters += RBA::EqualDeviceParameters::new(parameter_id('P'), 0.0, 0.01)
+    # applies the compare delegate:
+    self.equal_parameters = equal_diode_parameters
+
+    # combiner
+    self.combiner = DiodeDeviceCombiner.new
+    self.supports_serial_combination=true
+    self.supports_parallel_combination=true
+
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+    enable_parameter('m', true)
+  end
+end
+
+# schottky device class
+class CustomSchottky < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    self.combiner = SchottckyDeviceCombiner.new
+  end
+end
+
+# Taps device class
+class CustomTap < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'Area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'Perimeter', 0, true))
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+  end
+end
+
+# ESD-3term device class
+class Esd3Term < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
+  end
+end
+
+# ESD-2term device class
+class Esd2Term < RBA::DeviceClassDiode
+  def initialize
+    super
+    clear_parameters
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'area', 1, true))
+    enable_parameter('m', true)
+  end
+end
+
+#================================================
+# -------------- CUSTOM COMBINER ----------------
+#================================================
+
+# common methods
+module DeviceCombinerMethods
+  private
+
+  # A helper function to check whether two nets are the same
+  def same_net(a, b, name)
+    a_net = a.net_for_terminal(name)
+    b_net = b.net_for_terminal(name)
+
+    # same polarity
+    same_po = a_net.expanded_name == b_net.expanded_name if a_net && b_net
+    a_net && b_net && same_po
+  end
+
+  # A helper function to check whether two device connected in parallel
+  def supp_parallel(a, b, net1, net2)
+    a_net1 = a.net_for_terminal(net1)
+    a_net2 = a.net_for_terminal(net2)
+    b_net1 = b.net_for_terminal(net1)
+    b_net2 = b.net_for_terminal(net2)
+
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    same_po = a_net1.expanded_name == b_net1.expanded_name && a_net2.expanded_name == b_net2.expanded_name
+    diff_po = a_net1.expanded_name == b_net2.expanded_name && a_net2.expanded_name == b_net1.expanded_name
+
+    same_po || diff_po
+  end
+
+  # A helper function to check whether two device connected in series
+  def supp_series(a, b, net1, net2)
+    a_net1 = a.net_for_terminal(net1)
+    a_net2 = a.net_for_terminal(net2)
+    b_net1 = b.net_for_terminal(net1)
+    b_net2 = b.net_for_terminal(net2)
+
+    return false unless a_net1 && b_net1 && a_net2 && b_net2
+
+    series_con_a1 = a_net1.expanded_name == b_net1.expanded_name || a_net1.expanded_name == b_net2.expanded_name
+    series_con_a2 = a_net2.expanded_name == b_net1.expanded_name || a_net2.expanded_name == b_net2.expanded_name
+    series_con = series_con_a1 || series_con_a2
+
+    # Reroute terminal connections based on cluster IDs
+    if series_con_a1
+      if a_net1.expanded_name == b_net1.expanded_name
+        a.connect_terminal(0, b_net2)
+      else
+        a.connect_terminal(0, b_net1)
+      end
+    end
+
+    if series_con_a2
+      if a_net2.expanded_name == b_net1.expanded_name
+        a.connect_terminal(1, b_net2)
+      else
+        a.connect_terminal(1, b_net1)
+      end
+    end
+
+    series_con
+  end
+
+  # A helper function to check whether two parameters have approximately the same value
+  def same_parameter(a, b, name)
+    (a.parameter(name) - b.parameter(name)).abs < 1e-9
+  end
+end
+
+class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    # Check if both devices have the same net
+    return false unless same_net(a, b, 'mim_top') && same_net(a, b, 'mim_btm')
+
+    # Check if parameters are the same
+    return false unless same_parameter(a, b, 'w') && same_parameter(a, b, 'l')
+
+    # Combine by summing up 'm' parameter
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+
+    # Disconnect the second device and let the system clean it up
+    b.disconnect_terminal('mim_top')
+    b.disconnect_terminal('mim_btm')
+
+    # Disconnect mim_sub terminal if present and model name includes 'rfcmim'
+    b.disconnect_terminal('mim_sub') if b.name.downcase.include?('rfcmim')
+
+    true
+  end
+end
+
+class DiodeDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    # Check if both devices have the same net
+    return false unless same_net(a, b, 'A') && same_net(a, b, 'C')
+
+    # Check if parameters are the same
+    return false unless same_parameter(a, b, 'A') && same_parameter(a, b, 'P')
+
+    # Combine by summing up 'm' parameter
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+
+    # Disconnect the second device and let the system clean it up
+    b.disconnect_terminal('A')
+    b.disconnect_terminal('C')
+
+    true
+  end
+end
+
+class BJTDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    bjt3_nets = %w[C B E]
+    bjt4_nets = %w[C B E S]
+
+    # Determine the correct nets based on device type (assuming PNP or NPN)
+    bjt_nets = a.device_class.name.downcase.include?('pnp') ? bjt3_nets : bjt4_nets
+
+    # Check if terminals have the same net
+    return false unless bjt_nets.all? { |net| same_net(a, b, net) }
+
+    # Check if parameters are the same
+    return false unless %w[AE PE].all? { |param| same_parameter(a, b, param) }
+
+    # Combine parameters
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+    a.set_parameter('NE', a.parameter('NE') + b.parameter('NE'))
+
+    # Disconnect the second device and let the system clean it up
+    bjt_nets.each { |term| b.disconnect_terminal(term) }
+
+    true
+  end
+end
+
+class RESDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Method to check and perform device combination
+  def combine_devices(a, b)
+    res_nets = [0, 1] # Using id instead of names
+
+    # Check if same parameters
+
+    # Check if terminals series or parallel (With same params)
+    if supp_parallel(a, b, 0, 1)
+      return false unless PARALLEL_RES
+      return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
+
+      a.set_parameter('m', a.parameter('m') + b.parameter('m'))
+    elsif supp_series(a, b, 0, 1)
+      return false unless SERIES_RES
+      return false unless %w[w ps b m].all? { |param| same_parameter(a, b, param) }
+
+      a.set_parameter('l', a.parameter('l') + b.parameter('l'))
+    else
+      return false
+    end
+
+    # Disconnect the second device and let the system clean it up
+    res_nets.each { |term| b.disconnect_terminal(term) }
+
+    true
+  end
+end
+
+#================================================
+# -------------- CUSTOM EXTRACTOR ---------------
+#================================================
+
+# === GeneralNTerminalExtractor ===
+class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
+  # Extraction of N terminal devices - General Class
+
+  def initialize(name, num)
+    # Initialize the extractor with a device name and number of terminals.
+    #
+    # Args:
+    #   name (String): The name of the device.
+    #   num (Integer): Number of terminals.
+    create
+    self.name = name
+    @num = num
+    @name = name
+  end
+
+  def setup
+    # Set up layers and register device class for extraction.
+    define_layers
+    # Register device class for extraction.
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
+      @reg_dev = DeviceCustomRes.new(name, @num)
+    elsif name.downcase.include?('varicap')
+      @reg_dev = DeviceCustomVaractor.new(name, @num)
+    elsif name.downcase.start_with?('ind')
+      @reg_dev = DeviceCustomInd.new(name, @num)
+    else
+      raise ArgumentError, "Custom-Class for #{name} device is not supported yet, please recheck"
+    end
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    # Establish connectivity between layers.
+    #
+    # Args:
+    #   _layout: Layout object (unused).
+    #   layers (Array): Array of layer objects.
+    #
+    # Returns:
+    #   Connectivity object representing the connections between layers.
+    dev = layers[0]
+    ports = layers[1]
+    meas_mk = layers[2]
+    dev_mk = layers[3]
+
+    conn = RBA::Connectivity.new
+    conn.connect(dev, dev)
+    conn.connect(dev, dev_mk)
+    conn.connect(dev, meas_mk)
+    conn.connect(ports, dev_mk)
+    conn.connect(meas_mk, dev_mk)
+
+    # Sub connection for some devices
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      sub_mk = layers[4]
+      conn.connect(sub_mk, dev_mk)
+    end
+
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    # Extract devices based on layer geometry.
+    #
+    # Args:
+    #   layer_geometry (Array): Array of layer geometries.
+    dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
+
+    dev_mk.merged.each do |region|
+      if ports.size != @num
+        $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
+        $logger.info("No. of ports exist for #{@name} is #{ports.size}, should be #{@num}")
+      else
+        device = create_device
+        set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
+        define_and_sort_terminals(device, ports, sub_mk)
+      end
+    end
+  end
+
+  private
+
+  def define_layers
+    # Define layers for extraction.
+    define_layer('core', 'core Layer')
+    define_layer('ports', 'Connect Terminal')
+    define_layer('meas_mk', 'Measuring parameters marker')
+    define_layer('dev_mk', 'Device Marker')
+    # Define sub layer for some devices
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      define_layer('sub_mk', 'Substrate Marker')
+    end
+  end
+
+  def set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
+    # Set device parameters based on device type.
+    #
+    # Args:
+    #   device: Device object to set parameters for.
+    #   region: Region representing the measured region.
+    #   dev: Device layer object.
+    #   ports: ports layer object.
+    #   meas_mk: Measuring marker layer object.
+    #   dev_mk: main marker layer object.
+    #
+    # Returns:
+    #   None
+
+    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
+      width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+      device.set_parameter('ps', poly_sp * $unit)
+      device.set_parameter('b', bends)
+
+    elsif name.downcase.include?('varicap')
+      width, length = calc_varicap_params(dev, ports, meas_mk, dev_mk)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+
+    elsif name.downcase.start_with?('ind')
+      width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk, region)
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('s', space * $unit)
+      device.set_parameter('d', diameter * $unit)
+      device.set_parameter('nr_r', no_turns)
+    end
+  end
+
+  def calc_res_params(dev, ports, meas_mk)
+    # Width
+    width_edges = dev.edges.and(ports.edges)
+    width = get_uniq_length(width_edges)
+
+    # Length
+    length_edges = dev.edges.interacting(width_edges).not(width_edges)
+    length, _ = get_min_max_length(length_edges)
+
+    # Bends
+    corners = meas_mk.interacting(dev).corners.not_interacting(ports).count
+    bends = corners / 4
+
+    # poly_space between bends
+    if bends.positive?
+      poly_sp_polygon = meas_mk.interacting(dev)
+      poly_sp = get_notch_min(poly_sp_polygon, 10 * length)
+      length = length + width
+    end
+
+    # Default values
+    width ||= 0
+    length ||= 0
+    poly_sp ||= 0
+    bends ||= 0
+
+    [width, length, poly_sp, bends]
+  end
+
+  def calc_varicap_params(dev, _ports, meas_mk, _dev_mk)
+    # Width & Length
+    width_edges = dev.edges.not_interacting(meas_mk.edges)
+    length, width = get_min_max_length(width_edges)
+
+    # Default values
+    width ||= 0
+    length ||= 0
+
+    [width, length]
+  end
+
+  def calc_ind_params(dev, ports, meas_mk, dev_mk, region)
+    # Get upper limit for width, space
+    _, max_mk_len = get_min_max_length(dev_mk.edges)
+
+    # Width
+    meas_sel = meas_mk.merged & region
+    width = get_width_val(meas_sel, max_mk_len)
+
+    # space
+    space = get_space_val(meas_sel, max_mk_len)
+
+    # Turns
+    # Calc steps used for no. of turns:
+    # step1: Get count of inductor metal (catch if we have more 1)
+    # Step2: For more than 1 turns, get number of holes
+    # Step3: Turns = 1 + (holes - 1)/2 
+    no_turns_init = meas_mk.merged.count
+    no_turns = no_turns_init
+
+    ## Old implementation
+    # if no_turns_init == 1
+    #   no_turns = no_turns_init
+    # else
+    #   no_turns_pre1 = dev.merged.holes.count
+    #   no_turns_pre2 = (no_turns_pre1 - 1) / 2
+    #   no_turns = 1 + no_turns_pre2.ceil
+    # end
+
+    # Diameter
+    # Calc steps used for diameter:
+    # step1: Get extent of the inductor core
+    # step2: Exclude edges that touch inductor pins
+    # step3: Get length of the remaining edge (Outer diameter)
+    # step4: Get internal diameter --> din = dout - ((turns -1) * 2s) - (turns * w)
+    diam_extents = dev.extents.edges
+    diam_edge_exc = diam_extents.interacting(ports)
+    diam_edge = diam_extents.not_interacting(diam_edge_exc)
+    diameter = diam_edge.length
+    diameter = diameter - (2 * (no_turns - 1) * space) - (2 * no_turns * width)
+    diameter = diameter.negative? ? 0 : diameter
+
+    # Default values
+    width ||= 0
+    space ||= 0
+    diameter ||= 0
+    no_turns ||= 1
+
+    [width, space, diameter, no_turns]
+  end
+
+  def define_and_sort_terminals(device, ports, sub_mk)
+    # Define and sort terminals based on location.
+    #
+    # Args:
+    #   device: Device object to define terminals for.
+    #   ports: Contact layer object containing terminals.
+    #   sub_mk: substrate marker layer object.
+    #
+    # Returns:
+    #   None
+
+    # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
+    substrings = %w[varicap]
+
+    # Initialize sorted_ports with a default value
+    sorted_ports = nil
+
+    # Iterate over each substring
+    substrings.each do |substring|
+      if name.include?(substring)
+        sorted_ports = ports
+        break # Exit loop if a match is found
+      end
+    end
+
+    # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
+    sorted_ports ||= sort_polygons(ports)
+
+    # Define sub if exist (should be defined before other terminals)
+    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      else
+        define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0])
+      end
+    end
+
+    # Defination main terminals
+    (1..@num).each do |i|
+      define_terminal(device, @reg_dev.terminal_id("#{name}_#{i}"), 1, sorted_ports[i - 1])
+    end
+  end
+
+  def sort_polygons(polygons)
+    # Sort polygons points.
+    #
+    # Args:
+    #   polygons: Polygons to sort.
+    #
+    # Returns:
+    #   Sorted polygons.
+    #
+    # Note:
+    #   This function sorts the points of the input polygons to be ordered as expected.
+    #   It takes an array of polygons and returns the sorted array.
+    #   The sorting is based on the x-coordinate of the first point of each polygon.
+    con_polygons = []
+
+    polygons.merged.each do |ports_pl|
+      con_edges = []
+      ports_pl.each_edge do |con_ed|
+        con_edges.append([con_ed.x1, con_ed.y1])
+        con_edges.append([con_ed.x2, con_ed.y2])
+      end
+      con_polygons.append(con_edges.uniq)
+    end
+    sorted_ports_polygons = con_polygons.sort_by(&:first)
+    sorted_ports = []
+    sorted_ports_polygons.each do |sorted_pl|
+      ports_pl = RBA::DPolygon.new([RBA::DPoint.new(sorted_pl[0][0], sorted_pl[0][1]),
+                                    RBA::DPoint.new(sorted_pl[1][0], sorted_pl[1][1]),
+                                    RBA::DPoint.new(sorted_pl[2][0], sorted_pl[2][1]),
+                                    RBA::DPoint.new(sorted_pl[3][0], sorted_pl[3][1])])
+      sorted_ports.append(ports_pl)
+    end
+
+    sorted_ports
+  end
+
+  def get_uniq_length(sel_edges)
+    # Extract uniqe length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.uniq!
+    lengths.size == 1 ? lengths[0] : 0.0
+  end
+
+  def get_sep_val(sel_edges, sep_edges, sep_val)
+    # Extract distance between edges for separation check
+    proj = RBA::Metrics::Projection
+    sep_paris = sel_edges.separation_check(sep_edges, sep_val, proj)
+    sep_values = []
+    sep_paris.each do |edge|
+      sep_values << edge.distance
+    end
+    sep_values.min
+  end
+
+  def get_space_val(sel_polygon, sep_val)
+    # Extract distance between edges for space check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.space_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.min
+  end
+
+  def get_width_val(sel_polygon, width_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    width_paris = sel_polygon.width_check(width_val, metrics: proj, min_projection: 10)
+    width_values = []
+    width_paris.each do |edge|
+      width_values << edge.distance
+    end
+    # Group the array elements by their occurrences
+    width_values = width_values.reject(&:zero?)
+
+    width_values.min
+  end
+
+  def get_notch_min(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.min
+  end
+
+  def get_notch_max(sel_polygon, sep_val)
+    # intra-polygon spacing check
+    proj = RBA::Metrics::Projection
+    space_paris = sel_polygon.notch_check(sep_val, proj)
+    space_values = []
+    space_paris.each do |edge|
+      space_values << edge.distance
+    end
+    space_values.max
+  end
+
+  def get_min_max_length(sel_edges)
+    # Extract max length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.minmax
+  end
+end
+
+#========= CUSTOM MIM-EXTRACTOR =========
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# MIM-custom device calss
+class DeviceCustomMIM < RBA::DeviceClassCapacitor
+  def initialize(name)
+    # clear terminals and parameters of resistor class
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    # Adding params
+    add_parameter(RBA::DeviceParameterDefinition.new('w', 'width', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('l', 'length', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'perimeter', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    # Adding terminals
+    ter1 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_top"))
+    ter2 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_btm"))
+    ter1.name = "mim_top"
+    ter2.name = "mim_btm"
+
+    # Adding extra param & terminal for rfcmim
+    return unless name.downcase.include?('rfcmim')
+
+    add_parameter(RBA::DeviceParameterDefinition.new('wfeed', 'feed width', 0, true))
+    sub_ter = add_terminal(RBA::DeviceTerminalDefinition.new("mim_sub"))
+    sub_ter.name = "mim_sub"
+  end
+end
+
+# === MIMCAPExtractor ===
+class MIMCAPExtractor < RBA::GenericDeviceExtractor
+  # Extraction of N terminal devices - General Class
+
+  def initialize(name)
+    # Initialize the extractor with a device name and number of terminals.
+    #
+    # Args:
+    #   name (String): The name of the device.
+
+    self.name = name
+    @name = name
+  end
+
+  def setup
+    # Set up layers and register device class for extraction.
+    define_layers
+    # Register device class for extraction.
+    @reg_dev = DeviceCustomMIM.new(name)
+
+    # Disable combination for rfcmim
+    if name.downcase.include?('rfcmim')
+      @reg_dev.combiner = nil 
+    else
+      @reg_dev.combiner = MIMCAPNDeviceCombiner.new
+    end
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    # Establish connectivity between layers.
+    #
+    # Args:
+    #   _layout: Layout object (unused).
+    #   layers (Array): Array of layer objects.
+    #
+    # Returns:
+    #   Connectivity object representing the connections between layers.
+    dev = layers[0]
+    top_mim = layers[1]
+    btm_mim = layers[2]
+    dev_mk = layers[3]
+    meas_mk = layers[4]
+
+    conn = RBA::Connectivity.new
+    conn.connect(dev, dev)
+    conn.connect(dev, dev_mk)
+    conn.connect(dev, meas_mk)
+    conn.connect(top_mim, dev_mk)
+    conn.connect(btm_mim, dev_mk)
+
+    # Sub connection for rfcmim
+    if name.downcase.include?('rfcmim')
+      sub_mk = layers[5]
+      conn.connect(sub_mk, dev_mk)
+    end
+
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    # Extract devices based on layer geometry.
+    #
+    # Args:
+    #   layer_geometry (Array): Array of layer geometries.
+    dev, top_mim, btm_mim, dev_mk, meas_mk, sub_mk = layer_geometry
+
+    dev_mk.merged.each do |_region|
+      if top_mim.size != 1
+        $logger.info("No. of ports exist for #{@name} topmetal is #{top_mim.size}, should be 1")
+      elsif btm_mim.size != 1
+        $logger.info("No. of ports exist for #{@name} btmmetal is #{btm_mim.size}, should be 1")
+      else
+        device = create_device
+        set_device_parameters(device, dev, dev_mk, meas_mk)
+        define_terminals(device, top_mim, btm_mim, sub_mk)
+      end
+    end
+  end
+
+  private
+
+  def define_layers
+    # Define layers for extraction.
+    define_layer('core', 'core Layer')
+    define_layer('top_mim', 'Connect Terminal for top mim')
+    define_layer('btm_mim', 'Connect Terminal for btm mim')
+    define_layer('dev_mk', 'Device Marker')
+    define_layer('meas_mk', 'Measuring parameters marker')
+
+    # Define sub layer for some devices
+    return unless name.downcase.include?('rfcmim')
+
+    define_layer('sub_mk', 'Substrate layer')
+  end
+
+  def set_device_parameters(device, dev, dev_mk, meas_mk)
+    # Set device parameters based on device type.
+    #
+    # Args:
+    #   device: Device object to set parameters for.
+    #   dev: Device layer object.
+    #   dev_mk: device marker layer object.
+    #   meas_mk: meas marker layer object.
+    #
+    # Returns:
+    #   None
+
+    width, length, wfeed = calc_cmim_params(dev, dev_mk, meas_mk)
+
+    if name.downcase.include?('rfcmim')
+      device.set_parameter('l', width * $unit)
+      device.set_parameter('w', length * $unit)
+      device.set_parameter('wfeed', wfeed * $unit)
+    else
+      device.set_parameter('w', width * $unit)
+      device.set_parameter('l', length * $unit)
+    end
+    device.set_parameter('A', width * length * $unit * $unit)
+    device.set_parameter('P', (width + length) * 2 * $unit)
+
+  end
+
+  def calc_cmim_params(dev, dev_mk, meas_mk)
+    # Width & Length
+    dev_edges = dev.edges
+    width_edges = dev_edges.with_angle(0, false)
+    len_edges = dev_edges.not(width_edges)
+    width = get_uniq_length(width_edges)
+    length = get_uniq_length(len_edges)
+
+    # Wfeed
+    wfeed_edges = meas_mk.edges.and(dev_mk.edges)
+    wfeed = get_uniq_length(wfeed_edges)
+  
+    # Default values
+    width ||= 0
+    length ||= 0
+    wfeed ||= 0
+
+    [width, length, wfeed]
+  end
+
+  def define_terminals(device, top_mim, btm_mim, sub_mk)
+    # Define terminals based on location.
+    #
+    # Args:
+    #   device: Device object to define terminals for.
+    #   top_mim: Contact layer object containing mim top metal.
+    #   top_mim: Contact layer object containing mim btm metal.
+    #   sub_mk: substrate marker layer object.
+    #
+    # Returns:
+    #   None
+
+    # Define sub if exist (should be defined before other terminals)
+    if name.downcase.include?('rfcmim')
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      else
+        define_terminal(device, @reg_dev.terminal_id("mim_sub"), 5, sub_mk[0])
+      end
+    end
+
+    # Defination main terminals
+    define_terminal(device, @reg_dev.terminal_id("mim_top"), 1, top_mim[0])
+    define_terminal(device, @reg_dev.terminal_id("mim_btm"), 2, btm_mim[0])
+  end
+
+  def get_min_max_length(sel_edges)
+    # Extract max length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.minmax
+  end
+
+  def get_uniq_length(sel_edges)
+    # Extract uniqe length value for some selected edges
+    lengths = []
+    sel_edges.each do |edge|
+      lengths << edge.length
+    end
+    lengths.uniq!
+    lengths.size == 1 ? lengths[0] : 0.0
+  end
+end
+
+#================================================
+# --------------- END OF CLASSES ----------------
+#================================================
+
+# Instantiate a reader using the new delegate
+reader = RBA::NetlistSpiceReader.new(CustomReader.new)
+
+#=== GET NETLIST ===
+unless NET_ONLY
+  if $cdl_file
+    schematic($cdl_file, reader)
+    logger.info("Netlist file: #{$cdl_file}")
+  else
+    exts = %w[spice cdl cir]
+    candidates = exts.map { |ext| "#{source.cell_name}.#{ext}" }
+    netlists = candidates.select { |f| File.exist?(f) }
+    if netlists.empty?
+      error("Netlist not found, tried: #{candidates}")
+    else
+      schematic(netlists[0], reader)
+      logger.info("Netlist file: #{netlists[0]}")
+    end
+  end
+end
+
+# Instantiate a writer using the new delegate
+custom_spice_writer = RBA::NetlistSpiceWriter.new(CustomWriter.new)
+custom_spice_writer.use_net_names = SPICE_WITH_NET_NAMES
+custom_spice_writer.with_comments = SPICE_WITH_COMMENTS
+
+if $target_netlist
+  logger.info("LVS extracted netlist at: #{$target_netlist}")
+  target_netlist($target_netlist, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  netlist_path = layout_dir.join("#{source.cell_name}_extracted.cir")
+  target_netlist(netlist_path.to_s, custom_spice_writer,
+                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
+end
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+polygons_count = 0
+logger.info('Read in polygons from layers.')
+
+def get_polygons(lay_no, lay_dt)
+  if $run_mode == 'deep'
+    polygons(lay_no, lay_dt)
+  else
+    polygons(lay_no, lay_dt).merged
+  end
+end
+
+activ_drw = get_polygons(1, 0)
+count = activ_drw.count()
+logger.info("activ_drw has #{count} polygons")
+polygons_count += count
+
+activ_filler = get_polygons(1, 22)
+count = activ_filler.count()
+logger.info("activ_filler has #{count} polygons")
+polygons_count += count
+
+# activ org
+activ = activ_drw.join(activ_filler)
+count = activ.count()
+logger.info("activ has #{count} polygons")
+
+activ_pin = get_polygons(1, 2)
+count = activ_pin.count()
+logger.info("activ_pin has #{count} polygons")
+polygons_count += count
+
+activ_mask = get_polygons(1, 20)
+count = activ_mask.count()
+logger.info("activ_mask has #{count} polygons")
+polygons_count += count
+
+activ_nofill = get_polygons(1, 23)
+count = activ_nofill.count()
+logger.info("activ_nofill has #{count} polygons")
+polygons_count += count
+
+activ_OPC = get_polygons(1, 26)
+count = activ_OPC.count()
+logger.info("activ_OPC has #{count} polygons")
+polygons_count += count
+
+activ_iOPC = get_polygons(1, 27)
+count = activ_iOPC.count()
+logger.info("activ_iOPC has #{count} polygons")
+polygons_count += count
+
+activ_noqrc = get_polygons(1, 28)
+count = activ_noqrc.count()
+logger.info("activ_noqrc has #{count} polygons")
+polygons_count += count
+
+biwind_drw = get_polygons(3, 0)
+count = biwind_drw.count()
+logger.info("biwind_drw has #{count} polygons")
+polygons_count += count
+
+biwind_OPC = get_polygons(3, 26)
+count = biwind_OPC.count()
+logger.info("biwind_OPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_drw = get_polygons(5, 0)
+count = gatpoly_drw.count()
+logger.info("gatpoly_drw has #{count} polygons")
+polygons_count += count
+
+gatpoly_filler = get_polygons(5, 22)
+count = gatpoly_filler.count()
+logger.info("gatpoly_filler has #{count} polygons")
+polygons_count += count
+
+# gatpoly org
+gatpoly = gatpoly_drw.join(gatpoly_filler)
+count = gatpoly.count()
+logger.info("gatpoly has #{count} polygons")
+
+gatpoly_pin = get_polygons(5, 2)
+count = gatpoly_pin.count()
+logger.info("gatpoly_pin has #{count} polygons")
+polygons_count += count
+
+gatpoly_nofill = get_polygons(5, 23)
+count = gatpoly_nofill.count()
+logger.info("gatpoly_nofill has #{count} polygons")
+polygons_count += count
+
+gatpoly_OPC = get_polygons(5, 26)
+count = gatpoly_OPC.count()
+logger.info("gatpoly_OPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_iOPC = get_polygons(5, 27)
+count = gatpoly_iOPC.count()
+logger.info("gatpoly_iOPC has #{count} polygons")
+polygons_count += count
+
+gatpoly_noqrc = get_polygons(5, 28)
+count = gatpoly_noqrc.count()
+logger.info("gatpoly_noqrc has #{count} polygons")
+polygons_count += count
+
+cont_drw = get_polygons(6, 0)
+count = cont_drw.count()
+logger.info("cont_drw has #{count} polygons")
+polygons_count += count
+
+cont_OPC = get_polygons(6, 26)
+count = cont_OPC.count()
+logger.info("cont_OPC has #{count} polygons")
+polygons_count += count
+
+nsd_drw  = get_polygons(7, 0)
+count = nsd_drw.count()
+logger.info("nsd_drw has #{count} polygons")
+polygons_count += count
+
+nsd_block = get_polygons(7, 21)
+count = nsd_block.count()
+logger.info("nsd_block has #{count} polygons")
+polygons_count += count
+
+metal1_drw = get_polygons(8, 0)
+count = metal1_drw.count()
+logger.info("metal1_drw has #{count} polygons")
+polygons_count += count
+
+metal1_filler = get_polygons(8, 22)
+count = metal1_filler.count()
+logger.info("metal1_filler has #{count} polygons")
+polygons_count += count
+
+metal1_slit = get_polygons(8, 24)
+count = metal1_slit.count()
+logger.info("metal1_slit has #{count} polygons")
+polygons_count += count
+
+# metal1 org
+metal1 = metal1_drw.join(metal1_filler).not(metal1_slit)
+count = metal1.count()
+logger.info("metal1 has #{count} polygons")
+
+metal1_pin = get_polygons(8, 2)
+count = metal1_pin.count()
+logger.info("metal1_pin has #{count} polygons")
+polygons_count += count
+
+metal1_mask = get_polygons(8, 20)
+count = metal1_mask.count()
+logger.info("metal1_mask has #{count} polygons")
+polygons_count += count
+
+metal1_nofill = get_polygons(8, 23)
+count = metal1_nofill.count()
+logger.info("metal1_nofill has #{count} polygons")
+polygons_count += count
+
+metal1_text = labels(8, 25)
+count = metal1_text.count()
+logger.info("metal1_text has #{count} polygons")
+polygons_count += count
+
+metal1_OPC = get_polygons(8, 26)
+count = metal1_OPC.count()
+logger.info("metal1_OPC has #{count} polygons")
+polygons_count += count
+
+metal1_noqrc = get_polygons(8, 28)
+count = metal1_noqrc.count()
+logger.info("metal1_noqrc has #{count} polygons")
+polygons_count += count
+
+metal1_res = get_polygons(8, 29)
+count = metal1_res.count()
+logger.info("metal1_res has #{count} polygons")
+polygons_count += count
+
+metal1_iprobe = get_polygons(8, 33)
+count = metal1_iprobe.count()
+logger.info("metal1_iprobe has #{count} polygons")
+polygons_count += count
+
+metal1_diffprb = get_polygons(8, 34)
+count = metal1_diffprb.count()
+logger.info("metal1_diffprb has #{count} polygons")
+polygons_count += count
+
+passiv_drw = get_polygons(9, 0)
+count = passiv_drw.count()
+logger.info("passiv_drw has #{count} polygons")
+polygons_count += count
+
+passiv_pin = get_polygons(9, 2)
+count = passiv_pin.count()
+logger.info("passiv_pin has #{count} polygons")
+polygons_count += count
+
+passiv_sbump = get_polygons(9, 36)
+count = passiv_sbump.count()
+logger.info("passiv_sbump has #{count} polygons")
+polygons_count += count
+
+passiv_pillar = get_polygons(9, 35)
+count = passiv_pillar.count()
+logger.info("passiv_pillar has #{count} polygons")
+polygons_count += count
+
+passiv_pdl = get_polygons(9, 40)
+count = passiv_pdl.count()
+logger.info("passiv_pdl has #{count} polygons")
+polygons_count += count
+
+metal2_drw = get_polygons(10, 0)
+count = metal2_drw.count()
+logger.info("metal2_drw has #{count} polygons")
+polygons_count += count
+
+metal2_filler = get_polygons(10, 22)
+count = metal2_filler.count()
+logger.info("metal2_filler has #{count} polygons")
+polygons_count += count
+
+metal2_slit = get_polygons(10, 24)
+count = metal2_slit.count()
+logger.info("metal2_slit has #{count} polygons")
+polygons_count += count
+
+# metal2 org
+metal2 = metal2_drw.join(metal2_filler).not(metal2_slit)
+count = metal2.count()
+logger.info("metal2 has #{count} polygons")
+
+metal2_pin = get_polygons(10, 2)
+count = metal2_pin.count()
+logger.info("metal2_pin has #{count} polygons")
+polygons_count += count
+
+metal2_mask = get_polygons(10, 20)
+count = metal2_mask.count()
+logger.info("metal2_mask has #{count} polygons")
+polygons_count += count
+
+metal2_nofill = get_polygons(10, 23)
+count = metal2_nofill.count()
+logger.info("metal2_nofill has #{count} polygons")
+polygons_count += count
+
+metal2_text = labels(10, 25)
+count = metal2_text.count()
+logger.info("metal2_text has #{count} polygons")
+polygons_count += count
+
+metal2_OPC = get_polygons(10, 26)
+count = metal2_OPC.count()
+logger.info("metal2_OPC has #{count} polygons")
+polygons_count += count
+
+metal2_noqrc = get_polygons(10, 28)
+count = metal2_noqrc.count()
+logger.info("metal2_noqrc has #{count} polygons")
+polygons_count += count
+
+metal2_res = get_polygons(10, 29)
+count = metal2_res.count()
+logger.info("metal2_res has #{count} polygons")
+polygons_count += count
+
+metal2_iprobe = get_polygons(10, 33)
+count = metal2_iprobe.count()
+logger.info("metal2_iprobe has #{count} polygons")
+polygons_count += count
+
+metal2_diffprb = get_polygons(10, 34)
+count = metal2_diffprb.count()
+logger.info("metal2_diffprb has #{count} polygons")
+polygons_count += count
+
+baspoly_drw = get_polygons(13, 0)
+count = baspoly_drw.count()
+logger.info("baspoly_drw has #{count} polygons")
+polygons_count += count
+
+baspoly_pin = get_polygons(13, 2)
+count = baspoly_pin.count()
+logger.info("baspoly_pin has #{count} polygons")
+polygons_count += count
+
+psd_drw  = get_polygons(14, 0)
+count = psd_drw.count()
+logger.info("psd_drw has #{count} polygons")
+polygons_count += count
+
+nldb_drw = get_polygons(15, 0)
+count = nldb_drw.count()
+logger.info("nldb_drw has #{count} polygons")
+polygons_count += count
+
+digibnd_drw = get_polygons(16, 0)
+count = digibnd_drw.count()
+logger.info("digibnd_drw has #{count} polygons")
+polygons_count += count
+
+via1_drw = get_polygons(19, 0)
+count = via1_drw.count()
+logger.info("via1_drw has #{count} polygons")
+polygons_count += count
+
+backmetal1_drw = get_polygons(20, 0)
+count = backmetal1_drw.count()
+logger.info("backmetal1_drw has #{count} polygons")
+polygons_count += count
+
+backmetal1_pin = get_polygons(20, 2)
+count = backmetal1_pin.count()
+logger.info("backmetal1_pin has #{count} polygons")
+polygons_count += count
+
+backmetal1_mask = get_polygons(20, 20)
+count = backmetal1_mask.count()
+logger.info("backmetal1_mask has #{count} polygons")
+polygons_count += count
+
+backmetal1_filler = get_polygons(20, 22)
+count = backmetal1_filler.count()
+logger.info("backmetal1_filler has #{count} polygons")
+polygons_count += count
+
+backmetal1_nofill = get_polygons(20, 23)
+count = backmetal1_nofill.count()
+logger.info("backmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+backmetal1_slit = get_polygons(20, 24)
+count = backmetal1_slit.count()
+logger.info("backmetal1_slit has #{count} polygons")
+polygons_count += count
+
+backmetal1_text = labels(20, 25)
+count = backmetal1_text.count()
+logger.info("backmetal1_text has #{count} polygons")
+polygons_count += count
+
+backmetal1_OPC = get_polygons(20, 26)
+count = backmetal1_OPC.count()
+logger.info("backmetal1_OPC has #{count} polygons")
+polygons_count += count
+
+backmetal1_noqrc = get_polygons(20, 28)
+count = backmetal1_noqrc.count()
+logger.info("backmetal1_noqrc has #{count} polygons")
+polygons_count += count
+
+backmetal1_res = get_polygons(20, 29)
+count = backmetal1_res.count()
+logger.info("backmetal1_res has #{count} polygons")
+polygons_count += count
+
+backmetal1_iprobe = get_polygons(20, 33)
+count = backmetal1_iprobe.count()
+logger.info("backmetal1_iprobe has #{count} polygons")
+polygons_count += count
+
+backmetal1_diffprb = get_polygons(20, 34)
+count = backmetal1_diffprb.count()
+logger.info("backmetal1_diffprb has #{count} polygons")
+polygons_count += count
+
+backpassiv_drw = get_polygons(23, 0)
+count = backpassiv_drw.count()
+logger.info("backpassiv_drw has #{count} polygons")
+polygons_count += count
+
+res_drw  = get_polygons(24, 0)
+count = res_drw.count()
+logger.info("res_drw has #{count} polygons")
+polygons_count += count
+
+sram_drw = get_polygons(25, 0)
+count = sram_drw.count()
+logger.info("sram_drw has #{count} polygons")
+polygons_count += count
+
+trans_drw = get_polygons(26, 0)
+count = trans_drw.count()
+logger.info("trans_drw has #{count} polygons")
+polygons_count += count
+
+ind_drw  = get_polygons(27, 0)
+count = ind_drw.count()
+logger.info("ind_drw has #{count} polygons")
+polygons_count += count
+
+ind_pin  = get_polygons(27, 2)
+count = ind_pin.count()
+logger.info("ind_pin has #{count} polygons")
+polygons_count += count
+
+ind_text = labels(27, 25)
+count = ind_text.count()
+logger.info("ind_text has #{count} polygons")
+polygons_count += count
+
+salblock_drw = get_polygons(28, 0)
+count = salblock_drw.count()
+logger.info("salblock_drw has #{count} polygons")
+polygons_count += count
+
+via2_drw = get_polygons(29, 0)
+count = via2_drw.count()
+logger.info("via2_drw has #{count} polygons")
+polygons_count += count
+
+metal3_drw = get_polygons(30, 0)
+count = metal3_drw.count()
+logger.info("metal3_drw has #{count} polygons")
+polygons_count += count
+
+metal3_filler = get_polygons(30, 22)
+count = metal3_filler.count()
+logger.info("metal3_filler has #{count} polygons")
+polygons_count += count
+
+metal3_slit = get_polygons(30, 24)
+count = metal3_slit.count()
+logger.info("metal3_slit has #{count} polygons")
+polygons_count += count
+
+# metal3 org
+metal3 = metal3_drw.join(metal3_filler).not(metal3_slit)
+count = metal3.count()
+logger.info("metal3 has #{count} polygons")
+
+metal3_pin = get_polygons(30, 2)
+count = metal3_pin.count()
+logger.info("metal3_pin has #{count} polygons")
+polygons_count += count
+
+metal3_mask = get_polygons(30, 20)
+count = metal3_mask.count()
+logger.info("metal3_mask has #{count} polygons")
+polygons_count += count
+
+metal3_nofill = get_polygons(30, 23)
+count = metal3_nofill.count()
+logger.info("metal3_nofill has #{count} polygons")
+polygons_count += count
+
+metal3_text = labels(30, 25)
+count = metal3_text.count()
+logger.info("metal3_text has #{count} polygons")
+polygons_count += count
+
+metal3_OPC = get_polygons(30, 26)
+count = metal3_OPC.count()
+logger.info("metal3_OPC has #{count} polygons")
+polygons_count += count
+
+metal3_noqrc = get_polygons(30, 28)
+count = metal3_noqrc.count()
+logger.info("metal3_noqrc has #{count} polygons")
+polygons_count += count
+
+metal3_res = get_polygons(30, 29)
+count = metal3_res.count()
+logger.info("metal3_res has #{count} polygons")
+polygons_count += count
+
+metal3_iprobe = get_polygons(30, 33)
+count = metal3_iprobe.count()
+logger.info("metal3_iprobe has #{count} polygons")
+polygons_count += count
+
+metal3_diffprb = get_polygons(30, 34)
+count = metal3_diffprb.count()
+logger.info("metal3_diffprb has #{count} polygons")
+polygons_count += count
+
+nwell_drw = get_polygons(31, 0)
+count = nwell_drw.count()
+logger.info("nwell_drw has #{count} polygons")
+polygons_count += count
+
+nwell_pin = get_polygons(31, 2)
+count = nwell_pin.count()
+logger.info("nwell_pin has #{count} polygons")
+polygons_count += count
+
+nbulay_drw = get_polygons(32, 0)
+count = nbulay_drw.count()
+logger.info("nbulay_drw has #{count} polygons")
+polygons_count += count
+
+nbulay_pin = get_polygons(32, 2)
+count = nbulay_pin.count()
+logger.info("nbulay_pin has #{count} polygons")
+polygons_count += count
+
+nbulay_block = get_polygons(32, 21)
+count = nbulay_block.count()
+logger.info("nbulay_block has #{count} polygons")
+polygons_count += count
+
+emwind_drw = get_polygons(33, 0)
+count = emwind_drw.count()
+logger.info("emwind_drw has #{count} polygons")
+polygons_count += count
+
+emwind_OPC = get_polygons(33, 26)
+count = emwind_OPC.count()
+logger.info("emwind_OPC has #{count} polygons")
+polygons_count += count
+
+deepco_drw = get_polygons(35, 0)
+count = deepco_drw.count()
+logger.info("deepco_drw has #{count} polygons")
+polygons_count += count
+
+mim_drw  = get_polygons(36, 0)
+count = mim_drw.count()
+logger.info("mim_drw has #{count} polygons")
+polygons_count += count
+
+edgeseal_drw = get_polygons(39, 0)
+count = edgeseal_drw.count()
+logger.info("edgeseal_drw has #{count} polygons")
+polygons_count += count
+
+substrate_drw = get_polygons(40, 0)
+count = substrate_drw.count()
+logger.info("substrate_drw has #{count} polygons")
+polygons_count += count
+
+substrate_text = labels(40, 25)
+count = substrate_text.count()
+logger.info("substrate_text has #{count} polygons")
+polygons_count += count
+
+dfpad_drw = get_polygons(41, 0)
+count = dfpad_drw.count()
+logger.info("dfpad_drw has #{count} polygons")
+polygons_count += count
+
+dfpad_pillar = get_polygons(41, 35)
+count = dfpad_pillar.count()
+logger.info("dfpad_pillar has #{count} polygons")
+polygons_count += count
+
+dfpad_sbump = get_polygons(41, 36)
+count = dfpad_sbump.count()
+logger.info("dfpad_sbump has #{count} polygons")
+polygons_count += count
+
+thickgateox_drw = get_polygons(44, 0)
+count = thickgateox_drw.count()
+logger.info("thickgateox_drw has #{count} polygons")
+polygons_count += count
+
+pldb_drw = get_polygons(45, 0)
+count = pldb_drw.count()
+logger.info("pldb_drw has #{count} polygons")
+polygons_count += count
+
+pwell_drw = get_polygons(46, 0)
+count = pwell_drw.count()
+logger.info("pwell_drw has #{count} polygons")
+polygons_count += count
+
+pwell_pin = get_polygons(46, 2)
+count = pwell_pin.count()
+logger.info("pwell_pin has #{count} polygons")
+polygons_count += count
+
+pwell_block = get_polygons(46, 21)
+count = pwell_block.count()
+logger.info("pwell_block has #{count} polygons")
+polygons_count += count
+
+ic_drw   = get_polygons(48, 0)
+count = ic_drw.count()
+logger.info("ic_drw has #{count} polygons")
+polygons_count += count
+
+via3_drw = get_polygons(49, 0)
+count = via3_drw.count()
+logger.info("via3_drw has #{count} polygons")
+polygons_count += count
+
+metal4_drw = get_polygons(50, 0)
+count = metal4_drw.count()
+logger.info("metal4_drw has #{count} polygons")
+polygons_count += count
+
+metal4_filler = get_polygons(50, 22)
+count = metal4_filler.count()
+logger.info("metal4_filler has #{count} polygons")
+polygons_count += count
+
+metal4_slit = get_polygons(50, 24)
+count = metal4_slit.count()
+logger.info("metal4_slit has #{count} polygons")
+polygons_count += count
+
+# metal4 org
+metal4 = metal4_drw.join(metal4_filler).not(metal4_slit)
+count = metal4.count()
+logger.info("metal4 has #{count} polygons")
+
+metal4_pin = get_polygons(50, 2)
+count = metal4_pin.count()
+logger.info("metal4_pin has #{count} polygons")
+polygons_count += count
+
+metal4_mask = get_polygons(50, 20)
+count = metal4_mask.count()
+logger.info("metal4_mask has #{count} polygons")
+polygons_count += count
+
+metal4_nofill = get_polygons(50, 23)
+count = metal4_nofill.count()
+logger.info("metal4_nofill has #{count} polygons")
+polygons_count += count
+
+metal4_text = labels(50, 25)
+count = metal4_text.count()
+logger.info("metal4_text has #{count} polygons")
+polygons_count += count
+
+metal4_OPC = get_polygons(50, 26)
+count = metal4_OPC.count()
+logger.info("metal4_OPC has #{count} polygons")
+polygons_count += count
+
+metal4_noqrc = get_polygons(50, 28)
+count = metal4_noqrc.count()
+logger.info("metal4_noqrc has #{count} polygons")
+polygons_count += count
+
+metal4_res = get_polygons(50, 29)
+count = metal4_res.count()
+logger.info("metal4_res has #{count} polygons")
+polygons_count += count
+
+metal4_iprobe = get_polygons(50, 33)
+count = metal4_iprobe.count()
+logger.info("metal4_iprobe has #{count} polygons")
+polygons_count += count
+
+metal4_diffprb = get_polygons(50, 34)
+count = metal4_diffprb.count()
+logger.info("metal4_diffprb has #{count} polygons")
+polygons_count += count
+
+heattrans_drw = get_polygons(51, 0)
+count = heattrans_drw.count()
+logger.info("heattrans_drw has #{count} polygons")
+polygons_count += count
+
+heatres_drw = get_polygons(52, 0)
+count = heatres_drw.count()
+logger.info("heatres_drw has #{count} polygons")
+polygons_count += count
+
+fbe_drw  = get_polygons(54, 0)
+count = fbe_drw.count()
+logger.info("fbe_drw has #{count} polygons")
+polygons_count += count
+
+empoly_drw = get_polygons(55, 0)
+count = empoly_drw.count()
+logger.info("empoly_drw has #{count} polygons")
+polygons_count += count
+
+digisub_drw = get_polygons(60, 0)
+count = digisub_drw.count()
+logger.info("digisub_drw has #{count} polygons")
+polygons_count += count
+
+text_drw = labels(63, 0)
+count = text_drw.count()
+logger.info("text_drw has #{count} polygons")
+polygons_count += count
+
+via4_drw = get_polygons(66, 0)
+count = via4_drw.count()
+logger.info("via4_drw has #{count} polygons")
+polygons_count += count
+
+metal5_drw = get_polygons(67, 0)
+count = metal5_drw.count()
+logger.info("metal5_drw has #{count} polygons")
+polygons_count += count
+
+metal5_filler = get_polygons(67, 22)
+count = metal5_filler.count()
+logger.info("metal5_filler has #{count} polygons")
+polygons_count += count
+
+metal5_slit = get_polygons(67, 24)
+count = metal5_slit.count()
+logger.info("metal5_slit has #{count} polygons")
+polygons_count += count
+
+# metal5 org
+metal5 = metal5_drw.join(metal5_filler).not(metal5_slit)
+count = metal5.count()
+logger.info("metal5 has #{count} polygons")
+
+metal5_pin = get_polygons(67, 2)
+count = metal5_pin.count()
+logger.info("metal5_pin has #{count} polygons")
+polygons_count += count
+
+metal5_mask = get_polygons(67, 20)
+count = metal5_mask.count()
+logger.info("metal5_mask has #{count} polygons")
+polygons_count += count
+
+metal5_nofill = get_polygons(67, 23)
+count = metal5_nofill.count()
+logger.info("metal5_nofill has #{count} polygons")
+polygons_count += count
+
+metal5_text = labels(67, 25)
+count = metal5_text.count()
+logger.info("metal5_text has #{count} polygons")
+polygons_count += count
+
+metal5_OPC = get_polygons(67, 26)
+count = metal5_OPC.count()
+logger.info("metal5_OPC has #{count} polygons")
+polygons_count += count
+
+metal5_noqrc = get_polygons(67, 28)
+count = metal5_noqrc.count()
+logger.info("metal5_noqrc has #{count} polygons")
+polygons_count += count
+
+metal5_res = get_polygons(67, 29)
+count = metal5_res.count()
+logger.info("metal5_res has #{count} polygons")
+polygons_count += count
+
+metal5_iprobe = get_polygons(67, 33)
+count = metal5_iprobe.count()
+logger.info("metal5_iprobe has #{count} polygons")
+polygons_count += count
+
+metal5_diffprb = get_polygons(67, 34)
+count = metal5_diffprb.count()
+logger.info("metal5_diffprb has #{count} polygons")
+polygons_count += count
+
+radhard_drw = get_polygons(68, 0)
+count = radhard_drw.count()
+logger.info("radhard_drw has #{count} polygons")
+polygons_count += count
+
+memcap_drw = get_polygons(69, 0)
+count = memcap_drw.count()
+logger.info("memcap_drw has #{count} polygons")
+polygons_count += count
+
+varicap_drw = get_polygons(70, 0)
+count = varicap_drw.count()
+logger.info("varicap_drw has #{count} polygons")
+polygons_count += count
+
+intbondvia_drw = get_polygons(72, 0)
+count = intbondvia_drw.count()
+logger.info("intbondvia_drw has #{count} polygons")
+polygons_count += count
+
+intbondmet_drw = get_polygons(73, 0)
+count = intbondmet_drw.count()
+logger.info("intbondmet_drw has #{count} polygons")
+polygons_count += count
+
+devbondvia_drw = get_polygons(74, 0)
+count = devbondvia_drw.count()
+logger.info("devbondvia_drw has #{count} polygons")
+polygons_count += count
+
+devbondmet_drw = get_polygons(75, 0)
+count = devbondmet_drw.count()
+logger.info("devbondmet_drw has #{count} polygons")
+polygons_count += count
+
+devtrench_drw = get_polygons(76, 0)
+count = devtrench_drw.count()
+logger.info("devtrench_drw has #{count} polygons")
+polygons_count += count
+
+redist_drw = get_polygons(77, 0)
+count = redist_drw.count()
+logger.info("redist_drw has #{count} polygons")
+polygons_count += count
+
+graphbot_drw = get_polygons(78, 0)
+count = graphbot_drw.count()
+logger.info("graphbot_drw has #{count} polygons")
+polygons_count += count
+
+graphtop_drw = get_polygons(79, 0)
+count = graphtop_drw.count()
+logger.info("graphtop_drw has #{count} polygons")
+polygons_count += count
+
+antvia1_drw = get_polygons(83, 0)
+count = antvia1_drw.count()
+logger.info("antvia1_drw has #{count} polygons")
+polygons_count += count
+
+antmetal2_drw = get_polygons(84, 0)
+count = antmetal2_drw.count()
+logger.info("antmetal2_drw has #{count} polygons")
+polygons_count += count
+
+graphcont_drw = get_polygons(85, 0)
+count = graphcont_drw.count()
+logger.info("graphcont_drw has #{count} polygons")
+polygons_count += count
+
+siwg_drw = get_polygons(86, 0)
+count = siwg_drw.count()
+logger.info("siwg_drw has #{count} polygons")
+polygons_count += count
+
+siwg_filler = get_polygons(86, 22)
+count = siwg_filler.count()
+logger.info("siwg_filler has #{count} polygons")
+polygons_count += count
+
+siwg_nofill = get_polygons(86, 23)
+count = siwg_nofill.count()
+logger.info("siwg_nofill has #{count} polygons")
+polygons_count += count
+
+sigrating_drw = get_polygons(87, 0)
+count = sigrating_drw.count()
+logger.info("sigrating_drw has #{count} polygons")
+polygons_count += count
+
+singrating_drw = get_polygons(88, 0)
+count = singrating_drw.count()
+logger.info("singrating_drw has #{count} polygons")
+polygons_count += count
+
+graphpas_drw = get_polygons(89, 0)
+count = graphpas_drw.count()
+logger.info("graphpas_drw has #{count} polygons")
+polygons_count += count
+
+emwind3_drw = get_polygons(90, 0)
+count = emwind3_drw.count()
+logger.info("emwind3_drw has #{count} polygons")
+polygons_count += count
+
+emwihv3_drw = get_polygons(91, 0)
+count = emwihv3_drw.count()
+logger.info("emwihv3_drw has #{count} polygons")
+polygons_count += count
+
+redbulay_drw = get_polygons(92, 0)
+count = redbulay_drw.count()
+logger.info("redbulay_drw has #{count} polygons")
+polygons_count += count
+
+smos_drw = get_polygons(93, 0)
+count = smos_drw.count()
+logger.info("smos_drw has #{count} polygons")
+polygons_count += count
+
+graphpad_drw = get_polygons(97, 0)
+count = graphpad_drw.count()
+logger.info("graphpad_drw has #{count} polygons")
+polygons_count += count
+
+polimide_drw = get_polygons(98, 0)
+count = polimide_drw.count()
+logger.info("polimide_drw has #{count} polygons")
+polygons_count += count
+
+polimide_pin = get_polygons(98, 2)
+count = polimide_pin.count()
+logger.info("polimide_pin has #{count} polygons")
+polygons_count += count
+
+recog_drw = get_polygons(99, 0)
+count = recog_drw.count()
+logger.info("recog_drw has #{count} polygons")
+polygons_count += count
+
+recog_pin = get_polygons(99, 2)
+count = recog_pin.count()
+logger.info("recog_pin has #{count} polygons")
+polygons_count += count
+
+recog_esd = get_polygons(99, 30)
+count = recog_esd.count()
+logger.info("recog_esd has #{count} polygons")
+polygons_count += count
+
+recog_diode = get_polygons(99, 31)
+count = recog_diode.count()
+logger.info("recog_diode has #{count} polygons")
+polygons_count += count
+
+recog_tsv = get_polygons(99, 32)
+count = recog_tsv.count()
+logger.info("recog_tsv has #{count} polygons")
+polygons_count += count
+
+recog_iprobe = get_polygons(99, 33)
+count = recog_iprobe.count()
+logger.info("recog_iprobe has #{count} polygons")
+polygons_count += count
+
+recog_diffprb = get_polygons(99, 34)
+count = recog_diffprb.count()
+logger.info("recog_diffprb has #{count} polygons")
+polygons_count += count
+
+recog_pillar = get_polygons(99, 35)
+count = recog_pillar.count()
+logger.info("recog_pillar has #{count} polygons")
+polygons_count += count
+
+recog_sbump = get_polygons(99, 36)
+count = recog_sbump.count()
+logger.info("recog_sbump has #{count} polygons")
+polygons_count += count
+
+recog_otp = get_polygons(99, 37)
+count = recog_otp.count()
+logger.info("recog_otp has #{count} polygons")
+polygons_count += count
+
+recog_pdiode = get_polygons(99, 38)
+count = recog_pdiode.count()
+logger.info("recog_pdiode has #{count} polygons")
+polygons_count += count
+
+recog_mom = get_polygons(99, 39)
+count = recog_mom.count()
+logger.info("recog_mom has #{count} polygons")
+polygons_count += count
+
+recog_pcm = get_polygons(99, 100)
+count = recog_pcm.count()
+logger.info("recog_pcm has #{count} polygons")
+polygons_count += count
+
+colopen_drw = get_polygons(101, 0)
+count = colopen_drw.count()
+logger.info("colopen_drw has #{count} polygons")
+polygons_count += count
+
+graphmetal1_drw = get_polygons(109, 0)
+count = graphmetal1_drw.count()
+logger.info("graphmetal1_drw has #{count} polygons")
+polygons_count += count
+
+graphmetal1_filler = get_polygons(109, 22)
+count = graphmetal1_filler.count()
+logger.info("graphmetal1_filler has #{count} polygons")
+polygons_count += count
+
+graphmetal1_nofill = get_polygons(109, 23)
+count = graphmetal1_nofill.count()
+logger.info("graphmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+graphmetal1_slit = get_polygons(109, 24)
+count = graphmetal1_slit.count()
+logger.info("graphmetal1_slit has #{count} polygons")
+polygons_count += count
+
+graphmetal1_OPC = get_polygons(109, 26)
+count = graphmetal1_OPC.count()
+logger.info("graphmetal1_OPC has #{count} polygons")
+polygons_count += count
+
+graphmet1l_drw = get_polygons(110, 0)
+count = graphmet1l_drw.count()
+logger.info("graphmet1l_drw has #{count} polygons")
+polygons_count += count
+
+graphmet1l_filler = get_polygons(110, 22)
+count = graphmet1l_filler.count()
+logger.info("graphmet1l_filler has #{count} polygons")
+polygons_count += count
+
+graphmet1l_nofill = get_polygons(110, 23)
+count = graphmet1l_nofill.count()
+logger.info("graphmet1l_nofill has #{count} polygons")
+polygons_count += count
+
+graphmet1l_slit = get_polygons(110, 24)
+count = graphmet1l_slit.count()
+logger.info("graphmet1l_slit has #{count} polygons")
+polygons_count += count
+
+graphmet1l_OPC = get_polygons(110, 26)
+count = graphmet1l_OPC.count()
+logger.info("graphmet1l_OPC has #{count} polygons")
+polygons_count += count
+
+extblock_drw = get_polygons(111, 0)
+count = extblock_drw.count()
+logger.info("extblock_drw has #{count} polygons")
+polygons_count += count
+
+nldd_drw = get_polygons(112, 0)
+count = nldd_drw.count()
+logger.info("nldd_drw has #{count} polygons")
+polygons_count += count
+
+pldd_drw = get_polygons(113, 0)
+count = pldd_drw.count()
+logger.info("pldd_drw has #{count} polygons")
+polygons_count += count
+
+next_drw = get_polygons(114, 0)
+count = next_drw.count()
+logger.info("next_drw has #{count} polygons")
+polygons_count += count
+
+pext_drw = get_polygons(115, 0)
+count = pext_drw.count()
+logger.info("pext_drw has #{count} polygons")
+polygons_count += count
+
+nexthv_drw = get_polygons(116, 0)
+count = nexthv_drw.count()
+logger.info("nexthv_drw has #{count} polygons")
+polygons_count += count
+
+pexthv_drw = get_polygons(117, 0)
+count = pexthv_drw.count()
+logger.info("pexthv_drw has #{count} polygons")
+polygons_count += count
+
+graphgate_drw = get_polygons(118, 0)
+count = graphgate_drw.count()
+logger.info("graphgate_drw has #{count} polygons")
+polygons_count += count
+
+sinwg_drw = get_polygons(119, 0)
+count = sinwg_drw.count()
+logger.info("sinwg_drw has #{count} polygons")
+polygons_count += count
+
+sinwg_filler = get_polygons(119, 22)
+count = sinwg_filler.count()
+logger.info("sinwg_filler has #{count} polygons")
+polygons_count += count
+
+sinwg_nofill = get_polygons(119, 23)
+count = sinwg_nofill.count()
+logger.info("sinwg_nofill has #{count} polygons")
+polygons_count += count
+
+mempad_drw = get_polygons(124, 0)
+count = mempad_drw.count()
+logger.info("mempad_drw has #{count} polygons")
+polygons_count += count
+
+topvia1_drw = get_polygons(125, 0)
+count = topvia1_drw.count()
+logger.info("topvia1_drw has #{count} polygons")
+polygons_count += count
+
+topmetal1_drw = get_polygons(126, 0)
+count = topmetal1_drw.count()
+logger.info("topmetal1_drw has #{count} polygons")
+polygons_count += count
+
+topmetal1_filler = get_polygons(126, 22)
+count = topmetal1_filler.count()
+logger.info("topmetal1_filler has #{count} polygons")
+polygons_count += count
+
+topmetal1_slit = get_polygons(126, 24)
+count = topmetal1_slit.count()
+logger.info("topmetal1_slit has #{count} polygons")
+polygons_count += count
+
+# topmetal1 org
+topmetal1 = topmetal1_drw.join(topmetal1_filler).not(topmetal1_slit)
+count = topmetal1.count()
+logger.info("topmetal1 has #{count} polygons")
+
+topmetal1_pin = get_polygons(126, 2)
+count = topmetal1_pin.count()
+logger.info("topmetal1_pin has #{count} polygons")
+polygons_count += count
+
+topmetal1_mask = get_polygons(126, 20)
+count = topmetal1_mask.count()
+logger.info("topmetal1_mask has #{count} polygons")
+polygons_count += count
+
+topmetal1_nofill = get_polygons(126, 23)
+count = topmetal1_nofill.count()
+logger.info("topmetal1_nofill has #{count} polygons")
+polygons_count += count
+
+topmetal1_text = labels(126, 25)
+count = topmetal1_text.count()
+logger.info("topmetal1_text has #{count} polygons")
+polygons_count += count
+
+topmetal1_noqrc = get_polygons(126, 28)
+count = topmetal1_noqrc.count()
+logger.info("topmetal1_noqrc has #{count} polygons")
+polygons_count += count
+
+topmetal1_res = get_polygons(126, 29)
+count = topmetal1_res.count()
+logger.info("topmetal1_res has #{count} polygons")
+polygons_count += count
+
+topmetal1_iprobe = get_polygons(126, 33)
+count = topmetal1_iprobe.count()
+logger.info("topmetal1_iprobe has #{count} polygons")
+polygons_count += count
+
+topmetal1_diffprb = get_polygons(126, 34)
+count = topmetal1_diffprb.count()
+logger.info("topmetal1_diffprb has #{count} polygons")
+polygons_count += count
+
+inldpwl_drw = get_polygons(127, 0)
+count = inldpwl_drw.count()
+logger.info("inldpwl_drw has #{count} polygons")
+polygons_count += count
+
+polyres_drw = get_polygons(128, 0)
+count = polyres_drw.count()
+logger.info("polyres_drw has #{count} polygons")
+polygons_count += count
+
+polyres_pin = get_polygons(128, 2)
+count = polyres_pin.count()
+logger.info("polyres_pin has #{count} polygons")
+polygons_count += count
+
+vmim_drw = get_polygons(129, 0)
+count = vmim_drw.count()
+logger.info("vmim_drw has #{count} polygons")
+polygons_count += count
+
+nbulaycut_drw = get_polygons(131, 0)
+count = nbulaycut_drw.count()
+logger.info("nbulaycut_drw has #{count} polygons")
+polygons_count += count
+
+antmetal1_drw = get_polygons(132, 0)
+count = antmetal1_drw.count()
+logger.info("antmetal1_drw has #{count} polygons")
+polygons_count += count
+
+topvia2_drw = get_polygons(133, 0)
+count = topvia2_drw.count()
+logger.info("topvia2_drw has #{count} polygons")
+polygons_count += count
+
+topmetal2_drw = get_polygons(134, 0)
+count = topmetal2_drw.count()
+logger.info("topmetal2_drw has #{count} polygons")
+polygons_count += count
+
+topmetal2_filler = get_polygons(134, 22)
+count = topmetal2_filler.count()
+logger.info("topmetal2_filler has #{count} polygons")
+polygons_count += count
+
+topmetal2_slit = get_polygons(134, 24)
+count = topmetal2_slit.count()
+logger.info("topmetal2_slit has #{count} polygons")
+polygons_count += count
+
+# topmetal2 org
+topmetal2 = topmetal2_drw.join(topmetal2_filler).not(topmetal2_slit)
+count = topmetal2.count()
+logger.info("topmetal2 has #{count} polygons")
+
+topmetal2_pin = get_polygons(134, 2)
+count = topmetal2_pin.count()
+logger.info("topmetal2_pin has #{count} polygons")
+polygons_count += count
+
+topmetal2_mask = get_polygons(134, 20)
+count = topmetal2_mask.count()
+logger.info("topmetal2_mask has #{count} polygons")
+polygons_count += count
+
+topmetal2_nofill = get_polygons(134, 23)
+count = topmetal2_nofill.count()
+logger.info("topmetal2_nofill has #{count} polygons")
+polygons_count += count
+
+topmetal2_text = labels(134, 25)
+count = topmetal2_text.count()
+logger.info("topmetal2_text has #{count} polygons")
+polygons_count += count
+
+topmetal2_noqrc = get_polygons(134, 28)
+count = topmetal2_noqrc.count()
+logger.info("topmetal2_noqrc has #{count} polygons")
+polygons_count += count
+
+topmetal2_res = get_polygons(134, 29)
+count = topmetal2_res.count()
+logger.info("topmetal2_res has #{count} polygons")
+polygons_count += count
+
+topmetal2_iprobe = get_polygons(134, 33)
+count = topmetal2_iprobe.count()
+logger.info("topmetal2_iprobe has #{count} polygons")
+polygons_count += count
+
+topmetal2_diffprb = get_polygons(134, 34)
+count = topmetal2_diffprb.count()
+logger.info("topmetal2_diffprb has #{count} polygons")
+polygons_count += count
+
+snsring_drw = get_polygons(135, 0)
+count = snsring_drw.count()
+logger.info("snsring_drw has #{count} polygons")
+polygons_count += count
+
+sensor_drw = get_polygons(136, 0)
+count = sensor_drw.count()
+logger.info("sensor_drw has #{count} polygons")
+polygons_count += count
+
+snsarms_drw = get_polygons(137, 0)
+count = snsarms_drw.count()
+logger.info("snsarms_drw has #{count} polygons")
+polygons_count += count
+
+snscmosvia_drw = get_polygons(138, 0)
+count = snscmosvia_drw.count()
+logger.info("snscmosvia_drw has #{count} polygons")
+polygons_count += count
+
+colwind_drw = get_polygons(139, 0)
+count = colwind_drw.count()
+logger.info("colwind_drw has #{count} polygons")
+polygons_count += count
+
+flm_drw  = get_polygons(142, 0)
+count = flm_drw.count()
+logger.info("flm_drw has #{count} polygons")
+polygons_count += count
+
+hafniumox_drw = get_polygons(143, 0)
+count = hafniumox_drw.count()
+logger.info("hafniumox_drw has #{count} polygons")
+polygons_count += count
+
+memvia_drw = get_polygons(145, 0)
+count = memvia_drw.count()
+logger.info("memvia_drw has #{count} polygons")
+polygons_count += count
+
+thinfilmres_drw = get_polygons(146, 0)
+count = thinfilmres_drw.count()
+logger.info("thinfilmres_drw has #{count} polygons")
+polygons_count += count
+
+rfmem_drw = get_polygons(147, 0)
+count = rfmem_drw.count()
+logger.info("rfmem_drw has #{count} polygons")
+polygons_count += count
+
+norcx_drw = get_polygons(148, 0)
+count = norcx_drw.count()
+logger.info("norcx_drw has #{count} polygons")
+polygons_count += count
+
+norcx_m2m3 = get_polygons(148, 41)
+count = norcx_m2m3.count()
+logger.info("norcx_m2m3 has #{count} polygons")
+polygons_count += count
+
+norcx_m2m4 = get_polygons(148, 42)
+count = norcx_m2m4.count()
+logger.info("norcx_m2m4 has #{count} polygons")
+polygons_count += count
+
+norcx_m2m5 = get_polygons(148, 43)
+count = norcx_m2m5.count()
+logger.info("norcx_m2m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m2tm1 = get_polygons(148, 44)
+count = norcx_m2tm1.count()
+logger.info("norcx_m2tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m2tm2 = get_polygons(148, 45)
+count = norcx_m2tm2.count()
+logger.info("norcx_m2tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m3m4 = get_polygons(148, 46)
+count = norcx_m3m4.count()
+logger.info("norcx_m3m4 has #{count} polygons")
+polygons_count += count
+
+norcx_m3m5 = get_polygons(148, 47)
+count = norcx_m3m5.count()
+logger.info("norcx_m3m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m3tm1 = get_polygons(148, 48)
+count = norcx_m3tm1.count()
+logger.info("norcx_m3tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m3tm2 = get_polygons(148, 49)
+count = norcx_m3tm2.count()
+logger.info("norcx_m3tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m4m5 = get_polygons(148, 50)
+count = norcx_m4m5.count()
+logger.info("norcx_m4m5 has #{count} polygons")
+polygons_count += count
+
+norcx_m4tm1 = get_polygons(148, 51)
+count = norcx_m4tm1.count()
+logger.info("norcx_m4tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m4tm2 = get_polygons(148, 52)
+count = norcx_m4tm2.count()
+logger.info("norcx_m4tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m5tm1 = get_polygons(148, 53)
+count = norcx_m5tm1.count()
+logger.info("norcx_m5tm1 has #{count} polygons")
+polygons_count += count
+
+norcx_m5tm2 = get_polygons(148, 54)
+count = norcx_m5tm2.count()
+logger.info("norcx_m5tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_tm1tm2 = get_polygons(148, 55)
+count = norcx_tm1tm2.count()
+logger.info("norcx_tm1tm2 has #{count} polygons")
+polygons_count += count
+
+norcx_m1sub = get_polygons(148, 123)
+count = norcx_m1sub.count()
+logger.info("norcx_m1sub has #{count} polygons")
+polygons_count += count
+
+norcx_m2sub = get_polygons(148, 124)
+count = norcx_m2sub.count()
+logger.info("norcx_m2sub has #{count} polygons")
+polygons_count += count
+
+norcx_m3sub = get_polygons(148, 125)
+count = norcx_m3sub.count()
+logger.info("norcx_m3sub has #{count} polygons")
+polygons_count += count
+
+norcx_m4sub = get_polygons(148, 126)
+count = norcx_m4sub.count()
+logger.info("norcx_m4sub has #{count} polygons")
+polygons_count += count
+
+norcx_m5sub = get_polygons(148, 127)
+count = norcx_m5sub.count()
+logger.info("norcx_m5sub has #{count} polygons")
+polygons_count += count
+
+norcx_tm1sub = get_polygons(148, 300)
+count = norcx_tm1sub.count()
+logger.info("norcx_tm1sub has #{count} polygons")
+polygons_count += count
+
+norcx_tm2sub = get_polygons(148, 301)
+count = norcx_tm2sub.count()
+logger.info("norcx_tm2sub has #{count} polygons")
+polygons_count += count
+
+snsbotvia_drw = get_polygons(149, 0)
+count = snsbotvia_drw.count()
+logger.info("snsbotvia_drw has #{count} polygons")
+polygons_count += count
+
+snstopvia_drw = get_polygons(151, 0)
+count = snstopvia_drw.count()
+logger.info("snstopvia_drw has #{count} polygons")
+polygons_count += count
+
+deepvia_drw = get_polygons(152, 0)
+count = deepvia_drw.count()
+logger.info("deepvia_drw has #{count} polygons")
+polygons_count += count
+
+fgetch_drw = get_polygons(153, 0)
+count = fgetch_drw.count()
+logger.info("fgetch_drw has #{count} polygons")
+polygons_count += count
+
+ctrgat_drw = get_polygons(154, 0)
+count = ctrgat_drw.count()
+logger.info("ctrgat_drw has #{count} polygons")
+polygons_count += count
+
+fgimp_drw = get_polygons(155, 0)
+count = fgimp_drw.count()
+logger.info("fgimp_drw has #{count} polygons")
+polygons_count += count
+
+emwihv_drw = get_polygons(156, 0)
+count = emwihv_drw.count()
+logger.info("emwihv_drw has #{count} polygons")
+polygons_count += count
+
+lbe_drw  = get_polygons(157, 0)
+count = lbe_drw.count()
+logger.info("lbe_drw has #{count} polygons")
+polygons_count += count
+
+alcustop_drw = get_polygons(159, 0)
+count = alcustop_drw.count()
+logger.info("alcustop_drw has #{count} polygons")
+polygons_count += count
+
+nometfiller_drw = get_polygons(160, 0)
+count = nometfiller_drw.count()
+logger.info("nometfiller_drw has #{count} polygons")
+polygons_count += count
+
+prboundary_drw = get_polygons(189, 0)
+count = prboundary_drw.count()
+logger.info("prboundary_drw has #{count} polygons")
+polygons_count += count
+
+exchange0_drw = get_polygons(190, 0)
+count = exchange0_drw.count()
+logger.info("exchange0_drw has #{count} polygons")
+polygons_count += count
+
+exchange0_pin = get_polygons(190, 2)
+count = exchange0_pin.count()
+logger.info("exchange0_pin has #{count} polygons")
+polygons_count += count
+
+exchange0_text = labels(190, 25)
+count = exchange0_text.count()
+logger.info("exchange0_text has #{count} polygons")
+polygons_count += count
+
+exchange1_drw = get_polygons(191, 0)
+count = exchange1_drw.count()
+logger.info("exchange1_drw has #{count} polygons")
+polygons_count += count
+
+exchange1_pin = get_polygons(191, 2)
+count = exchange1_pin.count()
+logger.info("exchange1_pin has #{count} polygons")
+polygons_count += count
+
+exchange1_text = labels(191, 25)
+count = exchange1_text.count()
+logger.info("exchange1_text has #{count} polygons")
+polygons_count += count
+
+exchange2_drw = get_polygons(192, 0)
+count = exchange2_drw.count()
+logger.info("exchange2_drw has #{count} polygons")
+polygons_count += count
+
+exchange2_pin = get_polygons(192, 2)
+count = exchange2_pin.count()
+logger.info("exchange2_pin has #{count} polygons")
+polygons_count += count
+
+exchange2_text = labels(192, 25)
+count = exchange2_text.count()
+logger.info("exchange2_text has #{count} polygons")
+polygons_count += count
+
+exchange3_drw = get_polygons(193, 0)
+count = exchange3_drw.count()
+logger.info("exchange3_drw has #{count} polygons")
+polygons_count += count
+
+exchange3_pin = get_polygons(193, 2)
+count = exchange3_pin.count()
+logger.info("exchange3_pin has #{count} polygons")
+polygons_count += count
+
+exchange3_text = labels(193, 25)
+count = exchange3_text.count()
+logger.info("exchange3_text has #{count} polygons")
+polygons_count += count
+
+exchange4_drw = get_polygons(194, 0)
+count = exchange4_drw.count()
+logger.info("exchange4_drw has #{count} polygons")
+polygons_count += count
+
+exchange4_pin = get_polygons(194, 2)
+count = exchange4_pin.count()
+logger.info("exchange4_pin has #{count} polygons")
+polygons_count += count
+
+exchange4_text = labels(194, 25)
+count = exchange4_text.count()
+logger.info("exchange4_text has #{count} polygons")
+polygons_count += count
+
+isonwell_drw = get_polygons(257, 0)
+count = isonwell_drw.count()
+logger.info("isonwell_drw has #{count} polygons")
+polygons_count += count
+
+logger.info("Total no. of polygons in the design is #{polygons_count}")
+
+#================================================================
+#------------------------- MAIN RUNSET --------------------------
+#================================================================
+
+logger.info('Starting SG13G2 LVS runset')
+
+#================================================
+#------------- LAYERS DERIVATIONS ---------------
+#================================================
+
+logger.info('Starting base layers derivations')
+
+#==================================
+# ------ GENERAL DERIVATIONS ------
+#==================================
+
+logger.info('Starting general LVS derivations')
+
+#=== Global Layers ===
+# === CHIP ===
+CHIP = case $run_mode
+when 'deep'
+  extent('*')
+else
+  #=== FLAT MODE ===
+  extent.sized(0.0)
+end
+
+# === General Derivations ===
+# nwell
+nwell_iso = nwell_drw.and(nbulay_drw)
+nwell_holes = nwell_drw.holes.not(nwell_drw)
+
+# pwell
+pwell_allowed = CHIP.not(pwell_block)
+digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
+pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
+
+# General pwell
+pwell_sub = pwell_allowed.not(digisub_drw).not(nbulay_drw.interacting(nwell_holes))
+
+# n & p activ
+nactiv  = activ.not(psd_drw.join(nsd_block))
+pactiv  = activ.and(psd_drw)
+
+# res/cap exclusion
+res_mk        = polyres_drw.join(res_drw)
+poly_con      = gatpoly.not(res_mk)
+metal1_con    = metal1.not(metal1_res)
+metal2_con    = metal2.not(metal2_res)
+metal3_con    = metal3.not(metal3_res)
+metal4_con    = metal4.not(metal4_res)
+metal5_con    = metal5.not(metal5_res)
+topmetal1_con = topmetal1.not(topmetal1_res).not(ind_drw)
+topmetal2_con = topmetal2.not(topmetal2_res).not(ind_drw)
+
+# Gate FETs
+tgate   = gatpoly.and(activ).not(res_mk)
+ngate   = nactiv.and(tgate)
+pgate   = pactiv.and(tgate)
+ngate_lv_base = ngate.not(thickgateox_drw)
+pgate_lv_base = pgate.not(thickgateox_drw)
+ngate_hv_base = ngate.and(thickgateox_drw)
+pgate_hv_base = pgate.and(thickgateox_drw)
+
+# S/D FETs
+nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
+psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
+
+
+# n1/p1 taps labels
+well_patt = glob_to_case_insensitive_glob("well")
+sub_patt = glob_to_case_insensitive_glob("sub!")
+
+ntap1_lbl = text_drw.texts(well_patt)
+ntap1_mk = nwell_drw.interacting(ntap1_lbl)
+
+ptap1_lbl = text_drw.texts(sub_patt)
+ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
+
+# n & p taps (short connections)
+ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly).not(ntap1_mk)
+ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly)
+ptap_holes = ptap.holes
+ntap_holes = ntap.holes
+
+# S/D (salicide)
+nsd_sal = nsd_fet.not(salblock_drw)
+psd_sal = psd_fet.not(salblock_drw)
+
+# n & p taps (salicide)
+ntap_sal = ntap.not(salblock_drw)
+ptap_sal = ptap.not(salblock_drw)
+
+# n/p SD abutted with n/p taps (salicide)
+nsd_ptap_abutt = nsd_sal.edges.and(ptap_sal.edges).extended(:in => 1.nm, :out => 1.nm)
+psd_ntap_abutt = psd_sal.edges.and(ntap_sal.edges).extended(:in => 1.nm, :out => 1.nm)
+
+#==================================
+# ------ MOSFET DERIVATIONS -------
+#==================================
+
+logger.info('Starting MOSFET DERIVATIONS')
+
+mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
+                .join(emwind_drw).join(emwihv_drw).join(salblock_drw)
+                .join(polyres_drw).join(extblock_drw).join(res_drw)
+                .join(activ_mask).join(recog_diode).join(recog_esd)
+                .join(ind_drw).join(ind_pin).join(ind_drw)
+                .join(substrate_drw).join(nsd_block)
+
+# ==== General FETs & RF-FETs =====
+
+rfnmos_exc = nwell_drw.join(psd_drw).join(mos_exclude)
+rfpmos_exc = pwell.join(nwell_holes).join(mos_exclude)
+
+# Get case insensitive patterns for FETs
+rfnmos_patt = glob_to_case_insensitive_glob("rfnmos")
+rfnmoshv_patt = glob_to_case_insensitive_glob("rfnmosHV")
+
+rfpmos_patt = glob_to_case_insensitive_glob("rfpmos")
+rfpmoshv_patt = glob_to_case_insensitive_glob("rfpmosHV")
+
+rfnmos_mk_gen = ptap.join(ptap_holes)
+rfnmos_mk = rfnmos_mk_gen.interacting(text_drw.texts(rfnmos_patt))
+rfnmoshv_mk = rfnmos_mk_gen.interacting(text_drw.texts(rfnmoshv_patt))
+
+rfpmos_mk_gen = ntap.join(ntap_holes)
+rfpmos_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmos_patt))
+rfpmoshv_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmoshv_patt))
+
+# ==============
+# ---- NMOS ----
+# ==============
+
+logger.info('Starting NMOS DERIVATIONS')
+
+# for regular FETs
+nmos_exc = rfnmos_exc.join(rfnmos_mk)
+nmoshv_exc = rfnmos_exc.join(rfnmoshv_mk)
+
+# nmos - LV
+ngate_lv = ngate_lv_base.not(nmos_exc)
+
+# nmos - HV
+ngate_hv = ngate_hv_base.not(nmoshv_exc)
+
+# ==============
+# ---- PMOS ----
+# ==============
+
+logger.info('Starting PMOS DERIVATIONS')
+
+# for regular FETs
+pmos_exc = rfpmos_exc.join(rfpmos_mk)
+pmoshv_exc = rfpmos_exc.join(rfpmoshv_mk)
+
+# pmos - LV
+pgate_lv = pgate_lv_base.not(pmos_exc)
+
+# pmos - HV
+pgate_hv = pgate_hv_base.not(pmoshv_exc)
+
+#==================================
+# ----- RF-MOSFET DERIVATIONS -----
+#==================================
+
+logger.info('Starting RF-MOSFET DERIVATIONS')
+
+# ===============
+# --- RF-NMOS ---
+# ===============
+
+logger.info('Starting RF-NMOS DERIVATIONS')
+
+
+# rfnmos - LV
+rfngate_lv = ngate_lv_base.and(rfnmos_mk).not(rfnmos_exc)
+
+# rfnmos - HV
+rfngate_hv = ngate_hv_base.and(rfnmoshv_mk).not(rfnmos_exc)
+
+# ===============
+# --- RF-PMOS ---
+# ===============
+
+logger.info('Starting RF-PMOS DERIVATIONS')
+
+# rfpmos - LV
+rfpgate_lv = pgate_lv_base.and(rfpmos_mk).not(rfpmos_exc)
+
+# rfpmos - HV
+rfpgate_hv = pgate_hv_base.and(rfpmoshv_mk).not(rfpmos_exc)
+
+#================================
+# ------ BJT DERIVATIONS --------
+#================================
+
+logger.info('Starting BJT DERIVATIONS')
+
+# =============
+# ---- NPN ----
+# =============
+
+logger.info('Starting NPN-BJT DERIVATIONS')
+
+bjt_exclude = gatpoly.join(pwell_block).join(nsd_drw)
+                .join(salblock_drw).join(polyres_drw).join(extblock_drw)
+                .join(res_drw).join(recog_diode).join(recog_esd)
+                .join(ind_drw).join(ind_pin).join(substrate_drw)
+
+npn_exclude = nwell_drw.join(psd_drw).join(nbulay_drw).join(bjt_exclude)
+
+# ---------- General NPN ----------
+npn_mk = trans_drw.and(pwell).and(ptap_holes)
+npn_c_exc = emwind_drw.join(emwihv_drw).join(activ_mask)
+            .join(nsd_block).join(npn_exclude)
+npn_b_exc = emwind_drw.join(emwihv_drw).join(npn_exclude)
+npn_sub = npn_mk.not(npn_exclude)
+npn_dev = activ.join(activ_mask).and(npn_mk)
+
+# ---------- npn13G2 ----------
+# npn13G2 exclusion layers
+npn13G2_e_exc = activ.join(emwihv_drw).join(npn_exclude)
+npn13G2_b_exc = npn_b_exc.join(activ_mask)
+
+# npn13G2 nodes
+npn13G2_e_ = emwind_drw.and(activ_mask).and(nsd_block).and(npn_mk).not(npn13G2_e_exc)
+# npn13G2 is a fixed device (0.07um X 0.9um)
+npn13G2_e_pin = npn13G2_e_.with_bbox_min(0.07.um).with_bbox_max(0.9.um).with_area(0.063.um)
+npn13G2_b_pin = nsd_block.and(npn_mk).not(npn13G2_b_exc)
+npn13G2_c_pin = activ.and(npn_mk).not_overlapping(npn_c_exc)
+
+npn13G2_dev = npn_dev.join(nsd_block).extents.covering(npn13G2_e_pin).covering(npn13G2_b_pin).covering(npn13G2_c_pin)
+npn13G2_c = npn13G2_dev.sized(-1.nm)
+npn13G2_tc = npn13G2_dev.not(npn13G2_c).interacting(npn13G2_c_pin)
+npn13G2_b = npn13G2_dev.not(npn13G2_c_pin)
+npn13G2_tb = npn13G2_b.not(npn13G2_e_pin).merged
+npn13G2_e = npn13G2_e_pin
+npn13G2_te = npn13G2_e
+
+# ---------- npn13G2L ----------
+# npn13G2L exclusion layers
+npn13G2l_e_exc = activ_mask.join(nsd_block).join(emwihv_drw).join(npn_exclude)
+npn13G2l_b_exc = npn_b_exc.join(activ).join(nsd_block)
+
+# npn13G2L nodes
+npn13G2l_e_ = emwind_drw.and(activ).and(npn_mk).not(npn13G2l_e_exc)
+# npn13G2L has fixed width (0.07um), Length could vary from 1:2.5 um
+npn13G2l_e_pin = npn13G2l_e_.with_bbox_min(0.07.um).with_bbox_max(1.um, 2.5.um).with_area(0.07.um, 0.175.um)
+npn13G2l_b_pin = activ_mask.and(npn_mk).not(npn13G2l_b_exc)
+npn13G2l_c_pin = npn13G2_c_pin
+
+npn13G2l_dev = npn_dev.covering(npn13G2l_e_pin).covering(npn13G2l_b_pin).covering(npn13G2l_c_pin)
+npn13G2l_c = npn13G2l_dev.sized(1.nm)
+npn13G2l_tc = npn13G2l_c.not(npn13G2l_dev).interacting(npn13G2l_c_pin)
+npn13G2l_b = npn13G2l_dev.not(npn13G2l_c_pin)
+npn13G2l_tb = npn13G2l_b.not(npn13G2l_e_pin).merged
+npn13G2l_e = npn13G2l_e_pin
+npn13G2l_te = npn13G2l_e
+
+# # ---------- npn13G2V ----------
+# npn13G2V exclusion layers
+npn13G2v_e_exc = activ_mask.join(nsd_block).join(emwind_drw).join(npn_exclude)
+
+# npn13G2V nodes
+npn13G2v_e_ = emwihv_drw.and(activ).and(npn_mk).not(npn13G2v_e_exc)
+# npn13G2L has fixed width (0.12um), Length could vary from 1:5 um
+npn13G2v_e_pin = npn13G2v_e_.with_bbox_min(0.12.um).with_bbox_max(1.um, 5.um).with_area(0.12.um, 0.6.um)
+npn13G2v_b_pin = npn13G2l_b_pin
+npn13G2v_c_pin = npn13G2l_c_pin
+
+npn13G2v_dev = npn_dev.covering(npn13G2v_e_pin).covering(npn13G2v_b_pin).covering(npn13G2v_c_pin)
+npn13G2v_c = npn13G2v_dev.sized(1.nm)
+npn13G2v_tc = npn13G2v_c.not(npn13G2v_dev).interacting(npn13G2v_c_pin)
+npn13G2v_b = npn13G2v_dev.not(npn13G2v_c_pin)
+npn13G2v_tb = npn13G2v_b.not(npn13G2v_e_pin).merged
+npn13G2v_e = npn13G2v_e_pin
+npn13G2v_te = npn13G2v_e
+
+# =============
+# ---- PNP ----
+# =============
+
+logger.info('Starting PNP-BJT DERIVATIONS')
+
+pnp_exclude = trans_drw.join(emwind_drw)
+                .join(emwihv_drw).join(nsd_block).join(bjt_exclude)
+
+pnp_mk = ptap_holes.not(pnp_exclude)
+
+# pnp general nodes DERIVATIONS
+pnp_e = pactiv.and(pnp_mk).and(nwell_iso)
+pnp_b = nactiv.and(pnp_mk).and(nwell_iso)
+pnp_c = ptap.interacting(pnp_mk).not(pnp_exclude)
+
+# pnp_mpa nodes DERIVATIONS
+pnp_mpa_e = pnp_e.and(pnp_b.extents).and(pnp_c.extents)
+pnp_mpa_b = pnp_b.interacting(pnp_b.extents.interacting(pnp_mpa_e))
+pnp_mpa_c = pnp_c.interacting(pnp_c.extents.interacting(pnp_mpa_e))
+
+#================================
+# ----- DIODE DERIVATIONS -------
+#================================
+
+logger.info('Starting DIODE DERIVATIONS')
+
+diode_exclude = gatpoly.join(nsd_drw).join(trans_drw)
+                .join(emwind_drw).join(emwihv_drw).join(polyres_drw)
+                .join(extblock_drw).join(res_drw).join(activ_mask)
+                .join(recog_esd).join(ind_drw).join(ind_pin)
+                .join(substrate_drw)
+
+antenna_d_exc = pwell_block.join(salblock_drw)
+                .join(nsd_block).join(diode_exclude)
+
+antenna_d_mk = recog_diode.not(antenna_d_exc)
+
+# ==== dantenna diode ====
+dantenna_n = activ.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
+dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
+
+# ==== dpantenna diode ====
+dpantenna_p = pactiv.and(antenna_d_mk)
+dpantenna_n = nwell_drw.covering(dpantenna_p)
+
+# ==== schottky_nbl1 diode ====
+schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
+                .and(pwell_block).and(ptap_holes).and(nbulay_drw)
+                .and(salblock_drw).and(nsd_block).and(nwell_holes)
+                .not(psd_drw).not(pwell).not(diode_exclude)
+
+schottcky_p_ = cont_drw.and(activ).and(metal1_con)
+                .and(schottky_mk)
+
+# schottky_nbl1 is a fixed device (0.3um X 1.0 um)
+schottcky_p = schottcky_p_.with_bbox_min(0.3.um).with_bbox_max(1.0.um)
+# Using box with area 1x1 to be used as a reference to (m)
+schottcky_p_1x1 = schottcky_p.middle(as_boxes).sized(0.499.um)
+
+schottcky_n = nsd_block.and(activ).covering(schottcky_p)
+
+# define port for schottcky
+schottcky_n_port = activ.interacting(nwell_iso).interacting(schottcky_n).not(schottcky_n.sized(-1.nm))
+schottcky_n_con = cont_drw.and(schottcky_n_port).not_interacting(schottcky_p)
+schottcky_sub = ptap.extents.covering(schottcky_p).covering(schottcky_n)
+
+#================================
+# ---- RESISTOR DERIVATIONS -----
+#================================
+
+logger.info('Starting RESISTOR DERIVATIONS')
+
+polyres_exclude = activ.join(pwell_block).join(nsd_block)
+                    .join(nbulay_drw).join(thickgateox_drw).join(trans_drw)
+                    .join(emwind_drw).join(emwihv_drw).join(activ_mask)
+                    .join(recog_diode).join(recog_esd).join(ind_drw)
+                    .join(ind_pin).join(substrate_drw)
+
+# ==============
+# ---- POLY ----
+# ==============
+
+## polyres
+polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly).not(polyres_exclude)
+
+## rhigh
+rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)
+rhigh_ports = gatpoly.interacting(rhigh_res).not(rhigh_res)
+
+## rppd
+rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_block).not(nsd_drw)
+rppd_ports = gatpoly.interacting(rppd_res).not(rppd_res)
+
+## rsil
+rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
+rsil_res = polyres_mk.and(res_drw).not(rsil_exc)
+rsil_ports = gatpoly.interacting(rsil_res).not(rsil_res)
+
+# ===============
+# ---- METAL ----
+# ===============
+
+# res_metal1
+res_metal1 = metal1.and(metal1_res)
+
+# res_metal2
+res_metal2 = metal2.and(metal2_res)
+
+# res_metal3
+res_metal3 = metal3.and(metal3_res)
+
+# res_metal4
+res_metal4 = metal4.and(metal4_res)
+
+# res_metal5
+res_metal5 = metal5.and(metal5_res)
+
+# res_topmetal1
+res_topmetal1 = topmetal1.and(topmetal1_res)
+
+# res_topmetal2
+res_topmetal2 = topmetal2.and(topmetal2_res)
+
+#==================================
+# -------- CAP DERIVATIONS --------
+#==================================
+
+logger.info('Starting CAP DERIVATIONS')
+
+rfmimcap_exc = ind_drw.join(ind_pin)
+
+# === MIMCAP ===
+mimcap_exclude = pwell_block.join(rfmimcap_exc)
+
+mim_top = mim_drw.overlapping(topmetal1_con).and(metal5_con)
+mim_btm = metal5_con.and(mim_drw).sized(0.6.um)
+mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
+topvia1_n_cap = topvia1_drw.not(mim_via)
+
+# === cap_cmim ===
+cmim_top = mim_top.not(mimcap_exclude)
+cmim_btm = mim_btm.covering(cmim_top)
+cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
+
+# === rfcmim ===
+rfmim_area = pwell_block.interacting(mim_drw)
+rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
+rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
+rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
+rfmim_sub = ptap.extents.interacting(rfmim_area)
+rfmeas_mk = metal5_con.overlapping(rfmim_btm).and(rfmim_area)
+
+# === svaricap ===
+cap_exc = nsd_drw.join(trans_drw).join(emwind_drw)
+            .join(emwihv_drw).join(salblock_drw).join(polyres_drw)
+            .join(extblock_drw).join(res_drw).join(activ_mask)
+            .join(recog_diode).join(recog_esd).join(ind_drw)
+            .join(ind_pin).join(substrate_drw)
+
+varicap_exc = pwell.join(pwell_block).join(nwell_holes).join(cap_exc)
+
+varicap_core = ngate_hv_base.and(nwell_iso).not(varicap_exc)
+varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
+                    .and(nwell_iso).not(varicap_exc).sized(-1.nm)
+varicap_poly_port = gatpoly.interacting(varicap_core)
+varicap_ports = varicap_poly_port.join(varicap_diff_port)
+varicap_sub = ptap.and(thickgateox_drw)
+varicap_dev_mk = thickgateox_drw.covering(varicap_core).interacting(varicap_ports)
+
+#================================
+# ------ ESD DERIVATIONS --------
+#================================
+
+logger.info('Starting ESD DERIVATIONS')
+
+# General
+esd_exclude = nsd_block.join(nsd_drw).join(trans_drw)
+                .join(emwind_drw).join(emwihv_drw).join(polyres_drw)
+                .join(extblock_drw).join(res_drw).join(substrate_drw)
+                .join(ind_drw).join(ind_pin)
+
+esd_exc_d = gatpoly.join(thickgateox_drw).join(salblock_drw)
+            .join(esd_exclude)
+
+idiodevdd_exc = esd_exc_d.join(nwell_holes)
+diodevdd_exc = idiodevdd_exc.join(nbulay_drw).join(pwell_block)
+
+idiodevss_exc = esd_exc_d.join(nwell_drw.not_interacting(nwell_holes))
+                .join(pwell_block)
+diodevss_exc = idiodevss_exc.join(nbulay_drw)
+
+nw_diode = nwell_drw.not_interacting(pwell_block)
+nw_idiode = nwell_iso.interacting(pwell_block)
+
+#======================
+# ----- diode-ESD -----
+#======================
+
+# diodevdd_2kv
+diodevdd_2kv_e = pactiv.and(nw_diode).and(recog_esd).not(diodevdd_exc)
+diodevdd_2kv_e_1x1 = diodevdd_2kv_e.middle.sized(0.499.um)
+diodevdd_2kv_b_ = nactiv.and(nw_diode).and(recog_esd).not(diodevdd_exc)
+diodevdd_2kv_b = diodevdd_2kv_b_.interacting(diodevdd_2kv_b_.extents.interacting(diodevdd_2kv_e, 1, 1))
+diodevdd_2kv_tb = cont_drw.and(diodevdd_2kv_b).not_interacting(diodevdd_2kv_e)
+diodevdd_2kv_c_ = pactiv.and(pwell).and(recog_esd).not(diodevdd_exc)
+diodevdd_2kv_c = diodevdd_2kv_c_.interacting(diodevdd_2kv_c_.extents.interacting(diodevdd_2kv_b, 1, 1))
+
+# diodevdd_4kv
+diodevdd_4kv_b = diodevdd_2kv_b_.interacting(diodevdd_2kv_b_.extents.interacting(diodevdd_2kv_e, 2, 2))
+diodevdd_4kv_c = diodevdd_2kv_c_.interacting(diodevdd_2kv_c_.extents.interacting(diodevdd_4kv_b, 1, 1))
+diodevdd_4kv_e = diodevdd_4kv_b.extents.sized(-0.15.um)
+diodevdd_4kv_e_1x1 = diodevdd_4kv_e.middle.sized(0.499.um)
+diodevdd_4kv_te = cont_drw.and(diodevdd_2kv_e).not_interacting(diodevdd_4kv_b)
+diodevdd_4kv_tb = cont_drw.and(diodevdd_4kv_b).not_interacting(diodevdd_2kv_e)
+
+# diodevss_2kv
+diodevss_2kv_e = nactiv.and(pwell).and(recog_esd).not(diodevss_exc)
+diodevss_2kv_e_1x1 = diodevss_2kv_e.middle.sized(0.499.um)
+diodevss_2kv_b_ = pactiv.and(pwell).and(recog_esd).not(diodevss_exc)
+diodevss_2kv_b = diodevss_2kv_b_.interacting(diodevss_2kv_b_.extents.interacting(diodevss_2kv_e, 1, 1))
+diodevss_2kv_tb = cont_drw.and(diodevss_2kv_b).not_interacting(diodevss_2kv_e)
+diodevss_2kv_c_ = nactiv.and(nw_diode).and(recog_esd).not(diodevss_exc)
+diodevss_2kv_c = diodevss_2kv_c_.interacting(diodevss_2kv_c_.extents.interacting(diodevss_2kv_b, 1, 1))
+
+# diodevss_4kv
+diodevss_4kv_b = diodevss_2kv_b_.interacting(diodevss_2kv_b_.extents.interacting(diodevss_2kv_e, 2, 2))
+diodevss_4kv_c = diodevss_2kv_c_.interacting(diodevss_2kv_c_.extents.interacting(diodevss_4kv_b, 1, 1))
+diodevss_4kv_e = diodevss_4kv_b.extents.sized(-0.15.um)
+diodevss_4kv_e_1x1 = diodevss_4kv_e.middle.sized(0.499.um)
+diodevss_4kv_te = cont_drw.and(diodevss_2kv_e).not_interacting(diodevss_4kv_b)
+diodevss_4kv_tb = cont_drw.and(diodevss_4kv_b).not_interacting(diodevss_2kv_e)
+
+#=======================
+# ----- idiode-ESD -----
+#=======================
+
+# idiodevdd_2kv
+idiodevdd_2kv_e = pactiv.and(nw_idiode).and(recog_esd).not(idiodevdd_exc)
+idiodevdd_2kv_e_1x1 = idiodevdd_2kv_e.middle.sized(0.499.um)
+idiodevdd_2kv_b_ = nactiv.and(nw_idiode).and(recog_esd).not(idiodevdd_exc)
+idiodevdd_2kv_b = idiodevdd_2kv_b_.interacting(idiodevdd_2kv_b_.extents.interacting(idiodevdd_2kv_e, 1, 1))
+idiodevdd_2kv_tb = cont_drw.and(idiodevdd_2kv_b).not_interacting(idiodevdd_2kv_e)
+idiodevdd_2kv_c_ = pactiv.and(pwell).and(recog_esd).not(idiodevdd_exc)
+idiodevdd_2kv_c = idiodevdd_2kv_c_.interacting(idiodevdd_2kv_c_.extents.interacting(idiodevdd_2kv_b, 1, 1))
+
+# idiodevdd_4kv
+idiodevdd_4kv_b = idiodevdd_2kv_b_.interacting(idiodevdd_2kv_b_.extents.interacting(idiodevdd_2kv_e, 2, 2))
+idiodevdd_4kv_c = idiodevdd_2kv_c_.interacting(idiodevdd_2kv_c_.extents.interacting(idiodevdd_4kv_b, 1, 1))
+idiodevdd_4kv_e = idiodevdd_4kv_b.extents.sized(-0.15.um)
+idiodevdd_4kv_e_1x1 = idiodevdd_4kv_e.middle.sized(0.499.um)
+idiodevdd_4kv_te = cont_drw.and(idiodevdd_2kv_e).not_interacting(idiodevdd_4kv_b)
+idiodevdd_4kv_tb = cont_drw.and(idiodevdd_4kv_b).not_interacting(idiodevdd_2kv_e)
+
+# idiodevss_2kv
+idiodevss_2kv_e = nactiv.and(pwell).and(nbulay_drw).and(recog_esd).not(idiodevss_exc)
+idiodevss_2kv_e_1x1 = idiodevss_2kv_e.middle.sized(0.499.um)
+idiodevss_2kv_b_ = pactiv.and(pwell).and(nbulay_drw).and(recog_esd).not(idiodevss_exc)
+idiodevss_2kv_b = idiodevss_2kv_b_.interacting(idiodevss_2kv_b_.extents.interacting(idiodevss_2kv_e, 1, 1))
+idiodevss_2kv_tb = cont_drw.and(idiodevss_2kv_b).not_interacting(idiodevss_2kv_e)
+idiodevss_2kv_c_ = nactiv.and(nwell_iso).and(recog_esd).not(idiodevss_exc)
+idiodevss_2kv_c = idiodevss_2kv_c_.interacting(idiodevss_2kv_c_.extents.interacting(idiodevss_2kv_b, 1, 1))
+
+# idiodevss_4kv
+idiodevss_4kv_b = idiodevss_2kv_b_.interacting(idiodevss_2kv_b_.extents.interacting(idiodevss_2kv_e, 2, 2))
+idiodevss_4kv_c = idiodevss_2kv_c_.interacting(idiodevss_2kv_c_.extents.interacting(idiodevss_4kv_b, 1, 1))
+idiodevss_4kv_e = idiodevss_4kv_b.extents.sized(-0.15.um)
+idiodevss_4kv_e_1x1 = idiodevss_4kv_e.middle.sized(0.499.um)
+idiodevss_4kv_te = cont_drw.and(idiodevss_2kv_e).not_interacting(idiodevss_4kv_b)
+idiodevss_4kv_tb = cont_drw.and(idiodevss_4kv_b).not_interacting(idiodevss_2kv_e)
+
+#======================
+# ----- MOSCL-ESD -----
+#======================
+
+nmoscl_exc = esd_exclude.join(pwell_block)
+
+# nmoscl_2
+nmoscl_2_patt = glob_to_case_insensitive_glob("nmoscl_2")
+
+gate_moscl = ngate_hv_base.and(salblock_drw).and(nbulay_drw)
+nmoscl_2_n_ = recog_esd.interacting(text_drw.texts(nmoscl_2_patt))
+nmoscl_2_n = nmoscl_2_n_.interacting(gate_moscl, 12)
+nmoscl_2_n_port = nwell_drw.and(nmoscl_2_n)
+nmoscl_2_p_ = ptap.and(nbulay_drw).inside(nmoscl_2_n_)
+# Using box with area 1x1 to be used as a reference to (m)
+nmoscl_2_p =nmoscl_2_p_.middle(as_boxes).sized(0.499.um)
+
+# nmoscl_4
+nmoscl_4_patt = glob_to_case_insensitive_glob("nmoscl_4")
+
+gate_moscl = ngate_hv_base.and(salblock_drw).and(nbulay_drw)
+nmoscl_4_n_ = recog_esd.interacting(text_drw.texts(nmoscl_4_patt))
+nmoscl_4_n = nmoscl_4_n_.interacting(gate_moscl, 24)
+nmoscl_4_n_port = nwell_drw.and(nmoscl_4_n)
+nmoscl_4_p_ = ptap.and(nbulay_drw).inside(nmoscl_4_n_)
+# Using box with area 1x1 to be used as a reference to (m)
+nmoscl_4_p =nmoscl_4_p_.middle(as_boxes).sized(0.499.um)
+
+#===============================
+# ---- Inductor DERIVATIONS ----
+#===============================
+
+logger.info('Starting Inductor DERIVATIONS')
+
+ind_exc = gatpoly.join(nsd_drw).join(nbulay_drw)
+            .join(thickgateox_drw).join(emwind_drw).join(emwihv_drw)
+            .join(salblock_drw).join(polyres_drw).join(mim_drw)
+            .join(extblock_drw).join(res_drw).join(activ_mask)
+            .join(recog_diode).join(recog_esd).join(substrate_drw)
+
+# General
+la_patt = glob_to_case_insensitive_glob("LA")
+lb_patt = glob_to_case_insensitive_glob("LB")
+lc_patt = glob_to_case_insensitive_glob("LC")
+ind2_patt = glob_to_case_insensitive_glob("inductor2*")
+ind3_patt = glob_to_case_insensitive_glob("inductor3*")
+
+ind_edges = ind_drw.edges
+ind_core_ = topmetal2.join(topmetal1).and(ind_drw).merged.not(ind_exc)
+ind_ports_ = ind_pin.and(ind_core_).interacting(ind_edges)
+ind_port_la = ind_ports_.interacting(ind_text.texts(la_patt))
+ind_la_tm1 = ind_port_la.and(topmetal1)
+ind_port_lb = ind_ports_.interacting(ind_text.texts(lb_patt))
+ind_lb_tm1 = ind_port_lb.and(topmetal1)
+ind_port_lc = ind_ports_.interacting(ind_text.texts(lc_patt))
+ind_lc_tm2 = ind_port_lc.and(topmetal2)
+
+# inductor2
+ind2_ports = ind_port_la.join(ind_port_lb)
+ind2_core = ind_core_.interacting(ind_port_la, 1).interacting(ind_port_lb, 1)
+ind2_mk_ = ind_drw.interacting(text_drw.texts(ind2_patt))
+ind2_mk = ind2_mk_.interacting(ind2_core).interacting(ind2_ports).not_interacting(ind_port_lc)
+ind2_sub1 = pwell.and(ind_drw).interacting(ind2_core)
+ind2_sub2 = pwell_block.and(ind_drw).interacting(ind2_core).sized(1.nm)
+ind2_well = nwell_drw.and(ind_drw).interacting(ind2_core).sized(-1.nm)
+ind2_sub = ind2_sub1.join(ind2_sub2).join(ind2_well)
+# inductor3
+ind3_ports = ind_la_tm1.join(ind_lb_tm1).join(ind_lc_tm2)
+ind3_core = ind_core_.interacting(ind_lb_tm1, 1).interacting(ind_lb_tm1, 1).interacting(ind_lc_tm2, 1)
+ind3_mk_ = ind_drw.interacting(text_drw.texts(ind3_patt))
+ind3_mk = ind3_mk_.interacting(ind3_core).interacting(ind3_ports)
+ind3_sub1 = pwell.and(ind_drw).interacting(ind3_core)
+ind3_sub2 = pwell_block.and(ind_drw).interacting(ind3_core).sized(1.nm)
+ind3_well = nwell_drw.and(ind_drw).interacting(ind3_core).sized(-1.nm)
+ind3_sub = ind3_sub1.join(ind3_sub2).join(ind3_well)
+
+#===============================
+# ------ Taps DERIVATIONS ------
+#===============================
+
+logger.info('Starting Taps DERIVATIONS')
+
+taps_exclude = gatpoly.join(nsd_drw).join(trans_drw)
+                .join(emwind_drw).join(emwihv_drw).join(salblock_drw)
+                .join(polyres_drw).join(extblock_drw).join(res_drw)
+                .join(activ_mask).join(recog_diode).join(recog_esd)
+                .join(ind_drw).join(ind_pin)
+
+# === ntap1 ===
+ntap1_exc = pwell.join(psd_drw).join(taps_exclude)
+
+ntap1_tie = nactiv.and(ntap1_mk).extents.not(ntap1_exc)
+ntap1_well = ntap1_mk.covering(ntap1_tie)
+
+# === ptap1 ===
+ptap1_exc = nwell_drw.join(taps_exclude)
+
+ptap1_tie = pactiv.and(ptap1_mk).extents.not(ptap1_exc)
+ptap1_sub = pwell.covering(ptap1_tie)
+
+#================================================
+#------------ DEVICES CONNECTIVITY --------------
+#================================================
+
+logger.info('Starting GF180 LVS connectivity setup')
+
+#================================
+# ----- GENERAL CONNECTIONS -----
+#================================
+
+logger.info('Starting GF180 LVS connectivity setup (Inter-layer)')
+
+# Inter-layer
+connect(pwell_sub, pwell)
+connect(pwell, ptap)
+connect(nwell_drw, ntap)
+connect(ntap, cont_drw)
+connect(ptap, cont_drw)
+connect(poly_con, cont_drw)
+connect(nsd_fet, cont_drw)
+connect(psd_fet, cont_drw)
+connect(cont_drw, metal1_con)
+connect(metal1_con, via1_drw)
+connect(via1_drw, metal2_con)
+connect(metal2_con, via2_drw)
+connect(via2_drw, metal3_con)
+connect(metal3_con, via3_drw)
+connect(via3_drw, metal4_con)
+connect(metal4_con, via4_drw)
+connect(via4_drw, metal5_con)
+connect(metal5_con, topvia1_n_cap)
+connect(topvia1_n_cap, topmetal1_con)
+connect(topmetal1_con, topvia2_drw)
+connect(topvia2_drw, topmetal2_con)
+
+# salicide connection 
+connect(nsd_fet, nsd_ptap_abutt)
+connect(nsd_ptap_abutt, ptap)
+connect(psd_fet, psd_ntap_abutt)
+connect(psd_ntap_abutt, ntap)
+
+# Attaching labels
+connect(metal1_con, metal1_text)
+connect(metal2_con, metal2_text)
+connect(metal3_con, metal3_text)
+connect(metal4_con, metal4_text)
+connect(metal5_con, metal5_text)
+connect(topmetal1_con, topmetal1_text)
+connect(topmetal2_con, topmetal2_text)
+
+logger.info('Starting SG13G2 LVS connectivity setup (Global)')
+
+#================================
+# ----- MOSFET CONNECTIONS ------
+#================================
+
+logger.info('Starting LVS MOSFET CONNECTIONS')
+# Covered in general connections
+
+#================================
+# ---- RF-MOSFET CONNECTIONS ----
+#================================
+
+logger.info('Starting LVS RF-MOSFET CONNECTIONS')
+# Covered in general connections
+
+#================================
+# ------ BJT CONNECTIONS --------
+#================================
+
+logger.info('Starting LVS BJT CONNECTIONS')
+
+# =============
+# ---- NPN ----
+# =============
+
+# General
+connect(npn_sub, pwell)
+
+# npn13G2 nodes connections
+connect(npn13G2_te, npn13G2_e_pin)
+connect(npn13G2_tc, npn13G2_c_pin)
+connect(npn13G2_tb, npn13G2_b_pin)
+connect(npn13G2_e_pin, cont_drw)
+connect(npn13G2_c_pin, cont_drw)
+connect(npn13G2_b_pin, cont_drw)
+connect(npn_sub, pwell)
+connect(npn13G2_e_pin, emwind_drw)
+connect(emwind_drw, metal1_con)
+
+# npn13G2L nodes connections
+connect(npn13G2l_te, npn13G2l_e_pin)
+connect(npn13G2l_tc, npn13G2l_c_pin)
+connect(npn13G2l_tb, npn13G2l_b_pin)
+connect(npn13G2l_e_pin, cont_drw)
+connect(npn13G2l_c_pin, cont_drw)
+connect(npn13G2l_b_pin, cont_drw)
+connect(npn_sub, pwell)
+
+# npn13G2V nodes connections
+connect(npn13G2v_te, npn13G2v_e_pin)
+connect(npn13G2v_tc, npn13G2v_c_pin)
+connect(npn13G2v_tb, npn13G2v_b_pin)
+connect(npn13G2v_e_pin, cont_drw)
+connect(npn13G2v_c_pin, cont_drw)
+connect(npn13G2v_b_pin, cont_drw)
+connect(npn_sub, pwell)
+
+# =============
+# ---- PNP ----
+# =============
+
+# pnp_mpa nodes connections
+connect(pnp_mpa_e, cont_drw)
+connect(pnp_mpa_b, cont_drw)
+connect(pnp_mpa_c, cont_drw)
+
+#================================
+# ----- DIODE CONNECTIONS -------
+#================================
+
+logger.info('Starting LVS DIODE CONNECTIONS')
+
+# dantenna diode
+connect(dantenna_n, cont_drw)
+connect(dantenna_p, pwell)
+
+# dantenna diode
+connect(dpantenna_n, nwell_drw)
+connect(dpantenna_p, cont_drw)
+
+# dantenna diode
+connect(schottcky_p_1x1, schottcky_p)
+connect(schottcky_p, metal1_con)
+connect(schottcky_n, schottcky_n_port)
+connect(schottcky_n_port, schottcky_n_con)
+connect(schottcky_n_con, metal1_con)
+
+#================================
+# ------- RES CONNECTIONS -------
+#================================
+
+logger.info('Starting RESISTOR CONNECTIONS')
+
+# === rsil ===
+connect(rsil_ports, cont_drw)
+
+# === rppd ===
+connect(rppd_ports, cont_drw)
+
+# === rhigh ===
+connect(rhigh_ports, cont_drw)
+
+# === Metal Res ===
+# Added in general connections
+
+#==================================
+# -------- CAP CONNECTIONS --------
+#==================================
+
+logger.info('Starting LVS CAP CONNECTIONS')
+
+# === cap_mim ===
+connect(cmim_btm, metal5_con)
+connect(cmim_top, mim_via)
+connect(mim_via, topmetal1_con)
+
+# === rfcmim ===
+connect(rfmim_btm, metal5_con)
+connect(rfmim_top, mim_via)
+connect(rfmim_sub, ptap)
+
+# === svarivap ===
+connect(varicap_ports, cont_drw)
+connect(varicap_ports, text_drw)
+connect(varicap_sub, ptap)
+
+#================================
+# ------- ESD CONNECTIONS -------
+#================================
+
+logger.info('Starting ESD CONNECTIONS')
+
+#======================
+# ----- diode-ESD -----
+#======================
+
+# diodevdd_2kv
+connect(diodevdd_2kv_e_1x1, diodevdd_2kv_e)
+connect(diodevdd_2kv_e, cont_drw)
+connect(diodevdd_2kv_b, diodevdd_2kv_tb)
+connect(diodevdd_2kv_tb, cont_drw)
+connect(diodevdd_2kv_c, cont_drw)
+
+# diodevdd_4kv
+connect(diodevdd_4kv_e_1x1, diodevdd_4kv_e)
+connect(diodevdd_4kv_e, diodevdd_4kv_te)
+connect(diodevdd_4kv_te, cont_drw)
+connect(diodevdd_4kv_b, diodevdd_4kv_tb)
+connect(diodevdd_4kv_tb, cont_drw)
+connect(diodevdd_4kv_c, cont_drw)
+
+# diodevss_2kv
+connect(diodevss_2kv_e_1x1, diodevss_2kv_e)
+connect(diodevss_2kv_e, cont_drw)
+connect(diodevss_2kv_b, diodevss_2kv_tb)
+connect(diodevss_2kv_tb, cont_drw)
+connect(diodevss_2kv_c, cont_drw)
+
+# diodevss_4kv
+connect(diodevss_4kv_e_1x1, diodevss_4kv_e)
+connect(diodevss_4kv_e, diodevss_4kv_te)
+connect(diodevss_4kv_te, cont_drw)
+connect(diodevss_4kv_b, diodevss_4kv_tb)
+connect(diodevss_4kv_tb, cont_drw)
+connect(diodevss_4kv_c, cont_drw)
+
+#=======================
+# ----- idiode-ESD -----
+#=======================
+
+# idiodevdd_2kv
+connect(idiodevdd_2kv_e_1x1, idiodevdd_2kv_e)
+connect(idiodevdd_2kv_e, cont_drw)
+connect(idiodevdd_2kv_b, idiodevdd_2kv_tb)
+connect(idiodevdd_2kv_tb, cont_drw)
+connect(idiodevdd_2kv_c, cont_drw)
+
+# idiodevdd_4kv
+connect(idiodevdd_4kv_e_1x1, idiodevdd_4kv_e)
+connect(idiodevdd_4kv_e, idiodevdd_4kv_te)
+connect(idiodevdd_4kv_te, cont_drw)
+connect(idiodevdd_4kv_b, idiodevdd_4kv_tb)
+connect(idiodevdd_4kv_tb, cont_drw)
+connect(idiodevdd_4kv_c, cont_drw)
+
+# idiodevss_2kv
+connect(idiodevss_2kv_e_1x1, idiodevss_2kv_e)
+connect(idiodevss_2kv_e, cont_drw)
+connect(idiodevss_2kv_b, idiodevss_2kv_tb)
+connect(idiodevss_2kv_tb, cont_drw)
+connect(idiodevss_2kv_c, cont_drw)
+
+# idiodevss_4kv
+connect(idiodevss_4kv_e_1x1, idiodevss_4kv_e)
+connect(idiodevss_4kv_e, idiodevss_4kv_te)
+connect(idiodevss_4kv_te, cont_drw)
+connect(idiodevss_4kv_b, idiodevss_4kv_tb)
+connect(idiodevss_4kv_tb, cont_drw)
+connect(idiodevss_4kv_c, cont_drw)
+
+#======================
+# ----- MOSCL-ESD -----
+#======================
+
+# nmoscl_2
+connect(nmoscl_2_n, nmoscl_2_n_port)
+connect(nmoscl_2_n_port, cont_drw)
+connect(nmoscl_2_p, nmoscl_2_p_)
+connect(nmoscl_2_p_, ptap)
+
+# nmoscl_4
+connect(nmoscl_4_n, nmoscl_4_n_port)
+connect(nmoscl_4_n_port, cont_drw)
+connect(nmoscl_4_p, nmoscl_4_p_)
+connect(nmoscl_4_p_, ptap)
+
+#=================================
+# ----- Inductor CONNECTIONS -----
+#=================================
+
+logger.info('Starting Inductor CONNECTIONS')
+
+# ind2
+connect(ind2_ports, ind_pin)
+connect(ind_pin, ind_text)
+connect(ind_pin, topmetal2_con)
+connect(ind2_sub, pwell)
+connect(ind2_sub, nwell_drw)
+
+# ind3
+connect(ind3_ports, ind_pin)
+connect(ind_pin, topmetal1_con)
+connect(ind3_sub, pwell)
+connect(ind3_sub, nwell_drw)
+
+#================================
+# ------- Taps CONNECTIONS ------
+#================================
+
+logger.info('Starting LVS Taps CONNECTIONS')
+
+# ntap1
+connect(ntap1_tie, cont_drw)
+connect(ntap1_well, nwell_drw)
+
+# ptap1
+connect(ptap1_tie, cont_drw)
+connect(ptap1_sub, pwell)
+
+#================================================
+#------------- DEVICES EXTRACTION ---------------
+#================================================
+
+logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
+
+#================================
+# ----- MOSFET EXTRACTION -------
+#================================
+
+logger.info('Starting MOSFET EXTRACTION')
+
+# ==============
+# ---- NMOS ----
+# ==============
+
+
+logger.info('Starting NMOS EXTRACTION')
+
+# nmos - LV
+logger.info('Extraction of NMOS-LV transistor')
+extract_devices(mos4('sg13_lv_nmos'),
+                { 'SD' => nsd_fet,
+                  'G' => ngate_lv,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'W' => pwell })
+
+# nmos - HV
+logger.info('Extraction of NMOS-HV transistor')
+extract_devices(mos4('sg13_hv_nmos'),
+                { 'SD' => nsd_fet,
+                  'G' => ngate_hv,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'W' => pwell })
+
+# ==============
+# ---- PMOS ----
+# ==============
+
+logger.info('Starting PMOS EXTRACTION')
+
+# pmos - LV
+logger.info('Extraction of PMOS-LV transistor')
+extract_devices(mos4('sg13_lv_pmos'),
+                { 'SD' => psd_fet,
+                  'G' => pgate_lv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw })
+
+# pmos - HV
+logger.info('Extraction of PMOS-HV transistor')
+extract_devices(mos4('sg13_hv_pmos'),
+                { 'SD' => psd_fet,
+                  'G' => pgate_hv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw })
+
+#================================
+# ---- RF-MOSFET EXTRACTION -----
+#================================
+
+logger.info('Starting RF-MOSFET EXTRACTION')
+
+# ===============
+# --- RF-NMOS ---
+# ===============
+
+# rfnmos - LV
+logger.info('Extraction of RF-NMOS-LV transistor')
+extract_devices(mos4('rfnmos'),
+                { 'SD' => nsd_fet,
+                  'G' => rfngate_lv,
+                  'W' => pwell,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'tW' => ptap,
+                })
+
+# rfnmos - HV
+logger.info('Extraction of RF-NMOS-HV transistor')
+extract_devices(mos4('rfnmoshv'),
+                { 'SD' => nsd_fet,
+                  'G' => rfngate_hv,
+                  'W' => pwell,
+                  'tS' => nsd_fet,
+                  'tD' => nsd_fet,
+                  'tG' => poly_con,
+                  'tW' => ptap,
+                })
+
+# ===============
+# --- RF-PMOS ---
+# ===============
+
+# rfpmos - LV
+logger.info('Extraction of RF-PMOS-LV transistor')
+extract_devices(mos4('rfpmos'),
+                { 'SD' => psd_fet,
+                  'G' => rfpgate_lv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw,
+                  'tW' => ntap,
+                })
+
+# rfpmos - HV
+logger.info('Extraction of RF-PMOS-HV transistor')
+extract_devices(mos4('rfpmoshv'),
+                { 'SD' => psd_fet,
+                  'G' => rfpgate_hv,
+                  'tS' => psd_fet,
+                  'tD' => psd_fet,
+                  'tG' => poly_con,
+                  'W' => nwell_drw,
+                  'tW' => ntap,
+                })
+
+#================================
+# ------- BJT EXTRACTION --------
+#================================
+
+logger.info('Starting BJT EXTRACTION')
+
+# =============
+# ---- NPN ----
+# =============
+
+logger.info('Starting NPN-BJT EXTRACTION')
+
+logger.info('Extraction of npn13G2 BJT transistor')
+extract_devices(bjt4('npn13G2', CustomBJT4), {
+                  'C' => npn13G2_c,
+                  'B' => npn13G2_b,
+                  'E' => npn13G2_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2_tc,
+                  'tB' => npn13G2_tb,
+                  'tE' => npn13G2_te,
+                  'tS' => npn_sub
+                })
+
+logger.info('Extraction of npn13G2L BJT transistor')
+extract_devices(bjt4('npn13G2l', CustomBJT4), {
+                  'C' => npn13G2l_c,
+                  'B' => npn13G2l_b,
+                  'E' => npn13G2l_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2l_tc,
+                  'tB' => npn13G2l_tb,
+                  'tE' => npn13G2l_te,
+                  'tS' => npn_sub
+                })
+
+logger.info('Extraction of npn13G2V BJT transistor')
+extract_devices(bjt4('npn13G2v', CustomBJT4), {
+                  'C' => npn13G2v_c,
+                  'B' => npn13G2v_b,
+                  'E' => npn13G2v_e,
+                  'S' => npn_sub,
+                  'tC' => npn13G2v_tc,
+                  'tB' => npn13G2v_tb,
+                  'tE' => npn13G2v_te,
+                  'tS' => npn_sub
+                })
+
+# =============
+# ---- PNP ----
+# =============
+
+logger.info('Starting PNP-BJT EXTRACTION')
+
+# pnp_mpa BJT
+logger.info('Extracting pnpMPA BJT')
+extract_devices(bjt3('pnpMPA', CustomBJT3), { 'C' => pnp_mpa_c.extents,
+                                  'B' => pnp_mpa_b.extents,
+                                  'E' => pnp_mpa_e,
+                                  'tC' => pnp_mpa_c,
+                                  'tB' => pnp_mpa_b,
+                                  'tE' => pnp_mpa_e })
+
+#================================
+# ------ DIODE EXTRACTION -------
+#================================
+
+logger.info('Starting DIODE EXTRACTION')
+
+# dantenna diode
+logger.info('Extracting dantenna diode')
+extract_devices(diode('dantenna', EnDiode), { 'N' => dantenna_n, 'P' => dantenna_p })
+
+# dpantenna diode
+logger.info('Extracting dpantenna diode')
+extract_devices(diode('dpantenna', EnDiode), { 'N' => dpantenna_n, 'P' => dpantenna_p })
+
+# schottky_nbl1 diode
+logger.info('Extracting schottky_nbl1 diode')
+extract_devices(bjt3('schottky_nbl1', Esd3Term), { 'C' => schottcky_sub,
+                                                   'B' => schottcky_n_port.extents,
+                                                   'E' => schottcky_p_1x1,
+                                                   'tC' => ptap,
+                                                   'tB' => schottcky_n_port,
+                                                   'tE' => schottcky_p_1x1 })
+
+#================================
+# ---- RESISTOR EXTRACTIONS -----
+#================================
+
+logger.info('Starting RESISTOR EXTRACTION')
+
+# ==============
+# ---- POLY ----
+# ==============
+
+# rsil
+logger.info('Extracting rsil resistor')
+extract_devices(GeneralNTerminalExtractor.new('rsil', 2), {
+                  'core' => rsil_res,
+                  'ports' => rsil_ports,
+                  'meas_mk' => polyres_drw,
+                  'dev_mk' => polyres_drw.interacting(rsil_res),
+                  'sub_mk' => pwell.join(nwell_drw)
+                })
+# rppd
+logger.info('Extracting rppd resistor')
+extract_devices(GeneralNTerminalExtractor.new('rppd', 2), {
+                  'core' => rppd_res,
+                  'ports' => rppd_ports,
+                  'meas_mk' => polyres_drw,
+                  'dev_mk' => polyres_drw.interacting(rppd_res),
+                  'sub_mk' => pwell.join(nwell_drw)
+                })
+
+# rhigh
+logger.info('Extracting rhigh resistor')
+extract_devices(GeneralNTerminalExtractor.new('rhigh', 2), {
+                  'core' => rhigh_res,
+                  'ports' => rhigh_ports,
+                  'meas_mk' => polyres_drw,
+                  'dev_mk' => polyres_drw.interacting(rhigh_res),
+                  'sub_mk' => pwell.join(nwell_drw)
+                })
+
+# ===============
+# ---- METAL ----
+# ===============
+
+# RM1
+logger.info('Extracting res_metal1 resistor')
+extract_devices(resistor('res_metal1', 1.0, RES2), { 'R' => res_metal1, 'C' => metal1_con })
+
+# RM2
+logger.info('Extracting res_metal2 resistor')
+extract_devices(resistor('res_metal2', 1.0, RES2), { 'R' => res_metal2, 'C' => metal2_con })
+
+# RM3
+logger.info('Extracting res_metal3 resistor')
+extract_devices(resistor('res_metal3', 1.0, RES2), { 'R' => res_metal3, 'C' => metal3_con })
+
+# RM4
+logger.info('Extracting res_metal4 resistor')
+extract_devices(resistor('res_metal4', 1.0, RES2), { 'R' => res_metal4, 'C' => metal4_con })
+
+# RM5
+logger.info('Extracting res_metal5 resistor')
+extract_devices(resistor('res_metal5', 1.0, RES2), { 'R' => res_metal5, 'C' => metal5_con })
+
+# RTM1
+logger.info('Extracting res_topmetal1 resistor')
+extract_devices(resistor('res_topmetal1', 1.0, RES2), { 'R' => res_topmetal1, 'C' => topmetal1_con })
+
+# RTM2
+logger.info('Extracting res_topmetal2 resistor')
+extract_devices(resistor('res_topmetal2', 1.0, RES2), { 'R' => res_topmetal2, 'C' => topmetal2_con })
+
+#==================================
+# --------- CAP EXTRACTION --------
+#==================================
+
+logger.info('Starting CAP EXTRACTION')
+
+# === cap_cmim ===
+logger.info('Extracting cap_cmim device')
+extract_devices(MIMCAPExtractor.new('cap_cmim'), {
+                  'core' => cmim_top,
+                  'top_mim' => cmim_top,
+                  'btm_mim' => cmim_btm,
+                  'meas_mk' => cmim_dev,
+                  'dev_mk' => cmim_dev,
+                })
+
+# === rfcmim ===
+logger.info('Extracting rfcmim device')
+extract_devices(MIMCAPExtractor.new('rfcmim'), {
+                  'core' => rfmim_top,
+                  'top_mim' => rfmim_top,
+                  'btm_mim' => rfmim_btm,
+                  'dev_mk' => rfmim_area.covering(rfmim_dev),
+                  'meas_mk' => rfmeas_mk,
+                  'sub_mk' => rfmim_sub,
+                })
+
+# === svaricap ===
+logger.info('Extracting sg13_hv_svaricap varactor')
+extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
+                  'core' => varicap_core,
+                  'ports' => varicap_ports,
+                  'meas_mk' => activ,
+                  'dev_mk' => varicap_dev_mk,
+                  'sub_mk' => varicap_sub
+                })
+
+#================================
+# ------- ESD EXTRACTION --------
+#================================
+
+logger.info('Starting ESD EXTRACTION')
+
+#======================
+# ----- diode-ESD -----
+#======================
+
+# diodevdd_2kv
+logger.info('Extracting diodevdd_2kv ESD device')
+extract_devices(bjt3('diodevdd_2kv', Esd3Term), { 'C' => diodevdd_2kv_c.extents,
+                                                  'B' => diodevdd_2kv_b.extents,
+                                                  'E' => diodevdd_2kv_e_1x1,
+                                                  'tC' => diodevdd_2kv_c,
+                                                  'tB' => diodevdd_2kv_b,
+                                                  'tE' => diodevdd_2kv_e_1x1 })
+
+# diodevdd_4kv
+logger.info('Extracting diodevdd_4kv ESD device')
+extract_devices(bjt3('diodevdd_4kv', Esd3Term), { 'C' => diodevdd_4kv_c.extents,
+                                                  'B' => diodevdd_4kv_b.extents,
+                                                  'E' => diodevdd_4kv_e_1x1,
+                                                  'tC' => diodevdd_4kv_c,
+                                                  'tB' => diodevdd_4kv_b,
+                                                  'tE' => diodevdd_4kv_e_1x1 })
+
+# diodevss_2kv
+logger.info('Extracting diodevss_2kv ESD device')
+extract_devices(bjt3('diodevss_2kv', Esd3Term), { 'C' => diodevss_2kv_c.extents,
+                                                  'B' => diodevss_2kv_b.extents,
+                                                  'E' => diodevss_2kv_e_1x1,
+                                                  'tC' => diodevss_2kv_c,
+                                                  'tB' => diodevss_2kv_b,
+                                                  'tE' => diodevss_2kv_e_1x1 })
+
+# diodevss_4kv
+logger.info('Extracting diodevss_4kv ESD device')
+extract_devices(bjt3('diodevss_4kv', Esd3Term), { 'C' => diodevss_4kv_c.extents,
+                                                  'B' => diodevss_4kv_b.extents,
+                                                  'E' => diodevss_4kv_e_1x1,
+                                                  'tC' => diodevss_4kv_c,
+                                                  'tB' => diodevss_4kv_b,
+                                                  'tE' => diodevss_4kv_e_1x1 })
+
+#=======================
+# ----- idiode-ESD -----
+#=======================
+
+# idiodevdd_2kv
+logger.info('Extracting idiodevdd_2kv ESD device')
+extract_devices(bjt3('idiodevdd_2kv', Esd3Term), { 'C' => idiodevdd_2kv_c.extents,
+                                                   'B' => idiodevdd_2kv_b.extents,
+                                                   'E' => idiodevdd_2kv_e_1x1,
+                                                   'tC' => idiodevdd_2kv_c,
+                                                   'tB' => idiodevdd_2kv_b,
+                                                   'tE' => idiodevdd_2kv_e_1x1 })
+
+# idiodevdd_4kv
+logger.info('Extracting idiodevdd_4kv ESD device')
+extract_devices(bjt3('idiodevdd_4kv', Esd3Term), { 'C' => idiodevdd_4kv_c.extents,
+                                                   'B' => idiodevdd_4kv_b.extents,
+                                                   'E' => idiodevdd_4kv_e_1x1,
+                                                   'tC' => idiodevdd_4kv_c,
+                                                   'tB' => idiodevdd_4kv_b,
+                                                   'tE' => idiodevdd_4kv_e_1x1 })
+
+# idiodevss_2kv
+logger.info('Extracting idiodevss_2kv ESD device')
+extract_devices(bjt3('idiodevss_2kv', Esd3Term), { 'C' => idiodevss_2kv_c.extents,
+                                                   'B' => idiodevss_2kv_b.extents,
+                                                   'E' => idiodevss_2kv_e_1x1,
+                                                   'tC' => idiodevss_2kv_c,
+                                                   'tB' => idiodevss_2kv_b,
+                                                   'tE' => idiodevss_2kv_e_1x1 })
+
+# idiodevss_4kv
+logger.info('Extracting idiodevss_4kv ESD device')
+extract_devices(bjt3('idiodevss_4kv', Esd3Term), { 'C' => idiodevss_4kv_c.extents,
+                                                   'B' => idiodevss_4kv_b.extents,
+                                                   'E' => idiodevss_4kv_e_1x1,
+                                                   'tC' => idiodevss_4kv_c,
+                                                   'tB' => idiodevss_4kv_b,
+                                                   'tE' => idiodevss_4kv_e_1x1 })
+
+#======================
+# ----- MOSCL-ESD -----
+#======================
+
+# nmoscl_2
+logger.info('Extracting nmoscl_2 ESD device')
+extract_devices(diode('nmoscl_2', Esd2Term), { 'N' => nmoscl_2_n, 'P' => nmoscl_2_p })
+
+# nmoscl_4
+logger.info('Extracting nmoscl_4 ESD device')
+extract_devices(diode('nmoscl_4', Esd2Term), { 'N' => nmoscl_4_n, 'P' => nmoscl_4_p })
+
+#=================================
+# ----- Inductor EXTRACTIONS -----
+#=================================
+
+logger.info('Starting Inductor EXTRACTION')
+
+# ind2
+logger.info('Extracting Inductor2 device')
+extract_devices(GeneralNTerminalExtractor.new('inductor', 2), {
+                  'core' => ind2_core,
+                  'ports' => ind2_ports,
+                  'meas_mk' => topmetal2.and(ind2_core),
+                  'dev_mk' => ind2_mk,
+                  'sub_mk' => ind2_sub
+                })
+
+# ind3
+logger.info('Extracting Inductor3 device')
+extract_devices(GeneralNTerminalExtractor.new('inductor3', 3), {
+                  'core' => ind3_core,
+                  'ports' => ind3_ports,
+                  'meas_mk' => topmetal2.and(ind3_core),
+                  'dev_mk' => ind3_mk,
+                  'sub_mk' => ind3_sub
+                })
+
+#================================
+# ------- Taps EXTRACTIONS ------
+#================================
+
+logger.info('Starting Taps EXTRACTION')
+
+# ntap1
+logger.info('Extracting ntap1 device')
+extract_devices(diode('ntap1', CustomTap), { 'N' => ntap1_tie, 'P' => ntap1_well })
+
+# ptap1
+logger.info('Extracting ptap1 device')
+extract_devices(diode('ptap1', CustomTap), { 'N' => ptap1_tie, 'P' => ptap1_sub })
+
+#==================================================
+# ------------ COMPARISON PREPARATIONS ------------
+#==================================================
+
+logger.info('Starting SG13G2 LVS Options Preparations')
+
+# === Extract Netlist Only ===
+netlist if NET_ONLY
+return if NET_ONLY
+
+# === Aligns the extracted netlist vs. the schematic ===
+logger.info('Starting SG13G2 LVS Alignment')
+align
+
+#=== NETLIST OPTIONS ===
+logger.info('Starting SG13G2 LVS Simplification')
+# SIMPLIFY
+netlist.simplify if SIMPLIFY
+schematic.simplify if SIMPLIFY
+
+# TOP_LVL_PINS
+netlist.make_top_level_pins if TOP_LVL_PINS
+schematic.make_top_level_pins if TOP_LVL_PINS
+
+# COMBINE_DEVICES
+netlist.combine_devices if COMBINE_DEVICES
+schematic.combine_devices if COMBINE_DEVICES
+
+# PURGE
+netlist.purge if PURGE
+schematic.purge if PURGE
+
+# PURGE_NETS
+netlist.purge_nets if PURGE_NETS
+schematic.purge_nets if PURGE_NETS
+
+#=== IGNORE EXTREME VALUES ===
+max_res(1e9)
+min_caps(1e-18)
+
+# === COMPARISON === 
+logger.info('Starting SG13G2 LVS Comparison')
+compare
+
+#================================================
+#------------- COMPARISON RESULTS ---------------
+#================================================
+
+if !compare
+  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  logger.error("ERROR : Netlists don't match")
+  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+else
+  logger.info('==========================================')
+  logger.info('INFO : Congratulations! Netlists match.')
+  logger.info('==========================================')
+end
+
+exec_end_time = Time.now
+run_time = exec_end_time - exec_start_time
+logger.info(format('LVS Total Run time %f seconds', run_time))
+ ]]>
+</text>
+</klayout-macro>

@@ -189,3 +189,8 @@ class sealring(DloGen):
         # EdgeSeal box around sealring
         dbCreateRect(self, Layer('EdgeSeal', 'boundary'),
             Box(edgeBox_startx, edgeBox_starty, w, l))
+            
+        # Creating text label w/ area for device registration
+        sealringArea = (l * w) / 1e12 # mm2
+        pcLabelText = 'Device registration size: x={0:.1f} um ; y={1:.1f} um\nCalculated area: {2:.1e} sq mm'.format(l, w, sealringArea)
+        pcInst = dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(5.0, 5.0), pcLabelText, 'lowerLeft', 'R0', Font.EURO_STYLE, 5.0)

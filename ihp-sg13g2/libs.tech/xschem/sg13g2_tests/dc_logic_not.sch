@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -72,14 +72,12 @@ lab=in}
 C {devices/code_shown.sym} -300 170 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} -360 -260 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 dc Vin 0 1.8 1m
 let gain = -deriv(V(out))/10
@@ -98,16 +96,16 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/dc_logic_not.raw dc"
 }
 C {sg13g2_pr/sg13_lv_nmos.sym} 0 30 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 -70 0 0 {name=M2
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_lv_pmos

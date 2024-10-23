@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 150 -490 950 -90 {flags=graph
-y1=0
-y2=2e-05
+y1=-0
+y2=0.00012
 ypos1=0
 ypos2=2
 divy=5
@@ -49,18 +49,13 @@ lab=#net1}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} 310 -30 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
-.control
-pre_osdi ./psp103_nqs.osdi
-save all 
-op
-print all
-reset 
-dc Vds 0 3 0.01 Vgs 0. 0.9 0.1
+.control 
+dc Vds 0 3.0 0.01 Vgs 0.3 1.5 0.05
 write dc_hv_nmos.raw
 .endc
 "}
@@ -75,12 +70,12 @@ C {devices/launcher.sym} -200 -160 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/dc_hv_nmos.raw dc"
 }
+C {devices/ammeter.sym} 80 -70 1 0 {name=Vd}
 C {sg13g2_pr/sg13_hv_nmos.sym} 0 0 2 1 {name=M1
-L=0.45u
-W=1.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_hv_nmos
 spiceprefix=X
 }
-C {devices/ammeter.sym} 80 -70 1 0 {name=Vd}
