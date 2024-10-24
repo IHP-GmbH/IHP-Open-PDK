@@ -55,11 +55,10 @@ exec_start_time = Time.now
 
 logger = Logger.new($stdout)
 
-# Cross-platform memory usage retrieval
-require 'win32ole'
-
 def get_memory_usage
   if Gem.win_platform?
+    # Cross-platform memory usage retrieval
+    require 'win32ole'
     wmi = WIN32OLE.connect("winmgmts://")
     processes = wmi.ExecQuery("select * from Win32_Process where ProcessId = #{Process.pid}")
     process = processes.each.next # Get the first result
@@ -3867,13 +3866,13 @@ ptap1_sub = pwell.covering(ptap1_tie)
 #------------ DEVICES CONNECTIVITY --------------
 #================================================
 
-logger.info('Starting GF180 LVS connectivity setup')
+logger.info('Starting SG13G2 LVS connectivity setup')
 
 #================================
 # ----- GENERAL CONNECTIONS -----
 #================================
 
-logger.info('Starting GF180 LVS connectivity setup (Inter-layer)')
+logger.info('Starting SG13G2 LVS connectivity setup (Inter-layer)')
 
 # Inter-layer
 connect(pwell_sub, pwell)
