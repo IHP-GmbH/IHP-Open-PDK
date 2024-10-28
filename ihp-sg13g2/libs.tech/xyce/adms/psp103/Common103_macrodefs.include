@@ -190,15 +190,15 @@
     NF_r=NF; \
     if (AS <= 1e-50) begin \
         if (NF % 2 != 0) begin \
-            AS_i = max(W/NF_r, wmin) * (z1 + ((NF_r-1)/2.0) * z2) / NF_r; \
-            AD_i = max(W/NF_r, wmin) * (z1 + ((NF_r-1)/2.0) * z2) / NF_r; \
-            PS_i = 2 * (max(W/NF_r, wmin) * ((NF_r-1)/2.0 + 1) + z1 + ((NF_r-1)/2.0) * z2) / NF_r; \
-            PD_i = 2 * (max(W/NF_r, wmin) * ((NF_r-1)/2.0 + 1) + z1 + ((NF_r-1)/2.0) * z2) / NF_r; \
+            AS_i = max(W/NF_r, wmin) * (z1 + ((NF_r-1)/2.0) * z2); \
+            AD_i = max(W/NF_r, wmin) * (z1 + ((NF_r-1)/2.0) * z2); \
+            PS_i = 2 * (max(W/NF_r, wmin) * ((NF_r-1)/2.0 + 1) + z1 + ((NF_r-1)/2.0) * z2); \
+            PD_i = 2 * (max(W/NF_r, wmin) * ((NF_r-1)/2.0 + 1) + z1 + ((NF_r-1)/2.0) * z2); \
         end else begin \
-            AS_i = max(W/NF_r, wmin) * (2*z1 + max(0.0, (NF_r-2.0)/2.0) * z2) / NF_r; \
-            AD_i = max(W/NF_r, wmin) * z2 / 2.0; \
-            PS_i = 2 * (max(W/NF_r, wmin) * (2 + max(NF_r-2.0,0.0)/2.0) + 2*z1 + max(NF_r-2.0,0.0)/2.0 * z2) / NF_r; \
-            PD_i = max(W/NF_r, wmin) + z2; \
+            AS_i = max(W/NF_r, wmin) * (2*z1 + max(0.0, (NF_r-2.0)/2.0) * z2);\
+            AD_i = max(W/NF_r, wmin) * z2 / 2.0 * NF_r; \
+            PS_i = 2 * (max(W/NF_r, wmin) * (2 + max(NF_r-2.0,0.0)/2.0) + 2*z1 + max(NF_r-2.0,0.0)/2.0 * z2); \
+            PD_i = ( max(W/NF_r, wmin) + z2 ) * NF_r; \
         end \
     end else begin \
         AS_i = AS/NF_r; \
