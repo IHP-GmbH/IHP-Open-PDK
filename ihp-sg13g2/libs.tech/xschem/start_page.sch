@@ -1,5 +1,4 @@
-v {xschem version=3.0.0 file_version=1.0
-
+v {xschem version=3.4.5 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +14,17 @@ v {xschem version=3.0.0 file_version=1.0
 * limitations under the License.
 
 }
-K {type=subcircuit
-format="@name @pinlist @symname"
-template="name=x1"
-}
-T {@symname} -76.5 -6 0 0 0.3 0.3 {}
-T {@name} 135 -22 0 0 0.2 0.2 {}
-L 4 -130 -10 130 -10 {}
-L 4 -130 10 130 10 {}
-L 4 -130 -10 -130 10 {}
-L 4 130 -10 130 10 {}
+G {}
+K {}
+V {}
+S {}
+E {}
+L 7 2140 -730 2140 -60 {}
+T {NGSPICE} 40 -350 0 0 0.6 0.6 {}
+T {NGSPICE + XYCE} 380 -350 0 0 0.6 0.6 {}
+C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2024 IHP PDK Authors"}
+C {devices/launcher.sym} 90 -410 0 0 {name=h1
+descr="IHP-Open-PDK"
+url="https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main"}
+C {sg13g2_tests/IHP_testcases.sym} 160 -280 0 0 {name=x1}
+C {sg13g2_tests_xyce/IHP_testcases.sym} 510 -280 0 0 {name=x2}
