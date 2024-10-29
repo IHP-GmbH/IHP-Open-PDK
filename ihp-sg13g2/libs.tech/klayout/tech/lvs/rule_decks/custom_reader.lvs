@@ -47,9 +47,6 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Override parse_element method to handle exceptions gracefully
   def parse_element(line, element)
-    # clean line
-    line = line.delete('[]$\\/')
-
     # Prep sch for R, C
     line = clean_sch(line, element) if %w[R C].include?(element)
 
