@@ -188,7 +188,7 @@ class sealring(DloGen):
 
         # EdgeSeal box around sealring
         dbCreateRect(self, Layer('EdgeSeal', 'boundary'),
-            Box(edgeBox_startx, edgeBox_starty, w, l))
+            Box(edgeBox_startx, edgeBox_starty, l, w))
             
         # Creating text label w/ area for device registration
         sealringArea = (l * w) / 1e12 # mm2
