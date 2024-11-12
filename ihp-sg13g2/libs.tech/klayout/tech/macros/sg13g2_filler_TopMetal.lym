@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Fill TopMetal</description>
+ <version>0.1</version>
+ <category>filler</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>filler</group-name>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+	# Automatic filler generation script for TopMetal
+	Activ = source.input("1/0")
+	Activ_pin = source.input("1/2")
+	Activ_mask = source.input("1/20")
+	Activ_filler = source.input("1/22")
+	Activ_nofill = source.input("1/23")
+	BiWind = source.input("3/0")
+	GatPoly = source.input("5/0")
+	GatPoly_pin = source.input("5/2")
+	GatPoly_filler = source.input("5/22")
+	GatPoly_nofill = source.input("5/23")
+	Cont = source.input("6/0")
+	nSD = source.input("7/0")
+	nSD_block = source.input("7/21")
+	Metal1 = source.input("8/0")
+	Metal1_pin = source.input("8/2")
+	Metal1_filler = source.input("8/22")
+	Metal1_nofill = source.input("8/23")
+	Metal1_slit = source.input("8/24")
+	Passiv = source.input("9/0")
+	Metal2 = source.input("10/0")
+	Metal2_pin = source.input("10/2")
+	Metal2_filler = source.input("10/22")
+	Metal2_nofill = source.input("10/23")
+	Metal2_slit = source.input("10/24")
+	BasPoly = source.input("13/0")
+	pSD = source.input("14/0")
+	DigiBnd = source.input("16/0")
+	Via1 = source.input("19/0")
+	RES = source.input("24/0")
+	SRAM = source.input("25/0")
+	TRANS = source.input("26/0")
+	IND = source.input("27/0")
+	SalBlock = source.input("28/0")
+	Via2 = source.input("29/0")
+	Metal3 = source.input("30/0")
+	Metal3_pin = source.input("30/2")
+	Metal3_filler = source.input("30/22")
+	Metal3_nofill = source.input("30/23")
+	Metal3_slit = source.input("30/24")
+	NWell = source.input("31/0")
+	NWell_pin = source.input("31/2")
+	nBuLay = source.input("32/0")
+	nBuLay_block = source.input("32/21")
+	EmWind = source.input("33/0")
+	DeepCo = source.input("35/0")
+	MIM = source.input("36/0")
+	EdgeSeal = source.input("39/0")
+	dfpad = source.input("41/0")
+	dfpad_pillar = source.input("41/35")
+	dfpad_sbump = source.input("41/36")
+	ThickGateOx = source.input("44/0")
+	PWell = source.input("46/0")
+	PWell_block = source.input("46/21")
+	Via3 = source.input("49/0")
+	Metal4 = source.input("50/0")
+	Metal4_pin = source.input("50/2")
+	Metal4_filler = source.input("50/22")
+	Metal4_nofill = source.input("50/23")
+	Metal4_slit = source.input("50/24")
+	EmPoly = source.input("55/0")
+	DigiSub = source.input("60/0")
+	TEXT_0 = source.labels("63/0")
+	Via4 = source.input("66/0")
+	Metal5 = source.input("67/0")
+	Metal5_pin = source.input("67/2")
+	Metal5_filler = source.input("67/22")
+	Metal5_nofill = source.input("67/23")
+	Metal5_slit = source.input("67/24")
+	Polimide = source.input("98/0")
+	Recog = source.input("99/0")
+	Recog_esd = source.input("99/30")
+	Recog_diode = source.input("99/31")
+	Recog_tsv = source.input("99/32")
+	EXTBlock = source.input("111/0")
+	TopVia1 = source.input("125/0")
+	TopMetal1 = source.input("126/0")
+	TopMetal1_pin = source.input("126/2")
+	TopMetal1_filler = source.input("126/22")
+	TopMetal1_nofill = source.input("126/23")
+	TopMetal1_slit = source.input("126/24")
+	PolyRes = source.input("128/0")
+	Vmim = source.input("129/0")
+	TopVia2 = source.input("133/0")
+	TopMetal2 = source.input("134/0")
+	TopMetal2_pin = source.input("134/2")
+	TopMetal2_filler = source.input("134/22")
+	TopMetal2_nofill = source.input("134/23")
+	TopMetal2_slit = source.input("134/24")
+	ColWind = source.input("139/0")
+	RFMEM = source.input("147/0")
+	DeepVia = source.input("152/0")
+	LBE = source.input("157/0")
+	NoMetFiller = source.input("160/0")
+
+	# Paramter
+	width = 5.0
+	height = 10.0
+	distance = 3.05  # exact value of 3.0, which is a min. value for TM1Fil.b causes random DRC violations
+
+	# Create filler cell
+	pattern_tm1 = fill_pattern("TM1_FILL_CELL").shape(126, 22, box(0.0, 0.0, width, height))
+	pattern_tm2 = fill_pattern("TM2_FILL_CELL").shape(134, 22, box(0.0, 0.0, width, height))
+	 
+	# Define noFill exclusion layer
+	TM1Fil_c = TopMetal1.dup
+	TM1Fil_c.size(3.0, 3.0, "square_limit")
+	TM1Fil_d = TRANS.dup
+	TM1Fil_d.size(4.9, 4.9, "square_limit")
+	exclLayTM1 = TM1Fil_c | TM1Fil_d | TopMetal1_filler | TopMetal1_nofill | TopMetal1_slit | TRANS
+
+	TM2Fil_c = TopMetal2.dup
+	TM2Fil_c.size(3.0, 3.0, "square_limit")
+	TM2Fil_d = TRANS.dup
+	TM2Fil_d.size(4.9, 4.9, "square_limit")
+	exclLayTM2 = TM2Fil_c | TM2Fil_d | TopMetal2_filler | TopMetal2_nofill | TopMetal2_slit | TRANS
+
+	# perform fill
+	(EdgeSeal.holes - exclLayTM1).fill(pattern_tm1, hstep(width + distance), vstep(height + distance))
+	(EdgeSeal.holes - exclLayTM2).fill(pattern_tm2, hstep(width + distance), vstep(height + distance))
+</text>
+</klayout-macro>
