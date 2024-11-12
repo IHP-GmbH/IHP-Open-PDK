@@ -56,11 +56,7 @@ moduleNames = [
         'npn13G2L_code',
         'npn13G2V_code',
         'inductor2_code',
-        'inductor2_sc_code',
-        'inductor2_sp_code',
         'inductor3_code',
-        'inductor3_sc_code',
-        'inductor3_sp_code',
         'dantenna_code',
         'dpantenna_code'
 ]
