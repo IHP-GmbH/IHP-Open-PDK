@@ -112,25 +112,9 @@ N 130 50 170 50 {
 lab=Vgs2}
 N 240 -40 240 -10 {
 lab=Vgs2}
-C {devices/code_shown.sym} -320 -630 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib cornerMOSlv.lib mos_tt
-.lib cornerMOShv.lib mos_tt
-"}
-C {devices/code_shown.sym} -310 -510 0 0 {name=NGSPICE only_toplevel=true 
-value="
-.param temp=27
-.control
-save all 
-dc temp -40 125 1
-write mos_temp.raw
-wrdata mos_temp.csv Vgs1 Vgs2 Vgs3 Vgs4
-.endc
-"}
 C {devices/gnd.sym} -20 140 0 0 {name=l1 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -210 -250 0 0 {name=h5
+C {devices/launcher.sym} -110 -280 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
@@ -185,3 +169,78 @@ C {devices/isource.sym} 870 -60 2 0 {name=I3 value=10u}
 C {devices/gnd.sym} 640 -110 2 0 {name=l12 lab=GND}
 C {devices/gnd.sym} 870 -110 2 0 {name=l13 lab=GND}
 C {devices/gnd.sym} 30 140 0 0 {name=l14 lab=GND}
+C {simulator_commands_shown.sym} 270 -890 0 0 {name=Simulator1
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.dc  temp -40 125 1
+.print dc format=raw file=mos_temp.raw V(Vgs1) V(Vgs2) V(Vgs3)  V(Vgs4)
+"
+"}
+C {launcher.sym} 360 -700 0 0 {name=h2
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 200 -1030 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
+)"}
+C {simulator_commands_shown.sym} -250 -1030 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
+"}
+C {launcher.sym} -170 -700 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -250 -900 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+save all
+dc temp -40 125 1
+write mos_temp.raw
+wrdata mos_temp.csv Vgs1 Vgs2 Vgs3 Vgs4
+.endc
+"}

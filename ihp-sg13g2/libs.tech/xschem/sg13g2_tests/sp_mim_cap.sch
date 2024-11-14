@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 * Copyright 2021 Stefan Frederik Schippers
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,126 +19,148 @@ K {}
 V {}
 S {}
 E {}
-L 4 270 -320 270 -200 {}
-L 4 280 -330 300 -320 {}
-L 4 280 -310 300 -320 {}
-L 4 280 -330 280 -310 {}
-L 4 270 -320 280 -320 {}
-L 4 770 -320 770 -200 {}
-L 4 760 -320 770 -320 {}
-L 4 760 -330 760 -310 {}
-L 4 740 -320 760 -330 {}
-L 4 740 -320 760 -310 {}
-B 2 130 -1130 930 -730 {flags=graph
-y1=150
-y2=160
-ypos1=0
-ypos2=2
-divy=5
-subdivy=4
-unity=1
-x1=1e+09
-x2=1e+11
-divx=5
-subdivx=1
-xlabmag=1.0
-ylabmag=1.0
-node=cseries
-color=4
-dataset=-1
-unitx=1
-logx=0
-logy=0
-}
-B 2 950 -1130 1750 -730 {flags=graph
-y1=0.054
-y2=0.065
+B 2 30 -920 830 -520 {flags=graph
+y1=-2
+y2=4.5
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=1e+09
-x2=1e+11
+x1=0
+x2=6e-06
 divx=5
 subdivx=1
-xlabmag=1.0
-ylabmag=1.0
-node=rseries
-color=4
+node="g
+g2"
+color="4 5"
 dataset=-1
 unitx=1
 logx=0
 logy=0
 }
-P 4 6 300 -320 300 -470 740 -470 740 -180 300 -180 300 -330 {}
-T {use ac switch to load the waves:
-xschem raw_read $netlist_dir/sp_mim_cap.raw ac} 840 -630 0 0 0.3 0.3 {}
-N 80 -260 80 -230 {
-lab=GND}
-N 80 -380 80 -320 {
-lab=in}
-N 690 -260 690 -230 {
-lab=GND}
-N 690 -380 690 -320 {
-lab=out}
-N 370 -260 370 -230 {
-lab=GND}
-N 370 -380 370 -320 {
-lab=in}
-N 830 -260 830 -230 {
-lab=GND}
-N 830 -380 830 -320 {
-lab=out}
-N 690 -390 690 -380 {
-lab=out}
-N 370 -400 370 -380 {
-lab=in}
-N 690 -380 830 -380 {
-lab=out}
-N 370 -380 500 -380 {
-lab=in}
-N 560 -380 690 -380 {
-lab=out}
-N 80 -380 370 -380 {
-lab=in}
-C {devices/code_shown.sym} 50 -660 0 0 {name=NGSPICE
-only_toplevel=true
-value="
-.control
-save all
-sp lin 500 1e9 100e9 0
-let Cseries = 1e+15/(2*PI*frequency*imag(1/Y_2_1))
-let Rseries = -real(1/Y_2_1)
-write sp_mim_cap.raw
-.endc
-" }
+N 40 -470 40 -440 { lab=0}
+N 40 -320 40 -250 { lab=G}
+N 40 -190 40 -160 { lab=0}
+N 330 -250 330 -230 { lab=REF}
+N 330 -320 330 -310 { lab=G}
+N 40 -320 330 -320 { lab=G}
+N 40 -380 40 -320 { lab=G}
+N 470 -470 470 -440 { lab=0}
+N 470 -320 470 -250 { lab=G2}
+N 470 -190 470 -160 { lab=0}
+N 610 -250 610 -230 { lab=REF}
+N 610 -320 610 -310 { lab=G2}
+N 470 -320 610 -320 { lab=G2}
+N 470 -380 470 -320 { lab=G2}
+N 300 -460 300 -440 { lab=REF}
 C {devices/title.sym} 160 -30 0 0 {name=l1 author="Copyright 2023 IHP PDK Authors"}
-C {devices/res.sym} 370 -290 0 0 {name=R1
-value=1Meg
+C {devices/lab_pin.sym} 40 -290 0 0 {name=p4 lab=G}
+C {devices/isource.sym} 40 -410 0 0 {name=I1 value="pwl 0 0 1000n 0 1010n 100n"}
+C {devices/lab_pin.sym} 40 -470 0 0 {name=p1 lab=0}
+C {devices/lab_pin.sym} 40 -160 0 0 {name=p2 lab=0}
+C {devices/res.sym} 330 -280 0 0 {name=R1
+value=1G
 footprint=1206
 device=resistor
 m=1}
-C {devices/vsource.sym} 80 -290 0 0 {name=V1 value="dc 0 ac 1 portnum 1 z0 50"}
-C {devices/code_shown.sym} 30 -140 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib $::SG13G2_MODELS/cornerCAP.lib cap_typ
-"}
-C {devices/gnd.sym} 370 -230 0 0 {name=l3 lab=GND}
-C {devices/gnd.sym} 80 -230 0 0 {name=l4 lab=GND}
-C {devices/res.sym} 690 -290 0 0 {name=R2
-value=1Meg
+C {devices/lab_pin.sym} 330 -230 0 0 {name=p5 lab=REF}
+C {devices/lab_pin.sym} 470 -280 0 0 {name=p9 lab=G2}
+C {devices/isource.sym} 470 -410 0 0 {name=I3 value="pwl 0 0 1000n 0 1010n 100n"}
+C {devices/lab_pin.sym} 470 -470 0 0 {name=p11 lab=0}
+C {devices/lab_pin.sym} 470 -160 0 0 {name=p12 lab=0}
+C {devices/res.sym} 610 -280 0 0 {name=R3
+value=1G
 footprint=1206
 device=resistor
 m=1}
-C {devices/gnd.sym} 690 -230 0 0 {name=l5 lab=GND}
-C {devices/vsource.sym} 830 -290 0 0 {name=V2 value="dc 0 ac 0 portnum 2 z0 50"}
-C {devices/gnd.sym} 830 -230 0 0 {name=l6 lab=GND}
-C {devices/lab_pin.sym} 370 -400 1 0 {name=p1 sig_type=std_logic lab=in}
-C {devices/lab_pin.sym} 690 -390 1 0 {name=p2 sig_type=std_logic lab=out}
-C {devices/launcher.sym} 900 -650 0 0 {name=h5
+C {devices/lab_pin.sym} 610 -230 0 0 {name=p13 lab=REF}
+C {devices/capa.sym} 470 -220 0 0 {name=C1
+m=1
+value=0.07452p
+footprint=1206
+device="ceramic capacitor"}
+C {devices/vsource.sym} 300 -410 0 0 {name=V1 value=-2}
+C {devices/lab_pin.sym} 300 -380 0 0 {name=p14 lab=0}
+C {devices/lab_pin.sym} 300 -460 0 1 {name=p15 lab=REF}
+C {devices/launcher.sym} 780 -450 0 0 {name=h5
 descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/sp_mim_cap.raw ac"
+tclcommand="xschem raw_read $netlist_dir/test_mim_cap.raw tran"
 }
-C {sg13g2_pr/cap_cmim.sym} 530 -380 1 0 {name=C1 model=cap_cmim w=7.0e-6 l=7.0e-6 MF=1 spiceprefix=X}
+C {sg13g2_pr/cap_cmim.sym} 40 -220 0 0 {name=C2
+model=cap_cmim
+w=7.0e-6
+l=7.0e-6
+m=1
+spiceprefix=X}
+C {simulator_commands_shown.sym} 1120 -970 0 0 {name=Simulator
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.tran 10n 6u
+.print tran format=raw file=test_mim_cap.raw V(G) V(G2)
+"
+"}
+C {launcher.sym} 1200 -810 0 0 {name=h1
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 1130 -1090 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerCAP.lib cap_typ
+)"}
+C {simulator_commands_shown.sym} 1120 -680 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerCAP.lib cap_typ
+"}
+C {launcher.sym} 1200 -420 0 0 {name=h2
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 1130 -580 0 0 {name=Simulator1
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+tran 10n 6u
+write test_mim_cap.raw
+.endc
+"}

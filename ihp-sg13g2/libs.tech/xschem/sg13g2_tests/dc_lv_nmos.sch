@@ -5,9 +5,9 @@ K {}
 V {}
 S {}
 E {}
-B 2 240 -350 1040 50 {flags=graph
-y1=-6.4e-14
-y2=7.9e-06
+B 2 460 -320 1260 80 {flags=graph
+y1=-1.2e-12
+y2=0.00011
 ypos1=0
 ypos2=2
 divy=5
@@ -24,55 +24,119 @@ unitx=1
 logx=0
 logy=0
 }
-N -110 70 -110 90 {
+N -300 80 -300 140 {
 lab=GND}
-N -110 -0 -110 10 {
+N -300 10 -300 20 {
 lab=#net1}
-N 20 30 20 90 {
+N -170 40 -170 140 {
 lab=GND}
-N 150 30 150 90 {
+N -40 40 -40 140 {
 lab=GND}
-N 20 -70 20 -30 {
+N -170 -60 -170 -20 {
 lab=#net2}
-N 150 -70 150 -30 {
+N -40 -60 -40 -20 {
 lab=#net3}
-N 20 0 70 0 {
+N -170 10 -120 10 {
 lab=GND}
-N 70 0 70 90 {
+N -120 10 -120 140 {
 lab=GND}
-N 20 -70 50 -70 {
+N -170 -60 -140 -60 {
 lab=#net2}
-N 110 -70 150 -70 {
+N -80 -60 -40 -60 {
 lab=#net3}
-N -110 0 -20 0 {
+N -300 10 -210 10 {
 lab=#net1}
-C {devices/code_shown.sym} -290 190 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value=".lib cornerMOSlv.lib mos_tt
+N -170 140 -170 170 {
+lab=GND}
+N -120 140 -40 140 {
+lab=GND}
+N -300 140 -170 140 {
+lab=GND}
+N -170 140 -120 140 {
+lab=GND}
+C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
+C {devices/vsource.sym} -300 50 0 0 {name=Vgs value=0.0}
+C {devices/vsource.sym} -40 10 0 0 {name=Vds value=0}
+C {devices/launcher.sym} 540 150 0 0 {name=h1
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
+}
+C {devices/ammeter.sym} -110 -60 1 0 {name=Vd}
+C {simulator_commands_shown.sym} 0 -350 0 0 {name=Simulator1
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.step  vgs 0.0 0.8 0.05
+.dc vds 0 1.2 0.01
+.print dc format=raw file=dc_lv_nmos.raw i(Vd)
+"
 "}
-C {devices/code_shown.sym} -300 -320 0 0 {name=NGSPICE only_toplevel=true 
+C {launcher.sym} 150 -150 0 0 {name=h2
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -60 -470 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+)"}
+C {simulator_commands_shown.sym} -450 -470 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerMOSlv.lib mos_tt
+"}
+C {launcher.sym} -380 -140 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -460 -360 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
 value="
 .param temp=27
 .control
 save all 
 op
-dc Vds 0 1.2 0.01 Vgs 0.3 0.5 0.05
+dc Vds 0 1.2 0.01 Vgs 0.0 0.8 0.05
 write dc_lv_nmos.raw
 .endc
 "}
-C {devices/gnd.sym} 20 90 0 0 {name=l1 lab=GND}
-C {devices/gnd.sym} -110 90 0 0 {name=l2 lab=GND}
-C {devices/vsource.sym} -110 40 0 0 {name=Vgs value=0.75}
-C {devices/vsource.sym} 150 0 0 0 {name=Vds value=1.5}
-C {devices/gnd.sym} 150 90 0 0 {name=l3 lab=GND}
-C {devices/gnd.sym} 70 90 0 0 {name=l4 lab=GND}
-C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} 310 90 0 0 {name=h5
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
-}
-C {devices/ammeter.sym} 80 -70 1 0 {name=Vd}
-C {sg13g2_pr/sg13_lv_nmos.sym} 0 0 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_nmos.sym} -190 10 2 1 {name=M2
 l=0.13u
 w=1.0u
 ng=1
@@ -80,3 +144,4 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
+C {gnd.sym} -170 170 0 0 {name=l6 lab=GND}

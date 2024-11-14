@@ -42,7 +42,7 @@ logy=1
 y1=-0.26
 y2=-7.3e-07
 color=4
-node=mag
+node=out
 rainbow=1}
 N 340 -260 340 -230 {
 lab=GND}
@@ -62,27 +62,8 @@ N 560 -380 690 -380 {
 lab=out}
 N 340 -380 370 -380 {
 lab=in}
-C {devices/code_shown.sym} 130 -660 0 0 {name=NGSPICE
-only_toplevel=true
-value="
-
-.control
-save all
-ac dec 1000 1e6 1e9 
-let mag=abs(out)
-meas ac freq_at when mag = 0.707
-let C = 1/(2*PI*freq_at*1e+5)
-print C
-write ac_mim_cap.raw 
-.endc
-" }
 C {devices/title.sym} 160 -30 0 0 {name=l1 author="Copyright 2023 IHP PDK Authors"}
 C {devices/vsource.sym} 340 -290 0 0 {name=V1 value="dc 0 ac 1"}
-C {devices/code_shown.sym} 30 -140 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib $::SG13G2_MODELS/cornerCAP.lib cap_typ
-"}
 C {devices/gnd.sym} 340 -230 0 0 {name=l4 lab=GND}
 C {devices/res.sym} 690 -290 0 0 {name=R2
 value=100k
@@ -97,3 +78,80 @@ descr="load waves"
 tclcommand="xschem raw_read $netlist_dir/ac_mim_cap.raw ac"
 }
 C {sg13g2_pr/cap_cmim.sym} 530 -380 1 0 {name=C1 model=cap_cmim w=10.0e-6 l=70.0e-6 m=1 spiceprefix=X}
+C {simulator_commands_shown.sym} 1370 -730 0 0 {name=Simulator
+simulator=xyce
+only_toplevel=false 
+value="
+.preprocess replaceground true
+.option temp=27
+.ac dec 1001 1meg 1000meg
+.print ac format=raw file=ac_mim_cap.raw V(in) V(out)
+"
+"}
+C {launcher.sym} 1450 -570 0 0 {name=h1
+descr=SimulateXyce
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 3
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 1380 -850 0 0 {name=Libs_Xyce
+simulator=xyce
+only_toplevel=false 
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerCAP.lib cap_typ
+.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
+)"}
+C {simulator_commands_shown.sym} 1370 -470 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
+value="
+.lib cornerCAP.lib cap_typ
+.lib cornerRES.lib res_typ
+"}
+C {launcher.sym} 1460 -110 0 0 {name=h2
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} 1380 -340 0 0 {name=Simulator1
+simulator=ngspice
+only_toplevel=false 
+value="
+.param temp=27
+.control
+ac dec 1000 1e6 1e9 
+let mag=abs(out)
+meas ac freq_at when mag = 0.707
+let C = 1/(2*PI*freq_at*1e+5)
+print C
+write ac_mim_cap.raw 
+.endc
+"}
