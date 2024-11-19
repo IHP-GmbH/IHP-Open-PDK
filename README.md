@@ -57,7 +57,8 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * layer property and tech files
     * DRC rules (minimal/maximal set)
     * LVS rules
-    * PyCells (1st priority) 
+    * PyCells (1st priority)
+    * XSection initial settings
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * Qucs-S: primitive device symbols, settings and testbenches
@@ -89,6 +90,9 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * Source: https://github.com/The-OpenROAD-Project/OpenROAD
 * OpenROAD-flow-scripts
     * Source: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+ 
+## Tool versions (tested with)
+[versions.txt](versions.txt)
 
 ## Contributing
 
@@ -111,7 +115,7 @@ The IHP Open Source PDK is released under the [Apache 2.0 license](LICENSE).
 
 The copyright details are:
     
-    Copyright 2023 IHP PDK Authors
+    Copyright 2024 IHP PDK Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
