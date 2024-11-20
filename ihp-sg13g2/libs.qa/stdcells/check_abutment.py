@@ -129,7 +129,10 @@ def main(self, lib_gds):
 
         # Save result
         script_location = os.path.dirname(__file__)
-        test_lib.write_gds(script_location + '/../drc/special/' + 'sg13g2_stdcell_abutment.gds')
+        output_gds = script_location + '/../drc/special/' + 'sg13g2_stdcell_abutment.gds'
+        test_lib.write_gds(output_gds)
+        
+    print('Output GDS: ' + output_gds)        
 
 if __name__ == '__main__':
     main(*sys.argv)
