@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -77,8 +77,9 @@ C {devices/gnd.sym} 60 50 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} -20 50 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/isource.sym} -200 0 2 0 {name=I0 value=1u}
+C {devices/ammeter.sym} -10 -110 1 0 {name=Vc}
 C {sg13g2_pr/npn13G2.sym} -90 -40 0 0 {name=Q1
 model=npn13G2
 spiceprefix=X
-Nx=1}
-C {devices/ammeter.sym} -10 -110 1 0 {name=Vc}
+Nx=1
+}
