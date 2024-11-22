@@ -35,12 +35,12 @@ antenna_d_exc = pwell_block.join(salblock_drw)
 antenna_d_mk = recog_diode.not(antenna_d_exc)
 
 # ==== dantenna diode ====
-dantenna_n = activ.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
-dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
+dantenna_n = antenna_d_mk.and(activ).not(psd_drw).not(nwell_drw)
+dantenna_p = antenna_d_mk.and(pwell).covering(dantenna_n)
 
 # ==== dpantenna diode ====
-dpantenna_p = pactiv.and(antenna_d_mk)
-dpantenna_n = nwell_drw.covering(dpantenna_p)
+dpantenna_p = antenna_d_mk.and(pactiv)
+dpantenna_n = dpantenna_p.inside(nwell_drw)
 
 # ==== schottky_nbl1 diode ====
 schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
