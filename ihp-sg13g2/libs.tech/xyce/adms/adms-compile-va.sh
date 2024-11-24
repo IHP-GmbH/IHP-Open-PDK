@@ -5,6 +5,13 @@
 # License: New BSD
 
 
+DIRECTORY="../plugins"
+
+if [ ! -d "$DIRECTORY" ]; then
+  # Directory does not exist, so create it
+  mkdir -p "$DIRECTORY"
+fi
+
 cd ./psp103/
 buildxyceplugin psp103.va ../../plugins
 rm *.la *.log

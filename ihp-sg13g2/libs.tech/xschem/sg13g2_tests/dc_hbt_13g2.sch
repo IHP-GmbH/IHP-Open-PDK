@@ -82,4 +82,4 @@ C {sg13g2_pr/npn13G2.sym} -190 -10 0 0 {name=Q1
 model=npn13G2
 spiceprefix=X
 Nx=1
-le=0.9e-6}
+}

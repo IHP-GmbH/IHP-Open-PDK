@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -75,10 +75,6 @@ C {devices/vsource.sym} 190 -100 0 0 {name=Vce value=5}
 C {devices/gnd.sym} 190 -10 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 110 -10 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {sg13g2_pr/npn13G2.sym} 40 -100 0 0 {name=Q1
-model=npn13G2
-spiceprefix=X
-Nx=1}
 C {devices/res.sym} 120 -170 1 0 {name=R1
 value=40k
 footprint=1206
@@ -92,3 +88,8 @@ footprint=1206
 device=resistor
 m=1}
 C {devices/lab_pin.sym} -20 -130 0 0 {name=p2 sig_type=std_logic lab=Vb}
+C {sg13g2_pr/npn13G2.sym} 40 -100 0 0 {name=Q1
+model=npn13G2
+spiceprefix=X
+Nx=1
+}
