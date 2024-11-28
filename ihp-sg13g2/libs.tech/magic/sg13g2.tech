@@ -15,7 +15,7 @@ end
 version
  version 0.1.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.411
+ requires magic-8.3.499
 end
 
 #------------------------------------------------------------------------
@@ -574,7 +574,9 @@ style gdsii
 # PSD, NSD (PPLUS, NPLUS implants)
 #----------------------------------------------------------------
 
- layer PSD pres
+ layer PSD pres,xres
+	bloat-all POLY
+	grow 180
 	bloat-or allpactivetap * 125 allnactivenontap 0
 	bloat-or allpactivenontap * 125 allnactivetap 0
 	bridge	380 380
@@ -589,6 +591,11 @@ style gdsii
 # GDS layer:purpose pair 7 0 is marked for use as NSD, it is
 # not commonly used.  It is found coincident with PSD on "rhigh"
 # resistors (low n-doped poly).
+
+ layer NSD xres
+	bloat-all POLY
+	grow 180
+	calma 7 0
 
 #----------------------------------------------------------------
 # NSD BLOCK---Required where intrinsic devices (nnfet, hvnnfet)
@@ -632,27 +639,52 @@ style gdsii
 # SBLK (Salicide Block, or SalBlock)
 #----------------------------------------------------------------
 
- layer SBLK pres,xres
-	grow 200
-	grow-min 1270
-	grow 420
-	shrink 420
+ layer SBLK
+	bloat-or pres,xres * 200 *poly 0
+	grow 210
+	shrink 210
 	calma 28 0
+
+#----------------------------------------------------------------
+# EXTBLOCK (Tip and halo implant block)
+#----------------------------------------------------------------
+
+ layer EXTBLOCK	pres,xres,nres
+	bloat-all *poly
+	grow 180
+	bloat-or pres,xres * 200 *poly 0
+	calma 111 0
+
+#----------------------------------------------------------------
+# HEATRES (Resistor heat source marker)
+#----------------------------------------------------------------
+
+ layer HEATRES nres,pres,xres
+	labels nres,pres,xres
+	calma 52 0
 
 #----------------------------------------------------------------
 # POLY (GatPoly)
 #----------------------------------------------------------------
 
- layer POLY 	allpoly
+ layer POLY 	allpolynonres
  	calma 	5 0
 
  layer POLYPIN
-	labels  allpoly port
+	labels  allpolynonres port
 	calma	5 2
 
  layer POLYFILL	polyfill
 	labels 	polyfill
 	calma	5 22
+
+#----------------------------------------------------------------
+# SBLK (Salicide block)
+#----------------------------------------------------------------
+
+ layer SBLK rppd
+	labels	rppd
+	calma	28 0
 
 #----------------------------------------------------------------
 # THKOX (ThickGateOx)
@@ -681,7 +713,7 @@ style gdsii
 # Device markers
 #----------------------------------------------------------------
 
- layer POLYRES nres,pres,xres
+ layer RESDEF nres
 	calma 24 0
 
  layer DIODE *pdi,*ndi
@@ -830,9 +862,12 @@ style gdsii
 # VIA5 (TopVia1)
 #----------------------------------------------------------------
  layer VIA5	via5
-	or mimcc
  	squares-grid 190 800 800
  	calma 	125 0
+
+ layer MIMCC	mimcc
+ 	squares-grid 190 800 800
+ 	calma 	129 0
 
 #----------------------------------------------------------------
 # MET6 (TopMetal1)
@@ -901,31 +936,43 @@ style gdsii
 #----------------------------------------------------------------
 # FILLBLOCK
 #----------------------------------------------------------------
+# Note: do not let fill block overwrite the type of material for
+# which it is blocking fill.
+
  layer FILLOBSDIFF  obsactive
+	and-not DIFF
 	calma	1 23
 
  layer FILLOBSPOLY  obspoly
+	and-not POLY
 	calma	5 23
 
  layer FILLOBSM1 fillblock,obsm1
+	and-not MET1
  	calma 	8 23
 
  layer FILLOBSM2 fillblock,obsm2
+	and-not MET2
  	calma 	10  23
 
  layer FILLOBSM3 fillblock,obsm3
+	and-not MET3
  	calma 	30 23
 
  layer FILLOBSM4 fillblock,obsm4
+	and-not MET4
  	calma 	50 23
 
  layer FILLOBSM5 fillblock,obsm5
+	and-not MET5
 	calma	67 23
 
  layer FILLOBSM6 fillblock,obsm6
+	and-not MET6
 	calma	126 23
 
  layer FILLOBSM7 fillblock,obsm7
+	and-not MET7
 	calma	134 23
 
  render	DNWELL 	cwell       -0.1    0.1
@@ -1636,7 +1683,7 @@ cifinput
 # or else magic will scale below the allowed layout grid size
 #-----------------------------------------------------------------------
 
-style  sky130 variants ()
+style  sg13g2 variants ()
  scalefactor 10 nanometers
  gridlimit 5
 
@@ -1649,6 +1696,8 @@ style  sky130 variants ()
  ignore EXTBLOCK
  ignore SRAMID
  ignore DIGITALID
+ ignore HEATRES
+ ignore HEATTRANS
 
  layer pnp NWELL,WELLPIN
  and PNPID
@@ -1804,7 +1853,7 @@ style  sky130 variants ()
  templayer hvpfetarea DIFF
  and POLY
  and PSD
- and-not NWELL,nwelcheck
+ and NWELL,nwelcheck
  and THKOX,hvcheck
 
  layer hvpfet hvpfetarea
@@ -1919,9 +1968,32 @@ style  sky130 variants ()
 
  layer poly POLY,POLYPIN
  and-not POLYRES
+ and-not RESDEF
  and-not DIFF
  labels POLY
  labels POLYPIN port
+
+ # Resistors.  These use POLYRES, not POLY
+ layer nres RESDEF
+ and POLYRES
+ and EXTBLOCK
+ and-not PSD
+ and-not NSD
+ labels POLYRES
+
+ layer pres POLYRES
+ and EXTBLOCK
+ and SBLK
+ and PSD
+ and-not NSD
+ labels POLYRES
+
+ layer xres POLYRES
+ and EXTBLOCK
+ and SBLK
+ and PSD
+ and NSD
+ labels POLYRES
 
  # Copy (non-resistor) poly areas up for contact checks
  templayer xpolycheck polycheck
@@ -2171,7 +2243,7 @@ style  sky130 variants ()
  and MIM
  labels MIM
 
- layer mimcc VIA5
+ layer mimcc VIA5,MIMCC
  and MIM
  grow 60
  grow 40
@@ -2515,7 +2587,7 @@ style  sky130 variants ()
  calma THKOX 44 0
  calma SBLK 28 0
  # Poly resistor ID mark
- calma POLYRES 24 0
+ calma RESDEF 24 0
  calma POLY 5 0
  calma NSDBLOCK 7 21
  calma EXTBLOCK 111 0
@@ -2533,6 +2605,8 @@ style  sky130 variants ()
  calma SRAMID 25 0
  # DIGITAL area ID (for DRC rules)
  calma DIGITALID 16 0
+ calma HEATRES 52 0
+ calma HEATTRANS 51 0
  
  calma CONT  6 0
  calma MET1  8 0
@@ -2545,6 +2619,7 @@ style  sky130 variants ()
  calma VIA4 66 0
  calma MET5 67 0
  calma VIA5 125 0
+ calma MIMCC 129 0
  calma MET6 126 0
  calma VIA6 133 0
  calma MET7 134 0
@@ -2560,7 +2635,9 @@ style  sky130 variants ()
  calma MET6TXT 126 25
  calma MET7TXT 134 25
 
+ # NOTE: POLYRES includes POLY
  calma POLYRES 128 0
+
  calma MET1RES 8 29
  calma MET2RES 10 29
  calma MET3RES 30 29
@@ -2656,24 +2733,167 @@ end
 #-----------------------------------------------------
 
 extract
- style ngspice variants (),(orig),(si),(hrhc),(lrhc),(hrlc),(lrlc)
+ style ngspice variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  cscale 1
  # NOTE: SkyWater SPICE libraries use .option scale 1E6 so all
  # dimensions must be in units of microns in the extract file.
  # Use extract style "ngspice(si)" to override this and produce
  # a file with SI units for length/area.
 
- variants (),(orig),(hrhc),(lrhc),(hrlc),(lrlc)
- lambda  1E6
- variants (si)
+ variants (),(lvs),(hrhc),(lrhc),(hrlc),(lrlc)
  lambda 1.0
  variants *
 
  units	microns
  step   7
  sidehalo 8
- fringeshieldhalo 8
 
+ # NOTE:  MiM cap layer has been purposely put out of order
+
+ planeorder dwell       0
+ planeorder well        1
+ planeorder active      2
+ planeorder metal1      3
+ planeorder metal2      4
+ planeorder metal3      5
+ planeorder metal4      6
+ planeorder metal5      7
+ planeorder metal6      8
+ planeorder metal7      9
+ planeorder glass      10
+ planeorder comment    11
+ planeorder mimcap     12
+
+ tiedown alldiffnonfet
+
+ substrate *ppdiff,*hvppdiff,space/w,pwell well $SUB -dnwell,isosub
+
+# Resistances are in milliohms per square
+# Optional 3rd argument is the corner adjustment fraction
+# Device values come from trtc.cor (typical corner)
+
+variants (),(lvs)
+
+ # resist ndiffres/active         120000 0.5
+ # Finish this section. . .
+
+variants (),(hrhc),(lrhc),(hrlc),(lrlc)
+
+ # MOSFETs
+ device msubcircuit sg13_lv_pmos pfet *pdiff *pdiff nwell error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ device msubcircuit sg13_lv_nmos nfet *ndiff *ndiff pwell,space/w error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ device msubcircuit sg13_hv_pmos hvpfet *hvpdiff *hvpdiff nwell error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ device msubcircuit sg13_hv_nmos hvnfet *hvndiff *hvndiff pwell,space/w error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ device msubcircuit nmosi nnfet *ndiff *ndiff pwell,space/w error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ device msubcircuit nmosiHV hvnnfet *hvndiff *hvndiff pwell,space/w error \
+	l=l w=w a1=as p1=ps a2=ad p2=pd
+
+ # TBD
+ # device msubcircuit nmoscl_2
+
+ # TBD
+ # device msubcircuit nmoscl_4
+
+ # TBD
+ # device msubcircuit scr1
+
+ # Bipolars
+ device msubcircuit npn13g2 npn *ndiff dnwell space/w error a1=area
+
+ # Need criteria for differentiation between the NPN devices
+ # device msubcircuit npn13g2l npn *ndiff dnwell space/w error a1=area
+
+ # Need criteria for differentiation between the NPN devices
+ # device msubcircuit npn13g2v npn *ndiff dnwell space/w error a1=area
+
+ device msubcircuit pnpMPA pnp *pdiff pwell,space/w a1=area
+
+ # Capacitors
+ device csubcircuit cap_cmim *mimcap *m5 w=w l=l
+
+ # Diodes
+ device subcircuit dpantenna *pdiode nwell w=w l=l
+
+ device msubcircuit dantenna *ndiode pwell,space/w w=w l=l
+
+ # TBD
+ # device subcircuit schottky *schottky
+
+ # Resistors
+
+ device rsubcircuit rsil nres *poly w=w l=l
+
+ device rsubcircuit rppd pres *poly w=w l=l
+
+ device rsubcircuit rhigh xres *poly w=w l=l
+
+ # TBD
+ # device rsubcircuit ptap1
+
+ # TBD
+ # device rsubcircuit ntap1
+
+variants (lvs)
+
+ # MOSFETs
+ device mosfet sg13_lv_pmos pfet *pdiff *pdiff nwell error
+ device mosfet sg13_lv_nmos nfet *ndiff *ndiff pwell,space/w error
+ device mosfet sg13_hv_pmos hvpfet *hvpdiff *hvpdiff nwell error
+ device mosfet sg13_hv_nmos hvnfet *hvndiff *hvndiff pwell,space/w error
+ device mosfet nmosi nnfet *ndiff *ndiff pwell,space/w error
+ device mosfet nmosiHV hvnnfet *hvndiff *hvndiff pwell,space/w error
+
+ # TBD
+ # device mosfet nmoscl_2
+
+ # TBD
+ # device mosfet nmoscl_4
+
+ # TBD
+ # device mosfet scr1
+
+ # Bipolars
+ device msubcircuit npn13g2 npn *ndiff dnwell space/w error a1=area
+
+ # Need criteria for differentiation between the NPN devices
+ # device bjt npn13g2l npn *ndiff dnwell space/w error
+
+ # Need criteria for differentiation between the NPN devices
+ # device bjt npn13g2v npn *ndiff dnwell space/w error
+
+ device bjt pnpMPA pnp *pdiff pwell,space/w
+
+ # Capacitors
+ device capacitor cap_cmim *mimcap *m5
+
+ # Diodes
+ device pdiode dpantenna *pdiode nwell
+ device ndiode dantenna *ndiode pwell,space/w
+
+ # TBD
+ # device ndiode schottky *schottky
+
+ # Resistors
+
+ device resistor rsil nres *poly
+ device resistor rppd pres *poly
+ device resistor rhigh xres *poly
+
+ # TBD
+ # device resistor ptap1
+
+ # TBD
+ # device resistor ntap1
 end
 
 #-----------------------------------------------------
