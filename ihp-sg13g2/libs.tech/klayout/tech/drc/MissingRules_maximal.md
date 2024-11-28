@@ -4,11 +4,6 @@
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | NW.b        | Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged.                          |
 | NW.b1       | Min. PWell width between NWell regions (different net) (Note 3)                                                                |
-| NW.c        | Min. NWell enclosure of P+Activ not inside ThickGateOx                                                                         |
-| NW.c1       | Min. NWell enclosure of P+Activ inside ThickGateOx                                                                             |
-| NW.d        | Min. NWell space to external N+Activ not inside ThickGateOx                                                                    |
-| NW.e        | Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ not inside ThickGateOx                               |
-| NW.e1       | Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx                                   |
 | PWB.d       | Min. PWell:block overlap of NWell                                                                                              |
 | PWB.e       | Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell                                                            |
 | PWB.e1      | Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell                                                                |
@@ -19,12 +14,10 @@
 | NBL.d       | Min. PWell width between nBuLay and NWell (different net) (Note 1)                                                             |
 | NBL.e       | Min. nBuLay space to unrelated N+Activ                                                                                         |
 | NBL.f       | Min. nBuLay space to unrelated P+Activ                                                                                         |
-| Act.c       | Min. Activ drain/source extension                                                                                              |
 | AFil.c      | Min. Activ:filler space to Cont, GatPoly                                                                                       |
 | AFil.c1     | Min. Activ:filler space to Activ                                                                                               |
 | AFil.d      | Min. Activ:filler space to NWell, nBuLay                                                                                       |
 | AFil.e      | Min. Activ:filler space to TRANS                                                                                               |
-| AFil.i      | Min. Activ:filler space to edges of PWell:block                                                                                |
 | AFil.j      | Min. nSD:block and SalBlock enclosure of Activ:filler inside PWell:block                                                       |
 | Gat.a1      | Min. GatPoly width for channel length of 1.2 V NFET                                                                            |
 | Gat.a2      | Min. GatPoly width for channel length of 1.2 V PFET                                                                            |
@@ -33,14 +26,7 @@
 | GFil.i      | Max. GatPoly:nofill area (µm²)                                                                                                 |
 | pSD.c1      | Min. pSD enclosure of P+Activ in PWell                                                                                         |
 | nSDB.d      | Min. nSD:block overlap of pSD (Note 1)                                                                                         |
-| Cnt.c       | Min. Activ enclosure of Cont                                                                                                   |
-| Cnt.d       | Min. GatPoly enclosure of Cont                                                                                                 |
-| Cnt.e       | Min. Cont on GatPoly space to Activ                                                                                            |
-| Cnt.g1      | Min. pSD space to Cont on nSD-Activ                                                                                            |
-| Cnt.g2      | Min. pSD overlap of Cont on pSD-Activ                                                                                          |
 | CntB.b1     | Min. ContBar space with common run > 5 µm                                                                                      |
-| CntB.c      | Min. Activ enclosure of ContBar                                                                                                |
-| CntB.d      | Min. GatPoly enclosure of ContBar                                                                                              |
 | CntB.h1     | Min. Metal1 enclosure of ContBar                                                                                               |
 | M1.e        | Min. space of Metal1 lines if, at least one line is wider than 0.3 µm and the parallel run is more than 1.0 µm                 |
 | M1.f        | Min. space of Metal1 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm               |
@@ -90,8 +76,6 @@
 | npn13G2.bR  | Max. recommended total number of npn13G2 emitters per chip                                                                     |
 | npn13G2L.cR | Max. recommended total number of npn13G2L emitters per chip                                                                    |
 | npn13G2V.cR | Max. recommended total number of npn13G2V emitters per chip                                                                    |
-| Rppd.d      | Min. EXTBlock enclosure of GatPoly                                                                                             |
-| Rhi.e       | Min. EXTBlock enclosure of GatPoly                                                                                             |
 | nmosi.e1    | A separate Iso-PWell contact unabutted to a nmosi device is not allowed                                                        |
 | nmosi.e2    | nmosi unabutted to an Iso-PWell-Activ tie is not allowed                                                                       |
 | Sdiod.d     | Min. and max. ContBar width inside nBuLay                                                                                      |
@@ -134,15 +118,6 @@
 | Slt.i.M5    | Min. Metal5:slit density for any Metal5 plate bigger than 35 µm x 35 µm [%]                                                    |
 | Slt.i.TM1   | Min. TopMetal1:slit density for any TopMetal1 plate bigger than 35 µm x 35 µm [%]                                              |
 | Slt.i.TM2   | Min. TopMetal2:slit density for any TopMetal2 plate bigger than 35 µm x 35 µm [%]                                              |
-| NW.c1.dig   | Min. NWell enclosure of P+Activ inside ThickGateOx                                                                             |
-| NW.e1.dig   | Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx                                   |
-| Cnt.c.Digi  | Min. Activ enclosure of Cont                                                                                                   |
-| NW.c.SRAM   | Min. NWell enclosure of P+Activ not inside ThickGateOx                                                                         |
-| NW.d.SRAM   | Min. NWell space to external N+Activ not inside ThickGateOx                                                                    |
-| Act.c.SRAM  | Min. Activ drain/source extension                                                                                              |
-| Cnt.c.SRAM  | Min. Activ enclosure of Cont                                                                                                   |
-| Cnt.d.SRAM  | Min. GatPoly enclosure of Cont                                                                                                 |
-| Cnt.g2.SRAM | Min. pSD overlap of Cont on pSD-Activ                                                                                          |
 | M1.i.SRAM   | Min. space of Metal1 lines of which at least one is bent by 45-degree                                                          |
 | V1.c1.SRAM  | Min. Metal1 endcap enclosure of Via1                                                                                           |
 | V2.c1.SRAM  | Min. Metal2 endcap enclosure of Via2                                                                                           |
