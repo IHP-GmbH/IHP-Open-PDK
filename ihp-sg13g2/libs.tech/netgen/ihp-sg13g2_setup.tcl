@@ -1,6 +1,6 @@
 #---------------------------------------------------------------
 # Setup file for netgen LVS
-# IHP sg13g2
+# IHP ihp-sg13g2
 #---------------------------------------------------------------
 permute default
 property default
@@ -24,7 +24,6 @@ set cells2 [cells list -all -circuit2]
 set devices {}
 lappend devices ptap1
 lappend devices ntap1
-lappend devices Rparasitic
 lappend devices rsil
 lappend devices rppd
 lappend devices rhigh
@@ -38,10 +37,9 @@ foreach dev $devices {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {l critical}
 	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" parallel {value par}
 	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mult
+	property "-circuit1 $dev" delete b
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	permute "-circuit2 $dev" 1 2
@@ -51,10 +49,9 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {l critical}
 	property "-circuit2 $dev" parallel {w add}
-	property "-circuit2 $dev" parallel {value par}
 	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult
+	property "-circuit2 $dev" delete b
     }
 }
 
@@ -80,7 +77,6 @@ foreach dev $devices {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {l critical}
 	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" parallel {value par}
 	property "-circuit1 $dev" tolerance {l 10.0} {w 10.0}
 	# Ignore these properties
 	property "-circuit1 $dev" delete mult
@@ -93,7 +89,6 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {l critical}
 	property "-circuit2 $dev" parallel {w add}
-	property "-circuit2 $dev" parallel {value par}
 	property "-circuit2 $dev" tolerance {l 10.0} {w 10.0}
 	# Ignore these properties
 	property "-circuit2 $dev" delete mult
@@ -121,7 +116,7 @@ foreach dev $devices {
 	property "-circuit1 $dev" parallel {w add}
 	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs
+	property "-circuit1 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	permute "-circuit2 $dev" 1 3
@@ -130,7 +125,39 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs
+	property "-circuit2 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
+    }
+}
+
+#-------------------------------------------
+# (HBT) transistors
+#-------------------------------------------
+
+set devices {}
+lappend devices npn13G2
+lappend devices npn13G2l
+lappend devices npn13g2v
+lappend devices pnpMPA
+
+# TODO: check parallel merge
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" 1 3
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {le critical}
+	property "-circuit1 $dev" parallel {we add}
+	property "-circuit1 $dev" tolerance {we 0.01} {le 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete Nx Ny
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" 1 3
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {le critical}
+	property "-circuit2 $dev" parallel {we add}
+	property "-circuit2 $dev" tolerance {we 0.01} {le 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete Nx Ny
     }
 }
 
@@ -140,8 +167,6 @@ foreach dev $devices {
 #---------------------------------------------------------------------
 
 set devices {}
-lappend devices nmoscl_2
-lappend devices nmoscl_4
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -162,6 +187,35 @@ foreach dev $devices {
     }
 }
 
+#---------------------------------------------------------------------
+# (MOS) ESD transistors.  Note that the ESD transistors have a flanged
+# gate.  Magic disagrees slightly on how to interpret the width of the
+# devices, so the tolerance is increased to 7% to cover the difference
+#---------------------------------------------------------------------
+
+set devices {}
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" 1 3
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.07} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" 1 3
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.07} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+}
+
 #-------------------------------------------
 # diodes
 #-------------------------------------------
@@ -171,12 +225,12 @@ lappend devices dantenna
 lappend devices dpantenna
 lappend devices schottky
 
+# TODO: need area and perim parameter
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {area add}
 	property "-circuit1 $dev" parallel {perim add}
-	property "-circuit1 $dev" parallel {value add}
 	property "-circuit1 $dev" tolerance {area 0.02} {perim 0.02}
 	# Ignore these properties
 	property "-circuit1 $dev" delete mult perim
@@ -185,7 +239,6 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {area add}
 	property "-circuit2 $dev" parallel {perim add}
-	property "-circuit2 $dev" parallel {value add}
 	property "-circuit2 $dev" tolerance {area 0.02} {perim 0.02}
 	# Ignore these properties
 	property "-circuit2 $dev" delete mult perim
@@ -198,39 +251,35 @@ foreach dev $devices {
 #-------------------------------------------
 
 set devices {}
-lappend devices cparasitic
 lappend devices cap_cmim
 lappend devices cap_rfcmim
 
+# TODO: need area parameter
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {area add}
-	property "-circuit1 $dev" parallel {value add}
 	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mult perim mf
+	property "-circuit1 $dev" delete ic
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {area add}
-	property "-circuit2 $dev" parallel {value add}
 	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult perim mf
+	property "-circuit2 $dev" delete ic
     }
 }
 
 #-------------------------------------------
 # Fixed-layout devices
-# bipolar transistors
+# ESD devices
 #-------------------------------------------
 
 set devices {}
-lappend devices npn13g2
-lappend devices npn13g2l
-lappend devices npn13g2v
-lappend devices pnpMPA
+lappend devices nmoscl_2
+lappend devices nmoscl_4
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -245,6 +294,22 @@ foreach dev $devices {
     }
 }
 
+#---------------------------------------------------------------
+# Schematic cells which are not extractable
+#---------------------------------------------------------------
+
+set devices {}
+lappend devices Rparasitic
+lappend devices cparasitic
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	ignore class "-circuit1 $dev"
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	ignore class "-circuit2 $dev"
+    }
+}
 
 #---------------------------------------------------------------
 # Allow the fill, decap, etc., cells to be parallelized
@@ -266,9 +331,15 @@ foreach cell $cells1 {
     if {[regexp {sg13g2_decap_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
+    if {[regexp {sg13g2_fill_[[:digit:]]+} $cell match]} {
+	property "-circuit1 $cell" parallel enable
+    }
 }
 foreach cell $cells2 {
     if {[regexp {sg13g2_decap_[[:digit:]]+} $cell match]} {
+	property "-circuit2 $cell" parallel enable
+    }
+    if {[regexp {sg13g2_fill_[[:digit:]]+} $cell match]} {
 	property "-circuit2 $cell" parallel enable
     }
 }
