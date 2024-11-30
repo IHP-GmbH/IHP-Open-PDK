@@ -53,24 +53,24 @@ namespace eval sg13g2 {
 
     # Process DRC rules (magic style)
 
-    dict set ruleset poly_surround    0.08      ;# Poly surrounds contact
-    dict set ruleset diff_surround    0.06      ;# Diffusion surrounds contact
-    dict set ruleset gate_to_diffcont 0.145     ;# Gate to diffusion contact center
-    dict set ruleset gate_to_polycont 0.275     ;# Gate to poly contact center
-    dict set ruleset gate_extension   0.13      ;# Poly extension beyond gate
-    dict set ruleset diff_extension   0.29      ;# Diffusion extension beyond gate
-    dict set ruleset contact_size     0.17      ;# Minimum contact size
-    dict set ruleset via_size         0.17      ;# Minimum via size
-    dict set ruleset metal_surround   0.08      ;# Local interconnect overlaps contact
-    dict set ruleset sub_surround     0.18      ;# Sub/well surrounds diffusion
-    dict set ruleset diff_spacing     0.28      ;# Diffusion spacing rule
-    dict set ruleset poly_spacing     0.21      ;# Poly spacing rule
-    dict set ruleset diff_poly_space  0.075     ;# Diffusion to poly spacing rule
-    dict set ruleset diff_gate_space  0.20      ;# Diffusion to gate poly spacing rule
-    dict set ruleset metal_spacing    0.23      ;# Local interconnect spacing rule
-    dict set ruleset mmetal_spacing   0.14      ;# Metal spacing rule (above local interconnect)
+    dict set ruleset poly_surround    0.07      ;# Poly surrounds contact
+    dict set ruleset diff_surround    0.07      ;# Diffusion surrounds contact
+    dict set ruleset gate_to_diffcont 0.11      ;# Gate to diffusion contact center
+    dict set ruleset gate_to_polycont 0.11      ;# Gate to poly contact center
+    dict set ruleset gate_extension   0.18      ;# Poly extension beyond gate
+    dict set ruleset diff_extension   0.23      ;# Diffusion extension beyond gate
+    dict set ruleset contact_size     0.16      ;# Minimum contact size
+    dict set ruleset via_size         0.20      ;# Minimum via size
+    dict set ruleset metal_surround   0.01      ;# Metal 1 overlaps contact
+    dict set ruleset sub_surround     0.31      ;# Sub/well surrounds diffusion
+    dict set ruleset diff_spacing     0.21      ;# Diffusion spacing rule
+    dict set ruleset poly_spacing     0.18      ;# Poly spacing rule
+    dict set ruleset diff_poly_space  0.07      ;# Diffusion to poly spacing rule
+    dict set ruleset diff_gate_space  0.07      ;# Diffusion to gate poly spacing rule
+    dict set ruleset metal_spacing    0.18      ;# Metal 1 spacing rule
+    dict set ruleset mmetal_spacing   0.21      ;# Metal spacing rule (metal 2 to 5)
     dict set ruleset res_to_cont      0.20      ;# resistor to contact center
-    dict set ruleset res_diff_spacing 0.20      ;# resistor to guard ring
+    dict set ruleset res_diff_spacing 0.18      ;# resistor to guard ring
 }
 
 #-----------------------------------------------------
@@ -88,52 +88,54 @@ proc sg13g2::addtechmenu {framename} {
    }
 
    # List of devices is long.  Divide into two sections for active and passive deivces
-   magic::add_toolkit_menu $layoutframe "Devices 1" pdk1
+   magic::add_toolkit_menu $layoutframe "Devices" pdk1
 
    magic::add_toolkit_command $layoutframe "nmos (MOSFET)" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__nfet_01v8" pdk1
+	    "magic::gencell sg13g2::sg13_lv_nmos" pdk1
    magic::add_toolkit_command $layoutframe "pmos (MOSFET)" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__pfet_01v8" pdk1
-
-   magic::add_toolkit_separator	$layoutframe pdk1
-   magic::add_toolkit_command $layoutframe "LDNMOS (extended drain)" \
-   	    "magic::gencell sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0" pdk1
-   magic::add_toolkit_command $layoutframe "LDPMOS (extended drain)" \
-   	    "magic::gencell sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0" pdk1
+	    "magic::gencell sg13g2::sg13_lv_pmos" pdk1
 
    magic::add_toolkit_separator	$layoutframe pdk1
    magic::add_toolkit_command $layoutframe "n-diode" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5" pdk1
+	    "magic::gencell sg13g2::dantenna" pdk1
    magic::add_toolkit_command $layoutframe "p-diode" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5" pdk1
-   magic::add_toolkit_command $layoutframe "photodiode" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__photodiode" pdk1
-
-   magic::add_toolkit_separator	$layoutframe pdk1
-   magic::add_toolkit_command $layoutframe "MOS varactor" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_var_lvt" pdk1
+	    "magic::gencell sg13g2::dpantenna" pdk1
+   magic::add_toolkit_command $layoutframe "schottky" \
+	    "magic::gencell sg13g2::schottky" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
-   magic::add_toolkit_command $layoutframe "NPN 1.0 x 1.0" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00" pdk1
-   magic::add_toolkit_command $layoutframe "NPN 1.0 x 2.0" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00" pdk1
-   magic::add_toolkit_command $layoutframe "PNP 0.68 x 0.68" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68" pdk1
-   magic::add_toolkit_command $layoutframe "PNP 3.4 x 3.4" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40" pdk1
-   magic::add_toolkit_command $layoutframe "NPN 11V 1.0 x 1.0" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00" pdk1
-
+   magic::add_toolkit_command $layoutframe "NPN" \
+	    "magic::gencell sg13g2::npn13g2" pdk1
+   magic::add_toolkit_command $layoutframe "PNP" \
+	    "magic::gencell sg13g2::pnpMPA" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
-   magic::add_toolkit_command $layoutframe "inductor 1" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__rf_test_coil1" pdk1
-   magic::add_toolkit_command $layoutframe "inductor 2" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__rf_test_coil2" pdk1
-   magic::add_toolkit_command $layoutframe "inductor 3" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__rf_test_coil3" pdk1
+   magic::add_toolkit_command $layoutframe "poly resistor - 7 Ohm/sq" \
+	    "magic::gencell sg13g2::rsil" pdk1
+   magic::add_toolkit_command $layoutframe "poly resistor - 260 Ohm/sq" \
+	    "magic::gencell sg13g2::rppd" pdk1
+   magic::add_toolkit_command $layoutframe "poly resistor - 1360 Ohm/sq" \
+	    "magic::gencell sg13g2::rhigh" pdk1
+   magic::add_toolkit_separator	$layoutframe pdk1
 
+   magic::add_toolkit_command $layoutframe "m1 metal resistor - 115 mOhm/sq" \
+	    "magic::gencell sg13g2::rm1" pdk1
+   magic::add_toolkit_command $layoutframe "m2 metal resistor - 88 mOhm/sq" \
+	    "magic::gencell sg13g2::rm2" pdk1
+   magic::add_toolkit_command $layoutframe "m3 metal resistor - 88 mOhm/sq" \
+	    "magic::gencell sg13g2::rm3" pdk1
+   magic::add_toolkit_command $layoutframe "m4 metal resistor - 88 mOhm/sq" \
+	    "magic::gencell sg13g2::rm4" pdk1
+   magic::add_toolkit_command $layoutframe "m5 metal resistor - 88 mOhm/sq" \
+	    "magic::gencell sg13g2::rm5" pdk1
+   magic::add_toolkit_command $layoutframe "m6 metal resistor - 18 mOhm/sq" \
+	    "magic::gencell sg13g2::rm6" pdk1
+   magic::add_toolkit_command $layoutframe "m7 metal resistor - 11 mOhm/sq" \
+	    "magic::gencell sg13g2::rm7" pdk1
+   magic::add_toolkit_separator	$layoutframe pdk1
+
+   magic::add_toolkit_command $layoutframe "MiM cap - 1.5fF/um^2" \
+	    "magic::gencell sg13g2::cap_cmim" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
    magic::add_toolkit_command $layoutframe "substrate contact (1.8V)" \
@@ -141,19 +143,17 @@ proc sg13g2::addtechmenu {framename} {
    magic::add_toolkit_command $layoutframe "substrate guard ring (1.8V)" \
 	    "sg13g2::subconn_guard_draw" pdk1
    magic::add_toolkit_command $layoutframe "substrate contact (5.0V)" \
-	    "sg13g2::mvsubconn_draw" pdk1
+	    "sg13g2::hvsubconn_draw" pdk1
    magic::add_toolkit_command $layoutframe "substrate guard ring (5.0V)" \
-	    "sg13g2::mvsubconn_guard_draw" pdk1
+	    "sg13g2::hvsubconn_guard_draw" pdk1
    magic::add_toolkit_command $layoutframe "deep n-well region (1.8V)" \
 	    "sg13g2::deep_nwell_draw" pdk1
    magic::add_toolkit_command $layoutframe "deep n-well region (5.0V)" \
-	    "sg13g2::mvdeep_nwell_draw" pdk1
+	    "sg13g2::hvdeep_nwell_draw" pdk1
    magic::add_toolkit_command $layoutframe "n-well region with guard ring (1.8V)" \
 	    "sg13g2::nwell_draw" pdk1
    magic::add_toolkit_command $layoutframe "n-well region with guard ring (5.0V)" \
-	    "sg13g2::mvnwell_draw" pdk1
-   magic::add_toolkit_command $layoutframe "mcon" \
-	    "sg13g2::mcon_draw" pdk1
+	    "sg13g2::hvnwell_draw" pdk1
    magic::add_toolkit_command $layoutframe "via1" \
 	    "sg13g2::via1_draw" pdk1
    magic::add_toolkit_command $layoutframe "via2" \
@@ -162,56 +162,10 @@ proc sg13g2::addtechmenu {framename} {
 	    "sg13g2::via3_draw" pdk1
    magic::add_toolkit_command $layoutframe "via4" \
 	    "sg13g2::via4_draw" pdk1
-   
-
-   magic::add_toolkit_menu $layoutframe "Devices 2" pdk2
-
-   magic::add_toolkit_command $layoutframe "n-diff resistor (1.8V) - 120 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_nd" pdk2
-   magic::add_toolkit_command $layoutframe "p-diff resistor (1.8V) - 197 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_pd" pdk2
-   magic::add_toolkit_command $layoutframe "n-diff resistor (5.0V) - 114 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_nd__hv" pdk2
-   magic::add_toolkit_command $layoutframe "p-diff resistor (5.0V) - 191 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_pd__hv" pdk2
-
-   magic::add_toolkit_command $layoutframe "poly resistor - 48.2 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_po" pdk2
-   magic::add_toolkit_command $layoutframe "poly resistor - 319.8 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_high_po_0p35" pdk2
-   magic::add_toolkit_command $layoutframe "poly resistor - 2000 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35" pdk2
-   magic::add_toolkit_command $layoutframe "p-well resistor - 3050 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_iso_pw" pdk2
-   magic::add_toolkit_separator	$layoutframe pdk2
-
-   magic::add_toolkit_command $layoutframe "l1 metal resistor - 12.2 Ohm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_l1" pdk2
-   magic::add_toolkit_command $layoutframe "m1 metal resistor - 125 mOhm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_m1" pdk2
-   magic::add_toolkit_command $layoutframe "m2 metal resistor - 125 mOhm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_m2" pdk2
-   magic::add_toolkit_command $layoutframe "m3 metal resistor - 47 mOhm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_m3" pdk2
-   magic::add_toolkit_command $layoutframe "m4 metal resistor - 47 mOhm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_m4" pdk2
-   magic::add_toolkit_command $layoutframe "m5 metal resistor - 29 mOhm/sq" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__res_generic_m5" pdk2
-
-   magic::add_toolkit_command $layoutframe "MiM cap - 2fF/um^2 (metal3)" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_mim_m3_1" pdk2
-   magic::add_toolkit_command $layoutframe "MiM cap - 2fF/um^2 (metal4)" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_mim_m3_2" pdk2
-   magic::add_toolkit_separator	$layoutframe pdk2
-
-   magic::add_toolkit_command $layoutframe "vpp 11.5x11.7 m1-m4, li/m5 shield" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5" pdk2
-   magic::add_toolkit_command $layoutframe "vpp 11.5x11.7 m1-m2" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield" pdk2
-   magic::add_toolkit_command $layoutframe "vpp 8.6x7.8 m1-m2 l1 shield" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1" pdk2
-   magic::add_toolkit_command $layoutframe "vpp 4.4x4.6 m1-m2 l1 shield" \
-	    "magic::gencell sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1" pdk2
+   magic::add_toolkit_command $layoutframe "via5" \
+	    "sg13g2::via5_draw" pdk1
+   magic::add_toolkit_command $layoutframe "via6" \
+	    "sg13g2::via6_draw" pdk1
 
    # Additional DRC style for routing only---add this to the DRC menu
    ${layoutframe}.titlebar.mbuttons.drc.toolmenu add command -label "DRC Routing" -command {drc style drc(routing)}
@@ -233,7 +187,7 @@ proc sg13g2::addtechmenu {framename} {
 
 #----------------------------------------------------------------
 # Menu callback function to read a SPICE netlist and generate an
-# initial layout using the SKYWATER sg13g2A gencells.
+# initial layout using the IHP sg13g2A gencells.
 #----------------------------------------------------------------
 
 proc sg13g2::importspice {} {
@@ -249,72 +203,54 @@ proc sg13g2::importspice {} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::mcon_draw {{dir default}} {
+proc sg13g2::via1_draw {{dir default}} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 0.17} {
-      puts stderr "Mcon width must be at least 0.17um"
+   if {$w < 0.2} {
+      puts stderr "Via1 width must be at least 0.2um"
       return
    }
-   if {$h < 0.17} {
-      puts stderr "Mcon height must be at least 0.17um"
-      return
-   }
-   suspendall
-   paint mcon
-   pushbox
-   if {($w < $h) || ($dir == "vert")} {
-       box grow e 0.03um
-       box grow w 0.03um
-       box grow n 0.06um
-       box grow s 0.06um
-       paint m1
-   } else {
-       box grow n 0.03um
-       box grow s 0.03um
-       box grow e 0.06um
-       box grow w 0.06um
-       paint m1
-   }
-   popbox
-   resumeall
-}
-
-proc sg13g2::via1_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
-   if {$w < 0.26} {
-      puts stderr "Via1 width must be at least 0.26um"
-      return
-   }
-   if {$h < 0.26} {
-      puts stderr "Via1 height must be at least 0.26um"
+   if {$h < 0.2} {
+      puts stderr "Via1 height must be at least 0.2um"
       return
    }
    suspendall
    paint via1
-   box grow n 0.05um
-   box grow s 0.05um
-   paint m2
-   box grow n -0.05um
-   box grow s -0.05um
-   box grow e 0.05um
-   box grow w 0.05um
-   paint m1
-   box grow e -0.05um
-   box grow w -0.05um
+   if {($w < $h) || ($dir == "vert")} {
+      box grow n 0.05um
+      box grow s 0.05um
+      paint m2
+      box grow n -0.05um
+      box grow s -0.05um
+      box grow e 0.05um
+      box grow w 0.05um
+      paint m1
+      box grow e -0.05um
+      box grow w -0.05um
+   } else {
+      box grow e 0.05um
+      box grow w 0.05um
+      paint m2
+      box grow e -0.05um
+      box grow w -0.05um
+      box grow n 0.05um
+      box grow s 0.05um
+      paint m1
+      box grow n -0.05um
+      box grow s -0.05um
+   }
    resumeall
 }
 
 proc sg13g2::via2_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 0.28} {
-      puts stderr "Via2 width must be at least 0.28um"
+   if {$w < 0.2} {
+      puts stderr "Via2 width must be at least 0.2um"
       return
    }
-   if {$h < 0.28} {
-      puts stderr "Via2 height must be at least 0.28um"
+   if {$h < 0.2} {
+      puts stderr "Via2 height must be at least 0.2um"
       return
    }
    suspendall
@@ -337,12 +273,12 @@ proc sg13g2::via2_draw {} {
 proc sg13g2::via3_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 0.32} {
-      puts stderr "Via3 width must be at least 0.32um"
+   if {$w < 0.2} {
+      puts stderr "Via3 width must be at least 0.2um"
       return
    }
-   if {$h < 0.32} {
-      puts stderr "Via3 height must be at least 0.32um"
+   if {$h < 0.2} {
+      puts stderr "Via3 height must be at least 0.2um"
       return
    }
    suspendall
@@ -365,12 +301,12 @@ proc sg13g2::via3_draw {} {
 proc sg13g2::via4_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 1.18} {
-      puts stderr "Via3 width must be at least 1.18um"
+   if {$w < 0.2} {
+      puts stderr "Via4 width must be at least 0.2um"
       return
    }
-   if {$h < 1.18} {
-      puts stderr "Via3 height must be at least 1.18um"
+   if {$h < 0.2} {
+      puts stderr "Via4 height must be at least 0.2um"
       return
    }
    suspendall
@@ -385,15 +321,61 @@ proc sg13g2::via4_draw {} {
    resumeall
 }
 
+proc sg13g2::via5_draw {} {
+   set w [magic::i2u [box width]]
+   set h [magic::i2u [box height]]
+   if {$w < 0.62} {
+      puts stderr "Via5 width must be at least 0.62um"
+      return
+   }
+   if {$h < 0.62} {
+      puts stderr "Via5 height must be at least 0.62um"
+      return
+   }
+   suspendall
+   paint via5
+   pushbox
+   box grow n 0.12um
+   box grow s 0.12um
+   box grow e 0.12um
+   box grow w 0.12um
+   paint m6
+   popbox
+   resumeall
+}
+
+proc sg13g2::via6_draw {} {
+   set w [magic::i2u [box width]]
+   set h [magic::i2u [box height]]
+   if {$w < 1.90} {
+      puts stderr "Via6 width must be at least 1.90um"
+      return
+   }
+   if {$h < 1.90} {
+      puts stderr "Via6 height must be at least 1.90um"
+      return
+   }
+   suspendall
+   paint via6
+   pushbox
+   box grow n 0.12um
+   box grow s 0.12um
+   box grow e 0.12um
+   box grow w 0.12um
+   paint m7
+   popbox
+   resumeall
+}
+
 proc sg13g2::subconn_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 0.17} {
-      puts stderr "Substrate tap width must be at least 0.17um"
+   if {$w < 0.16} {
+      puts stderr "Substrate tap width must be at least 0.16um"
       return
    }
-   if {$h < 0.17} {
-      puts stderr "Substrate tap height must be at least 0.17um"
+   if {$h < 0.16} {
+      puts stderr "Substrate tap height must be at least 0.16um"
       return
    }
    suspendall
@@ -402,13 +384,13 @@ proc sg13g2::subconn_draw {} {
    if {$w > $h} {
       box grow e 0.08um
       box grow w 0.08um
-      paint li
+      paint m1
       box grow e 0.04um
       box grow w 0.04um
    } else {
       box grow n 0.08um
       box grow s 0.08um
-      paint li
+      paint m1
       box grow n 0.04um
       box grow s 0.04um
    }
@@ -419,34 +401,34 @@ proc sg13g2::subconn_draw {} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::mvsubconn_draw {} {
+proc sg13g2::hvsubconn_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
-   if {$w < 0.17} {
-      puts stderr "Substrate tap width must be at least 0.17um"
+   if {$w < 0.16} {
+      puts stderr "Substrate tap width must be at least 0.16um"
       return
    }
-   if {$h < 0.17} {
-      puts stderr "Substrate tap height must be at least 0.17um"
+   if {$h < 0.16} {
+      puts stderr "Substrate tap height must be at least 0.16um"
       return
    }
    suspendall
-   paint mvpsc
+   paint hvpsc
    pushbox
    if {$w > $h} {
       box grow e 0.08um
       box grow w 0.08um
-      paint li
+      paint m1
       box grow e 0.04um
       box grow w 0.04um
    } else {
       box grow n 0.08um
       box grow s 0.08um
-      paint li
+      paint m1
       box grow n 0.04um
       box grow s 0.04um
    }
-   paint mvpsd
+   paint hvpsd
    popbox
    resumeall
 }
@@ -463,7 +445,7 @@ proc sg13g2::guard_ring_draw {ctype dtype} {
    pushbox
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
@@ -475,7 +457,7 @@ proc sg13g2::guard_ring_draw {ctype dtype} {
    pushbox
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
@@ -488,7 +470,7 @@ proc sg13g2::guard_ring_draw {ctype dtype} {
    box move n [box height]i
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
@@ -501,7 +483,7 @@ proc sg13g2::guard_ring_draw {ctype dtype} {
    box move e [box width]i
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
@@ -540,7 +522,7 @@ proc sg13g2::subconn_guard_draw {} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::mvsubconn_guard_draw {} {
+proc sg13g2::hvsubconn_guard_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
    # NOTE:  Width and height are determined by the requirement for
@@ -558,7 +540,7 @@ proc sg13g2::mvsubconn_guard_draw {} {
    tech unlock *
    pushbox
 
-   sg13g2::guard_ring_draw mvpsc mvpsd
+   sg13g2::guard_ring_draw hvpsc hvpsd
 
    popbox
    tech revert
@@ -598,7 +580,7 @@ proc sg13g2::nwell_draw {} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::mvnwell_draw {} {
+proc sg13g2::hvnwell_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
    # NOTE:  Width and height are determined by the requirement for
@@ -620,7 +602,7 @@ proc sg13g2::mvnwell_draw {} {
    paint nwell
    popbox
 
-   sg13g2::guard_ring_draw mvnsc mvnsd
+   sg13g2::guard_ring_draw hvnsc hvnsd
 
    popbox
    tech revert
@@ -684,7 +666,7 @@ proc sg13g2::deep_nwell_draw {} {
    pushbox
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
@@ -697,7 +679,7 @@ proc sg13g2::deep_nwell_draw {} {
    pushbox
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
@@ -711,7 +693,7 @@ proc sg13g2::deep_nwell_draw {} {
    box move n [box height]i
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
@@ -725,7 +707,7 @@ proc sg13g2::deep_nwell_draw {} {
    box move e [box width]i
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
@@ -741,7 +723,7 @@ proc sg13g2::deep_nwell_draw {} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::mvdeep_nwell_draw {} {
+proc sg13g2::hvdeep_nwell_draw {} {
    set w [magic::i2u [box width]]
    set h [magic::i2u [box height]]
    if {$w < 3.0} {
@@ -787,54 +769,54 @@ proc sg13g2::mvdeep_nwell_draw {} {
    pushbox
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
-   paint mvnsc
+   paint hvnsc
    popbox
    box grow c 0.1um
-   paint mvnsd
+   paint hvnsd
    popbox
 
    pushbox
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
-   paint mvnsc
+   paint hvnsc
    popbox
    box grow c 0.1um
-   paint mvnsd
+   paint hvnsd
    popbox
 
    pushbox
    box move n [box height]i
    box height 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
-   paint mvnsc
+   paint hvnsc
    popbox
    box grow c 0.1um
-   paint mvnsd
+   paint hvnsd
    popbox
 
    pushbox
    box move e [box width]i
    box width 0
    box grow c 0.085um
-   paint li
+   paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
-   paint mvnsc
+   paint hvnsc
    box grow c 0.1um
-   paint mvnsd
+   paint hvnsd
    popbox
 
    popbox
@@ -1147,206 +1129,64 @@ proc sg13g2::diode_check {parameters} {
 }
 
 #------------------------------------------------------------------
-# NOTE:  sg13g2_fd_pr__diode_pw2nd_05v5_lvt,
-# sg13g2_fd_pr__diode_pw2nd_05v5_nvt, sg13g2_fd_pr__diode_pd2nw_05v5_lvt,
-# and sg13g2_fd_pr__diode_pd2nw_11v0 are all considered parasitic diodes.
-# They may be generated by invoking the build procedure on the
-# command line.  To enable them in the PDK, add them to the
-# appropriate compatible {} list.
-#------------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_defaults {} {
+proc sg13g2::dantenna_defaults {} {
     return {w 0.45 l 0.45 area 0.2025 peri 1.8 \
 	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
 	elc 1 erc 1 etc 1 ebc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pw2nd_05v5 sg13g2_fd_pr__diode_pw2nd_05v5_lvt \
-	sg13g2_fd_pr__diode_pw2nd_05v5_nvt sg13g2_fd_pr__diode_pw2nd_11v0} \
 	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_defaults {} {
+proc sg13g2::dpantenna_defaults {} {
     return {w 0.45 l 0.45 area 0.2025 peri 1.8 \
 	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
 	elc 1 erc 1 etc 1 ebc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pw2nd_05v5 sg13g2_fd_pr__diode_pw2nd_05v5_lvt \
-	sg13g2_fd_pr__diode_pw2nd_05v5_nvt sg13g2_fd_pr__diode_pw2nd_11v0} \
 	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_nvt_defaults {} {
-    return {w 0.45 l 0.45 area 0.2024 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pw2nd_05v5 sg13g2_fd_pr__diode_pw2nd_05v5_lvt \
-	sg13g2_fd_pr__diode_pw2nd_05v5_nvt sg13g2_fd_pr__diode_pw2nd_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_11v0_defaults {} {
-    return {w 0.45 l 0.45 area 0.2024 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pw2nd_05v5 sg13g2_fd_pr__diode_pw2nd_05v5_lvt \
-	sg13g2_fd_pr__diode_pw2nd_05v5_nvt sg13g2_fd_pr__diode_pw2nd_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__photodiode_defaults {} {
+proc sg13g2::schottky_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 xstep 8.0 ystep 8.0 class diode}
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_defaults {} {
-    return {w 0.45 l 0.45 area 0.2025 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 \
-	glc 1 grc 1 gtc 1 gbc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pd2nw_05v5 sg13g2_fd_pr__diode_pd2nw_05v5_lvt \
-	sg13g2_fd_pr__diode_pd2nw_05v5_hvt sg13g2_fd_pr__diode_pd2nw_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_lvt_defaults {} {
-    return {w 0.45 l 0.45 area 0.2025 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 \
-	glc 1 grc 1 gtc 1 gbc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pd2nw_05v5 sg13g2_fd_pr__diode_pd2nw_05v5_lvt \
-	sg13g2_fd_pr__diode_pd2nw_05v5_hvt sg13g2_fd_pr__diode_pd2nw_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_hvt_defaults {} {
-    return {w 0.45 l 0.45 area 0.2025 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 \
-	glc 1 grc 1 gtc 1 gbc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pd2nw_05v5 sg13g2_fd_pr__diode_pd2nw_05v5_lvt \
-	sg13g2_fd_pr__diode_pd2nw_05v5_hvt sg13g2_fd_pr__diode_pd2nw_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_11v0_defaults {} {
-    return {w 0.45 l 0.45 area 0.2024 peri 1.8 \
-	nx 1 ny 1 dummy 0 lmin 0.45 wmin 0.45 class diode \
-	elc 1 erc 1 etc 1 ebc 1 \
-	glc 1 grc 1 gtc 1 gbc 1 doverlap 0 \
-	compatible {sg13g2_fd_pr__diode_pd2nw_05v5 sg13g2_fd_pr__diode_pd2nw_05v5_lvt \
-	sg13g2_fd_pr__diode_pd2nw_05v5_hvt sg13g2_fd_pr__diode_pd2nw_11v0} \
-	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_convert {parameters} {
+proc sg13g2::dantenna_convert {parameters} {
     return [sg13g2::diode_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_convert {parameters} {
+proc sg13g2::dpantenna_convert {parameters} {
     return [sg13g2::diode_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_nvt_convert {parameters} {
-    return [sg13g2::diode_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_11v0_convert {parameters} {
-    return [sg13g2::diode_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__photodiode_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_convert {parameters} {
-    return [sg13g2::diode_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_lvt_convert {parameters} {
-    return [sg13g2::diode_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_hvt_convert {parameters} {
-    return [sg13g2::diode_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_11v0_convert {parameters} {
+proc sg13g2::schottky_convert {parameters} {
     return [sg13g2::diode_convert $parameters]
 }
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pw2nd_05v5 $parameters
+proc sg13g2::dantenna_dialog {parameters} {
+    sg13g2::diode_dialog dantenna $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pw2nd_05v5_lvt $parameters
+proc sg13g2::dpantenna_dialog {parameters} {
+    sg13g2::diode_dialog dpantenna $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_nvt_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pw2nd_05v5_nvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_11v0_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pw2nd_11v0 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__photodiode_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pd2nw_05v5 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_lvt_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pd2nw_05v5_lvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_hvt_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pd2nw_05v5_hvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_11v0_dialog {parameters} {
-    sg13g2::diode_dialog sg13g2_fd_pr__diode_pd2nw_11v0 $parameters
+proc sg13g2::schottky_dialog {parameters} {
+    sg13g2::diode_dialog shottky $parameters
 }
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_check {parameters} {
+proc sg13g2::dantenna_check {parameters} {
     sg13g2::diode_check $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_check {parameters} {
+proc sg13g2::dpantenna_check {parameters} {
     sg13g2::diode_check $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_nvt_check {parameters} {
-    sg13g2::diode_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_11v0_check {parameters} {
-    sg13g2::diode_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__photodiode_check {parameters} {
-    sg13g2::fixed_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_check {parameters} {
-    sg13g2::diode_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_lvt_check {parameters} {
-    sg13g2::diode_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_hvt_check {parameters} {
-    sg13g2::diode_check $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_11v0_check {parameters} {
+proc sg13g2::schottky_check {parameters} {
     sg13g2::diode_check $parameters
 }
 
@@ -1435,12 +1275,12 @@ proc sg13g2::diode_device {parameters} {
 	box grow s [/ $ch 2]um
 	box grow w [/ $cw 2]um
 	box grow e [/ $cw 2]um
-        sg13g2::mcon_draw
+        sg13g2::via1_draw
         popbox
     }
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${w} ${l} \
 		${dev_surround} ${metal_surround} ${contact_size} \
-		${dev_type} ${dev_contact_type} li ${orient}]]
+		${dev_type} ${dev_contact_type} m1 ${orient}]]
 
     popbox
     return $cext
@@ -1548,10 +1388,10 @@ proc sg13g2::diode_draw {parameters} {
 }
 
 #----------------------------------------------------------------
-# Photodiode: Draw a single device
+# Schottky: Draw a single device
 #----------------------------------------------------------------
 
-proc sg13g2::photodiode_device {parameters} {
+proc sg13g2::shottky_device {parameters} {
 
     # Set a local variable for each parameter (e.g., $l, $w, etc.)
     foreach key [dict keys $parameters] {
@@ -1588,7 +1428,7 @@ proc sg13g2::photodiode_device {parameters} {
 
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${w} ${l} \
 		0 ${metal_surround} ${contact_size} \
-		nsd nsc li horz]]
+		nsd nsc m1 horz]]
 
     popbox
     return $cext
@@ -1596,7 +1436,7 @@ proc sg13g2::photodiode_device {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::photodiode_draw {parameters} {
+proc sg13g2::shottky_device {parameters} {
 
     # Set a local variable for each parameter (e.g., $l, $w, etc.)
     foreach key [dict keys $parameters] {
@@ -1696,7 +1536,7 @@ proc sg13g2::photodiode_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_draw {parameters} {
+proc sg13g2::dantenna_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -1719,12 +1559,8 @@ proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_draw {parameters} {
 } 
 
 #----------------------------------------------------------------
-# NOTE:  Use ppd instead of psd so that there is additional
-# diffusion around the contact, allowing more space for the
-# implant (likewise sg13g2_fd_pr__diode_pd2nw_05v5_lvt and
-# sg13g2_fd_pr__diode_pd2nw_11v0).
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_draw {parameters} {
+proc sg13g2::dpantenna_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -1746,172 +1582,9 @@ proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_lvt_draw {parameters} {
     return [sg13g2::diode_draw $drawdict]
 } 
 
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_05v5_nvt_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    dev_type		nndiode \
-	    dev_contact_type	nndic \
-	    end_type		mvpsd \
-	    end_contact_type	mvpsc \
-	    end_sub_type	psub \
-	    dev_spacing		0.37 \
-	    dev_surround	${diff_surround} \
-	    end_spacing		0.30 \
-	    end_surround	${diff_surround} \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-} 
-
-proc sg13g2::sg13g2_fd_pr__diode_pw2nd_11v0_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    dev_type		mvndiode \
-	    dev_contact_type	mvndic \
-	    end_type		mvpsd \
-	    end_contact_type	mvpsc \
-	    end_sub_type	psub \
-	    diff_spacing	0.37 \
-	    dev_spacing		0.39 \
-	    dev_surround	${diff_surround} \
-	    end_spacing		0.36 \
-	    end_surround	${diff_surround} \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-}
-
-
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    dev_type		pdiode \
-	    guard		1 \
-	    dev_contact_type	pdic \
-	    end_type		nsd \
-	    end_contact_type	nsc \
-	    end_sub_type	nwell \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    sub_type		psub \
-	    dev_spacing		${diff_spacing} \
-	    dev_surround	${diff_surround} \
-	    end_spacing		${diff_spacing} \
-	    end_surround	0 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_lvt_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    dev_type		pdiodelvt \
-	    guard		1 \
-	    dev_contact_type	pdilvtc \
-	    end_type		nnd \
-	    end_contact_type	nsc \
-	    end_sub_type	nwell \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    sub_type		psub \
-	    dev_spacing		${diff_spacing} \
-	    dev_surround	${diff_surround} \
-	    end_spacing		${diff_spacing} \
-	    end_surround	${diff_surround} \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_05v5_hvt_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    dev_type		pdiodehvt \
-	    guard		1 \
-	    dev_contact_type	pdihvtc \
-	    end_type		nnd \
-	    end_contact_type	nsc \
-	    end_sub_type	nwell \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    sub_type		psub \
-	    dev_spacing		${diff_spacing} \
-	    dev_surround	${diff_surround} \
-	    end_spacing		${diff_spacing} \
-	    end_surround	${diff_surround} \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-}
-
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__diode_pd2nw_11v0_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    guard		1 \
-	    dev_type 		mvpdiode \
-	    dev_contact_type	mvpdic \
-	    end_type		mvnsd \
-	    end_contact_type	mvnsc \
-	    end_sub_type	nwell \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
-	    sub_type		psub \
-	    diff_spacing	0.58 \
-	    dev_spacing		0.37 \
-	    dev_surround	${diff_surround} \
-	    end_spacing		0.30 \
-	    end_sub_surround	0.33 \
-	    end_surround	${diff_surround} \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-# The photodiode has its own drawing routine, so
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__photodiode_draw {parameters} {
+proc sg13g2::schottky_draw {parameters} {
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
         set $key [dict get $sg13g2::ruleset $key]
@@ -1929,7 +1602,7 @@ proc sg13g2::sg13g2_fd_pr__photodiode_draw {parameters} {
 	    plus_contact_type	psc	\
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::photodiode_draw $drawdict]
+    return [sg13g2::schottky_device $drawdict]
 }
 
 #----------------------------------------------------------------
@@ -1937,19 +1610,12 @@ proc sg13g2::sg13g2_fd_pr__photodiode_draw {parameters} {
 # NOTE:  Work in progress.  These values need to be corrected.
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_defaults {} {
+proc sg13g2::cap_cmim_defaults {} {
     return {w 2.00 l 2.00 val 8.0 carea 2.00 cperi 0.19 class capacitor \
 		nx 1 ny 1 dummy 0 square 0 lmin 2.00 wmin 2.00 \
 		lmax 30.0 wmax 30.0 dc 0 bconnect 1 tconnect 1 \
 		ccov 100}
 }
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_defaults {} {
-    return {w 2.00 l 2.00 val 8.0 carea 2.00 cperi 0.19 class capacitor \
-		nx 1 ny 1 dummy 0 square 0 lmin 2.00 wmin 2.00 \
-		lmax 30.0 wmax 30.0 dc 0 bconnect 1 tconnect 1 \
-		ccov 100}
-}
-
 
 #----------------------------------------------------------------
 # Recalculate capacitor values from GUI entries.
@@ -2021,10 +1687,7 @@ proc sg13g2::cap_convert {parameters} {
     return $pdkparams
 }
 
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_convert {parameters} {
-    return [cap_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_convert {parameters} {
+proc sg13g2::cap_cmim_convert {parameters} {
     return [cap_convert $parameters]
 }
 
@@ -2065,11 +1728,8 @@ proc sg13g2::cap_dialog {device parameters} {
     # magic::add_checkbox dummy "Add dummy" $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_dialog {parameters} {
-    sg13g2::cap_dialog sg13g2_fd_pr__cap_mim_m3_1 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_dialog {parameters} {
-    sg13g2::cap_dialog sg13g2_fd_pr__cap_mim_m3_2 $parameters
+proc sg13g2::cap_cmim_dialog {parameters} {
+    sg13g2::cap_dialog cap_cmim $parameters
 }
 
 #----------------------------------------------------------------
@@ -2233,214 +1893,6 @@ proc sg13g2::cap_device {parameters} {
 }
 
 #----------------------------------------------------------------
-# Metal plate sandwich capacitor:  Draw a single device
-#----------------------------------------------------------------
-
-proc sg13g2::sandwich_cap_device {parameters} {
-
-    # Set a local variable for each parameter (e.g., $l, $w, etc.)
-    foreach key [dict keys $parameters] {
-        set $key [dict get $parameters $key]
-    }
-
-    pushbox
-    box size 0 0
-
-    set hw [/ $w 2.0]
-    set hl [/ $l 2.0]
-
-    set cw [- [* $hw [/ 2.0 3]] [* $cont_surround 2.0]]
-    set cl [- [* $hl [/ 2.0 3]] [* $cont_surround 2.0]]
-
-    # plate capacitor defines layers p0, p1, etc.
-    for {set i 0} {$i < 20} {incr i} {
-        if {[catch {set layer [subst \$p${i}_type]}]} {break}  ;# no more layers defined
-	pushbox
-	box grow e ${hw}um
-	box grow w ${hw}um
-	box grow n ${hl}um
-	box grow s ${hl}um
-        if {![catch {set shrink [subst \$p${i}_shrink]}]} {
-	    box grow e -${shrink}um
-	    box grow w -${shrink}um
-	    box grow n -${shrink}um
-	    box grow s -${shrink}um
-	    set cutout_spacing [+ [* ${shrink} 2.0] [/ $via_size 2.0] $cont_surround]
-	} else {
-	    set cutout_spacing 0
-	}
-
-	paint ${layer}
-
-	if {$i == 1} {
-	    # Note that cap_type geometry is coincident with p1_type.
-	    # Typically, this will define a layer that outputs as both
-	    # poly and a capacitor definition layer.
-	    if {[dict exists $parameters cap_type]} {
-		paint $cap_type
-	    }
-	}
-	popbox
-
-	# Even layers connect at corners, odd layers connect at sides.
-	# Even layers cut out the sides, odd layers cut out the corners.
-	# Layer zero has no side contacts or cutout.
-
-	if {[% $i 2] == 0} {
-	    set cornercmd  paint
-	    set cornersize $cutout_spacing
-	    set sidecmd    erase
-	    set nssidelong   [+ $cutout_spacing [/ $hw 3.0]]
-	    set ewsidelong   [+ $cutout_spacing [/ $hl 3.0]]
-	    set sideshort    $cutout_spacing
-	} else {
-	    set cornercmd  erase
-	    set cornersize $cutout_spacing
-	    set sidecmd    paint
-	    set nssidelong   [/ $hw 3.0]
-	    set ewsidelong   [/ $hl 3.0]
-	    set sideshort    $cutout_spacing
-	}
-
-	if {$i > 0} {
-	    pushbox
-	    box move e ${hw}um
-	    box grow n ${ewsidelong}um
-	    box grow s ${ewsidelong}um
-	    box grow w ${sideshort}um
-	    ${sidecmd} ${layer}
-	    popbox
-	    pushbox
-	    box move n ${hl}um
-	    box grow e ${nssidelong}um
-	    box grow w ${nssidelong}um
-	    box grow s ${sideshort}um
-	    ${sidecmd} ${layer}
-	    popbox
-	    pushbox
-	    box move w ${hw}um
-	    box grow n ${ewsidelong}um
-	    box grow s ${ewsidelong}um
-	    box grow e ${sideshort}um
-	    ${sidecmd} ${layer}
-	    popbox
-	    pushbox
-	    box move s ${hl}um
-	    box grow e ${nssidelong}um
-	    box grow w ${nssidelong}um
-	    box grow n ${sideshort}um
-	    ${sidecmd} ${layer}
-	    popbox
-
-	    pushbox
-	    box move n ${hl}um
-	    box move e ${hw}um
-	    box grow s ${cornersize}um
-	    box grow w ${cornersize}um
-	    ${cornercmd} ${layer}
-	    popbox
-	    pushbox
-	    box move n ${hl}um
-	    box move w ${hw}um
-	    box grow s ${cornersize}um
-	    box grow e ${cornersize}um
-	    ${cornercmd} ${layer}
-	    popbox
-	    pushbox
-	    box move s ${hl}um
-	    box move e ${hw}um
-	    box grow n ${cornersize}um
-	    box grow w ${cornersize}um
-	    ${cornercmd} ${layer}
-	    popbox
-	    pushbox
-	    box move s ${hl}um
-	    box move w ${hw}um
-	    box grow n ${cornersize}um
-	    box grow e ${cornersize}um
-	    ${cornercmd} ${layer}
-	    popbox
-	}
-    }
-
-    # Draw contacts after all layers have been drawn, so that erasing
-    # layers does not affect the contacts.
-
-    for {set i 0} {$i < 20} {incr i} {
-        if {![catch {set contact [subst \$p${i}_contact_type]}]} {
-	    set layer [subst \$p${i}_type]
-	    set j [+ $i 1]
-	    set toplayer [subst \$p${j}_type]
-
-	    # Draw corner contacts
-	    pushbox
-	    box move e ${hw}um
-	    box move n ${hl}um
-	    sg13g2::draw_contact 0 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-	    popbox
-	    pushbox
-	    box move w ${hw}um
-	    box move n ${hl}um
-	    sg13g2::draw_contact 0 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-	    popbox
-	    pushbox
-	    box move e ${hw}um
-	    box move s ${hl}um
-	    sg13g2::draw_contact 0 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-	    popbox
-	    pushbox
-	    box move w ${hw}um
-	    box move s ${hl}um
-	    sg13g2::draw_contact 0 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-	    popbox
-
-	    # Draw side contacts (except on poly)
-	    if {$i > 0} {
-		pushbox
-		box move w ${hw}um
-		sg13g2::draw_contact 0 ${cl} \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-		popbox
-		pushbox
-		box move e ${hw}um
-		sg13g2::draw_contact 0 ${cl} \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-		popbox
-		pushbox
-		box move n ${hl}um
-		sg13g2::draw_contact ${cw} 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-		popbox
-		pushbox
-		box move s ${hl}um
-		sg13g2::draw_contact ${cw} 0 \
-			${cont_surround} ${cont_surround} ${via_size} \
-			${layer} ${contact} ${toplayer} full
-		popbox
-	    }
-	} else {
-	    break
-	}
-    }
-
-    popbox
-    # Bounding box is the same as the device length and width
-    set cext [list -$hw -$hl $hw $hl]
-    return $cext
-}
-
-#----------------------------------------------------------------
 # Capacitor: Draw the tiled device
 #----------------------------------------------------------------
 
@@ -2574,7 +2026,7 @@ proc sg13g2::cap_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_draw {parameters} {
+proc sg13g2::cap_cmim_draw {parameters} {
     set newdict [dict create \
 	    top_type 		m4 \
 	    top_contact_type	via3 \
@@ -2593,29 +2045,6 @@ proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_draw {parameters} {
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
     return [sg13g2::cap_draw $drawdict]
 }
-
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_draw {parameters} {
-    set newdict [dict create \
-	    top_type 		m5 \
-	    top_contact_type	via4 \
-	    cap_type 		mimcap2 \
-	    cap_contact_type	mim2cc \
-	    bot_type 		m4 \
-	    bot_surround	0.4 \
-	    cap_spacing		1.2 \
-	    cap_surround	0.2 \
-	    top_surround	0.12 \
-	    end_surround	0.1 \
-	    end_spacing		2.0 \
-	    contact_size	1.18 \
-	    metal_surround	0.21 \
-	    top_metal_width	1.6 \
-	    top_metal_space	0.7 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::cap_draw $drawdict]
-}
-
 
 #----------------------------------------------------------------
 # capacitor: Check device parameters for out-of-bounds values
@@ -2697,10 +2126,7 @@ proc sg13g2::cap_check {parameters} {
     return $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_1_check {parameters} {
-    return [sg13g2::cap_check $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_check {parameters} {
+proc sg13g2::cap_cmim_check {parameters} {
     return [sg13g2::cap_check $parameters]
 }
 
@@ -2733,25 +2159,11 @@ proc sg13g2::sg13g2_fd_pr__cap_mim_m3_2_check {parameters} {
 #----------------------------------------------------------------
 
 #----------------------------------------------------------------
-# sg13g2_fd_pr__res_iso_pw: Specify all user-editable default values
-# and those needed by sg13g2_fd_pr__res_iso_pw_check
-# NOTE:  Work in progress.  Some values need to be corrected.
-# Discrepancy between sheet rho value in documentation vs. model.
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_iso_pw_defaults {} {
-    return {w 2.650 l 26.50 m 1 nx 1 wmin 2.650 lmin 26.50 class resistor \
-	 	rho 3050 val 30502 dummy 0 dw 0.25 term 1.0 \
-		guard 1 endcov 100 full_metal 1 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-#----------------------------------------------------------------
-# rpp1: Specify all user-editable default values and those
+# rsil: Specify all user-editable default values and those
 # needed by rp1_check
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_po_defaults {} {
+proc sg13g2::rsil_defaults {} {
     return {w 0.330 l 1.650 m 1 nx 1 wmin 0.330 lmin 1.650 class resistor \
 		rho 48.2 val 241 dummy 0 dw 0.0 term 0.0 \
 		sterm 0.0 caplen 0.4 snake 0 guard 1 \
@@ -2760,216 +2172,67 @@ proc sg13g2::sg13g2_fd_pr__res_generic_po_defaults {} {
 		viagb 0 viagt 0 viagl 0 viagr 0}
 }
 
-# "term" is rho * 0.06, the distance between xpc edge and CONT.
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_defaults {} {
+proc sg13g2::rppd_defaults {} {
     return {w 0.350 l 0.50 m 1 nx 1 wmin 0.350 lmin 0.50 class resistor \
 		rho 319.8 val 456.857 dummy 0 dw 0.0 term 194.82 \
 		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_high_po_0p35 \
-		sg13g2_fd_pr__res_high_po_0p69 sg13g2_fd_pr__res_high_po_1p41 \
-		sg13g2_fd_pr__res_high_po_2p85 sg13g2_fd_pr__res_high_po_5p73} \
 		snake 0 full_metal 1 wmax 0.350 vias 1 n_guard 0 hv_guard 0 \
 		viagb 0 viagt 0 viagl 0 viagr 0}
 }
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p69_defaults {} {
-    return {w 0.690 l 1.00 m 1 nx 1 wmin 0.690 lmin 0.50 class resistor \
-		rho 319.8 val 463.480 dummy 0 dw 0.0 term 194.82 \
-		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_high_po_0p35 \
-		sg13g2_fd_pr__res_high_po_0p69 sg13g2_fd_pr__res_high_po_1p41 \
-		sg13g2_fd_pr__res_high_po_2p85 sg13g2_fd_pr__res_high_po_5p73} \
-		snake 0 full_metal 1 wmax 0.690 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_1p41_defaults {} {
-    return {w 1.410 l 2.00 m 1 nx 1 wmin 1.410 lmin 0.50 class resistor \
-		rho 319.8 val 453.620 dummy 0 dw 0.0 term 194.82 \
-		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_high_po_0p35 \
-		sg13g2_fd_pr__res_high_po_0p69 sg13g2_fd_pr__res_high_po_1p41 \
-		sg13g2_fd_pr__res_high_po_2p85 sg13g2_fd_pr__res_high_po_5p73} \
-		snake 0 full_metal 1 wmax 1.410 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_2p85_defaults {} {
-    return {w 2.850 l 3.00 m 1 nx 1 wmin 2.850 lmin 0.50 class resistor \
-		rho 319.8 val 336.630 dummy 0 dw 0.0 term 194.82 \
-		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_high_po_0p35 \
-		sg13g2_fd_pr__res_high_po_0p69 sg13g2_fd_pr__res_high_po_1p41 \
-		sg13g2_fd_pr__res_high_po_2p85 sg13g2_fd_pr__res_high_po_5p73} \
-		snake 0 full_metal 1 wmax 2.850 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_5p73_defaults {} {
-    return {w 5.730 l 6.00 m 1 nx 1 wmin 5.730 lmin 0.50 class resistor \
-		rho 319.8 val 334.870 dummy 0 dw 0.0 term 194.82 \
-		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_high_po_0p35 \
-		sg13g2_fd_pr__res_high_po_0p69 sg13g2_fd_pr__res_high_po_1p41 \
-		sg13g2_fd_pr__res_high_po_2p85 sg13g2_fd_pr__res_high_po_5p73} \
-		snake 0 full_metal 1 wmax 5.730 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
 
-# "term" is rho * 0.06, the distance between xpc edge and CONT.
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_defaults {} {
+proc sg13g2::rhigh_defaults {} {
     return {w 0.350 l 0.50 m 1 nx 1 wmin 0.350 lmin 0.50 class resistor \
 		rho 2000 val 2875.143 dummy 0 dw 0.0 term 188.2 \
 		sterm 0.0 caplen 0 wmax 0.350 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_xhigh_po_0p35 \
-		sg13g2_fd_pr__res_xhigh_po_0p69 sg13g2_fd_pr__res_xhigh_po_1p41 \
-		sg13g2_fd_pr__res_xhigh_po_2p85 sg13g2_fd_pr__res_xhigh_po_5p73} \
-		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p69_defaults {} {
-    return {w 0.690 l 1.00 m 1 nx 1 wmin 0.690 lmin 0.50 class resistor \
-		rho 2000 val 2898.600 dummy 0 dw 0.0 term 188.2 \
-		sterm 0.0 caplen 0 wmax 0.690 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_xhigh_po_0p35 \
-		sg13g2_fd_pr__res_xhigh_po_0p69 sg13g2_fd_pr__res_xhigh_po_1p41 \
-		sg13g2_fd_pr__res_xhigh_po_2p85 sg13g2_fd_pr__res_xhigh_po_5p73} \
-		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_1p41_defaults {} {
-    return {w 1.410 l 2.00 m 1 nx 1 wmin 1.410 lmin 0.50 class resistor \
-		rho 2000 val 2836.900 dummy 0 dw 0.0 term 188.2 \
-		sterm 0.0 caplen 0 wmax 1.410 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_xhigh_po_0p35 \
-		sg13g2_fd_pr__res_xhigh_po_0p69 sg13g2_fd_pr__res_xhigh_po_1p41 \
-		sg13g2_fd_pr__res_xhigh_po_2p85 sg13g2_fd_pr__res_xhigh_po_5p73} \
-		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_2p85_defaults {} {
-    return {w 2.850 l 3.00 m 1 nx 1 wmin 2.850 lmin 0.50 class resistor \
-		rho 2000 val 2105.300 dummy 0 dw 0.0 term 188.2 \
-		sterm 0.0 caplen 0 wmax 2.850 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_xhigh_po_0p35 \
-		sg13g2_fd_pr__res_xhigh_po_0p69 sg13g2_fd_pr__res_xhigh_po_1p41 \
-		sg13g2_fd_pr__res_xhigh_po_2p85 sg13g2_fd_pr__res_xhigh_po_5p73} \
-		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_5p73_defaults {} {
-    return {w 5.730 l 6.00 m 1 nx 1 wmin 5.730 lmin 0.50 class resistor \
-		rho 2000 val 2094.200 dummy 0 dw 0.0 term 188.2 \
-		sterm 0.0 caplen 0 wmax 5.730 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		compatible {sg13g2_fd_pr__res_xhigh_po_0p35 \
-		sg13g2_fd_pr__res_xhigh_po_0p69 sg13g2_fd_pr__res_xhigh_po_1p41 \
-		sg13g2_fd_pr__res_xhigh_po_2p85 sg13g2_fd_pr__res_xhigh_po_5p73} \
 		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
 		viagb 0 viagt 0 viagl 0 viagr 0}
 }
 
 #----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_nd: Specify all user-editable default values and those
-# needed by rdn_check
+# metal resistors
+#----------------------------------------------------------------
+# rm*: Specify all user-editable default values and those needed
+# by rm*_check
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd_defaults {} {
-    return {w 0.420 l 2.100 m 1 nx 1 wmin 0.42 lmin 2.10 class resistor \
-		rho 120 val 600.0 dummy 0 dw 0.05 term 0.0 \
-		sterm 0.0 caplen 0.4 snake 0 guard 1 \
-		glc 1 grc 1 gtc 1 gbc 1 roverlap 0 endcov 100 \
-		full_metal 1 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_nd__hv_defaults {} {
-    return {w 0.420 l 2.100 m 1 nx 1 wmin 0.42 lmin 2.10 class resistor \
-		rho 120 val 600.0 dummy 0 dw 0.02 term 0.0 \
-		sterm 0.0 caplen 0.4 snake 0 guard 1 \
-		glc 1 grc 1 gtc 1 gbc 1 roverlap 0 endcov 100 \
-		full_metal 1 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-#----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_pd: Specify all user-editable default values and those
-# needed by rdp_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_pd_defaults {} {
-    return {w 0.420 l 2.100 m 1 nx 1 wmin 0.42 lmin 2.10 class resistor \
-		rho 197 val 985.0 dummy 0 dw 0.02 term 0.0 \
-		sterm 0.0 caplen 0.60 snake 0 guard 1 \
-		glc 1 grc 1 gtc 1 gbc 1 roverlap 0 endcov 100 \
-		full_metal 1 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_pd__hv_defaults {} {
-    return {w 0.420 l 2.100 m 1 nx 1 wmin 0.42 lmin 2.10 class resistor \
-		rho 197 val 985.0 dummy 0 dw 0.02 term 0.0 \
-		sterm 0.0 caplen 0.60 snake 0 guard 1 \
-		glc 1 grc 1 gtc 1 gbc 1 roverlap 0 endcov 100 \
-		full_metal 1 vias 1 \
-		viagb 0 viagt 0 viagl 0 viagr 0}
-}
-
-#----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_l1: Specify all user-editable default values and those needed
-# by sg13g2_fd_pr__res_generic_l1_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_l1_defaults {} {
-    return {w 0.170 l 0.170 m 1 nx 1 wmin 0.17 lmin 0.17 class resistor \
-		rho 12.8 val 12.8 dummy 0 dw 0.0 term 0.0 snake 0 \
-		roverlap 0}
-}
-
-#----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_m1: Specify all user-editable default values and those needed
-# by sg13g2_fd_pr__res_generic_m1_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m1_defaults {} {
+proc sg13g2::rm1_defaults {} {
     return {w 0.140 l 0.140 m 1 nx 1 wmin 0.14 lmin 0.14 class resistor \
 		rho 0.125 val 0.125 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0}
 }
 
-#----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_m2: Specify all user-editable default values and those needed
-# by sg13g2_fd_pr__res_generic_m2_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m2_defaults {} {
+proc sg13g2::rm2_defaults {} {
     return {w 0.140 l 0.140 m 1 nx 1 wmin 0.14 lmin 0.14 class resistor \
 		rho 0.125 val 0.125 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0}
 }
 
-#----------------------------------------------------------------
-# sg13g2_fd_pr__res_generic_m3: Specify all user-editable default values and those needed
-# by sg13g2_fd_pr__res_generic_m3_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m3_defaults {} {
+proc sg13g2::rm3_defaults {} {
     return {w 0.300 l 0.300 m 1 nx 1 wmin 0.30 lmin 0.30 class resistor \
 		rho 0.047 val 0.047 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0}
 }
 
-#----------------------------------------------------------------
-# Additional entries for sg13g2_fd_pr__res_generic_m4 and sg13g2_fd_pr__res_generic_m5, depending on the
-# back-end metal stack.
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m4_defaults {} {
+proc sg13g2::rm4_defaults {} {
     return {w 0.300 l 0.300 m 1 nx 1 wmin 0.30 lmin 0.30 class resistor \
 		rho 0.047 val 0.047 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0}
 }
-proc sg13g2::sg13g2_fd_pr__res_generic_m5_defaults {} {
+
+proc sg13g2::rm5_defaults {} {
+    return {w 0.300 l 0.300 m 1 nx 1 wmin 0.30 lmin 0.30 class resistor \
+		rho 0.047 val 0.047 dummy 0 dw 0.0 term 0.0 \
+		roverlap 0}
+}
+
+proc sg13g2::rm6_defaults {} {
+    return {w 0.300 l 0.300 m 1 nx 1 wmin 0.30 lmin 0.30 class resistor \
+		rho 0.047 val 0.047 dummy 0 dw 0.0 term 0.0 \
+		roverlap 0}
+}
+
+proc sg13g2::rm7_defaults {} {
     return {w 1.600 l 1.600 m 1 nx 1 wmin 1.60 lmin 1.60 class resistor \
 		rho 0.029 val 0.029 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0}
@@ -3002,82 +2265,43 @@ proc sg13g2::res_convert {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_iso_pw_convert {parameters} {
+proc sg13g2::rsil_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_po_convert {parameters} {
+proc sg13g2::rppd_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p69_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_1p41_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_2p85_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_5p73_convert {parameters} {
+proc sg13g2::rhigh_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p69_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_1p41_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_2p85_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_5p73_convert {parameters} {
+proc sg13g2::rm1_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd_convert {parameters} {
+proc sg13g2::rm2_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_pd_convert {parameters} {
+proc sg13g2::rm3_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd__hv_convert {parameters} {
+proc sg13g2::rm4_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_pd__hv_convert {parameters} {
+proc sg13g2::rm5_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_l1_convert {parameters} {
+proc sg13g2::rm6_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m1_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m2_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m3_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m4_convert {parameters} {
-    return [sg13g2::res_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_generic_m5_convert {parameters} {
+proc sg13g2::rm7_convert {parameters} {
     return [sg13g2::res_convert $parameters]
 }
 
@@ -3164,83 +2388,44 @@ proc sg13g2::res_dialog {device parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_iso_pw_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_iso_pw $parameters
+proc sg13g2::rsil_dialog {parameters} {
+    sg13g2::res_dialog rsil $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_po_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_po $parameters
+proc sg13g2::rppd_dialog {parameters} {
+    sg13g2::res_dialog rppd $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_high_po_0p35 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p69_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_high_po_0p69 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_1p41_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_high_po_1p41 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_2p85_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_high_po_2p85 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_5p73_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_high_po_5p73 $parameters
+proc sg13g2::rhigh_dialog {parameters} {
+    sg13g2::res_dialog rhigh $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_xhigh_po_0p35 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p69_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_xhigh_po_0p69 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_1p41_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_xhigh_po_1p41 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_2p85_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_xhigh_po_2p85 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_5p73_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_xhigh_po_5p73 $parameters
+proc sg13g2::rm1_dialog {parameters} {
+    sg13g2::res_dialog rm1 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_nd $parameters
+proc sg13g2::rm2_dialog {parameters} {
+    sg13g2::res_dialog rm2 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_pd_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_pd $parameters
+proc sg13g2::rm3_dialog {parameters} {
+    sg13g2::res_dialog rm3 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd__hv_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_nd__hv $parameters
+proc sg13g2::rm4_dialog {parameters} {
+    sg13g2::res_dialog rm4 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_pd__hv_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_pd__hv $parameters
+proc sg13g2::rm5_dialog {parameters} {
+    sg13g2::res_dialog rm5 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_l1_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_l1 $parameters
+proc sg13g2::rm6_dialog {parameters} {
+    sg13g2::res_dialog rm6 $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m1_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_m1 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m2_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_m2 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m3_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_m3 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m4_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_m4 $parameters
-}
-proc sg13g2::sg13g2_fd_pr__res_generic_m5_dialog {parameters} {
-    sg13g2::res_dialog sg13g2_fd_pr__res_generic_m5 $parameters
+proc sg13g2::rm7_dialog {parameters} {
+    sg13g2::res_dialog rm7 $parameters
 }
 
 #----------------------------------------------------------------
@@ -3369,12 +2554,12 @@ proc sg13g2::res_device {parameters} {
 	    box grow s [- $ch [/ $via_size 2]]um
 	    box grow w [/ $cw 2]um
 	    box grow e [/ $cw 2]um
-            sg13g2::mcon_draw
+            sg13g2::via1_draw
             popbox
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} li horz]]
+		${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
 
@@ -3405,12 +2590,12 @@ proc sg13g2::res_device {parameters} {
 	    box grow s [/ $via_size 2]um
 	    box grow w [/ $cw 2]um
 	    box grow e [/ $cw 2]um
-            sg13g2::mcon_draw
+            sg13g2::via1_draw
             popbox
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} li horz]]
+		${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
 
@@ -3490,7 +2675,7 @@ proc sg13g2::res_snake_device {nf parameters} {
     if {${end_contact_type} != ""} {
 	set cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} li horz]
+		${end_type} ${end_contact_type} m1 horz]
     }
     popbox
 
@@ -3583,7 +2768,7 @@ proc sg13g2::res_snake_device {nf parameters} {
     if {${end_contact_type} != ""} {
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} li horz]]
+		${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
     # Draw portion between resistor end and contact.
@@ -3736,7 +2921,7 @@ proc sg13g2::res_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_po_draw {parameters} {
+proc sg13g2::rsil_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -3757,11 +2942,11 @@ proc sg13g2::sg13g2_fd_pr__res_generic_po_draw {parameters} {
 
     if {$use_hv_guard == 1} {
 	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
+	    set gdifftype hvnsd
+	    set gdiffcont hvnsc
 	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
+	    set gdifftype hvpsd
+	    set gdiffcont hvpsc
 	}
 	set gsurround 0.33
     } else {
@@ -3805,7 +2990,7 @@ proc sg13g2::sg13g2_fd_pr__res_generic_po_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_draw {parameters} {
+proc sg13g2::rppd_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -3826,11 +3011,11 @@ proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_draw {parameters} {
 
     if {$use_hv_guard == 1} {
 	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
+	    set gdifftype hvnsd
+	    set gdiffcont hvnsc
 	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
+	    set gdifftype hvpsd
+	    set gdiffcont hvpsc
 	}
 	set gsurround 0.33
     } else {
@@ -3878,301 +3063,9 @@ proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_draw {parameters} {
     return [sg13g2::res_draw $drawdict]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p69_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.615
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		ppres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_high_po_1p41_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		ppres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_high_po_2p85_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		ppres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_high_po_5p73_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		ppres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_draw {parameters} {
+proc sg13g2::rhigh_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -4193,11 +3086,11 @@ proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_draw {parameters} {
 
     if {$use_hv_guard == 1} {
 	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
+	    set gdifftype hvnsd
+	    set gdiffcont hvnsc
 	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
+	    set gdifftype hvpsd
+	    set gdiffcont hvpsc
 	}
 	set gsurround 0.33
     } else {
@@ -4247,545 +3140,7 @@ proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.785
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		xpres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p69_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.615
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		xpres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_1p41_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		xpres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_2p85_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		xpres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_5p73_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    # Handle options related to guard ring type (high/low voltage, nwell/psub)
-    if {[dict exists $parameters hv_guard]} {
-	set use_hv_guard [dict get $parameters hv_guard]
-    } else {
-	set use_hv_guard 0
-    }
-    if {[dict exists $parameters n_guard]} {
-	set use_n_guard [dict get $parameters n_guard]
-    } else {
-	set use_n_guard 0
-    }
-
-    if {$use_hv_guard == 1} {
-	if {$use_n_guard == 1} {
-	    set gdifftype mvnsd
-	    set gdiffcont mvnsc
-	} else {
-	    set gdifftype mvpsd
-	    set gdiffcont mvpsc
-	}
-	set gsurround 0.33
-    } else {
-	if {$use_n_guard == 1} {
-	    set gdifftype nsd
-	    set gdiffcont nsc
-	} else {
-	    set gdifftype psd
-	    set gdiffcont psc
-	}
-	set gsurround $sub_surround
-    }
-    if {$use_n_guard == 1} {
-	set gsubtype nwell
-	set gresdiff_spacing 0.525
-	set gresdiff_end 0.525
-    } else {
-	set gsubtype psub
-	set gresdiff_spacing 0.48
-	set gresdiff_end 0.48
-    }
-
-    set newdict [dict create \
-	    res_type		xpres \
-	    end_type 		xpc \
-	    end_contact_type	xpc \
-	    end_contact_size	0 \
-	    plus_diff_type	$gdifftype \
-	    plus_contact_type	$gdiffcont \
-	    sub_type		$gsubtype \
-	    guard_sub_surround	$gsurround \
-	    end_surround	$poly_surround \
-	    end_spacing		$gresdiff_end \
-	    end_to_end_space	0.52 \
-	    end_contact_size	0.19 \
-	    res_to_cont		0.575 \
-	    res_to_endcont	1.985 \
-	    res_spacing		0.48 \
-	    res_diff_spacing	$gresdiff_spacing \
-	    mask_clearance	0.52 \
-	    overlap_compress	0.36 \
-	    l_delta		-0.08 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_nd_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    res_type		rdn \
-	    end_type 		ndiff \
-	    end_contact_type	ndc \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    sub_type		psub \
-	    end_surround	$diff_surround \
-	    end_spacing		0.44 \
-	    res_to_endcont	0.37 \
-	    res_spacing		0.30 \
-	    res_diff_spacing	0.44 \
-	    mask_clearance	0.22 \
-	    overlap_compress	0.36 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_nd__hv_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    res_type		mvrdn \
-	    end_type 		mvndiff \
-	    end_contact_type	mvndc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
-	    sub_type		psub \
-	    end_surround	$diff_surround \
-	    end_spacing		0.44 \
-	    res_to_endcont	0.37 \
-	    res_spacing		0.30 \
-	    res_diff_spacing	0.44 \
-	    mask_clearance	0.22 \
-	    overlap_compress	0.36 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_pd_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    res_type		rdp \
-	    end_type 		pdiff \
-	    end_contact_type	pdc \
-	    plus_diff_type	nsd \
-	    plus_contact_type	nsc \
-	    sub_type		nwell \
-	    end_surround	$diff_surround \
-	    end_spacing		0.44 \
-	    res_to_endcont	0.37 \
-	    res_spacing		$diff_spacing \
-	    res_diff_spacing	0.44 \
-	    mask_clearance	0.22 \
-	    overlap_compress	0.36 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_pd__hv_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    res_type		mvrdp \
-	    end_type 		mvpdiff \
-	    end_contact_type	mvpdc \
-	    plus_diff_type	mvnsd \
-	    plus_contact_type	mvnsc \
-	    sub_type		nwell \
-	    end_surround	$diff_surround \
-	    guard_sub_surround	0.33 \
-	    end_spacing		0.44 \
-	    res_to_endcont	0.37 \
-	    res_spacing		0.30 \
-	    res_diff_spacing	0.44 \
-	    mask_clearance	0.22 \
-	    overlap_compress	0.36 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_iso_pw_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    well_res_type	pwell \
-	    res_type		rpw \
-	    end_type 		psd \
-	    end_contact_type	psc \
-	    plus_diff_type	nsd \
-	    plus_contact_type	nsc \
-	    sub_type		dnwell \
-	    sub_surround	0.23 \
-	    guard_sub_type	nwell \
-	    guard_sub_surround	0.63 \
-	    end_surround	$diff_surround \
-	    end_spacing		0.63 \
-	    end_to_end_space	1.15 \
-	    end_overlap_cont	0.06 \
-	    end_contact_size	0.53 \
-	    overlap_compress	-0.17 \
-	    res_to_endcont	0.265 \
-	    res_spacing		1.4 \
-	    res_diff_spacing	0.63 \
-	    well_res_overlap	0.2 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_l1_draw {parameters} {
-
-    # Set a local variable for each rule in ruleset
-    foreach key [dict keys $sg13g2::ruleset] {
-        set $key [dict get $sg13g2::ruleset $key]
-    }
-
-    set newdict [dict create \
-	    guard		0 \
-	    res_type		rli \
-	    end_type 		li \
-	    end_surround	0.0 \
-	    end_spacing		0.0 \
-	    res_to_endcont	0.2 \
-	    end_to_end_space	0.23 \
-	    res_spacing		$metal_spacing \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::res_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m1_draw {parameters} {
+proc sg13g2::rm1_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -4808,7 +3163,7 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m1_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m2_draw {parameters} {
+proc sg13g2::rm2_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -4831,7 +3186,7 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m2_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m3_draw {parameters} {
+proc sg13g2::rm3_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -4854,7 +3209,7 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m3_draw {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m4_draw {parameters} {
+proc sg13g2::rm4_draw {parameters} {
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -4875,7 +3230,10 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m4_draw {parameters} {
     return [sg13g2::res_draw $drawdict]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_m5_draw {parameters} {
+#----------------------------------------------------------------
+
+proc sg13g2::rm5_draw {parameters} {
+
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
         set $key [dict get $sg13g2::ruleset $key]
@@ -4885,6 +3243,51 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m5_draw {parameters} {
 	    guard		0 \
 	    res_type		rm5 \
 	    end_type 		m5 \
+	    end_surround	0.0 \
+	    end_spacing		0.0 \
+	    end_to_end_space	0.28 \
+	    res_to_endcont	0.2 \
+	    res_spacing		$mmetal_spacing \
+    ]
+    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
+    return [sg13g2::res_draw $drawdict]
+}
+
+#----------------------------------------------------------------
+
+proc sg13g2::rm6_draw {parameters} {
+
+    # Set a local variable for each rule in ruleset
+    foreach key [dict keys $sg13g2::ruleset] {
+        set $key [dict get $sg13g2::ruleset $key]
+    }
+
+    set newdict [dict create \
+	    guard		0 \
+	    res_type		rm6 \
+	    end_type 		m6 \
+	    end_surround	0.0 \
+	    end_spacing		0.0 \
+	    end_to_end_space	0.28 \
+	    res_to_endcont	0.2 \
+	    res_spacing		$mmetal_spacing \
+    ]
+    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
+    return [sg13g2::res_draw $drawdict]
+}
+
+#----------------------------------------------------------------
+
+proc sg13g2::rm7_draw {parameters} {
+    # Set a local variable for each rule in ruleset
+    foreach key [dict keys $sg13g2::ruleset] {
+        set $key [dict get $sg13g2::ruleset $key]
+    }
+
+    set newdict [dict create \
+	    guard		0 \
+	    res_type		rm7 \
+	    end_type 		m7 \
 	    end_surround	0.0 \
 	    end_spacing		0.0 \
 	    end_to_end_space	1.6 \
@@ -5036,128 +3439,41 @@ proc sg13g2::res_check {device parameters} {
 	}
     }
 
-    # Diffusion resistors must satisfy diffusion-to-tap spacing of 15um.
-    # Therefore the maximum of guard ring width or height cannot exceed 30um.
-    # If in violation, reduce counts first, as these are easiest to recover
-    # by duplicating the device and overlapping the wells.
-    if {$device == "rdn" || $device == "rdp"} {
-       set origm $m
-       set orignx $nx
-       while true {
-	  set xext [expr ($w + 0.8) * $nx + 1.0]
-	  set yext [expr ($l + 1.7) * $m + 1.7]
-          if {[expr min($xext, $yext)] > 40.0} {
-              if {$yext > 40.0 && $m > 1} {
-		 incr m -1
-	      } elseif {$xext > 30.0 && $nx > 1} {
-		 incr nx -1
-	      } elseif {$yext > 30.0} {
-		 set l 29
-		 puts -nonewline stderr "Diffusion resistor length must be < 29 um"
-		 puts stderr " to avoid tap spacing violation."
-		 dict set parameters l $l
-	      } elseif {$xext > 30.0} {
-		 set w 29
-		 puts -nonewline stderr "Diffusion resistor width must be < 29 um"
-		 puts stderr " to avoid tap spacing violation."
-		 dict set parameters w $w
-	      }
-          } else {
-	      break
-	  }
-       }
-       if {$m != $origm} {
-	  puts stderr "Warning:  Fingers may need to be reduced to prevent tap distance violation"
-	  # dict set parameters m $m
-       }
-       if {$nx != $orignx} {
-	  puts stderr "Warning:  M may need to be reduced to prevent tap distance violation"
-	  # dict set parameters nx $nx
-       }
-    }
     sg13g2::compute_ltot $parameters
     return $parameters
 }
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__res_iso_pw_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_iso_pw $parameters]
+proc sg13g2::rsil_check {parameters} {
+    return [sg13g2::res_check rsil $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_po_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_po $parameters]
+proc sg13g2::rppd_check {parameters} {
+    return [sg13g2::res_check rppd $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p35_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_high_po_0p35 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_0p69_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_high_po_0p69 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_1p41_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_high_po_1p41 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_2p85_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_high_po_2p85 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_high_po_5p73_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_high_po_5p73 $parameters]
+proc sg13g2::rhigh_check {parameters} {
+    return [sg13g2::res_check rhigh $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p35_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_xhigh_po_0p35 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_0p69_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_xhigh_po_0p69 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_1p41_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_xhigh_po_1p41 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_2p85_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_xhigh_po_2p85 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_xhigh_po_5p73_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_xhigh_po_5p73 $parameters]
+proc sg13g2::rm1_check {parameters} {
+    return [sg13g2::res_check rm1 $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_nd $parameters]
+proc sg13g2::rm2_check {parameters} {
+    return [sg13g2::res_check rm2 $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_pd_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_pd $parameters]
+proc sg13g2::rm3_check {parameters} {
+    return [sg13g2::res_check rm3 $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__res_generic_nd__hv_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_nd__hv $parameters]
+proc sg13g2::rm4_check {parameters} {
+    return [sg13g2::res_check rm4 $parameters]
 }
-
-proc sg13g2::sg13g2_fd_pr__res_generic_pd__hv_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_pd__hv $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_l1_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_l1 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m1_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_m1 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m2_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_m2 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m3_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_m3 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__res_generic_m4_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_m4 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__res_generic_m5_check {parameters} {
-    return [sg13g2::res_check sg13g2_fd_pr__res_generic_m5 $parameters]
+proc sg13g2::rm5_check {parameters} {
+    return [sg13g2::res_check rm5 $parameters]
 }
 
 #----------------------------------------------------------------
@@ -5184,55 +3500,21 @@ proc sg13g2::sg13g2_fd_pr__res_generic_m5_check {parameters} {
 # needed by mos_check
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_defaults {} {
+proc sg13g2::sg13_lv_pmos_defaults {} {
     return {w 0.42 l 0.15 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
-		class mosfet compatible {sg13g2_fd_pr__pfet_01v8 \
-		sg13g2_fd_pr__pfet_01v8_lvt sg13g2_fd_pr__pfet_01v8_hvt \
-		sg13g2_fd_pr__pfet_g5v0d10v5} full_metal 1 \
+		class mosfet compatible {sh13_lv_pmos sh13_hv_pmos} full_metal 1 \
 		viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_lvt_defaults {} {
-    return {w 0.42 l 0.35 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.35 wmin 0.42 \
-		class mosfet compatible {sg13g2_fd_pr__pfet_01v8 \
-		sg13g2_fd_pr__pfet_01v8_lvt sg13g2_fd_pr__pfet_01v8_hvt \
-		sg13g2_fd_pr__pfet_g5v0d10v5} full_metal 1 \
-		viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_defaults {} {
-    return {w 0.42 l 0.15 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
-		class mosfet compatible {sg13g2_fd_pr__pfet_01v8 \
-		sg13g2_fd_pr__pfet_01v8_lvt sg13g2_fd_pr__pfet_01v8_hvt \
-		sg13g2_fd_pr__pfet_g5v0d10v5} full_metal 1 \
-		viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_defaults {} {
+proc sg13g2::sg13_hv_pmos_defaults {} {
     return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
-		class mosfet compatible {sg13g2_fd_pr__pfet_01v8 \
-		sg13g2_fd_pr__pfet_01v8_lvt sg13g2_fd_pr__pfet_01v8_hvt \
-		sg13g2_fd_pr__pfet_g5v0d10v5} full_metal 1 \
+		class mosfet compatible {sg13_lv_pmos sg13_hv_pmos} full_metal 1 \
 		viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_defaults {} {
-    return {w 5.00 l 1.050 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 0 lmin 1.050 wmin 5.00 \
-		class mosfet full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
@@ -5241,125 +3523,42 @@ proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_defaults {} {
 # needed by mos_check
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_defaults {} {
+proc sg13g2::sg13_lv_nmos_defaults {} {
     return {w 0.420 l 0.150 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
-		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
+		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_lvt_defaults {} {
-    return {w 0.420 l 0.150 m 1 nf 1 diffcov 100 polycov 100 \
+proc sg13g2::sg13_hv_nmos_defaults {} {
+    return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
-		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
+		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
-proc sg13g2::sg13g2_fd_bs_flash__special_sonosfet_star_defaults {} {
-    return {w 0.420 l 0.150 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
-		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_defaults {} {
+proc sg13g2::nmosi_defaults {} {
     return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
 		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
+		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_defaults {} {
-    return {w 0.42 l 0.90 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.90 wmin 0.42 \
-		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_03v3_nvt_defaults {} {
+proc sg13g2::nmosiHV_defaults {} {
     return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
 		class mosfet \
-		compatible {sg13g2_fd_pr__nfet_01v8 sg13g2_fd_pr__nfet_01v8_lvt \
-		sg13g2_fd_bs_flash__special_sonosfet_star \
-		sg13g2_fd_pr__nfet_g5v0d10v5 sg13g2_fd_pr__nfet_05v0_nvt \
-		sg13g2_fd_pr__nfet_03v3_nvt} \
+		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0_defaults {} {
-    return {w 5.00 l 1.055 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 0 lmin 1.050 wmin 5.00 \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0}
-}
-
-#----------------------------------------------------------------
-# mos varactor: Specify all user-editable default values and those
-# needed by mosvc_check
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__cap_var_lvt_defaults {} {
-    return {w 1.0 l 0.18 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.18 wmin 1.0 \
-		class mosfet compatible {sg13g2_fd_pr__cap_var_lvt \
-		sg13g2_fd_pr__cap_var_hvt sg13g2_fd_pr__cap_var} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0 gshield 1}
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_hvt_defaults {} {
-    return {w 1.0 l 0.18 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.18 wmin 1.0 \
-		class mosfet compatible {sg13g2_fd_pr__cap_var_lvt \
-		sg13g2_fd_pr__cap_var_hvt sg13g2_fd_pr__cap_var} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0 gshield 1}
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_defaults {} {
-    return {w 1.0 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 1.0 \
-		class mosfet compatible {sg13g2_fd_pr__cap_var_lvt \
-		sg13g2_fd_pr__cap_var_hvt sg13g2_fd_pr__cap_var} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0 gshield 1}
 }
 
 #----------------------------------------------------------------
@@ -5410,63 +3609,27 @@ proc sg13g2::mos_convert {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_convert {parameters} {
+proc sg13g2::sg13_hv_nmos_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_lvt_convert {parameters} {
+proc sg13g2::sg13_lv_nmos_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_bs_flash__special_sonosfet_star_convert {parameters} {
+proc sg13g2::sg13_hv_pmos_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_convert {parameters} {
+proc sg13g2::sg13_lv_pmos_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0_convert {parameters} {
+proc sg13g2::nmosi_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_03v3_nvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_lvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_lvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_hvt_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_convert {parameters} {
+proc sg13g2::nmosiHV_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
@@ -5530,64 +3693,24 @@ proc sg13g2::mos_dialog {device parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_01v8 $parameters
+proc sg13g2::sg13_lv_nmos_dialog {parameters} {
+    sg13g2::mos_dialog sg13_lv_nmos $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_lvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_01v8_lvt $parameters
+proc sg13g2::sg13_lv_pmos_dialog {parameters} {
+    sg13g2::mos_dialog sg13_lv_pmos $parameters
 }
 
-proc sg13g2::sg13g2_fd_bs_flash__special_sonosfet_star_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_bs_flash__special_sonosfet_star $parameters
+proc sg13g2::sg13_hv_nmos_dialog {parameters} {
+    sg13g2::mos_dialog sg13_hv_nmos $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_g5v0d10v5 $parameters
+proc sg13g2::nmosi_dialog {parameters} {
+    sg13g2::mos_dialog nmosi $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_g5v0d16v0 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_05v0_nvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_03v3_nvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__nfet_03v3_nvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__pfet_01v8 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_lvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__pfet_01v8_lvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__pfet_01v8_hvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__pfet_g5v0d10v5 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__pfet_g5v0d16v0 $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_lvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__cap_var_lvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_hvt_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__cap_var_hvt $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_dialog {parameters} {
-    sg13g2::mos_dialog sg13g2_fd_pr__cap_var $parameters
+proc sg13g2::nmosiHV_dialog {parameters} {
+    sg13g2::mos_dialog nmosiHV $parameters
 }
 
 #----------------------------------------------------------------
@@ -5812,7 +3935,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	box grow s ${hx}um
 	box grow e ${hmetw}um
 	box grow w ${hmetw}um
-	paint li
+	paint m1
 	popbox
 	pushbox
 	box move s ${hh}um
@@ -5820,7 +3943,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	box grow s ${hx}um
 	box grow e ${hmetw}um
 	box grow w ${hmetw}um
-	paint li
+	paint m1
 	popbox
 	pushbox
 	box move e ${hw}um
@@ -5828,7 +3951,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	box grow w ${hx}um
 	box grow n ${hmeth}um
 	box grow s ${hmeth}um
-	paint li
+	paint m1
 	popbox
 	pushbox
 	box move w ${hw}um
@@ -5836,7 +3959,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	box grow w ${hx}um
 	box grow n ${hmeth}um
 	box grow s ${hmeth}um
-	paint li
+	paint m1
 	popbox
     }
 
@@ -5856,14 +3979,14 @@ proc sg13g2::guard_ring {gw gh parameters} {
             pushbox
             box move n ${hh}um
             sg13g2::draw_contact $cw 0 $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type li horz
+		$contact_size $plus_diff_type $plus_contact_type m1 horz
             popbox
 	}
 	if {$gbc == 1} {
 	    pushbox
 	    box move s ${hh}um
 	    sg13g2::draw_contact $cw 0 $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type li horz
+		$contact_size $plus_diff_type $plus_contact_type m1 horz
 	    popbox
 	}
     }
@@ -5872,14 +3995,14 @@ proc sg13g2::guard_ring {gw gh parameters} {
             pushbox
             box move e ${hw}um
             sg13g2::draw_contact 0 $ch $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type li vert
+		$contact_size $plus_diff_type $plus_contact_type m1 vert
             popbox
         }
         if {$glc == 1} {
             pushbox
             box move w ${hw}um
             sg13g2::draw_contact 0 $ch $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type li vert
+		$contact_size $plus_diff_type $plus_contact_type m1 vert
             popbox
         }
     }
@@ -5904,7 +4027,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	    box grow e [/ $cw 2]um
 	    box grow w [/ $cw 2]um
 	}
-        sg13g2::mcon_draw horz
+        sg13g2::via1_draw horz
         popbox
     }
     if {$viagt != 0} {
@@ -5926,7 +4049,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	    box grow e [/ $cw 2]um
 	    box grow w [/ $cw 2]um
 	}
-        sg13g2::mcon_draw horz
+        sg13g2::via1_draw horz
         popbox
     }
     if {$viagr != 0} {
@@ -5948,7 +4071,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	    box grow n [/ $ch 2]um
 	    box grow s [/ $ch 2]um
 	}
-        sg13g2::mcon_draw vert
+        sg13g2::via1_draw vert
         popbox
     }
     if {$viagl != 0} {
@@ -5970,7 +4093,7 @@ proc sg13g2::guard_ring {gw gh parameters} {
 	    box grow n [/ $ch 2]um
 	    box grow s [/ $ch 2]um
 	}
-        sg13g2::mcon_draw vert
+        sg13g2::via1_draw vert
         popbox
     }
 
@@ -5989,174 +4112,6 @@ proc sg13g2::guard_ring {gw gh parameters} {
     popbox
     popbox
 
-    return $cext
-}
-
-#----------------------------------------------------------------
-# LDNMOS:  Sub-procedure to draw the extended drain
-#----------------------------------------------------------------
-
-proc sg13g2::draw_ldnmos_drain {parameters} {
-
-    # Set a local variable for each parameter (e.g., $l, $w, etc.)
-    foreach key [dict keys $parameters] {
-        set $key [dict get $parameters $key]
-    }
-
-    # Need to regenerate some values from mos_device
-    set hl [/ $l 2.0]
-    set hw [/ $w 2.0]
-
-    # Extension is fixed at 1.585um and we assume a fixed
-    # underlap of the gate of 0.13um, which is not in the
-    # drawn device, so subtracted from the extension distance.
-    set extension 1.455
-
-    pushbox
-    # Starts with point at the device center
-    box grow n ${hw}um
-    box grow s ${hw}um
-    box move $dside ${hl}um
-    pushbox
-    box grow $dside ${extension}um
-    paint ed
-    set cext [sg13g2::getbox]
-    popbox
-    box move $dside ${extension}um
-    box move $dside 0.13um
-    box grow e 0.13um
-    box grow w 0.13um
-    paint mvnsd
-    # Test:  Do not include nwell in bounding box
-    set cext [sg13g2::unionbox $cext [sg13g2::getbox]]
-    pushbox
-    box grow c 0.66um
-    paint nwell
-    popbox
-    popbox
-    # Back to the center point
-    pushbox
-    box move $dside ${hl}um
-    box move $dside ${extension}um
-    box move $dside 0.13um
-
-    # Drain via on top of contact
-    set viatype $viadrn
-    if {$viatype != 0} {
-        pushbox
-        set cw $via_size
-    	set ch [* $cdwfull [/ [expr abs($viatype)] 100.0]]
-    	if {$ch < $via_size} {set ch $via_size}
-	box grow $dside [/ $cw 2]um
-	box grow $sside [/ $cw 2]um
-        set anchor [string index $viatype 0]
-	if {$anchor == "+"} {
-            box move s [/ [- $cdwfull $via_size] 2]um
-	    box grow n ${ch}um
-	} elseif {$anchor == "-"} {
-            box move n [/ [- $cdwfull $via_size] 2]um
-	    box grow s ${ch}um
-	} else {
-	    box grow n [/ $ch 2]um
-	    box grow s [/ $ch 2]um
-	}
-	sg13g2::mcon_draw vert
-	popbox
-    }
-    # cdwfull was calculated for the source side and is too long for
-    # the drain side by 0.06um on top and bottom.
-    set cdwfull [- $cdwfull 0.12]
-    if {$cdw > $cdwfull} [set cdw $cdwfull]
-
-    set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
-		${drain_diff_surround} ${metal_surround} ${contact_size}\
-		mvnsd mvnsc li vert]]
-    popbox
-    return $cext
-}
-
-#----------------------------------------------------------------
-# LDPMOS:  Sub-procedure to draw the extended drain
-#----------------------------------------------------------------
-
-proc sg13g2::draw_ldpmos_drain {parameters} {
-
-    # Set a local variable for each parameter (e.g., $l, $w, etc.)
-    foreach key [dict keys $parameters] {
-        set $key [dict get $parameters $key]
-    }
-
-    # Need to regenerate some values from mos_device
-    set hl [/ $l 2.0]
-    set hw [/ $w 2.0]
-
-    # Extension is fixed at 1.19um and we assume a fixed
-    # underlap of the gate of 0.13um, which is not in the
-    # drawn device, so subtracted from the extension distance.
-    set extension 1.06
-
-    pushbox
-    # Starts with point at the device center
-    box grow n ${hw}um
-    box grow s ${hw}um
-    box move $dside ${hl}um
-    pushbox
-    box grow $dside ${extension}um
-    paint ed
-    set cext [sg13g2::getbox]
-    popbox
-    box move $dside ${extension}um
-    box move $dside 0.13um
-    box grow e 0.13um
-    box grow w 0.13um
-    paint mvpsd
-    pushbox
-    box grow c 0.86um
-    # Shorter than necessary to avoid DRC error;  actual
-    # nwell is erased under gate by GDS generation rules.
-    box grow e -0.15um
-    box grow w -0.15um
-    paint pwell
-    popbox
-    popbox
-    # Back to the center point
-    pushbox
-    box move $dside ${hl}um
-    box move $dside ${extension}um
-    box move $dside 0.13um
-
-    # Drain via on top of contact
-    set viatype $viadrn
-    if {$viatype != 0} {
-        pushbox
-        set cw $via_size
-    	set ch [* $cdwfull [/ [expr abs($viatype)] 100.0]]
-    	if {$ch < $via_size} {set ch $via_size}
-	box grow $dside [/ $cw 2]um
-	box grow $sside [/ $cw 2]um
-        set anchor [string index $viatype 0]
-	if {$anchor == "+"} {
-            box move s [/ [- $cdwfull $via_size] 2]um
-	    box grow n ${ch}um
-	} elseif {$anchor == "-"} {
-            box move n [/ [- $cdwfull $via_size] 2]um
-	    box grow s ${ch}um
-	} else {
-	    box grow n [/ $ch 2]um
-	    box grow s [/ $ch 2]um
-	}
-	sg13g2::mcon_draw vert
-	popbox
-    }
-    # cdwfull was calculated for the source side and is too long for
-    # the drain side by 0.06um on top and bottom.
-    set cdwfull [- $cdwfull 0.12]
-    if {$cdw > $cdwfull} [set cdw $cdwfull]
-
-    set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
-		${drain_diff_surround} ${metal_surround} ${contact_size}\
-		mvpsd mvpsc li vert]]
-    popbox
     return $cext
 }
 
@@ -6349,12 +4304,12 @@ proc sg13g2::mos_device {parameters} {
 		box grow n [/ $ch 2]um
 		box grow s [/ $ch 2]um
 	    }
-	    sg13g2::mcon_draw vert
+	    sg13g2::via1_draw vert
 	    popbox
 	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
 		${diff_surround} ${metal_surround} ${contact_size}\
-		${diff_type} ${diff_contact_type} li vert]]
+		${diff_type} ${diff_contact_type} m1 vert]]
 	popbox
     }
 
@@ -6383,12 +4338,12 @@ proc sg13g2::mos_device {parameters} {
 	    box grow n [/ $ch 2]um
 	    box grow s [/ $ch 2]um
 	}
-        sg13g2::mcon_draw vert
+        sg13g2::via1_draw vert
         popbox
     }
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
 		${diff_surround} ${metal_surround} ${contact_size} \
-		${diff_type} ${diff_contact_type} li vert]]
+		${diff_type} ${diff_contact_type} m1 vert]]
     set diffarea $cext
     popbox
     # Gate shield (only on varactors)
@@ -6399,7 +4354,7 @@ proc sg13g2::mos_device {parameters} {
 	box width [* 2 [+ ${he} ${gate_to_diffcont}]]um
 	box grow n [/ $cdwfull 2]um
 	box grow s [/ $cdwfull 2]um
-	paint m1
+	paint m2
 	# Enforce slotting of large metal
 	set gsh [magic::i2u [box height]]
 	if {$gsh > 25} {
@@ -6408,7 +4363,7 @@ proc sg13g2::mos_device {parameters} {
 	   box height 2.3um	;# Minimum m1 slot width
 	   box grow w -${via_size}um
 	   box grow e -${via_size}um
-	   erase m1
+	   erase m2
 	}
 	popbox
     }
@@ -6437,12 +4392,12 @@ proc sg13g2::mos_device {parameters} {
 	       box grow e [/ $cw 2]um
 	       box grow w [/ $cw 2]um
 	   }
-           sg13g2::mcon_draw horz
+           sg13g2::via1_draw horz
            popbox
        }
        set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${poly_surround} ${metal_surround} ${contact_size} \
-		${poly_type} ${poly_contact_type} li horz]]
+		${poly_type} ${poly_contact_type} m1 horz]]
        popbox
     }
     # Bottom poly contact
@@ -6470,12 +4425,12 @@ proc sg13g2::mos_device {parameters} {
 	       box grow e [/ $cw 2]um
 	       box grow w [/ $cw 2]um
 	   }
-           sg13g2::mcon_draw horz
+           sg13g2::via1_draw horz
            popbox
        }
        set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${poly_surround} ${metal_surround} ${contact_size} \
-		${poly_type} ${poly_contact_type} li horz]]
+		${poly_type} ${poly_contact_type} m1 horz]]
        popbox
     }
 
@@ -6761,7 +4716,7 @@ proc sg13g2::mos_draw {parameters} {
 # nMOS 1.8V
 #-------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_draw {parameters} {
+proc sg13g2::sg13_lv_nmos_draw {parameters} {
     set newdict [dict create \
 	    gate_type		nfet \
 	    diff_type 		ndiff \
@@ -6778,87 +4733,13 @@ proc sg13g2::sg13g2_fd_pr__nfet_01v8_draw {parameters} {
     return [sg13g2::mos_draw $drawdict]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_lvt_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		nfetlvt \
-	    diff_type 		ndiff \
-	    diff_contact_type	ndc \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    min_effl		0.185 \
-	    min_allc		0.26 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_bs_flash__special_sonosfet_star_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		nsonos \
-	    diff_type 		ndiff \
-	    diff_contact_type	ndc \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    id_type		dnwell \
-	    id_surround		1.355 \
-	    min_effl		0.185 \
-	    min_allc		0.26 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
 #-------------------
 # pMOS 1.8V
 #-------------------
 
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_draw {parameters} {
+proc sg13g2::sg13_lv_pmos_draw {parameters} {
     set newdict [dict create \
 	    gate_type		pfet \
-	    diff_type 		pdiff \
-	    diff_contact_type	pdc \
-	    plus_diff_type	nsd \
-	    plus_contact_type	nsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		nwell \
-	    dev_sub_type	nwell \
-	    gate_to_polycont	0.32 \
-	    min_effl		0.185 \
-	    min_allc		0.26 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_lvt_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		pfetlvt \
-	    diff_type 		pdiff \
-	    diff_contact_type	pdc \
-	    plus_diff_type	nsd \
-	    plus_contact_type	nsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		nwell \
-	    dev_sub_type	nwell \
-	    gate_to_polycont	0.32 \
-	    min_effl		0.185 \
-	    min_allc		0.26 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		pfethvt \
 	    diff_type 		pdiff \
 	    diff_contact_type	pdc \
 	    plus_diff_type	nsd \
@@ -6879,13 +4760,13 @@ proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_draw {parameters} {
 # pMOS 5.0V
 #-------------------
 
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_draw {parameters} {
+proc sg13g2::sg13_hv_pmos_draw {parameters} {
     set newdict [dict create \
-	    gate_type		mvpfet \
-	    diff_type 		mvpdiff \
-	    diff_contact_type	mvpdc \
-	    plus_diff_type	mvnsd \
-	    plus_contact_type	mvnsc \
+	    gate_type		hvpfet \
+	    diff_type 		hvpdiff \
+	    diff_contact_type	hvpdc \
+	    plus_diff_type	hvnsd \
+	    plus_contact_type	hvnsc \
 	    poly_type		poly \
 	    poly_contact_type	pc \
 	    sub_type		nwell \
@@ -6904,13 +4785,13 @@ proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_draw {parameters} {
 # nMOS 5.0V
 #-------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_draw {parameters} {
+proc sg13g2::sg13_hv_nmos_draw {parameters} {
     set newdict [dict create \
-	    gate_type		mvnfet \
-	    diff_type 		mvndiff \
-	    diff_contact_type	mvndc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
+	    gate_type		hvnfet \
+	    diff_type 		hvndiff \
+	    diff_contact_type	hvndc \
+	    plus_diff_type	hvpsd \
+	    plus_contact_type	hvpsc \
 	    poly_type		poly \
 	    poly_contact_type	pc \
 	    sub_type		psub \
@@ -6922,13 +4803,13 @@ proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_draw {parameters} {
     return [sg13g2::mos_draw $drawdict]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_draw {parameters} {
+proc sg13g2::nmosiHV_draw {parameters} {
     set newdict [dict create \
-	    gate_type		mvnnfet \
-	    diff_type 		mvndiff \
-	    diff_contact_type	mvndc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
+	    gate_type		hvnnfet \
+	    diff_type 		hvndiff \
+	    diff_contact_type	hvndc \
+	    plus_diff_type	hvpsd \
+	    plus_contact_type	hvpsc \
 	    poly_type		poly \
 	    poly_contact_type	pc \
 	    sub_type		psub \
@@ -6940,147 +4821,19 @@ proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_draw {parameters} {
     return [sg13g2::mos_draw $drawdict]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_03v3_nvt_draw {parameters} {
+proc sg13g2::nmosi_draw {parameters} {
     set newdict [dict create \
 	    gate_type		nnfet \
-	    diff_type 		mvndiff \
-	    diff_contact_type	mvndc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
+	    diff_type 		hvndiff \
+	    diff_contact_type	hvndc \
+	    plus_diff_type	hvpsd \
+	    plus_contact_type	hvpsc \
 	    poly_type		poly \
 	    poly_contact_type	pc \
 	    sub_type		psub \
 	    diff_spacing	0.30 \
 	    diff_tap_space	0.38 \
 	    diff_gate_space	0.38 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-#------------------------
-# MOS varactor (1.8V)
-#------------------------
-
-proc sg13g2::sg13g2_fd_pr__cap_var_lvt_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		var \
-	    diff_type 		nnd \
-	    diff_contact_type	nsc \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    dev_sub_type	nwell \
-	    diff_overlap_cont	0.06 \
-	    dev_sub_dist	0.14 \
-	    dev_sub_space	1.27 \
-	    gate_to_diffcont	0.34 \
-	    diff_extension	0.485 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_hvt_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		varhvt \
-	    diff_type 		nnd \
-	    diff_contact_type	nsc \
-	    plus_diff_type	psd \
-	    plus_contact_type	psc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    dev_sub_type	nwell \
-	    diff_overlap_cont	0.06 \
-	    dev_sub_dist	0.14 \
-	    dev_sub_space	1.27 \
-	    gate_to_diffcont	0.34 \
-	    diff_extension	0.485 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-#---------------------------------------------------------
-# MOS varactor (5.0V)
-# NOTE:  dev_sub_space set to 2.0 assuming different nets.
-# Should have option for same-net with merged wells.
-#---------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__cap_var_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		mvvar \
-	    diff_type 		mvnsd \
-	    diff_contact_type	mvnsc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    dev_sub_type	nwell \
-	    sub_surround	0.38 \
-	    sub_surround_dev	0.56 \
-	    guard_sub_surround	0.18 \
-	    diff_overlap_cont	0.06 \
-	    dev_sub_dist	0.785 \
-	    dev_sub_space	2.0 \
-	    gate_to_diffcont	0.34 \
-	    diff_extension	0.485 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-#----------------------------------------------------------------
-# 16V extended-drain devices LDNMOS and LDPMOS
-#----------------------------------------------------------------
-
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		mvnfet \
-	    diff_type 		mvndiff \
-	    diff_contact_type	mvndc \
-	    plus_diff_type	mvpsd \
-	    plus_contact_type	mvpsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    diff_spacing	0.31 \
-	    diff_tap_space	0.38 \
-	    diff_gate_space	0.38 \
-	    drain_diff_surround 0.045 \
-	    set_x_to_guard	1.665 \
-	    set_y_to_guard	1.225 \
-	    drain_proc		sg13g2::draw_ldnmos_drain \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		mvpfet \
-	    diff_type 		mvpdiff \
-	    diff_contact_type	mvpdc \
-	    plus_diff_type	mvnsd \
-	    plus_contact_type	mvnsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		nwell \
-	    id_type		nwell \
-	    id_surround		0.035 \
-	    guard_sub_surround	0.33 \
-	    gate_to_polycont	0.32 \
-	    diff_spacing	0.31 \
-	    diff_tap_space	0.38 \
-	    diff_gate_space	0.38 \
-	    drain_diff_surround 0.045 \
-	    set_x_to_guard	1.665 \
-	    set_y_to_guard	1.180 \
-	    drain_proc		sg13g2::draw_ldpmos_drain \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
     return [sg13g2::mos_draw $drawdict]
@@ -7249,76 +5002,35 @@ proc sg13g2::mos_check {device parameters} {
        # dict set parameters nf $nf
     }
 
-    # Used by varactor only
-    if {$device == "sg13g2_fd_pr__cap_var"} {
-        catch {set magic::minfo_val "Warning:  No model exists for this device!"}
-    } else {
-        catch {set magic::minfo_val ""}
-    }
+    catch {set magic::minfo_val ""}
 
     return $parameters
 }
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_01v8 $parameters]
+proc sg13g2::sg13_lv_nmos_check {parameters} {
+   return [sg13g2::mos_check sg13_lv_nmos $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_01v8_lvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_01v8_lvt $parameters]
+proc sg13g2::sg13_hv_nmos_check {parameters} {
+   return [sg13g2::mos_check sg13_hv_nmos $parameters]
 }
 
-proc sg13g2::sg13g2_fd_bs_flash__special_sonosfet_star_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_bs_flash__special_sonosfet_star $parameters]
+proc sg13g2::nmosHV_check {parameters} {
+   return [sg13g2::mos_check nmosHV $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d10v5_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_g5v0d10v5 $parameters]
+proc sg13g2::nmosi_check {parameters} {
+   return [sg13g2::mos_check nmosi $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_g5v0d16v0_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_g5v0d16v0 $parameters]
+proc sg13g2::sg13_lv_pmos_check {parameters} {
+   return [sg13g2::mos_check sg13_lv_pmos $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__nfet_05v0_nvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_05v0_nvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__nfet_03v3_nvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__nfet_03v3_nvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__pfet_01v8 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_lvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__pfet_01v8_lvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_01v8_hvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__pfet_01v8_hvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d10v5_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__pfet_g5v0d10v5 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__pfet_g5v0d16v0_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__pfet_g5v0d16v0 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_lvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__cap_var_lvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_hvt_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__cap_var_hvt $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_var_check {parameters} {
-   return [sg13g2::mos_check sg13g2_fd_pr__cap_var $parameters]
+proc sg13g2::sg13_hv_pmos_check {parameters} {
+   return [sg13g2::mos_check sg13_hv_pmos $parameters]
 }
 
 #----------------------------------------------------------------
@@ -7343,68 +5055,28 @@ proc sg13g2::sg13g2_fd_pr__cap_var_check {parameters} {
 # ystep  --- Height of the cell (nominal array pitch in Y)
 #----------------------------------------------------------------
 
-# Fixed-layout devices (from sg13g2_fd_pr_base, _rf, and _rf2 libraries)
+# Fixed-layout devices (from sg13g2_fd_pr library)
 #
 # Bipolar transistors:
 #
-# sg13g2_fd_pr__npn_05v5_W1p00L1p00
-# sg13g2_fd_pr__npn_05v5_W1p00L2p00
-# sg13g2_fd_pr__pnp_05v5_W3p40L3p40
-# sg13g2_fd_pr__pnp_05v5_W0p68L0p68
-# sg13g2_fd_pr__npn_11v0_W1p00L1p00
+# npn13g2
+# npn13g2l
+# npn13g2v
+# pnpMPA
 #
-# Parallel Plate Capacitors:
-#
-# sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldlim5
-# sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield
-# sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1
-# sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1
-#
-# Inductors:
-#
-# sg13g2_fd_pr__rf_test_coil1
-# sg13g2_fd_pr__rf_test_coil2
-# sg13g2_fd_pr__rf_test_coil3
-
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00_defaults {} {
+proc sg13g2::npn13g2_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 7.03 ystep 7.03 class bjt}
 }
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00_defaults {} {
+proc sg13g2::npn13g2l_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 7.03 ystep 8.03 class bjt}
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68_defaults {} {
+proc sg13g2::npn13g2v_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 3.72 ystep 3.72 class bjt}
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40_defaults {} {
+proc sg13g2::pnpMPA_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 6.44 ystep 6.44 class bjt}
-}
-proc sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 7.03 ystep 7.03 class bjt}
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil1_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 258 ystep 258 class inductor}
-}
-proc sg13g2::sg13g2_fd_pr__rf_test_coil2_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 290 ystep 404 class inductor}
-}
-proc sg13g2::sg13g2_fd_pr__rf_test_coil3_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 290 ystep 404 class inductor}
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 11.08 ystep 11.36 class capacitor}
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 11.08 ystep 11.36 class capacitor}
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 11.08 ystep 11.36 class capacitor}
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1_defaults {} {
-    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 11.08 ystep 11.36 class capacitor}
 }
 
 #----------------------------------------------------------------
@@ -7429,48 +5101,19 @@ proc sg13g2::fixed_convert {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00_convert {parameters} {
+proc sg13g2::npn13g2_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00_convert {parameters} {
+proc sg13g2::npn13g2l_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68_convert {parameters} {
+proc sg13g2::npn13g2v_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil1_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil2_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil3_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1_convert {parameters} {
+proc sg13g2::pnpMPA_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
@@ -7517,48 +5160,19 @@ proc sg13g2::fixed_dialog {parameters} {
     magic::add_entry deltay "Y step (um)" $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00_dialog {parameters} {
+proc sg13g2::npn13g2_dialog {parameters} {
     sg13g2::fixed_dialog $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00_dialog {parameters} {
+proc sg13g2::npn13g2l_dialog {parameters} {
     sg13g2::fixed_dialog $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68_dialog {parameters} {
+proc sg13g2::npn13g2v_dialog {parameters} {
     sg13g2::fixed_dialog $parameters
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil1_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil2_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil3_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1_dialog {parameters} {
+proc sg13g2::pnpMPA_dialog {parameters} {
     sg13g2::fixed_dialog $parameters
 }
 
@@ -7600,49 +5214,20 @@ proc sg13g2::fixed_draw {devname parameters} {
 # No additional parameters declared for drawing
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_npn_05v5_W1p00L1p00 $parameters]
+proc sg13g2::npn13g2_draw {parameters} {
+    return [sg13g2::fixed_draw npn13g2 $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_npn_05v5_W1p00L2p00 $parameters]
+proc sg13g2::npn13g2l_draw {parameters} {
+    return [sg13g2::fixed_draw npn13g2l $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_pnp_05v5_W0p68L0p68 $parameters]
+proc sg13g2::npn13g2v_draw {parameters} {
+    return [sg13g2::fixed_draw npn13g2v $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_pnp_05v5_W3p40L3p40 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_npn_11v0_W1p00L1p00 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil1_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_test_coil1 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil2_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_test_coil2 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil3_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__rf_test_coil3 $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1 $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1_draw {parameters} {
-    return [sg13g2::fixed_draw sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1 $parameters]
+proc sg13g2::pnpMPA_draw {parameters} {
+    return [sg13g2::fixed_draw pnpMPA $parameters]
 }
 
 #----------------------------------------------------------------
@@ -7695,50 +5280,22 @@ proc sg13g2::fixed_check {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L1p00_check {parameters} {
+proc sg13g2::npn13g2_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_05v5_W1p00L2p00_check {parameters} {
+proc sg13g2::npn13g2l_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W0p68L0p68_check {parameters} {
+proc sg13g2::npn13g2v_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__pnp_05v5_W3p40L3p40_check {parameters} {
+proc sg13g2::pnpMPA_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::sg13g2_fd_pr__npn_11v0_W1p00L1p00_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil1_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil2_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__rf_test_coil3_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2m3m4_shieldl1m5_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_11p5x11p7_m1m2_noshield_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_08p6x07p8_m1m2_shieldl1_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
-proc sg13g2::sg13g2_fd_pr__cap_vpp_04p4x04p6_m1m2_shieldl1_check {parameters} {
-    return [sg13g2::fixed_check $parameters]
-}
 #-------------------------------------------------------------------
 # General-purpose routines for the PDK script in all technologies
 #-------------------------------------------------------------------

@@ -19,7 +19,7 @@ version
 end
 
 #------------------------------------------------------------------------
-# Status 8/26/24: Version 0.1.0 (alpha):
+# Status 11/29/24: Version 0.1.1 (alpha):
 # Pre-release
 #------------------------------------------------------------------------
 
@@ -106,6 +106,7 @@ types
  -active hvnmosesd,hvntransistoresd,hvnfetesd
  -active hvpmosesd,hvptransistoresd,hvpfetesd
   active varactor,varact,var
+  active hvvaractor,hvvaract,hvvar
 
 # Diffusions
  -active difffill
@@ -134,15 +135,17 @@ types
  -active obspoly
 
 # Resistors
-  active npolyres,nres
-  active ppolyres,pres
-  active xpolyres,xres
+  active npolyres,nres,rsil
+  active ppolyres,pres,rppd
+  active xpolyres,xres,rhigh
 
 # Diodes
   active pdiode,pdi
   active ndiode,ndi
-  active pdiodec,pdic
-  active ndiodec,ndic
+  active pdiodecont,pdiodec,pdic
+  active ndiodecont,ndiodec,ndic
+  active schottky,sdi
+  active schottkycont,schottkyc,sdic
 
 # Metal 1
   metal1 metal1,m1,met1
@@ -214,6 +217,7 @@ contact
   psc      psd        metal1
   ndic     ndiode     metal1
   pdic     pdiode     metal1
+  sdic     schottky   metal1
 
   hvndc   hvndiff   metal1
   hvpdc   hvpdiff   metal1
@@ -243,13 +247,13 @@ aliases
 
   allnfets	   nfet,hvnfet,hvnfetesd,hvnnfet,nnfet
   allpfets	   pfet,hvpfet,hvpfetesd
-  allfets	   allnfets,allpfets,varactor
+  allfets	   allnfets,allpfets,var,hvvar
   allfetsstd	   nfet,hvnfet,hvnfetesd,hvnnfet,nnfet,pfet,hvpfet,hvpfetesd
 
   allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd
   allnactive	   allnactivenonfet,allnfets
   allnactivenontap *ndiff,*ndiode,*hvndiff,allnfets
-  allnactivetap	   *nsd,*hvnsd,var
+  allnactivetap	   *nsd,*hvnsd,var,hvvar
 
   allpactivenonfet *pdiff,*psd,*pdiode,*hvpdiff,*hvpsd
   allpactive	   allpactivenonfet,allpfets
@@ -326,13 +330,13 @@ styles
   nwell     nwell
   pwell	    pwell
   ndiff     ndiffusion
-  difffill   ndiffusion
+  difffill  ndiffusion
   pdiff     pdiffusion
   nsd       ndiff_in_nwell
   psd       pdiff_in_pwell
   nfet      ntransistor    ntransistor_stripes
   pfet      ptransistor    ptransistor_stripes
-  var       polysilicon    ndiff_in_nwell
+  var	    polysilicon	   ndiff_in_nwell
   ndc       ndiffusion     metal1  contact_X'es
   pdc       pdiffusion     metal1  contact_X'es
   nsc       ndiff_in_nwell metal1  contact_X'es
@@ -356,6 +360,7 @@ styles
   hvpdc     pdiffusion     metal1  contact_X'es hvpdiff_mask
   hvnsc     ndiff_in_nwell metal1  contact_X'es hvndiff_mask
   hvpsc     pdiff_in_pwell metal1  contact_X'es hvpdiff_mask
+  hvvar	    polysilicon	   hvndiff_mask
 
   poly      polysilicon 
   polyfill  polysilicon
@@ -368,6 +373,8 @@ styles
   ndiode    ndiffusion     nselect2
   pdiodec   pdiffusion     pselect2 metal1 contact_X'es
   ndiodec   ndiffusion     nselect2 metal1 contact_X'es
+  schottky  ndiffusion
+  sdic	    ndiffusion	   contact_X'es
 
   metal1    metal1
   m1fill    metal1
@@ -437,10 +444,11 @@ end
 compose
   compose  nfet  poly  ndiff
   compose  pfet  poly  pdiff
-  compose  var   poly  hvnsd
+  compose  var	 poly  nsd
 
   compose  hvnfet  poly  hvndiff
   compose  hvpfet  poly  hvpdiff
+  compose  hvvar   poly  hvnsd
 
   decompose nnfet     poly hvndiff
   decompose hvnfetesd poly hvndiff
@@ -482,7 +490,7 @@ connect
   *m5,m5fill	*m5,m5fill
   *m6,m6fill	*m6,m6fill
   *m7,m7fill	*m7,m7fill
-  *mimcap     *mimcap
+  *mimcap       *mimcap
    allnactivenonfet	allnactivenonfet
    allpactivenonfet	allpactivenonfet
   *poly,allfets,polyfill	*poly,allfets,polyfill
@@ -574,8 +582,8 @@ style gdsii
 # PSD, NSD (PPLUS, NPLUS implants)
 #----------------------------------------------------------------
 
- layer PSD pres,xres
-	bloat-all POLY
+ layer PSD
+	bloat-all pres,xres poly
 	grow 180
 	bloat-or allpactivetap * 125 allnactivenontap 0
 	bloat-or allpactivenontap * 125 allnactivetap 0
@@ -592,8 +600,8 @@ style gdsii
 # not commonly used.  It is found coincident with PSD on "rhigh"
 # resistors (low n-doped poly).
 
- layer NSD xres
-	bloat-all POLY
+ layer NSD
+	bloat-all xres poly
 	grow 180
 	calma 7 0
 
@@ -649,8 +657,8 @@ style gdsii
 # EXTBLOCK (Tip and halo implant block)
 #----------------------------------------------------------------
 
- layer EXTBLOCK	pres,xres,nres
-	bloat-all *poly
+ layer EXTBLOCK
+	bloat-all pres,xres,nres *poly
 	grow 180
 	bloat-or pres,xres * 200 *poly 0
 	calma 111 0
@@ -679,18 +687,10 @@ style gdsii
 	calma	5 22
 
 #----------------------------------------------------------------
-# SBLK (Salicide block)
-#----------------------------------------------------------------
-
- layer SBLK rppd
-	labels	rppd
-	calma	28 0
-
-#----------------------------------------------------------------
 # THKOX (ThickGateOx)
 #----------------------------------------------------------------
 
- layer THKOX alldiffhv,var
+ layer THKOX alldiffhv,hvvar
 	grow	185
 	bloat-all alldiffhv nwell
 	grow 345
@@ -704,9 +704,23 @@ style gdsii
 #----------------------------------------------------------------
 # CONT
 #----------------------------------------------------------------
+# NOTE:  Contact arrays defined at 200 spacing for large array
+# rule (5x5), otherwise spacing is 180.
+# The smallest square which would be illegal at 180 spacing is
+# (160 * 5) + (180 * 4) = 1520 (divided by 2 is 760)
+
+ layer contlarge allcont
+	shrink 755
+	grow 755
 
  layer CONT allcont
- 	squares-grid 0 170 170
+	and-not contlarge
+	squares-grid 0 160 180
+	calma 6 0
+
+ layer CONT allcont
+	and contlarge
+ 	squares-grid 0 160 200
  	calma	6 0
 
 #----------------------------------------------------------------
@@ -744,10 +758,24 @@ style gdsii
 #----------------------------------------------------------------
 # VIA1
 #----------------------------------------------------------------
- layer VIA1 	via1
- 	squares-grid 55 150 170
- 	calma 	19 0
+# NOTE:  Via1 arrays defined at 290 spacing for large array
+# rule (4x4), otherwise spacing is 220.
+# The smallest square which would be illegal at 220 spacing is
+# (5 * 2) + (190 * 4) + (220 * 3) = 1430 (divided by 2 is 715)
 
+ layer via1large via1
+	shrink 710
+	grow 710
+
+ layer VIA1 via1
+	and-not via1large
+	squares-grid 5 190 220
+	calma 19 0
+
+ layer VIA1 via1
+	and via1large
+ 	squares-grid 5 190 290
+ 	calma	19 0
 
 #----------------------------------------------------------------
 # MET2
@@ -774,9 +802,24 @@ style gdsii
 #----------------------------------------------------------------
 # VIA2
 #----------------------------------------------------------------
- layer VIA2 	via2
- 	squares-grid 40 200 200
- 	calma 	29 0
+# NOTE:  Via2 arrays defined at 290 spacing for large array
+# rule (4x4), otherwise spacing is 220.
+# The smallest square which would be illegal at 220 spacing is
+# (5 * 2) + (190 * 4) + (220 * 3) = 1430 (divided by 2 is 715)
+
+ layer via2large via2
+	shrink 710
+	grow 710
+
+ layer VIA2 via2
+	and-not via2large
+	squares-grid 5 190 220
+	calma 29 0
+
+ layer VIA2 via2
+	and via2large
+ 	squares-grid 5 190 290
+ 	calma	29 0
 
 #----------------------------------------------------------------
 # MET3
@@ -803,9 +846,21 @@ style gdsii
 #----------------------------------------------------------------
 # VIA3
 #----------------------------------------------------------------
- layer VIA3	via3
- 	squares-grid 60 200 200
- 	calma 	49 0
+# See note above for VIA2
+
+ layer via3large via3
+	shrink 710
+	grow 710
+
+ layer VIA3 via3
+	and-not via3large
+	squares-grid 5 190 220
+	calma 49 0
+
+ layer VIA3 via3
+	and via3large
+ 	squares-grid 5 190 290
+ 	calma	49 0
 
 #----------------------------------------------------------------
 # MET4
@@ -832,9 +887,21 @@ style gdsii
 #----------------------------------------------------------------
 # VIA4
 #----------------------------------------------------------------
- layer VIA4	via4
- 	squares-grid 190 800 800
- 	calma 	66 0
+# See note above for VIA2
+
+ layer via4large via4
+	shrink 710
+	grow 710
+
+ layer VIA4 via4
+	and-not via4large
+	squares-grid 5 190 220
+	calma 66 0
+
+ layer VIA4 via4
+	and via4large
+ 	squares-grid 5 190 290
+ 	calma	66 0
 
 #----------------------------------------------------------------
 # MET5
@@ -861,12 +928,13 @@ style gdsii
 #----------------------------------------------------------------
 # VIA5 (TopVia1)
 #----------------------------------------------------------------
+
  layer VIA5	via5
- 	squares-grid 190 800 800
+ 	squares-grid 5 420 420
  	calma 	125 0
 
  layer MIMCC	mimcc
- 	squares-grid 190 800 800
+ 	squares-grid 360 420 420
  	calma 	129 0
 
 #----------------------------------------------------------------
@@ -895,7 +963,7 @@ style gdsii
 # VIA6 (TopVia2)
 #----------------------------------------------------------------
  layer VIA6	via6
- 	squares-grid 190 800 800
+ 	squares-grid 500 900 1060
  	calma 	133 0
 
 #----------------------------------------------------------------
@@ -1003,67 +1071,88 @@ style drc
  scalefactor 10  nanometers
  options calma-permissive-labels
 
- # Ensure nwell overlaps dnwell at least 0.4um outside and 1.03um inside
- templayer dnwell_shrink dnwell
- shrink 1030
-
- templayer nwell_missing dnwell
- grow 400
- and-not dnwell_shrink
- and-not nwell
-
  templayer pwell_in_dnwell dnwell
  and-not nwell
 
  # Make sure nwell covers varactor poly
  templayer var_poly_no_nwell
-	bloat-all varactor *poly
-	grow 150
-	and-not nwell
+ bloat-all var,hvvar *poly
+ grow 150
+ and-not nwell
 
- # Check latchup rule (15um minimum from tap LICON center to any
+ # Check latchup rule (20um minimum from tap VIA center to any
  # non-tap diffusion.  Note that to count as a tap, the diffusion
- # must be contacted to LI
+ # must be contacted to M1
 
  templayer ptap_reach psc,hvpsc
  and-not dnwell
- # grow total is 15um.  grow in 0.84um increments to ensure that
+ # grow total is 20um.  grow in 0.62um increments to ensure that
  # no nwell ring is crossed
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 840
+ grow 620
  and-not nwell,dnwell
- grow 635
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 620
+ and-not nwell,dnwell
+ grow 160
  and-not nwell,dnwell
 
  templayer ptap_missing *ndiff,*hvndiff
@@ -1071,32 +1160,42 @@ style drc
  and-not ptap_reach
 
  templayer ntap_reach nsc,hvnsc
- # grow total is 15um.  grow in 1.27um increments to ensure that
+ # grow total is 20um.  grow in 1.24um increments to ensure that
  # no nwell ring is crossed.  There is no difference between
  # ntaps in and out of deep nwell.
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 1270
+ grow 1240
  and nwell,pnp
- grow 945
+ grow 1240
+ and nwell,pnp
+ grow 1240
+ and nwell,pnp
+ grow 1240
+ and nwell,pnp
+ grow 1240
+ and nwell,pnp
+ grow 1240
+ and nwell,pnp
+ grow 160
  and nwell,pnp
  
  templayer ntap_missing *pdiff,*hvpdiff
@@ -1105,58 +1204,103 @@ style drc
 
  templayer dptap_reach psc,hvpsc
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 840
+ grow 620
  and-not nwell
  and dnwell
- grow 635
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 620
+ and-not nwell
+ and dnwell
+ grow 160
  and-not nwell
  and dnwell
 
@@ -1205,13 +1349,20 @@ style drc
  bloat-all allpactivetap psd,hvpsd
  bloat-all allnactivetap nsd,hvnsd
 
- templayer tap_missing_licon allnactivetap,allpactivetap
+ templayer tap_missing_m1 allnactivetap,allpactivetap
  and-not tap_with_m1
 
- # Make sure varactor nwell contains no P diffusion
+ # Make srue varactor nwell contains no P diffusion
  templayer pdiff_in_varactor_well
- bloat-all varactor nwell
+ bloat-all var,hvvar nwell
  and allpactive
+
+ # Find minimum hole sizes in diffusion
+ templayer diff_small_hole alldiff
+ close	150000
+
+ templayer diff_hole_empty diff_small_hole
+ and-not alldiff
 
 #----------------------------------------------------------------
 style density
@@ -1225,8 +1376,6 @@ style density
  templayer diff_all alldiff,difffill
 
  templayer poly_all allpoly,polyfill
-
- templayer li_all allli,lifill
 
  templayer m1_all allm1,m1fill
 
@@ -2566,8 +2715,7 @@ style  sg13g2 variants ()
  layer obsm7 FILLOBSM7
  labels FILLOBSM7
 
-# MOS Varactor
-
+ # MOS Varactor
  layer var POLY
  and DIFF
  and NSD
@@ -2713,6 +2861,454 @@ drc
  scalefactor 10 
  cifstyle drc
 
+ variants (fast),(full)
+
+#-----------------------------
+# DNWELL (nBuLay)
+#-----------------------------
+
+ width dnwell 1000 "Deep N-well width < %d (NBL.a)"
+ spacing dnwell dnwell 1500 touching_ok "Deep N-well spacing, same net < %d (NBL.b)"
+ # spacing dnwell dnwell 3200 touching_illegal "Deep N-well spacing, different net < %d (NBL.b)"
+ spacing allnwell dnwell 2200 surround_ok \
+	"Deep N-well spacing to N-well < %d (NBL.d)"
+ spacing dnwell allnactive 1000 touching_illegal "Deep N-well spacing to N-diffusion < %d (NBL.e)"
+ spacing dnwell allpactive 500 touching_illegal "Deep N-well spacing to P-diffusion < %d (NBL.f)"
+
+ # NOTE: Nwell > 3um has generated dnwell implant and must be considered here.
+ # Also:  Illustration shows pwell:block regions connected to a deep nwell as being considered part
+ # of the nwell for the purpose of checking DRC rules.
+
+#-----------------------------
+# NWELL
+#-----------------------------
+
+ width allnwell 620 "N-well width < %d (NW.a)"
+ # NOTE:  This spacing rule should only count areas with pwell block.  Areas without pwell
+ # block should be merged automatically during GDS generation.
+ spacing allnwell allnwell 620 touching_ok "N-well spacing < %d (NW.b)"
+
+ surround *pdiff,*pdiode,pfet allnwell 310 absence_illegal \
+	"N-well overlap of P-Diffusion < %d (NW.c)"
+ surround *hvpdiff,hvpfet,hvpfetesd allnwell 620 absence_illegal \
+	"N-well overlap of HV P-Diffusion < %d (NW.c1)"
+ spacing *ndiff,*ndiode,nfet allnwell 310 touching_illegal \
+	"N-Diffusion spacing to N-well < %d (NW.d)"
+ spacing *hvndiff,hvnfet,hvnnfet,nnfet allnwell 620 touching_illegal \
+	"HV N-Diffusion spacing to N-well < %d (NW.d1)"
+ surround *nsd allnwell 240 absence_illegal \
+	"N-well overlap of N-tap < %d (NW.e)"
+ surround *hvnsd allnwell 620 absence_illegal \
+	"N-well overlap of HV N-tap < %d (NW.e1)"
+ spacing *psd allnwell 240 touching_illegal \
+	"P-tap spacing to N-well < %d (NW.f)"
+ spacing *hvpsd allnwell 620 touching_illegal \
+	"HV P-tap spacing to N-well < %d (NW.f1)"
+
+
+#-----------------------------
+# DIFF
+#-----------------------------
+
+ width alldiff 150 "Diffusion width < %d (Act.a)"
+ spacing alldiff alldiff 210 touching_illegal "Diffusion spacing < %d (Act.b)"
+
+ overhang *ndiff nfet,nnfet 230 "N-Diffusion overhang of nFET < %d (Act.c)"
+ overhang *pdiff pfet 230 "P-Diffusion overhang of pFET < %d (Act.c)"
+ overhang *hvndiff hvnfet,hvnnfet,hvnfetesd 230 "N-Diffusion overhang of nFET < %d (Act.c)"
+ overhang *hvpdiff hvpfet,hvpfetesd 230 "P-Diffusion overhang of pFET < %d (Act.c)"
+
+ area  alldiff 122000 150 "Diffusion minimum area < 0.122um^2 (Act.d)"
+
+ variants (full)
+ cifmaxwidth diff_hole_empty 0 bend_illegal "Minimum area of diffusion holes > 0.15um^2 (Act.e)"
+ variants *
+
+ # Latchup rules
+ cifmaxwidth ptap_missing 0 bend_illegal \
+	"N-diff distance to P-tap must be < 20.0um (LU.b)"
+ cifmaxwidth dptap_missing 0 bend_illegal \
+	"N-diff distance to P-tap in deep nwell must be < 20.0um (LU.b)"
+ cifmaxwidth ntap_missing 0 bend_illegal \
+	"P-diff distance to N-tap must be < 20.0um (LU.a)"
+
+ variants (fast),(full)
+
+#-----------------------------
+# POLY
+#-----------------------------
+
+ width allpoly,polyfill 130 "poly width < %d (Gat.a)"
+ spacing allpoly,polyfill allpoly,polyfill 180 touching_ok "poly spacing < %d (Gat.b)"
+
+ spacing allpolynonfet,polyfill alldiff 70 corner_ok allfets \
+	"poly spacing to Diffusion < %d (Gat.d)"
+
+ rect_only allfets "No bends in transistors (Gat.f)"
+
+ overhang *poly allfetsstd 180 "Poly overhang of transistor < %d (Gat.c)"
+
+ angles allpoly,polyfill 45 "Only 45 degree angles permitted on poly (x.2)"
+
+ width allpoly,polyfill 160 angles "Poly drawn at 45 degrees width < %d (Gat.g)"
+
+ area  allpoly,polyfill 90000 130 "Poly minimum area < 0.09um^2 (Gat.e)"
+
+ # NOTE:  Need to implement Gat.b1 as cifspacing rule
+
+#--------------------------------------------------------------------
+# CONT (contact between poly/diff and M1)
+#--------------------------------------------------------------------
+
+ width ndc/m1 160 "N-diffusion contact width < %d (Cnt.a)"
+ width nsc/m1 160 "N-tap contact width     < %d (Cnt.a)"
+ width pdc/m1 160 "P-diffusion contact width < %d (Cnt.a)"
+ width psc/m1 160 "P-tap contact width     < %d (Cnt.a)"
+ width ndic/m1 160 "N-diode contact width < %d (Cnt.a)"
+ width pdic/m1 160 "P-diode contact width < %d (Cnt.a)"
+ width sdic/m1 160 "Schottky-diode contact width < %d (Cnt.a)"
+ width pc/m1   160 "poly contact width        < %d (Cnt.a)"
+
+ width hvndc/m1 160 "N-diffusion contact width < %d (Cnt.a)"
+ width hvnsc/m1 160 "N-tap contact width     < %d (Cnt.a)"
+ width hvpdc/m1 160 "P-diffusion contact width < %d (Cnt.a)"
+ width hvpsc/m1 160 "P-tap contact width     < %d (Cnt.a)"
+
+ # NOTE:  All spacing rules should include a "widespacing" to 4+ contact
+ # areas (Cnt.b1).  However, this rule being enforced in only one
+ # direction, it is not clear that this is usefully implemented in magic.
+
+ spacing allpdiffcont allndiffcont 180 touching_illegal \
+	"Diffusion contact spacing < %d (Cnt.b)"
+ spacing allndiffcont allndiffcont 180 touching_ok \
+	"Diffusion contact spacing < %d (Cnt.b)"
+ spacing allpdiffcont allpdiffcont 180 touching_ok \
+	"Diffusion contact spacing < %d (Cnt.b)"
+ spacing pc pc 180 touching_ok "Poly1 contact spacing < %d (Cnt.b)"
+
+ spacing pc alldiff 140 touching_illegal \
+	"Poly contact spacing to diffusion < %d (Cnt.e)"
+
+ surround ndc/a *ndiff,nfet 40 absence_illegal \
+	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
+ surround pdc/a *pdiff,pfet 70 absence_illegal \
+	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
+ surround ndic/a *ndi 70 absence_illegal \
+	"N-diode overlap of N-diode contact < %d (Cnt.c)"
+ surround pdic/a *pdi 70 absence_illegal \
+	"P-diode overlap of P-diode contact < %d (Cnt.c)"
+
+ surround hvndc/a *hvndiff,hvnfet,hvnfetesd 70 absence_illegal \
+	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
+ surround hvpdc/a *hvpdiff,hvpfet,hvpfetesd 70 absence_illegal \
+	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
+
+ surround pc/a *poly 70 absence_illegal \
+	"poly overlap of poly contact < %d (Cnd.d)"
+
+ exact_overlap (allcont)/a
+
+#-------------------------------------------------------------
+# METAL1 -
+#-------------------------------------------------------------
+
+ width *m1,rm1 160 "Metal1 width < %d (M1.a)"
+ spacing allm1,m1fill allm1,*obsm1,m1fill 180 touching_ok "Metal1 spacing < %d (M1.b)"
+ area allm1,*obsm1 90000 160 "Metal1 minimum area < %a (M1.d)"
+
+ angles allm1,m1fill 45 "Only 45 and 90 degree angles permitted on metal1 (Grid Rules)"
+
+ width *m1,rm1 200 angles "Metal1 drawn at 45 degrees width < %d (M1.g)"
+
+ # NOTE: M1.i is probably not implementable in magic (would require "spacing ... angles"
+ # implementation similar to "width ... angles").
+
+variants (fast),(full)
+ widespacing allm1 305 1005 allm1,*obsm1,m1fill 220 touching_ok \
+	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
+ widespacing *obsm1 305 1005 allm1 220 touching_ok \
+	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
+
+ widespacing allm1 10005 10005 allm1,*obsm1,m1fill 600 touching_ok \
+	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
+ widespacing *obsm1 10005 10005 allm1 600 touching_ok \
+	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
+variants *
+
+#--------------------------------------------------
+# VIA1
+#--------------------------------------------------
+
+ width v1/m1 200 "Via1 width < %d (V1.a + 2 * M2.c)"
+ spacing v1 v1 210 touching_ok "Via1 spacing < %d (V1.b - 2 * M2.c)"
+ surround v1/m1 *m1,rm1 5 absence_illegal \
+	"Metal1 overlap of Via1 < %d (V1.c - M2.c)"
+ surround v1/m1 *m1,rm1 45 directional \
+	"Metal1 overlap of Via1 < %d in one direction (V1.c1 - M2.c)"
+ surround v1/m2 *m2,rm2 45 directional \
+	"Metal2 overlap of Via1 < %d in one direction (M2.c1 - M2.c)"
+
+ exact_overlap v1/m1
+
+#--------------------------------------------------
+# METAL2 - 
+#--------------------------------------------------
+
+ width allm2,m2fill 200 "Metal2 width < %d (M2.a)"
+ spacing allm2  allm2,obsm2,m2fill 210 touching_ok "Metal2 spacing < %d (M2.b)"
+ area allm2,obsm2 144000 200 "Metal2 minimum area < %a (M2.d)"
+
+ angles allm2 45 "Only 45 and 90 degree angles permitted on metal2 (Grid Rules)"
+
+ width *m2,rm2 240 angles "Metal2 drawn at 45 degrees width < %d (M2.g)"
+
+ # NOTE: M2.i is probably not implementable in magic (would require "spacing ... angles"
+ # implementation similar to "width ... angles").
+
+variants (fast),(full)
+ widespacing allm2 395 1005 allm2,*obsm2,m2fill 240 touching_ok \
+	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
+ widespacing *obsm2 395 1005 allm2 240 touching_ok \
+	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
+
+ widespacing allm2 10005 10005 allm2,*obsm2,m2fill 600 touching_ok \
+	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
+ widespacing *obsm2 10005 10005 allm2 600 touching_ok \
+	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
+variants *
+
+#--------------------------------------------------
+# VIA2
+#--------------------------------------------------
+
+ width v2/m2 200 "via2 width < %d (V2.a + 2 * V2.c)"
+
+ spacing v2 v2 210 touching_ok "via2 spacing < %d (V2.b - 2 * V2.c)"
+
+ surround v2/m2 *m2,rm2 45 directional \
+	"Metal2 overlap of via2 < %d in one direction (V2.c1 - V2.c)"
+ surround v2/m3 *m3,rm3 45 directional \
+	"Metal3 overlap of via2 < %d in one direction (M3.c1 - V2.c)"
+
+ exact_overlap v2/m2
+
+#--------------------------------------------------
+# METAL3 - 
+#--------------------------------------------------
+
+ width allm3,m3fill 200 "Metal3 width < %d (M3.a)"
+ spacing allm3  allm3,obsm3,m3fill 210 touching_ok "Metal3 spacing < %d (M3.b)"
+ area allm3,obsm3 144000 200 "Metal3 minimum area < %a (M3.d)"
+
+ angles allm3 45 "Only 45 and 90 degree angles permitted on metal3 (Grid Rules)"
+
+ width *m3,rm3 240 angles "Metal3 drawn at 45 degrees width < %d (M3.g)"
+
+ # NOTE: M3.i is probably not implementable in magic (would require "spacing ... angles"
+ # implementation similar to "width ... angles").
+
+variants (fast),(full)
+ widespacing allm3 395 1005 allm3,*obsm3,m3fill 240 touching_ok \
+	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
+ widespacing *obsm3 395 1005 allm3 240 touching_ok \
+	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
+
+ widespacing allm3 10005 10005 allm3,*obsm3,m3fill 600 touching_ok \
+	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
+ widespacing *obsm3 10005 10005 allm3 600 touching_ok \
+	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
+variants *
+
+#--------------------------------------------------
+# VIA3 -
+#--------------------------------------------------
+
+ width v3/m3 200 "via3 width < %d (V3.a + 2 * V3.c)"
+
+ spacing v3 v3 210 touching_ok "via3 spacing < %d (V3.b - 2 * V3.c)"
+
+ surround v3/m3 *m3,rm3 45 directional \
+	"Metal3 overlap of via3 < %d in one direction (V3.c1 - V3.c)"
+ surround v3/m4 *m4,rm4 45 directional \
+	"Metal4 overlap of via3 < %d in one direction (M4.c1 - V3.c)"
+
+ exact_overlap v3/m3
+
+#--------------------------------------------------
+# METAL4 -
+#--------------------------------------------------
+
+ width allm4,m4fill 200 "Metal4 width < %d (M4.a)"
+ spacing allm4  allm4,obsm4,m4fill 210 touching_ok "Metal4 spacing < %d (M4.b)"
+ area allm4,obsm4 144000 200 "Metal4 minimum area < %a (M4.d)"
+
+ angles allm4 45 "Only 45 and 90 degree angles permitted on metal4 (Grid Rules)"
+
+ width *m4,rm4 240 angles "Metal4 drawn at 45 degrees width < %d (M4.g)"
+
+ # NOTE: M4.i is probably not implementable in magic (would require "spacing ... angles"
+ # implementation similar to "width ... angles").
+
+variants (fast),(full)
+ widespacing allm4 395 1005 allm4,*obsm4,m4fill 240 touching_ok \
+	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
+ widespacing *obsm4 395 1005 allm4 240 touching_ok \
+	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
+
+ widespacing allm4 10005 10005 allm4,*obsm4,m4fill 600 touching_ok \
+	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
+ widespacing *obsm4 10005 10005 allm4 600 touching_ok \
+	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
+variants *
+
+#--------------------------------------------------
+# VIA4 -
+#--------------------------------------------------
+
+ width v4/m4 200 "via4 width < %d (V4.a + 2 * V4.c)"
+
+ spacing v4 v4 210 touching_ok "via4 spacing < %d (V4.b - 2 * V4.c)"
+
+ surround v4/m4 *m4,rm4 45 directional \
+	"Metal4 overlap of via4 < %d in one direction (V4.c1 - V4.c)"
+ surround v4/m5 *m5,rm5 45 directional \
+	"Metal5 overlap of via4 < %d in one direction (M5.c1 - V4.c)"
+
+ exact_overlap v4/m4
+
+#--------------------------------------------------
+# METAL5 -
+#--------------------------------------------------
+
+ width allm5,m5fill 200 "Metal5 width < %d (M5.a)"
+ spacing allm5  allm5,obsm5,m5fill 210 touching_ok "Metal5 spacing < %d (M5.b)"
+ area allm5,obsm5 144000 200 "Metal5 minimum area < %a (M5.d)"
+
+ angles allm5 45 "Only 45 and 90 degree angles permitted on metal5 (Grid Rules)"
+
+ width *m5,rm5 240 angles "Metal5 drawn at 45 degrees width < %d (M5.g)"
+
+ # NOTE: M5.i is probably not implementable in magic (would require "spacing ... angles"
+ # implementation similar to "width ... angles").
+
+variants (fast),(full)
+ widespacing allm5 395 1005 allm5,*obsm5,m5fill 240 touching_ok \
+	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
+ widespacing *obsm5 395 1005 allm5 240 touching_ok \
+	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
+
+ widespacing allm5 10005 10005 allm5,*obsm5,m5fill 600 touching_ok \
+	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
+ widespacing *obsm5 10005 10005 allm5 600 touching_ok \
+	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
+variants *
+
+#--------------------------------------------------
+# VIA5 (TopVia1) -
+#--------------------------------------------------
+
+ width v5/m5 620 "via5 width < %d (TV1.a + 2 * TV1.c)"
+
+ spacing v5 v5 220 touching_ok "via5 spacing < %d (TV1.b - 2 * TV1.c)"
+
+ surround v5/m6 *m5,rm5 320 directional \
+	"Metal6 overlap of via5 < %d in one direction (TV1.d - TV1.c)"
+
+ exact_overlap v5/m5
+
+#--------------------------------------------------
+# METAL6 (TopMetal1) -
+#--------------------------------------------------
+
+ width allm6,m6fill 1640 "Metal6 width < %d (TM1.a)"
+ spacing allm6  allm6,obsm6,m6fill 1640 touching_ok "Metal6 spacing < %d (TM1.b)"
+
+ angles allm6 45 "Only 45 and 90 degree angles permitted on metal6 (Grid Rules)"
+
+#--------------------------------------------------
+# VIA6 (TopVia2) -
+#--------------------------------------------------
+
+ width v6/m6 1900 "via6 width < %d (TV2.a + 2 * TV2.c)"
+
+ spacing v6 v6 60 touching_ok "via6 spacing < %d (TV2.b - 2 * TV2.c)"
+
+ exact_overlap v6/m6
+
+#--------------------------------------------------
+# METAL7 (TopMetal2) -
+#--------------------------------------------------
+
+ width allm7,m7fill 2000 "Metal7 width < %d (TM2.a)"
+ spacing allm7  allm7,obsm7,m7fill 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
+
+variants (fast),(full)
+ widespacing allm7 5005 50005 allm7,*obsm7,m7fill 5000 touching_ok \
+	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < %d (TM2.bR)"
+variants *
+
+ angles allm7 45 "Only 45 and 90 degree angles permitted on metal7 (Grid Rules)"
+
+#--------------------------------------------------
+# NMOS, PMOS
+#--------------------------------------------------
+
+ # Minimum length of HV FETs.  Note that this is larger than the minimum
+ # width (0.15um), so an edge rule is required
+
+ edge4way hvndiff hvnfet,hvnfetesd 450 hvnfet,hvnfetesd 0 0 \
+	"HV NMOS minimum length < %d (Gat.a3)"
+
+ edge4way hvnsd hvvaractor 450 hvvaractor 0 0 \
+	"HV Varactor minimum length < %d (Gat.a3)"
+
+ edge4way hvpdiff hvpfet,hvpfetesd 400 hvpfet,hvpfetesd 0 0 \
+	"HV PMOS minimum length < %d (Gat.a4)"
+
+#--------------------------------------------------
+# nres (N+ poly resistor, rsil)
+#--------------------------------------------------
+
+  width nres 500 "rsil resistor width < %d (Rsil.a)"
+
+#--------------------------------------------------
+# pres (P+ poly resistor, rppd)
+# xres (P+ poly resistor, rhigh)
+#--------------------------------------------------
+
+  width pres 500 "rppd resistor width < %d (Rppd.a)"
+  width xres 350 "right resistor width < %d (Rhigh.a)"
+
+#-----------------------------------------------------------
+# MiM CAP (MIM) - 
+#-----------------------------------------------------------
+
+ width *mimcap 1140 "MiM cap width < %d (MIM.a)"
+ spacing *mimcap *mimcap 600 touching_ok "MiM cap spacing < %d (MIM.b)"
+ surround *mimcc *mimcap 260 absence_illegal \
+	"MiM cap must surround MiM cap contact by %d (MIM.d - TV1.c)"
+ rect_only *mimcap "MiM cap must be rectangular (Grid Rules)
+
+ surround *mimcap *metal5/m5 600 absence_illegal \
+	"Metal5 must surround MiM cap by %d (MIM.c)"
+ spacing *metal6 *mimcap 600 surround_ok \
+	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
+
+ area *mimcap 1300000 1140 "MiM cap minimum area < %a (MIM.f)"
+
+ # MIM.g:  Need a maximum area rule?
+
+ # MiM cap contact rules (Vmim)
+
+ width mimcc/m5 620 "MiM contact width < %d (TV1.a + 2 * TV1.c)"
+
+ spacing mimcc mimcc 220 touching_ok "MiM contact spacing < %d (TV1.b - 2 * TV1.c)"
+
+ surround mimcc/m6 *m5,rm5 320 directional \
+	"Metal6 overlap of MiM contact < %d in one direction (TV1.d - TV1.c)"
+
+ exact_overlap mimcc/m5
+
 #----------------------------
 # End DRC style
 #----------------------------
@@ -2725,6 +3321,33 @@ end
 
 lef
 
+# Vendor standard cells are fully contacted to nwell and substrate
+# so masterslice layers for nwell/pwell are not required.
+
+masterslice poly  GatPoly
+
+routing m1	Metal1
+routing m2	Metal2
+routing m3	Metal3
+routing m4	Metal4
+routing m5	Metal5
+routing m6	TopMetal1
+routing m7	TopMetal2
+
+cut via1	Via1
+cut via2	Via2
+cut via3	Via3
+cut via4	Via4
+cut via5	TopVia1
+cut via6	TopVia2
+
+obs obsm1	Metal1
+obs obsm2	Metal2
+obs obsm3	Metal3
+obs obsm4	Metal4
+obs obsm5	Metal5
+obs obsm6	TopMetal1
+obs obsm7	TopMetal2
 
 end
 
@@ -2907,7 +3530,9 @@ wiring
  contact v1  260 m1 0 30 m2  0 30
  contact v2  280 m2 0 45 m3 25  0
  contact v3  320 m3 0 30 m4  5  5
- contact v4 1180 m4 0    m5 120
+ contact v4  320 m4 0 30 m5  5  5
+ contact v5  320 m5 0 30 m6  5  5
+ contact v6 1180 m6 0    m7 120
 
  contact pc  170  poly 50 80 m1 0 80
  contact pdc 170 pdiff 40 60 m1 0 80
@@ -2945,6 +3570,8 @@ plot
      draw obsm3 no_color_at_all
      draw obsm4 no_color_at_all
      draw obsm5 no_color_at_all
+     draw obsm6 no_color_at_all
+     draw obsm7 no_color_at_all
      draw difffill no_color_at_all
      draw polyfill no_color_at_all
      draw m1fill no_color_at_all
@@ -2952,6 +3579,8 @@ plot
      draw m3fill no_color_at_all
      draw m4fill no_color_at_all
      draw m5fill no_color_at_all
+     draw m6fill no_color_at_all
+     draw m7fill no_color_at_all
      draw isosub no_color_at_all
      draw nwell cwell
 end
