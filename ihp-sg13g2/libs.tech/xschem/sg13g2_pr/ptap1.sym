@@ -16,12 +16,12 @@ v {xschem version=3.1.0 file_version=1.2
 }
 G {}
 K {type=res
-format="@spiceprefix@name @pinlist @model"
+format="@spiceprefix@name @pinlist @model w=@w l=@l"
 template="name=R1
 model=ptap1
 spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
+w=0.5e-6
+l=0.5e-6
 "
 }
 V {}
@@ -42,7 +42,9 @@ L 4 -10 20 10 20 {}
 B 5 -2.5 27.5 2.5 32.5 {name=M dir=inout propag=1 pinnumber=2}
 B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 pinnumber=1}
 T {@model} 15 -16.25 0 0 0.2 0.2 {}
+T {w/l = @w / @l} 15 -3.75 0 0 0.2 0.2 {layer=13}
 T {@spiceprefix@name} 15 -28.75 0 0 0.2 0.2 {}
-T {tcleval( R=[ ev \{262.847\} ] )} 15 0 0 0 0.2 0.2 {layer=13}
+
+T {tcleval( R=[ ev \{ 1 / ( @w * @l / 0.98e-6 ) + 2 * ( @w + @l ) / 0.98e-3 \} ] )} 20 10 0 0 0.2 0.2 {layer=13}
+
 T {} 15 20 0 0 0.2 0.2 {}
-T {SUB} 20 10 0 0 0.2 0.2 {layer=13}
