@@ -55,13 +55,13 @@ namespace eval sg13g2 {
 
     dict set ruleset poly_surround    0.07      ;# Poly surrounds contact
     dict set ruleset diff_surround    0.07      ;# Diffusion surrounds contact
-    dict set ruleset gate_to_diffcont 0.11      ;# Gate to diffusion contact center
-    dict set ruleset gate_to_polycont 0.11      ;# Gate to poly contact center
+    dict set ruleset gate_to_diffcont 0.19      ;# Gate to diffusion contact center
+    dict set ruleset gate_to_polycont 0.22      ;# Gate to poly contact center
     dict set ruleset gate_extension   0.18      ;# Poly extension beyond gate
     dict set ruleset diff_extension   0.23      ;# Diffusion extension beyond gate
     dict set ruleset contact_size     0.16      ;# Minimum contact size
     dict set ruleset via_size         0.20      ;# Minimum via size
-    dict set ruleset metal_surround   0.01      ;# Metal 1 overlaps contact
+    dict set ruleset metal_surround   0.05      ;# Metal 1 exension over contact
     dict set ruleset sub_surround     0.31      ;# Sub/well surrounds diffusion
     dict set ruleset diff_spacing     0.21      ;# Diffusion spacing rule
     dict set ruleset poly_spacing     0.18      ;# Poly spacing rule
@@ -217,27 +217,29 @@ proc sg13g2::via1_draw {{dir default}} {
    suspendall
    paint via1
    if {($w < $h) || ($dir == "vert")} {
-      box grow n 0.05um
-      box grow s 0.05um
+      pushbox
+      box grow e 0.045um
+      box grow w 0.045um
       paint m2
-      box grow n -0.05um
-      box grow s -0.05um
-      box grow e 0.05um
-      box grow w 0.05um
+      popbox
+      pushbox
+      box grow c 0.005um
+      box grow n 0.045um
+      box grow s 0.045um
       paint m1
-      box grow e -0.05um
-      box grow w -0.05um
+      popbox
    } else {
-      box grow e 0.05um
-      box grow w 0.05um
+      pushbox
+      box grow n 0.045um
+      box grow s 0.045um
       paint m2
-      box grow e -0.05um
-      box grow w -0.05um
-      box grow n 0.05um
-      box grow s 0.05um
+      popbox
+      pushbox
+      box grow c 0.005um
+      box grow e 0.045um
+      box grow w 0.045um
       paint m1
-      box grow n -0.05um
-      box grow s -0.05um
+      popbox
    }
    resumeall
 }
@@ -256,15 +258,13 @@ proc sg13g2::via2_draw {} {
    suspendall
    pushbox
    paint via2
-   box grow n 0.05um
-   box grow s 0.05um
+   box grow n 0.045um
+   box grow s 0.045um
    paint m2
    popbox
    pushbox
-   box grow n 0.025um
-   box grow s 0.025um
-   box grow e 0.05um
-   box grow w 0.05um
+   box grow e 0.045um
+   box grow w 0.045um
    paint m3
    popbox
    resumeall
@@ -284,15 +284,13 @@ proc sg13g2::via3_draw {} {
    suspendall
    pushbox
    paint via3
-   box grow n 0.005um
-   box grow s 0.005um
-   box grow e 0.005um
-   box grow w 0.005um
+   box grow n 0.045um
+   box grow s 0.045um
    paint m4
    popbox
    pushbox
-   box grow e 0.05um
-   box grow w 0.05um
+   box grow e 0.045um
+   box grow w 0.045um
    paint m3
    popbox
    resumeall
@@ -310,13 +308,16 @@ proc sg13g2::via4_draw {} {
       return
    }
    suspendall
-   paint via4
    pushbox
-   box grow n 0.12um
-   box grow s 0.12um
-   box grow e 0.12um
-   box grow w 0.12um
+   paint via4
+   box grow n 0.045um
+   box grow s 0.045um
    paint m5
+   popbox
+   pushbox
+   box grow e 0.045um
+   box grow w 0.045um
+   paint m4
    popbox
    resumeall
 }
@@ -335,10 +336,7 @@ proc sg13g2::via5_draw {} {
    suspendall
    paint via5
    pushbox
-   box grow n 0.12um
-   box grow s 0.12um
-   box grow e 0.12um
-   box grow w 0.12um
+   box grow c 0.32um
    paint m6
    popbox
    resumeall
@@ -357,13 +355,7 @@ proc sg13g2::via6_draw {} {
    }
    suspendall
    paint via6
-   pushbox
-   box grow n 0.12um
-   box grow s 0.12um
-   box grow e 0.12um
-   box grow w 0.12um
    paint m7
-   popbox
    resumeall
 }
 
@@ -382,17 +374,17 @@ proc sg13g2::subconn_draw {} {
    paint psc
    pushbox
    if {$w > $h} {
-      box grow e 0.08um
-      box grow w 0.08um
+      box grow e 0.05um
+      box grow w 0.05um
       paint m1
-      box grow e 0.04um
-      box grow w 0.04um
+      box grow e 0.02um
+      box grow w 0.02um
    } else {
-      box grow n 0.08um
-      box grow s 0.08um
+      box grow n 0.05um
+      box grow s 0.05um
       paint m1
-      box grow n 0.04um
-      box grow s 0.04um
+      box grow n 0.02um
+      box grow s 0.02um
    }
    paint psd
    popbox
@@ -416,17 +408,17 @@ proc sg13g2::hvsubconn_draw {} {
    paint hvpsc
    pushbox
    if {$w > $h} {
-      box grow e 0.08um
-      box grow w 0.08um
+      box grow e 0.05um
+      box grow w 0.05um
       paint m1
-      box grow e 0.04um
-      box grow w 0.04um
+      box grow e 0.02um
+      box grow w 0.02um
    } else {
-      box grow n 0.08um
-      box grow s 0.08um
+      box grow n 0.05um
+      box grow s 0.05um
       paint m1
-      box grow n 0.04um
-      box grow s 0.04um
+      box grow n 0.02um
+      box grow s 0.02um
    }
    paint hvpsd
    popbox
@@ -444,51 +436,55 @@ proc sg13g2::hvsubconn_draw {} {
 proc sg13g2::guard_ring_draw {ctype dtype} {
    pushbox
    box width 0
-   box grow c 0.085um
+   box grow c 0.08um
    paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
    paint $ctype
    popbox
+   box grow c 0.07um
    paint $dtype
    popbox
 
    pushbox
    box height 0
-   box grow c 0.085um
+   box grow c 0.08um
    paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
    paint $ctype
    popbox
+   box grow c 0.07um
    paint $dtype
    popbox
 
    pushbox
    box move n [box height]i
    box height 0
-   box grow c 0.085um
+   box grow c 0.08um
    paint m1
    pushbox
    box grow e -0.3um
    box grow w -0.3um
    paint $ctype
    popbox
+   box grow c 0.07um
    paint $dtype
    popbox
 
    pushbox
    box move e [box width]i
    box width 0
-   box grow c 0.085um
+   box grow c 0.08um
    paint m1
    pushbox
    box grow n -0.3um
    box grow s -0.3um
    paint $ctype
    popbox
+   box grow c 0.07um
    paint $dtype
    popbox
 }
@@ -555,12 +551,12 @@ proc sg13g2::nwell_draw {} {
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
-   if {$w < 0.6} {
-      puts stderr "N-well region width must be at least 0.6um"
+   if {$w < 0.62} {
+      puts stderr "N-well region width must be at least 0.62um"
       return
    }
-   if {$h < 0.6} {
-      puts stderr "N-well region height must be at least 0.6um"
+   if {$h < 0.62} {
+      puts stderr "N-well region height must be at least 0.62um"
       return
    }
    suspendall
@@ -586,12 +582,12 @@ proc sg13g2::hvnwell_draw {} {
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
-   if {$w < 0.6} {
-      puts stderr "MV N-well region width must be at least 0.6um"
+   if {$w < 0.62} {
+      puts stderr "MV N-well region width must be at least 0.62um"
       return
    }
-   if {$h < 0.6} {
-      puts stderr "MV N-well region height must be at least 0.6um"
+   if {$h < 0.62} {
+      puts stderr "MV N-well region height must be at least 0.26um"
       return
    }
    suspendall
@@ -634,29 +630,29 @@ proc sg13g2::deep_nwell_draw {} {
    # separate rectangles.
    # -----------------
    # paint nwell
-   # box grow c -1.43um
+   # box grow c -1.05um
    # erase nwell
    # -----------------
    pushbox
-   box width 1.43um
+   box width 1.05um
    paint nwell
    popbox
    pushbox
-   box height 1.43um
+   box height 1.05um
    paint nwell
    popbox
    pushbox
    box move n ${h}um
    box move n 0.8um
-   box move s 1.43um
-   box height 1.43um
+   box move s 1.05um
+   box height 1.05um
    paint nwell
    popbox
    pushbox
    box move e ${w}um
    box move e 0.8um
-   box move w 1.43um
-   box width 1.43um
+   box move w 1.05um
+   box width 1.05um
    paint nwell
    popbox
 
@@ -1279,8 +1275,8 @@ proc sg13g2::diode_device {parameters} {
         popbox
     }
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${w} ${l} \
-		${dev_surround} ${metal_surround} ${contact_size} \
-		${dev_type} ${dev_contact_type} m1 ${orient}]]
+		${dev_surround} ${metal_surround} \
+		${contact_size} ${dev_type} ${dev_contact_type} m1 ${orient}]]
 
     popbox
     return $cext
@@ -1880,8 +1876,9 @@ proc sg13g2::cap_device {parameters} {
     set cl [- [+ ${lcont} [* ${bot_surround} 2.0]] [* ${end_surround} 2.0]]
     set cl [- ${cl} ${metal_surround}]  ;# see below
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cl} \
-		${end_surround} ${metal_surround} ${contact_size} \
-		${bot_type} ${top_contact_type} ${top_type} full]]
+		${end_surround} ${metal_surround} \
+		${contact_size} ${bot_type} ${top_contact_type} \
+		${top_type} full]]
     popbox
     popbox
 
@@ -2558,8 +2555,8 @@ proc sg13g2::res_device {parameters} {
             popbox
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
-		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} m1 horz]]
+		${end_surround} ${metal_surround} \
+		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
 
@@ -2594,8 +2591,8 @@ proc sg13g2::res_device {parameters} {
             popbox
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
-		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} m1 horz]]
+		${end_surround} ${metal_surround} \
+		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
 
@@ -2674,8 +2671,8 @@ proc sg13g2::res_snake_device {nf parameters} {
 
     if {${end_contact_type} != ""} {
 	set cext [sg13g2::draw_contact ${cpl} 0 \
-		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} m1 horz]
+		${end_surround} ${metal_surround} \
+		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]
     }
     popbox
 
@@ -2767,8 +2764,8 @@ proc sg13g2::res_snake_device {nf parameters} {
 
     if {${end_contact_type} != ""} {
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
-		${end_surround} ${metal_surround} ${end_contact_size} \
-		${end_type} ${end_contact_type} m1 horz]]
+		${end_surround} ${metal_surround} \
+		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
     }
     popbox
     # Draw portion between resistor end and contact.
@@ -3501,18 +3498,18 @@ proc sg13g2::rm5_check {parameters} {
 #----------------------------------------------------------------
 
 proc sg13g2::sg13_lv_pmos_defaults {} {
-    return {w 0.42 l 0.15 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sh13_lv_pmos sh13_hv_pmos} full_metal 1 \
 		viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
 proc sg13g2::sg13_hv_pmos_defaults {} {
-    return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.4 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.4 wmin 0.15 \
 		class mosfet compatible {sg13_lv_pmos sg13_hv_pmos} full_metal 1 \
 		viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
@@ -3524,27 +3521,27 @@ proc sg13g2::sg13_hv_pmos_defaults {} {
 #----------------------------------------------------------------
 
 proc sg13g2::sg13_lv_nmos_defaults {} {
-    return {w 0.420 l 0.150 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.15 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
 proc sg13g2::sg13_hv_nmos_defaults {} {
-    return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
 		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0}
 }
 
 proc sg13g2::nmosi_defaults {} {
-    return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet \
 		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
@@ -3552,9 +3549,9 @@ proc sg13g2::nmosi_defaults {} {
 }
 
 proc sg13g2::nmosiHV_defaults {} {
-    return {w 0.42 l 0.50 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.15 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.50 wmin 0.42 \
+		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
 		class mosfet \
 		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
@@ -3772,16 +3769,10 @@ proc sg13g2::draw_contact {w h s o x atype ctype mtype {orient vert}} {
     # orient is the orientation of the contact
 
     # Set orientations for the bottom material based on material type.
-    # Substrate diffusions (tap) need not overlap the contact in all
-    # directions, but other (diff) types do.  The metal (local
-    # interconnect) layer always overlaps in two directions only.
+    # All diffusions overlap on all sides.  Metal1 overlaps on all
+    # sides but in different amounts depending on the direction.
 
-    set lv_sub_types {"psd" "nsd"}
-    if {[lsearch $lv_sub_types $atype] >= 0} {
-	set aorient $orient
-    } else {
-	set aorient "full"
-    }
+    set aorient "full"
 
     pushbox
     box size 0 0
@@ -3858,14 +3849,6 @@ proc sg13g2::guard_ring {gw gh parameters} {
     set hx [/ $contact_size 2.0]
     set hw [/ $gw 2.0]
     set hh [/ $gh 2.0]
-
-    # Watch for (LV) substrate diffusion types, which have a different
-    # contact surround amount depending on the direction
-
-    set lv_sub_types {"psd" "nsd"}
-    if {[lsearch $lv_sub_types $plus_diff_type] >= 0} {
-	set diff_surround 0
-    }
 
     # Compute diffusion width
     set difft [+ $contact_size $diff_surround $diff_surround]
@@ -3979,14 +3962,16 @@ proc sg13g2::guard_ring {gw gh parameters} {
             pushbox
             box move n ${hh}um
             sg13g2::draw_contact $cw 0 $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type m1 horz
+		$contact_size $plus_diff_type \
+		$plus_contact_type m1 horz
             popbox
 	}
 	if {$gbc == 1} {
 	    pushbox
 	    box move s ${hh}um
 	    sg13g2::draw_contact $cw 0 $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type m1 horz
+		$contact_size $plus_diff_type \
+		$plus_contact_type m1 horz
 	    popbox
 	}
     }
@@ -3995,14 +3980,16 @@ proc sg13g2::guard_ring {gw gh parameters} {
             pushbox
             box move e ${hw}um
             sg13g2::draw_contact 0 $ch $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type m1 vert
+		$contact_size $plus_diff_type \
+		$plus_contact_type m1 vert
             popbox
         }
         if {$glc == 1} {
             pushbox
             box move w ${hw}um
             sg13g2::draw_contact 0 $ch $diff_surround $metal_surround \
-		$contact_size $plus_diff_type $plus_contact_type m1 vert
+		$contact_size $plus_diff_type \
+		$plus_contact_type m1 vert
             popbox
         }
     }
@@ -4308,8 +4295,8 @@ proc sg13g2::mos_device {parameters} {
 	    popbox
 	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
-		${diff_surround} ${metal_surround} ${contact_size}\
-		${diff_type} ${diff_contact_type} m1 vert]]
+		${diff_surround} ${metal_surround} \
+		${contact_size} ${diff_type} ${diff_contact_type} m1 vert]]
 	popbox
     }
 
@@ -4342,8 +4329,8 @@ proc sg13g2::mos_device {parameters} {
         popbox
     }
     set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cdw} \
-		${diff_surround} ${metal_surround} ${contact_size} \
-		${diff_type} ${diff_contact_type} m1 vert]]
+		${diff_surround} ${metal_surround} \
+		${contact_size} ${diff_type} ${diff_contact_type} m1 vert]]
     set diffarea $cext
     popbox
     # Gate shield (only on varactors)
@@ -4396,8 +4383,8 @@ proc sg13g2::mos_device {parameters} {
            popbox
        }
        set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
-		${poly_surround} ${metal_surround} ${contact_size} \
-		${poly_type} ${poly_contact_type} m1 horz]]
+		${poly_surround} ${metal_surround} \
+		${contact_size} ${poly_type} ${poly_contact_type} m1 horz]]
        popbox
     }
     # Bottom poly contact
@@ -4429,8 +4416,8 @@ proc sg13g2::mos_device {parameters} {
            popbox
        }
        set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
-		${poly_surround} ${metal_surround} ${contact_size} \
-		${poly_type} ${poly_contact_type} m1 horz]]
+		${poly_surround} ${metal_surround} \
+		${contact_size} ${poly_type} ${poly_contact_type} m1 horz]]
        popbox
     }
 

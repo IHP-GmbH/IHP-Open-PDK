@@ -52,11 +52,11 @@ end
 # sg13_hv_pmos			hvpfet		Thick-oxide pFET
 # sg13_lv_nmos			nfet		Thin-oxide nFET
 # sg13_lv_pmos			pfet		Thin-oxide pFET
-# nmosi				nnfet		Thin-oxide native nFET
-# nmosiHV			hvnnfet		Thick-oxide native nFET
-# nmoscl_2			???		Extended-drain ESD thick-oxide nFET
-# nmoscl_4			???		Extended-drain ESD thick-oxide nFET
-# scr1				???		Silicon-controlled rectifier
+# nmosi				nfet		Thin-oxide nFET in deep nwell pwell
+# nmosiHV			hvnfet		Thick-oxide nFET in deep nwell pwell
+# nmoscl_2			hvnfetesd	Extended-drain ESD thick-oxide nFET
+# nmoscl_4			hvnfetesd	Extended-drain ESD thick-oxide nFET
+# scr1				hvnfetesd	Silicon-controlled rectifier
 # 
 #------------------------------------------------------------------------
 
@@ -99,14 +99,13 @@ types
 # Transistors
   active nmos,ntransistor,nfet
   active pmos,ptransistor,pfet
-  active nnmos,nntransistor,nnfet
   active hvnmos,hvntransistor,hvnfet
   active hvpmos,hvptransistor,hvpfet
-  active hvnnmos,hvnntransistor,hvnnfet
  -active hvnmosesd,hvntransistoresd,hvnfetesd
  -active hvpmosesd,hvptransistoresd,hvpfetesd
   active varactor,varact,var
   active hvvaractor,hvvaract,hvvar
+ -active fillfet
 
 # Diffusions
  -active difffill
@@ -201,6 +200,7 @@ types
 # Miscellaneous
  -glass  glass
   comment fillblock
+  comment thruvia,tsv
   comment comment
 
 end
@@ -245,10 +245,10 @@ aliases
   allwellplane     nwell
   allnwell	   nwell,obswell,pnp
 
-  allnfets	   nfet,hvnfet,hvnfetesd,hvnnfet,nnfet
+  allnfets	   nfet,hvnfet,hvnfetesd
   allpfets	   pfet,hvpfet,hvpfetesd
   allfets	   allnfets,allpfets,var,hvvar
-  allfetsstd	   nfet,hvnfet,hvnfetesd,hvnnfet,nnfet,pfet,hvpfet,hvpfetesd
+  allfetsstd	   nfet,hvnfet,hvnfetesd,pfet,hvpfet,hvpfetesd
 
   allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd
   allnactive	   allnactivenonfet,allnfets
@@ -270,10 +270,10 @@ aliases
   allpdifflvnonfet *pdif,*psd,*pdiode
   alldifflvnonfet  allndifflvnonfet,allpdifflvnonfet
 
-  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd,hvnnfet,nnfet
+  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd
   allpdiffhv       *hvpdif,*hvpsd,hvpfet,hvpfetesd
   alldiffhv        allndiffhv,allpdiffhv
-  allndiffhvnontap *hvndif,hvnfet,hvnfetesd,hvnnfet,nnfet
+  allndiffhvnontap *hvndif,hvnfet,hvnfetesd
   allpdiffhvnontap *hvpdif,hvpfet,hvpfetesd
   alldiffhvnontap  allndiffhvnontap,allpdiffhvnontap
   allndiffhvnonfet *hvndif,*hvnsd
@@ -281,7 +281,7 @@ aliases
   alldiffhvnonfet  allndiffhvnonfet,allpdiffhvnonfet
 
   alldiffnonfet	   alldifflvnonfet,alldiffhvnonfet
-  alldiff	   alldifflv,alldiffhv,difffill
+  alldiff	   alldifflv,alldiffhv
 
   allpolyres	   pres,nres,xres
   allpolynonfet	   *poly,allpolyres
@@ -336,6 +336,7 @@ styles
   psd       pdiff_in_pwell
   nfet      ntransistor    ntransistor_stripes
   pfet      ptransistor    ptransistor_stripes
+  fillfet   ntransistor
   var	    polysilicon	   ndiff_in_nwell
   ndc       ndiffusion     metal1  contact_X'es
   pdc       pdiffusion     metal1  contact_X'es
@@ -345,15 +346,12 @@ styles
   pnp	    nwell ntransistor_stripes
   npn	    pwell ptransistor_stripes
 
-  nnfet	    ntransistor ndiff_in_nwell
-
   hvndiff   ndiffusion     hvndiff_mask
   hvpdiff   pdiffusion     hvpdiff_mask
   hvnsd     ndiff_in_nwell hvndiff_mask
   hvpsd     pdiff_in_pwell hvpdiff_mask
   hvnfet    ntransistor    ntransistor_stripes hvndiff_mask
   hvnfetesd ntransistor    ntransistor_stripes hvndiff_mask
-  hvnnfet   ntransistor    ndiff_in_nwell hvndiff_mask
   hvpfet    ptransistor    ptransistor_stripes
   hvpfetesd ptransistor    ptransistor_stripes
   hvndc     ndiffusion     metal1  contact_X'es hvndiff_mask
@@ -427,6 +425,7 @@ styles
   error_s   error_waffle
   error_ps  error_waffle
   fillblock cwell
+  thruvia   mems	implant1
 
   obswell   cwell
   obsactive implant4
@@ -450,9 +449,9 @@ compose
   compose  hvpfet  poly  hvpdiff
   compose  hvvar   poly  hvnsd
 
-  decompose nnfet     poly hvndiff
+  compose  fillfet polyfill difffill
+
   decompose hvnfetesd poly hvndiff
-  decompose hvnnfet   poly hvndiff
   decompose hvpfetesd poly hvpdiff
 
   paint  ndc     nwell  pdc
@@ -606,15 +605,6 @@ style gdsii
 	calma 7 0
 
 #----------------------------------------------------------------
-# NSD BLOCK---Required where intrinsic devices (nnfet, hvnnfet)
-# are defined.
-#----------------------------------------------------------------
-
- layer NSDBLOCK  nnfet,hvnnfet
-        grow 100
-	calma 7 21
-
-#----------------------------------------------------------------
 # ESDID is a marker layer for ESD devices in the padframe I/O.
 #----------------------------------------------------------------
 
@@ -629,7 +619,7 @@ style gdsii
 # TRANS, NPNID, and PNPID apply to bipolar transistors
 #----------------------------------------------------------------
 
- layer TRANS npn,pnp
+ layer TRANS npn
 	calma 26 0
 
  layer NPNID npn
@@ -672,6 +662,18 @@ style gdsii
 	calma 52 0
 
 #----------------------------------------------------------------
+# Thru-via
+#----------------------------------------------------------------
+
+ layer THRUVIA tsv
+	calma 152 0
+
+ layer TSVID	tsv
+	maxrect external
+	grow 2500
+	calma 99 32
+
+#----------------------------------------------------------------
 # POLY (GatPoly)
 #----------------------------------------------------------------
 
@@ -691,13 +693,13 @@ style gdsii
 #----------------------------------------------------------------
 
  layer THKOX alldiffhv,hvvar
-	grow	185
-	bloat-all alldiffhv nwell
-	grow 345
-	shrink 345
+        bloat-or alldiffhv,hvvar * 185 alldifflv 0
+	# bloat-all alldiffhv nwell
+	grow	430
+	shrink	430
 	bridge	700 600
- 	grow 	345
- 	shrink 	345
+ 	grow 	430
+ 	shrink 	430
 	mask-hints THKOX
  	calma 	44 0
 
@@ -1008,40 +1010,34 @@ style gdsii
 # which it is blocking fill.
 
  layer FILLOBSDIFF  obsactive
-	and-not DIFF
 	calma	1 23
 
  layer FILLOBSPOLY  obspoly
-	and-not POLY
 	calma	5 23
 
- layer FILLOBSM1 fillblock,obsm1
-	and-not MET1
+ layer FILLOBSM1 obsm1
  	calma 	8 23
 
- layer FILLOBSM2 fillblock,obsm2
-	and-not MET2
+ layer FILLOBSM2 obsm2
  	calma 	10  23
 
- layer FILLOBSM3 fillblock,obsm3
-	and-not MET3
+ layer FILLOBSM3 obsm3
  	calma 	30 23
 
- layer FILLOBSM4 fillblock,obsm4
-	and-not MET4
+ layer FILLOBSM4 obsm4
  	calma 	50 23
 
- layer FILLOBSM5 fillblock,obsm5
-	and-not MET5
+ layer FILLOBSM5 obsm5
 	calma	67 23
 
- layer FILLOBSM6 fillblock,obsm6
-	and-not MET6
+ layer FILLOBSM6 obsm6
 	calma	126 23
 
- layer FILLOBSM7 fillblock,obsm7
-	and-not MET7
+ layer FILLOBSM7 obsm7
 	calma	134 23
+
+ layer FILLBLOCK fillblock
+	calma 160 0
 
  render	DNWELL 	cwell       -0.1    0.1
  render	NWELL	nwell        0.0    0.2062
@@ -1839,17 +1835,26 @@ style  sg13g2 variants ()
  options ignore-unknown-layer-labels
 
  # Need to handle these layers---ignoring during tech file development
- ignore SBLK
  ignore CAPID
  ignore PADPIN
  ignore EXTBLOCK
  ignore SRAMID
  ignore DIGITALID
+ ignore BIPOLARID
+ ignore PWELLBLK
+ ignore DEEPNBLK
+ ignore DIFFMASK
+
+ # These layers are not used by this technology file
  ignore HEATRES
  ignore HEATTRANS
+ ignore EDGESEAL
 
+ # NOTE:  The pnpMPA example device has neither TRANS
+ # nor PNPID layers.  Don't know how to automatically
+ # infer a PNP device.
  layer pnp NWELL,WELLPIN
- and PNPID
+ and TRANS
  labels NWELL
  labels WELLPIN port
 
@@ -1888,9 +1893,13 @@ style  sg13g2 variants ()
  layer isosub SUBCUT
  labels SUBCUT
 
- layer npn DNWELL
+ layer npn TRANS
  and-not NWELL,nwelcheck
- and NPNID
+ labels NPNID
+
+ layer tsv THRUVIA
+ and TSVID
+ labels THRUVIA
 
  templayer ndiffarea DIFF,DIFFPIN
  and-not POLY
@@ -2036,6 +2045,7 @@ style  sg13g2 variants ()
  copyup nsubcheck
 
  templayer psdarea DIFF
+ and-not DIODE
  and PSD
  and-not NWELL,nwelcheck
  and-not POLY
@@ -2052,19 +2062,12 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
  grow 350
 
- templayer hvnnfetarea DIFF
- and POLY
- and-not PSD
- and THKOX,hvcheck
- and-not hvnfetarea
-
  layer hvnfetesd DIFF
  and POLY
  and-not PSD
  and-not NSDBLOCK
  and THKOX,hvcheck
  and ESDID
- and-not hvnnfetarea
  labels DIFF
 
  layer hvnfet DIFF
@@ -2073,14 +2076,6 @@ style  sg13g2 variants ()
  and-not NSDBLOCK
  and THKOX,hvcheck
  and-not ESDID
- and-not hvnnfetarea
- labels DIFF
-
- layer nnfet hvnnfetarea
- and LVID
- labels DIFF
-
- layer hvnnfet hvnnfetarea
  labels DIFF
 
  templayer hvnsdarea DIFF
@@ -2375,7 +2370,12 @@ style  sg13g2 variants ()
  layer	polyfill POLYFILL
  labels POLYFILL
 
- layer m1 MET1,MET1TXT,MET1PIN
+ # NOTE:  There is no device model for iprobe and diffprobe,
+ # but they have a different GDS number and they should be
+ # represented by alternative types of metal1 like obsm1,
+ # instead of being converted to metal1 as done below.
+
+ layer m1 MET1,MET1TXT,MET1PIN,IPROBE,DPROBE
  and-not MET1RES
  labels MET1
  labels MET1PIN port
@@ -2399,17 +2399,12 @@ style  sg13g2 variants ()
  shrink 40
  labels MIM
 
- templayer m2cbase VIA1
+ layer m2c VIA1
  grow 5
- or VIA1
- grow 50
-
- layer m2c m2cbase
- grow 30
- shrink 30
- shrink 130
- grow 130
- or m2cbase
+ grow 105 
+ shrink 105
+ shrink 95
+ grow 95
 
  layer m2 MET2,MET2TXT,MET2PIN
  and-not MET2RES
@@ -2424,15 +2419,12 @@ style  sg13g2 variants ()
  layer m2fill MET2FILL
  labels MET2FILL
 
- templayer m3cbase VIA2
- grow 40
-
- layer m3c m3cbase
- grow 60
- shrink 60
- shrink 140 
- grow 140
- or m3cbase
+ layer m3c VIA2
+ grow 5
+ grow 105 
+ shrink 105
+ shrink 95
+ grow 95
 
  layer m3 MET3,MET3TXT,MET3PIN
  and-not MET3RES
@@ -2448,10 +2440,11 @@ style  sg13g2 variants ()
  labels MET3FILL
 
  layer via3 VIA3
- grow 40
- shrink 40
- shrink 160
- grow 160
+ grow 5
+ grow 105 
+ shrink 105
+ shrink 95
+ grow 95
 
  layer m4 MET4,MET4TXT,MET4PIN
  and-not MET4RES
@@ -2467,10 +2460,11 @@ style  sg13g2 variants ()
  labels MET4FILL
 
  layer via4 VIA4
- grow 40
- shrink 40
- shrink 160
- grow 160
+ grow 5
+ grow 105 
+ shrink 105
+ shrink 95
+ grow 95
 
  layer m5 MET5,MET5TXT,MET5PIN
  and-not MET5RES
@@ -2486,10 +2480,11 @@ style  sg13g2 variants ()
  labels MET5FILL
 
  layer via5 VIA5
- grow 40
- shrink 40
- shrink 160
- grow 160
+ grow 100
+ grow 110 
+ shrink 110
+ shrink 305
+ grow 305
 
  layer m6 MET6,MET6TXT,MET6PIN
  and-not MET6RES
@@ -2505,10 +2500,11 @@ style  sg13g2 variants ()
  labels MET6FILL
 
  layer via6 VIA6
- grow 40
- shrink 40
- shrink 160
- grow 160
+ grow 500
+ grow 25 
+ shrink 25
+ shrink 945
+ grow 945
 
  layer m7 MET7,MET7TXT,MET7PIN
  and-not MET7RES
@@ -2687,32 +2683,44 @@ style  sg13g2 variants ()
  layer comment LVSTEXT
  labels LVSTEXT text
 
+ layer fillblock FILLBLOCK
+ labels FILLBLOCK
+
 # Use the obstruction types for fill block on individual layers
  layer obsactive FILLOBSDIFF
+ and-not DIFF
  labels FILLOBSDIFF
 
  layer obspoly FILLOBSPOLY
+ and-not POLY
  labels FILLOBSPOLY
 
  layer obsm1 FILLOBSM1
+ and-not MET1
  labels FILLOBSM1
 
  layer obsm2 FILLOBSM2
+ and-not MET2
  labels FILLOBSM2
 
  layer obsm3 FILLOBSM3
+ and-not MET3
  labels FILLOBSM3
 
  layer obsm4 FILLOBSM4
+ and-not MET4
  labels FILLOBSM4
 
  layer obsm5 FILLOBSM5
+ and-not MET5
  labels FILLOBSM5
 
  layer obsm6 FILLOBSM6
+ and-not MET6
  labels FILLOBSM6
 
  layer obsm7 FILLOBSM7
+ and-not MET7
  labels FILLOBSM7
 
  # MOS Varactor
@@ -2725,6 +2733,7 @@ style  sg13g2 variants ()
 
  calma NWELL 31 0
  calma DIFF 1 0
+ calma DIFFMASK 1 20
  calma DNWELL 32 0
  calma SUBCUT 40 0
  # NSD (NPLUS)
@@ -2755,6 +2764,14 @@ style  sg13g2 variants ()
  calma DIGITALID 16 0
  calma HEATRES 52 0
  calma HEATTRANS 51 0
+ calma BIPOLARID 26 0
+ calma PWELLBLK 46 21
+ calma DEEPNBLK 32 21
+ calma EDGESEAL 39 0
+ calma IPROBE 8 33
+ calma DPROBE 8 34
+ calma THRUVIA 152 0
+ calma TSVID 99 32
  
  calma CONT  6 0
  calma MET1  8 0
@@ -2831,6 +2848,7 @@ style  sg13g2 variants ()
  calma FILLOBSM5  67 23
  calma FILLOBSM6  126 23
  calma FILLOBSM7  134 23
+ calma FILLBLOCK  160 0
 
  calma DIFFFILL	  1  22
  calma POLYFILL	  5  22
@@ -2872,8 +2890,8 @@ drc
  # spacing dnwell dnwell 3200 touching_illegal "Deep N-well spacing, different net < %d (NBL.b)"
  spacing allnwell dnwell 2200 surround_ok \
 	"Deep N-well spacing to N-well < %d (NBL.d)"
- spacing dnwell allnactive 1000 touching_illegal "Deep N-well spacing to N-diffusion < %d (NBL.e)"
- spacing dnwell allpactive 500 touching_illegal "Deep N-well spacing to P-diffusion < %d (NBL.f)"
+ spacing dnwell allnactive 1000 surround_ok "Deep N-well spacing to N-diffusion < %d (NBL.e)"
+ spacing dnwell allpactive 500 surround_ok "Deep N-well spacing to P-diffusion < %d (NBL.f)"
 
  # NOTE: Nwell > 3um has generated dnwell implant and must be considered here.
  # Also:  Illustration shows pwell:block regions connected to a deep nwell as being considered part
@@ -2894,7 +2912,7 @@ drc
 	"N-well overlap of HV P-Diffusion < %d (NW.c1)"
  spacing *ndiff,*ndiode,nfet allnwell 310 touching_illegal \
 	"N-Diffusion spacing to N-well < %d (NW.d)"
- spacing *hvndiff,hvnfet,hvnnfet,nnfet allnwell 620 touching_illegal \
+ spacing *hvndiff,hvnfet allnwell 620 touching_illegal \
 	"HV N-Diffusion spacing to N-well < %d (NW.d1)"
  surround *nsd allnwell 240 absence_illegal \
 	"N-well overlap of N-tap < %d (NW.e)"
@@ -2905,7 +2923,6 @@ drc
  spacing *hvpsd allnwell 620 touching_illegal \
 	"HV P-tap spacing to N-well < %d (NW.f1)"
 
-
 #-----------------------------
 # DIFF
 #-----------------------------
@@ -2913,16 +2930,15 @@ drc
  width alldiff 150 "Diffusion width < %d (Act.a)"
  spacing alldiff alldiff 210 touching_illegal "Diffusion spacing < %d (Act.b)"
 
- overhang *ndiff nfet,nnfet 230 "N-Diffusion overhang of nFET < %d (Act.c)"
+ overhang *ndiff nfet 230 "N-Diffusion overhang of nFET < %d (Act.c)"
  overhang *pdiff pfet 230 "P-Diffusion overhang of pFET < %d (Act.c)"
- overhang *hvndiff hvnfet,hvnnfet,hvnfetesd 230 "N-Diffusion overhang of nFET < %d (Act.c)"
+ overhang *hvndiff hvnfet,hvnfetesd 230 "N-Diffusion overhang of nFET < %d (Act.c)"
  overhang *hvpdiff hvpfet,hvpfetesd 230 "P-Diffusion overhang of pFET < %d (Act.c)"
 
  area  alldiff 122000 150 "Diffusion minimum area < 0.122um^2 (Act.d)"
 
  variants (full)
  cifmaxwidth diff_hole_empty 0 bend_illegal "Minimum area of diffusion holes > 0.15um^2 (Act.e)"
- variants *
 
  # Latchup rules
  cifmaxwidth ptap_missing 0 bend_illegal \
@@ -2932,29 +2948,64 @@ drc
  cifmaxwidth ntap_missing 0 bend_illegal \
 	"P-diff distance to N-tap must be < 20.0um (LU.a)"
 
- variants (fast),(full)
+ width difffill,fillfet 1000 "Diff fill width < %d (AFil.a1)"
+ maxwidth difffill,fillfet 5000 both " (AFil.a)"
+ spacing difffill,fillfet difffill,fillfet 800 touching_ok \
+	"Diff fill spacing < %d (AFil.b)"
+ spacing difffill,fillfet *poly,obspoly 1100 touching_illegal \
+	"Diff fill spacing to Poly < %d (AFil.c)"
+ spacing difffill,fillfet ndc,pdc,nsc,psc,ndic,pdic,hvndc,hvpdc,hvnsc,hvpsc \
+	 1100 touching_illegal "Diff fill spacing to Contact < %d (AFil.c)"
+ spacing difffill,fillfet nwell 1000 touching_illegal \
+	"Diff fill spacing to Nwell < %d (AFil.d)"
+ spacing difffill,fillfet dnwell 1000 touching_illegal \
+	"Diff fill spacing to Deep nwell < %d (AFil.d)"
+ spacing difffill  npn,pnp 1000 touching_illegal \
+	"Diff fill spacing to bipolar transistor < %d (AFil.e)"
+ angle  difffill,fillfet 90 "Only 90 degree angles permitted on Diff fill (AFil.i)"
+
+ # To be done:  Afil.i, and Afil.j
 
 #-----------------------------
 # POLY
 #-----------------------------
 
- width allpoly,polyfill 130 "poly width < %d (Gat.a)"
- spacing allpoly,polyfill allpoly,polyfill 180 touching_ok "poly spacing < %d (Gat.b)"
+ variants *
+ width allpoly 130 "poly width < %d (Gat.a)"
+ spacing allpoly allpoly 180 touching_ok "poly spacing < %d (Gat.b)"
 
- spacing allpolynonfet,polyfill alldiff 70 corner_ok allfets \
+ spacing allpolynonfet alldiff 70 corner_ok allfets \
 	"poly spacing to Diffusion < %d (Gat.d)"
 
  rect_only allfets "No bends in transistors (Gat.f)"
 
  overhang *poly allfetsstd 180 "Poly overhang of transistor < %d (Gat.c)"
 
- angles allpoly,polyfill 45 "Only 45 degree angles permitted on poly (x.2)"
+ angles allpoly 45 "Only 45 degree angles permitted on poly (x.2)"
 
- width allpoly,polyfill 160 angles "Poly drawn at 45 degrees width < %d (Gat.g)"
+ width allpoly 160 angles "Poly drawn at 45 degrees width < %d (Gat.g)"
 
- area  allpoly,polyfill 90000 130 "Poly minimum area < 0.09um^2 (Gat.e)"
+ area  allpoly 90000 130 "Poly minimum area < 0.09um^2 (Gat.e)"
 
  # NOTE:  Need to implement Gat.b1 as cifspacing rule
+
+ width polyfill,fillfet 700 "Poly fill width < %d (GFil.b)"
+ maxwidth polyfill,fillfet 5000 both " (GFil.a)"
+ spacing polyfill,fillfet polyfill,fillfet 800 touching_ok \
+	"Poly fill spacing < %d (GFil.c)"
+ # To do:  add spacing requirements to devices with P+, N+-block, and SBLK
+ spacing polyfill,fillfet alldiff,*poly,obspoly 1100 touching_illegal \
+	"Poly fill spacing to Poly and Diffusion < %d (GFil.d)"
+ spacing polyfill,fillfet nwell 1100 touching_illegal \
+	"Poly fill spacing to Nwell < %d (GFil.e)"
+ spacing polyfill,fillfet dnwell 1100 touching_illegal \
+	"Poly fill spacing to Deep nwell < %d (GFil.e)"
+ spacing polyfill  npn,pnp 1100 touching_illegal \
+	"Poly fill spacing to bipolar transistor < %d (GFil.f)"
+ overhang *polyfill fillfet 180 "Poly fill overhang of Diff fill < %d (GFil.j)"
+ angle  polyfill,fillfet 90 "Only 90 degree angles permitted on Poly fill (GFil.k)"
+
+ # To do:  max area rule GFil.i
 
 #--------------------------------------------------------------------
 # CONT (contact between poly/diff and M1)
@@ -2989,9 +3040,18 @@ drc
  spacing pc alldiff 140 touching_illegal \
 	"Poly contact spacing to diffusion < %d (Cnt.e)"
 
- surround ndc/a *ndiff,nfet 40 absence_illegal \
+ spacing (ndc,nsd,pdc,psc,ndic,pdic)/a *poly,allfets 110 touching_illegal \
+	"Diffusion contact spacing to poly < %d (Cnt.f)"
+ spacing (hvndc,hvnsd,hvpdc,hvpsc)/a *poly,allfets 110 touching_illegal \
+	"Diffusion contact spacing to poly < %d (Cnt.f)"
+
+ surround ndc/a *ndiff,nfet 70 absence_illegal \
 	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
  surround pdc/a *pdiff,pfet 70 absence_illegal \
+	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
+ surround nsc/a *nsd 70 absence_illegal \
+	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
+ surround psc/a *psd 70 absence_illegal \
 	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
  surround ndic/a *ndi 70 absence_illegal \
 	"N-diode overlap of N-diode contact < %d (Cnt.c)"
@@ -3002,9 +3062,24 @@ drc
 	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
  surround hvpdc/a *hvpdiff,hvpfet,hvpfetesd 70 absence_illegal \
 	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
+ surround hvnsc/a *hvnsd 70 absence_illegal \
+	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
+ surround hvpsc/a *hvpsd 70 absence_illegal \
+	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
 
  surround pc/a *poly 70 absence_illegal \
 	"poly overlap of poly contact < %d (Cnd.d)"
+
+ surround pc/m1 *m1,rm1 50 directional \
+	"Metal1 overlap of poly contact < %d in one direction (M1.c1)"
+ surround (ndc,nsc)/m1 *m1,rm1 50 directional \
+	"Metal1 overlap of N-diffusion contact < %d in one direction (M1.c1)"
+ surround (pdc,psc)/m1 *m1,rm1 50 directional \
+	"Metal1 overlap of P-diffusion contact < %d in one direction (M1.c1)"
+ surround (hvndc,hvnsc)/m1 *m1,rm1 50 directional \
+	"Metal1 overlap of HV N-diffusion contact < %d in one direction (M1.c1)"
+ surround (hvpdc,hvpsc)/m1 *m1,rm1 50 directional \
+	"Metal1 overlap of HV P-diffusion contact < %d in one direction (M1.c1)"
 
  exact_overlap (allcont)/a
 
@@ -3013,10 +3088,10 @@ drc
 #-------------------------------------------------------------
 
  width *m1,rm1 160 "Metal1 width < %d (M1.a)"
- spacing allm1,m1fill allm1,*obsm1,m1fill 180 touching_ok "Metal1 spacing < %d (M1.b)"
+ spacing allm1 allm1,*obsm1 180 touching_ok "Metal1 spacing < %d (M1.b)"
  area allm1,*obsm1 90000 160 "Metal1 minimum area < %a (M1.d)"
 
- angles allm1,m1fill 45 "Only 45 and 90 degree angles permitted on metal1 (Grid Rules)"
+ angles allm1 45 "Only 45 and 90 degree angles permitted on metal1 (Grid Rules)"
 
  width *m1,rm1 200 angles "Metal1 drawn at 45 degrees width < %d (M1.g)"
 
@@ -3024,16 +3099,25 @@ drc
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
- widespacing allm1 305 1005 allm1,*obsm1,m1fill 220 touching_ok \
+ widespacing allm1 305 1005 allm1,*obsm1 220 touching_ok \
 	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
  widespacing *obsm1 305 1005 allm1 220 touching_ok \
 	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
 
- widespacing allm1 10005 10005 allm1,*obsm1,m1fill 600 touching_ok \
+ widespacing allm1 10005 10005 allm1,*obsm1 600 touching_ok \
 	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
  widespacing *obsm1 10005 10005 allm1 600 touching_ok \
 	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
 variants *
+
+ width m1fill 1000 "Metal1 fill width < %d (MFil.a1)"
+ maxwidth m1fill 5000 both "Metal1 fill width > %d (MFil.a2)"
+ spacing m1fill m1fill 420 touching_ok "Metal1 fill spacing < %d (MFil.b)"
+ spacing m1fill allm1,obsm1 420 touching_illegal \
+	"Metal1 fill spacing to Metal1 < %d (MFil.c)"
+ spacing m1fill  npn,pnp 1000 touching_illegal \
+	"Metal1 fill spacing to bipolar transistor < %d (MFil.d)"
+ angle  m1fill 90 "Only 90 degree angles permitted on Metal1 fill (MFil.i)"
 
 #--------------------------------------------------
 # VIA1
@@ -3054,8 +3138,8 @@ variants *
 # METAL2 - 
 #--------------------------------------------------
 
- width allm2,m2fill 200 "Metal2 width < %d (M2.a)"
- spacing allm2  allm2,obsm2,m2fill 210 touching_ok "Metal2 spacing < %d (M2.b)"
+ width allm2 200 "Metal2 width < %d (M2.a)"
+ spacing allm2  allm2,obsm2 210 touching_ok "Metal2 spacing < %d (M2.b)"
  area allm2,obsm2 144000 200 "Metal2 minimum area < %a (M2.d)"
 
  angles allm2 45 "Only 45 and 90 degree angles permitted on metal2 (Grid Rules)"
@@ -3066,16 +3150,25 @@ variants *
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
- widespacing allm2 395 1005 allm2,*obsm2,m2fill 240 touching_ok \
+ widespacing allm2 395 1005 allm2,*obsm2 240 touching_ok \
 	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
  widespacing *obsm2 395 1005 allm2 240 touching_ok \
 	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
 
- widespacing allm2 10005 10005 allm2,*obsm2,m2fill 600 touching_ok \
+ widespacing allm2 10005 10005 allm2,*obsm2 600 touching_ok \
 	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
  widespacing *obsm2 10005 10005 allm2 600 touching_ok \
 	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
 variants *
+
+ width m2fill 1000 "Metal2 fill width < %d (MFil.a1)"
+ maxwidth m2fill 5000 both "Metal2 fill width > %d (MFil.a2)"
+ spacing m2fill m2fill 420 touching_ok "Metal2 fill spacing < %d (MFil.b)"
+ spacing m2fill allm2,obsm2 420 touching_illegal \
+	"Metal2 fill spacing to Metal2 < %d (MFil.c)"
+ spacing m2fill  npn,pnp 1000 touching_illegal \
+	"Metal2 fill spacing to bipolar transistor < %d (MFil.d)"
+ angle  m2fill 90 "Only 90 degree angles permitted on Metal2 fill (MFil.i)"
 
 #--------------------------------------------------
 # VIA2
@@ -3096,8 +3189,8 @@ variants *
 # METAL3 - 
 #--------------------------------------------------
 
- width allm3,m3fill 200 "Metal3 width < %d (M3.a)"
- spacing allm3  allm3,obsm3,m3fill 210 touching_ok "Metal3 spacing < %d (M3.b)"
+ width allm3 200 "Metal3 width < %d (M3.a)"
+ spacing allm3  allm3,obsm3 210 touching_ok "Metal3 spacing < %d (M3.b)"
  area allm3,obsm3 144000 200 "Metal3 minimum area < %a (M3.d)"
 
  angles allm3 45 "Only 45 and 90 degree angles permitted on metal3 (Grid Rules)"
@@ -3108,16 +3201,25 @@ variants *
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
- widespacing allm3 395 1005 allm3,*obsm3,m3fill 240 touching_ok \
+ widespacing allm3 395 1005 allm3,*obsm3 240 touching_ok \
 	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
  widespacing *obsm3 395 1005 allm3 240 touching_ok \
 	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
 
- widespacing allm3 10005 10005 allm3,*obsm3,m3fill 600 touching_ok \
+ widespacing allm3 10005 10005 allm3,*obsm3 600 touching_ok \
 	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
  widespacing *obsm3 10005 10005 allm3 600 touching_ok \
 	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
 variants *
+
+ width m3fill 1000 "Metal3 fill width < %d (MFil.a1)"
+ maxwidth m3fill 5000 both "Metal3 fill width > %d (MFil.a2)"
+ spacing m3fill m3fill 420 touching_ok "Metal3 fill spacing < %d (MFil.b)"
+ spacing m3fill allm3,obsm3 420 touching_illegal \
+	"Metal3 fill spacing to Metal3 < %d (MFil.c)"
+ spacing m3fill  npn,pnp 1000 touching_illegal \
+	"Metal3 fill spacing to bipolar transistor < %d (MFil.d)"
+ angle  m3fill 90 "Only 90 degree angles permitted on Metal3 fill (MFil.i)"
 
 #--------------------------------------------------
 # VIA3 -
@@ -3138,8 +3240,8 @@ variants *
 # METAL4 -
 #--------------------------------------------------
 
- width allm4,m4fill 200 "Metal4 width < %d (M4.a)"
- spacing allm4  allm4,obsm4,m4fill 210 touching_ok "Metal4 spacing < %d (M4.b)"
+ width allm4 200 "Metal4 width < %d (M4.a)"
+ spacing allm4  allm4,obsm4 210 touching_ok "Metal4 spacing < %d (M4.b)"
  area allm4,obsm4 144000 200 "Metal4 minimum area < %a (M4.d)"
 
  angles allm4 45 "Only 45 and 90 degree angles permitted on metal4 (Grid Rules)"
@@ -3150,16 +3252,25 @@ variants *
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
- widespacing allm4 395 1005 allm4,*obsm4,m4fill 240 touching_ok \
+ widespacing allm4 395 1005 allm4,*obsm4 240 touching_ok \
 	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
  widespacing *obsm4 395 1005 allm4 240 touching_ok \
 	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
 
- widespacing allm4 10005 10005 allm4,*obsm4,m4fill 600 touching_ok \
+ widespacing allm4 10005 10005 allm4,*obsm4 600 touching_ok \
 	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
  widespacing *obsm4 10005 10005 allm4 600 touching_ok \
 	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
 variants *
+
+ width m4fill 1000 "Metal4 fill width < %d (MFil.a1)"
+ maxwidth m4fill 5000 both "Metal4 fill width > %d (MFil.a2)"
+ spacing m4fill m4fill 420 touching_ok "Metal4 fill spacing < %d (MFil.b)"
+ spacing m4fill allm4,obsm4 420 touching_illegal \
+	"Metal4 fill spacing to Metal4 < %d (MFil.c)"
+ spacing m4fill  npn,pnp 1000 touching_illegal \
+	"Metal4 fill spacing to bipolar transistor < %d (MFil.d)"
+ angle  m4fill 90 "Only 90 degree angles permitted on Metal4 fill (MFil.i)"
 
 #--------------------------------------------------
 # VIA4 -
@@ -3180,8 +3291,8 @@ variants *
 # METAL5 -
 #--------------------------------------------------
 
- width allm5,m5fill 200 "Metal5 width < %d (M5.a)"
- spacing allm5  allm5,obsm5,m5fill 210 touching_ok "Metal5 spacing < %d (M5.b)"
+ width allm5 200 "Metal5 width < %d (M5.a)"
+ spacing allm5  allm5,obsm5 210 touching_ok "Metal5 spacing < %d (M5.b)"
  area allm5,obsm5 144000 200 "Metal5 minimum area < %a (M5.d)"
 
  angles allm5 45 "Only 45 and 90 degree angles permitted on metal5 (Grid Rules)"
@@ -3192,16 +3303,25 @@ variants *
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
- widespacing allm5 395 1005 allm5,*obsm5,m5fill 240 touching_ok \
+ widespacing allm5 395 1005 allm5,*obsm5 240 touching_ok \
 	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
  widespacing *obsm5 395 1005 allm5 240 touching_ok \
 	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
 
- widespacing allm5 10005 10005 allm5,*obsm5,m5fill 600 touching_ok \
+ widespacing allm5 10005 10005 allm5,*obsm5 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
  widespacing *obsm5 10005 10005 allm5 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
 variants *
+
+ width m5fill 1000 "Metal5 fill width < %d (MFil.a1)"
+ maxwidth m5fill 5000 both "Metal5 fill width > %d (MFil.a2)"
+ spacing m5fill m5fill 420 touching_ok "Metal5 fill spacing < %d (MFil.b)"
+ spacing m5fill allm5,obsm5 420 touching_illegal \
+	"Metal5 fill spacing to Metal5 < %d (MFil.c)"
+ spacing m5fill  npn,pnp 1000 touching_illegal \
+	"Metal5 fill spacing to bipolar transistor < %d (MFil.d)"
+ angle  m5fill 90 "Only 90 degree angles permitted on Metal5 fill (MFil.i)"
 
 #--------------------------------------------------
 # VIA5 (TopVia1) -
@@ -3211,8 +3331,8 @@ variants *
 
  spacing v5 v5 220 touching_ok "via5 spacing < %d (TV1.b - 2 * TV1.c)"
 
- surround v5/m6 *m5,rm5 320 directional \
-	"Metal6 overlap of via5 < %d in one direction (TV1.d - TV1.c)"
+ surround v5/m6 *m6,rm6 320 absence_illegal \
+	"Metal6 overlap of via5 < %d (TV1.d - TV1.c)"
 
  exact_overlap v5/m5
 
@@ -3220,10 +3340,19 @@ variants *
 # METAL6 (TopMetal1) -
 #--------------------------------------------------
 
- width allm6,m6fill 1640 "Metal6 width < %d (TM1.a)"
- spacing allm6  allm6,obsm6,m6fill 1640 touching_ok "Metal6 spacing < %d (TM1.b)"
+ width allm6 1640 "Metal6 width < %d (TM1.a)"
+ spacing allm6  allm6,obsm6 1640 touching_ok "Metal6 spacing < %d (TM1.b)"
 
  angles allm6 45 "Only 45 and 90 degree angles permitted on metal6 (Grid Rules)"
+
+ width m6fill 5000 "Metal6 fill width < %d (TM1Fil.a)"
+ maxwidth m6fill 10000 both "Metal6 fill width > %d (TM1Fil.a1)"
+ spacing m6fill  m6fill 3000 touching_ok "Metal6 fill spacing < %d (TM1Fil.b)"
+ spacing m6fill  allm6,obsm6 3000 touching_illegal \
+	"Metal6 fill spacing to Metal7 < %d (TM1Fil.c)"
+ spacing m6fill  npn,pnp 4900 touching_illegal \
+	"Metal6 fill spacing to bipolar transistor < %d (TM1Fil.d)"
+ angle  m6fill 90 "Only 90 degree angles permitted on Metal6 fill (TM1Fil.g)"
 
 #--------------------------------------------------
 # VIA6 (TopVia2) -
@@ -3239,15 +3368,24 @@ variants *
 # METAL7 (TopMetal2) -
 #--------------------------------------------------
 
- width allm7,m7fill 2000 "Metal7 width < %d (TM2.a)"
- spacing allm7  allm7,obsm7,m7fill 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
+ width allm7 2000 "Metal7 width < %d (TM2.a)"
+ spacing allm7  allm7,obsm7 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
 
 variants (fast),(full)
- widespacing allm7 5005 50005 allm7,*obsm7,m7fill 5000 touching_ok \
+ widespacing allm7 5005 50005 allm7,*obsm7 5000 touching_ok \
 	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < %d (TM2.bR)"
 variants *
 
  angles allm7 45 "Only 45 and 90 degree angles permitted on metal7 (Grid Rules)"
+
+ width m7fill 5000 "Metal7 fill width < %d (TM2Fil.a)"
+ maxwidth m7fill 10000 both "Metal7 fill width > %d (TM2Fil.a1)"
+ spacing m7fill  m7fill 3000 touching_ok "Metal7 fill spacing < %d (TM2Fil.b)"
+ spacing m7fill  allm7,obsm7 3000 touching_illegal \
+	"Metal7 fill spacing to Metal7 < %d (TM2Fil.c)"
+ spacing m7fill  npn,pnp 4900 touching_illegal \
+	"Metal7 fill spacing to bipolar transistor < %d (TM2Fil.d)"
+ angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
 
 #--------------------------------------------------
 # NMOS, PMOS
@@ -3264,6 +3402,18 @@ variants *
 
  edge4way hvpdiff hvpfet,hvpfetesd 400 hvpfet,hvpfetesd 0 0 \
 	"HV PMOS minimum length < %d (Gat.a4)"
+
+ # Low voltage and high voltages may exist on the same
+ # active shape with spacing requirement to THKOX
+
+ edge4way hvnfet,hvnfetesd *hvndiff 340 ~(*ndiff)/a 0 0 \
+	"HV NMOS distance to LV diffusion < %d (TGO.c)"
+ edge4way hvpfet,hvpfetesd *hvpdiff 340 ~(*pdiff)/a 0 0 \
+	"HV PMOS distance to LV diffusion < %d (TGO.c)"
+ edge4way nfet *hvndiff 340 ~(*hvndiff)/a 0 0 \
+	"LV NMOS distance to HV diffusion < %d (TGO.d)"
+ edge4way pfet *hvpdiff 340 ~(*pdiff)/a 0 0 \
+	"LV PMOS distance to HV diffusion < %d (TGO.d)"
 
 #--------------------------------------------------
 # nres (N+ poly resistor, rsil)
@@ -3291,8 +3441,18 @@ variants *
 
  surround *mimcap *metal5/m5 600 absence_illegal \
 	"Metal5 must surround MiM cap by %d (MIM.c)"
- spacing *metal6 *mimcap 600 surround_ok \
-	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
+
+ # Improper use of corner_ok.  This can be done with a cifwidth rule.
+ # spacing *mimcap *metal6 600 corner_ok \
+ #	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
+
+ edge4way hvndiff hvnfet,hvnfetesd 450 hvnfet,hvnfetesd 0 0 \
+	"HV NMOS minimum length < %d (Gat.a3)"
+ # Minimum length inferred from primitive device layout.  Length is 0.36um
+ # in nmoscl_2 and nmoscl_4, and 0.33um in scr1.  The two cases could in
+ # theory be differentiated and handled separately.
+ edge4way hvndiff hvnfetesd 330 hvnfetesd 0 0 \
+	"HV NMOS ESD minimum length < %d (Gat.a3 exception)"
 
  area *mimcap 1300000 1140 "MiM cap minimum area < %a (MIM.f)"
 
@@ -3308,6 +3468,20 @@ variants *
 	"Metal6 overlap of MiM contact < %d in one direction (TV1.d - TV1.c)"
 
  exact_overlap mimcc/m5
+
+#-----------------------------------------------------------
+# Glass cut (passivation cut)
+#-----------------------------------------------------------
+
+ width glass 2100 "Passivation width < %d (Pas.a)"
+ spacing glass glass 3500 touching_ok "Passivation spacing < %d (Pas.b)"
+ surround glass *metal7 2100 absence_illegal \
+	"Metal7 overlap of passivation < %d (Pas.c)"
+
+ # NOTE: Verification layout suggests that passivation over metal6 is
+ # legal and follows the same rules as for metal7.  This use is not
+ # documented.  Checking overlap of one OR the other would require a
+ # cifwidth rule.
 
 #----------------------------
 # End DRC style
@@ -3415,12 +3589,6 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  device msubcircuit sg13_hv_nmos hvnfet *hvndiff *hvndiff pwell,space/w error \
 	l=l w=w a1=as p1=ps a2=ad p2=pd
 
- device msubcircuit nmosi nnfet *ndiff *ndiff pwell,space/w error \
-	l=l w=w a1=as p1=ps a2=ad p2=pd
-
- device msubcircuit nmosiHV hvnnfet *hvndiff *hvndiff pwell,space/w error \
-	l=l w=w a1=as p1=ps a2=ad p2=pd
-
  # TBD
  # device msubcircuit nmoscl_2
 
@@ -3473,8 +3641,6 @@ variants (lvs)
  device mosfet sg13_lv_nmos nfet *ndiff *ndiff pwell,space/w error
  device mosfet sg13_hv_pmos hvpfet *hvpdiff *hvpdiff nwell error
  device mosfet sg13_hv_nmos hvnfet *hvndiff *hvndiff pwell,space/w error
- device mosfet nmosi nnfet *ndiff *ndiff pwell,space/w error
- device mosfet nmosiHV hvnnfet *hvndiff *hvndiff pwell,space/w error
 
  # TBD
  # device mosfet nmoscl_2
@@ -3527,18 +3693,18 @@ wiring
  # All wiring values are in nanometers
  scalefactor 10
 
- contact v1  260 m1 0 30 m2  0 30
- contact v2  280 m2 0 45 m3 25  0
- contact v3  320 m3 0 30 m4  5  5
- contact v4  320 m4 0 30 m5  5  5
- contact v5  320 m5 0 30 m6  5  5
- contact v6 1180 m6 0    m7 120
+ contact v1  200 m1 5 45 m2   0 45
+ contact v2  200 m2 0 45 m3   0 45
+ contact v3  200 m3 0 45 m4   0 45
+ contact v4  200 m4 0 45 m5   0 45
+ contact v5  620 m5 0    m6 320 
+ contact v6 1900 m6 0    m7   0
 
- contact pc  170  poly 50 80 m1 0 80
- contact pdc 170 pdiff 40 60 m1 0 80
- contact ndc 170 ndiff 40 60 m1 0 80
- contact psc 170   psd 40 60 m1 0 80
- contact nsc 170   nsd 40 60 m1 0 80
+ contact pc  160  poly 70 70 m1 0 50
+ contact pdc 160 pdiff 70 70 m1 0 50
+ contact ndc 160 ndiff 70 70 m1 0 50
+ contact psc 160   psd 70 70 m1 0 50
+ contact nsc 160   nsd 70 70 m1 0 50
 
 end
 
