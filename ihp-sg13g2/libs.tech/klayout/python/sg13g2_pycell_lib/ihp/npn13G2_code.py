@@ -155,12 +155,12 @@ class npn13G2(DloGen):
                                                                     Point(-3.15-ActivShift, (-2.68 - we/2 - leoffset - bipwinyoffset - empolyyoffset-ActivShift)),
                                                                     Point(stretchX+3.15+ActivShift, (-2.68 - we/2 - leoffset - bipwinyoffset - empolyyoffset-ActivShift))]))
         if Nx >  1 :
-            MkPin(self, 'C', 1, Box(-0.89-le/2, (0.57+we/2-leoffset-bipwinyoffset-empolyyoffset), (stretchX+0.89+le/2), (1.01+we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal1', 'pin'))
+            MkPin(self, 'C', 1, Box(-0.89-le/2, (0.57+we/2-leoffset-bipwinyoffset-empolyyoffset), (stretchX+0.89+le/2), (1.01+we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal1', 'pin'), True)
         else :
-            MkPin(self, 'C', 1, Box(-0.89-le/2, (0.56+we/2+leoffset+bipwinyoffset+empolyyoffset), (stretchX+0.89+le/2), (0.8+we/2+leoffset+bipwinyoffset+empolyyoffset)), Layer('Metal1', 'pin'))
+            MkPin(self, 'C', 1, Box(-0.89-le/2, (0.56+we/2+leoffset+bipwinyoffset+empolyyoffset), (stretchX+0.89+le/2), (0.8+we/2+leoffset+bipwinyoffset+empolyyoffset)), Layer('Metal1', 'pin'), True)
 
-        MkPin(self, 'B', 2, Box(-0.94-le/2, (-0.81-we/2-leoffset-bipwinyoffset-empolyyoffset), (stretchX+0.94+le/2), (-0.57-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal1', 'pin'))
-        MkPin(self, 'E', 3, Box(-0.71-le/2, (0.32+we/2+leoffset+bipwinyoffset+empolyyoffset), stretchX+0.71+le/2, (-0.335-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal2', 'pin'))
+        MkPin(self, 'B', 2, Box(-0.94-le/2, (-0.81-we/2-leoffset-bipwinyoffset-empolyyoffset), (stretchX+0.94+le/2), (-0.57-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal1', 'pin'), True)
+        MkPin(self, 'E', 3, Box(-0.71-le/2, (0.32+we/2+leoffset+bipwinyoffset+empolyyoffset), stretchX+0.71+le/2, (-0.335-we/2-leoffset-bipwinyoffset-empolyyoffset)), Layer('Metal2', 'pin'), True)
 
         pcLayer = 'TEXT'
         pcLabelText = 'Ae={0:d}*{1:d}*{2:.2f}*{3:.2f}'.format(int(Nx), int(Ny), le, we)
