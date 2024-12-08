@@ -13,13 +13,13 @@ tech
 end
 
 version
- version 0.1.0
+ version 0.1.2
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.504
+ requires magic-8.3.505
 end
 
 #------------------------------------------------------------------------
-# Status 11/29/24: Version 0.1.1 (alpha):
+# Status 12/8/24: Version 0.1.2 (alpha):
 # Pre-release
 #------------------------------------------------------------------------
 
@@ -1562,6 +1562,131 @@ style drc
 	grow 100
 	and-not npnactive
 	and alldiff,difffill,npn,nwell,dnwell
+
+# Runlength rules.  NOTE:  The runlength widespacing rule in magic
+# needs to be fixed, as the cifdrc implementation is very
+# inefficient.
+
+ templayer m1_halo_0p3 allm1,obsm1,m1fill
+	shrink 150
+	grow 150
+	grow 220
+
+ templayer m1_halo_10p0 allm1,obsm1,m1fill
+	shrink 5000
+	grow 5000
+	grow 600
+
+ templayer m1_runlength_1 allm1,obsm1,m1fill
+	grow 105
+	shrink 105
+	and-not allm1,obsm1,m1fill
+	and m1_halo_0p3
+
+ templayer m1_runlength_10 allm1,obsm1,m1fill
+	grow 295
+	shrink 295
+	and-not allm1,obsm1,m1fill
+	and m1_halo_10p0
+
+ templayer m2_halo_0p4 allm2,obsm2,m2fill
+	shrink 195
+	grow 195
+	grow 240
+
+ templayer m2_halo_10p0 allm2,obsm2,m2fill
+	shrink 5000
+	grow 5000
+	grow 600
+
+ templayer m2_runlength_1 allm2,obsm2,m2fill
+	grow 115
+	shrink 115
+	and-not allm2,obsm2,m2fill
+	and m2_halo_0p4
+
+ templayer m2_runlength_10 allm2,obsm2,m2fill
+	grow 295
+	shrink 295
+	and-not allm2,obsm2,m2fill
+	and m2_halo_10p0
+
+ templayer m3_halo_0p4 allm3,obsm3,m3fill
+	shrink 195
+	grow 195
+	grow 240
+
+ templayer m3_halo_10p0 allm3,obsm3,m3fill
+	shrink 5000
+	grow 5000
+	grow 600
+
+ templayer m3_runlength_1 allm3,obsm3,m3fill
+	grow 115
+	shrink 115
+	and-not allm3,obsm3,m3fill
+	and m3_halo_0p4
+
+ templayer m3_runlength_10 allm3,obsm3,m3fill
+	grow 295
+	shrink 295
+	and-not allm3,obsm3,m3fill
+	and m3_halo_10p0
+
+ templayer m4_halo_0p4 allm4,obsm4,m4fill
+	shrink 195
+	grow 195
+	grow 240
+
+ templayer m4_halo_10p0 allm4,obsm4,m4fill
+	shrink 5000
+	grow 5000
+	grow 600
+
+ templayer m4_runlength_1 allm4,obsm4,m4fill
+	grow 115
+	shrink 115
+	and-not allm4,obsm4,m4fill
+	and m4_halo_0p4
+
+ templayer m4_runlength_10 allm4,obsm4,m4fill
+	grow 295
+	shrink 295
+	and-not allm4,obsm4,m4fill
+	and m4_halo_10p0
+
+ templayer m5_halo_0p4 allm5,obsm5,m5fill
+	shrink 195
+	grow 195
+	grow 240
+
+ templayer m5_halo_10p0 allm5,obsm5,m5fill
+	shrink 5000
+	grow 5000
+	grow 600
+
+ templayer m5_runlength_1 allm5,obsm5,m5fill
+	grow 115
+	shrink 115
+	and-not allm5,obsm5,m5fill
+	and m5_halo_0p4
+
+ templayer m5_runlength_10 allm5,obsm5,m5fill
+	grow 295
+	shrink 295
+	and-not allm5,obsm5,m5fill
+	and m5_halo_10p0
+
+ templayer m7_halo_5p0 allm7,obsm7,m7fill
+	shrink 2495
+	grow 2495
+	grow 5000
+
+ templayer m7_runlength_50 allm7,obsm7,m7fill
+	grow 2495
+	shrink 2495
+	and-not allm7,obsm7,m7fill
+	and m7_halo_5p0
 
 #----------------------------------------------------------------
 style density
@@ -3303,7 +3428,8 @@ drc
  area  alldiff 122000 150 "Diffusion minimum area < 0.122um^2 (Act.d)"
 
  variants (full)
- cifmaxwidth diff_hole_empty 0 bend_illegal "Minimum area of diffusion holes > 0.15um^2 (Act.e)"
+ cifmaxwidth diff_hole_empty 0 bend_illegal \
+	"Minimum area of diffusion holes > 0.15um^2 (Act.e)"
 
  # Latchup rules
  cifmaxwidth ptap_missing 0 bend_illegal \
@@ -3463,16 +3589,25 @@ drc
  # NOTE: M1.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
-variants (fast),(full)
- widespacing allm1 305 1005 allm1,*obsm1 220 touching_ok \
-	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
- widespacing *obsm1 305 1005 allm1 220 touching_ok \
-	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
-
- widespacing allm1 10005 10005 allm1,*obsm1 600 touching_ok \
-	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
- widespacing *obsm1 10005 10005 allm1 600 touching_ok \
-	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
+# variants (fast),(full)
+# widespacing allm1 305 1005 allm1,*obsm1 220 touching_ok \
+#	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
+# widespacing *obsm1 305 1005 allm1 220 touching_ok \
+#	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
+#
+# widespacing allm1 10005 10005 allm1,*obsm1 600 touching_ok \
+#	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
+# widespacing *obsm1 10005 10005 allm1 600 touching_ok \
+#	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
+# variants *
+# NOTE:  The runlength rule in magic is not correctly implemented as of version
+# 8.3.504 and results in false positives.  The use of cifdrc rules to implement
+# the runlength rule is correct but very inefficient.
+variants (full)
+ cifmaxwidth m1_runlength_1 1000 both \
+	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < 0.22um (M1.e)"
+ cifmaxwidth m1_runlength_10 10000 both \
+	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < 0.6um (M1.f)"
 variants *
 
  width m1fill 1000 "Metal1 fill width < %d (MFil.a1)"
@@ -3518,16 +3653,23 @@ variants *
  # NOTE: M2.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
-variants (fast),(full)
- widespacing allm2 395 1005 allm2,*obsm2 240 touching_ok \
-	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
- widespacing *obsm2 395 1005 allm2 240 touching_ok \
-	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
-
- widespacing allm2 10005 10005 allm2,*obsm2 600 touching_ok \
-	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
- widespacing *obsm2 10005 10005 allm2 600 touching_ok \
-	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
+# variants (fast),(full)
+# widespacing allm2 395 1005 allm2,*obsm2 240 touching_ok \
+#	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
+# widespacing *obsm2 395 1005 allm2 240 touching_ok \
+#	"Metal2 > 0.3um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
+#
+# widespacing allm2 10005 10005 allm2,*obsm2 600 touching_ok \
+#	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
+# widespacing *obsm2 10005 10005 allm2 600 touching_ok \
+#	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
+# variants *
+# (See note about runlength rules in metal1 section.)
+variants (full)
+ cifmaxwidth m2_runlength_1 1000 both \
+	"Metal2 > 0.4um with runlength > 1.0um spacing to unrelated m2 < 0.24um (M2.e)"
+ cifmaxwidth m2_runlength_10 10000 both \
+	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < 0.6um (M2.f)"
 variants *
 
  width m2fill 1000 "Metal2 fill width < %d (MFil.a1)"
@@ -3573,16 +3715,23 @@ variants *
  # NOTE: M3.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
-variants (fast),(full)
- widespacing allm3 395 1005 allm3,*obsm3 240 touching_ok \
-	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
- widespacing *obsm3 395 1005 allm3 240 touching_ok \
-	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
-
- widespacing allm3 10005 10005 allm3,*obsm3 600 touching_ok \
-	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
- widespacing *obsm3 10005 10005 allm3 600 touching_ok \
-	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
+# variants (fast),(full)
+# widespacing allm3 395 1005 allm3,*obsm3 240 touching_ok \
+#	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
+# widespacing *obsm3 395 1005 allm3 240 touching_ok \
+#	"Metal3 > 0.3um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
+#
+# widespacing allm3 10005 10005 allm3,*obsm3 600 touching_ok \
+#	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
+# widespacing *obsm3 10005 10005 allm3 600 touching_ok \
+#	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
+# variants *
+# (See note about runlength rules in metal1 section.)
+variants (full)
+ cifmaxwidth m3_runlength_1 1000 both \
+	"Metal3 > 0.4um with runlength > 1.0um spacing to unrelated m3 < 0.24um (M3.e)"
+ cifmaxwidth m3_runlength_10 10000 both \
+	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < 0.6um (M3.f)"
 variants *
 
  width m3fill 1000 "Metal3 fill width < %d (MFil.a1)"
@@ -3628,16 +3777,23 @@ variants *
  # NOTE: M4.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
-variants (fast),(full)
- widespacing allm4 395 1005 allm4,*obsm4 240 touching_ok \
-	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
- widespacing *obsm4 395 1005 allm4 240 touching_ok \
-	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
-
- widespacing allm4 10005 10005 allm4,*obsm4 600 touching_ok \
-	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
- widespacing *obsm4 10005 10005 allm4 600 touching_ok \
-	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
+# variants (fast),(full)
+# widespacing allm4 395 1005 allm4,*obsm4 240 touching_ok \
+#	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
+# widespacing *obsm4 395 1005 allm4 240 touching_ok \
+#	"Metal4 > 0.3um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
+#
+# widespacing allm4 10005 10005 allm4,*obsm4 600 touching_ok \
+#	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
+# widespacing *obsm4 10005 10005 allm4 600 touching_ok \
+#	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
+# variants *
+# (See note about runlength rules in metal1 section.)
+variants (full)
+ cifmaxwidth m4_runlength_1 1000 both \
+	"Metal4 > 0.4um with runlength > 1.0um spacing to unrelated m4 < 0.24um (M4.e)"
+ cifmaxwidth m4_runlength_10 10000 both \
+	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < 0.6um (M4.f)"
 variants *
 
  width m4fill 1000 "Metal4 fill width < %d (MFil.a1)"
@@ -3683,16 +3839,23 @@ variants *
  # NOTE: M5.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
-variants (fast),(full)
- widespacing allm5 395 1005 allm5,*obsm5 240 touching_ok \
-	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
- widespacing *obsm5 395 1005 allm5 240 touching_ok \
-	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
-
- widespacing allm5 10005 10005 allm5,*obsm5 600 touching_ok \
-	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
- widespacing *obsm5 10005 10005 allm5 600 touching_ok \
-	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
+# variants (fast),(full)
+# widespacing allm5 395 1005 allm5,*obsm5 240 touching_ok \
+#	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
+# widespacing *obsm5 395 1005 allm5 240 touching_ok \
+#	"Metal5 > 0.3um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
+#
+# widespacing allm5 10005 10005 allm5,*obsm5 600 touching_ok \
+#	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
+# widespacing *obsm5 10005 10005 allm5 600 touching_ok \
+#	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
+# variants *
+# (See note about runlength rules in metal1 section.)
+variants (full)
+ cifmaxwidth m5_runlength_1 1000 both \
+	"Metal5 > 0.4um with runlength > 1.0um spacing to unrelated m5 < 0.24um (M5.e)"
+ cifmaxwidth m5_runlength_10 10000 both \
+	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < 0.6um (M5.f)"
 variants *
 
  width m5fill 1000 "Metal5 fill width < %d (MFil.a1)"
@@ -3761,9 +3924,14 @@ variants *
  width allm7 2000 "Metal7 width < %d (TM2.a)"
  spacing allm7  allm7,obsm7 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
 
-variants (fast),(full)
- widespacing allm7 5005 50005 allm7,*obsm7 5000 touching_ok \
-	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < %d (TM2.bR)"
+# variants (fast),(full)
+# widespacing allm7 5005 50005 allm7,*obsm7 5000 touching_ok \
+#	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < %d (TM2.bR)"
+# variants *
+# (See note about runlength rules in metal1 section.)
+variants (full)
+ cifmaxwidth m7_runlength_50 50000 both \
+	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < 5.0um (TM2.bR)"
 variants *
 
  angles allm7 45 "Only 45 and 90 degree angles permitted on metal7 (Grid Rules)"
@@ -3777,10 +3945,10 @@ variants *
 	"Metal7 fill spacing to bipolar transistor < %d (TM2Fil.d)"
  angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
 
-variants (full)
- # This rule needs to exclude inductors and pads
- # maxwidth *m7 30000 bend_illegal "Metal7 maximum width without slots < %d (Slt.c)"
-variants *
+# variants (full)
+# This rule needs to exclude inductors and pads
+# maxwidth *m7 30000 bend_illegal "Metal7 maximum width without slots < %d (Slt.c)"
+# variants *
 
 #--------------------------------------------------
 # NMOS, PMOS
