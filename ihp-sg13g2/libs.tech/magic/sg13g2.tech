@@ -15,7 +15,7 @@ end
 version
  version 0.1.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.499
+ requires magic-8.3.504
 end
 
 #------------------------------------------------------------------------
@@ -45,7 +45,7 @@ end
 #
 # npn13g2			npn		NPN W=0.07um L=0.9um
 # npn13g2l			npn		NPN W=0.07um L=1.0-2.5um
-# npn13g2v			npn		NPN W=0.12um L=1.0-5.0um
+# npn13g2v			npn		HVNPN W=0.12um L=1.0-5.0um
 # pnpMPA			pnp
 #
 # sg13_hv_nmos			hvnfet		Thick-oxide nFET
@@ -111,6 +111,12 @@ types
  -active difffill
   active ndiff,ndiffusion,ndif
   active pdiff,pdiffusion,pdif
+  active pbasec,pbcontact,pbc
+  active nemitter,nemit,ne
+  active nemitterc,nemitc,necontact,nec
+  active gemitterc,gemitc,gecontact,gec
+  active hvnemitter,hvnemit,hvne
+  active hvnemitterc,hvnemitc,hvnecontact,hvnec
   active hvndiff,hvndiffusion,hvndif
   active hvpdiff,hvpdiffusion,hvpdif
   active ndiffc,ndcontact,ndc
@@ -137,6 +143,10 @@ types
   active npolyres,nres,rsil
   active ppolyres,pres,rppd
   active xpolyres,xres,rhigh
+  # Used in scr1, nmoscl_2, and nmoscl_4
+  active hvndiffres,hvrnd,hvrndiff
+  # Used in ptapSB
+  active isodiffres,risodiff,riso
 
 # Diodes
   active pdiode,pdi
@@ -218,6 +228,8 @@ contact
   ndic     ndiode     metal1
   pdic     pdiode     metal1
   sdic     schottky   metal1
+  nec	   nemitter   metal1
+  hvnec	   hvnemitter metal1
 
   hvndc   hvndiff   metal1
   hvpdc   hvpdiff   metal1
@@ -250,7 +262,7 @@ aliases
   allfets	   allnfets,allpfets,var,hvvar
   allfetsstd	   nfet,hvnfet,hvnfetesd,pfet,hvpfet,hvpfetesd
 
-  allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd
+  allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd,hvndiffres
   allnactive	   allnactivenonfet,allnfets
   allnactivenontap *ndiff,*ndiode,*hvndiff,allnfets
   allnactivetap	   *nsd,*hvnsd,var,hvvar
@@ -270,7 +282,7 @@ aliases
   allpdifflvnonfet *pdif,*psd,*pdiode
   alldifflvnonfet  allndifflvnonfet,allpdifflvnonfet
 
-  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd
+  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd,hvndiffres
   allpdiffhv       *hvpdif,*hvpsd,hvpfet,hvpfetesd
   alldiffhv        allndiffhv,allpdiffhv
   allndiffhvnontap *hvndif,hvnfet,hvnfetesd
@@ -302,7 +314,7 @@ aliases
 
   allcont	alldiffcont,pc
 
-  allres	allpolyres
+  allres	allpolyres,hvndiffres,isodiffres
 
   allm1		*m1,rm1
   allm2		*m2,rm2
@@ -345,6 +357,14 @@ styles
 
   pnp	    nwell ntransistor_stripes
   npn	    pwell ptransistor_stripes
+  nemitter  emitter
+  hvnemitter  emitter  hvndiff_mask
+  pbc	    pbase metal1 contact_X'es
+  nec	    emitter metal1 contact_X'es
+  gec	    emitter metal1 contact_X'es
+  hvnec	    emitter hvndiff_mask metal1 contact_X'es
+  hvndiffres  ndiffusion ndop_stripes hvndiff_mask
+  riso	    ndiff_in_nwell pdiff_in_pwell substrate_field_implant
 
   hvndiff   ndiffusion     hvndiff_mask
   hvpdiff   pdiffusion     hvpdiff_mask
@@ -371,8 +391,8 @@ styles
   ndiode    ndiffusion     nselect2
   pdiodec   pdiffusion     pselect2 metal1 contact_X'es
   ndiodec   ndiffusion     nselect2 metal1 contact_X'es
-  schottky  ndiffusion
-  sdic	    ndiffusion	   contact_X'es
+  schottky  pdiffusion	   pselect
+  sdic	    pdiffusion	   pselect contact_X'es
 
   metal1    metal1
   m1fill    metal1
@@ -481,7 +501,9 @@ end
 
 connect
   *nwell,*nsd,*hvnsd,dnwell *nwell,*nsd,*hvnsd,dnwell
-  pwell,*psd,*hvpsd,npn,isosub  pwell,*psd,*hvpsd,npn,isosub
+  pwell,*psd,*hvpsd,isosub  pwell,*psd,*hvpsd,isosub
+  npn,pbc	npn,pbc
+  pbc,*m1	pbc,*m1
   *m1,m1fill	*m1,m1fill
   *m2,m2fill	*m2,m2fill
   *m3,m3fill	*m3,m3fill
@@ -543,7 +565,12 @@ style gdsii
 # NWELL
 #----------------------------------------------------------------
 
+# Identify a schottky diode area, which generates its own nwell.
+ templayer schottkyarea *schottky
+	grow 1170
+
  layer NWELL 	allnwell
+	and-not schottkyarea
  	calma 	31 0
 
  layer WELLPIN
@@ -562,15 +589,56 @@ style gdsii
 # DIFF (Activ)
 #----------------------------------------------------------------
 
- layer DIFF 	allnactivenontap,allpactivenontap
+ layer DIFF 	allnactive,allpactive,*schottky
  	calma 	1 0
 
  layer DIFFPIN
- 	labels allnactivenontap,allpactivenontap port
+ 	labels allnactive,allpactive port
 	calma	1 2
 
+ # This is used in NPN transistors
+ layer DIFFMASK	*nemitter
+	calma	1 20
+
 #----------------------------------------------------------------
-# DIFF
+# BIPOLARID (TRANS), applies to NPN bipolar transistor.  Use
+# the unique emitter layer and grow to fill the area inside
+# PSD
+#----------------------------------------------------------------
+
+ templayer trans gec,nec,hvnec
+	grow 2630
+	and-not psd
+	grow 400
+	and-not psd
+	grow 400
+	and-not psd
+	shrink 200
+
+ # Define the guard ring area around bipolar transistors
+ templayer transhalo trans
+	grow 700
+	and-not trans
+
+ layer BIPOLARID trans
+	calma 26 0
+
+#----------------------------------------------------------------
+# Emitter window and related layers
+#----------------------------------------------------------------
+
+ layer EMITTER nec,gec
+	calma 33 0
+
+ layer HEATTRANS nec,hvnec
+	grow 50
+	calma 51 0 
+
+ layer HVEMITTER hvnec
+	calma 156 0
+
+#----------------------------------------------------------------
+# DIFF (Fill)
 #----------------------------------------------------------------
 
  layer DIFFFILL	difffill
@@ -586,12 +654,19 @@ style gdsii
 	grow 180
 	bloat-or allpactivetap * 125 allnactivenontap 0
 	bloat-or allpactivenontap * 125 allnactivetap 0
+	and-not transhalo
 	bridge	380 380
 	# and-not NSD
 	grow	185
 	shrink	185
 	close   265000
 	mask-hints PSD
+	calma	14 0
+
+ # PSD overlaps P+ guard ring by 0.2um (npnG2.c)
+ layer PSD allpactivetap
+	and transhalo
+	grow 200
 	calma	14 0
 
 # NOTE: sg13g2 defines PSD but not (by default) NSD.  Although
@@ -616,24 +691,6 @@ style gdsii
 	calma 99 30
 
 #----------------------------------------------------------------
-# TRANS, NPNID, and PNPID apply to bipolar transistors
-#----------------------------------------------------------------
-
- layer TRANS npn
-	calma 26 0
-
- layer NPNID npn
-	mask-hints NPNID
-	calma	33 0
-
- templayer pnparea pnp
-	grow 400
-
- layer PNPID pnp
-	mask-hints PNPID
-	calma	55 0
-
-#----------------------------------------------------------------
 # SBLK (Salicide Block, or SalBlock)
 #----------------------------------------------------------------
 
@@ -644,7 +701,7 @@ style gdsii
 	calma 28 0
 
 #----------------------------------------------------------------
-# EXTBLOCK (Tip and halo implant block)
+# EXTBLOCK (Tip and halo implant block) (Rsil.e)
 #----------------------------------------------------------------
 
  layer EXTBLOCK
@@ -692,20 +749,73 @@ style gdsii
 # THKOX (ThickGateOx)
 #----------------------------------------------------------------
 
- layer THKOX alldiffhv,hvvar
+ layer THKOX schottkyarea
+	grow 100
+	or alldiffhv,hvvar
         bloat-or alldiffhv,hvvar * 185 alldifflv 0
-	# bloat-all alldiffhv nwell
 	grow	430
 	shrink	430
-	bridge	700 600
- 	grow 	430
- 	shrink 	430
 	mask-hints THKOX
  	calma 	44 0
 
 #----------------------------------------------------------------
+# Schottky diode.  All schottky dimensions are relative to the
+# contact bar.
+#----------------------------------------------------------------
+
+ # PWell:block surrounds the contact by 0.25um (Sdiod.a)
+ layer PWELLBLK sdic
+	grow 250
+	calma 46 21
+
+ # NSD:block surrounds the contact by 0.40nm (Sdiod.b)
+ layer NSDBLOCK sdic
+	grow 400
+	calma 7 21
+
+ # Salicide block surrounds the contact by 0.45um (Sdiod.c)
+ layer SBLK sdic
+	grow 450
+	calma 28 0
+
+ # (Re-)generate the nwell around the schottky, which forms
+ # the fence around the buried layer.  The drawn nwell is
+ # "false" and has been made larger to avoid specialty DRC
+ # rules.
+ layer NWELL *schottky
+	grow 650
+	and *schottky,*hvnsd
+	grow 100
+	and-not *schottky
+	grow 150
+	calma 31 0
+
+ # Diode recognition layer is coincident with the nwell
+ templayer diodeid *schottky
+	grow 650
+	and *schottky,*hvnsd
+	grow 250
+
+ layer DIODE diodeid
+	calma 99 31
+
+ # PWell:block also surrounds the nwell around the whole
+ # schottky structure.
+ layer PWELLBLK diodeid
+	grow 830
+	and-not diodeid
+	calma 46 21
+
+#----------------------------------------------------------------
 # CONT
 #----------------------------------------------------------------
+# For purposes of differentiating square contact vias and bars,
+# identify resistor terminals.
+
+ templayer resterm
+	bloat-all nres,pres,xres *poly
+	and-not nres,pres,xres
+
 # NOTE:  Contact arrays defined at 200 spacing for large array
 # rule (5x5), otherwise spacing is 180.
 # The smallest square which would be illegal at 180 spacing is
@@ -717,13 +827,71 @@ style gdsii
 
  layer CONT allcont
 	and-not contlarge
+	and-not resterm
 	squares-grid 0 160 180
 	calma 6 0
 
  layer CONT allcont
 	and contlarge
+	and-not resterm
  	squares-grid 0 160 200
  	calma	6 0
+
+#----------------------------------------------------------------
+# CONTBAR
+#----------------------------------------------------------------
+
+ # Base contacts are drawn as-is, either bar or square, as
+ # are schottky diode contacts.
+ layer CONT pbc,sdic
+	calma	6 0
+
+ layer CONT pc
+	and resterm
+	calma	6 0
+
+#----------------------------------------------------------------
+# Bipolar transistors
+#----------------------------------------------------------------
+
+ # Emitter contacts are derived from the emitter window layer
+ # NOTE:  No CONT found over the "gec" (sg13g2 device model)
+ # emitter window in the IHP example primitive device GDS.
+ layer CONT nec,hvnec
+	grow 200
+	and nemitter,hvnemitter,nec,hvnec
+	shrink 50
+	calma	6 0
+
+ # To make the NPNs extractable, layers have been shuffled
+ # around and need to be regenerated as the expected types. 
+
+ templayer npnarea nec,hvnec
+	grow 750
+
+ # NSDBLOCK is used only in the sg13g2 layout.
+ layer NSDBLOCK pbase
+	and-not npnarea
+	shrink 40
+	calma 7 21
+
+ # DIFFMASK is used in the base regions in the sg13g2l and sg13g2v layouts.
+ layer DIFFMASK pbase
+	and npnarea
+	and-not *nemitter,*hvnemitter
+	calma 1 20
+
+ # DIFFMASK is used in the emitter region in the sg13g2 layout.
+ layer DIFFMASK nemitter
+	and-not npnarea
+	or gec 
+	calma 1 20
+
+ # DIFF is used in the emitter region of sg13g2l and sg13g2v
+ # The collector region DIFF is already handled.
+ layer DIFF *nemitter,*hvnemitter
+	and npnarea
+	calma 1 0
 
 #----------------------------------------------------------------
 # Device markers
@@ -1360,6 +1528,41 @@ style drc
  templayer diff_hole_empty diff_small_hole
  and-not alldiff
 
+ # Identify bipolar areas (same as BIPOLARID)
+
+ templayer trans gec,nec,hvnec
+	grow 2630
+	and-not psd
+	grow 400
+	and-not psd
+	grow 400
+	and-not psd
+	shrink 200
+
+ # Identify areas that have to be seprated by a specific
+ # distance from bipolar areas (see "trans" definition, above)
+
+ templayer cifpoly allpoly,polyfill
+
+ templayer psdcont psc
+
+ # Note:  Need to include pwell block and nsd block here
+ templayer transkeepout allnactive,nwell,dnwell
+ 	and-not trans
+
+ templayer npngrow npn
+	grow 10
+
+ templayer npnactive npn
+	bloat-all npngrow *ndiff,nemit
+
+ # Nothing may exist on the active plane inside the npn area
+ # other than the npn itself.
+ templayer illegal_type_in_npn trans
+	grow 100
+	and-not npnactive
+	and alldiff,difffill,npn,nwell,dnwell
+
 #----------------------------------------------------------------
 style density
 #----------------------------------------------------------------
@@ -1840,21 +2043,20 @@ style  sg13g2 variants ()
  ignore EXTBLOCK
  ignore SRAMID
  ignore DIGITALID
- ignore BIPOLARID
  ignore PWELLBLK
  ignore DEEPNBLK
- ignore DIFFMASK
+ ignore EMITPOLY
 
  # These layers are not used by this technology file
  ignore HEATRES
  ignore HEATTRANS
  ignore EDGESEAL
 
- # NOTE:  The pnpMPA example device has neither TRANS
- # nor PNPID layers.  Don't know how to automatically
- # infer a PNP device.
+ # NOTE:  The pnpMPA example device has neither BIPOLARID
+ # (TRANS) nor PNPID layers.  Don't know how to automatically
+ # infer an PNP device. . .
  layer pnp NWELL,WELLPIN
- and TRANS
+ and BIPOLARID
  labels NWELL
  labels WELLPIN port
 
@@ -1892,10 +2094,6 @@ style  sg13g2 variants ()
 
  layer isosub SUBCUT
  labels SUBCUT
-
- layer npn TRANS
- and-not NWELL,nwelcheck
- labels NPNID
 
  layer tsv THRUVIA
  and TSVID
@@ -1935,6 +2133,92 @@ style  sg13g2 variants ()
  templayer hvxndifcheck hvndifcheck
  copyup hvndifcheck
 
+ # Identify emitter area of low voltage bipolars (type npn13G2).
+ templayer lvnpnarea EMITTER
+ and DIFFMASK
+ grow 890
+ and DIFFMASK
+ grow 1600
+ and DIFFMASK,NSDBLOCK
+ 
+ # Identify emitter area of low voltage bipolars (type npn13G2L).
+ templayer npnarea EMITTER
+ and DIFF
+ and BIPOLARID
+ grow 705
+ and DIFF,DIFFMASK
+
+ # Identify high voltage bipolars (type npn13G2V).
+ templayer hvnpnarea HVEMITTER
+ and DIFF
+ and BIPOLARID
+ grow 705
+ and DIFF,DIFFMASK
+
+ layer nemitter DIFFMASK
+ and lvnpnarea
+ and-not EMITTER
+ labels DIFFMASK
+
+ layer nemitter DIFF
+ and npnarea
+ and-not EMITTER
+ labels DIFF
+
+ layer hvnemitter DIFF
+ and hvnpnarea
+ and-not HVEMITTER
+ labels DIFF
+
+ # Layer "npn" is the device identifier for the NPN bipolar,
+ # marks the base area, and extends under collector and
+ # emitter.  The emitter window is defined as the contact,
+ # although CONT is the real contact and is generated on
+ # output.  This is done so that the emitter window dimensions
+ # can be preserved for extraction.  Note that "npn" is grown
+ # by 0.04um so that it abuts the collector diffusion so that
+ # the collector will be identified as a terminal.  This is
+ # done in the proprietary cell and does not get regenerated
+ # on output.
+
+ layer npn NSDBLOCK
+ and lvnpnarea
+ grow 40
+
+ layer npn DIFFMASK,DIFF
+ and npnarea,hvnpnarea
+
+ layer gec DIFFMASK
+ and lvnpnarea
+ and EMITTER
+
+ layer nec DIFF
+ and npnarea
+ and EMITTER
+ labels DIFF
+
+ layer hvnec DIFF
+ and hvnpnarea
+ and HVEMITTER
+ labels DIFF
+
+ # One type of bipolar has the base over NSDBLOCK only.
+ # This is a bar contact.
+ layer pbc NSDBLOCK
+ and lvnpnarea
+ and CONT
+ labels NSDBLOCK
+
+ # The other type of bipolar has the base over diffusion
+ # which has been defined as "nemitter" from the 1st
+ # bipolar type, although it is not the emitter here.
+ # This is *not* a bar contact, so preserve the cuts
+ # (no grow/shrink operation to merge them).
+ layer pbc DIFFMASK
+ and npnarea,hvnpnarea
+ and CONT
+ labels DIFFMASK
+
  layer ndiode DIFF
  and-not NSDBLOCK
  and DIODE
@@ -1968,6 +2252,7 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
  and-not DIODE
  and PSD
+ and-not SBLK
  copyup hvpdifcheck
  labels DIFF
  labels DIFFPIN port
@@ -1989,6 +2274,67 @@ style  sg13g2 variants ()
  and PSD
  and-not THKOX,hvcheck
  copyup DIODE,PSD
+
+ layer hvndiffres DIFF
+ and SBLK
+ and THKOX
+ and-not PSD
+ and-not DIODE
+ and-not BIPOLARID
+ and-not POLY
+ labels DIFF
+
+ layer isodiffres DIFFMASK
+ and SBLK
+ and NSDBLOCK
+ and-not BIPOLARID
+ labels DIFFMASK
+
+ # Include DIFFMASK on either side of isodiffres 
+ layer ndiff DIFFMASK
+ and SBLK
+ and NSDBLOCK
+ and-not NWELL
+ and-not BIPOLARID
+ grow 150
+ and DIFFMASK
+ grow 200
+ and DIFFMASK
+ and-not PSD
+ and-not NSDBLOCK
+
+ layer psd DIFFMASK
+ and SBLK
+ and NSDBLOCK
+ and-not NWELL
+ and-not BIPOLARID
+ grow 150
+ and DIFFMASK
+ grow 200
+ and DIFFMASK
+ and PSD
+
+ # Define schottky diode device from the salicide block.
+ templayer schottkyarea DIODE
+ and SBLK
+
+ layer schottky schottkyarea
+ and-not CONT
+ labels DIODE
+
+ layer sdic DIODE
+ and SBLK
+ and CONT
+ labels DIODE
+
+ # Extend nwell under and around schottky diode to avoid having
+ # to create special layers and rules.  The nwell will be
+ # generated for the schottky device on output.
+
+ layer nwell schottkyarea
+ grow 1000
+ and DIFF
+ grow 620
 
  # Define pfet areas as known pdiff
 
@@ -2080,6 +2426,7 @@ style  sg13g2 variants ()
 
  templayer hvnsdarea DIFF
  and-not NSDBLOCK
+ and-not SBLK
  and NWELL,nwelcheck
  and-not POLY
  and-not PSD
@@ -2149,6 +2496,7 @@ style  sg13g2 variants ()
  or barecont
  and DIFF
  and-not NSDBLOCK
+ and-not npnarea,hvnpnarea
  and-not NWELL,nwelcheck
  and-not THKOX,hvcheck
 
@@ -2166,6 +2514,7 @@ style  sg13g2 variants ()
  or barecont
  and DIFF
  and-not NSDBLOCK
+ and-not npnarea,hvnpnarea
  and NWELL,nwelcheck
  and-not THKOX,hvcheck
 
@@ -2303,6 +2652,7 @@ style  sg13g2 variants ()
  or barecont
  and DIFF
  and-not NSDBLOCK
+ and-not SBLK
  and NWELL,nwelcheck
  and THKOX,hvcheck
 
@@ -2377,6 +2727,7 @@ style  sg13g2 variants ()
 
  layer m1 MET1,MET1TXT,MET1PIN,IPROBE,DPROBE
  and-not MET1RES
+ and-not MET1SLIT
  labels MET1
  labels MET1PIN port
  labels MET1TXT text
@@ -2408,6 +2759,7 @@ style  sg13g2 variants ()
 
  layer m2 MET2,MET2TXT,MET2PIN
  and-not MET2RES
+ and-not MET2SLIT
  labels MET2
  labels MET2PIN port
  labels MET2TXT text
@@ -2428,6 +2780,7 @@ style  sg13g2 variants ()
 
  layer m3 MET3,MET3TXT,MET3PIN
  and-not MET3RES
+ and-not MET3SLIT
  labels MET3
  labels MET3PIN port
  labels MET3TXT text
@@ -2448,6 +2801,7 @@ style  sg13g2 variants ()
 
  layer m4 MET4,MET4TXT,MET4PIN
  and-not MET4RES
+ and-not MET4SLIT
  labels MET4
  labels MET4PIN port
  labels MET4TXT text
@@ -2468,6 +2822,7 @@ style  sg13g2 variants ()
 
  layer m5 MET5,MET5TXT,MET5PIN
  and-not MET5RES
+ and-not MET5SLIT
  labels MET5
  labels MET5PIN port
  labels MET5TXT text
@@ -2488,6 +2843,7 @@ style  sg13g2 variants ()
 
  layer m6 MET6,MET6TXT,MET6PIN
  and-not MET6RES
+ and-not MET6SLIT
  labels MET6
  labels MET6PIN port
  labels MET6TXT text
@@ -2508,6 +2864,7 @@ style  sg13g2 variants ()
 
  layer m7 MET7,MET7TXT,MET7PIN
  and-not MET7RES
+ and-not MET7SLIT
  labels MET7
  labels MET7PIN port
  labels MET7TXT text
@@ -2748,12 +3105,12 @@ style  sg13g2 variants ()
  calma POLY 5 0
  calma NSDBLOCK 7 21
  calma EXTBLOCK 111 0
+ calma EMITTER 33 0
+ calma HVEMITTER 156 0
  # Diode ID mark
  calma DIODE 99 31
- # Bipolar NPN mark
- calma NPNID 33 0
- # Bipolar PNP mark
- calma PNPID 55 0
+ # NPN and PNP poly regions (unused)
+ calma EMITPOLY 55 0
  # Capacitor ID
  calma CAPID 99 39
  # ESD area ID
@@ -2820,6 +3177,14 @@ style  sg13g2 variants ()
  calma MET5FILL 67 22
  calma MET6FILL 126 22
  calma MET7FILL 134 22
+ 
+ calma MET1SLIT 8 24
+ calma MET2SLIT 10 24
+ calma MET3SLIT 30 24
+ calma MET4SLIT 50 24
+ calma MET5SLIT 67 24
+ calma MET6SLIT 126 24
+ calma MET7SLIT 134 24
 
  calma PADPIN 9 2
  calma DIFFPIN 1 2
@@ -2916,7 +3281,7 @@ drc
 	"HV N-Diffusion spacing to N-well < %d (NW.d1)"
  surround *nsd allnwell 240 absence_illegal \
 	"N-well overlap of N-tap < %d (NW.e)"
- surround *hvnsd allnwell 620 absence_illegal \
+ surround *hvnsd,*schottky allnwell 620 absence_illegal \
 	"N-well overlap of HV N-tap < %d (NW.e1)"
  spacing *psd allnwell 240 touching_illegal \
 	"P-tap spacing to N-well < %d (NW.f)"
@@ -2956,7 +3321,7 @@ drc
 	"Diff fill spacing to Poly < %d (AFil.c)"
  spacing difffill,fillfet ndc,pdc,nsc,psc,ndic,pdic,hvndc,hvpdc,hvnsc,hvpsc \
 	 1100 touching_illegal "Diff fill spacing to Contact < %d (AFil.c)"
- spacing difffill,fillfet nwell 1000 touching_illegal \
+ spacing difffill,fillfet nwell 1000 surround_ok \
 	"Diff fill spacing to Nwell < %d (AFil.d)"
  spacing difffill,fillfet dnwell 1000 touching_illegal \
 	"Diff fill spacing to Deep nwell < %d (AFil.d)"
@@ -3119,6 +3484,10 @@ variants *
 	"Metal1 fill spacing to bipolar transistor < %d (MFil.d)"
  angle  m1fill 90 "Only 90 degree angles permitted on Metal1 fill (MFil.i)"
 
+variants (full)
+ maxwidth *m1 30000 bend_illegal "Metal1 maximum width without slots < %d (Slt.c)"
+variants *
+
 #--------------------------------------------------
 # VIA1
 #--------------------------------------------------
@@ -3169,6 +3538,10 @@ variants *
  spacing m2fill  npn,pnp 1000 touching_illegal \
 	"Metal2 fill spacing to bipolar transistor < %d (MFil.d)"
  angle  m2fill 90 "Only 90 degree angles permitted on Metal2 fill (MFil.i)"
+
+variants (full)
+ maxwidth *m2 30000 bend_illegal "Metal2 maximum width without slots < %d (Slt.c)"
+variants *
 
 #--------------------------------------------------
 # VIA2
@@ -3221,6 +3594,10 @@ variants *
 	"Metal3 fill spacing to bipolar transistor < %d (MFil.d)"
  angle  m3fill 90 "Only 90 degree angles permitted on Metal3 fill (MFil.i)"
 
+variants (full)
+ maxwidth *m3 30000 bend_illegal "Metal3 maximum width without slots < %d (Slt.c)"
+variants *
+
 #--------------------------------------------------
 # VIA3 -
 #--------------------------------------------------
@@ -3271,6 +3648,10 @@ variants *
  spacing m4fill  npn,pnp 1000 touching_illegal \
 	"Metal4 fill spacing to bipolar transistor < %d (MFil.d)"
  angle  m4fill 90 "Only 90 degree angles permitted on Metal4 fill (MFil.i)"
+
+variants (full)
+ maxwidth *m4 30000 bend_illegal "Metal4 maximum width without slots < %d (Slt.c)"
+variants *
 
 #--------------------------------------------------
 # VIA4 -
@@ -3323,6 +3704,11 @@ variants *
 	"Metal5 fill spacing to bipolar transistor < %d (MFil.d)"
  angle  m5fill 90 "Only 90 degree angles permitted on Metal5 fill (MFil.i)"
 
+variants (full)
+ # NOTE:  This rule needs to exclude MiM cap bottom plates
+ # maxwidth *m5 30000 bend_illegal "Metal5 maximum width without slots < %d (Slt.c)"
+variants *
+
 #--------------------------------------------------
 # VIA5 (TopVia1) -
 #--------------------------------------------------
@@ -3353,6 +3739,10 @@ variants *
  spacing m6fill  npn,pnp 4900 touching_illegal \
 	"Metal6 fill spacing to bipolar transistor < %d (TM1Fil.d)"
  angle  m6fill 90 "Only 90 degree angles permitted on Metal6 fill (TM1Fil.g)"
+
+variants (full)
+ maxwidth *m6 30000 bend_illegal "Metal6 maximum width without slots < %d (Slt.c)"
+variants *
 
 #--------------------------------------------------
 # VIA6 (TopVia2) -
@@ -3387,6 +3777,11 @@ variants *
 	"Metal7 fill spacing to bipolar transistor < %d (TM2Fil.d)"
  angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
 
+variants (full)
+ # This rule needs to exclude inductors and pads
+ # maxwidth *m7 30000 bend_illegal "Metal7 maximum width without slots < %d (Slt.c)"
+variants *
+
 #--------------------------------------------------
 # NMOS, PMOS
 #--------------------------------------------------
@@ -3394,11 +3789,17 @@ variants *
  # Minimum length of HV FETs.  Note that this is larger than the minimum
  # width (0.15um), so an edge rule is required
 
- edge4way hvndiff hvnfet,hvnfetesd 450 hvnfet,hvnfetesd 0 0 \
+ edge4way hvndiff hvnfet 450 hvnfet 0 0 \
 	"HV NMOS minimum length < %d (Gat.a3)"
 
  edge4way hvnsd hvvaractor 450 hvvaractor 0 0 \
 	"HV Varactor minimum length < %d (Gat.a3)"
+
+ # Minimum length inferred from primitive device layout.  Length is 0.36um
+ # in nmoscl_2 and nmoscl_4, and 0.33um in scr1.  The two cases could in
+ # theory be differentiated and handled separately.
+ edge4way hvndiff hvnfetesd 330 hvnfetesd 0 0 \
+	"HV NMOS ESD minimum length < %d (Gat.a3 exception)"
 
  edge4way hvpdiff hvpfet,hvpfetesd 400 hvpfet,hvpfetesd 0 0 \
 	"HV PMOS minimum length < %d (Gat.a4)"
@@ -3419,15 +3820,25 @@ variants *
 # nres (N+ poly resistor, rsil)
 #--------------------------------------------------
 
-  width nres 500 "rsil resistor width < %d (Rsil.a)"
+  width nres 500 "Rsil resistor width < %d (Rsil.a)"
+  spacing nres pc 120 touching_illegal \
+	"Rsil resistor space to poly contact < %d (Rsil.b)"
+  extend nres poly 500 "Rsil length < %d (Rsil.f)"
 
 #--------------------------------------------------
 # pres (P+ poly resistor, rppd)
 # xres (P+ poly resistor, rhigh)
 #--------------------------------------------------
 
-  width pres 500 "rppd resistor width < %d (Rppd.a)"
-  width xres 350 "right resistor width < %d (Rhigh.a)"
+  width pres 500 "Rppd resistor width < %d (Rppd.a)"
+  spacing pres pc 200 touching_illegal \
+	"Rppd resistor space to poly contact < %d (Rppd.c)"
+  extend pres *poly 500 "Rppd resistor length < %d (Rppd.e)"
+
+  width xres 500 "Rhigh resistor width < %d (Rhi.a)"
+  spacing xres pc 200 touching_illegal \
+	"Rhigh resistor space to poly contact < %d (Rhi.d)"
+  extend xres *poly 500 "Rhigh resistor length < %d (Rhi.f)"
 
 #-----------------------------------------------------------
 # MiM CAP (MIM) - 
@@ -3446,14 +3857,6 @@ variants *
  # spacing *mimcap *metal6 600 corner_ok \
  #	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
 
- edge4way hvndiff hvnfet,hvnfetesd 450 hvnfet,hvnfetesd 0 0 \
-	"HV NMOS minimum length < %d (Gat.a3)"
- # Minimum length inferred from primitive device layout.  Length is 0.36um
- # in nmoscl_2 and nmoscl_4, and 0.33um in scr1.  The two cases could in
- # theory be differentiated and handled separately.
- edge4way hvndiff hvnfetesd 330 hvnfetesd 0 0 \
-	"HV NMOS ESD minimum length < %d (Gat.a3 exception)"
-
  area *mimcap 1300000 1140 "MiM cap minimum area < %a (MIM.f)"
 
  # MIM.g:  Need a maximum area rule?
@@ -3468,6 +3871,51 @@ variants *
 	"Metal6 overlap of MiM contact < %d in one direction (TV1.d - TV1.c)"
 
  exact_overlap mimcc/m5
+
+#-----------------------------------------------------------
+# Bipolar devices
+#-----------------------------------------------------------
+
+# npn13G2
+ width gec/a 70 "npn13G2 emitter width < %d (npn13G2)"
+ maxwidth gec/a 70 bend_illegal "npn13G2 emitter width > %d (npn13G2)"
+ maxwidth gec/a 900 both "npn13G2 emitter length > %d (npn13G2.a)"
+ area gec/a 63000 70 "npn13G2 emitter length < 0.9um (npn13G2.a)"
+
+# npn13G2L
+ width nec/a 70 "npn13g2L emitter width < %d (npn13G2L)"
+ maxwidth nec/a 70 bend_illegal "npn13g2L emitter width > %d (npn13G2L)"
+ maxwidth nec/a 2500 both "npn13g2l emitter width > %d (npn13G2L.b)"
+ area nec/a 70000 70 "npn13g2L emitter length < 1.0um (npn13G2L.a)"
+
+# npn13G2V
+ width hvnec/a 120 "npn13g2V emitter width < %d (npn13G2V)"
+ maxwidth hvnec/a 120 bend_illegal "npn13g2V emitter width > %d (npn13G2V)"
+ maxwidth hvnec/a 5000 both "npn13g2V emitter width > %d (npn13G2V.b)"
+ area hvnec/a 120000 120 "npn13g2L emitter length < 1.0um (npn13G2V.a)"
+
+ variants (full)
+ cifspacing transkeepout trans 1210 touching_illegal \
+	"N+ Diffusion, NWell, DNwell spacing to bipolar transistor < 1.21um (npnG2.d)"
+ cifspacing cifpoly trans 900 touching_illegal \
+	"Poly spacing to bipolar transistor < 0.9um (npnG2.d1)"
+ cifspacing psdcont trans 270 touching_illegal \
+	"Contact spacing to bipolar transistor < 0.27um (npnG2.d1)"
+ cifmaxwidth illegal_type_in_npn 0 bend_illegal \
+	"No unrelated diffusion or well may exist in the NPN area ()"
+ variants *
+
+#-----------------------------------------------------------
+# Schottky diode
+#-----------------------------------------------------------
+
+ width sdic/a 300 "Schottky contact width < %d (Sdiod.d)"
+ maxwidth sdic/a 300 bend_illegal "Schottky contact width > %d (Sdiod.d)"
+ maxwidth sdic/a 1000 both "Schottky contact length > %d (Sdiod.e)"
+ area sdic/a 30000 300 "Schottky contact length < 1.0um (Sdiod.e)"
+ 
+ surround sdic schottky 450 absence_illegal \
+	"Schottky diode overlap of contact < %d (Sdiod.c)"
 
 #-----------------------------------------------------------
 # Glass cut (passivation cut)
@@ -3571,7 +4019,7 @@ extract
 
 variants (),(lvs)
 
- # resist ndiffres/active         120000 0.5
+ # resist hvndiffres/active         120000 0.5
  # Finish this section. . .
 
 variants (),(hrhc),(lrhc),(hrlc),(lrlc)
@@ -3589,43 +4037,39 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  device msubcircuit sg13_hv_nmos hvnfet *hvndiff *hvndiff pwell,space/w error \
 	l=l w=w a1=as p1=ps a2=ad p2=pd
 
- # TBD
- # device msubcircuit nmoscl_2
+ # Devices in nmoscl_2, nmoscl_4, and scr1 are high-voltage nMOS FETs
+ # with salicided drains.  These are best extracted as either special
+ # FET devices or a combination of a FET device and a diffusion
+ # resistor.  Currently extracting all of them as plain high-voltage
+ # MOSFETs, which is probably not the best way to handle them.
 
- # TBD
- # device msubcircuit nmoscl_4
-
- # TBD
- # device msubcircuit scr1
+ device msubcircuit sg13_hv_nmos hvnfet hvndiffres hvndiffres \
+	pwell,space/w error l=l w=w a1=as p1=ps a2=ad p2=pd
 
  # Bipolars
- device msubcircuit npn13g2 npn *ndiff dnwell space/w error a1=area
+ device msubcircuit npn13g2 npn gec *ndiff space/w error w1=we l1=le
 
- # Need criteria for differentiation between the NPN devices
- # device msubcircuit npn13g2l npn *ndiff dnwell space/w error a1=area
+ # 2nd layout type of low-voltage HBT bipolar
+ device msubcircuit npn13g2l npn nec *ndiff space/w error w1=we l1=le
 
- # Need criteria for differentiation between the NPN devices
- # device msubcircuit npn13g2v npn *ndiff dnwell space/w error a1=area
+ # High voltage NPN bipolar
+ device msubcircuit npn13g2v npn hvnec *ndiff space/w error w1=we l1=le
 
- device msubcircuit pnpMPA pnp *pdiff pwell,space/w a1=area
+ # Currently this device is not identifiable
+ # device msubcircuit pnpMPA pnp *pdiff pwell,space/w w1=we l1=le
 
  # Capacitors
  device csubcircuit cap_cmim *mimcap *m5 w=w l=l
 
  # Diodes
  device subcircuit dpantenna *pdiode nwell w=w l=l
-
  device msubcircuit dantenna *ndiode pwell,space/w w=w l=l
-
- # TBD
- # device subcircuit schottky *schottky
+ device subcircuit schottky *schottky *hvnsd pwell w=w l=l
 
  # Resistors
 
  device rsubcircuit rsil nres *poly w=w l=l
-
  device rsubcircuit rppd pres *poly w=w l=l
-
  device rsubcircuit rhigh xres *poly w=w l=l
 
  # TBD
@@ -3652,15 +4096,16 @@ variants (lvs)
  # device mosfet scr1
 
  # Bipolars
- device msubcircuit npn13g2 npn *ndiff dnwell space/w error a1=area
+ device bjt npn13g2 npn gec *ndiff space/w error w1=we l1=le
 
- # Need criteria for differentiation between the NPN devices
- # device bjt npn13g2l npn *ndiff dnwell space/w error
+ # 2nd layout type of low-voltage HBT bipolar
+ device bjt npn13g2l npn nec *ndiff space/w error w1=we l1=le
 
- # Need criteria for differentiation between the NPN devices
- # device bjt npn13g2v npn *ndiff dnwell space/w error
+ # High voltage NPN bipolar
+ device bjt npn13g2v npn hvnec *ndiff space/w error w1=we l1=le
 
- device bjt pnpMPA pnp *pdiff pwell,space/w
+ # Currently no way to identify a pnpMPA device.
+ # device bjt pnpMPA pnp *pdiff pwell,space/w
 
  # Capacitors
  device capacitor cap_cmim *mimcap *m5
@@ -3668,9 +4113,7 @@ variants (lvs)
  # Diodes
  device pdiode dpantenna *pdiode nwell
  device ndiode dantenna *ndiode pwell,space/w
-
- # TBD
- # device ndiode schottky *schottky
+ device pdiode schottky *schottky *hvnsd pwell w=w l=l
 
  # Resistors
 
