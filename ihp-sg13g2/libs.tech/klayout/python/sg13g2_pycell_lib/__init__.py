@@ -58,7 +58,8 @@ moduleNames = [
         'inductor2_code',
         'inductor3_code',
         'dantenna_code',
-        'dpantenna_code'
+        'dpantenna_code',
+        'gring_code'
 ]
 
 def getProcessNames():

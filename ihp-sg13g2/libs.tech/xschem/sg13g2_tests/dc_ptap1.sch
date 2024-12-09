@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 100 -460 900 -60 {flags=graph
 
-y2=0.012
+y2=0.058
 ypos1=0
 ypos2=2
 divy=5
@@ -72,10 +72,10 @@ descr="load waves"
 tclcommand="xschem raw_read $netlist_dir/dc_ptap1.raw dc"
 }
 C {devices/lab_pin.sym} 50 -60 2 0 {name=p1 sig_type=std_logic lab=Vcc}
-C {sg13g2_pr/ptap1.sym} -180 10 0 0 {name=R1
-model=ntap1
-spiceprefix=X
-R=262.847.0
-Imax=0.3e-6
-}
 C {devices/ammeter.sym} -70 -60 1 0 {name=Vr}
+C {sg13g2_pr/ptap1.sym} -180 10 0 0 {name=R1
+model=ptap1
+spiceprefix=X
+w=1.0e-6
+l=1.0e-6
+}

@@ -1,4 +1,4 @@
-*#######################################################################
+*l#######################################################################
 *
 * Copyright 2023 IHP PDK Authors
 * 
@@ -20,13 +20,48 @@
 
 **ptap1 (TIE SUB)
 .subckt ptap1 1 2 
-R1 1 2 R=262.847
+.param w=0.78e-6 l=0.78e-6
++raspec=9.8e-10
++rpspec=9.8e-4
++area=w*l 
++perimeter=2*(w+l)
++rptap=1/(1/(raspec/(area))+1/(rpspec/(perimeter)))
+R1 1 2 R=rptap
 .ends ptap1
 
 **ntap1 (TIE WELL)
 .subckt ntap1 1 2 
-R1 1 2 R=262.847
+.param w=0.78e-6 l=0.78e-6
++raspec=9.8e-10
++rpspec=9.8e-4
++area=w*l 
++perimeter=2*(w+l)
++rntap=1/(1/(raspec/(area))+1/(rpspec/(perimeter)))
+R1 1 2 R=rntap
 .ends ntap1
+
+
+** guard rign on the substrate
+.subckt pgring 1 2
+.param a=3.0e-6 b=3.0e-6
+* two vertical ptap1
+XR3 1 2 ptap1 w=0.31e-6 l=(a - 0.62e-6)
+XR4 1 2 ptap1 w=0.31e-6 l=(a - 0.62e-6)
+XR1 1 2 ptap1 w=b l=0.31e-6 
+XR2 1 2 ptap1 w=b l=0.31e-6 
+.ends pgring
+
+
+** guard ring on the nwell
+.subckt ngring 1 2
+.param a=3.0e-6 b=3.0e-6
+* two vertical ptap1
+XR3 1 2 ntap1 w=0.31e-6 l=(a - 0.62e-6)
+XR4 1 2 ntap1 w=0.31e-6 l=(a - 0.62e-6)
+XR1 1 2 ntap1 w=b l=0.31e-6 
+XR2 1 2 ntap1 w=b l=0.31e-6 
+.ends ngring
+
 
 * Parasitic R/C models
 * aluminum: prozess tol. res_rpara 
