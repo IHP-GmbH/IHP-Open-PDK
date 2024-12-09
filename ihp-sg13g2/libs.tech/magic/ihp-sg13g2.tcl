@@ -1,5 +1,5 @@
 #-----------------------------------------------------
-# Magic/TCL design kit for IHP sg13g2
+# Magic/TCL design kit for IHP ihp-sg13g2
 #-----------------------------------------------------
 # Tim Edwards
 # Revision 0.1	ALPHA   8/27/2024
@@ -9,11 +9,11 @@
 if {[catch {set TECHPATH $env(PDK_ROOT)}]} {
     set TECHPATH /usr/share/pdk
 }
-if [catch {set PDKPATH}] {set PDKPATH ${TECHPATH}/sg13g2A}
-set PDKNAME sg13g2
+if [catch {set PDKPATH}] {set PDKPATH ${TECHPATH}/ihp-sg13g2}
+set PDKNAME ihp-sg13g2
 # "sg13g2" is the namespace used for all devices
 set PDKNAMESPACE sg13g2
-puts stdout "Loading sg13g2 Device Generator Menu ..."
+puts stdout "Loading ihp-sg13g2 Device Generator Menu ..."
 
 # Initialize toolkit menus to the wrapper window
 
