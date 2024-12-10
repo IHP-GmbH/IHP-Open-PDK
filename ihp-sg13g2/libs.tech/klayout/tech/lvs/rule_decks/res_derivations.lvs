@@ -38,16 +38,19 @@ polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly).not(polyres_excl
 
 ## rhigh
 rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)
-rhigh_ports = gatpoly.interacting(rhigh_res).not(rhigh_res)
+rhigh_ports_pre = gatpoly.interacting(rhigh_res).not(rhigh_res)
+rhigh_ports = rhigh_ports_pre.edges.and(rhigh_res.edges).extended(0, 0, 5.nm, 5.nm).not(rhigh_res)
 
 ## rppd
 rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_block).not(nsd_drw)
-rppd_ports = gatpoly.interacting(rppd_res).not(rppd_res)
+rppd_ports_pre = gatpoly.interacting(rppd_res).not(rppd_res)
+rppd_ports = rppd_ports_pre.edges.and(rppd_res.edges).extended(0, 0, 5.nm, 5.nm).not(rppd_res)
 
 ## rsil
 rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
 rsil_res = polyres_mk.and(res_drw).not(rsil_exc)
-rsil_ports = gatpoly.interacting(rsil_res).not(rsil_res)
+rsil_ports_pre = gatpoly.interacting(rsil_res).not(rsil_res)
+rsil_ports = rsil_ports_pre.edges.and(rsil_res.edges).extended(0, 0, 5.nm, 5.nm).not(rsil_res)
 
 # ===============
 # ---- METAL ----
