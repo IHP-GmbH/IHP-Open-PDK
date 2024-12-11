@@ -188,9 +188,7 @@ foreach dev $devices {
 }
 
 #---------------------------------------------------------------------
-# (MOS) ESD transistors.  Note that the ESD transistors have a flanged
-# gate.  Magic disagrees slightly on how to interpret the width of the
-# devices, so the tolerance is increased to 7% to cover the difference
+# (MOS) ESD transistors. (Placeholder)
 #---------------------------------------------------------------------
 
 set devices {}
@@ -225,23 +223,22 @@ lappend devices dantenna
 lappend devices dpantenna
 lappend devices schottky
 
-# TODO: need area and perim parameter
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {area add}
-	property "-circuit1 $dev" parallel {perim add}
-	property "-circuit1 $dev" tolerance {area 0.02} {perim 0.02}
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mult perim
+	property "-circuit1 $dev" delete DEV_A DEV_P DEV_C
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	property "-circuit2 $dev" parallel enable
-	property "-circuit2 $dev" parallel {area add}
-	property "-circuit2 $dev" parallel {perim add}
-	property "-circuit2 $dev" tolerance {area 0.02} {perim 0.02}
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult perim
+	property "-circuit2 $dev" delete DEV_A DEV_P DEV_C
     }
 }
 
@@ -254,19 +251,20 @@ set devices {}
 lappend devices cap_cmim
 lappend devices cap_rfcmim
 
-# TODO: need area parameter
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {area add}
-	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
 	property "-circuit1 $dev" delete ic
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	property "-circuit2 $dev" parallel enable
-	property "-circuit2 $dev" parallel {area add}
-	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
 	property "-circuit2 $dev" delete ic
     }
