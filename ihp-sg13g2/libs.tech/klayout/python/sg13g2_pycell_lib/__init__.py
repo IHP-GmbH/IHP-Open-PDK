@@ -159,10 +159,6 @@ class PyCellLib(pya.Library):
                 isFirst = False
             print(f'Current process chain: {processChain}')
 
-
-        module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
-        preProcessor = getattr(module, "preprocessor")
-
         definesSetToPrint = []
 
         for moduleName in moduleNames:
