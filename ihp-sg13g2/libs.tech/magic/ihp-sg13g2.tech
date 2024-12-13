@@ -206,9 +206,11 @@ types
   metal7 rm7,rmetal7,rmet7
  -metal7 obsm7
  -metal7 m7fill
+ -metal7 pillar
 
 # Miscellaneous
  -glass  glass
+ -glass	 seal
   comment fillblock
   comment thruvia,tsv
   comment comment
@@ -437,8 +439,10 @@ styles
   m7fill    metal7
   rm7       metal7         poly_resist_stripes
   obsm7     metal7
+  pillar    metal7	   mems
 
   glass	    overglass
+  seal	    overglass	   mems
 
   comment   comment
   error_p   error_waffle
@@ -510,7 +514,7 @@ connect
   *m4,m4fill	*m4,m4fill
   *m5,m5fill	*m5,m5fill
   *m6,m6fill	*m6,m6fill
-  *m7,m7fill	*m7,m7fill
+  *m7,m7fill,pillar	*m7,m7fill,pillar
   *mimcap       *mimcap
    allnactivenonfet	allnactivenonfet
    allpactivenonfet	allpactivenonfet
@@ -681,14 +685,27 @@ style gdsii
 
 #----------------------------------------------------------------
 # ESDID is a marker layer for ESD devices in the padframe I/O.
+# It is coincident with the nwell tap ring around the clamp
+# devices.
 #----------------------------------------------------------------
 
  layer ESDID  
-	bloat-all hvnfetesd *hvndiff,*poly
-	bloat-all hvpfetesd *hvpdiff,*poly
-	grow 100
+	bloat-all hvnfetesd dnwell
+	bloat-all hvpfetesd dnwell
+	grow 360
 	mask-hints ESDID
 	calma 99 30
+
+#----------------------------------------------------------------
+# DEVICE is a marker layer for ESD devices in the padframe I/O.
+# It is equal to ESDID.
+#----------------------------------------------------------------
+
+ layer DEVICE
+	bloat-all hvnfetesd dnwell
+	bloat-all hvpfetesd dnwell
+	grow 360
+	calma 99 0
 
 #----------------------------------------------------------------
 # SBLK (Salicide Block, or SalBlock)
@@ -729,6 +746,20 @@ style gdsii
 	maxrect external
 	grow 2500
 	calma 99 32
+
+#----------------------------------------------------------------
+# SEAL (define area containing seal ring)
+#----------------------------------------------------------------
+ templayer sealring seal
+	maxrect external
+	grow 22800
+
+ layer SEALBOUND sealring
+	calma  39 4
+
+ layer EDGESEAL seal
+	grow 7375
+	and DIFF
 
 #----------------------------------------------------------------
 # POLY (GatPoly)
@@ -828,12 +859,14 @@ style gdsii
  layer CONT allcont
 	and-not contlarge
 	and-not resterm
+	and-not sealring
 	squares-grid 0 160 180
 	calma 6 0
 
  layer CONT allcont
 	and contlarge
 	and-not resterm
+	and-not sealring
  	squares-grid 0 160 200
  	calma	6 0
 
@@ -842,12 +875,16 @@ style gdsii
 #----------------------------------------------------------------
 
  # Base contacts are drawn as-is, either bar or square, as
- # are schottky diode contacts.
+ # are schottky diode contacts, and contact in the seal ring.
  layer CONT pbc,sdic
 	calma	6 0
 
  layer CONT pc
 	and resterm
+	calma	6 0
+
+ layer CONT psc
+	and sealring
 	calma	6 0
 
 #----------------------------------------------------------------
@@ -939,13 +976,19 @@ style gdsii
 
  layer VIA1 via1
 	and-not via1large
+	and-not sealring
 	squares-grid 5 190 220
 	calma 19 0
 
  layer VIA1 via1
 	and via1large
+	and-not sealring
  	squares-grid 5 190 290
  	calma	19 0
+
+ layer VIA1 via1
+	and sealring
+	calma	19 0
 
 #----------------------------------------------------------------
 # MET2
@@ -983,13 +1026,19 @@ style gdsii
 
  layer VIA2 via2
 	and-not via2large
+	and-not sealring
 	squares-grid 5 190 220
 	calma 29 0
 
  layer VIA2 via2
 	and via2large
+	and-not sealring
  	squares-grid 5 190 290
  	calma	29 0
+
+ layer VIA2 via2
+	and sealring
+	calma	29 0
 
 #----------------------------------------------------------------
 # MET3
@@ -1024,13 +1073,19 @@ style gdsii
 
  layer VIA3 via3
 	and-not via3large
+	and-not sealring
 	squares-grid 5 190 220
 	calma 49 0
 
  layer VIA3 via3
 	and via3large
+	and-not sealring
  	squares-grid 5 190 290
  	calma	49 0
+
+ layer VIA3 via3
+	and sealring
+	calma	49 0
 
 #----------------------------------------------------------------
 # MET4
@@ -1065,13 +1120,19 @@ style gdsii
 
  layer VIA4 via4
 	and-not via4large
+	and-not sealring
 	squares-grid 5 190 220
 	calma 66 0
 
  layer VIA4 via4
 	and via4large
+	and-not sealring
  	squares-grid 5 190 290
  	calma	66 0
+
+ layer VIA4 via4
+	and sealring
+	calma	66 0
 
 #----------------------------------------------------------------
 # MET5
@@ -1100,8 +1161,13 @@ style gdsii
 #----------------------------------------------------------------
 
  layer VIA5	via5
+	and-not sealring
  	squares-grid 5 420 420
  	calma 	125 0
+
+ layer VIA5	via5
+	and sealring
+	calma	125 0
 
  layer MIMCC	mimcc
  	squares-grid 360 420 420
@@ -1133,13 +1199,18 @@ style gdsii
 # VIA6 (TopVia2)
 #----------------------------------------------------------------
  layer VIA6	via6
+	and-not sealring
  	squares-grid 500 900 1060
  	calma 	133 0
+
+ layer VIA6	via6
+	and sealring
+	calma	133 0
 
 #----------------------------------------------------------------
 # MET7 (TopMetal2)
 #----------------------------------------------------------------
- layer MET7 	allm7,m7fill
+ layer MET7 	allm7,m7fill,pillar
  	calma 	134 0
 
  layer MET7TXT
@@ -1159,9 +1230,15 @@ style gdsii
 	calma 134 22
 
 #----------------------------------------------------------------
+# Cu pillar
+#----------------------------------------------------------------
+ layer PILLAR pillar
+	calma 41 35
+
+#----------------------------------------------------------------
 # GLASS
 #----------------------------------------------------------------
- layer GLASS 	glass
+ layer GLASS 	glass,seal
  	calma 	9 0
 
 #----------------------------------------------------------------
@@ -2037,20 +2114,35 @@ style  sg13g2 variants ()
 
  options ignore-unknown-layer-labels
 
- # Need to handle these layers---ignoring during tech file development
+ # May need to handle these layers---ignoring during tech file development
  ignore CAPID
  ignore PADPIN
- ignore EXTBLOCK
  ignore SRAMID
  ignore DIGITALID
  ignore PWELLBLK
  ignore DEEPNBLK
  ignore EMITPOLY
+ ignore PADID
+ ignore RFMEMS
+ ignore INDBOUND
+ ignore INDUCTOR
+ ignore INDPIN
+ ignore DEVICE
 
  # These layers are not used by this technology file
  ignore HEATRES
  ignore HEATTRANS
- ignore EDGESEAL
+ ignore SEALBOUND
+ ignore NORCX
+ ignore DIFFNORCX
+ ignore POLYNORCX
+ ignore MET1NORCX
+ ignore MET2NORCX
+ ignore MET3NORCX
+ ignore MET4NORCX
+ ignore MET5NORCX
+ ignore MET6NORCX
+ ignore MET7NORCX
 
  # NOTE:  The pnpMPA example device has neither BIPOLARID
  # (TRANS) nor PNPID layers.  Don't know how to automatically
@@ -2226,7 +2318,6 @@ style  sg13g2 variants ()
  and-not POLY
  and-not PSD
  and-not THKOX,hvcheck
- labels DIFF
 
  templayer ndiodearea DIODE
  and-not NSDBLOCK
@@ -2241,7 +2332,7 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
  and PSD
  copyup pdifcheck
- labels DIFF 
+ labels DIFF
  labels DIFFPIN port
 
  layer pdiff pdiffarea
@@ -2865,6 +2956,7 @@ style  sg13g2 variants ()
  layer m7 MET7,MET7TXT,MET7PIN
  and-not MET7RES
  and-not MET7SLIT
+ and-not PILLAR
  labels MET7
  labels MET7PIN port
  labels MET7TXT text
@@ -3032,7 +3124,19 @@ style  sg13g2 variants ()
  copyup barecont
 
  layer glass GLASS
+ and-not EDGESEAL
  labels GLASS
+
+ # The "seal" marker is moved from the diffusion to passivation,
+ # since the passivation needs a special DRC rule exception.
+ layer seal EDGESEAL
+ grow 7200
+ and GLASS
+ labels GLASS
+
+ layer pillar PILLAR
+ and MET7
+ labels PILLAR
 
  templayer boundary BOUND
  boundary
@@ -3147,6 +3251,9 @@ style  sg13g2 variants ()
  calma MET7 134 0
 
  calma GLASS 9 0
+ calma PADID 41 0
+ calma PILLAR 41 35
+ calma RFMEMS 69 0
 
  calma SUBTXT  40 25
  calma MET1TXT 8 25
@@ -3200,6 +3307,12 @@ style  sg13g2 variants ()
 
  calma BOUND 189 *
 
+ calma SEALBOUND 39 4
+ calma INDBOUND 27 4
+ calma INDUCTOR 27 0
+ calma INDPIN 27 2
+ calma DEVICE 99 0
+
  calma LVSTEXT 63 0
 
  calma MIM 36 0
@@ -3224,6 +3337,17 @@ style  sg13g2 variants ()
  calma MET5FILL	  67  22
  calma MET6FILL	  126  22
  calma MET7FILL	  134  22
+
+ calma NORCX	  148 *
+ calma DIFFNORCX  1  28
+ calma POLYNORCX  5  28
+ calma MET1NORCX  8  28
+ calma MET2NORCX  10  28
+ calma MET3NORCX  30  28
+ calma MET4NORCX  50  28
+ calma MET5NORCX  67  28
+ calma MET6NORCX  126  28
+ calma MET7NORCX  134  28
 
 end
 
@@ -3759,8 +3883,8 @@ variants *
 # METAL7 (TopMetal2) -
 #--------------------------------------------------
 
- width allm7 2000 "Metal7 width < %d (TM2.a)"
- spacing allm7  allm7,obsm7 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
+ width allm7,pillar 2000 "Metal7 width < %d (TM2.a)"
+ spacing allm7,pillar  allm7,obsm7 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
 
  variants (fast),(full)
  widespacing allm7 5005 50005 allm7,*obsm7 5000 touching_ok \
@@ -3777,6 +3901,11 @@ variants *
  spacing m7fill  npn,pnp 4900 touching_illegal \
 	"Metal7 fill spacing to bipolar transistor < %d (TM2Fil.d)"
  angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
+
+ variants (full)
+ surround glass pillar 7500 absence_illegal \
+	"Passivation must surround Cu pillar by %d (Padc.c)"
+ variants *
 
 # variants (full)
 # This rule needs to exclude inductors and pads
@@ -3922,9 +4051,9 @@ variants *
 # Glass cut (passivation cut)
 #-----------------------------------------------------------
 
- width glass 2100 "Passivation width < %d (Pas.a)"
- spacing glass glass 3500 touching_ok "Passivation spacing < %d (Pas.b)"
- surround glass *metal7 2100 absence_illegal \
+ width glass,seal 2100 "Passivation width < %d (Pas.a)"
+ spacing glass,seal glass,seal 3500 touching_ok "Passivation spacing < %d (Pas.b)"
+ surround glass *metal7,pillar 2100 absence_illegal \
 	"Metal7 overlap of passivation < %d (Pas.c)"
 
  # NOTE: Verification layout suggests that passivation over metal6 is
