@@ -4,14 +4,14 @@ Location of the Python-generated pre-compiled cached files (*.pyc) can be contro
 export PYTHONPYCACHEPREFIX=/tmp
 ```
 
-Support for 'conditional compilation' in a C-style manner of PyCell code:
+Support for 'conditional compilation' in a C-style manner of PyCell code (preprocessing directives should start on the beginning of the line):
 
 ```
-    #ifdef name (|| name)*
-        ...some code...
-    #else
-        ...some other code...
-    #endif
+#ifdef name (|| name)*
+    ...some code...
+#else
+    ...some other code...
+#endif
 ```
 
 The #ifdef-block is executed (name is considered as defined) if
@@ -26,4 +26,4 @@ is set.
 The list of names which are used in an #ifdef-statement and are considered as 'defined' will be dumped
 if the environment variable 'IHP\_PYCELL\_LIB\_PRINT\_DEFINES\_SET' is set.
 
-On non-windows platforms using the 'conditional PyCell compilation' feature, the Python library psutil must be installed.
+On non-windows platforms using the 'conditional PyCell compilation' feature, the Python library `psutil` must be installed.
