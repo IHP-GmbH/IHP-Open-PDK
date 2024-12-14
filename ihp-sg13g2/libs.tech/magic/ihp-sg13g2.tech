@@ -103,8 +103,10 @@ types
   active hvpmos,hvptransistor,hvpfet
  -active hvnmosesd,hvntransistoresd,hvnfetesd
  -active hvpmosesd,hvptransistoresd,hvpfetesd
-  active varactor,varact,var
   active hvvaractor,hvvaract,hvvar
+  active hvvarcontact,hvvarc,hvvc
+  # parasitic varactor formed by poly over HV ptap
+  active hvpvaractor,hvpvaract,hvpvar
  -active fillfet
 
 # Diffusions
@@ -163,6 +165,8 @@ types
   metal1 via1,m2contact,m2cut,m2c,via,v,v1
  -metal1 obsm1
  -metal1 m1fill
+ -metal1 iprobe
+ -metal1 diffprobe
 
 # Metal 2
   metal2 metal2,m2,met2
@@ -238,6 +242,7 @@ contact
   hvpdc   hvpdiff   metal1
   hvnsc   hvnsd     metal1
   hvpsc   hvpsd     metal1
+  hvvc	  hvvar	    metal1
 
   via1   metal1 metal2
   via2   metal2 metal3
@@ -262,18 +267,18 @@ aliases
 
   allnfets	   nfet,hvnfet,hvnfetesd
   allpfets	   pfet,hvpfet,hvpfetesd
-  allfets	   allnfets,allpfets,var,hvvar
+  allfets	   allnfets,allpfets,*hvvar,hvpvar
   allfetsstd	   nfet,hvnfet,hvnfetesd,pfet,hvpfet,hvpfetesd
 
   allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd,hvndiffres
   allnactive	   allnactivenonfet,allnfets
   allnactivenontap *ndiff,*ndiode,*hvndiff,allnfets
-  allnactivetap	   *nsd,*hvnsd,var,hvvar
+  allnactivetap	   *nsd,*hvnsd,*hvvar
 
   allpactivenonfet *pdiff,*psd,*pdiode,*hvpdiff,*hvpsd
   allpactive	   allpactivenonfet,allpfets
   allpactivenontap *pdiff,*pdiode,*hvpdiff,allpfets
-  allpactivetap    *psd,*hvpsd
+  allpactivetap    *psd,*hvpsd,hvpvar
 
   allactivenonfet  allnactivenonfet,allpactivenonfet
   allactive	   allactivenonfet,allfets
@@ -285,8 +290,8 @@ aliases
   allpdifflvnonfet *pdif,*psd,*pdiode
   alldifflvnonfet  allndifflvnonfet,allpdifflvnonfet
 
-  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd,hvndiffres
-  allpdiffhv       *hvpdif,*hvpsd,hvpfet,hvpfetesd
+  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd,hvndiffres,*hvvar
+  allpdiffhv       *hvpdif,*hvpsd,hvpfet,hvpfetesd,hvpvar
   alldiffhv        allndiffhv,allpdiffhv
   allndiffhvnontap *hvndif,hvnfet,hvnfetesd
   allpdiffhvnontap *hvpdif,hvpfet,hvpfetesd
@@ -315,11 +320,11 @@ aliases
   alldiffconthv	   allndiffconthv,allpdiffconthv
   alldiffcont	   alldiffcontlv,alldiffconthv
 
-  allcont	alldiffcont,pc
+  allcont	alldiffcont,pc,hvvarc
 
   allres	allpolyres,hvndiffres,isodiffres,hvisodiffres
 
-  allm1		*m1,rm1
+  allm1		*m1,rm1,iprobe
   allm2		*m2,rm2
   allm3		*m3,rm3
   allm4	   	*m4,rm4
@@ -352,7 +357,6 @@ styles
   nfet      ntransistor    ntransistor_stripes
   pfet      ptransistor    ptransistor_stripes
   fillfet   ntransistor
-  var	    polysilicon	   ndiff_in_nwell
   ndc       ndiffusion     metal1  contact_X'es
   pdc       pdiffusion     metal1  contact_X'es
   nsc       ndiff_in_nwell metal1  contact_X'es
@@ -382,7 +386,9 @@ styles
   hvpdc     pdiffusion     metal1  contact_X'es hvpdiff_mask
   hvnsc     ndiff_in_nwell metal1  contact_X'es hvndiff_mask
   hvpsc     pdiff_in_pwell metal1  contact_X'es hvpdiff_mask
-  hvvar	    polysilicon	   hvndiff_mask
+  hvvar	    polysilicon	   ndiff_in_nwell hvndiff_mask
+  hvpvar    polysilicon	   pdiff_in_pwell hvpdiff_mask
+  hvvarc    polysilicon	   ndiff_in_nwell hvndiff_mask  contact_X'es
 
   poly      polysilicon 
   polyfill  polysilicon
@@ -400,6 +406,8 @@ styles
 
   metal1    metal1
   m1fill    metal1
+  iprobe    metal1	   electrode
+  diffprobe metal1	   electrode
   rm1       metal1         poly_resist_stripes
   obsm1     metal1
   m2c       metal1         metal2  via1arrow
@@ -469,11 +477,11 @@ end
 compose
   compose  nfet  poly  ndiff
   compose  pfet  poly  pdiff
-  compose  var	 poly  nsd
 
   compose  hvnfet  poly  hvndiff
   compose  hvpfet  poly  hvpdiff
   compose  hvvar   poly  hvnsd
+  compose  hvpvar  poly  hvpsd
 
   compose  fillfet polyfill difffill
 
@@ -510,7 +518,7 @@ connect
   pwell,*psd,*hvpsd,isosub  pwell,*psd,*hvpsd,isosub
   npn,pbc	npn,pbc
   pbc,*m1	pbc,*m1
-  *m1,m1fill	*m1,m1fill
+  *m1,m1fill,iprobe,diffprobe	*m1,m1fill,iprobe,diffprobe
   *m2,m2fill	*m2,m2fill
   *m3,m3fill	*m3,m3fill
   *m4,m4fill	*m4,m4fill
@@ -603,7 +611,7 @@ style gdsii
  templayer diffmaskarea
 	bloat-or isodiffres * 0 *ndiff 130 *psd 200
 
- layer DIFF 	allnactive,allpactive,*schottky,hvisodiffres
+ layer DIFF 	allnactive,allpactive,*schottky,hvisodiffres,*hvvar,hvpvar
 	and-not diffmaskarea
  	calma 	1 0
 
@@ -659,6 +667,14 @@ style gdsii
 	labels	difffill
 	calma	1 22
 
+# Identify a varactor area, which generates its own thick oxide mask
+# and its own PSD mask
+
+ templayer varactorarea hvpvar
+	grow 580
+	bloat-all *hvvar nwell
+	maxrect external
+
 #----------------------------------------------------------------
 # PSD, NSD (PPLUS, NPLUS implants)
 #----------------------------------------------------------------
@@ -672,6 +688,7 @@ style gdsii
 	bloat-or allpactivetap * 30 allnactivenontap 0 isodiffres 150
 	bloat-or allpactivenontap * 180 allnactivetap 0
 	and-not transhalo
+	and-not varactorarea
 	# fill catecorner abutments satisfying pSD.a, pSD.b
 	bridge	310 310
 	# and-not NSD
@@ -688,6 +705,12 @@ style gdsii
 	grow 200
 	calma	14 0
 
+ # Varactor (SVaricap) generates its own PSD around the diffusion
+ # tab passing under the gate on top and bottom.
+ layer PSD
+	bloat-or hvpmos,hvpvar,hvpsd * 100 *hvvar 0
+	and varactorarea
+	calma	14 0
 
 # NOTE: sg13g2 defines PSD but not (by default) NSD.  Although
 # GDS layer:purpose pair 7 0 is marked for use as NSD, it is
@@ -808,10 +831,10 @@ style gdsii
 # THKOX (ThickGateOx)
 #----------------------------------------------------------------
 
- layer THKOX schottkyarea
+ layer THKOX schottkyarea,varactorarea
 	grow 100
-	or alldiffhv,hvvar
-        bloat-or alldiffhv,hvvar * 185 alldifflv 0
+	or alldiffhv,hvvar,hvpvar
+        bloat-or alldiffhv,hvvar,hvpvar * 185 alldifflv 0
 	grow	430
 	shrink	430
 	mask-hints THKOX
@@ -989,6 +1012,21 @@ style gdsii
  layer MET1FILL m1fill
 	labels m1fill
 	calma 8 22
+
+ layer IPROBE iprobe
+	labels iprobe
+	calma 8 33
+
+ layer DPROBE diffprobe
+	labels diffprobe
+	calma 8 34
+
+ layer MET1 diffprobe
+	grow 200
+	and m1
+	grow 300
+	shrink 300
+ 	calma 	8 0
 
 #----------------------------------------------------------------
 # VIA1
@@ -1343,12 +1381,6 @@ style drc
  templayer pwell_in_dnwell dnwell
  and-not nwell
 
- # Make sure nwell covers varactor poly
- templayer var_poly_no_nwell
- bloat-all var,hvvar *poly
- grow 150
- and-not nwell
-
  # Check latchup rule (20um minimum from tap VIA center to any
  # non-tap diffusion.  Note that to count as a tap, the diffusion
  # must be contacted to M1
@@ -1621,9 +1653,9 @@ style drc
  templayer tap_missing_m1 allnactivetap,allpactivetap
  and-not tap_with_m1
 
- # Make srue varactor nwell contains no P diffusion
+ # Make sure varactor nwell contains no P diffusion
  templayer pdiff_in_varactor_well
- bloat-all var,hvvar nwell
+ bloat-all hvvar nwell
  and allpactive
 
  # Find minimum hole sizes in diffusion
@@ -2172,20 +2204,39 @@ style  sg13g2 variants ()
  ignore MET6NORCX
  ignore MET7NORCX
 
- # NOTE:  The pnpMPA example device has neither BIPOLARID
- # (TRANS) nor PNPID layers.  Don't know how to automatically
- # infer an PNP device. . .
- layer pnp NWELL,WELLPIN
- and BIPOLARID
- labels NWELL
- labels WELLPIN port
+ # Sort of a hack---Identify a PNP area as a small island of pdiff
+ # in a pwell in a deep nwell in nwell.  Only consider "small" deep
+ # nwell regions (2.28um), as they are too small to hold any other
+ # device except a diode, which is checked for.
+
+ templayer large_dnwell DNWELL
+ and NWELL
+ shrink 1140
+ grow 1140
+
+ templayer small_dnwell DNWELL
+ and NWELL
+ and-not large_dnwell
+
+ templayer pnparea DIFF
+ and PSD
+ and-not THKOX
+ and-not SBLK
+ and-not NSDBLOCK
+ and-not DIODE
+ and small_dnwell
+ grow 1050
+ and NWELL
+
+ layer pnp pnparea
 
  layer nwell NWELL,WELLPIN
- and-not PNPID
+ and-not pnparea
  labels NWELL
  labels WELLPIN port
 
  templayer nwellarea NWELL
+ and-not pnp
  copyup nwelcheck
 
  # Copy nwell areas up for diffusion checks
@@ -2364,10 +2415,10 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
  and PSD
  copyup pdifcheck
- labels DIFF
- labels DIFFPIN port
 
  layer pdiff pdiffarea
+ labels DIFF
+ labels DIFFPIN port
 
  templayer hvpdiffarea DIFF,DIFFPIN
  and-not POLY
@@ -2377,10 +2428,10 @@ style  sg13g2 variants ()
  and PSD
  and-not SBLK
  copyup hvpdifcheck
- labels DIFF
- labels DIFFPIN port
 
  layer hvpdiff hvpdiffarea
+ labels DIFF
+ labels DIFFPIN port
 
  # Copy pdiff areas up for contact checks
  templayer xpdifcheck pdifcheck
@@ -2479,10 +2530,6 @@ style  sg13g2 variants ()
  and PSD
  and NWELL,nwelcheck
  and-not THKOX,hvcheck
-
- # Always force nwell under pfet (nwell encloses pdiff by 0.18)
- layer nwell pfet
- grow 180
 
  # Copy hvpdiff areas up for contact checks
  templayer hvxpdifcheck hvpdifcheck
@@ -2861,12 +2908,18 @@ style  sg13g2 variants ()
  # represented by alternative types of metal1 like obsm1,
  # instead of being converted to metal1 as done below.
 
- layer m1 MET1,MET1TXT,MET1PIN,IPROBE,DPROBE
+ layer m1 MET1,MET1TXT,MET1PIN
  and-not MET1RES
  and-not MET1SLIT
  labels MET1
  labels MET1PIN port
  labels MET1TXT text
+
+ layer iprobe IPROBE
+ labels IPROBE
+
+ layer diffprobe DPROBE
+ labels DPROBE
 
  layer rm1 MET1
  and MET1RES
@@ -3230,10 +3283,30 @@ style  sg13g2 variants ()
  labels FILLOBSM7
 
  # MOS Varactor
- layer var POLY
+ layer hvvar POLY
  and DIFF
- and NSD
+ and-not NSDBLOCK
+ and-not PSD
+ and-not CONT
  and NWELL,nwelcheck
+ and THKOX,hvcheck
+ labels POLY
+
+ # MOS Varactor contact
+ layer hvvarc CONT
+ and POLY
+ and DIFF
+ and-not NSDBLOCK
+ and-not PSD
+ and NWELL,nwelcheck
+ and THKOX,hvcheck
+ labels CONT
+
+ # parasitic p-type varactor
+ layer hvpvar POLY
+ and DIFF
+ and PSD
+ and-not NWELL,nwelcheck
  and THKOX,hvcheck
  labels POLY
 
@@ -3519,7 +3592,7 @@ drc
  spacing allpolynonfet alldiff 70 corner_ok allfets \
 	"poly spacing to Diffusion < %d (Gat.d)"
 
- rect_only allfets "No bends in transistors (Gat.f)"
+ rect_only allnfets,allpfets,hvpvar "No bends in transistors (Gat.f)"
 
  overhang *poly allfetsstd 180 "Poly overhang of transistor < %d (Gat.c)"
 
@@ -3582,9 +3655,9 @@ drc
  spacing pc alldiff 140 touching_illegal \
 	"Poly contact spacing to diffusion < %d (Cnt.e)"
 
- spacing (ndc,nsd,pdc,psc,ndic,pdic)/a *poly,allfets 110 touching_illegal \
+ spacing (ndc,nsc,pdc,psc,ndic,pdic)/a *poly,allfets 110 touching_illegal \
 	"Diffusion contact spacing to poly < %d (Cnt.f)"
- spacing (hvndc,hvnsd,hvpdc,hvpsc)/a *poly,allfets 110 touching_illegal \
+ spacing (hvndc,hvnsc,hvpdc,hvpsc)/a *poly,allfets 110 touching_illegal \
 	"Diffusion contact spacing to poly < %d (Cnt.f)"
 
  surround ndc/a *ndiff,nfet 70 absence_illegal \
@@ -3629,9 +3702,10 @@ drc
 # METAL1 -
 #-------------------------------------------------------------
 
- width *m1,rm1 160 "Metal1 width < %d (M1.a)"
- spacing allm1 allm1,*obsm1 180 touching_ok "Metal1 spacing < %d (M1.b)"
- area allm1,*obsm1 90000 160 "Metal1 minimum area < %a (M1.d)"
+ width *m1,rm1,iprobe,diffprobe 160 "Metal1 width < %d (M1.a)"
+ spacing allm1,diffprobe allm1,diffprobe,*obsm1 180 touching_ok \
+	"Metal1 spacing < %d (M1.b)"
+ area allm1,diffprobe,*obsm1 90000 160 "Metal1 minimum area < %a (M1.d)"
 
  angles allm1 45 "Only 45 and 90 degree angles permitted on metal1 (Grid Rules)"
 
@@ -3974,8 +4048,8 @@ variants *
  edge4way hvndiff hvnfet 450 hvnfet 0 0 \
 	"HV NMOS minimum length < %d (Gat.a3)"
 
- edge4way hvnsd hvvaractor 450 hvvaractor 0 0 \
-	"HV Varactor minimum length < %d (Gat.a3)"
+ extend *hvvaractor hvnsd 300 exclusive \
+	"HV Varactor minimum length < %d (Gat.a3 exception)"
 
  # Minimum length inferred from primitive device layout.  Length is 0.36um
  # in nmoscl_2 and nmoscl_4, and 0.33um in scr1.  The two cases could in
@@ -4669,8 +4743,8 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  # High voltage NPN bipolar
  device msubcircuit npn13g2v npn hvnec *ndiff space/w error w1=we l1=le
 
- # Currently this device is not identifiable
- # device msubcircuit pnpMPA pnp *pdiff pwell,space/w w1=we l1=le
+ # Lateral PNP bipolar
+ device msubcircuit pnpMPA pnp *pdiff pwell,space/w w1=we l1=le
 
  # Capacitors
  device csubcircuit cap_cmim *mimcap *m5 w=w l=l
