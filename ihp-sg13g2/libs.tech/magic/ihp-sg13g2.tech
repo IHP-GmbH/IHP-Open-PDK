@@ -147,6 +147,7 @@ types
   active hvndiffres,hvrnd,hvrndiff
   # Used in ptapSB
   active isodiffres,risodiff,riso
+  active hvisodiffres,hvrisodiff,hvriso
 
 # Diodes
   active pdiode,pdi
@@ -316,7 +317,7 @@ aliases
 
   allcont	alldiffcont,pc
 
-  allres	allpolyres,hvndiffres,isodiffres
+  allres	allpolyres,hvndiffres,isodiffres,hvisodiffres
 
   allm1		*m1,rm1
   allm2		*m2,rm2
@@ -367,6 +368,7 @@ styles
   hvnec	    emitter hvndiff_mask metal1 contact_X'es
   hvndiffres  ndiffusion ndop_stripes hvndiff_mask
   riso	    ndiff_in_nwell pdiff_in_pwell substrate_field_implant
+  hvriso    ndiff_in_nwell pdiff_in_pwell substrate_field_implant hvndiff_mask
 
   hvndiff   ndiffusion     hvndiff_mask
   hvpdiff   pdiffusion     hvpdiff_mask
@@ -593,16 +595,24 @@ style gdsii
 # DIFF (Activ)
 #----------------------------------------------------------------
 
- layer DIFF 	allnactive,allpactive,*schottky
+ # DIFFMASK is used in the ptapSB structure around isodiffres
+ # Note that this is not used around hvisodiffres.  DIFFMASK
+ # in bipolar transistors is handled below with other bipolar
+ # device masks.
+
+ templayer diffmaskarea
+	bloat-or isodiffres * 0 *ndiff 130 *psd 200
+
+ layer DIFF 	allnactive,allpactive,*schottky,hvisodiffres
+	and-not diffmaskarea
  	calma 	1 0
 
  layer DIFFPIN
  	labels allnactive,allpactive port
 	calma	1 2
 
- # This is used in NPN transistors
- layer DIFFMASK	*nemitter
-	calma	1 20
+ layer DIFFMASK diffmaskarea
+ 	calma 	1 20
 
 #----------------------------------------------------------------
 # BIPOLARID (TRANS), applies to NPN bipolar transistor.  Use
@@ -652,18 +662,23 @@ style gdsii
 #----------------------------------------------------------------
 # PSD, NSD (PPLUS, NPLUS implants)
 #----------------------------------------------------------------
+# To-do:  Satisfy pSD.e and pSD.f for butted taps (prob. not simple)
+#----------------------------------------------------------------
 
  layer PSD
+	# PSD covers rppd and righ resistors
 	bloat-all pres,xres poly
 	grow 180
-	bloat-or allpactivetap * 125 allnactivenontap 0
-	bloat-or allpactivenontap * 125 allnactivetap 0
+	bloat-or allpactivetap * 30 allnactivenontap 0 isodiffres 150
+	bloat-or allpactivenontap * 180 allnactivetap 0
 	and-not transhalo
-	bridge	380 380
+	# fill catecorner abutments satisfying pSD.a, pSD.b
+	bridge	310 310
 	# and-not NSD
 	grow	185
 	shrink	185
-	close   265000
+	# handles pSD.l, minimum enclosed area = 0.25um^2
+	close   250000
 	mask-hints PSD
 	calma	14 0
 
@@ -672,6 +687,7 @@ style gdsii
 	and transhalo
 	grow 200
 	calma	14 0
+
 
 # NOTE: sg13g2 defines PSD but not (by default) NSD.  Although
 # GDS layer:purpose pair 7 0 is marked for use as NSD, it is
@@ -713,8 +729,20 @@ style gdsii
 
  layer SBLK
 	bloat-or pres,xres * 200 *poly 0
+	bloat-or hvndiffres * 280 *hvndiff,*hvpsd 0
+	bloat-or isodiffres * 320 *ndiff,*psd 0
+	bloat-or hvisodiffres * 330 *hvndiff,*hvpsd 0
 	grow 210
 	shrink 210
+	calma 28 0
+
+ # NSDBLOCK is inside SBLK
+ layer NSDBLOCK
+	bloat-or hvisodiffres * 350 *hvndiff 0 *hvpsd 150
+	bloat-or isodiffres * 320 *ndiff,*psd 0
+	shrink 150
+	grow 155
+	shrink 155
 	calma 28 0
 
 #----------------------------------------------------------------
@@ -2173,9 +2201,13 @@ style  sg13g2 variants ()
 
  # Always draw pwell under p-tap and n-diff.  This is not always
  # necessary but works better with deep nwell for correct extraction.
+ # Avoid drawing under butted contacts.
+
  layer pwell DIFF
+ and-not PWELLBLK
  and-not NWELL,nwelcheck
  grow 130
+ and-not NWELL,nwelcheck
  or SUBTXT
  grow 420
  shrink 420
@@ -2366,25 +2398,39 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
  copyup DIODE,PSD
 
+ templayer isoarea NSDBLOCK
+ and-not PSD
+ grow 150
+ 
  layer hvndiffres DIFF
  and SBLK
  and THKOX
- and-not PSD
+ and-not isoarea
  and-not DIODE
  and-not BIPOLARID
  and-not POLY
  labels DIFF
 
- layer isodiffres DIFFMASK
+ layer isodiffres DIFF,DIFFMASK
+ and isoarea
  and SBLK
- and NSDBLOCK
+ and-not THKOX
  and-not BIPOLARID
- labels DIFFMASK
+ and-not POLY
+ labels DIFF,DIFFMASK
 
- # Include DIFFMASK on either side of isodiffres 
- layer ndiff DIFFMASK
+ layer hvisodiffres DIFF
+ and isoarea
  and SBLK
- and NSDBLOCK
+ and THKOX
+ and-not BIPOLARID
+ and-not POLY
+ labels DIFF
+
+ # Include DIFFMASK on either side of isodiffres in pwell tap
+ layer ndiff DIFFMASK
+ and isoarea
+ and SBLK
  and-not NWELL
  and-not BIPOLARID
  grow 150
@@ -2392,18 +2438,17 @@ style  sg13g2 variants ()
  grow 200
  and DIFFMASK
  and-not PSD
- and-not NSDBLOCK
+ and-not isoarea
 
  layer psd DIFFMASK
+ and isoarea
  and SBLK
- and NSDBLOCK
  and-not NWELL
  and-not BIPOLARID
- grow 150
- and DIFFMASK
  grow 200
  and DIFFMASK
  and PSD
+ and-not SBLK
 
  # Define schottky diode device from the salicide block.
  templayer schottkyarea DIODE
@@ -3405,18 +3450,25 @@ drc
 	"HV N-Diffusion spacing to N-well < %d (NW.d1)"
  surround *nsd allnwell 240 absence_illegal \
 	"N-well overlap of N-tap < %d (NW.e)"
- surround *hvnsd,*schottky allnwell 620 absence_illegal \
-	"N-well overlap of HV N-tap < %d (NW.e1)"
  spacing *psd allnwell 240 touching_illegal \
 	"P-tap spacing to N-well < %d (NW.f)"
  spacing *hvpsd allnwell 620 touching_illegal \
 	"HV P-tap spacing to N-well < %d (NW.f1)"
+ surround *schottky allnwell 620 absence_illegal \
+	"N-well overlap of HV N-tap < %d (NW.e1)"
+
+ # N-well surround rule needs to accommodate the SCR device,
+ # in which nwell stops at the hvndiffres edge.
+ # surround *hvnsd allnwell 0 absence_illegal \
+ #	"N-well overlap of HV N-tap < %d (NW.e1)"
+ edge4way *hvnsd ~(*hvnsd,hvndiffres)/a 620 allnwell 0 0 \
+	"N-well overlap of HV N-tap < %d (NW.e1)"
 
 #-----------------------------
 # DIFF
 #-----------------------------
 
- width alldiff 150 "Diffusion width < %d (Act.a)"
+ width alldiff,isodiffres,hvisodiffres 150 "Diffusion width < %d (Act.a)"
  spacing alldiff alldiff 210 touching_illegal "Diffusion spacing < %d (Act.b)"
 
  overhang *ndiff nfet 230 "N-Diffusion overhang of nFET < %d (Act.c)"
