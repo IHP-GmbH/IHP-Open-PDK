@@ -149,6 +149,7 @@ types
   active hvndiffres,hvrnd,hvrndiff
   # Used in ptapSB
   active isodiffres,risodiff,riso
+  # Used in scr1
   active hvisodiffres,hvrisodiff,hvriso
 
 # Diodes
@@ -4234,17 +4235,9 @@ end
 #-----------------------------------------------------
 
 extract
- style ngspice variants (),(hrhc),(lrhc),(hrlc),(lrlc)
+ style ngspice variants (),(lvs),(hrhc),(lrhc),(hrlc),(lrlc)
  cscale 1
- # NOTE: SkyWater SPICE libraries use .option scale 1E6 so all
- # dimensions must be in units of microns in the extract file.
- # Use extract style "ngspice(si)" to override this and produce
- # a file with SI units for length/area.
-
- variants (),(lvs),(hrhc),(lrhc),(hrlc),(lrlc)
  lambda 1.0
- variants *
-
  units	microns
  step   7
  sidehalo 8
@@ -4731,7 +4724,7 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  # resistor.  Currently extracting all of them as plain high-voltage
  # MOSFETs, which is probably not the best way to handle them.
 
- device msubcircuit sg13_hv_nmos hvnfet hvndiffres hvndiffres \
+ device msubcircuit sg13_hv_nmos hvnmosesd hvndiffres hvndiffres \
 	pwell,space/w error l=l w=w a1=as p1=ps a2=ad p2=pd
 
  # Bipolars
