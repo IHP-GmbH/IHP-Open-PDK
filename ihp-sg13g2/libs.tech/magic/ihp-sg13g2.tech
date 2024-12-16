@@ -528,6 +528,9 @@ connect
   *m7,m7fill,pillar	*m7,m7fill,pillar
   *mimcap       *mimcap
    allnactivenonfet	allnactivenonfet
+   # Resistor to isolated pwell tap
+   isodiffres	*ndiff,*psd
+   # Note:  This creates a short through hvndiffres resistors.
    allpactivenonfet	allpactivenonfet
   *poly,allfets,polyfill	*poly,allfets,polyfill
 end
@@ -2269,6 +2272,10 @@ style  sg13g2 variants ()
  labels DNWELL
 
  layer isosub SUBCUT
+ # isosub as part of ptap or ntap makes no sense in magic, so
+ # remove it if it exists only under a contact area.
+ shrink 400
+ grow 400
  labels SUBCUT
 
  layer tsv THRUVIA
@@ -4741,17 +4748,29 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
 
  # Capacitors
  device csubcircuit cap_cmim *mimcap *m5 w=w l=l
+ # Placeholder for SVaricap (for which there is no device model)
+ device csubcircuit SVaricap *hvvaractor *hvnsd w=w l=l
 
  # Diodes
  device subcircuit dpantenna *pdiode nwell w=w l=l
  device msubcircuit dantenna *ndiode pwell,space/w w=w l=l
- device subcircuit schottky *schottky *hvnsd pwell w=w l=l
+ device subcircuit schottky *schottky *hvnsd nwell error w=w l=l
 
  # Resistors
 
  device rsubcircuit rsil nres *poly w=w l=l
  device rsubcircuit rppd pres *poly w=w l=l
  device rsubcircuit rhigh xres *poly w=w l=l
+
+ # Metal resistors.  There are no device models for these, so they
+ # are extracted as ideal (non-semiconductor) resistors.
+ device resistor None rm1 *metal1
+ device resistor None rm2 *metal2
+ device resistor None rm3 *metal3
+ device resistor None rm4 *metal4
+ device resistor None rm5 *metal5
+ device resistor None rm6 *metal6
+ device resistor None rm7 *metal7
 
  # TBD
  # device rsubcircuit ptap1
@@ -4794,13 +4813,23 @@ variants (lvs)
  # Diodes
  device pdiode dpantenna *pdiode nwell
  device ndiode dantenna *ndiode pwell,space/w
- device pdiode schottky *schottky *hvnsd pwell w=w l=l
+ device pdiode schottky *schottky *hvnsd pwell
 
  # Resistors
 
  device resistor rsil nres *poly
  device resistor rppd pres *poly
  device resistor rhigh xres *poly
+
+ # Metal resistors.  There are no device models for these, so they
+ # are extracted as ideal (non-semiconductor) resistors.
+ device resistor None rm1 *metal1
+ device resistor None rm2 *metal2
+ device resistor None rm3 *metal3
+ device resistor None rm4 *metal4
+ device resistor None rm5 *metal5
+ device resistor None rm6 *metal6
+ device resistor None rm7 *metal7
 
  # TBD
  # device resistor ptap1
