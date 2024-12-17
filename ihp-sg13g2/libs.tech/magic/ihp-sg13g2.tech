@@ -15,7 +15,7 @@ end
 version
  version 0.1.2
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.506
+ requires magic-8.3.507
 end
 
 #------------------------------------------------------------------------
@@ -254,7 +254,7 @@ contact
   stackable
 
   # MiM cap contacts are not stackable!
-  mimcc  mimcap metal4
+  mimcc  mimcap metal6
 end
 
 #-----------------------------------------------------
@@ -438,7 +438,7 @@ styles
   via5      metal5         metal6  via5
 
   mimcap    metal5         mems
-  mimcc     metal5         contact_X'es mems
+  mimcc     metal6         contact_X'es mems
 
   metal6    metal6
   m6fill    metal6
@@ -1703,6 +1703,28 @@ style drc
 	grow 100
 	and-not npnactive
 	and alldiff,difffill,npn,nwell,dnwell
+
+ # Check for (lack of) TopVia1 over MiM cap.
+ templayer mimcap_with_via
+	bloat-all mimcc mimcap
+
+ templayer mimcap_missing_via mimcap
+	and-not mimcap_with_via 
+
+ # Check for mimcap overlapping via4
+ templayer via_under_mimcap via4
+	and mimcap
+
+ # For metal6 spacing to MiM cap, a regular spacing rule will
+ # not suffice, because only unrelated metal6 should be
+ # considered.
+ templayer metal6_connects_mimcap
+	bloat-all mimcc/m6 metal6
+
+ templayer metal6_spacing_to_mimcap metal6
+	and-not metal6_connects_mimcap
+	grow 600
+	and mimcap
 
 #----------------------------------------------------------------
 style density
@@ -3032,6 +3054,7 @@ style  sg13g2 variants ()
  labels MET5FILL
 
  layer via5 VIA5
+ and-not MIM
  grow 100
  grow 110 
  shrink 110
@@ -4117,10 +4140,6 @@ variants *
  surround *mimcap *metal5/m5 600 absence_illegal \
 	"Metal5 must surround MiM cap by %d (MIM.c)"
 
- # Improper use of corner_ok.  This can be done with a cifwidth rule.
- # spacing *mimcap *metal6 600 corner_ok \
- #	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
-
  area *mimcap 1300000 1140 "MiM cap minimum area < %a (MIM.f)"
 
  # MIM.g:  Need a maximum area rule?
@@ -4135,6 +4154,17 @@ variants *
 	"Metal6 overlap of MiM contact < %d in one direction (TV1.d - TV1.c)"
 
  exact_overlap mimcc/m5
+
+ variants (full)
+ cifmaxwidth mimcap_missing_via 0 bend_illegal \
+	"TopVia1 must be over MiM (MIM.h)"
+
+ cifmaxwidth via_under_mimcap 0 bend_illegal \
+	"Via4 not allowed under MiM cap (MIM.i)"
+
+ cifmaxwidth metal6_spacing_to_mimcap 0 bend_illegal \
+	"MiM cap spacing to unrelated metal6 < %d (MIM.e)"
+ variants *
 
 #-----------------------------------------------------------
 # Bipolar devices
