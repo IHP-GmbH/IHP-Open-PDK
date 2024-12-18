@@ -1739,7 +1739,7 @@ style density
 
  templayer poly_all allpoly,polyfill
 
- templayer m1_all allm1,m1fill
+ templayer m1_all allm1,m1fill,diffprobe
 
  templayer m2_all allm2,m2fill
 
@@ -1754,7 +1754,7 @@ style density
  templayer m7_all allm7,m7fill
 
 #----------------------------------------------------------------
-style wafflefill variants (),(tiled)
+style patternfill variants (),(tiled)
 #----------------------------------------------------------------
 # Style used by scripts for automatically generating fill layers
 # NOTE: Be sure to generate output on flattened layout.
@@ -1791,399 +1791,453 @@ style wafflefill variants (),(tiled)
 
 #----------------------------------------------------------------
 # Generate guard-band around nwells to keep DIFF from crossing
-# Spacing from LV nwell = Diff 9 = 0.34um
-# Spacing from HV nwell = Diff 18 = 0.43um (= 0.18 + 0.25)
-# Enclosure by nwell = Diff 8 = 0.18um
+# Spacing from nwell = AFil.d = 1um
+# Enclosure by nwell = AFil.d = 1um
 #----------------------------------------------------------------
 
- templayer hvnwell
- 	bloat-all alldiffhv nwell
+ templayer	well_shrink nwell,dnwell
+	shrink  1000
 
- templayer lvnwell allnwell
-	and-not hvnwell
-
- templayer	well_shrink hvnwell
-	shrink 	250
-	or lvnwell
-	shrink	180
- templayer	well_guardband allnwell
-	grow	340
+ templayer	well_guardband nwell,dnwell
+	grow	1000
 	and-not	well_shrink
 
-#---------------------------------------------------
-# Diffusion and poly keep-out areas
-#---------------------------------------------------
- templayer      obstruct_diff alldiff,allpoly,difffill,polyfill,obsactive
-	or	pnp,npn
-        grow    500
+ # Generate area of TRANS for diffusion fill keep-out 
+ templayer trans gec,nec,hvnec
+	grow 2630
+	and-not psd
+	grow 400
+	and-not psd
+	grow 400
+	and-not psd
+	shrink 200
+
+#------------------------------------------------------------------------
+# Diffusion filler keep-out areas
+# Spacing to diffusion:  0.42um (AFil.c1)
+# Spacing to poly and contact: 1.10um (AFil.c)
+# Space to NPN bipolar: 1um (AFil.e)
+#
+# To do:  Ensure spacing to pwell-block (Afil.i)
+# Note: Fill patterns inside pwell-block are not automatically
+# generated but can be manually drawn.
+#------------------------------------------------------------------------
+
+ templayer      obstruct_diff allpoly,polyfill,allcont
+	grow	100
+	or	trans
+	grow	580
+	or	alldiff,difffill,obsactive
+	grow	420
 	or	well_guardband
 
- templayer      obstruct_poly alldiff,allpoly,difffill,polyfill,obsactive
-	or	pnp,npn
+#------------------------------------------------------------------------
+# Poly filler keep-out areas determined by diffusion obstruction areas.
+# Spacing to diffusion, poly, contact: 1.1um (GFil.d)
+# Spacing to nwell, dnwell:  1.1um (GFil.e)
+# Spacing to TRANS: 1.1um (GFil.f)
+#------------------------------------------------------------------------
+
+ templayer      obstruct_poly 	alldiff,allpoly,difffill,polyfill,obsactive
+	or	trans
 	grow	1000
+	or	well_guardband
+	grow	100
 
 #---------------------------------------------------
 # DIFF and POLY fill
+# Done in three passes at sizes 4600, 2000, and 1000
+# on diffusion.  Poly overlaps diffusion with
+# extensions, lengths 5000, 2400, and 1400; and
+# widths 4300, 1700, and 700
 #---------------------------------------------------
- templayer	difffill_pass1 topbox
-        slots   0 4080 1600 0 4080 1600 1360 0
+
+ templayer	difffill_coarse topbox
+        slots   0 4600 820 0 5000 420 1360 0
         and-not obstruct_diff
 	and	topbox
-        shrink  2035
-        grow    2035
+        shrink  2295
+        grow    2295
 
-#---------------------------------------------------
-
- templayer      obstruct_poly_pass1 difffill_pass1
-        grow    300
-	or	obstruct_poly
- templayer	polyfill_pass1 topbox
-        slots   0 720 360 0 720 360 240 0
-        and-not obstruct_poly_pass1
-	and	topbox
-        shrink  355
-        grow    355
-
-#---------------------------------------------------
-
- templayer      obstruct_diff_pass2 difffill_pass1
-        grow    1290
-	or	polyfill_pass1
-        grow    300
-	or	obstruct_diff
- templayer	difffill_pass2 topbox
-        slots   0 2500 1320 0 2500 1320 1360 0
-        and-not obstruct_diff_pass2
-	and	topbox
-        shrink  1245
-        grow    1245
-
-#---------------------------------------------------
-
- templayer      obstruct_poly_coarse polyfill_pass1
-	grow	60
-	or	difffill_pass1,difffill_pass2
-	grow	300
-	or	obstruct_poly
  templayer	polyfill_coarse topbox
-        slots   0 720 360 0 720 360 240 120
-        and-not obstruct_poly_coarse
+	slots	0 5000 420 0 3000 2420 1560 1000
+        and-not obstruct_diff
 	and	topbox
-        shrink  355
-        grow    355
+        shrink  2495
+        grow    2495
 
-#---------------------------------------------------
- templayer      obstruct_poly_medium polyfill_pass1,polyfill_coarse
-	grow	60
-	or	difffill_pass1,difffill_pass2
-        grow    300
-	or	obstruct_poly
+ templayer      obstruct_diff_medium allpoly,polyfill,allcont
+	grow	100
+	or	trans
+	grow	580
+	or	alldiff,difffill,obsactive,difffill_coarse
+	grow	420
+	or	well_guardband
+
+ templayer	difffill_medium topbox
+        slots   0 2000 820 0 2000 420 750 0
+        and-not obstruct_diff_medium
+	and	topbox
+        shrink  995
+        grow    995
+
  templayer	polyfill_medium topbox
-        slots   0 540 360 0 540 360 240 100
-        and-not obstruct_poly_medium
+	slots	0 2400 420 0 1000 1420 550 500
+        and-not obstruct_diff
 	and	topbox
-        shrink  265
-        grow    265
+        shrink  995
+        grow    995
 
-#---------------------------------------------------
- templayer      obstruct_poly_fine polyfill_pass1,polyfill_coarse,polyfill_medium
-	grow	60
-	or	difffill_pass1,difffill_pass2
-	grow	300
-	or	obstruct_poly
- templayer	polyfill_fine topbox
-        slots   0 480 360 0 480 360 240 200
-        and-not obstruct_poly_fine
-	and	topbox
-        shrink  235
-        grow    235
+ templayer      obstruct_diff_fine allpoly,polyfill,allcont
+	grow	100
+	or	trans
+	grow	580
+	or	alldiff,difffill,obsactive
+	or	difffill_coarse,difffill_medium
+	grow	420
+	or	well_guardband
 
-#---------------------------------------------------
-
- templayer      obstruct_diff_coarse difffill_pass1,difffill_pass2
-        grow    1290
-	or	polyfill_pass1,polyfill_coarse,polyfill_medium,polyfill_fine
-	grow	300
-	or	obstruct_diff
- templayer	difffill_coarse topbox
-        slots   0 1500 1320 0 1500 1320 1360 0
-        and-not obstruct_diff_coarse
-	and	topbox
-        shrink  745
-        grow    745
-
-#---------------------------------------------------
-
- templayer      obstruct_diff_fine difffill_pass1,difffill_pass2,difffill_coarse
-        grow    1290
-	or	polyfill_pass1,polyfill_coarse,polyfill_medium,polyfill_fine
-	grow	300
-	or	obstruct_diff
  templayer	difffill_fine topbox
-        slots   0 500 400 0 500 400 160 0
+        slots   0 1000 820 0 1000 420 360 0
         and-not obstruct_diff_fine
 	and	topbox
-        shrink  245
-        grow    245
+        shrink  495
+        grow    495
+
+ templayer	polyfill_fine topbox
+	slots	0 1400 420 0 700 720 160 150
+        and-not obstruct_diff
+	and	topbox
+        shrink  995
+        grow    995
 
 #---------------------------------------------------
- layer  DIFFFILL difffill_pass1 
-	or	difffill_pass2
-	or	difffill_coarse
+ layer  DIFFFILL difffill_coarse
+	or	difffill_medium
 	or	difffill_fine
  	calma 	1 22
 
- layer	POLYFILL polyfill_pass1 
-	or	 polyfill_coarse
+ layer	POLYFILL polyfill_coarse
 	or	 polyfill_medium
 	or	 polyfill_fine
  	calma 	5 22
 
 #---------------------------------------------------
+# MET1 to MET5 rules:
+# Space to other metal1-5: 0.42um (MFil.c)
+# Space to TRANS: 1.0 (MFil.d)
+# Also:  Prohibiting metal1-5 fill under pads.
+#---------------------------------------------------
 # MET1 fill
+# Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer      obstruct_m1_coarse allm1,glass,obsm1,m1fill,fillblock
-        grow    3000
- templayer	met1fill_coarse topbox
-        # slots   0 2000 200 0 2000 200 700 0
-        slots   0 2000 800 0 2000 800 700 350
-        and-not obstruct_m1_coarse
-	and	topbox
-        shrink  995
-        grow    995
+ templayer	obstruct_m1 trans,glass
+	grow	580
+	or	allm1,obsm1,m1fill,fillblock
+        grow    420
 
- templayer      obstruct_m1_medium allm1,glass,obsm1,m1fill,fillblock
-        grow    2800
+ templayer	met1fill_coarse topbox
+        slots   0 5000 420 0 5000 420 1700 850
+        and-not obstruct_m1
+	and	topbox
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m1_medium trans,glass
+	grow	580
+	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse
-        grow    200
+        grow    420
+
  templayer	met1fill_medium topbox
-        slots   0 1000 200 0 1000 200 700 0
+        slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m1_medium
 	and	topbox
         shrink  495
         grow    495
 
- templayer      obstruct_m1_fine allm1,glass,obsm1,m1fill,fillblock
-        grow    300
+ templayer      obstruct_m1_fine trans,glass
+	grow	580
+	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse,met1fill_medium
-        grow    200
+        grow    420
+
  templayer	met1fill_fine topbox
-        slots   0 580 200 0 580 200 700 0
+        slots   0 1000 420 0 1000 420 300 0
         and-not obstruct_m1_fine
 	and	topbox
-        shrink  285
-        grow    285
-
- templayer      obstruct_m1_veryfine allm1,glass,obsm1,m1fill,fillblock
-        grow    100
-	or	met1fill_coarse,met1fill_medium,met1fill_fine
-        grow    200
- templayer	met1fill_veryfine topbox
-        slots   0 300 200 0 300 200 100 50
-        and-not obstruct_m1_veryfine
-	and	topbox
-        shrink  145
-        grow    145
+        shrink  495
+        grow    495
 
  layer	MET1FILL met1fill_coarse
 	or	met1fill_medium
 	or	met1fill_fine
-	or	met1fill_veryfine
  	calma 	8 22
 
 #---------------------------------------------------
 # MET2 fill
+# Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
- templayer      obstruct_m2 allm2,glass,obsm2,m2fill,fillblock
-        grow    3000
+
+ templayer	obstruct_m2 trans,glass
+	grow	580
+	or	allm2,obsm2,m2fill,fillblock
+        grow    420
+
  templayer	met2fill_coarse topbox
-        # slots   0 2000 200 0 2000 200 700 350
-        slots   0 2000 800 0 2000 800 700 350
+        slots   0 5000 420 0 5000 420 1700 850
         and-not obstruct_m2
 	and	topbox
-        shrink  995
-        grow    995
+        shrink  2495
+        grow    2495
 
- templayer      obstruct_m2_medium allm2,glass,obsm2,m2fill,fillblock
-        grow    2800
+ templayer      obstruct_m2_medium trans,glass
+	grow	580
+	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse
-        grow    200
+        grow    420
+
  templayer	met2fill_medium topbox
-        slots   0 1000 200 0 1000 200 700 350
+        slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m2_medium
 	and	topbox
         shrink  495
         grow    495
 
- templayer      obstruct_m2_fine allm2,glass,obsm2,m2fill,fillblock
-        grow    300
+ templayer      obstruct_m2_fine trans,glass
+	grow	580
+	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse,met2fill_medium
-        grow    200
+        grow    420
+
  templayer	met2fill_fine topbox
-        slots   0 580 200 0 580 200 700 350
+        slots   0 1000 420 0 1000 420 300 0
         and-not obstruct_m2_fine
 	and	topbox
-        shrink  285
-        grow    285
-
- templayer      obstruct_m2_veryfine allm2,glass,obsm2,m2fill,fillblock
-        grow    100
-	or	met2fill_coarse,met2fill_medium,met2fill_fine
-        grow    200
- templayer	met2fill_veryfine topbox
-        slots   0 300 200 0 300 200 100 100
-        and-not obstruct_m2_veryfine
-	and	topbox
-        shrink  145
-        grow    145
+        shrink  495
+        grow    495
 
  layer	MET2FILL met2fill_coarse
 	or met2fill_medium
 	or met2fill_fine
-	or met2fill_veryfine
  	calma 	10 22
 
 #---------------------------------------------------
 # MET3 fill
+# Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
- templayer      obstruct_m3 allm3,glass,obsm3,m3fill,fillblock
-        grow    3000
+
+ templayer	obstruct_m3 trans,glass
+	grow	580
+	or	allm3,obsm3,m3fill,fillblock
+        grow    420
+
  templayer	met3fill_coarse topbox
-        # slots   0 2000 300 0 2000 300 700 700
-        slots   0 2000 800 0 2000 800 700 350
+        slots   0 5000 420 0 5000 420 1700 850
         and-not obstruct_m3
 	and	topbox
-        shrink  995
-        grow    995
+        shrink  2495
+        grow    2495
 
- templayer      obstruct_m3_medium allm3,glass,obsm3,m3fill,fillblock
-        grow    2700
+ templayer      obstruct_m3_medium trans,glass
+	grow	580
+	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse
-        grow    300
+        grow    420
+
  templayer	met3fill_medium topbox
-        slots   0 1000 300 0 1000 300 700 700
+        slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m3_medium
 	and	topbox
         shrink  495
         grow    495
 
- templayer      obstruct_m3_fine allm3,glass,obsm3,m3fill,fillblock
-        grow    200
+ templayer      obstruct_m3_fine trans,glass
+	grow	580
+	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse,met3fill_medium
-        grow    300
+        grow    420
+
  templayer	met3fill_fine topbox
-        slots   0 580 300 0 580 300 700 700
+        slots   0 1000 420 0 1000 420 300 0
         and-not obstruct_m3_fine
 	and	topbox
-        shrink  285
-        grow    285
-
- templayer      obstruct_m3_veryfine allm3,glass,obsm3,m3fill,fillblock
-	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
-        grow    100
-	or	met3fill_coarse,met3fill_medium,met3fill_fine
-        grow    300
- templayer	met3fill_veryfine topbox
-        slots   0 500 300 0 500 300 150 200
-        and-not obstruct_m3_veryfine
-	and	topbox
-        shrink  245
-        grow    245
+        shrink  495
+        grow    495
 
  layer	MET3FILL met3fill_coarse
 	or	met3fill_medium
 	or	met3fill_fine
-	or	met3fill_veryfine
  	calma 	30 22
 
 #---------------------------------------------------
 # MET4 fill
+# Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
- templayer      obstruct_m4 glass
-	grow	2500
- 	or	allm4,obsm4,m4fill,fillblock
-        grow    3000
+
+ templayer	obstruct_m4 trans,glass
+	grow	580
+	or	allm4,obsm4,m4fill,fillblock
+        grow    420
+
  templayer	met4fill_coarse topbox
-        # slots   0 2000 300 0 2000 300 700 1050
-        slots   0 2000 800 0 2000 800 700 350
+        slots   0 5000 420 0 5000 420 1700 850
         and-not obstruct_m4
 	and	topbox
-        shrink  995
-        grow    995
+        shrink  2495
+        grow    2495
 
- templayer	obstruct_m4_medium glass
-	grow	2500
+ templayer      obstruct_m4_medium trans,glass
+	grow	580
 	or	allm4,obsm4,m4fill,fillblock
-        grow    2700
 	or	met4fill_coarse
-        grow    300
+        grow    420
+
  templayer	met4fill_medium topbox
-        slots   0 1000 300 0 1000 300 700 1050
+        slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m4_medium
 	and	topbox
         shrink  495
         grow    495
 
- templayer      obstruct_m4_fine glass
-	grow	5000
- 	or	allm4,obsm4,m4fill,fillblock
-        grow    200
+ templayer      obstruct_m4_fine trans,glass
+	grow	580
+	or	allm4,obsm4,m4fill,fillblock
 	or	met4fill_coarse,met4fill_medium
-        grow    300
+        grow    420
+
  templayer	met4fill_fine topbox
-        slots   0 580 300 0 580 300 700 1050
+        slots   0 1000 420 0 1000 420 300 0
         and-not obstruct_m4_fine
 	and	topbox
-        shrink  285
-        grow    285
-
- templayer      obstruct_m4_veryfine glass
-	grow	5100
-	or	allm4,obsm4,m4fill,fillblock
-	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
-        grow    100
-	or	met4fill_coarse,met4fill_medium,met4fill_fine
-        grow    300
- templayer	met4fill_veryfine topbox
-        slots   0 500 300 0 500 300 150 300
-        and-not obstruct_m4_veryfine
-	and	topbox
-        shrink  245
-        grow    245
+        shrink  495
+        grow    495
 
  layer	MET4FILL met4fill_coarse
 	or	met4fill_medium
 	or	met4fill_fine
-	or	met4fill_veryfine
  	calma 	50 22
 
 #---------------------------------------------------
 # MET5 fill
+# Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
- templayer      obstruct_m5 allm5,glass,obsm5,m5fill,fillblock
-        grow    3000
+
+ templayer	obstruct_m5 trans,glass
+	grow	580
+	or	allm5,obsm5,m5fill,fillblock
+        grow    420
+
  templayer	met5fill_coarse topbox
-        slots   0 5000 1600 0 5000 1600 1000 100
+        slots   0 5000 420 0 5000 420 1700 850
         and-not obstruct_m5
 	and	topbox
         shrink  2495
         grow    2495
 
- templayer      obstruct_m5_medium allm5,glass,obsm5,m5fill,fillblock
-        grow    1400
+ templayer      obstruct_m5_medium trans,glass
+	grow	580
+	or	allm5,obsm5,m5fill,fillblock
 	or	met5fill_coarse
-        grow    1600
+        grow    420
+
  templayer	met5fill_medium topbox
-        slots   0 3000 1600 0 3000 1600 1000 100
+        slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m5_medium
 	and	topbox
-        shrink  1495
-        grow    1495
+        shrink  495
+        grow    495
+
+ templayer      obstruct_m5_fine trans,glass
+	grow	580
+	or	allm5,obsm5,m5fill,fillblock
+	or	met5fill_coarse,met5fill_medium
+        grow    420
+
+ templayer	met5fill_fine topbox
+        slots   0 1000 420 0 1000 420 300 0
+        and-not obstruct_m5_fine
+	and	topbox
+        shrink  495
+        grow    495
 
  layer	MET5FILL met5fill_coarse
 	or	met5fill_medium
+	or	met5fill_fine
  	calma 	67 22
+
+#---------------------------------------------------
+# MET6 (TopMetal1) fill
+# Space to other metal6: 3.0um (TM1MFil.c)
+# Space to TRANS: 4.9 (TM1Fil.d)
+# Also:  Prohibiting metal6 fill under pads.
+# Two passes in sizes 10000, 5000
+#---------------------------------------------------
+ templayer	obstruct_m6 trans,glass
+	grow	1900
+	or	allm6,obsm6,m6fill,fillblock
+        grow    3000
+
+ templayer	met6fill_coarse topbox
+        slots   0 10000 3000 0 10000 3000 3000 1500
+        and-not obstruct_m6
+	and	topbox
+        shrink  4995
+        grow    4995
+
+ templayer      obstruct_m6_medium trans,glass
+	grow	1900
+	or	allm6,obsm6,m6fill,fillblock
+	or	met6fill_coarse
+        grow    3000
+
+ templayer	met6fill_medium topbox
+        slots   0 5000 3000 0 5000 3000 1000 500
+        and-not obstruct_m6_medium
+	and	topbox
+        shrink  2495
+        grow    2495
+
+ layer	MET6FILL met6fill_coarse
+	or	met6fill_medium
+ 	calma 	126 22
+
+#---------------------------------------------------
+# MET7 (TopMetal2) fill
+# Space to other metal7: 3.0um (TM2MFil.c)
+# Space to TRANS: 4.9 (TM2Fil.d)
+# Two passes in sizes 10000, 5000
+#---------------------------------------------------
+ templayer	obstruct_m7 trans,glass
+	grow	1900
+	or	allm7,obsm7,m7fill,fillblock
+        grow    3000
+
+ templayer	met7fill_coarse topbox
+        slots   0 10000 3000 0 10000 3000 3000 1500
+        and-not obstruct_m7
+	and	topbox
+        shrink  4995
+        grow    4995
+
+ templayer      obstruct_m7_medium trans,glass
+	grow	1900
+	or	allm7,obsm7,m7fill,fillblock
+	or	met7fill_coarse
+        grow    3000
+
+ templayer	met7fill_medium topbox
+        slots   0 5000 3000 0 5000 3000 1000 500
+        and-not obstruct_m7_medium
+	and	topbox
+        shrink  2495
+        grow    2495
+
+
+ layer	MET7FILL met7fill_coarse
+	or	met7fill_medium
+ 	calma 	134 22
 
 end
 
@@ -2677,15 +2731,15 @@ style  sg13g2 variants ()
  labels POLY
  labels POLYPIN port
 
- # Resistors.  These use POLYRES, not POLY
+ # Resistors.  Allow either POLYRES or POLY (pycells are inconsistent)
  layer nres RESDEF
- and POLYRES
+ and POLYRES,POLY
  and EXTBLOCK
  and-not PSD
  and-not NSD
  labels POLYRES
 
- layer pres POLYRES
+ layer pres POLYRES,POLY
  and EXTBLOCK
  and SBLK
  and PSD
@@ -3413,7 +3467,7 @@ style  sg13g2 variants ()
  calma MET6TXT 126 25
  calma MET7TXT 134 25
 
- # NOTE: POLYRES includes POLY
+ # NOTE: POLYRES includes POLY (or doesn't; layouts are inconsistent)
  calma POLYRES 128 0
 
  calma MET1RES 8 29
