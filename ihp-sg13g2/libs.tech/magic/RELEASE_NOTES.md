@@ -20,12 +20,14 @@ Included in this pre-release:
 3. Startup script for magic (`ihp-sg13g2-GDS.magicrc`)
 4. LVS setup for netgen (`../netgen/ihp-sg13g2_setup.tcl`)
 
-Not included in this pre-release:
+Not included/completed in this pre-release:
 
 1. Device generator for magic (`ihp-sg13g2.tcl`).  
    The file in the pre-release version is a placeholder only.
-2. Density rule check (requires a script)
-3. Fill generation (requires a script)
+2. Density rule check (`check_density.py`)  
+   Needs verification.
+3. Fill generation (`generate_fill.py`)  
+   Work in progress.
 4. Seal ring generator (may be implemented in the device generation script)
 
 All items not included in this pre-release are expected to be completed by April 2025.
