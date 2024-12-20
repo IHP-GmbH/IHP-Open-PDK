@@ -696,8 +696,6 @@ style gdsii
 #----------------------------------------------------------------
 # PSD, NSD (PPLUS, NPLUS implants)
 #----------------------------------------------------------------
-# To-do:  Satisfy pSD.e and pSD.f for butted taps (prob. not simple)
-#----------------------------------------------------------------
 
  layer PSD
 	# PSD covers rppd and righ resistors
@@ -775,6 +773,7 @@ style gdsii
 	bloat-or hvisodiffres * 330 *hvndiff,*hvpsd 0
 	grow 210
 	shrink 210
+	mask-hints SBLK
 	calma 28 0
 
  # NSDBLOCK is inside SBLK
@@ -784,6 +783,7 @@ style gdsii
 	shrink 150
 	grow 155
 	shrink 155
+	mask-hints NSDBLOCK
 	calma 28 0
 
 #----------------------------------------------------------------
@@ -794,6 +794,7 @@ style gdsii
 	bloat-all pres,xres,nres *poly
 	grow 180
 	bloat-or pres,xres * 200 *poly 0
+	mask-hints EXTBLOCK
 	calma 111 0
 
 #----------------------------------------------------------------
@@ -802,6 +803,7 @@ style gdsii
 
  layer HEATRES nres,pres,xres
 	labels nres,pres,xres
+	mask-hints HEATRES
 	calma 52 0
 
 #----------------------------------------------------------------
@@ -853,6 +855,8 @@ style gdsii
 	grow 100
 	or alldiffhv,hvvar,hvpvar
         bloat-or alldiffhv,hvvar,hvpvar * 185 alldifflv 0
+	grow-min 860
+	bridge 860 860
 	grow	430
 	shrink	430
 	mask-hints THKOX
@@ -904,7 +908,15 @@ style gdsii
  layer PWELLBLK diodeid
 	grow 830
 	and-not diodeid
+	mask-hints PWELLBLK
 	calma 46 21
+
+ # There is no layer and no actions associated with
+ # DEEPNBLK, but it can be generated using mask hints.
+
+ layer DEEPNBLK
+	mask-hints DEEPNBLK
+	calma 32 21
 
 #----------------------------------------------------------------
 # CONT
@@ -1399,11 +1411,10 @@ style drc
  templayer pwell_in_dnwell dnwell
  and-not nwell
 
- # Check latchup rule (20um minimum from tap VIA center to any
- # non-tap diffusion.  Note that to count as a tap, the diffusion
- # must be contacted to M1
+ # Check latchup rule (20um minimum from tap diffusion to any
+ # non-tap diffusion.
 
- templayer ptap_reach psc,hvpsc
+ templayer ptap_reach *psd,*hvpsd
  and-not dnwell
  # grow total is 20um.  grow in 0.62um increments to ensure that
  # no nwell ring is crossed
@@ -1478,7 +1489,7 @@ style drc
  and-not dnwell
  and-not ptap_reach
 
- templayer ntap_reach nsc,hvnsc
+ templayer ntap_reach *nsd,*hvnsd
  # grow total is 20um.  grow in 1.24um increments to ensure that
  # no nwell ring is crossed.  There is no difference between
  # ntaps in and out of deep nwell.
@@ -1521,7 +1532,7 @@ style drc
  and-not pwell_in_dnwell
  and-not ntap_reach
 
- templayer dptap_reach psc,hvpsc
+ templayer dptap_reach *psd,*hvpsd
  and dnwell
  grow 620
  and-not nwell
@@ -1739,6 +1750,33 @@ style drc
 	and-not metal6_connects_mimcap
 	grow 600
 	and mimcap
+
+ # Identify butted p-tap areas
+ templayer butted_tap
+	bloat-all ndiff psd
+	bloat-all hvndiff hvpsd
+	bloat-all pdiff nsd
+	bloat-all hvpdiff hvnsd
+	and-not ndiff,hvndiff,pdiff,hvpdiff
+
+ # Determine if butted tap has at least one area that meets
+ # the width pSD.e or pSD.f (0.3um).  This is a convoluted
+ # process of finding all butted taps that extend at least
+ # 0.3um from the diffusion and enumerating all butted taps
+ # that did not meet this criterion.
+
+ templayer butted_tap_inside *ndiff,*pdiff,*hvndiff,*hvpdiff
+	grow 295
+	and butted_tap
+
+ templayer butted_tap_outside butted_tap
+	and-not butted_tap_inside
+
+ templayer butted_tap_okay
+	bloat-all butted_tap_outside butted_tap
+
+ templayer butted_tap_short butted_tap
+	and-not butted_tap_okay
 
 #----------------------------------------------------------------
 style density
@@ -3593,8 +3631,8 @@ drc
 
  width dnwell 1000 "Deep N-well width < %d (NBL.a)"
  spacing dnwell dnwell 1500 touching_ok "Deep N-well spacing, same net < %d (NBL.b)"
- # spacing dnwell dnwell 3200 touching_illegal "Deep N-well spacing, different net < %d (NBL.b)"
- spacing allnwell dnwell 2200 surround_ok \
+ # spacing dnwell dnwell 3200 touching_illegal "Deep N-well spacing, different net < %d (NBL.c)"
+ spacing dnwell allnwell 2200 surround_ok \
 	"Deep N-well spacing to N-well < %d (NBL.d)"
  spacing dnwell allnactive 1000 surround_ok "Deep N-well spacing to N-diffusion < %d (NBL.e)"
  spacing dnwell allpactive 500 surround_ok "Deep N-well spacing to P-diffusion < %d (NBL.f)"
@@ -3663,9 +3701,11 @@ drc
 	"P-diff distance to N-tap must be < 20.0um (LU.a)"
 
  width difffill,fillfet 1000 "Diff fill width < %d (AFil.a1)"
- maxwidth difffill,fillfet 5000 both " (AFil.a)"
- spacing difffill,fillfet difffill,fillfet 800 touching_ok \
+ maxwidth difffill,fillfet 5000 both "Diff fill width > %d (AFil.a)"
+ spacing difffill,fillfet difffill,fillfet 420 touching_ok \
 	"Diff fill spacing < %d (AFil.b)"
+ spacing difffill,fillfet alldiff 420 touching_illegal \
+	"Diff fill spacing to diffusion < %d (AFil.c1)"
  spacing difffill,fillfet *poly,obspoly 1100 touching_illegal \
 	"Diff fill spacing to Poly < %d (AFil.c)"
  spacing difffill,fillfet ndc,pdc,nsc,psc,ndic,pdic,hvndc,hvpdc,hvnsc,hvpsc \
@@ -3679,6 +3719,21 @@ drc
  angle  difffill,fillfet 90 "Only 90 degree angles permitted on Diff fill (AFil.i)"
 
  # To be done:  Afil.i, and Afil.j
+
+ variants (full)
+ cifarea butted_tap 90000 250 "Diff area of butted tie < 0.09um^2 (pSD.g)"
+ cifmaxwidth butted_tap_short 0 bend_illegal "Diff tap length < 0.30um (pSD.e/f)
+ variants *
+
+ # Length of source/drain areas where butted taps exist
+ edge4way pfet *pdiff 300 ~(*nsd)/a 0 0 "pSD must overhang pFET by %dum (pSD.i)"
+ edge4way hvpfet *hvpdiff 400 ~(*hvnsd)/a 0 0 \
+	"pSD must overhang HV pFET by %dum (pSD.i1)"
+ edge4way nfet *ndiff 300 ~(*psd)/a 0 0 "pSD must be %dum from nFET (pSD.j)"
+ edge4way hvnfet *hvndiff 400 ~(*hvpsd)/a 0 0 "pSD must be %dum from HV nFET (pSD.j1)"
+
+ edge4way hvndiff hvnfet 450 hvnfet 0 0 \
+	"HV NMOS minimum length < %d (Gat.a3)"
 
 #-----------------------------
 # POLY
@@ -4194,6 +4249,9 @@ variants *
   spacing xres pc 200 touching_illegal \
 	"Rhigh resistor space to poly contact < %d (Rhi.d)"
   extend xres *poly 500 "Rhigh resistor length < %d (Rhi.f)"
+
+  spacing nres pres,xres 360 touching_illegal \
+	"Righ or Rppd resistor must be %d from Rsil resistor (pSD.m + pSD.n)"
 
 #-----------------------------------------------------------
 # MiM CAP (MIM) - 
