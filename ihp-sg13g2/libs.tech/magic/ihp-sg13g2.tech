@@ -793,7 +793,10 @@ style gdsii
  layer EXTBLOCK
 	bloat-all pres,xres,nres *poly
 	grow 180
-	bloat-or pres,xres * 200 *poly 0
+	# bloat-or pres,xres * 200 *poly 0
+	# Merge EXTBLOCK across resistors if needed
+	grow 155
+	shrink 155
 	mask-hints EXTBLOCK
 	calma 111 0
 
@@ -1777,6 +1780,29 @@ style drc
 
  templayer butted_tap_short butted_tap
 	and-not butted_tap_okay
+
+ templayer res_extblock
+	bloat-all pres,xres,nres *poly
+	grow 180
+
+ templayer res_to_psd_space res_extblock
+	grow 340
+	and *psd
+	grow 150
+	and *pdiff
+
+ # Check for 50nm metal surround of ContBar.  ContBar is
+ # generated only for certain devices such as resistors,
+ # where it can only be distinguished from Cont by
+ # detecting the resistor area.
+
+ templayer resistors
+	bloat-all nres,pres,xres *poly
+
+ templayer contbar_enclosure_error pc
+	and resistors
+	grow 50
+	and-not *m1
 
 #----------------------------------------------------------------
 style density
@@ -3735,6 +3761,17 @@ drc
  edge4way hvndiff hvnfet 450 hvnfet 0 0 \
 	"HV NMOS minimum length < %d (Gat.a3)"
 
+ # Rules for NSDBLOCK implicitly defined by (hv)isodiffres
+
+ spacing isodiffres *pdiff,*hvpdiff 660 touching_illegal \
+	"isodiffres spacing to P-diffusion < %d (nSDB.c + overlaps)"
+ spacing isodiffres *psd,*hvpsd 510 touching_ok \
+	"isodiffres spacing to P+ diffusion < %d (nSDB.c + overlaps)"
+ spacing hvisodiffres *pdiff,*hvpdiff 690 touching_illegal \
+	"isodiffres spacing to P-diffusion < %d (nSDB.c + overlaps)"
+ spacing hvisodiffres *psd,*hvpsd 540 touching_ok \
+	"isodiffres spacing to P+ diffusion < %d (nSDB.c + overlaps)"
+
 #-----------------------------
 # POLY
 #-----------------------------
@@ -3851,6 +3888,24 @@ drc
 	"Metal1 overlap of HV P-diffusion contact < %d in one direction (M1.c1)"
 
  exact_overlap (allcont)/a
+
+ spacing *psd ndc/a 90 touching_illegal \
+	"Min. pSD space to Cont < %d (Cnt.g1)
+ edge4way ndiff *psd 90 ~(psc)/a 0 0 \
+	"Min. pSD overlap of Cont < %d (Cnt.g2)
+
+#-------------------------------------------------------------
+# CONTBAR
+#-------------------------------------------------------------
+
+ # This rule is violated in all example cells.
+ # surround pbc,sdic m1 50 absence_illegal \
+ #	"Metal enclosure of ContBar < %d (CntB.h1)"
+
+ variants (full)
+ cifmaxwidth contbar_enclosure_error 0 bend_illegal \
+	"Metal enclosure of ContBar < 0.05um (CntB.h1)"
+ variants *
 
 #-------------------------------------------------------------
 # METAL1 -
@@ -4230,28 +4285,67 @@ variants *
 # nres (N+ poly resistor, rsil)
 #--------------------------------------------------
 
-  width nres 500 "Rsil resistor width < %d (Rsil.a)"
-  spacing nres pc 120 touching_illegal \
+ width nres 500 "Rsil resistor width < %d (Rsil.a)"
+ spacing nres pc 120 touching_illegal \
 	"Rsil resistor space to poly contact < %d (Rsil.b)"
-  extend nres poly 500 "Rsil length < %d (Rsil.f)"
+ extend nres poly 500 "Rsil length < %d (Rsil.f)"
+
+ spacing *pdiff,*hvpdiff nres 540 touching_illegal \
+	"Rsil resistor space to P-diffusion < %d (Rsil.d + Rsil.e + pSD.c)"
+ spacing *hvpsd,*psd nres 390 touching_illegal \
+	"Rsil resistor space to P+ diffusion < %d (Rsil.d + Rsil.e + pSD.c1)"
 
 #--------------------------------------------------
 # pres (P+ poly resistor, rppd)
 # xres (P+ poly resistor, rhigh)
 #--------------------------------------------------
 
-  width pres 500 "Rppd resistor width < %d (Rppd.a)"
-  spacing pres pc 200 touching_illegal \
+ width pres 500 "Rppd resistor width < %d (Rppd.a)"
+ spacing pres pc 200 touching_illegal \
 	"Rppd resistor space to poly contact < %d (Rppd.c)"
-  extend pres *poly 500 "Rppd resistor length < %d (Rppd.e)"
+ extend pres *poly 500 "Rppd resistor length < %d (Rppd.e)"
 
-  width xres 500 "Rhigh resistor width < %d (Rhi.a)"
-  spacing xres pc 200 touching_illegal \
+ width xres 500 "Rhigh resistor width < %d (Rhi.a)"
+ spacing xres pc 200 touching_illegal \
 	"Rhigh resistor space to poly contact < %d (Rhi.d)"
-  extend xres *poly 500 "Rhigh resistor length < %d (Rhi.f)"
+ extend xres *poly 500 "Rhigh resistor length < %d (Rhi.f)"
 
-  spacing nres pres,xres 360 touching_illegal \
-	"Righ or Rppd resistor must be %d from Rsil resistor (pSD.m + pSD.n)"
+ spacing nres pres,xres 360 touching_illegal \
+	"Rhigh or Rppd resistor must be %d from Rsil resistor (pSD.m + pSD.n)"
+ edge4way pres,xres poly 420 ~(pres,xres)/a 0 0 \
+	"Rhigh or Rppd resistor must be separated by %d across poly (Sal.b)"
+
+ # EXTBLOCK spacing includes resistor terminals so must be determined from
+ # a cifdrc rule
+ variants (full)
+ cifmaxwidth res_to_psd_space 0 bend_illegal \
+	"EXTBLOCK space to pSD < 0.31um (EXTB.c)"
+ variants *
+
+ # SBLK rules.  Spacing to diffusion and poly requires multiple rules,
+ # as some types connect directly to the layer that is overlaid with
+ # SBLK, while all other types are forbidden.  In principle all of
+ # these rules should be 0.4um but the automatically-generated SBLK
+ # follows the layout of the pymacro cells, where the SBLK overlaps
+ # are often greater than the minimum.
+
+ spacing pres,xres *poly 400 touching_ok \
+	"Righ or Rppd resistor to unrelated poly < %d (Sal.c + Sal.d)"
+ spacing pres,xres alldiff 400 touching_illegal \
+	"Righ or Rppd resistor to diffusion < %d (Sal.c + Sal.d)"
+
+ spacing hvndiffres *hvndiff,hvnmosesd 480 touching_ok \
+	"HV diffusion resistor to unrelated diffusion < %d (Sal.c + Sal.d)"
+ spacing hvndiffres alldifflv,allpolynonfet,*hvpdiff,*hvpsd 480 touching_illegal \
+	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
+ spacing isodiffres *ndiff,*psd 520 touching_ok \
+	"Diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
+ spacing isodiffres alldiffhv,allpoly,*pdiff,*nsd 520 touching_illegal \
+	"Diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
+ spacing hvisodiffres *hvndiff,*hvpsc 530 touching_ok \
+	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
+ spacing hvisodiffres alldifflv,allpoly,*hvpdiff,*hvnsc 530 touching_illegal \
+	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
 
 #-----------------------------------------------------------
 # MiM CAP (MIM) - 
