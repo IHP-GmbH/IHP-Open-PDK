@@ -121,6 +121,7 @@ types
   # parasitic varactor formed by poly over HV ptap
   active hvpvaractor,hvpvaract,hvpvar
  -active fillfet
+ -active sealcont,sealc
 
 # Diffusions
  -active difffill
@@ -181,6 +182,7 @@ types
  -metal1 m1fill
  -metal1 iprobe
  -metal1 diffprobe
+ -metal1 sealvia1,sealv1
 
 # Metal 2
   metal2 metal2,m2,met2
@@ -188,6 +190,7 @@ types
   metal2 via2,m3contact,m3cut,m3c,v2
  -metal2 obsm2
  -metal2 m2fill
+ -metal2 sealvia2,sealv2
 
 # Metal 3
   metal3 metal3,m3,met3
@@ -195,6 +198,7 @@ types
  -metal3 obsm3
   metal3 via3,v3
  -metal3 m3fill
+ -metal3 sealvia3,sealv3
 
 # Metal 4
   metal4 metal4,m4,met4
@@ -202,6 +206,7 @@ types
  -metal4 obsm4
   metal4 via4,v4
  -metal4 m4fill
+ -metal4 sealvia4,sealv4
 
 # Metal 5
   metal5 metal5,m5,met5
@@ -209,6 +214,7 @@ types
  -metal5 obsm5
   metal5 via5,v5
  -metal5 m5fill
+ -metal5 sealvia5,sealv5
 
   mimcap mimcap,mim,capm
   mimcap mimcapcontact,mimcapc,mimcc,capmc
@@ -219,6 +225,7 @@ types
  -metal6 obsm6
   metal6 via6,v6
  -metal6 m6fill
+ -metal6 sealvia6,sealv6
 
 # Metal 7
   metal7 metal7,m7,met7
@@ -376,6 +383,7 @@ styles
   pdc       pdiffusion     metal1  contact_X'es
   nsc       ndiff_in_nwell metal1  contact_X'es
   psc       pdiff_in_pwell metal1  contact_X'es
+  sealc     pdiff_in_pwell metal1  contact_X'es
 
   pnp	    nwell ntransistor_stripes
   npn	    pwell ptransistor_stripes
@@ -426,30 +434,35 @@ styles
   rm1       metal1         poly_resist_stripes
   obsm1     metal1
   m2c       metal1         metal2  via1arrow
+  sealv1    metal1	   metal2  via1arrow
 
   metal2    metal2
   m2fill    metal2
   rm2       metal2         poly_resist_stripes
   obsm2     metal2
   m3c       metal2         metal3  via2arrow
+  sealv2    metal2	   metal3  via2arrow
 
   metal3    metal3
   m3fill    metal3
   rm3       metal3         poly_resist_stripes
   obsm3     metal3
   via3      metal3         metal4  via3alt
+  sealv3    metal4	   metal4  via3alt
 
   metal4    metal4
   m4fill    metal4
   rm4       metal4         poly_resist_stripes
   obsm4     metal4
   via4      metal4         metal5  via4
+  sealv4    metal4	   metal5  via4
 
   metal5    metal5
   m5fill    metal5
   rm5       metal5         poly_resist_stripes
   obsm5     metal5
   via5      metal5         metal6  via5
+  sealv5    metal5	   metal6  via5
 
   mimcap    metal5         mems
   mimcc     metal6         contact_X'es mems
@@ -459,6 +472,7 @@ styles
   rm6       metal6         poly_resist_stripes
   obsm6     metal6
   via6      metal6         metal7  via6
+  sealv6    metal6	   metal7  via6
 
   metal7    metal7
   m7fill    metal7
@@ -522,6 +536,16 @@ compose
   paint  m5      obsm5  m5
   paint  m6      obsm5  m6
   paint  m7      obsm5  m7
+
+  # Seal ring contacts are not really contacts in
+  # the database, so use compose rules instead.
+  paint  sealc	 psd	sealc
+  paint  sealv1	 m1	sealv1
+  paint  sealv2	 m2	sealv2
+  paint  sealv3	 m3	sealv3
+  paint  sealv4	 m4	sealv4
+  paint  sealv5	 m5	sealv5
+  paint  sealv6	 m6	sealv6
 end
 
 #-----------------------------------------------------
@@ -629,7 +653,7 @@ style gdsii
  templayer diffmaskarea
 	bloat-or isodiffres * 0 *ndiff 130 *psd 200
 
- layer DIFF 	allnactive,allpactive,*schottky,hvisodiffres,*hvvar,hvpvar
+ layer DIFF 	allnactive,allpactive,*schottky,hvisodiffres,*hvvar,hvpvar,sealc
 	and-not diffmaskarea
  	calma 	1 0
 
@@ -705,6 +729,7 @@ style gdsii
 	bloat-or allpactivenontap * 180 allnactivetap 0
 	and-not transhalo
 	and-not varactorarea
+	or sealc
 	# fill catecorner abutments satisfying pSD.a, pSD.b
 	bridge	310 310
 	# and-not NSD
@@ -967,9 +992,9 @@ style gdsii
 	and resterm
 	calma	6 0
 
- layer CONT psc
+ layer CONT sealc
 	and sealring
-	calma	6 0
+ 	calma	6 0
 
 #----------------------------------------------------------------
 # Bipolar transistors
@@ -1027,7 +1052,7 @@ style gdsii
 #----------------------------------------------------------------
 # MET1
 #----------------------------------------------------------------
- layer MET1 	allm1
+ layer MET1 	allm1,sealv1
  	calma 	8 0
 
  layer MET1TXT
@@ -1085,14 +1110,14 @@ style gdsii
  	squares-grid 5 190 290
  	calma	19 0
 
- layer VIA1 via1
+ layer VIA1 sealv1
 	and sealring
 	calma	19 0
 
 #----------------------------------------------------------------
 # MET2
 #----------------------------------------------------------------
- layer MET2 	allm2
+ layer MET2 	allm2,sealv2
  	calma 	10 0
 
  layer MET2TXT
@@ -1135,14 +1160,14 @@ style gdsii
  	squares-grid 5 190 290
  	calma	29 0
 
- layer VIA2 via2
+ layer VIA2 sealv2
 	and sealring
 	calma	29 0
 
 #----------------------------------------------------------------
 # MET3
 #----------------------------------------------------------------
- layer MET3 	allm3
+ layer MET3 	allm3,sealv3
  	calma 	30 0
 
  layer MET3TXT
@@ -1182,14 +1207,14 @@ style gdsii
  	squares-grid 5 190 290
  	calma	49 0
 
- layer VIA3 via3
+ layer VIA3 sealv3
 	and sealring
 	calma	49 0
 
 #----------------------------------------------------------------
 # MET4
 #----------------------------------------------------------------
- layer MET4 	allm4
+ layer MET4 	allm4,sealv4
  	calma 	50 0
 
  layer MET4TXT
@@ -1229,14 +1254,14 @@ style gdsii
  	squares-grid 5 190 290
  	calma	66 0
 
- layer VIA4 via4
+ layer VIA4 sealv4
 	and sealring
 	calma	66 0
 
 #----------------------------------------------------------------
 # MET5
 #----------------------------------------------------------------
- layer MET5 	allm5,m5fill
+ layer MET5 	allm5,m5fill,sealv5
  	calma 	67 0
 
  layer MET5TXT
@@ -1264,7 +1289,7 @@ style gdsii
  	squares-grid 5 420 420
  	calma 	125 0
 
- layer VIA5	via5
+ layer VIA5	sealv5
 	and sealring
 	calma	125 0
 
@@ -1275,7 +1300,7 @@ style gdsii
 #----------------------------------------------------------------
 # MET6 (TopMetal1)
 #----------------------------------------------------------------
- layer MET6 	allm6,m6fill
+ layer MET6 	allm6,m6fill,sealv6
  	calma 	126 0
 
  layer MET6TXT
@@ -1302,7 +1327,7 @@ style gdsii
  	squares-grid 500 900 1060
  	calma 	133 0
 
- layer VIA6	via6
+ layer VIA6	sealv6
 	and sealring
 	calma	133 0
 
@@ -1818,6 +1843,35 @@ style drc
 	and resistors
 	grow 50
 	and-not *m1
+
+ # There are no specific rules for seal metal overlap of seal
+ # vias, so seal metal width rules can only be calculated by
+ # cifdrc rules.
+
+ templayer seal_active
+	bloat-all sealc psd
+
+ templayer seal_metal1
+	bloat-all sealv1 m1
+
+ templayer seal_metal2
+	bloat-all sealv2 m2
+
+ templayer seal_metal3
+	bloat-all sealv3 m3
+
+ templayer seal_metal4
+	bloat-all sealv4 m4
+
+ templayer seal_metal5
+	bloat-all sealv5 m5
+
+ templayer seal_metal6
+	bloat-all sealv6 m6
+
+ templayer seal_metal7 sealv6
+	grow 1300
+	and m7
 
 #----------------------------------------------------------------
 style density
@@ -2928,11 +2982,16 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
 
  layer psc pscbase
+ and-not EDGESEAL
  grow 85
  shrink 85
  shrink 85
  grow 85
  or pscbase
+ labels CONT
+
+ layer sealc pscbase
+ and EDGESEAL
  labels CONT
 
  templayer pcbase CONT
@@ -3116,11 +3175,15 @@ style  sg13g2 variants ()
  labels MIM
 
  layer m2c VIA1
+ and-not EDGESEAL
  grow 5
  grow 105 
  shrink 105
  shrink 95
  grow 95
+
+ layer sealv1 VIA1
+ and EDGESEAL
 
  layer m2 MET2,MET2TXT,MET2PIN
  and-not MET2RES
@@ -3137,11 +3200,15 @@ style  sg13g2 variants ()
  labels MET2FILL
 
  layer m3c VIA2
+ and-not EDGESEAL
  grow 5
  grow 105 
  shrink 105
  shrink 95
  grow 95
+
+ layer sealv2 VIA2
+ and EDGESEAL
 
  layer m3 MET3,MET3TXT,MET3PIN
  and-not MET3RES
@@ -3158,11 +3225,15 @@ style  sg13g2 variants ()
  labels MET3FILL
 
  layer via3 VIA3
+ and-not EDGESEAL
  grow 5
  grow 105 
  shrink 105
  shrink 95
  grow 95
+
+ layer sealv3 VIA3
+ and EDGESEAL
 
  layer m4 MET4,MET4TXT,MET4PIN
  and-not MET4RES
@@ -3179,11 +3250,15 @@ style  sg13g2 variants ()
  labels MET4FILL
 
  layer via4 VIA4
+ and-not EDGESEAL
  grow 5
  grow 105 
  shrink 105
  shrink 95
  grow 95
+
+ layer sealv4 VIA4
+ and EDGESEAL
 
  layer m5 MET5,MET5TXT,MET5PIN
  and-not MET5RES
@@ -3200,12 +3275,16 @@ style  sg13g2 variants ()
  labels MET5FILL
 
  layer via5 VIA5
+ and-not EDGESEAL
  and-not MIM
  grow 100
  grow 110 
  shrink 110
  shrink 305
  grow 305
+
+ layer sealv5 VIA5
+ and EDGESEAL
 
  layer m6 MET6,MET6TXT,MET6PIN
  and-not MET6RES
@@ -3222,11 +3301,15 @@ style  sg13g2 variants ()
  labels MET6FILL
 
  layer via6 VIA6
+ and-not EDGESEAL
  grow 500
  grow 25 
  shrink 25
  shrink 945
  grow 945
+
+ layer sealv6 VIA6
+ and EDGESEAL
 
  layer m7 MET7,MET7TXT,MET7PIN
  and-not MET7RES
@@ -3729,8 +3812,9 @@ drc
 # DIFF
 #-----------------------------
 
- width alldiff,isodiffres,hvisodiffres 150 "Diffusion width < %d (Act.a)"
- spacing alldiff alldiff 210 touching_illegal "Diffusion spacing < %d (Act.b)"
+ width alldiff,isodiffres,hvisodiffres,sealc 150 "Diffusion width < %d (Act.a)"
+ spacing alldiff,sealc alldiff,sealc 210 touching_illegal \
+	"Diffusion spacing < %d (Act.b)"
 
  overhang *ndiff nfet 230 "N-Diffusion overhang of nFET < %d (Act.c)"
  overhang *pdiff pfet 230 "P-Diffusion overhang of pFET < %d (Act.c)"
@@ -3855,6 +3939,11 @@ drc
  width hvnsc/m1 160 "N-tap contact width     < %d (Cnt.a)"
  width hvpdc/m1 160 "P-diffusion contact width < %d (Cnt.a)"
  width hvpsc/m1 160 "P-tap contact width     < %d (Cnt.a)"
+ 
+ width sealc 160 "Seal contact width < %d (Seal.c)"
+
+ surround sealc psd 1300 absence_illegal \
+	"Seal diffusion overlap of seal contact < %d (Seal.d)"
 
  # NOTE:  All spacing rules should include a "widespacing" to 4+ contact
  # areas (Cnt.b1).  However, this rule being enforced in only one
@@ -3919,6 +4008,10 @@ drc
  edge4way ndiff *psd 90 ~(psc)/a 0 0 \
 	"Min. pSD overlap of Cont < %d (Cnt.g2)
 
+ variants (full)
+ cifwidth seal_active 3500 "EdgeSeal-Activ width < 3.5um (Seal.a)"
+ variants *
+
 #-------------------------------------------------------------
 # CONTBAR
 #-------------------------------------------------------------
@@ -3936,8 +4029,8 @@ drc
 # METAL1 -
 #-------------------------------------------------------------
 
- width *m1,rm1,iprobe,diffprobe 160 "Metal1 width < %d (M1.a)"
- spacing allm1,diffprobe allm1,diffprobe,*obsm1 180 touching_ok \
+ width *m1,rm1,iprobe,diffprobe,sealv1 160 "Metal1 width < %d (M1.a)"
+ spacing allm1,diffprobe,sealv1 allm1,diffprobe,*obsm1,sealv1 180 touching_ok \
 	"Metal1 spacing < %d (M1.b)"
  area allm1,diffprobe,*obsm1 90000 160 "Metal1 minimum area < %a (M1.d)"
 
@@ -3949,12 +4042,12 @@ drc
  # implementation similar to "width ... angles").
 
 variants (fast),(full)
-widespacing allm1 305 1005 allm1,*obsm1 220 touching_ok \
+widespacing allm1,sealv1 305 1005 allm1,*obsm1 220 touching_ok \
 	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
 widespacing *obsm1 305 1005 allm1 220 touching_ok \
 	"Metal1 > 0.3um with runlength > 1.0um spacing to unrelated m1 < %d (M1.e)"
 
-widespacing allm1 10005 10005 allm1,*obsm1 600 touching_ok \
+widespacing allm1,sealv1 10005 10005 allm1,*obsm1 600 touching_ok \
 	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
 widespacing *obsm1 10005 10005 allm1 600 touching_ok \
 	"Metal1 > 10.0um with runlength > 10.0um spacing to unrelated m1 < %d (M1.f)"
@@ -3970,7 +4063,8 @@ variants *
  angle  m1fill 90 "Only 90 degree angles permitted on Metal1 fill (MFil.i)"
 
 variants (full)
- maxwidth *m1 30000 bend_illegal "Metal1 maximum width without slots < %d (Slt.c)"
+ maxwidth *m1 30000 bend_ok "Metal1 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal1 3500 "EdgeSeal-Metal1 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -3988,12 +4082,14 @@ variants *
 
  exact_overlap v1/m1
 
+ width sealv1 190 "Seal via1 width < %d (Seal.c1)"
+
 #--------------------------------------------------
 # METAL2 - 
 #--------------------------------------------------
 
- width allm2 200 "Metal2 width < %d (M2.a)"
- spacing allm2  allm2,obsm2 210 touching_ok "Metal2 spacing < %d (M2.b)"
+ width allm2,sealv2 200 "Metal2 width < %d (M2.a)"
+ spacing allm2,sealv2  allm2,sealv2,obsm2 210 touching_ok "Metal2 spacing < %d (M2.b)"
  area allm2,obsm2 144000 200 "Metal2 minimum area < %a (M2.d)"
 
  angles allm2 45 "Only 45 and 90 degree angles permitted on metal2 (Grid Rules)"
@@ -4004,12 +4100,12 @@ variants *
  # implementation similar to "width ... angles").
 
  variants (fast),(full)
- widespacing allm2 395 1005 allm2,*obsm2 240 touching_ok \
+ widespacing allm2,sealv2 395 1005 allm2,*obsm2 240 touching_ok \
 	"Metal2 > 0.39um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
  widespacing *obsm2 395 1005 allm2 240 touching_ok \
 	"Metal2 > 0.39um with runlength > 1.0um spacing to unrelated m2 < %d (M2.e)"
 
- widespacing allm2 10005 10005 allm2,*obsm2 600 touching_ok \
+ widespacing allm2,sealv2 10005 10005 allm2,*obsm2 600 touching_ok \
 	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
  widespacing *obsm2 10005 10005 allm2 600 touching_ok \
 	"Metal2 > 10.0um with runlength > 10.0um spacing to unrelated m2 < %d (M2.f)"
@@ -4025,7 +4121,8 @@ variants *
  angle  m2fill 90 "Only 90 degree angles permitted on Metal2 fill (MFil.i)"
 
 variants (full)
- maxwidth *m2 30000 bend_illegal "Metal2 maximum width without slots < %d (Slt.c)"
+ maxwidth *m2 30000 bend_ok "Metal2 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal2 3500 "EdgeSeal-Metal2 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -4043,12 +4140,14 @@ variants *
 
  exact_overlap v2/m2
 
+ width sealv2 190 "Seal via2 width < %d (Seal.c1)"
+
 #--------------------------------------------------
 # METAL3 - 
 #--------------------------------------------------
 
- width allm3 200 "Metal3 width < %d (M3.a)"
- spacing allm3  allm3,obsm3 210 touching_ok "Metal3 spacing < %d (M3.b)"
+ width allm3,sealv3 200 "Metal3 width < %d (M3.a)"
+ spacing allm3,sealv3  allm3,sealv3,obsm3 210 touching_ok "Metal3 spacing < %d (M3.b)"
  area allm3,obsm3 144000 200 "Metal3 minimum area < %a (M3.d)"
 
  angles allm3 45 "Only 45 and 90 degree angles permitted on metal3 (Grid Rules)"
@@ -4059,12 +4158,12 @@ variants *
  # implementation similar to "width ... angles").
 
  variants (fast),(full)
- widespacing allm3 395 1005 allm3,*obsm3 240 touching_ok \
+ widespacing allm3,sealv3 395 1005 allm3,*obsm3 240 touching_ok \
 	"Metal3 > 0.39um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
  widespacing *obsm3 395 1005 allm3 240 touching_ok \
 	"Metal3 > 0.39um with runlength > 1.0um spacing to unrelated m3 < %d (M3.e)"
 
- widespacing allm3 10005 10005 allm3,*obsm3 600 touching_ok \
+ widespacing allm3,sealv3 10005 10005 allm3,*obsm3 600 touching_ok \
 	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
  widespacing *obsm3 10005 10005 allm3 600 touching_ok \
 	"Metal3 > 10.0um with runlength > 10.0um spacing to unrelated m3 < %d (M3.f)"
@@ -4080,7 +4179,8 @@ variants *
  angle  m3fill 90 "Only 90 degree angles permitted on Metal3 fill (MFil.i)"
 
 variants (full)
- maxwidth *m3 30000 bend_illegal "Metal3 maximum width without slots < %d (Slt.c)"
+ maxwidth *m3 30000 bend_ok "Metal3 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal3 3500 "EdgeSeal-Metal3 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -4098,12 +4198,14 @@ variants *
 
  exact_overlap v3/m3
 
+ width sealv3 190 "Seal via3 width < %d (Seal.c1)"
+
 #--------------------------------------------------
 # METAL4 -
 #--------------------------------------------------
 
- width allm4 200 "Metal4 width < %d (M4.a)"
- spacing allm4  allm4,obsm4 210 touching_ok "Metal4 spacing < %d (M4.b)"
+ width allm4,sealv4 200 "Metal4 width < %d (M4.a)"
+ spacing allm4,sealv4  allm4,obsm4,sealv4 210 touching_ok "Metal4 spacing < %d (M4.b)"
  area allm4,obsm4 144000 200 "Metal4 minimum area < %a (M4.d)"
 
  angles allm4 45 "Only 45 and 90 degree angles permitted on metal4 (Grid Rules)"
@@ -4114,12 +4216,12 @@ variants *
  # implementation similar to "width ... angles").
 
  variants (fast),(full)
- widespacing allm4 395 1005 allm4,*obsm4 240 touching_ok \
+ widespacing allm4,sealv4 395 1005 allm4,*obsm4 240 touching_ok \
 	"Metal4 > 0.39um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
  widespacing *obsm4 395 1005 allm4 240 touching_ok \
 	"Metal4 > 0.39um with runlength > 1.0um spacing to unrelated m4 < %d (M4.e)"
 
- widespacing allm4 10005 10005 allm4,*obsm4 600 touching_ok \
+ widespacing allm4,sealv4 10005 10005 allm4,*obsm4 600 touching_ok \
 	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
  widespacing *obsm4 10005 10005 allm4 600 touching_ok \
 	"Metal4 > 10.0um with runlength > 10.0um spacing to unrelated m4 < %d (M4.f)"
@@ -4135,7 +4237,8 @@ variants *
  angle  m4fill 90 "Only 90 degree angles permitted on Metal4 fill (MFil.i)"
 
 variants (full)
- maxwidth *m4 30000 bend_illegal "Metal4 maximum width without slots < %d (Slt.c)"
+ maxwidth *m4 30000 bend_ok "Metal4 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal4 3500 "EdgeSeal-Metal4 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -4153,12 +4256,14 @@ variants *
 
  exact_overlap v4/m4
 
+ width sealv4 190 "Seal via4 width < %d (Seal.c1)"
+
 #--------------------------------------------------
 # METAL5 -
 #--------------------------------------------------
 
- width allm5 200 "Metal5 width < %d (M5.a)"
- spacing allm5  allm5,obsm5 210 touching_ok "Metal5 spacing < %d (M5.b)"
+ width allm5,sealv5 200 "Metal5 width < %d (M5.a)"
+ spacing allm5,sealv5  allm5,obsm5,sealv5 210 touching_ok "Metal5 spacing < %d (M5.b)"
  area allm5,obsm5 144000 200 "Metal5 minimum area < %a (M5.d)"
 
  angles allm5 45 "Only 45 and 90 degree angles permitted on metal5 (Grid Rules)"
@@ -4169,12 +4274,12 @@ variants *
  # implementation similar to "width ... angles").
 
  variants (fast),(full)
- widespacing allm5 395 1005 allm5,*obsm5 240 touching_ok \
+ widespacing allm5,sealv5 395 1005 allm5,*obsm5 240 touching_ok \
 	"Metal5 > 0.39um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
  widespacing *obsm5 395 1005 allm5 240 touching_ok \
 	"Metal5 > 0.39um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
 
- widespacing allm5 10005 10005 allm5,*obsm5 600 touching_ok \
+ widespacing allm5,sealv5 10005 10005 allm5,*obsm5 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
  widespacing *obsm5 10005 10005 allm5 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
@@ -4191,7 +4296,8 @@ variants *
 
 variants (full)
  # NOTE:  This rule needs to exclude MiM cap bottom plates
- # maxwidth *m5 30000 bend_illegal "Metal5 maximum width without slots < %d (Slt.c)"
+ # maxwidth *m5 30000 bend_ok "Metal5 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal5 3500 "EdgeSeal-Metal5 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -4207,12 +4313,14 @@ variants *
 
  exact_overlap v5/m5
 
+ width sealv5 420 "Seal TopVia1 width < %d (Seal.c2)"
+
 #--------------------------------------------------
 # METAL6 (TopMetal1) -
 #--------------------------------------------------
 
- width allm6 1640 "Metal6 width < %d (TM1.a)"
- spacing allm6  allm6,obsm6 1640 touching_ok "Metal6 spacing < %d (TM1.b)"
+ width allm6,sealv6 1640 "Metal6 width < %d (TM1.a)"
+ spacing allm6,sealv6  allm6,obsm6,sealv6 1640 touching_ok "Metal6 spacing < %d (TM1.b)"
 
  angles allm6 45 "Only 45 and 90 degree angles permitted on metal6 (Grid Rules)"
 
@@ -4226,7 +4334,8 @@ variants *
  angle  m6fill 90 "Only 90 degree angles permitted on Metal6 fill (TM1Fil.g)"
 
 variants (full)
- maxwidth *m6 30000 bend_illegal "Metal6 maximum width without slots < %d (Slt.c)"
+ maxwidth *m6 30000 bend_ok "Metal6 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal6 3500 "EdgeSeal-TopMetal1 width < 3.5um (Seal.a)"
 variants *
 
 #--------------------------------------------------
@@ -4238,6 +4347,8 @@ variants *
  spacing v6 v6 60 touching_ok "via6 spacing < %d (TV2.b - 2 * TV2.c)"
 
  exact_overlap v6/m6
+
+ width sealv6 900 "Seal TopVia2 width < %d (Seal.c3)"
 
 #--------------------------------------------------
 # METAL7 (TopMetal2) -
@@ -4275,10 +4386,12 @@ variants *
 	"Metal 7 must surround bond pad by %d (Pas.c)"
  variants *
 
-# variants (full)
-# This rule needs to exclude inductors and pads
-# maxwidth *m7 30000 bend_illegal "Metal7 maximum width without slots < %d (Slt.c)"
-# variants *
+ variants (full)
+ # This rule excludes pads;  may need to include inductors?  Would any
+ # inductor wire exceed 30um width?
+ maxwidth *m7 30000 bend_ok "Metal7 maximum width without slots < %d (Slt.c)"
+ cifwidth seal_metal7 3500 "EdgeSeal-TopMetal2 width < 3.5um (Seal.a)"
+ variants *
 
 #--------------------------------------------------
 # NMOS, PMOS
@@ -4468,8 +4581,9 @@ variants *
 # Glass cut (passivation cut)
 #-----------------------------------------------------------
 
- width seal 2100 "Passivation width < %d (Pas.a)"
- spacing seal seal 3500 touching_ok "Passivation spacing < %d (Pas.b)"
+ width seal 4200 "Seal ring passivation width < %d (Seal.e)"
+ spacing seal pdiff,m1,m2,m3,m4,m5,m6 1000 touching_illegal \
+	"Seal ring passivation spacing to seal metals < %d (Seal.f)"
 
  variants (full)
  width pad 30000 "Bond pad width (recommended) < %d (Pad.aR)"
