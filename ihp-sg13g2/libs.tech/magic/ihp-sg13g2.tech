@@ -90,7 +90,6 @@ planes
   mimcap,mc
   metal6,m6
   metal7,m7
-  glass,g
   comment,c
 end
 
@@ -226,11 +225,12 @@ types
   metal7 rm7,rmetal7,rmet7
  -metal7 obsm7
  -metal7 m7fill
- -metal7 pillar
+ -metal7 pillar,cu
+ -metal7 solder,sbump
+ metal7 pad
+ -metal7 seal
 
 # Miscellaneous
- -glass  glass
- -glass	 seal
   comment fillblock
   comment thruvia,tsv
   comment comment
@@ -464,9 +464,9 @@ styles
   m7fill    metal7
   rm7       metal7         poly_resist_stripes
   obsm7     metal7
-  pillar    metal7	   mems
-
-  glass	    overglass
+  pillar    metal7	   mems		overglass
+  solder    metal7	   mems		overglass
+  pad	    metal7	   mems		overglass
   seal	    overglass	   mems
 
   comment   comment
@@ -539,7 +539,7 @@ connect
   *m4,m4fill	*m4,m4fill
   *m5,m5fill	*m5,m5fill
   *m6,m6fill	*m6,m6fill
-  *m7,m7fill,pillar	*m7,m7fill,pillar
+  *m7,m7fill,pillar,solder	*m7,m7fill,pillar,solder
   *mimcap       *mimcap
    allnactivenonfet	allnactivenonfet
    # Resistor to isolated pwell tap
@@ -1309,7 +1309,7 @@ style gdsii
 #----------------------------------------------------------------
 # MET7 (TopMetal2)
 #----------------------------------------------------------------
- layer MET7 	allm7,m7fill,pillar
+ layer MET7 	allm7,m7fill,pillar,solder,pad
  	calma 	134 0
 
  layer MET7TXT
@@ -1329,15 +1329,30 @@ style gdsii
 	calma 134 22
 
 #----------------------------------------------------------------
-# Cu pillar
+# Cu pillar ID
+# (note:  this is made coincident with the passivation cut)
 #----------------------------------------------------------------
  layer PILLAR pillar
 	calma 41 35
 
 #----------------------------------------------------------------
-# GLASS
+# Solder bump ID
+# (note:  this is made coincident with the passivation cut)
 #----------------------------------------------------------------
- layer GLASS 	glass,seal
+ layer SOLDER solder
+	calma 41 36
+
+#----------------------------------------------------------------
+# Bond pad ID
+# (note:  this is made coincident with the passivation cut)
+#----------------------------------------------------------------
+ layer PADID	pad
+	calma	41 0
+
+#----------------------------------------------------------------
+# GLASS (i.e., passivation cut)
+#----------------------------------------------------------------
+ layer GLASS 	seal,pillar,solder,pad
  	calma 	9 0
 
 #----------------------------------------------------------------
@@ -2010,7 +2025,7 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m1 trans,glass
+ templayer	obstruct_m1 trans,pad
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
         grow    420
@@ -2022,7 +2037,7 @@ style patternfill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m1_medium trans,glass
+ templayer      obstruct_m1_medium trans,pad
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse
@@ -2035,7 +2050,7 @@ style patternfill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m1_fine trans,glass
+ templayer      obstruct_m1_fine trans,pad
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse,met1fill_medium
@@ -2058,7 +2073,7 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m2 trans,glass
+ templayer	obstruct_m2 trans,pad
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
         grow    420
@@ -2070,7 +2085,7 @@ style patternfill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m2_medium trans,glass
+ templayer      obstruct_m2_medium trans,pad
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse
@@ -2083,7 +2098,7 @@ style patternfill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m2_fine trans,glass
+ templayer      obstruct_m2_fine trans,pad
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse,met2fill_medium
@@ -2106,7 +2121,7 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m3 trans,glass
+ templayer	obstruct_m3 trans,pad
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
         grow    420
@@ -2118,7 +2133,7 @@ style patternfill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m3_medium trans,glass
+ templayer      obstruct_m3_medium trans,pad
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse
@@ -2131,7 +2146,7 @@ style patternfill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m3_fine trans,glass
+ templayer      obstruct_m3_fine trans,pad
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse,met3fill_medium
@@ -2154,7 +2169,7 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m4 trans,glass
+ templayer	obstruct_m4 trans,pad
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
         grow    420
@@ -2166,7 +2181,7 @@ style patternfill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m4_medium trans,glass
+ templayer      obstruct_m4_medium trans,pad
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
 	or	met4fill_coarse
@@ -2179,7 +2194,7 @@ style patternfill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m4_fine trans,glass
+ templayer      obstruct_m4_fine trans,pad
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
 	or	met4fill_coarse,met4fill_medium
@@ -2202,7 +2217,7 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m5 trans,glass
+ templayer	obstruct_m5 trans,pad
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
         grow    420
@@ -2214,7 +2229,7 @@ style patternfill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m5_medium trans,glass
+ templayer      obstruct_m5_medium trans,pad
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
 	or	met5fill_coarse
@@ -2227,7 +2242,7 @@ style patternfill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m5_fine trans,glass
+ templayer      obstruct_m5_fine trans,pad
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
 	or	met5fill_coarse,met5fill_medium
@@ -2252,7 +2267,7 @@ style patternfill variants (),(tiled)
 # Also:  Prohibiting metal6 fill under pads.
 # Two passes in sizes 10000, 5000
 #---------------------------------------------------
- templayer	obstruct_m6 trans,glass
+ templayer	obstruct_m6 trans,pad,solder,pillar
 	grow	1900
 	or	allm6,obsm6,m6fill,fillblock
         grow    3000
@@ -2264,7 +2279,7 @@ style patternfill variants (),(tiled)
         shrink  4995
         grow    4995
 
- templayer      obstruct_m6_medium trans,glass
+ templayer      obstruct_m6_medium trans,pad,solder,pillar
 	grow	1900
 	or	allm6,obsm6,m6fill,fillblock
 	or	met6fill_coarse
@@ -2287,7 +2302,7 @@ style patternfill variants (),(tiled)
 # Space to TRANS: 4.9 (TM2Fil.d)
 # Two passes in sizes 10000, 5000
 #---------------------------------------------------
- templayer	obstruct_m7 trans,glass
+ templayer	obstruct_m7 trans,pad,solder,pillar
 	grow	1900
 	or	allm7,obsm7,m7fill,fillblock
         grow    3000
@@ -2299,7 +2314,7 @@ style patternfill variants (),(tiled)
         shrink  4995
         grow    4995
 
- templayer      obstruct_m7_medium trans,glass
+ templayer      obstruct_m7_medium trans,pad,solder,pillar
 	grow	1900
 	or	allm7,obsm7,m7fill,fillblock
 	or	met7fill_coarse
@@ -2340,7 +2355,6 @@ style  sg13g2 variants ()
  ignore PWELLBLK
  ignore DEEPNBLK
  ignore EMITPOLY
- ignore PADID
  ignore RFMEMS
  ignore INDBOUND
  ignore INDUCTOR
@@ -3217,7 +3231,7 @@ style  sg13g2 variants ()
  layer m7 MET7,MET7TXT,MET7PIN
  and-not MET7RES
  and-not MET7SLIT
- and-not PILLAR
+ and-not GLASS
  labels MET7
  labels MET7PIN port
  labels MET7TXT text
@@ -3384,10 +3398,6 @@ style  sg13g2 variants ()
  and-not hvpsubcheck
  copyup barecont
 
- layer glass GLASS
- and-not EDGESEAL
- labels GLASS
-
  # The "seal" marker is moved from the diffusion to passivation,
  # since the passivation needs a special DRC rule exception.
  layer seal EDGESEAL
@@ -3397,7 +3407,21 @@ style  sg13g2 variants ()
 
  layer pillar PILLAR
  and MET7
+ and GLASS
+ and-not EDGESEAL
  labels PILLAR
+
+ layer solder SOLDER
+ and MET7
+ and GLASS
+ and-not EDGESEAL
+ labels SOLDER
+
+ layer pad PADID
+ and MET7
+ and GLASS
+ and-not EDGESEAL
+ labels PADID
 
  templayer boundary BOUND
  boundary
@@ -3534,6 +3558,7 @@ style  sg13g2 variants ()
  calma GLASS 9 0
  calma PADID 41 0
  calma PILLAR 41 35
+ calma SOLDER 41 36
  calma RFMEMS 69 0
 
  calma SUBTXT  40 25
@@ -4218,8 +4243,12 @@ variants *
 # METAL7 (TopMetal2) -
 #--------------------------------------------------
 
- width allm7,pillar 2000 "Metal7 width < %d (TM2.a)"
- spacing allm7,pillar  allm7,obsm7 2000 touching_ok "Metal7 spacing < %d (TM2.b)"
+ width allm7,pillar,solder,pad 2000 "Metal7 width < %d (TM2.a)"
+
+ # Note: TopVia2 (via6/m7) is not allowed under bond pad
+ spacing allm7  allm7,obsm7,pillar,solder 2000 touching_ok \
+	"Metal7 spacing < %d (TM2.b)"
+ spacing m7,rm7  pad 2000 touching_ok "TopVia2 spacing to pad < %d (Pad.kR)"
 
  variants (fast),(full)
  widespacing allm7 5005 50005 allm7,*obsm7 5000 touching_ok \
@@ -4238,8 +4267,12 @@ variants *
  angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
 
  variants (full)
- surround glass pillar 7500 absence_illegal \
-	"Passivation must surround Cu pillar by %d (Padc.c)"
+ surround pillar allm7 7500 absence_illegal \
+	"Metal 7 must surround Cu pillar pad by %d (Padc.c)"
+ surround solder allm7 10000 absence_illegal \
+	"Metal 7 must surround Solder bump pad by %d (Padb.c)"
+ surround pad allm7 2100 absence_illegal \
+	"Metal 7 must surround bond pad by %d (Pas.c)"
  variants *
 
 # variants (full)
@@ -4435,10 +4468,27 @@ variants *
 # Glass cut (passivation cut)
 #-----------------------------------------------------------
 
- width glass,seal 2100 "Passivation width < %d (Pas.a)"
- spacing glass,seal glass,seal 3500 touching_ok "Passivation spacing < %d (Pas.b)"
- surround glass *metal7,pillar 2100 absence_illegal \
-	"Metal7 overlap of passivation < %d (Pas.c)"
+ width seal 2100 "Passivation width < %d (Pas.a)"
+ spacing seal seal 3500 touching_ok "Passivation spacing < %d (Pas.b)"
+
+ variants (full)
+ width pad 30000 "Bond pad width (recommended) < %d (Pad.aR)"
+ maxwidth pad 150000 both "Bond pad width > %d (Pad.a1)"
+ spacing pad pad 8400 touching_ok "Bond pad spacing (recommended) < %d (Pad.bR)"
+ spacing pad seal 7500 touching_illegal "Bond pad spacing to EdgeSeal < %d (Pad.d)"
+
+ width solder 60000 "Solder bump pad size < %d (Padb.a)"
+ maxwidth solder 60000 bend_illegal "Solder bump pad size > %d (Padb.a)"
+ spacing solder solder 70000 touching_ok "Solder bump pad spacing < %d (Padb.b)"
+ spacing solder seal 50000 touching_illegal \
+	"Solder bump pad spacing to EdgeSeal < %d (Padb.d)"
+ 
+ width pillar 35000 "CuPillar pad size < %d (Padc.a)"
+ maxwidth pillar 45000 both "CuPillar pad width > %d (Padc.a)"
+ spacing pillar pillar 40000 touching_ok "CuPillar pad spacing < %d (Padc.e)"
+ spacing pillar seal 30000 touching_illegal \
+	"CuPillar pad spacing to EdgeSeal < %d (Padc.d)"
+ variants *
 
  # NOTE: Verification layout suggests that passivation over metal6 is
  # legal and follows the same rules as for metal7.  This use is not
@@ -4511,9 +4561,8 @@ extract
  planeorder metal5      7
  planeorder metal6      8
  planeorder metal7      9
- planeorder glass      10
- planeorder comment    11
- planeorder mimcap     12
+ planeorder comment    10
+ planeorder mimcap     11
 
  # Antenna check parameters
  # Note that checks w/diode diffusion are not modeled
