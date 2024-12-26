@@ -27,13 +27,13 @@ tech
 end
 
 version
- version 0.1.2
+ version 0.2.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.507
+ requires magic-8.3.508
 end
 
 #------------------------------------------------------------------------
-# Status 12/8/24: Version 0.1.2 (alpha):
+# Status 12/23/24: Version 0.2.0 (alpha):
 # Pre-release
 #------------------------------------------------------------------------
 
@@ -670,13 +670,8 @@ style gdsii
 # PSD
 #----------------------------------------------------------------
 
- templayer trans gec,nec,hvnec
-	grow 2630
-	and-not psd
-	grow 400
-	and-not psd
-	grow 400
-	and-not psd
+ templayer trans
+	bloat-all gec,nec,hvnec nemitter,hvnemitter,*ndiff,space/a 3430
 	shrink 200
 
  # Define the guard ring area around bipolar transistors
@@ -801,10 +796,13 @@ style gdsii
 	mask-hints SBLK
 	calma 28 0
 
- # NSDBLOCK is inside SBLK
+ # NSDBLOCK is inside SBLK.  This satisfies rule (nmosi.g)
+ # The grow/shrink 160 joins neighboring taps and satisfies rule (nmosi.f)
  layer NSDBLOCK
-	bloat-or hvisodiffres * 350 *hvndiff 0 *hvpsd 150
 	bloat-or isodiffres * 320 *ndiff,*psd 0
+	grow 160
+	shrink 160
+	bloat-or hvisodiffres * 350 *hvndiff 0 *hvpsd 150
 	shrink 150
 	grow 155
 	shrink 155
@@ -1454,228 +1452,69 @@ style drc
  templayer pwell_in_dnwell dnwell
  and-not nwell
 
+ templayer active_in_pwell alldiff,isodiffres,hvisodiffres
+ and pwell_in_dnwell
+
+ templayer dwell_overlap_of_active active_in_pwell
+ and-not nbase
+ grow 1240
+ and-not dnwell
+
+ templayer scr_butting_junction
+ bloat-or *hvnsubdiff * 0 hvndiffres 390
+
+ # Find nwell spacing to diffusion in pwell.  Exclude butting edge of
+ # hvndiffres (in SCR layout, for example)
+ templayer nwell_space_to_pwell_active nwell
+ grow 390
+ and active_in_pwell
+ and-not scr_butting_junction
+
+ # Ensure that nwell overlaps dnwell at least 0.62um on the inside edge
+ templayer dnwell_shrink dnwell
+ shrink 620
+
+ templayer nwell_missing dnwell
+ and-not nbase
+ and-not dnwell_shrink
+ and-not nwell
+
+ # Find all transistor source/drain regions in pwell
+ ## templayer nfet_in_pwell allnfets
+ ## and active_in_pwell
+
+ ## templayer nfet_source_drain_in_pwell
+ ## bloat-all nfet_in_pwell alldiffnonfet,isodiffres,hvisodiffres,hvndiffres
+
+ # Find all ptap diffusion
+ ## templayer ptap_in_pwell *psd,*hvpsd
+ ## and active_in_pwell
+
+ # Any ptap area that is not included in nfet_source_drain_in_pwell
+ # is an error.
+ ## templayer unconnected_pwell_ptap
+ ## bloat-all ptap_in_pwell alldiffnonfet,isodiffres,hvisodiffres
+ ## and-not nfet_source_drain_in_pwell
+
  # Check latchup rule (20um minimum from tap diffusion to any
  # non-tap diffusion.
 
- templayer ptap_reach *psd,*hvpsd
- and-not dnwell
- # grow total is 20um.  grow in 0.62um increments to ensure that
- # no nwell ring is crossed
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 620
- and-not nwell,dnwell
- grow 160
- and-not nwell,dnwell
+ templayer ptap_reach
+ bloat-all *psd,*hvpsd pwell,space/w 20000
 
  templayer ptap_missing *ndiff,*hvndiff
  and-not dnwell
  and-not ptap_reach
 
- templayer ntap_reach *nsd,*hvnsd
- # grow total is 20um.  grow in 1.24um increments to ensure that
- # no nwell ring is crossed.  There is no difference between
- # ntaps in and out of deep nwell.
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 1240
- and nwell,pnp
- grow 160
- and nwell,pnp
- 
+ templayer ntap_reach
+ bloat-all *nsd,*hvnsd nwell,pnp 20000
+
  templayer ntap_missing *pdiff,*hvpdiff
  and-not pwell_in_dnwell
  and-not ntap_reach
 
- templayer dptap_reach *psd,*hvpsd
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 620
- and-not nwell
- and dnwell
- grow 160
- and-not nwell
- and dnwell
+ templayer dptap_reach
+ bloat-all *psd,*hvpsd pwell_in_dnwell 20000
 
  templayer dptap_missing *ndiff,*hvndiff
  and dnwell
@@ -1739,13 +1578,8 @@ style drc
 
  # Identify bipolar areas (same as BIPOLARID)
 
- templayer trans gec,nec,hvnec
-	grow 2630
-	and-not psd
-	grow 400
-	and-not psd
-	grow 400
-	and-not psd
+ templayer trans
+	bloat-all gec,nec,hvnec nemitter,hvnemitter,*ndiff,space/a 3430
 	shrink 200
 
  # Identify areas that have to be seprated by a specific
@@ -1801,6 +1635,19 @@ style drc
 	bloat-all pdiff nsd
 	bloat-all hvpdiff hvnsd
 	and-not ndiff,hvndiff,pdiff,hvpdiff
+
+ # No butted tap area should be more than 6um away from a contact.
+ templayer diff_contact_halo
+	bloat-all pdc,ndc,hvpdc,hvndc alldiff 6000
+
+ templayer tap_far_from_contact butted_tap
+	and-not diff_contact_halo
+
+ templayer tap_contact_halo
+	bloat-all psc,nsc,hvpsc,hvnsc allnactivetap,allpactivetap 6000
+
+ templayer tap_far_from_tap_contact psd,nsd,hvpsd,hvnsd
+	and-not tap_contact_halo
 
  # Determine if butted tap has at least one area that meets
  # the width pSD.e or pSD.f (0.3um).  This is a convoluted
@@ -1950,13 +1797,8 @@ style patternfill variants (),(tiled)
 	and-not	well_shrink
 
  # Generate area of TRANS for diffusion fill keep-out 
- templayer trans gec,nec,hvnec
-	grow 2630
-	and-not psd
-	grow 400
-	and-not psd
-	grow 400
-	and-not psd
+ templayer trans
+	bloat-all gec,nec,hvnec nemitter,hvnemitter,*ndiff,space/a 3430
 	shrink 200
 
 #------------------------------------------------------------------------
@@ -3775,6 +3617,24 @@ drc
  # Also:  Illustration shows pwell:block regions connected to a deep nwell as being considered part
  # of the nwell for the purpose of checking DRC rules.
 
+ variants (full)
+ cifmaxwidth dwell_overlap_of_active 0 bend_illegal \
+	"Deep N-well enclosure of N-diffusion in P-well < 1.24um (nmosi.b)"
+ cifmaxwidth nwell_space_to_pwell_active 0 bend_illegal \
+	"N-well space to diffusion in P-well < %d (nmosi.c)"
+
+ # Assuming that any nwell overlapping a deep nwell edge must satisfy
+ # rule nmosi.d is more conservative than the rule is written.  May
+ # warrant revisiting.
+ cifmaxwidth nwell_missing 0 bend_illegal \
+	"N-well overlap of deep N-well < 0.62um inside (nmosi.d)"
+
+ # NOTE:  This rule check has been disabled because the nmoscl_* layouts
+ # violate it;  it is not clear why it should be a rule.
+ ## cifmaxwidth unconnected_pwell_ptap 0 bend_illegal \
+ ##	"P-well contact unabutted to a MOS device is not allowed (nmosi.e1)"
+ variants *
+
 #-----------------------------
 # NWELL
 #-----------------------------
@@ -3834,6 +3694,10 @@ drc
 	"N-diff distance to P-tap in deep nwell must be < 20.0um (LU.b)"
  cifmaxwidth ntap_missing 0 bend_illegal \
 	"P-diff distance to N-tap must be < 20.0um (LU.a)"
+ cifmaxwidth tap_far_from_contact 0 bend_illegal \
+	"Extension of tie beyond diffusion contact < 6.0um (LU.c, LU.c1)"
+ cifmaxwidth tap_far_from_tap_contact 0 bend_illegal \
+	"Extension of tie diffusion beyond tie contact < 6.0um (LU.d, LU.d1)"
 
  width difffill,fillfet 1000 "Diff fill width < %d (AFil.a1)"
  maxwidth difffill,fillfet 5000 both "Diff fill width > %d (AFil.a)"
@@ -4482,13 +4346,17 @@ variants *
 
  spacing hvndiffres *hvndiff,hvnmosesd 480 touching_ok \
 	"HV diffusion resistor to unrelated diffusion < %d (Sal.c + Sal.d)"
- spacing hvndiffres alldifflv,allpolynonfet,*hvpdiff,*hvpsd 480 touching_illegal \
+ spacing hvndiffres,hvnmosesd alldifflv,allpolynonfet,*hvpdiff,*hvpsd 480 \
+	corner_ok *poly \
 	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
  spacing isodiffres *ndiff,*psd 520 touching_ok \
 	"Diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
- spacing isodiffres alldiffhv,allpoly,*pdiff,*nsd 520 touching_illegal \
+ edge4way isodiffres ~(*ndiff,*psd,isodiffres)/a 520 \
+	~(alldiffhv,allpoly,*pdiff,*nsd)/a 0 0 \
 	"Diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
- spacing hvisodiffres *hvndiff,*hvpsc 530 touching_ok \
+ edge4way isodiffres (*ndiff,*psd)/a 200 ~(alldiffhv,allpoly,*pdiff,*nsd)/a 0 0 \
+	"Diffusion resistor to poly and unrelated diffusion < %d (Sal.d)"
+ spacing hvisodiffres *hvndiff,*hvpsd 530 touching_ok \
 	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
  spacing hvisodiffres alldifflv,allpoly,*hvpdiff,*hvnsc 530 touching_illegal \
 	"HV diffusion resistor to poly and unrelated diffusion < %d (Sal.c + Sal.d)"
