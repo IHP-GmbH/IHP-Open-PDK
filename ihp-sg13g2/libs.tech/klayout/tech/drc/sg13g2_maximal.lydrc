@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!--
- Copyright 2024 IHP PDK Authors
+ Copyright 2025 IHP PDK Authors
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -506,11 +506,16 @@ class DRC::DRCLayer
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
         other.data.min_coherence = true
-        overlap_filter = @engine.overlapping(other.not_inside(self))
+        if other.is_merged?
+            merged_other = other
+        else
+            merged_other = other.merged(true, 0)
+        end
+        overlap_filter = @engine.overlapping(merged_other.not_inside(self))
         constraint.each do |expression|
             overlap_filter = overlap_filter.public_send(expression[0], expression[1])
         end
-        output_layer = self.drc(@engine.if_all(overlap_filter, ! @engine.inside(other)))
+        output_layer = self.drc(@engine.if_all(overlap_filter, ! @engine.inside(merged_other)))
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         return output_layer
