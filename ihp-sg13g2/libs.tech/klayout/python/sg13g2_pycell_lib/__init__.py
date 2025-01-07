@@ -51,7 +51,6 @@ moduleNames = [
         'rhigh_code',
         'rppd_code',
         'sealring_code',
-        'npn13G2_base_code',
         'npn13G2_code',
         'npn13G2L_code',
         'npn13G2V_code',
