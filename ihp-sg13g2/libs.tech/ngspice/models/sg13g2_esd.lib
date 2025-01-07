@@ -39,6 +39,7 @@
 
 
 
+*----------------------------------------------------------------------------------------
 .subckt diodevdd_2kv VDD PAD VSS
 .params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
 
@@ -46,6 +47,16 @@ D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
 D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
 
 .ends diodevdd_2kv
+*----------------------------------------------------------------------------------------
+
+.subckt diodevdd_4kv VDD PAD VSS
+.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
+D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
+
+.ends diodevdd_4kv
+*----------------------------------------------------------------------------------------
 
 .subckt diodevss_2kv VDD PAD VSS
 .params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
@@ -54,3 +65,41 @@ D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
 D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
 
 .ends diodevss_2kv
+*----------------------------------------------------------------------------------------
+
+.subckt diodevss_4kv VDD PAD VSS
+.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
+D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
+
+.ends diodevss_4kv
+*----------------------------------------------------------------------------------------
+
+.subckt idiodevdd_2kv VDD PAD VSS
+.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
+D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
+
+.ends idiodevdd_2kv
+*----------------------------------------------------------------------------------------
+
+.subckt idiodevss_4kv VDD PAD VSS
+.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
+D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
+
+.ends idiodevss_4kv
+*----------------------------------------------------------------------------------------
+
+.subckt nmoscl_2 VDD VSS
+
+.ends nmoscl_2
+*----------------------------------------------------------------------------------------
+
+.subckt nmoscl_4 VDD VSS
+
+.ends nmoscl_4
+*----------------------------------------------------------------------------------------
