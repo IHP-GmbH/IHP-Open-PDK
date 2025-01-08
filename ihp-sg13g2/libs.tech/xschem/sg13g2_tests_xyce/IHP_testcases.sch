@@ -1,4 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
+v {xschem version=3.4.6 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,3 +66,4 @@ C {sg13g2_tests_xyce/dc_mos_cs_temp.sym} 180 -470 0 0 {name=x12}
 C {sg13g2_tests_xyce/mc_lv_nmos_cs_loop.sym} 1200 -630 0 0 {name=x1}
 C {sg13g2_tests_xyce/dc_hv_pmos.sym} 180 -540 0 0 {name=x8}
 C {sg13g2_tests_xyce/ac_rfmim_cap.sym} 860 -550 0 0 {name=x31}
+C {sg13g2_tests_xyce/tran_bondpad.sym} 520 -510 0 0 {name=x32}
