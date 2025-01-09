@@ -39,7 +39,6 @@ class rsil(DloGen):
         rzspec     = techparams['rsil_rzspec']
         defL       = techparams['rsil_defL']
         defW       = techparams['rsil_defW']
-        defB       = techparams['rsil_defB']
         defPS      = techparams['rsil_defPS']
         minL       = techparams['rsil_minL']
         minW       = techparams['rsil_minW']
@@ -54,12 +53,11 @@ class rsil(DloGen):
         #specs('Recommendation', 'No', 'Recommendation', ChoiceConstraint(['Yes', 'No'])) -> display = nil
         specs('model', model, 'Model name')
 
-        resistance = CbResCalc('R', 0, defL, defW, defB, defPS, 'rsil')
+        resistance = CbResCalc('R', 0, defL, defW, 0, defPS, 'rsil')
         specs('R', eng_string(resistance), 'R')
 
         specs('w',  defW, 'Width')
         specs('l',  defL, 'Length')
-        specs('b',  defB, 'Bends')
         specs('ps', defPS, 'Poly Space')
 
         imax = CbResCurrent(Numeric(defW), Numeric(eps), 'rsilG2')
@@ -83,14 +81,12 @@ class rsil(DloGen):
         self.params = params
         self.l = Numeric(params['l'])
         self.w = Numeric(params['w'])
-        self.b = int(params['b'])
         self.ps = Numeric(params['ps'])
         self.resistance = Numeric(params['R'])
 
     def genLayout(self):
         l = self.l
         w = self.w
-        b = self.b
         ps = self.ps
 
         self.techparams = self.tech.getTechParams()
@@ -141,7 +137,6 @@ class rsil(DloGen):
         contoverlay = 0.0
         l = Numeric(l)*1e6
         w = Numeric(w)*1e6
-        b = fix(b + epsilon)
         ps = Numeric(ps)*1e6
         
         wcontact = w
@@ -172,7 +167,6 @@ class rsil(DloGen):
         xpos2 = xpos1+wcontact
         ypos2 = 0
         dir = -1
-        stripes = b+1
         
         # set xpos1/xpos2 to left for contacts
         xpos1 = xpos1-contoverlay
@@ -222,51 +216,20 @@ class rsil(DloGen):
         # **************************************************************
         # GatPoly and PolyRes
         # major structures ahead -> here: not applicable
-        for i in range(1, stripes+1) :
-            xpos2 = xpos1+w
-            ypos2 = ypos1+l*dir
-            # draw long res line
-            # when dogbone and bends>0 shift long res line to inner contactline
-            if stripes > 1 :
-                if i == 1 :
-                    xpos1 = xpos1+contoverlay
-                    xpos2 = xpos2+contoverlay
-                    
-            # all vertical ResPoly and GatPoly Parts   
-            dbCreateRect(self, bodypolylayer, Box(xpos1, ypos1, xpos2, ypos2))
-            dbCreateRect(self, reslayer, Box(xpos1, ypos1, xpos2, ypos2))
-            
-            ihpAddThermalResLayer(self, Box(xpos1, ypos1, xpos2, ypos2), True, Cell)
-            
-            if i == 1 :
-                dbCreateRect(self, extBlocklayer, Box(xpos1-ext_over, ypos1, xpos2+ext_over, ypos2))
-            else :
-                dbCreateRect(self, extBlocklayer, Box(xpos1-ext_over, ypos1, xpos2+ext_over, ypos2))
+        xpos2 = xpos1+w
+        ypos2 = ypos1+l*dir
                 
-            # hor connection parts
-            if i < stripes : # Connections parts
-                ypos1 = ypos2+w*dir
-                xpos2 = xpos1+2*w+ps
-                ypos2 = ypos1-w*dir
-                dir = dir*-1
-                # draw res bend
-                dbCreateRect(self, bodypolylayer, Box(xpos1, ypos1, xpos2, ypos2))
-                dbCreateRect(self, reslayer, Box(xpos1, ypos1, xpos2, ypos2))
-                if oddp(i) :
-                    dbCreateRect(self, extBlocklayer, Box(xpos1-ext_over, ypos1+ext_over, xpos2+ext_over, ypos2-ext_over))
-                else :
-                    dbCreateRect(self, extBlocklayer, Box(xpos1-ext_over, ypos1-ext_over, xpos2+ext_over, ypos2+ext_over))
-                    
-                xpos1 = xpos1+w+ps
-                ypos1 = ypos2
-                
+        # all vertical ResPoly and GatPoly Parts   
+        dbCreateRect(self, bodypolylayer, Box(xpos1, ypos1, xpos2, ypos2))
+        dbCreateRect(self, reslayer, Box(xpos1, ypos1, xpos2, ypos2))
+        
+        ihpAddThermalResLayer(self, Box(xpos1, ypos1, xpos2, ypos2), True, Cell)
+        
+        dbCreateRect(self, extBlocklayer, Box(xpos1-ext_over, ypos1, xpos2+ext_over, ypos2))
+            
         # draw res contact (Top)    
-        if stripes >  1 :
-            xpos1 = xpos1
-            xpos2 = xpos2+contoverlay+contoverlay
-        else :
-            xpos1 = xpos1-contoverlay
-            xpos2 = xpos2+contoverlay
+        xpos1 = xpos1-contoverlay
+        xpos2 = xpos2+contoverlay
            
         #  GatPoly Part
         dbCreateRect(self, contpolylayer, Box(xpos1, ypos2, xpos2, ypos2+poly_cont_len*dir))
@@ -291,7 +254,7 @@ class rsil(DloGen):
         MkPin(self, 'MINUS', 2, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2), metlayer)
         
         # now draw the label
-        resistance = CbResCalc('R', 0, l*1e-6, w*1e-6, b, ps*1e-6, Cell)
+        resistance = CbResCalc('R', 0, l*1e-6, w*1e-6, 0, ps*1e-6, Cell)
         labeltext = Cell + ' r=' + eng_string(resistance)
         labelpos = Point(w/2, l/2)
         labelheight = 0.1
@@ -301,7 +264,3 @@ class rsil(DloGen):
             rot = 'R90'
             
         lbl = dbCreateLabel(self, Layer(textlayer, 'drawing'), labelpos, labeltext, 'centerCenter', rot, Font.EURO_STYLE, labelheight)
-        #lsizex = lbl.bbox.getWidth()
-        #lsizey = lbl.bbox.getHeight()
-        #scale = min(w/lsizex, (l+2*poly_cont_len)/lsizey)
-        #SetSGq(lbl scale height)
