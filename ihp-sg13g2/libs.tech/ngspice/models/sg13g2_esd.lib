@@ -1,105 +1,142 @@
-*#######################################################################
+********************************************************************************************************
 *
-* Copyright 2023 IHP PDK Authors
-* 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* 
-*    https://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
 *
-*#######################################################################
-       
-*--------------------------------------------------
-* Testfield: T270
-* Technology: SG13
-* Lot: PQT401
-* Wafer: 19
-* DUT: diodevdd_2kv
-* Temperature range: -40C ... +125C
-* Date: 25.02.2013
-* Remarks: no scaling
-* DC Measurements  at T=27C, T=-40C and T=125C
-* CV Measurements at T=27C
-* bipolar effect NOT taken into account
-* No temperature modeling of the VDD-VSS diode (dsub)
-*--------------------------------------------------
 *
+*                        COMMON ESD MODELS
+*
+*
+*
+***************************************************************************************************
+*
+*
+.MODEL diodevdd_2kv_mod diode (tnom=27 level=1 is=4.911e-019 rs=289.6 n=1.04 isr=5.422e-015 ik=10m cj=8.716e-016 cjsw=4.068e-017 mj=0.3294 mjsw=0.118 vj=0.6621 vjsw=0.15 bv=11.81 ibv=4.744e-016 ibvl=1.067e-012 nbv=1 nbvl=35.32 nz=1.046 tlev=1 eg=1.11 xti=4 tbv1=-0.0008212 gleak=4.45e-015 cminr=0.01)          
 
+.MODEL idiodevdd_2kv_mod diode (tnom = 27 level = 1 is = 4.911E-019 rs = 289.6 n = 1.04 isr = 5.422E-015 ik = 10m cj = 8.716E-016 cjsw = 4.068E-017 mj = 0.3294 mjsw = 0.118 vj = 0.6621 vjsw = 0.15 bv = 11.81 ibv = 4.744E-016 ibvl = 1.067E-012 nbv = 1 nbvl = 35.32 nz = 1.046 tlev = 1 eg = 1.11 xti = 4 tbv1 = -0.0008212 gleak = 4.45E-015 minr = 0.01)
 
-.model diodevdd_2kv_mod D (level=1 tnom=27 is=4.911E-019 n=1.04 ik=10m rs=289.6 cj0=8.716E-016 m=0.3294 vj=0.6621 fc=0.5 bv=11.81 ibv=4.744E-016 tcv=-0.8212E-003 nbv = 1 isr=5.422E-015 xti=4.0 trs=0 trs2=0 tt=7.009E-007)
+.MODEL diodevdd_4kv_mod diode (tnom = 27 level = 1 is = 4.911E-019 rs = 289.6 n = 1.04 isr = 5.422E-015 ik = 10m cj = 8.716E-016 cjsw = 4.068E-017 mj = 0.3294 mjsw = 0.118 vj = 0.6621 vjsw = 0.15 bv = 11.81 ibv = 4.744E-016 ibvl = 1.067E-012 nbv = 1 nbvl = 35.32 nz = 1.046 tlev = 1 eg = 1.11 xti = 4 tbv1 = -0.0008212 gleak = 4.45E-015 minr = 0.01)
 
-.model dsub_2kv_mod D (level=1 tnom=27 is=1.7E-016 n=1.0 ik=10m rs=4.759 cj0=99.77E-018 m=0.56 vj=0.4547 fc=0.5 bv=10.0 ibv=1.0E-019 tcv=0.0 nbv = 1 isr=5.422E-015 xti=3.0 trs=0 trs2=0 tt=7.009E-007)
+.MODEL idiodevdd_4kv_mod diode (tnom = 27 level = 1 is = 4.911E-019 rs = 289.6 n = 1.04 isr = 5.422E-015 ik = 10m cj = 8.716E-016 cjsw = 4.068E-017 mj = 0.3294 mjsw = 0.118 vj = 0.6621 vjsw = 0.15 bv = 11.81 ibv = 4.744E-016 ibvl = 1.067E-012 nbv = 1 nbvl = 35.32 nz = 1.046 tlev = 1 eg = 1.11 xti = 4 tbv1 = -0.0008212 gleak = 4.45E-015 minr = 0.01)
 
+.MODEL diodevss_2kv_mod diode (tnom = 27 level = 1 is = 9.017E-019 rs = 200 n = 1.03 isr = 3.776E-015 ik = 0.0001754 cj = 9.42E-016 cjsw = 4.518E-017 mj = 0.3012 mjsw = 0.09 vj = 0.6684 vjsw = 0.5018 bv = 11.28 ibv = 1E-009 ibvl = 1E-018 nbv = 1.324 nbvl = 1 nz = 0.5048 tlev = 1 eg = 1.17 xti = 3 tbv1 = -0.000724 gleak = 9.616E-015 minr = 0.01)
 
+.MODEL idiodevss_2kv_mod diode (tnom = 27 level = 1 is = 9.017E-019 rs = 200 n = 1.03 isr = 3.776E-015 ik = 0.0001754 cj = 9.42E-016 cjsw = 4.518E-017 mj = 0.3012 mjsw = 0.09 vj = 0.6684 vjsw = 0.5018 bv = 11.28 ibv = 1E-009 ibvl = 1E-018 nbv = 1.324 nbvl = 1 nz = 0.5048 tlev = 1 eg = 1.17 xti = 3 tbv1 = -0.000724 gleak = 9.616E-015 minr = 0.01)
 
-*----------------------------------------------------------------------------------------
+.MODEL diodevss_4kv_mod diode (tnom = 27 level = 1 is = 9.017E-019 rs = 273.7 n = 1.03 isr = 3.776E-015 ik = 0.0001754 cj = 9.42E-016 cjsw = 4.518E-017 mj = 0.3012 mjsw = 0.09 vj = 0.6684 vjsw = 0.5018 bv = 11.28 ibv = 1E-009 ibvl = 1E-01 nbv = 1.324 nbvl = 1 nz = 0.5048 tlev = 1 eg = 1.17 xti = 3 tbv1 = -0.000724 gleak = 9.616E-015 minr = 0.01)
+
+.MODEL idiodevss_4kv_mod diode (tnom = 27 level = 1 is = 9.017E-019 rs = 273.7 n = 1.03 isr = 3.776E-015 ik = 0.0001754 cj = 9.42E-016 cjsw = 4.518E-017 mj = 0.3012 mjsw = 0.09 vj = 0.6684 vjsw = 0.5018 bv = 11.28 ibv = 1E-009 ibvl = 1E-018 nbv = 1.324 nbvl = 1 nz = 0.5048 tlev = 1 eg = 1.17 xti = 3 tbv1 = -0.000724 gleak = 9.616E-015 minr = 0.01)
+
+.MODEL dsub_2kv_mod diode (is = 1.7E-016 rs = 4.759 n = 1 isw = 0 ik = 10m cj = 99.77E-018 mj = 0.560 vj = 0.4547 bv = 10 ibv = 1E-019 nz = 1 xti = 3 tbv1 = 0 eg = 1.11 gleak = 0 minr = 0.01)
+.MODEL dsub_4kv_mod diode (is = 1.7E-016 rs = 4.759 n = 1 ik = 100u cj = 99.77E-018 mj = 0.560 vj = 0.4547 bv = 10 ibv = 0 nz = 1 xti = 3 tbv1 = 0 eg = 1.11 gleak = 0 minr = 0.01)
+********************************************************
+.MODEL nmoscl_2_psp pspnqs103va (type = +1 level = 103 tr = 7   dta = 0   swgeo = 1   swigate = 1   swimpact = 1   swgidl = 0   swjuncap = 2   swjunasym = 0   swdelvtac = 0   qmc = 1   lvaro = 3.499E-008   lvarl = -0.09125   lvarw = 0   lap = 6.694E-008   wvaro = 0   wvarl = 0   wvarw = 0   wot = 3E-008   dlq = 8.958E-009   dwq = 3E-008   vfbo = -0.8568   vfbl = 0.09544   vfbw = 0.00658   vfblw = -0.0149   stvfbo = 0.001   stvfbl = 1.558E-005    stvfbw = -2.828E-005   stvfblw = 8.939E-007   toxo = 7.167E-009   epsroxo = 3.9   nsubo = 1.63E+023   nsubw = -0.002855   wseg = 1.098E-010  npck = 1E+016   npckw = -10   wsegp = 1E-008   lpck = 2.996E-006   lpckw = 89.51   fol1 = 0.1786   fol2 = -0.002805   facneffaco = 1   facneffacl = 0   facneffacw = 0   facneffaclw = 0   gfacnudo = 1   gfacnudl = 0   gfacnudlexp = 1   gfacnudw = 0   gfacnudlw = 0   vsbnudo = 0   dvsbnudo = 1   vnsubo = 0  nslpo = 0.05   dnsubo = 0.02605   dphibo = -0.0662   dphibl = -0.002342   dphiblexp = 2.063   dphibw = -0.003698   dphiblw = 0.01091   delvtaco = 0 delvtacl = 0   delvtaclexp = 1   delvtacw = 0   delvtaclw = 0   npo = 3.897E+026   npl = -0.1215   cto = 0.05214   ctl = 0.04637   ctlexp = 0.5848   ctw = 0.172   ctlw = 0.0008114   toxovo = 7.167E-009   toxovdo = 2E-009   lov = 6.694E-008   lovd = 0   novo = 1E+024   novdo = 5E+025   cfl = 0.0009938   cflexp = 1.775   cfw = -0.04232   cfbo = 0.8336   uo = 0.04983   fbet1 = -10   fbet1w = -0.2195   lp1 = 6.542E-009   lp1w = 0.4189   fbet2 = 14.9   lp2 = 9.42E-009   betw1 = 0.6563   betw2 = -0.08203   wbet = 1.002E-010   stbeto = 1.451   stbetl = -0.025   stbetw = -0.06729   stbetlw = -0.01405   mueo = 0.9748   muew = -0.03093   stmueo = 0.1965   themuo = 2.4   stthemuo = 1.128   cso = 0.6121   csl = -0.3029   cslexp = 0.2   csw = -0.3192   cslw = 0.3187   stcso = 3.65   xcoro = 0.04872   xcorl = -0.2149   xcorw = -0.1948   xcorlw = 0.4718   stxcoro = 2   fetao = 0.9237   rsw1 = 600   rsw2 = -0.1131   strso = -0.06224   rsbo = -0.007445   rsgo = 0.1281   thesato = 0.02   thesatl = 0.446   thesatlexp = 1.045   thesatw = -0.06129   thesatlw = -0.002918   stthesato = 1.652   stthesatl = -0.1115   stthesatw = 0.03227   stthesatlw = -0.04256   thesatbo = -2.776E-017   thesatgo = 0.1936 axo = 12.41   axl = 0.5308   alpl = 4.926E-006   alplexp = 0.9059   alpw = 0.3073   alp1l1 = 0.02176   alp1lexp = 0.7506   alp1l2 = 0.06979  alp1w = -0.08123   alp2l1 = 5.413E-007   alp2lexp = 0.2541   alp2l2 = 0   alp2w = -10   vpo = 0.4821   a1o = 7.893   a1l = 0.06917   a1w = -0.03328  a2o = 23.97   sta2o = 0.002602   a3o = 1.105   a3l = -0.07106   a3w = -0.01108   a4o = 0.1179   a4l = -0.05413   a4w = -0.06197   gcoo = 0   iginvlw = 0 igovw = 0   igovdw = 0   stigo = 2   gc2o = 0.375   gc3o = 0.063   chibo = 3.1   agidlw = 70   agidldw = 0   bgidlo = 13   bgidldo = 41 stbgidlo = -0.001067   stbgidldo = 0   cgidlo = 0   cgidldo = 0   cgbovl = 2.522E-016   cfrdw = 0   fnto = 1   nfalw = 1.42E+025   nfblw = 5.743E+008  nfclw = -3.015E-008   efo = 1   lintnoi = -3.158E-008   alpnoi = 2.708   saref = 1E-006   sbref = 1E-006   wlod = 0   kuo = 0   kvsat = 0   tkuo = 0 lkuo = 0   wkuo = 0   pkuo = 0   llodkuo = 0   wlodkuo = 0   kvtho = 0   lkvtho = 0   wkvtho = 0   pkvtho = 0   llodvth = 0   wlodvth = 0   stetao = 0 lodetao = 1   scref = 1E-006   web = 0   wec = 0   kvthoweo = 0   kvthowel = 0   kvthowew = 0   kvthowelw = 0   kuoweo = 0   kuowel = 0   kuowew = 0  kuowelw = 0   trj = 21   swjunexp = 0   imax = 0.005   cjorbot = 0.0009277   cjorsti = 2.304E-011   cjorgat = 4.772E-010   vbirbot = 0.8806   vbirsti = 0.7746   vbirgat = 0.6629   pbot = 0.3263   psti = 0.1451   pgat = 0.4016   cjorbotd = 0.001   cjorstid = 1E-009   cjorgatd = 1E-009   vbirbotd = 1   vbirstid = 1   vbirgatd = 1   pbotd = 0.5   pstid = 0.5   pgatd = 0.5   phigbot = 1.113   phigsti = 0.5   phiggat = 0.5   idsatrbot = 6.288E-008   idsatrsti = 1E-019   idsatrgat = 0   csrhbot = 100   csrhsti = 0.0001   csrhgat = 0.0001   xjunsti = 1.61E-008  xjungat = 6.134E-007   phigbotd = 1.16   phigstid = 1.16   phiggatd = 1.16   idsatrbotd = 1E-012   idsatrstid = 1E-018   idsatrgatd = 1E-018  csrhbotd = 100   csrhstid = 0.0001   csrhgatd = 0.0001   xjunstid = 1E-007   xjungatd = 1E-007   ctatbot = 6.441E+004   ctatsti = 0.0001   ctatgat = 0.0001   mefftatbot = 0.25   mefftatsti = 0.25   mefftatgat = 0.25   ctatbotd = 100   ctatstid = 0.0001   ctatgatd = 0.0001   mefftatbotd = 0.25   mefftatstid = 0.25   mefftatgatd = 0.25   cbbtbot = 1.653E-010   cbbtsti = 1E-021   cbbtgat = 1E-018   fbbtrbot = 7E+008   fbbtrsti = 1E+009  fbbtrgat = 1E+009   stfbbtbot = -0.001   stfbbtsti = -0.001   stfbbtgat = -0.001   cbbtbotd = 1E-012   cbbtstid = 1E-018   cbbtgatd = 1E-018   fbbtrbotd = 1E+009   fbbtrstid = 1E+009   fbbtrgatd = 1E+009   stfbbtbotd = -0.001   stfbbtstid = -0.001   stfbbtgatd = -0.001   vbrbot = 9.855   vbrsti = 10   vbrgat = 10   pbrbot = 0.4   pbrsti = 4   pbrgat = 4   vbrbotd = 10   vbrstid = 10   vbrgatd = 10   pbrbotd = 4   pbrstid = 4   pbrgatd = 4  vjunref = 2.5   fjunq = 0.03   vjunrefd = 2.5   rint = 0   rvpoly = 0   dlsil = 0   rsh = 0   rshd = 0   munqso = 1   swnqs = 0   cfrw = 0   rshg = 0 rgo = 0   rbulko = 0   rwello = 0   rjunso = 0   rjundo = 0)
+
+.MODEL nmoscl_4_psp pspnqs103va  (type = +1   level = 103   tr = 7   dta = 0   swgeo = 1   swigate = 1   swimpact = 1   swgidl = 0   swjuncap = 2   swjunasym = 0   
++ swdelvtac = 0   qmc = 1   lvaro = 3.499E-008   lvarl = -0.09125   lvarw = 0   lap = 6.694E-008   wvaro = 0   wvarl = 0   wvarw = 0   wot = 3E-008   
++ dlq = 8.958E-009   dwq = 3E-008   vfbo = -0.8568   vfbl = 0.09544   vfbw = 0.00658   vfblw = -0.0149   stvfbo = 0.001   stvfbl = 1.558E-005  
++ stvfbw = -2.828E-005   stvfblw = 8.939E-007   toxo = 7.167E-009   epsroxo = 3.9   nsubo = 1.63E+023   nsubw = -0.002855   wseg = 1.098E-010  npck = 1E+016   
++ npckw = -10   wsegp = 1E-008   lpck = 2.996E-006   lpckw = 89.51   fol1 = 0.1786   fol2 = -0.002805   facneffaco = 1   facneffacl = 0   facneffacw = 0  
++ facneffaclw = 0   gfacnudo = 1   gfacnudl = 0   gfacnudlexp = 1   gfacnudw = 0   gfacnudlw = 0   vsbnudo = 0   dvsbnudo = 1   vnsubo = 0   nslpo = 0.05  
++ dnsubo = 0.02605   dphibo = -0.0662   dphibl = -0.002342   dphiblexp = 2.063   dphibw = -0.003698   dphiblw = 0.01091   delvtaco = 0   delvtacl = 0  
++ delvtaclexp = 1   delvtacw = 0   delvtaclw = 0   npo = 3.897E+026   npl = -0.1215   cto = 0.05214   ctl = 0.04637   ctlexp = 0.5848   ctw = 0.172   
++ ctlw = 0.0008114   toxovo = 7.167E-009   toxovdo = 2E-009   lov = 6.694E-008   lovd = 0   novo = 1E+024   novdo = 5E+025   cfl = 0.0009938   
++ cflexp = 1.775   cfw = -0.04232   cfbo = 0.8336   uo = 0.04983   fbet1 = -10   fbet1w = -0.2195   lp1 = 6.542E-009   lp1w = 0.4189   fbet2 = 14.9   
++ lp2 = 9.42E-009   betw1 = 0.6563   betw2 = -0.08203   wbet = 1.002E-010   stbeto = 1.451   stbetl = -0.025   stbetw = -0.06729   stbetlw = -0.01405   
++ mueo = 0.9748   muew = -0.03093   stmueo = 0.1965   themuo = 2.4   stthemuo = 1.128   cso = 0.6121   csl = -0.3029   cslexp = 0.2   csw = -0.3192   
++ cslw = 0.3187   stcso = 3.65   xcoro = 0.04872   xcorl = -0.2149   xcorw = -0.1948   xcorlw = 0.4718   stxcoro = 2   fetao = 0.9237   rsw1 = 600 
++ rsw2 = -0.1131   strso = -0.06224   rsbo = -0.007445   rsgo = 0.1281   thesato = 0.02   thesatl = 0.446   thesatlexp = 1.045   thesatw = -0.06129   
++ thesatlw = -0.002918   stthesato = 1.652   stthesatl = -0.1115   stthesatw = 0.03227   stthesatlw = -0.04256   thesatbo = -2.776E-017   thesatgo = 0.1936
++ axo = 12.41   axl = 0.5308   alpl = 4.926E-006   alplexp = 0.9059   alpw = 0.3073   alp1l1 = 0.02176   alp1lexp = 0.7506   alp1l2 = 0.06979   
++ alp1w = -0.08123   alp2l1 = 5.413E-007   alp2lexp = 0.2541   alp2l2 = 0   alp2w = -10   vpo = 0.4821   a1o = 7.893   a1l = 0.06917   a1w = -0.03328   
++ a2o = 23.97   sta2o = 0.002602   a3o = 1.105   a3l = -0.07106   a3w = -0.01108   a4o = 0.1179   a4l = -0.05413   a4w = -0.06197   gcoo = 0   iginvlw = 0 
++ igovw = 0   igovdw = 0   stigo = 2   gc2o = 0.375   gc3o = 0.063   chibo = 3.1   agidlw = 70   agidldw = 0   bgidlo = 13   bgidldo = 41  
++ stbgidlo = -0.001067   stbgidldo = 0   cgidlo = 0   cgidldo = 0   cgbovl = 2.522E-016   cfrdw = 0   fnto = 1   nfalw = 1.42E+025   nfblw = 5.743E+008  
++ nfclw = -3.015E-008   efo = 1   lintnoi = -3.158E-008   alpnoi = 2.708   saref = 1E-006   sbref = 1E-006   wlod = 0   kuo = 0   kvsat = 0   tkuo = 0  
++ lkuo = 0   wkuo = 0   pkuo = 0   llodkuo = 0   wlodkuo = 0   kvtho = 0   lkvtho = 0   wkvtho = 0   pkvtho = 0   llodvth = 0   wlodvth = 0   stetao = 0   
++ lodetao = 1   scref = 1E-006   web = 0   wec = 0   kvthoweo = 0   kvthowel = 0   kvthowew = 0   kvthowelw = 0   kuoweo = 0   kuowel = 0   kuowew = 0   
++ kuowelw = 0   trj = 21   swjunexp = 0   imax = 0.005   cjorbot = 0.0009277   cjorsti = 2.304E-011   cjorgat = 4.772E-010   vbirbot = 0.8806   
++ vbirsti = 0.7746   vbirgat = 0.6629   pbot = 0.3263   psti = 0.1451   pgat = 0.4016   cjorbotd = 0.001   cjorstid = 1E-009   cjorgatd = 1E-009 
++ vbirbotd = 1   vbirstid = 1   vbirgatd = 1   pbotd = 0.5   pstid = 0.5   pgatd = 0.5   phigbot = 1.113   phigsti = 0.5   phiggat = 0.5   
++ idsatrbot = 6.288E-008   idsatrsti = 1E-019   idsatrgat = 0   csrhbot = 100   csrhsti = 0.0001   csrhgat = 0.0001   xjunsti = 1.61E-008
++ xjungat = 6.134E-007   phigbotd = 1.16   phigstid = 1.16   phiggatd = 1.16   idsatrbotd = 1E-012   idsatrstid = 1E-018   idsatrgatd = 1E-018
++ csrhbotd = 100   csrhstid = 0.0001   csrhgatd = 0.0001   xjunstid = 1E-007   xjungatd = 1E-007    ctatbot = 100   ctatsti = 0.0001   ctatgat = 0.0001   
++ mefftatbot = 0.25   mefftatsti = 0.25   mefftatgat = 0.25   ctatbotd = 100   ctatstid = 0.0001   ctatgatd = 0.0001   mefftatbotd = 0.25  
++ mefftatstid = 0.25   mefftatgatd = 0.25   cbbtbot = 5.23E-011   cbbtsti = 1E-021   cbbtgat = 1E-018   fbbtrbot = 7.011E+008   fbbtrsti = 1E+009   
++ fbbtrgat = 1E+009   stfbbtbot = -0.001   stfbbtsti = -0.001   stfbbtgat = -0.001   cbbtbotd = 1E-012   cbbtstid = 1E-018   cbbtgatd = 1E-018
++ fbbtrbotd = 1E+009   fbbtrstid = 1E+009   fbbtrgatd = 1E+009   stfbbtbotd = -0.001   stfbbtstid = -0.001   stfbbtgatd = -0.001   vbrbot = 9.958 
++ vbrsti = 10   vbrgat = 10   pbrbot = 4.04345   pbrsti = 4   pbrgat = 4   vbrbotd = 10   vbrstid = 10   vbrgatd = 10   pbrbotd = 4   pbrstid = 4   
++ pbrgatd = 4   vjunref = 2.5   fjunq = 0.03   vjunrefd = 2.5   rint = 0   rvpoly = 0   dlsil = 0   rsh = 0   rshd = 0   munqso = 1   swnqs = 0   cfrw = 0   
++ rshg = 0   rgo = 0   rbulko = 0   rwello = 0   rjunso = 0   rjundo = 0)
+********************************************************
+
 .subckt diodevdd_2kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
-
-D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
-D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
-
-.ends diodevdd_2kv
-*----------------------------------------------------------------------------------------
-
-.subckt diodevdd_4kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
-
-D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
-D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
-
-.ends diodevdd_4kv
-*----------------------------------------------------------------------------------------
-
-.subckt diodevss_2kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
-
-D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
-D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
-
-.ends diodevss_2kv
-*----------------------------------------------------------------------------------------
-
-.subckt diodevss_4kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
-
-D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
-D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
-
-.ends diodevss_4kv
-*----------------------------------------------------------------------------------------
+.param DEV_A=35 DEV_P=58.08 sub_A=224.9559 sub_P=81.12
+diodevdd_2kv PAD VDD diodevdd_2kv_mod area =DEV_A pj=DEV_P m=m 
+dsub_2kv VSS VDD dsub_2kv_mod area=sub_A pj=sub_P m=m
+.ends diodevdd_2kv 
+ 
+*************************************
 
 .subckt idiodevdd_2kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
-
-D1 PAD  VDD  diodevdd_2kv_mod area = DEV_A  pj = DEV_P  m = m
-D2 VSS  VDD  dsub_2kv_mod area = sub_A  pj = sub_P m = m
-
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12
+diodevdd_2kv PAD  VDD idiodevdd_2kv_mod area = DEV_A pj=DEV_P m=m 
+dsub_2kv VSS  VDD dsub_2kv_mod area = sub_A  pj=DEV_P m=m
 .ends idiodevdd_2kv
-*----------------------------------------------------------------------------------------
+**************************************
 
-.subckt idiodevss_4kv VDD PAD VSS
-.params DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+.subckt diodevdd_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32
 
-D1 VSS  PAD  diodevdd_2kv_mod area = DEV_A  m = m
-D2 VSS  PAD  dsub_2kv_mod area = sub_A pj = sub_P m = m  
+diodevdd_4kv PAD  VDD diodevdd_4kv_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends diodevdd_4kv_mod
 
+*******************************************************
+.subckt idiodevdd_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32
+
+diodevdd_4kv PAD  VDD idiodevdd_4kv_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends idiodevdd_4kv_mod
+************************************************************
+
+.subckt diodevss_2kv VDD PAD VSS
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12
+
+diodevss_2kv VSS PAD diodevss_2kv_mod area = DEV_A pj=DEV_P m=m          
+dsub_2kv VSS VDD dsub_2kv_mod area = sub_A pj=sub_P m=m
+.ends diodevss_2kv
+***********************************************************
+
+.subckt idiodevss_2kv VDD PAD VSS
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12
+diodevss_2kv VSS PAD idiodevss_2kv_mod area = DEV_A pj=DEV_P m=m
+dsub_2kv  VSS VDD dsub_2kv_mod area=sub_A pj=sub_P m=m 
+.ends idiodevss_2kv
+************************************************************
+
+.subckt diodevss_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32
+
+diodevss_4kv VSS PAD diodevss_4kv_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends diodevss_4kv
+***************************************************************
+
+.subckt idiodevss_4kv VDD PAD VSS 
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32
+diodevss_4kv VSS  PAD idiodevss_4kv_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
 .ends idiodevss_4kv
-*----------------------------------------------------------------------------------------
-
-.subckt nmoscl_2 VDD VSS
-
+****************************************************************
+.subckt nmoscl_2  VDD VSS
+.param l=0.36u w=168u m=1
+nmosnqscl_2 VDD VSS VSS VSS nmoscl_2_psp w = w  l = l m = m as = 58e-12  ad = 58e-12 pd = 336u ps = 336u
 .ends nmoscl_2
-*----------------------------------------------------------------------------------------
 
-.subckt nmoscl_4 VDD VSS
+*****************************************************************
 
+.subckt nmoscl_4  VDD VSS
+.param l=0.36u w=168u m=1
+nmoscl_4 VDD VSS VSS VSS nmoscl_4_psp w = w  l = l m = m as = 114e-12  ad = 114e-12 pd = 672u ps = 672u
 .ends nmoscl_4
-*----------------------------------------------------------------------------------------
+
