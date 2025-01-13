@@ -58,6 +58,7 @@ moduleNames = [
         'inductor3_code',
         'dantenna_code',
         'dpantenna_code',
+        'via_stack_code',
         'ptap1_code',
         'bondpad_code'
 ]
