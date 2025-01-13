@@ -76,7 +76,7 @@ C {devices/gnd.sym} 560 -910 0 0 {name=l2 lab=GND}
 C {devices/code_shown.sym} 30 -1700 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.include sg13g2_esd.lib
+.lib cornerMOSlv.lib mos_tt
 "}
 C {devices/code_shown.sym} 40 -1570 0 0 {name=NGSPICE only_toplevel=true 
 value="

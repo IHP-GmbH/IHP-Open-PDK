@@ -5,7 +5,7 @@ V {}
 S {}
 E {}
 B 2 1630 -1710 2430 -1310 {flags=graph
-y1=-0.92
+y1=-0.65
 
 ypos1=0
 ypos2=2
@@ -26,11 +26,11 @@ logx=0
 logy=0
 
 
-y2=13
+y2=11
 color=4
 node=vin1}
 B 2 1620 -1290 2420 -890 {flags=graph
-y1=12
+y1=0
 
 ypos1=0
 ypos2=2
@@ -51,7 +51,7 @@ logx=0
 logy=0
 color=10
 node=vin2
-y2=13}
+y2=0.01}
 N 1740 -510 1740 -490 {
 lab=GND}
 N 1740 -630 1740 -570 {
@@ -99,7 +99,7 @@ m=1
 spiceprefix=X
 }
 C {isource.sym} 2030 -540 2 0 {name=I1 value=0}
-C {launcher.sym} 520 -1240 0 0 {name=h2
+C {launcher.sym} 530 -1240 0 0 {name=h2
 descr=SimulateXyce
 tclcommand="
 # Setup the default simulation commands if not already set up
@@ -122,13 +122,13 @@ C {simulator_commands_shown.sym} 450 -1660 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.include $::SG13G2_MODELS_XYCE/sg13g2_esd.lib
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
 )"}
 C {simulator_commands_shown.sym} 40 -1670 0 0 {name=Libs_Ngspice
 simulator=ngspice
 only_toplevel=false 
 value="
-.include sg13g2_esd.lib
+.lib cornerMOSlv.lib mos_tt
 "}
 C {launcher.sym} 120 -1240 0 0 {name=h3
 descr=SimulateNGSPICE
@@ -179,6 +179,9 @@ value="
 .dc I0 -20m 20m 10u
 .measure dc_cont nmoscl_2_VF FIND V(Vin1) AT=0.01
 .measure dc_cont nmoscl_2_VR FIND V(Vin1) AT=-0.01
+
+.measure dc_cont nmoscl_4_VF FIND V(Vin2) AT=0.01
+.measure dc_cont nmoscl_4_VR FIND V(Vin2) AT=-0.01
 
 .print dc format=raw file=dc_esd_nmos_cl.raw i(Vmda1)  i(Vmda2) v(Vin1) v(Vin2) 
 "
