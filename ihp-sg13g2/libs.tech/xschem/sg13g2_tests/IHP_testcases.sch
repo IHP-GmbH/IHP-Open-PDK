@@ -65,5 +65,6 @@ C {sg13g2_tests/dc_logic_not.sym} 180 -190 0 0 {name=x28}
 C {sg13g2_tests/tran_logic_nand.sym} 520 -550 0 0 {name=x29}
 C {sg13g2_tests/dc_pnpMPA.sym} 180 -230 0 0 {name=x30}
 C {sg13g2_tests/dc_lv_nmos.sym} 180 -630 0 0 {name=x5}
+C {sg13g2_tests/tran_bondpad.sym} 520 -510 0 0 {name=x31}
 C {sg13g2_tests/dc_esd_diodes.sym} 180 -150 0 0 {name=x31}
 C {sg13g2_tests/dc_esd_nmos_cl.sym} 180 -110 0 0 {name=x32}

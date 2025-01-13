@@ -65,5 +65,7 @@ C {sg13g2_tests_xyce/dc_mos_temp.sym} 180 -510 0 0 {name=x11}
 C {sg13g2_tests_xyce/dc_mos_cs_temp.sym} 180 -470 0 0 {name=x12}
 C {sg13g2_tests_xyce/mc_lv_nmos_cs_loop.sym} 1200 -630 0 0 {name=x1}
 C {sg13g2_tests_xyce/dc_hv_pmos.sym} 180 -540 0 0 {name=x8}
+C {sg13g2_tests_xyce/ac_rfmim_cap.sym} 860 -550 0 0 {name=x31}
+C {sg13g2_tests_xyce/tran_bondpad.sym} 520 -510 0 0 {name=x32}
 C {sg13g2_tests_xyce/dc_esd_diodes.sym} 180 -150 0 0 {name=x31}
 C {sg13g2_tests_xyce/dc_esd_nmos_cl.sym} 180 -110 0 0 {name=x32}

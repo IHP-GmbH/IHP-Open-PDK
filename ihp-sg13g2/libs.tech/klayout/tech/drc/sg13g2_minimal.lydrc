@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!--
- Copyright 2024 IHP PDK Authors
+ Copyright 2025 IHP PDK Authors
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ class DRC::DRCLayer
     end
 
     def output(*args)
-        count = self.count()
+        count = self.hier_count()
         $drc_error_count += count
         puts("Rule %s: %d error(s)" % [args[0], count])
         original_output(*args)
@@ -331,7 +331,7 @@ class DRC::DRCLayer
             relation = expression[0]
             value = expression[1]
             if relation == "&gt;"
-                lower_bound = value + 1e-6
+                lower_bound = value + 1.dbu**2
             elsif relation == "&lt;"
                 upper_bound = value
             elsif relation == "=="
@@ -341,7 +341,7 @@ class DRC::DRCLayer
             elsif relation == "&gt;="
                 lower_bound = value
             elsif relation == "&lt;="
-                upper_bound = value + 1e-6
+                upper_bound = value + 1.dbu**2
             else
                 raise "invalid expression"
             end
@@ -790,7 +790,8 @@ class DRC::DRCLayer
                 raise "argument error"
             end
         end
-        bbox = @engine.extent.bbox
+        readonly_extent = DRC::DRCLayer::new(@engine, RBA::Region::new(@engine.source.cell_obj.bbox))
+        bbox = readonly_extent.bbox
         if origin == 'll'
             origin_x = bbox.left
             origin_y = bbox.bottom
@@ -816,6 +817,12 @@ class DRC::DRCLayer
             result = merged_layer.with_density(*arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
             return result.raw.overlapping(DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu))))
         end
+    end
+
+    def ext_outside(other)
+        output_layer = self.dup.raw.outside(other)
+        output_layer.data.merged_semantics = true
+        return output_layer
     end
 end
 
@@ -894,7 +901,7 @@ M2_Nsram = Metal2.ext_not(SRAM)
 M3_Nsram = Metal3.ext_not(SRAM)
 Via1_edgC1_out = Via1.ext_not(EdgeSeal)
 Via2_edgC1_out = Via2.ext_not(EdgeSeal)
-Cont_outside_EdgeSeal = Cont.outside(EdgeSeal)
+Cont_outside_EdgeSeal = Cont.ext_outside(EdgeSeal)
 ThickGateOx_TGO_f = ThickGateOx.ext_width(0.86.um, consider_intersecting_edges: false, polygon_output: true)
 Via3_edgC1_out = Via3.ext_not(EdgeSeal)
 M4_Nsram = Metal4.ext_not(SRAM)
@@ -1072,25 +1079,25 @@ if $density
 end
 
 -&gt; do
-    Via1_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+    Via1_edgC1_out.ext_outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V1.a", "Min. and max. Via1 width = 0.19")
 -&gt; do
     Via1_edgC1_out.ext_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V1.b", "Min. Via1 space = 0.22")
 -&gt; do
-    Via2_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+    Via2_edgC1_out.ext_outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V2.a", "Min. and max. Via2 width = 0.19")
 -&gt; do
     Via2_edgC1_out.ext_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V2.b", "Min. Via2 space = 0.22")
 -&gt; do
-    Via3_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+    Via3_edgC1_out.ext_outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V3.a", "Min. and max. Via3 width = 0.19")
 -&gt; do
     Via3_edgC1_out.ext_space(0.22.um, consider_intersecting_edges: false)
 end.().output("V3.b", "Min. Via3 space = 0.22")
 -&gt; do
-    Via4_edgC1_out.outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
+    Via4_edgC1_out.ext_outside(transG2L).ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil, inverted: true)
 end.().output("V4.a", "Min. and max. Via4 width = 0.19")
 -&gt; do
     Via4_edgC1_out.ext_space(0.22.um, consider_intersecting_edges: false)
@@ -1180,7 +1187,7 @@ end
     LBE.ext_width(100.0.um)
 end.().output("LBE.a", "Min. LBE width = 100.00")
 -&gt; do
-    LBE.drc((width(projection) &gt; 1500.0.um).polygons)
+    LBE.sized(-1500.0.um/2.0, acute_limit).sized(1500.0.um/2.0, acute_limit)
 end.().output("LBE.b", "Max. LBE width = 1500.00")
 -&gt; do
     LBE.ext_with_area([["&gt;", 250000.0.um2]])
