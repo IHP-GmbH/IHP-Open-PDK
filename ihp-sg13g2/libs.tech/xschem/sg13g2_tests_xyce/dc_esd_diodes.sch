@@ -107,41 +107,23 @@ lab=#net6}
 N 2040 -740 2040 -730 {lab=Vin}
 N 1990 -730 2040 -730 {
 lab=Vin}
-N 1840 -350 1840 -340 {
-lab=#net7}
-N 2090 -350 2090 -340 {
-lab=#net8}
-N 1260 -260 1260 -250 {
-lab=GND}
-N 1260 -330 1260 -320 {
-lab=#net9}
-N 1260 -400 1260 -390 {
-lab=Vin}
-N 1380 -260 1380 -250 {
-lab=GND}
-N 1380 -330 1380 -320 {
-lab=#net10}
-N 1380 -400 1380 -390 {
-lab=Vin}
 N 2260 -730 2290 -730 {
 lab=Vin}
 N 2290 -590 2290 -580 {
 lab=GND}
 N 2290 -660 2290 -650 {
-lab=#net11}
+lab=#net7}
 N 2290 -730 2290 -720 {
 lab=Vin}
 N 2210 -730 2210 -710 {
 lab=Vin}
 N 2210 -650 2210 -620 {
-lab=#net12}
+lab=#net8}
 N 2210 -620 2260 -620 {
-lab=#net12}
+lab=#net8}
 N 2260 -740 2260 -730 {lab=Vin}
 N 2210 -730 2260 -730 {
 lab=Vin}
-N 2310 -350 2310 -340 {
-lab=#net13}
 N 1530 -250 1530 -230 {lab=GND}
 N 1530 -230 1890 -230 {lab=GND}
 N 1610 -440 1610 -390 {lab=Vin}
@@ -154,18 +136,18 @@ N 1840 -440 2090 -440 {lab=Vin}
 N 1890 -230 2310 -230 {lab=GND}
 N 1890 -230 1890 -210 {lab=GND}
 N 1610 -480 1610 -440 {lab=Vin}
-N 2230 -360 2280 -360 {lab=#net14}
-N 2230 -360 2230 -290 {lab=#net14}
-N 2310 -330 2310 -290 {lab=#net15}
-N 2010 -360 2060 -360 {lab=#net16}
-N 2010 -360 2010 -290 {lab=#net16}
-N 2090 -330 2090 -290 {lab=#net17}
-N 1760 -360 1810 -360 {lab=#net18}
-N 1760 -360 1760 -290 {lab=#net18}
-N 1840 -330 1840 -290 {lab=#net19}
-N 1610 -330 1610 -290 {lab=#net20}
-N 1530 -360 1580 -360 {lab=#net21}
-N 1530 -360 1530 -310 {lab=#net21}
+N 2230 -360 2280 -360 {lab=#net9}
+N 2230 -360 2230 -290 {lab=#net9}
+N 2310 -330 2310 -290 {lab=#net10}
+N 2010 -360 2060 -360 {lab=#net11}
+N 2010 -360 2010 -290 {lab=#net11}
+N 2090 -330 2090 -290 {lab=#net12}
+N 1760 -360 1810 -360 {lab=#net13}
+N 1760 -360 1760 -290 {lab=#net13}
+N 1840 -330 1840 -290 {lab=#net14}
+N 1610 -330 1610 -290 {lab=#net15}
+N 1530 -360 1580 -360 {lab=#net16}
+N 1530 -360 1530 -310 {lab=#net16}
 C {devices/gnd.sym} 1310 -590 0 0 {name=l2 lab=GND}
 C {devices/launcher.sym} 1630 -840 0 0 {name=h5
 descr="Load IV curve" 
@@ -223,22 +205,6 @@ C {sg13g2_pr/diodevss_2kv.sym} 2310 -360 2 1 {name=D6
 model=idiodevss_4kv
 spiceprefix=X
 m=1
-}
-C {devices/gnd.sym} 1260 -250 0 0 {name=l9 lab=GND}
-C {devices/ammeter.sym} 1260 -360 0 0 {name=Vmda12}
-C {lab_pin.sym} 1260 -400 1 0 {name=p8 sig_type=std_logic lab=Vin}
-C {sg13g2_pr/nmoscl_2.sym} 1260 -290 2 1 {name=D7
-model=nmoscl_2
-m=1
-spiceprefix=X
-}
-C {devices/gnd.sym} 1380 -250 0 0 {name=l10 lab=GND}
-C {devices/ammeter.sym} 1380 -360 0 0 {name=Vmda13}
-C {lab_pin.sym} 1380 -400 1 0 {name=p9 sig_type=std_logic lab=Vin}
-C {sg13g2_pr/nmoscl_2.sym} 1380 -290 2 1 {name=D8
-model=nmoscl_4
-m=1
-spiceprefix=X
 }
 C {devices/gnd.sym} 2290 -580 0 0 {name=l11 lab=GND}
 C {devices/ammeter.sym} 2290 -690 0 0 {name=Vmda14}
@@ -388,45 +354,45 @@ value="
 .preprocess replaceground true
 .option temp=27
 .dc v1 -13 2.0 1m
-.measure dc_cont diodevdd_2kv_Vf_pad when i(Vmda)= 0.01
-.measure dc_cont diodevdd_2kv_Vf_pad when i(Vmda)= 0.01
-.measure dc_cont diodevdd_2kv_Vr_sub when i(Vmda1)=-0.01 
-.measure dc_cont diodevdd_2kv_Vr_sub when i(Vmda1)=-0.01 
+.measure dc_cont diodevdd_2kv_Vf_pad when i(Vmda)  =  0.01
+.measure dc_cont diodevdd_2kv_Vr_pad when i(Vmda)  = -0.01
+.measure dc_cont diodevdd_2kv_Vf_sub when i(Vmda1) =  0.01 
+.measure dc_cont diodevdd_2kv_Vr_sub when i(Vmda1) = -0.01 
 
-.measure dc_cont diodevdd_4kv_Vf_pad when i(Vmda2)= 0.01
-.measure dc_cont diodevdd_4kv_Vf_pad when i(Vmda2)= 0.01
-.measure dc_cont diodevdd_4kv_Vr_sub when i(Vmda3)=-0.01 
-.measure dc_cont diodevdd_4kv_Vr_sub when i(Vmda3)=-0.01 
+.measure dc_cont diodevdd_4kv_Vf_pad when i(Vmda2)=  0.01
+.measure dc_cont diodevdd_4kv_Vr_pad when i(Vmda2)= -0.01
+.measure dc_cont diodevdd_4kv_Vf_sub when i(Vmda3)=  0.01 
+.measure dc_cont diodevdd_4kv_Vr_sub when i(Vmda3)= -0.01 
 
-.measure dc_cont idiodevdd_2kv_Vf_pad when i(Vmda4)= 0.01
-.measure dc_cont idiodevdd_2kv_Vf_pas when i(Vmda4)= 0.01
-.measure dc_cont idiodevdd_2kv_Vr_sub when i(Vmda5)=-0.01 
-.measure dc_cont idiodevdd_2kv_Vr_sub when i(Vmda5)=-0.01 
+.measure dc_cont idiodevdd_2kv_Vf_pad when i(Vmda4)=  0.01
+.measure dc_cont idiodevdd_2kv_Vr_pas when i(Vmda4)= -0.01
+.measure dc_cont idiodevdd_2kv_Vf_sub when i(Vmda5)=  0.01 
+.measure dc_cont idiodevdd_2kv_Vr_sub when i(Vmda5)= -0.01 
 
-.measure dc_cont idiodevdd_4kv_Vf_pad when i(Vmda14)= 0.01
-.measure dc_cont idiodevdd_4kv_Vf_pad when i(Vmda14)= 0.01
-.measure dc_cont idiodevdd_4kv_Vr_sub when i(Vmda15)=-0.01 
-.measure dc_cont idiodevdd_4kv_Vr_sub when i(Vmda15)=-0.01 
+.measure dc_cont idiodevdd_4kv_Vf_pad when i(Vmda14)=  0.01
+.measure dc_cont idiodevdd_4kv_Vr_pad when i(Vmda14)= -0.01
+.measure dc_cont idiodevdd_4kv_Vf_sub when i(Vmda15)=  0.01 
+.measure dc_cont idiodevdd_4kv_Vr_sub when i(Vmda15)= -0.01 
 
-.measure dc_cont diodevss_2kv_Vf_pad when i(Vmda6)= 0.01
-.measure dc_cont diodevss_2kv_Vf_pad when i(Vmda6)= 0.01
-.measure dc_cont diodevss_2kv_Vr_sub when i(Vmda7)=-0.01 
-.measure dc_cont diodevss_2kv_Vr_sub when i(Vmda7)=-0.01 
+.measure dc_cont diodevss_2kv_Vf_pad when i(Vmda6)=  0.01
+.measure dc_cont diodevss_2kv_Vr_pad when i(Vmda6)= -0.01
+.measure dc_cont diodevss_2kv_Vf_sub when i(Vmda7)=  0.01 
+.measure dc_cont diodevss_2kv_Vr_sub when i(Vmda7)= -0.01 
 
-.measure dc_cont diodevss_4kv_Vf_pad when i(Vmda8)= 0.01
-.measure dc_cont diodevss_4kv_Vf_pad when i(Vmda8)= 0.01
-.measure dc_cont diodevss_4kv_Vr_sub when i(Vmda9)=-0.01 
-.measure dc_cont diodevss_4kv_Vr_sub when i(Vmda9)=-0.01 
+.measure dc_cont diodevss_4kv_Vf_pad when i(Vmda8)=  0.01
+.measure dc_cont diodevss_4kv_Vr_pad when i(Vmda8)= -0.01
+.measure dc_cont diodevss_4kv_Vf_sub when i(Vmda9)=  0.01 
+.measure dc_cont diodevss_4kv_Vr_sub when i(Vmda9)= -0.01 
 
-.measure dc_cont idiodevss_2kv_Vf_pad when i(Vmda10)= 0.01
-.measure dc_cont idiodevss_2kv_Vf_pad when i(Vmda10)= 0.01
-.measure dc_cont idiodevss_2kv_Vr_sub when i(Vmda11)=-0.01 
-.measure dc_cont idiodevss_2kv_Vr_sub when i(Vmda11)=-0.01 
+.measure dc_cont idiodevss_2kv_Vf_pad when i(Vmda10)=  0.01
+.measure dc_cont idiodevss_2kv_Vr_pad when i(Vmda10)= -0.01
+.measure dc_cont idiodevss_2kv_Vf_sub when i(Vmda11)=  0.01 
+.measure dc_cont idiodevss_2kv_Vr_sub when i(Vmda11)= -0.01 
 
-.measure dc_cont idiodevss_4kv_Vf_pad when i(Vmda16)= 0.01
-.measure dc_cont idiodevss_4kv_Vf_pad when i(Vmda16)= 0.01
-.measure dc_cont idiodevss_4kv_Vr_sub when i(Vmda17)=-0.01 
-.measure dc_cont idiodevss_4kv_Vr_sub when i(Vmda17)=-0.01 
+.measure dc_cont idiodevss_4kv_Vf_pad when i(Vmda16)=  0.01
+.measure dc_cont idiodevss_4kv_Vr_pad when i(Vmda16)= -0.01
+.measure dc_cont idiodevss_4kv_Vf_sub when i(Vmda17)=  0.01 
+.measure dc_cont idiodevss_4kv_Vr_sub when i(Vmda17)= -0.01 
 
 .print dc format=raw file=dc_esd.raw i(Vmda1) i(Vmda) i(Vmda6) i(Vmda7)
 "
