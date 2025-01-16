@@ -1,6 +1,6 @@
-<Qucs Schematic 24.4.1>
+<Qucs Schematic 24.3.0>
 <Properties>
-  <View=-19,24,1572,1014,0.988975,0,0>
+  <View=-7,24,1560,1014,1.0011,0,0>
   <Grid=10,10,1>
   <DataSet=dc_nmoscl_2_op.dat>
   <DataDisplay=dc_nmoscl_2_op.dpl>
@@ -24,8 +24,8 @@
   <GND * 1 470 840 0 0 0 0>
   <IProbe Pr2 1 470 640 -37 -26 0 3>
   <SpiceLib SpiceLib1 1 100 80 -13 18 0 0 "cornerMOSlv.lib" 1 "mos_tt" 1>
-  <Lib nmoscl_1 1 270 750 40 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_2" 1 "1" 1>
-  <Lib nmoscl_2 1 470 750 40 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_4" 1 "1" 1>
+  <Lib nmoscl_1 1 270 760 16 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_2" 0 "1" 1>
+  <Lib nmoscl_2 1 470 750 16 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_4" 0 "1" 1>
 </Components>
 <Wires>
   <270 590 270 610 "" 0 0 0 "">
@@ -35,9 +35,9 @@
   <270 670 270 730 "" 0 0 0 "">
   <270 790 270 840 "" 0 0 0 "">
   <470 590 470 610 "" 0 0 0 "">
-  <470 670 470 730 "" 0 0 0 "">
-  <470 790 470 840 "" 0 0 0 "">
   <270 590 470 590 "" 0 0 0 "">
+  <470 780 470 840 "" 0 0 0 "">
+  <470 670 470 720 "" 0 0 0 "">
 </Wires>
 <Diagrams>
   <Rect 639 890 831 618 3 #c0c0c0 1 00 1 0 0.2 2 1 0 2e-06 2e-05 1 -1 0.2 1 315 0 225 1 0 0 "" "" "">

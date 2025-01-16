@@ -1,6 +1,6 @@
-<Qucs Schematic 24.4.1>
+<Qucs Schematic 24.3.0>
 <Properties>
-  <View=-130,-94,1601,1073,0.947202,65,0>
+  <View=-126,20,1510,968,0.958817,0,1>
   <Grid=10,10,1>
   <DataSet=dc_esd_op.dat>
   <DataDisplay=dc_esd_op.dpl>
@@ -22,9 +22,7 @@
   <Vdc V2 1 400 220 18 -26 0 1 "1 V" 1>
   <GND * 1 690 310 0 0 0 0>
   <IProbe Pr2 1 690 110 -37 -26 0 3>
-  <Lib idiodevdd_2kv1 1 690 230 30 0 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "idiodevdd_2kv" 0 "1" 1>
   <IProbe Pr1 1 570 110 -37 -26 0 3>
-  <Lib diodevss_2kv1 1 1030 150 30 0 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "diodevss_2kv" 0 "1" 1>
   <IProbe Pr4 1 910 250 -37 -26 0 3>
   <IProbe Pr3 1 1030 250 -37 -26 0 3>
   <GND * 1 1030 320 0 0 0 0>
