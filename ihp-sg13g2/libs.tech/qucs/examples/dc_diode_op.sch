@@ -1,6 +1,6 @@
 <Qucs Schematic 24.3.0>
 <Properties>
-  <View=-42,-6,1577,1014,0.96905,0,1>
+  <View=-42,-6,1577,932,0.96905,0,1>
   <Grid=10,10,1>
   <DataSet=dc_diode_op.dat>
   <DataDisplay=dc_diode_op.dpl>
@@ -16,7 +16,7 @@
 <Symbol>
 </Symbol>
 <Components>
-  <.SW SW1 1 90 280 0 71 0 0 "DC1" 1 "lin" 1 "V2" 1 "-10" 1 "1" 1 "301" 1>
+  <.SW SW1 1 90 280 0 71 0 0 "DC1" 1 "lin" 1 "V2" 1 "-1" 1 "1" 1 "301" 1>
   <GND * 1 270 840 0 0 0 0>
   <IProbe Pr1 1 270 640 -37 -26 0 3>
   <INCLSCR INCLSCR1 1 130 50 -60 16 0 0 "\n.INCLUDE diodes.lib\n" 1 "" 0 "" 0>
@@ -24,8 +24,8 @@
   <Vdc V2 1 120 750 18 -26 0 1 "1 V" 1>
   <GND * 1 470 840 0 0 0 0>
   <IProbe Pr2 1 470 640 -37 -26 0 3>
-  <Lib dpantenna1 1 470 760 14 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "dpantenna" 0 "20.78u" 1 "0.78u" 1>
-  <Lib dantenna1 1 270 760 14 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "dantenna" 0 "20.78u" 1 "0.78u" 1>
+  <Lib dantenna1 1 270 760 14 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "dantenna" 0 "20.78u" 1 "20.78u" 1>
+  <Lib dpantenna1 1 470 760 14 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "dpantenna" 0 "20.78u" 1 "20.78u" 1>
 </Components>
 <Wires>
   <270 590 270 610 "" 0 0 0 "">
