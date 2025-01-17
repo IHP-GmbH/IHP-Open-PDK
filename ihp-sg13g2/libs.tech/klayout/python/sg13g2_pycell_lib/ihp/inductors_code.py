@@ -119,6 +119,8 @@ class inductors(DloGen):
         NoMet1Filler = Layer('Metal1', 'nofill')
         NoMet2Filler = Layer('Metal2', 'nofill')
         NoMet3Filler = Layer('Metal3', 'nofill')
+        NoMet4Filler = Layer('Metal4', 'nofill')
+        NoMet5Filler = Layer('Metal5', 'nofill')
         NoTMet1Filler = Layer('TopMetal1', 'nofill')
         NoTMet2Filler = Layer('TopMetal2', 'nofill')
         NoRCX = Layer('NoRCX', 'drawing')
@@ -361,16 +363,23 @@ class inductors(DloGen):
 
         polyPoints1 = PointList([Point(lat_sm/2, y2), Point(d/2, y2+cateta_sm), Point(d/2, y2+cateta_sm+lat_sm), Point(lat_sm/2, y2+d), Point(-lat_sm/2, y2+d),
                                  Point(-d/2, y2+cateta_sm+lat_sm), Point(-d/2, y2+cateta_sm), Point(-lat_sm/2, y2)])
-        dbCreatePolygon(self, PWellBlock, polyPoints1)
-        dbCreatePolygon(self, NoActFiller, polyPoints1)
-        dbCreatePolygon(self, NoGatFiller, polyPoints1)
-        dbCreatePolygon(self, NoMet1Filler, polyPoints1)
-        dbCreatePolygon(self, NoMet2Filler, polyPoints1)
-        dbCreatePolygon(self, NoMet3Filler, polyPoints1)
-
-        dbCreatePolygon(self, NoTMet1Filler, polyPoints1)
-        dbCreatePolygon(self, NoTMet2Filler, polyPoints1)
-
+        
+        filler_layers = [
+            PWellBlock,
+            NoActFiller,
+            NoGatFiller,
+            NoMet1Filler,
+            NoMet2Filler,
+            NoMet3Filler,
+            NoMet4Filler,
+            NoMet5Filler,
+            NoTMet1Filler,
+            NoTMet2Filler
+        ]
+        
+        for layer in filler_layers:
+            dbCreatePolygon(self, layer, polyPoints1)
+        
         if blockqrc :
             dbCreatePolygon(self, NoRCX, polyPoints1)
 
