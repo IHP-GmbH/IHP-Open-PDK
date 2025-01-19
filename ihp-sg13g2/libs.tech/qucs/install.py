@@ -54,7 +54,7 @@ def info():
     msg = """
     This script:
     - copies the Qucs-S user library files into $HOME/[.qucs|QucsWorkspace]/user_lib directory. 
-    - compiles and copies PSP103 model in ../ngspice/openvaf location
+    - compiles and copies Verilog-A models in ../verilog-a location
     Please make sure that you have set up the PDK_ROOT env variable
     export PDK_ROOT=<path_to_IHP-Open-PDK>
     """
@@ -148,13 +148,17 @@ if __name__ == "__main__":
             logging.error(f"{program_name} is not installed.")
             exit(1)
                 
-    # Compiling MOSFET PSP Verilog-A models
-    print("\nCompiling MOSFET PSP Verilog-A models ...")
-    source_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
-    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
+    # Compiling Verilog-A models
+    print("\nCompiling Verilog-A models ...")
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a"
     program_name = "openvaf"
     if is_program_installed(program_name):
+        source_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a/psp103"
         command = "openvaf psp103_nqs.va --output " + destination_directory + "/psp103_nqs.osdi"    
+        print(f"{program_name} is available and about to run the command '{command}' in a location: {source_directory} ")	
+        exec_app_in_directory(command, source_directory)
+        source_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a/r3_cmc"
+        command = "openvaf r3_cmc.va --output " + destination_directory + "/r3_cmc.osdi"    
         print(f"{program_name} is available and about to run the command '{command}' in a location: {source_directory} ")	
         exec_app_in_directory(command, source_directory)
     else:

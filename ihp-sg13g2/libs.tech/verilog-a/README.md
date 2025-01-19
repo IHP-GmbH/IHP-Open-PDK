@@ -1,4 +1,4 @@
-# Compilation and installation of the psp_103 model for XYCE
+# Compilation and installation of verilog-a models for XYCE
 
 
 Each model should be placed in a separate directory like `psp103`

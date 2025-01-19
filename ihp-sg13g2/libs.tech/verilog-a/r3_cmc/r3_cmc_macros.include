@@ -1,0 +1,792 @@
+// r3_cmc version 1.1.1
+
+/*
+Copyright (c) 2020 Silicon Integration Initiative, Inc.
+
+Licensed under Educational Community License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License. You may
+obtain a copy of the license at
+http://opensource.org/licenses/ECL-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+The R3_CMC standard has been developed by the Silicon Integration Initiative's Compact Model Coalition.
+
+CMC Release Date: September 22, 2020
+Public Release Date: December 1, 2021
+
+A link to the most recent version of this standard can be found at:
+http://www.si2.org/cmc
+*/
+
+`ifdef haveIncludededCmcMacrosAndDefines
+`else
+`define haveIncludededCmcMacrosAndDefines
+
+//
+//  Physical constants and other generally useful numbers
+//
+
+`define TABS_NIST2004     273.15                 // (NIST2004) 0C in K
+`define QQ_NIST2004       1.60217653e-19         // (NIST2004) mag. of electronic charge (C)
+`define KB_NIST2004       1.3806505e-23          // (NIST2004) Boltzmann constant (J/K)
+`define EPS0_NIST2004     8.854187817e-12        // (NIST2004) Electric constant (F/m)
+`define EPS_OX            3.45313324863e-11      // EPS0_NIST2004*3.90 (F/m)
+`define EPS_SI            1.035939974589e-10     // EPS0_NIST2004*11.7 (F/m)
+`define oneSixth          0.1666666666666667
+`define oneThird          0.3333333333333333
+`define twoThirds         0.6666666666666667
+`define sqrtTwo           1.414213562373095
+`define inv_sqrtTwo       0.7071067811865475
+`define egTsividis(Eg,t_K) \
+    if (t_K<300.0) \
+        Eg = 1.17850-t_K*(9.025e-05-t_K*3.05e-07); \
+    else \
+        Eg = 1.20595-t_K*2.7325e-04;
+
+//
+//  Clipping macros, these smoothly limit to lower, upper, or both lower and upper
+//  limits. Rather than using a sqrt or log-exp form, which affects values
+//  everywhere, these use a conditional form that is continuous in function
+//  and derivative. If a value is not clipped then no exp() evaluation occurs.
+//  Smooth limiting is preferable to hard limiting (although latter can still
+//  be useful for enforcing parameter limits) for bias dependent quantities
+//  as derivatives do not become zero or have discontinuities.
+//
+
+`define CLIPL0p1(XCLIP,X,LOWER) \
+    if (X<(LOWER+0.1)) \
+        XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPU0p1(XCLIP,X,UPPER) \
+    if (X>(UPPER-0.1)) \
+        XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPB0p1(XCLIP,X,LOWER,UPPER) \
+    if (X<(LOWER+0.1)) \
+        XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+    else if (X>(UPPER-0.1)) \
+        XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+    else \
+        XCLIP    =  X;
+
+`define CLIPL1p0(XCLIP,X,LOWER) \
+    if (X<(LOWER+1.0)) \
+        XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPU1p0(XCLIP,X,UPPER) \
+    if (X>(UPPER-1.0)) \
+        XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPB1p0(XCLIP,X,LOWER,UPPER) \
+    if (X<(LOWER+1.0)) \
+        XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+    else if (X>(UPPER-1.0)) \
+        XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+    else \
+        XCLIP    =  X;
+
+//
+//  Hard clamping and sqrt clamping macros
+//
+
+`define MAX(x,y)            ((x)>(y)?(x):(y))
+`define MIN(x,y)            ((x)<(y)?(x):(y))
+`define CLAMP(val,min,max) `MIN(max,`MAX(val,min))
+`define MAXA(x,y,a)         (0.5*((x)+(y)+sqrt(((x)-(y))*((x)-(y))+(a))))
+`define MINA(x,y,a)         (0.5*((x)+(y)-sqrt(((x)-(y))*((x)-(y))+(a))))
+
+//
+//  Macro definitions.  The "des" description argument is intended to be
+//  a short description, the "inf" information argument is intended to be
+//  a detailed description (e.g. for display as part of on-line help).
+//
+//  MPR      model    parameter real
+//  MPI      model    parameter integer
+//  IPR      instance parameter real
+//  IPI      instance parameter integer
+//  OPP      operating point parameter, includes units and description for printing
+//  OPM      operating point parameter, value scaled by $mfactor
+//  OPD      operating point parameter, value scaled by 1/$mfactor
+//
+//  There are 9 versions with different range options:
+//  cc       closed lower bound, closed upper bound
+//  co       closed lower bound, open   upper bound
+//  oc       open   lower bound, closed upper bound
+//  oo       open   lower bound, open   upper bound
+//  cz       closed lower bound of 0.0, no upper bound
+//  oz       open   lower bound of 0.0, no upper bound
+//  nb       no bounds
+//  sw       switch (integer only, values  0=false  and  1=true)
+//  ty       switch (integer only, values -1=n-type and +1=p-type)
+//
+
+`define ERROR(str) \
+    begin \
+        $strobe(str); \
+        $finish(1); \
+    end
+`define WARNING(str) $strobe(str);
+`define OPP(nam,uni,des) (*units=uni, desc=des                         *) real nam;
+`define OPM(nam,uni,des) (*units=uni, desc=des, multiplicity="multiply"*) real nam;
+`define OPD(nam,uni,des) (*units=uni, desc=des, multiplicity="divide"  *) real nam;
+`define MPRcc(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter real    nam=def from [lwr:upr];
+`define MPRco(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter real    nam=def from [lwr:upr);
+`define MPRoc(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter real    nam=def from (lwr:upr];
+`define MPRoo(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter real    nam=def from (lwr:upr);
+`define MPRcz(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter real    nam=def from [0.0:inf);
+`define MPRoz(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter real    nam=def from (0.0:inf);
+`define MPRnb(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter real    nam=def;
+`define MPIcc(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter integer nam=def from [lwr:upr];
+`define MPIco(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter integer nam=def from [lwr:upr);
+`define MPIoc(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter integer nam=def from (lwr:upr];
+`define MPIoo(nam,def,uni,lwr,upr,des) (*units=uni,                  desc=des*) parameter integer nam=def from (lwr:upr);
+`define MPInb(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter integer nam=def;
+`define MPIsw(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter integer nam=def from [  0:  1];
+`define MPIty(nam,def,uni,        des) (*units=uni,                  desc=des*) parameter integer nam=def from [ -1:  1] exclude 0;
+`define IPRcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from [lwr:upr];
+`define IPRco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from [lwr:upr);
+`define IPRoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from (lwr:upr];
+`define IPRoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from (lwr:upr);
+`define IPRcz(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from [0.0:inf);
+`define IPRoz(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter real    nam=def from (0.0:inf);
+`define IPRnb(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter real    nam=def;
+`define IPIcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from [lwr:upr];
+`define IPIco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from [lwr:upr);
+`define IPIoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from (lwr:upr];
+`define IPIoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from (lwr:upr);
+`define IPIcz(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from [  0:inf);
+`define IPInb(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter integer nam=def;
+`define IPIsw(nam,def,uni,        des) (*units=uni, type="instance", desc=des*) parameter integer nam=def from [  0:  1];
+
+//
+//  Simulator variable macros, for use as defaults in model parameter definitions
+//
+
+`define SIMPARIMAX $simparam("imax",1.0)
+`define SIMPARSCAL $simparam("scale",1.0)
+`define SIMPARSHRI $simparam("shrink",0.0)
+`define SIMPARRTHR $simparam("rthresh",1.0e-3)
+
+
+//
+//  Built-in potential temperature mapping (smoothly goes to zero as the temperature increases).
+//
+//  This is originally from Richard Booth (Agere Systems), and is physically based on the
+//  built-in potential being (kT/q)*ln(ppo*nno/ni^2), whereas the standard SPICE model is
+//  based on (kT/q)*ln(NA*ND/ni^2) which assumes ppo=NA and nno=ND and does not take into
+//  account that at high temperatures material becomes intrinsic and ppo and nno approach ni.
+//  The model is based on ni^2(T)=ni^2(Tnom)*exp(-(EA*q/k)*(1/T-1/Tnom))*(T/Tnom)^3
+//  where the temperatures T and Tnom are in Kelvins.
+//
+//  A derivation is available at http://www.designers-guide.org/VBIC/documents/notesPsibi.html
+//
+//  Outputs:
+//           psibi      built-in potential at temperature T
+//  Inputs:
+//           p          built-in potential at reference temperature Tnom
+//           ea         activation energy for intrinsic concentration squared
+//           vtv        thermal voltage at temperature T (=k*T/q)
+//           rt         T/Tnom, ratio of temperatures
+//           blockName  name for the begin/end block (must be unique)
+//
+
+`define psibi(psibi,p,ea,vtv,rt,blockName) \
+    begin : blockName \
+        real psiio, psiin ; \
+        psiio = 2.0*(vtv/rt)*ln(exp(0.5*p*rt/vtv)-exp(-0.5*p*rt/vtv)); \
+        psiin = psiio*rt-3.0*vtv*ln(rt)-ea*(rt-1.0); \
+        psibi = psiin+2.0*vtv*ln(0.5*(1.0+sqrt(1.0+4.0*exp(-psiin/vtv)))); \
+    end
+
+//
+//  exp(V*a) that linearizes for V>Vmax
+//
+//  Outputs:
+//           expv       exponential linearized for V>Vmax
+//  Inputs:
+//           V          input voltage
+//           Vmax       voltage at which to linearize the exponential
+//           a          multiplicative factor for V in the exponential calculation
+//
+
+`define expLinA(expv,V,Vmax,a) \
+    if (V<Vmax) begin \
+        expv    =  exp(V*a); \
+    end else begin \
+        expv    =  exp(Vmax*a)*(1.0+(V-Vmax)*a); \
+    end
+
+//
+//  Basic normalized depletion charge models, that include the standard regional SPICE
+//  model (selected if aj<=0.0) and a smooth, single-piece version
+//  (selected if aj>0). The basic capacitance form is 1/(1-v/p)^m.
+//
+//  Outputs:
+//           qj         junction charge
+//  Inputs:
+//           v          voltage across the junction
+//           p          built-in voltage of the junction
+//           m          grading coefficient of the junction
+//           fc         linearization factor, model is linearized for v>fc*p
+//           aj         smoothing parameter, if <=0 a the model is regional
+//           blockName  name for the begin/end block (must be unique)
+//
+//  There are 6 variants of the (aj>0) depletion charge model. Physically,
+//  for high forward bias the depletion region does not exist as it is swamped by
+//  mobile carriers, hence the depletion charge (and capacitance) should
+//  go to zero. This gives a cj(v) characteristic that peaks and then drops
+//  to zero as v increases. This characteristic can cause convergence problems
+//  and has to be carefully matched with a diffusion charge model so that the
+//  total (depletion+diffusion) charge and capacitance are modeled accurately.
+//  A less radical version of this is provided, that smoothly approaches the
+//  constant capacitance at v=fc*p. This also needs to be carefully integrated
+//  with a diffusion charge model to give correct total (depletion+diffusion)
+//  charge and capacitance modeling. A smooth version of the standard SPICE
+//  model, where the capacitance linearly increases with voltage for v>fc*p,
+//  is also provided. In the absence of a diffusion charge model, which is
+//  often the case for parasitic junction models which are not expected to be
+//  driven to high forward bias and so for which diffusion charge can be ignored,
+//  the version that gives a linear cj(v) form for v>fc*p should be used.
+//
+//  Each of these 3 models has 2 variants, one that has qj(v=0)=0 and another
+//  that does not. For capacitance modeling it does not matter which is used,
+//  as only the derivative is important. For modeling base-charge in BJTs
+//  it is the change in depletion charge w.r.t. zero bias that is used to
+//  model the Early effect, hence qj(v=0)=0 is required. This requires
+//  additional calculations that are not needed if only capacitance modeling
+//  is of interest. Hence versions that do not force qj(v=0)=0 are provided
+//  as they are more efficient to evaluate.
+//
+//                         cj(v) for
+//  Name       qj(v=0)=0   v->+inf
+//  =========  ==========  ========
+//  qj         no          linear in v
+//  qj_z       yes         linear in v
+//  qjCnst     no          constant 1/(1-fc)^m
+//  qjCnst_z   yes         constant 1/(1-fc)^m
+//  qjPeak     no          zero
+//  qjPeak_z   yes         zero
+//
+
+`define qj(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*(1.0+0.5*m*dvh/(p*(1.0-fc)))*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)*(1.0+0.5*m*(v-vl+vl0)/(p*(1.0-fc))); \
+        end \
+    end
+
+`define qj_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*(1.0+0.5*m*dvh/(p*(1.0-fc)))*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)*(1.0+0.5*m*(v-vl+vl0)/(p*(1.0-fc)))-q0; \
+        end \
+    end
+
+`define qjCnst(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0); \
+        end \
+    end
+
+`define qjCnst_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)-q0; \
+        end \
+    end
+
+`define qjPeak(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qj  = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+            end else begin \
+                qj  = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+            end \
+        end else begin \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qj  = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+        end \
+    end
+
+`define qjPeak_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qj  = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+            end else begin \
+                qj  = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+            end \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qj  = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m)-q0; \
+        end \
+    end
+
+//
+//  pn junction current, includes area and perimeter components
+//
+//  Outputs:
+//           pnjI       junction current
+//  Inputs:
+//           v          voltage across the junction
+//           vtv        the thermal voltage
+//           a          area of junction
+//           isa        saturation current per unit area
+//           na         ideality factor of the area component
+//           vmaxa      linearization voltage for the area component
+//           p          perimeter of junction
+//           isp        saturation current per unit perimeter
+//           np         ideality factor of the perimeter component
+//           vmaxp      linearization voltage for the perimeter component
+//           blockName  name for the begin/end block (must be unique)
+//
+
+`define pnjIap(pnjI,v,vtv,a,isa,na,vmaxa,p,isp,np,vmaxp,blockName) \
+    begin : blockName \
+        real aisa,pisp,argx,expx,pnjIa,pnjIp; \
+        aisa     = a*isa; \
+        pisp     = p*isp; \
+        if (aisa>0.0) begin \
+            argx     =  1.0/(na*vtv); \
+            `expLinA(expx,v,vmaxa,argx)  \
+            pnjIa    =  aisa*(expx-1.0); \
+        end else begin \
+            pnjIa    =  0.0; \
+        end \
+        if (pisp>0.0) begin \
+            argx     =  1.0/(np*vtv); \
+            `expLinA(expx,v,vmaxp,argx)  \
+            pnjIp    =  pisp*(expx-1.0); \
+        end else begin \
+            pnjIp    =  0.0; \
+        end \
+        pnjI    =  pnjIa+pnjIp; \
+    end
+
+//
+//  pn junction charge, includes area and perimeter components
+//
+//  Based on the basic depletion charge model with a linear increase
+//  in c(v) at high forward bias, qj(v=0)=0 is not enforced.
+//
+//  Outputs:
+//           pnjQ       junction charge
+//  Inputs:
+//           v          voltage across the junction
+//           a          area of junction
+//           cja        zero-bias capacitance per unit area
+//           pa         built-in voltage of the area component
+//           ma         grading coefficient of the area component
+//           fca        linearization factor of the are component
+//           aja        smoothing parameter of the area component
+//           p          perimeter of junction
+//           cjp        zero-bias capacitance per unit perimeter
+//           pp         built-in voltage of the perimeter component
+//           mp         grading coefficient of the perimeter component
+//           fcp        linearization factor of the perimeter component
+//           ajp        smoothing parameter of the perimeter component
+//           blockName  name for the begin/end block (must be unique)
+//           dba        name to pass to `qj for the area component (must be unique)
+//           dbp        name to pass to `qj for the perimeter component (must be unique)
+//
+
+`define pnjQap(pnjQ,v,a,cja,pa,ma,fca,aja,p,cjp,pp,mp,fcp,ajp,blockName,dba,dbp) \
+    begin : blockName \
+        real acja,pcjp,arga,argp; \
+        acja     = a*cja; \
+        pcjp     = p*cjp; \
+        if (acja>0.0) begin \
+            `qj(arga,v,pa,ma,fca,aja,dba) \
+        end else begin \
+            arga     = 0.0; \
+        end \
+        if (pcjp>0.0) begin \
+            `qj(argp,v,pp,mp,fcp,ajp,dbp) \
+        end else begin \
+            argp     = 0.0; \
+        end \
+        pnjQ     = acja*arga+pcjp*argp; \
+    end
+
+//
+//  simple junction breakdown current model
+//
+//  Outputs:
+//           bkdI       breakdown current
+//  Inputs:
+//           v          voltage across the junction
+//           Ibv        current at Vbv
+//           Vbv        breakdown voltage (defined at Ibv)
+//           vtv        the thermal voltage
+//           nb         ideality factor of the breakdown exponential
+//           vmax       linearization voltage
+//           blockName  name for the begin/end block (must be unique)
+//
+//  This model is based on the simple exponential breakdown model
+//  for SPICE diodes. The model has current -Ibv at voltage -Vbv,
+//  and varies exponentially with voltage. The nb parameter controls
+//  the steepness of the exponential. The current is linearized for
+//  for bias and hasvalue zero at zero bias across the junction.
+//
+
+`define pnjIbkd(bkdI,v,Ibv,Vbv,vtv,nb,vmax,blockName) \
+    begin : blockName \
+        real Vbkd,argx,expx; \
+        if (Vbv>0.0) begin \
+            Vbkd     = -Vbv-v; \
+            argx     =  1.0/(nb*vtv); \
+            `expLinA(expx,Vbkd,vmax,argx)  \
+            bkdI     = -Ibv*(expx-exp(-Vbv*argx)); \
+        end else begin \
+            bkdI     =  0.0; \
+        end \
+    end
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Junction shot noise (including ideal and nonideal components of current)
+//
+//  The commonly used shot noise model 2q|I| is inaccurate for voltages less
+//  than a few phi_t, and for pn junctions with nonideal components of current
+//  can underpredict the noise. This formulation overcomes those limitations
+//  and, for zero nonideal component, matches the van der Ziel result.
+//
+//  Inputs:
+//    b_j        branch defined for the intrinsic pn junction
+//    iSat       ideal saturation current
+//    iIdeal     ideal component of current
+//    iNonideal  nonideal component of current
+//    label      string that identifies the noise component (must be in "")
+//
+
+`define pnjShotNoise(b_j,iSat,iIdeal,iNonideal,label) \
+    I(b_j) <+ white_noise(2.0*`QQ_NIST2004*(abs(iIdeal+2.0*iSat)+abs(iNonideal)),label);
+
+
+//
+//  Core calculation for r3_cmc, current in the main resistor body
+//
+//  Outputs:
+//           Irb        current through the body of the resistor element
+//           geff       effective DC conductance (used in noise calculation)
+//  Inputs:
+//           Vrb        voltage across the resistor body
+//           Vc1        voltage from control to terminal 1 nodes
+//           Vc2        voltage from control to terminal 2 nodes
+//           vpo        pinch-off voltage: 0.5/(df*df)-dp*0.5
+//           vpoe       effective pinch-off voltage (vpo less offset for grpo limiting)
+//           V1cx       threshold to switch simple Vsat calculation form for iecrit=0
+//           nsteff     full pinch-off slope parameter
+//           phi_t0     thermal voltage at circuit ambient (without self-heating)
+//           dp         depletion pinching potential
+//           df         depletion pinching factor
+//           dfsq       df*df (precomputed as it is used several times)
+//           lde        (effective length)*delta_field for velocity saturation
+//           leffE_um   effective resistor length for velocity saturation calculation, in micron
+//           ecrneff    effective corner field for velocity saturation
+//           iecrit     inverse of the velocity saturation critical field
+//           dufctr     du factor, precomputed
+//           uoff       du offset, precomputed
+//           ats        pinch-off smoothing parameter
+//           atspo      ats limit in pinch-off or 4*ats*ats (for swaccpo=2/3 or 0/1, respectively)
+//           gf         conductance factor
+//           grpo       minimum conductance ratio in pinch-off
+//           swaccpo    switch for accurate pinch-off calculation (0=orig, 1=no, 2/3=yes)
+//           blockName  name for the begin/end block (must be unique)
+//
+//  Some of the above arguments are, to reduce model evaluation time,
+//  pre-computed quantities.
+//
+//  Most of the calculations below are to solve a quartic equation for Vsat
+//  that gives a value the guarantees that the output conductance (without
+//  self-heating) will not become negative, Vsat equal to or (just) less than
+//  the Vrb voltage at which d(Irb)/d(Vrb) is zero. The appropriate real root of
+//  the equation is calculated. Note that always bb<0, rp>0, arg1>0, so some
+//  conditional calculation branches below should never be followed. rm can change
+//  sign, which leads to a numerical problem in evaluation of the derivative of
+//  pow(rm,`oneThird) for rm near zero. Hence the linearization of this function
+//  for abs(rm)<1.0e-6. The derivative of bvar2 w.r.t. rm is not continuous when
+//  abs(rm)=1.0e-6, but the effect on Irb and gm is embedded in many calculations
+//  and is negligible.
+//
+//  Terminology:
+//  non-pinch-off    is when neither source nor drain are in pinch-off
+//  drain pinch-off  is when the drain is pinched off but the source is not
+//  full pinch-off   is when both the source and drain are in pinch-off
+//
+//  There are 4 options for limiting behavior in full pinch-off:
+//  sw_accpo=0  original equations from version 1.0.0
+//  sw_accpo=1  no special handling of full pinch-off, the model does not well
+//              approximate 1-exp(-Vb/phi_t0) behavior; this has the fastest
+//              computation time and is appropriate for resistor modeling
+//              (setting ats to 1.1*phi_t0 makes full pinch-off modeling reasonable,
+//              setting ats to less than that value makes saturation happen too early,
+//              setting ats to more than that value makes saturation happen too late)
+//  sw_accpo=2  this makes the model approximate 1-exp(-Vb/phi_t0) behavior in
+//              full pinch-off significantly more accurately than sw_accpo=1; it takes
+//              more computation time than sw_accpo=0 but is more accurate for JFETs
+//  sw_accpo=3  this also makes the model approximate 1-exp(-Vb/phi_t0) behavior
+//              in full pinch-off significantly more accurately than sw_accpo=1;
+//              it is slightly less accurate than sw_accpo=2 in full pinch-off but
+//              slightly more accurate through the transition to full pinch-off,
+//              i.e. around "threshold" compared to sw_accpo=2; the transition from
+//              non-pinch-off to drain pinch-off is smoother, and higher order
+//              continuity is maintained through Vb=0; the cost is a small increase
+//              in computational complexity cf. sw_accpo=2
+
+
+`define r3Ibody(Irb,geff,Vrb,Vc1,Vc2,vpo,vpoe,V1cx,nsteff,phi_t0,dp,df,dfsq,lde,leffE_um,ecrneff,iecrit,dufctr,uoff,ats,atspo,gf,grpo,swaccpo,blockName) \
+    begin : blockName \
+        real sdFlip, V1ci, Vrbi, V1cl, V1c, pe; \
+        real a0, a1, a2, a3, a4, dvar, cvar, bvar, avar, asq, pvar, qvar, rvar; \
+        real aa, bb, aa3d27, dd, sd, rp, rm, avar2, bvar2, yvar, val1, val2, arg1, arg2; \
+        real dore, Vsat, VrbEff, fctrm, fctrp, sqrtp, sqrtm, rmu, dpfctr, atseff, fouratsq; \
+        real Vsatphi, Fsatphi, drmu, dfe, dpee, tmp; \
+        if (Vrb<0.0) begin \
+            sdFlip   = -1.0; \
+            V1ci     = -Vc2; \
+            Vrbi     = -Vrb; \
+        end else begin \
+            sdFlip   =  1.0; \
+            V1ci     = -Vc1; \
+            Vrbi     =  Vrb; \
+        end \
+        if (V1ci>vpoe) begin \
+            V1cl     =  vpoe-nsteff*ln(1.0+exp((vpoe-V1ci)/nsteff)); \
+        end else begin \
+            V1cl     =  V1ci-nsteff*ln(1.0+exp((V1ci-vpoe)/nsteff)); \
+        end \
+        if (swaccpo) begin \
+            if (V1cl<(-0.4*(dp+`MIN(Vrbi,vpoe-V1cl)))) begin \
+                V1c      = -0.4*(dp+`MIN(Vrbi,vpoe-V1cl)); \
+            end else begin \
+                V1c      =  V1cl; \
+            end \
+        end else begin \
+            if (V1cl<(-0.4*dp)) begin \
+                V1c      = -0.4*dp; \
+            end else begin \
+                V1c      =  V1cl; \
+            end \
+        end \
+        pe       =  dp+2.0*V1c; \
+        if (iecrit>0.0) begin \
+            a0       =  dfsq*pe*pe-pe; \
+            a1       = -1.0+3.0*dfsq*pe; \
+            a2       =  dfsq*(9.0/4.0+pe/lde); \
+            a3       =  1.5*dfsq/lde; \
+            a4       =  4.0*lde*lde/dfsq; \
+            dvar     =  a0*a4; \
+            cvar     =  a1*a4; \
+            bvar     =  a2*a4; \
+            avar     =  a3*a4; \
+            asq      =  avar*avar; \
+            pvar     = -bvar; \
+            qvar     =  avar*cvar-4.0*dvar; \
+            rvar     =  4.0*bvar*dvar-cvar*cvar-dvar*asq; \
+            aa       =  qvar-pvar*pvar*`oneThird; \
+            bb       =  rvar-pvar*(qvar+2.0*aa)/9.0; \
+            aa3d27   =  aa*aa*aa/27.0; \
+            dd       =  0.25*bb*bb+aa3d27; \
+            sd       =  sqrt(dd); \
+            if (bb<0.0) begin \
+                rp       = -0.5*bb+sd; \
+                rm       = -aa3d27/rp; \
+            end else begin \
+                rm       = -0.5*bb-sd; \
+                rp       = -aa3d27/rm; \
+            end \
+            if (rp>(0.000001)) begin \
+                avar2    =  pow(rp,`oneThird); \
+            end else if (rp<(-0.000001)) begin \
+                avar2    = -pow((-rp),`oneThird); \
+            end else begin \
+                avar2    =  10000.0*rp; \
+            end \
+            if (rm>(0.000001)) begin \
+                bvar2    =  pow(rm,`oneThird); \
+            end else if (rm<(-0.000001)) begin \
+                bvar2    = -pow((-rm),`oneThird); \
+            end else begin \
+                bvar2    =  10000.0*rm; \
+            end \
+            yvar     =  avar2+bvar2-pvar*`oneThird; \
+            rvar     =  sqrt(0.25*asq-bvar+yvar); \
+            val1     =  0.75*asq-rvar*rvar-2.0*bvar; \
+            val2     =  (avar*bvar-2.0*cvar-0.25*asq*avar)/rvar; \
+            arg1     =  val1+val2; \
+            if (arg1>0.0) begin \
+                dore     =  sqrt(arg1); \
+                Vsat     = -0.25*avar+0.5*(dore+rvar); \
+            end else begin \
+                arg2     =  val1-val2; \
+                dore     =  sqrt(sqrt(arg2*arg2+1.0e-4)); \
+                Vsat     = -0.25*avar+0.5*(dore-rvar); \
+            end \
+        end else begin \
+            if (V1c>V1cx) begin \
+                tmp      =  dfsq*(vpo-V1c); \
+                Vsat     =  2.0*(1.0-2.0*tmp)*(vpo-V1c)/(1.0-3.0*tmp+sqrt(1.0-1.5*tmp)); \
+            end else begin \
+                tmp      =  3.0*dfsq*pe; \
+                Vsat     =  (1.0-tmp+sqrt(1.0+tmp))/(4.5*dfsq); \
+            end \
+        end \
+        if (swaccpo>1) begin \
+            Vsatphi  =  Vsat+phi_t0; \
+            Fsatphi  =  df*sqrt(pe+Vsat); \
+            if (iecrit>0.0) begin \
+                fctrm    =  0.5*((Vsatphi/leffE_um)-ecrneff)*iecrit; \
+                fctrp    =  0.5*((Vsatphi/leffE_um)+ecrneff)*iecrit; \
+                sqrtm    =  sqrt(fctrm*fctrm+dufctr); \
+                sqrtp    =  sqrt(fctrp*fctrp+dufctr); \
+                rmu      =  sqrtm+sqrtp-uoff; \
+                drmu     =  0.5*((fctrm/sqrtm)+(fctrp/sqrtp))*iecrit/leffE_um; \
+                dfe      =  sqrt(2.0*Fsatphi*(1.0-Fsatphi)*(1.0-drmu*Vsatphi/(1.0+rmu))/Vsatphi); \
+            end else begin \
+                dfe      =  sqrt(2.0*Fsatphi*(1.0-Fsatphi)/Vsatphi); \
+            end \
+            dpee     =  dfsq*(pe+Vsat)/(dfe*dfe)-Vsatphi; \
+            atseff   =  atspo+ats*Vsat/(ats+Vsatphi); \
+            fouratsq =  4.0*atseff*atseff; \
+            VrbEff   =  2.0*Vrbi*Vsatphi/(sqrt((Vrbi-Vsatphi)*(Vrbi-Vsatphi)+fouratsq)+sqrt((Vrbi+Vsatphi)*(Vrbi+Vsatphi)+fouratsq)); \
+            if (sw_accpo>2) begin \
+                atseff   =  atspo+ats*VrbEff/(ats+Vsatphi); \
+                fouratsq =  4.0*atseff*atseff; \
+                VrbEff   =  2.0*Vrbi*Vsatphi/(sqrt((Vrbi-Vsatphi)*(Vrbi-Vsatphi)+fouratsq)+sqrt((Vrbi+Vsatphi)*(Vrbi+Vsatphi)+fouratsq)); \
+            end \
+            dpfctr   =  1.0-dfe*sqrt(dpee+VrbEff); \
+            if (iecrit>0.0) begin \
+                fctrm    =  0.5*((VrbEff/leffE_um)-ecrneff)*iecrit; \
+                fctrp    =  0.5*((VrbEff/leffE_um)+ecrneff)*iecrit; \
+                sqrtm    =  sqrt(fctrm*fctrm+dufctr); \
+                sqrtp    =  sqrt(fctrp*fctrp+dufctr); \
+                rmu      =  sqrtm+sqrtp-uoff; \
+            end else begin \
+                rmu      =  0.0; \
+            end \
+        end else begin \
+            VrbEff   =  2.0*Vrbi*Vsat/(sqrt((Vrbi-Vsat)*(Vrbi-Vsat)+atspo)+sqrt((Vrbi+Vsat)*(Vrbi+Vsat)+atspo)); \
+            if (iecrit>0.0) begin \
+                fctrm    =  0.5*((VrbEff/leffE_um)-ecrneff)*iecrit; \
+                fctrp    =  0.5*((VrbEff/leffE_um)+ecrneff)*iecrit; \
+                sqrtm    =  sqrt(fctrm*fctrm+dufctr); \
+                sqrtp    =  sqrt(fctrp*fctrp+dufctr); \
+                rmu      =  sqrtm+sqrtp-uoff; \
+            end else begin \
+                rmu      =  0.0; \
+            end \
+            dpfctr   =  1.0-df*sqrt(pe+VrbEff); \
+        end \
+        if (dpfctr<grpo) begin \
+            dpfctr   =  grpo; \
+        end \
+        geff     =  gf*dpfctr/(1.0+rmu); \
+        Irb      =  sdFlip*geff*VrbEff; \
+    end
+
+`endif
