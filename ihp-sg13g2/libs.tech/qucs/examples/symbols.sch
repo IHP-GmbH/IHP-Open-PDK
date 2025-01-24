@@ -1,6 +1,6 @@
 <Qucs Schematic 24.3.0>
 <Properties>
-  <View=-54,26,1290,804,1.1671,0,0>
+  <View=-36,46,1274,804,1.19789,0,0>
   <Grid=10,10,1>
   <DataSet=symbols.dat>
   <DataDisplay=symbols.dpl>
