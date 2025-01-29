@@ -75,18 +75,18 @@ nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(re
 psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
 
 
-# n1/p1 taps labels
+# tap1 labels
 well_patt = glob_to_case_insensitive_glob("well")
 sub_patt = glob_to_case_insensitive_glob("sub!")
-
 ntap1_lbl = text_drw.texts(well_patt)
-ntap1_mk = nwell_drw.interacting(ntap1_lbl)
-
 ptap1_lbl = text_drw.texts(sub_patt)
+# ntap1 marker
+ntap1_mk = nbulay_drw.and(nwell_drw).interacting(ntap1_lbl)
+# ptap1 marker
 ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
 
 # n & p taps (short connections)
-ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly).not(ntap1_mk)
+ntap = nactiv.and(nwell_drw).not(ntap1_mk).not(recog_diode).not(gatpoly)
 ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly)
 ptap_holes = ptap.holes
 ntap_holes = ntap.holes
