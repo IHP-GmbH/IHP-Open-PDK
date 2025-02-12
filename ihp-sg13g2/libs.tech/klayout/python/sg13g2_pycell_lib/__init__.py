@@ -60,6 +60,7 @@ moduleNames = [
         'dpantenna_code',
         'via_stack_code',
         'ptap1_code',
+        'ntap1_code',
         'bondpad_code',
         'rfcmim_code',
         'gring_code'
