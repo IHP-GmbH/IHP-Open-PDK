@@ -16,12 +16,15 @@ v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {type=res
-format="@spiceprefix@name @pinlist @model a=@a b=@b"
-template="name=Rp1
-model=pgring
+lvs_format="tcleval(@name @pinlist @model A=[ev \{ 2 * ( @w * @d ) + 2 * ( ( @l - @ * @d ) * @d ) \} ] P=[ev \{ 4 * ( @w + @d ) + 4 * ( ( @l - 2 * @d ) + @d ) \} ] )"
+*lvs_format="tcleval(@name @pinlist @model w=[ev \{ 2 * ( @w + ( @l - 2 * @d ) )  \} ] l=[ev \{ @d \} ] )"
+format="tcleval(@spiceprefix@name @pinlist @model R=[ev \{  1/ ( 1/( (1.0 / ( 1.0 / ( 9.8e-10 / ( @w * @d ) ) + 1.0 / ( 9.8e-4 / ( 2.0 * ( @w + @d ) ) ) )) / 2 ) + 1/( (1.0 / ( 1.0 / ( 9.8e-10 / ( @d * ( @l -2 * @d ) ) ) + 1.0 / ( 9.8e-4 / ( 2.0 * ( @l - @d ) ) ) ) )/2 ) ) \}] w=@w l=@l d=@d )"
+template="name=R1
+model=ptap1
 spiceprefix=X
-a=6e-6
-b=6e-6
+w=6e-6
+l=6e-6
+d=1e-6
 "
 
 }
@@ -41,8 +44,10 @@ B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 pinnumber=1}
 B 5 -2.5 27.5 2.5 32.5 {name=S dir=inout propag=0 pinnumber=2}
 P 4 6 0 -20 20 -20 20 20 -20 20 -20 -20 -0 -20 {}
 T {@model} 25 -16.25 0 0 0.2 0.2 {}
-T {a = @a} 25 -3.75 0 0 0.2 0.2 {layer=13}
+T {w = @w} 25 -3.75 0 0 0.2 0.2 {layer=13}
 T {@spiceprefix@name} 25 -28.75 0 0 0.2 0.2 {}
 T {} 15 20 0 0 0.2 0.2 {}
-T {b = @b} 25 6.25 0 0 0.2 0.2 {layer=13}
+T {l = @l} 25 6.25 0 0 0.2 0.2 {layer=13}
 T {sub} -10 10 0 0 0.2 0.2 {}
+T {tcleval( R=[ev \{  1/ ( 1/( (1.0 / ( 1.0 / ( 9.8e-10 / ( @w * @d ) ) + 1.0 / ( 9.8e-4 / ( 2.0 * ( @w + @d ) ) ) )) / 2 ) + 1/( (1.0 / ( 1.0 / ( 9.8e-10 / ( @d * ( @l -2 * @d ) ) ) + 1.0 / ( 9.8e-4 / ( 2.0 * ( @l - @d ) ) ) ) )/2 ) ) \}] )} 20 30 0 0 0.2 0.2 {layer=13}
+T {d = @d} 25 16.25 0 0 0.2 0.2 {layer=13}

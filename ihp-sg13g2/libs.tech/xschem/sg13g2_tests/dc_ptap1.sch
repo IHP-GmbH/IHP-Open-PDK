@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 100 -460 900 -60 {flags=graph
 
-y2=0.058
+y2=0.54
 ypos1=0
 ypos2=2
 divy=5
@@ -28,9 +28,8 @@ y1=0
 rainbow=0
 color=4
 node=i(vr)}
-T {Here GND is only for simulation purpose. The actuall connection is to substrate.} -150 100 0 0 0.2 0.2 {}
 N -180 80 -180 100 {
-lab=GND}
+lab=sub!}
 N -180 -60 -180 -20 {
 lab=#net1}
 N 0 -60 0 -20 {
@@ -42,17 +41,87 @@ lab=Vcc}
 N 0 -60 50 -60 {
 lab=Vcc}
 N -180 80 0 80 {
-lab=GND}
+lab=sub!}
 N 0 40 0 80 {
-lab=GND}
+lab=sub!}
 N -180 40 -180 80 {
+lab=sub!}
+N -530 30 -530 80 {
+lab=sub!}
+N -530 -140 -530 -30 {
+lab=Vcc}
+N 0 -140 -0 -60 {
+lab=Vcc}
+N -270 80 -180 80 {
+lab=sub!}
+N -530 -140 0 -140 {
+lab=Vcc}
+N -430 40 -430 80 {
+lab=sub!}
+N -530 80 -430 80 {
+lab=sub!}
+N -350 40 -350 80 {
+lab=sub!}
+N -430 80 -350 80 {
+lab=sub!}
+N -270 40 -270 80 {
+lab=sub!}
+N -350 80 -270 80 {
+lab=sub!}
+N -270 -60 -180 -60 {
+lab=#net1}
+N -430 -60 -430 -20 {
+lab=#net1}
+N -350 -60 -350 -20 {
+lab=#net1}
+N -430 -60 -350 -60 {
+lab=#net1}
+N -270 -60 -270 -20 {
+lab=#net1}
+N -350 -60 -270 -60 {
+lab=#net1}
+N -300 180 -280 180 {
 lab=GND}
-C {devices/code_shown.sym} -210 160 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
+N -220 180 -200 180 {
+lab=sub!}
+C {devices/gnd.sym} -300 180 0 0 {name=l1 lab=GND}
+C {devices/vsource.sym} 0 10 0 0 {name=Vres value=1.5}
+C {devices/title.sym} -100 240 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
+C {devices/launcher.sym} -120 -200 0 0 {name=h5
+descr="load waves" 
+tclcommand="xschem raw_read $netlist_dir/dc_ptap1.raw dc"
+}
+C {devices/lab_pin.sym} 50 -60 2 0 {name=p1 sig_type=std_logic lab=Vcc}
+C {devices/ammeter.sym} -70 -60 1 0 {name=Vr}
+C {simulator_commands_shown.sym} -370 -810 0 0 {name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false 
 value="
-.lib $::SG13G2_MODELS/cornerRES.lib  res_typ 
+.lib cornerRES.lib res_typ
 "}
-C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
+C {launcher.sym} -300 -480 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
+C {simulator_commands_shown.sym} -380 -700 0 0 {name=Simulator2
+simulator=ngspice
+only_toplevel=false 
 value="
 .param temp=27
 .control
@@ -64,18 +133,37 @@ dc Vres 0 3 0.01
 write dc_ptap1.raw
 .endc
 "}
-C {devices/gnd.sym} -180 100 0 0 {name=l1 lab=GND}
-C {devices/vsource.sym} 0 10 0 0 {name=Vres value=1.5}
-C {devices/title.sym} -100 240 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -120 -200 0 0 {name=h5
-descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/dc_ptap1.raw dc"
+C {sg13g2_pr/pgring.sym} -530 0 0 0 {name=R2
+model=ptap1
+spiceprefix=X
+w=10e-6
+l=20e-6
+d=1e-6
 }
-C {devices/lab_pin.sym} 50 -60 2 0 {name=p1 sig_type=std_logic lab=Vcc}
-C {devices/ammeter.sym} -70 -60 1 0 {name=Vr}
+C {sg13g2_pr/ptap1.sym} -270 10 0 0 {name=R3
+model=ptap1
+spiceprefix=X
+w=18.0e-6
+l=1.0e-6
+}
+C {sg13g2_pr/ptap1.sym} -430 10 0 0 {name=R5
+model=ptap1
+spiceprefix=X
+w=10.0e-6
+l=1.0e-6
+}
+C {sg13g2_pr/ptap1.sym} -350 10 0 0 {name=R4
+model=ptap1
+spiceprefix=X
+w=10.0e-6
+l=1.0e-6
+}
 C {sg13g2_pr/ptap1.sym} -180 10 0 0 {name=R1
 model=ptap1
 spiceprefix=X
-w=1.0e-6
+w=18.0e-6
 l=1.0e-6
 }
+C {sg13g2_pr/sub.sym} -180 100 0 0 {name=l2 lab=sub!}
+C {sg13g2_pr/sub.sym} -200 180 0 0 {name=l3 lab=sub!}
+C {devices/vsource.sym} -250 180 3 0 {name=Vres1 value=0}

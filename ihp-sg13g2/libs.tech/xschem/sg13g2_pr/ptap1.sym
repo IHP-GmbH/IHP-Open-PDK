@@ -16,12 +16,14 @@ v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {type=res
-format="@spiceprefix@name @pinlist @model w=@w l=@l"
+lvs_format="tcleval(@name @pinlist @model A=[ev \{ @w * @l \} ] P=[ev \{ 2 * ( @w + @l ) \} ] )"
+*lvs_format="@name @pinlist @model w=@w l=@l"
+format="tcleval(@spiceprefix@name @pinlist @model R=[ev \{  1.0 / ( 1.0 / ( 9.8e-10 / ( @w * @l ) ) + 1.0 / ( 9.8e-4 / ( 2.0 * ( @w + @l ) ) ) )\}] w=@w l=@l )"
 template="name=R1
 model=ptap1
 spiceprefix=X
-w=1.0e-6
-l=1.0e-6
+w=0.78e-6
+l=0.78e-6
 "
 }
 
