@@ -51,7 +51,6 @@ moduleNames = [
         'rhigh_code',
         'rppd_code',
         'sealring_code',
-        'npn13G2_base_code',
         'npn13G2_code',
         'npn13G2L_code',
         'npn13G2V_code',
@@ -59,6 +58,10 @@ moduleNames = [
         'inductor3_code',
         'dantenna_code',
         'dpantenna_code',
+        'via_stack_code',
+        'ptap1_code',
+        'bondpad_code',
+        'rfcmim_code',
         'gring_code'
 ]
 
@@ -159,10 +162,6 @@ class PyCellLib(pya.Library):
                 processChain += "'" + processName + "'"
                 isFirst = False
             print(f'Current process chain: {processChain}')
-
-
-        module = importlib.import_module(f"{__name__}.ihp.pypreprocessor")
-        preProcessor = getattr(module, "preprocessor")
 
         definesSetToPrint = []
 
