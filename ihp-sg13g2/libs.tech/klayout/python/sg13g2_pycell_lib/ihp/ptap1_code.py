@@ -129,11 +129,11 @@ class ptap1(DloGen):
         bBox = DrawContArray(self, cont_layer, Box(0, 0, w, l), cont_size, cont_dist, cont_diff_over)
         
         # change bBox to size of Metal1 drawing
-        bBox = ResizeBBox(bBox, cont_metal_over)
+        ResizeBBox(bBox, cont_metal_over)
         dbCreateRect(self, metall_layer, Box(bBox.left, bBox.bottom-cont_metal_endcap, bBox.right, bBox.top+cont_metal_endcap)) # draw min. rec. size
         
         # create Pin
-        MkPin(self, 'TIE', 1, Box(bBox.left, bBox.bottom, bBox.right, bBox.top), metall_layer)
+        MkPin(self, 'TIE', 1, bBox, metall_layer)
         
         dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
         dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w+pdiffx_over, l+pdiffx_over))
