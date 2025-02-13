@@ -7,7 +7,7 @@ If you are going to add a new model place it in a separate directory and edit th
 In order to compile the Verilog-A models for ngspice use the following command:
 
 ```
-source openvaf-compile-va.sh
+./openvaf-compile-va.sh
 
 ```
 The binaries will be generated in the following direcotry
@@ -16,7 +16,7 @@ The binaries will be generated in the following direcotry
 If you would like to compile the models for xyce just run the script:
 
 ```
-source adms-compile-va.sh
+./adms-compile-va.sh
 
 ```
 
