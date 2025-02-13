@@ -129,8 +129,8 @@ class ntap1(DloGen):
         
         # change bBox to size of Metal1 drawing
         bBox = ResizeBBox(bBox, cont_metal_over)
-        dbCreateRect(self, metal1_layer, Box(bBox.left, bBox.bottom-cont_metal_endcap, bBox.right, bBox.top+cont_metal_endcap)) # draw min. rec. size
-        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom-cont_metal_endcap, bBox.right, bBox.top+cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer,     Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
         
         # create Pin
         MkPin(self, 'TIE', 1, Box(bBox.left, bBox.bottom, bBox.right, bBox.top), metal1_layer_pin)
@@ -140,5 +140,5 @@ class ntap1(DloGen):
         dbCreateRect(self, bulay_layer, Box(-ndiff_over, -ndiff_over, w+ndiff_over, l+ndiff_over))
 
         MkPin(self, 'WELL', 2, Box(0, 0, w, l), well_layer)
-        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)
-        dbCreateLabel(self, well_layer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)    
+        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'well', 'centerCenter', 'R180', Font.EURO_STYLE, 0.25)
+        dbCreateLabel(self, well_layer, Point(w/2, 0.01), 'well', 'centerCenter', 'R180', Font.EURO_STYLE, 0.25)    
