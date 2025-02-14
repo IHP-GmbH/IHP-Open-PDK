@@ -46,39 +46,13 @@ N 80 40 80 80 {
 lab=#net1}
 N -100 40 -100 80 {
 lab=#net1}
-N -450 30 -450 80 {
-lab=#net1}
-N -450 -140 -450 -30 {
-lab=Vcc}
-N 80 -140 80 -60 {
-lab=Vcc}
-N -190 80 -100 80 {
-lab=#net1}
-N -450 -140 80 -140 {
-lab=Vcc}
 N -350 40 -350 80 {
 lab=#net1}
-N -450 80 -350 80 {
+N -350 80 -100 80 {
 lab=#net1}
-N -270 40 -270 80 {
-lab=#net1}
-N -350 80 -270 80 {
-lab=#net1}
-N -190 40 -190 80 {
-lab=#net1}
-N -270 80 -190 80 {
-lab=#net1}
-N -190 -60 -100 -60 {
-lab=#net2}
 N -350 -60 -350 -20 {
 lab=#net2}
-N -270 -60 -270 -20 {
-lab=#net2}
-N -350 -60 -270 -60 {
-lab=#net2}
-N -190 -60 -190 -20 {
-lab=#net2}
-N -270 -60 -190 -60 {
+N -350 -60 -100 -60 {
 lab=#net2}
 N -220 180 -200 180 {
 lab=GND}
@@ -168,34 +142,15 @@ C {devices/vsource.sym} 80 10 0 0 {name=Vres value=1.5}
 C {devices/lab_pin.sym} 130 -60 2 0 {name=p2 sig_type=std_logic lab=Vcc}
 C {devices/ammeter.sym} 10 -60 1 0 {name=Vr}
 C {devices/vsource.sym} -170 180 3 0 {name=Vres2 value=0}
-C {sg13g2_pr/ntap1.sym} -270 10 0 0 {name=R1
-model=ntap1
-spiceprefix=X
-w=10.0e-6
-l=1.0e-6
-}
 C {sg13g2_pr/ntap1.sym} -100 10 0 0 {name=R4
 model=ntap1
 spiceprefix=X
-w=18.0e-6
-l=1.0e-6
+w=1.0e-6
+l=0.78e-6
 }
 C {sg13g2_pr/ntap1.sym} -350 10 0 0 {name=R5
 model=ntap1
 spiceprefix=X
 w=10.0e-6
 l=1.0e-6
-}
-C {sg13g2_pr/ntap1.sym} -190 10 0 0 {name=R3
-model=ntap1
-spiceprefix=X
-w=18.0e-6
-l=1.0e-6
-}
-C {sg13g2_pr/ngring.sym} -450 0 0 0 {name=R2
-model=ntap1
-spiceprefix=X
-w=10e-6
-l=20e-6
-d=1e-6
 }

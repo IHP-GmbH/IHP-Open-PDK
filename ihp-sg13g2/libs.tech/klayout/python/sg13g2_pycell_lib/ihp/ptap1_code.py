@@ -79,7 +79,8 @@ class ptap1(DloGen):
         #* Layer Definitions
         #*
         #*************************************************************************
-        metall_layer = Layer('Metal1')
+        metal1_layer = Layer('Metal1')
+        metal1_layer_pin = Layer('Metal1','pin')
         ndiff_layer = Layer('Activ')
         pdiff_layer = Layer('Activ')
         pdiffx_layer = Layer('pSD')
@@ -130,10 +131,11 @@ class ptap1(DloGen):
         
         # change bBox to size of Metal1 drawing
         ResizeBBox(bBox, cont_metal_over)
-        dbCreateRect(self, metall_layer, Box(bBox.left, bBox.bottom-cont_metal_endcap, bBox.right, bBox.top+cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer,     Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
         
         # create Pin
-        MkPin(self, 'TIE', 1, bBox, metall_layer)
+        MkPin(self, 'TIE', 1, bBox, metal1_layer)
         
         dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
         dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w+pdiffx_over, l+pdiffx_over))

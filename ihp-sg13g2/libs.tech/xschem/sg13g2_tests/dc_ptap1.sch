@@ -46,39 +46,13 @@ N 0 40 0 80 {
 lab=sub!}
 N -180 40 -180 80 {
 lab=sub!}
-N -530 30 -530 80 {
-lab=sub!}
-N -530 -140 -530 -30 {
-lab=Vcc}
-N 0 -140 -0 -60 {
-lab=Vcc}
-N -270 80 -180 80 {
-lab=sub!}
-N -530 -140 0 -140 {
-lab=Vcc}
 N -430 40 -430 80 {
 lab=sub!}
-N -530 80 -430 80 {
+N -430 80 -180 80 {
 lab=sub!}
-N -350 40 -350 80 {
-lab=sub!}
-N -430 80 -350 80 {
-lab=sub!}
-N -270 40 -270 80 {
-lab=sub!}
-N -350 80 -270 80 {
-lab=sub!}
-N -270 -60 -180 -60 {
-lab=#net1}
 N -430 -60 -430 -20 {
 lab=#net1}
-N -350 -60 -350 -20 {
-lab=#net1}
-N -430 -60 -350 -60 {
-lab=#net1}
-N -270 -60 -270 -20 {
-lab=#net1}
-N -350 -60 -270 -60 {
+N -430 -60 -180 -60 {
 lab=#net1}
 N -300 180 -280 180 {
 lab=GND}
@@ -133,26 +107,7 @@ dc Vres 0 3 0.01
 write dc_ptap1.raw
 .endc
 "}
-C {sg13g2_pr/pgring.sym} -530 0 0 0 {name=R2
-model=ptap1
-spiceprefix=X
-w=10e-6
-l=20e-6
-d=1e-6
-}
-C {sg13g2_pr/ptap1.sym} -270 10 0 0 {name=R3
-model=ptap1
-spiceprefix=X
-w=18.0e-6
-l=1.0e-6
-}
 C {sg13g2_pr/ptap1.sym} -430 10 0 0 {name=R5
-model=ptap1
-spiceprefix=X
-w=10.0e-6
-l=1.0e-6
-}
-C {sg13g2_pr/ptap1.sym} -350 10 0 0 {name=R4
 model=ptap1
 spiceprefix=X
 w=10.0e-6
@@ -161,8 +116,8 @@ l=1.0e-6
 C {sg13g2_pr/ptap1.sym} -180 10 0 0 {name=R1
 model=ptap1
 spiceprefix=X
-w=18.0e-6
-l=1.0e-6
+w=1.0e-6
+l=0.78e-6
 }
 C {sg13g2_pr/sub.sym} -180 100 0 0 {name=l2 lab=sub!}
 C {sg13g2_pr/sub.sym} -200 180 0 0 {name=l3 lab=sub!}
