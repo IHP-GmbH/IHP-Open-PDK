@@ -82,13 +82,9 @@ class esd(DloGen):
         # geometry definitions
         outer_box = Box(0, 0, 9.72, 37.05)
         psd_polygon_list1 = PointList( [ Point (0.00000, 0.00000), Point(0.00000, 1.35000), Point(8.40000, 1.35000), Point(8.40000,	35.70000), Point(1.35000, 35.70000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000) ] )
-        metal1_polygon_list1 = psd_polygon_list1 
-        metal1_polygon_list2 = PointList( [ Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.36000, 3.30000), Point(6.36000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000) ] )
         psd_box = Box(3.81, 4.07, 5.91, 33.14)        
         activ_box = Box(4.23, 4.73, 5.49, 32.51)
         nwell_box = Box(1.56, 1.56, 8.19, 35.49)
-        metal1_box = Box(3.96, 4.43, 5.76, 32.78)
-        metal1_pin_box = Box(0, 0, 9.72, 1.35)
         metal2_polygon_list1 = PointList([Point(-2.12000, 7.75500), Point(-2.12000, 29.31500), Point(5.50500, 29.31500), Point(5.50500, 25.75500), Point(1.48000, 25.75500), Point(1.48000, 20.31500), Point(5.50500, 20.31500), Point(5.50500, 16.75500), Point(1.48000, 16.75500), Point(1.48000, 11.31500), Point(5.50500, 11.31500), Point(5.50500, 7.75500)])
         metal2_polygon_list2 = PointList( [ Point(1.94000, 3.73500), Point(1.94000, 6.33500), Point(7.34000, 6.33500), Point(7.34000, 12.73500), Point(1.94000, 12.73500), Point(1.94000, 15.33500), Point(7.34000, 15.33500), Point(7.34000, 21.73500), Point(1.94000, 21.73500), Point(1.94000, 24.33500), Point(7.34000, 24.33500), Point(7.34000, 30.73500), Point(1.94000, 30.73500), Point(1.94000, 33.33500), Point(10.94000, 33.33500), Point(10.94000, 3.73500) ] )        
         metal2_pin_box1 = Box(-2.12, 7.755, 1.48, 29.315)
@@ -114,9 +110,25 @@ class esd(DloGen):
         #  well layer
         if self.model == 'diodevdd_2kv':
             dbCreateRect(self, well_layer , nwell_box) 
+            metal1_polygon_list1 = psd_polygon_list1 
+            metal1_polygon_list2 = PointList( [ Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.36000, 3.30000), Point(6.36000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000) ] )
+            metal1_box = Box(3.96, 4.43, 5.76, 32.78)
+            dbCreateRect(self, metal1_layer , metal1_box) 
+            metal1_pin_box = Box(0.0, 0.0, 9.72, 1.35)
+            dbCreateRect(self, metal1_layer_pin , metal1_pin_box) 
         
         if self.model == 'diodevss_2kv':
-            DrawRing(self, well_layer, 0.00, 9.72, 0.00, 37.05, 1.35, 1.35)
+            nwell_point_list  = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(8.40000, 1.35000), Point(8.40000, 35.70000), Point(1.35000, 35.70000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
+            dbCreatePolygon(self, well_layer, nwell_point_list) 
+            metal1_point_list1 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(8.40000, 1.35000), Point(8.40000, 35.70000), Point(1.35000, 35.70000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
+            dbCreatePolygon(self, metal1_layer, metal1_point_list1) 
+            metal1_point_list2 = PointList([Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.36000, 3.30000), Point(6.36000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000)])
+            dbCreatePolygon(self, metal1_layer, metal1_point_list2) 
+            #DrawRing(self, well_layer, 0.00, 9.72, 0.00, 37.05, 1.35, 1.35)
+            metal1_box = Box(4.11, 4.43, 5.64, 32.78)
+            metal1_pin_box = Box(0, 35.7, 9.72, 37.05)
+            dbCreateRect(self, metal1_layer , metal1_box) 
+            dbCreateRect(self, metal1_layer_pin , metal1_pin_box) 
 
         #  contact layer
         dbCreateRectArray(self, cont_layer, origin=(0.64,  0.61), n=1, m=24, x1=cont_size, off1=cont_sep)
@@ -130,12 +142,10 @@ class esd(DloGen):
         dbCreateRectArray(self, cont_layer, origin=(2.055,  34.02),  n=3, m=16, x1=cont_size, off1=cont_sep)
         #  metal1 layer
         
-        dbCreatePolygon(self, metal1_layer, metal1_polygon_list1) 
-        dbCreatePolygon(self, metal1_layer, metal1_polygon_list2) 
+        #dbCreatePolygon(self, metal1_layer, metal1_polygon_list1) 
+        #dbCreatePolygon(self, metal1_layer, metal1_polygon_list2) 
         #DrawRing(self, metal1_layer, 0, 9.72, 0, 37.05, 1.32, 1.32) 
         #DrawRing(self, metal1_layer, 1.83, 7.92, 1.89, 35.16, 1.53, 1.41)
-        dbCreateRect(self, metal1_layer , metal1_box) 
-        dbCreateRect(self, metal1_layer_pin , metal1_pin_box) 
         #  metal2 layer
         dbCreatePolygon(self, metal2_layer, metal2_polygon_list1) 
         dbCreatePolygon(self, metal2_layer, metal2_polygon_list2)
@@ -162,10 +172,10 @@ class esd(DloGen):
             dbCreateLabel(self, textlayer, Point(8.33, 0.625), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
         
         if self.model == 'diodevss_2kv' :
-            dbCreateLabel(self, textlayer, Point(-0.32, 18.535), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
-            dbCreateLabel(self, textlayer, Point(9.15, 18.99), 'VDD', 'centerCenter', 'R0', Font.MATH, 0.2)
-            dbCreateLabel(self, textlayer, Point(4.86, 0.675), 'VSS', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            dbCreateLabel(self, textlayer, Point(8.33, 0.625), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(-0.2, 18.535), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
+            dbCreateLabel(self, textlayer, Point(9.15, 18.99), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
+            dbCreateLabel(self, textlayer, Point(4.86, 36.375), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(2.285, 2.385), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
         #MkPin(self, 'MINUS', 1, metal2_pin_box2, metal2_layer)
 
 

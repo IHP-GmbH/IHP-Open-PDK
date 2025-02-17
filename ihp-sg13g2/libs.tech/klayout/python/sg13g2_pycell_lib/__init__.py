@@ -62,7 +62,8 @@ moduleNames = [
         'ptap1_code',
         'ntap1_code',
         'bondpad_code',
-        'rfcmim_code'
+        'rfcmim_code',
+        'esd_code'
 ]
 
 def getProcessNames():
