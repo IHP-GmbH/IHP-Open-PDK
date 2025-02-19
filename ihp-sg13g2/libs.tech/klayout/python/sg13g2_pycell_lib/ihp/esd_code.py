@@ -45,7 +45,7 @@ class esd(DloGen):
         model = 'diodevdd_2kv'
         
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
-        specs('model', model, 'Model name', ChoiceConstraint(['diodevdd_2kv', 'diodevss_2kv', 'diodevdd_4kv', 'idiodevdd_2kv', 'idiodevdd_4kv']) )
+        specs('model', model, 'Model name', ChoiceConstraint(['diodevdd_2kv', 'diodevss_2kv', 'diodevdd_4kv', 'idiodevdd_2kv', 'idiodevdd_4kv', 'test']) )
 
 
     def setupParams(self, params):
@@ -182,17 +182,19 @@ class esd(DloGen):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+        if self.model == 'test':
+            metal1_layer_polygon_list_0 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.32000), Point(8.40000, 1.32000), Point(8.40000, 35.73000), Point(1.32000, 35.73000), Point(1.32000, 1.32000), Point(0.00000, 1.32000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_0)
+            metal1_layer_polygon_list_1 = PointList([Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.39000, 3.30000), Point(6.39000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_1)
+            metal1_layer_polygon_list_2 = PointList([Point(3.96000, 4.43000), Point(3.96000, 32.78000), Point(5.76000, 32.78000), Point(5.76000, 4.43000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_2)
+            metal1_layer_polygon_list_3 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.32000), Point(8.40000, 1.32000), Point(8.40000, 35.73000), Point(1.32000, 35.73000), Point(1.32000, 1.32000), Point(0.00000, 1.32000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_3)
+            metal1_layer_polygon_list_4 = PointList([Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.39000, 3.30000), Point(6.39000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_4)
+            metal1_layer_polygon_list_5 = PointList([Point(3.96000, 4.43000), Point(3.96000, 32.78000), Point(5.76000, 32.78000), Point(5.76000, 4.43000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_5)
 
 
 
