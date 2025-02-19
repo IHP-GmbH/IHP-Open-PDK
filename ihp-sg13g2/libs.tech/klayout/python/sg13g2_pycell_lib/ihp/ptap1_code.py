@@ -131,8 +131,8 @@ class ptap1(DloGen):
         
         # change bBox to size of Metal1 drawing
         ResizeBBox(bBox, cont_metal_over)
-        dbCreateRect(self, metal1_layer,     Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
-        dbCreateRect(self, metal1_layer_pin, Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer,     Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom, bBox.right, bBox.top)) 
         
         # create Pin
         MkPin(self, 'TIE', 1, bBox, metal1_layer)
@@ -141,5 +141,5 @@ class ptap1(DloGen):
         dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w+pdiffx_over, l+pdiffx_over))
 
         MkPin(self, 'SUB', 2, Box(0, 0, w, l), Layer('Substrate', 'drawing'))
-        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)
-        dbCreateLabel(self, Layer('Substrate', 'drawing'), Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)    
+        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)
+        dbCreateLabel(self, Layer('Substrate', 'drawing'), Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)    
