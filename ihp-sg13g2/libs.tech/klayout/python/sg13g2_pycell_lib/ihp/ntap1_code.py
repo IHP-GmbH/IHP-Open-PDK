@@ -84,6 +84,7 @@ class ntap1(DloGen):
         ndiff_layer = Layer('Activ')
         cont_layer = Layer('Cont')
         well_layer = Layer('NWell')
+        well_layer_pin = Layer('NWell', 'pin')
         bulay_layer = Layer('nBuLay')
         textlayer = Layer('TEXT', 'drawing')
         
@@ -97,7 +98,7 @@ class ntap1(DloGen):
         cont_diff_over = self.techparams['Cnt_c']
         cont_metal_over = self.techparams['M1_c']
         cont_metal_endcap = self.techparams['M1_c1']
-        ndiff_over = self.techparams['NW_c']          # Nwell enc. of p+Activ in pWell
+        ndiff_over = self.techparams['NW_e']          # Minimum NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ1
         wmin = Numeric(self.techparams['ntap1_minLW'])
         lmin = Numeric(self.techparams['ntap1_minLW'])
         
@@ -129,16 +130,17 @@ class ntap1(DloGen):
         
         # change bBox to size of Metal1 drawing
         bBox = ResizeBBox(bBox, cont_metal_over)
-        dbCreateRect(self, metal1_layer,     Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
-        dbCreateRect(self, metal1_layer_pin, Box(bBox.left - cont_metal_endcap, bBox.bottom - cont_metal_endcap, bBox.right + cont_metal_endcap, bBox.top + cont_metal_endcap)) # draw min. rec. size
+        dbCreateRect(self, metal1_layer,     Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
         
         # create Pin
         MkPin(self, 'TIE', 1, Box(bBox.left, bBox.bottom, bBox.right, bBox.top), metal1_layer_pin)
         
         dbCreateRect(self, ndiff_layer, Box(0, 0, w, l))
+        dbCreateRect(self, well_layer_pin, Box(0, 0, w, l))
         dbCreateRect(self, well_layer, Box(-ndiff_over, -ndiff_over, w+ndiff_over, l+ndiff_over))
         dbCreateRect(self, bulay_layer, Box(-ndiff_over, -ndiff_over, w+ndiff_over, l+ndiff_over))
 
         MkPin(self, 'WELL', 2, Box(0, 0, w, l), well_layer)
-        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'well', 'centerCenter', 'R180', Font.EURO_STYLE, 0.25)
-        dbCreateLabel(self, well_layer, Point(w/2, 0.01), 'well', 'centerCenter', 'R180', Font.EURO_STYLE, 0.25)    
+        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)
+        dbCreateLabel(self, well_layer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)    
