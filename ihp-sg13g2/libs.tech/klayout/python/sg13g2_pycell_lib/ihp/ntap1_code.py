@@ -24,21 +24,21 @@ from .utility_functions import *
 
 import math
 
-class ptap1(DloGen):
+class ntap1(DloGen):
 
     @classmethod
     def defineParamSpecs(self, specs):
         # define parameters and default values
         techparams = specs.tech.getTechParams()
         
-        minL       = techparams['ptap1_minLW' ]
-        minW       = techparams['ptap1_minLW' ]
-        defL       = techparams['ptap1_defL' ]
-        defW       = techparams['ptap1_defW']
+        minL       = techparams['ntap1_minLW' ]
+        minW       = techparams['ntap1_minLW' ]
+        defL       = techparams['ntap1_defL' ]
+        defW       = techparams['ntap1_defW']
         defA       = Numeric(defL)*Numeric(defW)
         defP       = 2*Numeric(defL)+2*Numeric(defW)
         
-        r = eng_string(CbTapCalc('R', 0.0, Numeric(defL), Numeric(defW), 'ptap1'), 3)
+        r = eng_string(CbTapCalc('R', 0.0, Numeric(defL), Numeric(defW), 'ntap1'), 3)
                 
 #ifdef KLAYOUT
         specs('Calculate', 'R,A', 'Calculate', ChoiceConstraint(['R,A', 'w,A', 'l,A', 'w,l,A', 'w,l,R', 'w,R', 'l,R']))
@@ -82,10 +82,9 @@ class ptap1(DloGen):
         metal1_layer = Layer('Metal1')
         metal1_layer_pin = Layer('Metal1','pin')
         ndiff_layer = Layer('Activ')
-        pdiff_layer = Layer('Activ')
-        pdiffx_layer = Layer('pSD')
         cont_layer = Layer('Cont')
         well_layer = Layer('NWell')
+        well_layer_pin = Layer('NWell', 'pin')
         bulay_layer = Layer('nBuLay')
         textlayer = Layer('TEXT', 'drawing')
         
@@ -99,9 +98,9 @@ class ptap1(DloGen):
         cont_diff_over = self.techparams['Cnt_c']
         cont_metal_over = self.techparams['M1_c']
         cont_metal_endcap = self.techparams['M1_c1']
-        pdiffx_over = self.techparams['pSD_c1']          # pSD enc. of p+Activ in pWell
-        wmin = Numeric(self.techparams['ptap1_minLW'])
-        lmin = Numeric(self.techparams['ptap1_minLW'])
+        ndiff_over = self.techparams['NW_e']          # Minimum NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ1
+        wmin = Numeric(self.techparams['ntap1_minLW'])
+        lmin = Numeric(self.techparams['ntap1_minLW'])
         
         # ntap1 gets 2 Pins -> value must be 3
         dbReplaceProp(self, 'pin#', 3)
@@ -130,16 +129,18 @@ class ptap1(DloGen):
         bBox = DrawContArray(self, cont_layer, Box(0, 0, w, l), cont_size, cont_dist, cont_diff_over)
         
         # change bBox to size of Metal1 drawing
-        ResizeBBox(bBox, cont_metal_over)
+        bBox = ResizeBBox(bBox, cont_metal_over)
         dbCreateRect(self, metal1_layer,     Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
-        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom, bBox.right, bBox.top)) 
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
         
         # create Pin
-        MkPin(self, 'TIE', 1, bBox, metal1_layer)
+        MkPin(self, 'TIE', 1, Box(bBox.left, bBox.bottom, bBox.right, bBox.top), metal1_layer_pin)
         
-        dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
-        dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w+pdiffx_over, l+pdiffx_over))
+        dbCreateRect(self, ndiff_layer, Box(0, 0, w, l))
+        dbCreateRect(self, well_layer_pin, Box(0, 0, w, l))
+        dbCreateRect(self, well_layer, Box(-ndiff_over, -ndiff_over, w+ndiff_over, l+ndiff_over))
+        dbCreateRect(self, bulay_layer, Box(-ndiff_over, -ndiff_over, w+ndiff_over, l+ndiff_over))
 
-        MkPin(self, 'SUB', 2, Box(0, 0, w, l), Layer('Substrate', 'drawing'))
-        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)
-        dbCreateLabel(self, Layer('Substrate', 'drawing'), Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)    
+        MkPin(self, 'WELL', 2, Box(0, 0, w, l), well_layer)
+        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)
+        dbCreateLabel(self, well_layer, Point(w/2, 0.01), 'well', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)    
