@@ -136,7 +136,31 @@ class esd(DloGen):
         if self.model == 'diodevdd_2kv':
             outer_box = Box(0, 0, 9.72, 37.05)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
-            pSD_layer_polygon_list_0 = PointList([Point(1.56000, 1.56000), Point(1.56000, 3.66000), Point(6.09000, 3.66000), Point(6.09000, 33.39000), Point(3.66000, 33.39000), Point(3.66000, 3.66000), Point(1.56000, 3.66000), Point(1.56000, 35.49000), Point(8.19000, 35.49000), Point(8.19000, 1.56000)])
+ 
+### Extracted Polygons ###
+            activ_layer_polygon_list_0 = PointList([Point(4.23000, 4.73000), Point(4.23000, 32.51000), Point(5.49000, 32.51000), Point(5.49000, 4.73000)])
+            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_0)
+            activ_layer_polygon_list_1 = PointList([Point(1.98000, 1.98000), Point(1.98000, 3.24000), Point(6.51000, 3.24000), Point(6.51000, 33.81000), Point(3.24000, 33.81000), Point(3.24000, 3.24000), Point(1.98000, 3.24000), Point(1.98000, 35.07000), Point(7.77000, 35.07000), Point(7.77000, 1.98000)])
+            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_1)
+            activ_layer_polygon_list_2 = PointList([Point(0.42000, 0.45000), Point(0.42000, 0.93000), Point(8.82000, 0.93000), Point(8.82000, 36.12000), Point(0.90000, 36.12000), Point(0.90000, 0.93000), Point(0.42000, 0.93000), Point(0.42000, 36.60000), Point(9.30000, 36.60000), Point(9.30000, 0.45000)])
+            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_2)
+
+### Extracted Polygons ###
+            pSD_layer_polygon_list_0 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(8.40000, 1.35000), Point(8.40000, 35.70000), Point(1.35000, 35.70000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
             dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_0)
-            pSD_layer_polygon_list_1 = PointList([Point(1.56000, 1.56000), Point(1.56000, 3.66000), Point(6.09000, 3.66000), Point(6.09000, 33.39000), Point(3.66000, 33.39000), Point(3.66000, 3.66000), Point(1.56000, 3.66000), Point(1.56000, 35.49000), Point(8.19000, 35.49000), Point(8.19000, 1.56000)])
+            pSD_layer_polygon_list_1 = PointList([Point(3.81000, 4.07000), Point(3.81000, 33.14000), Point(5.91000, 33.14000), Point(5.91000, 4.07000)])
             dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_1)
+
+### Extracted Polygons ###
+            well_layer_polygon_list_0 = PointList([Point(1.56000, 1.56000), Point(1.56000, 35.49000), Point(8.19000, 35.49000), Point(8.19000, 1.56000)])
+            dbCreatePolygon(self, well_layer, well_layer_polygon_list_0)
+
+### Extracted Polygons ###
+            metal1_layer_polygon_list_0 = PointList([Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.36000, 3.30000), Point(6.36000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_0)
+            metal1_layer_polygon_list_1 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(8.40000, 1.35000), Point(8.40000, 35.70000), Point(1.35000, 35.70000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.05000), Point(9.72000, 37.05000), Point(9.72000, 0.00000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_1)
+            metal1_layer_polygon_list_2 = PointList([Point(3.96000, 4.43000), Point(3.96000, 32.78000), Point(5.76000, 32.78000), Point(5.76000, 4.43000)])
+            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_2)
+
+### Extracted Polygons ###
