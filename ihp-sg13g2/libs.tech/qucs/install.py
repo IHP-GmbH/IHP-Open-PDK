@@ -54,7 +54,7 @@ def info():
     msg = """
     This script:
     - copies the Qucs-S user library files into $HOME/[.qucs|QucsWorkspace]/user_lib directory. 
-    - compiles and copies Verilog-A models in ../verilog-a location
+    - compiles and copies Verilog-A models in ../ngspice/osdi location
     Please make sure that you have set up the PDK_ROOT env variable
     export PDK_ROOT=<path_to_IHP-Open-PDK>
     """
@@ -150,7 +150,11 @@ if __name__ == "__main__":
                 
     # Compiling Verilog-A models
     print("\nCompiling Verilog-A models ...")
-    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a"
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/osdi"
+    
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+    
     program_name = "openvaf"
     if is_program_installed(program_name):
         source_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a/psp103"
