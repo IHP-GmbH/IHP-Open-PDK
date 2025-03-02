@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -23,7 +22,8 @@ dataset=-1
 unitx=1
 logx=0
 logy=0
-}
+sim_type=dc
+autoload=1}
 T {The Vds source is inverted in 
 order to plot positive value of 
 the current, which corresponds 
@@ -57,8 +57,14 @@ value="
 "}
 C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
 value="
+.options savecurrents
+.include dc_lv_pmos.save
 .param temp=27
 .control
+save all
+op
+write dc_lv_pmos.raw
+set appendwrite
 dc Vds 0 -1.2 -0.01 Vgs -0.35 -1.1 -0.05
 write dc_lv_pmos.raw
 .endc
@@ -70,10 +76,6 @@ C {devices/vsource.sym} 150 0 0 0 {name=Vds value=-1.5}
 C {devices/gnd.sym} 150 90 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 70 90 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -230 -150 0 0 {name=h5
-descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/dc_lv_pmos.raw dc"
-}
 C {sg13g2_pr/sg13_lv_pmos.sym} 0 0 2 1 {name=M1
 l=0.45u
 w=1.0u
@@ -83,3 +85,12 @@ model=sg13_lv_pmos
 spiceprefix=X
 }
 C {devices/ammeter.sym} 80 -110 1 0 {name=Vd}
+C {devices/launcher.sym} 610 -80 0 0 {name=h1
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/dc_lv_pmos.raw dc"
+}
+C {devices/launcher.sym} 610 -50 0 0 {name=h2
+descr="OP annotate" 
+tclcommand="xschem annotate_op"
+}
+C {sg13g2_pr/annotate_fet_params.sym} 10 -270 0 0 {name=annot1 ref=M1}
