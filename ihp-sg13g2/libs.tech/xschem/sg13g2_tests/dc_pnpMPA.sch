@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 -280 -540 520 -140 {flags=graph
-y1=0.4
-y2=0.7
+y1=0.65
+y2=0.9
 ypos1=0
 ypos2=2
 divy=5
@@ -63,13 +63,15 @@ C {devices/launcher.sym} 70 -70 0 0 {name=h5
 descr="load/unload waves" 
 tclcommand="xschem raw_read $netlist_dir/test_pnpMPA.raw dc"
 }
-C {sg13g2_pr/pnpMPA.sym} -190 -10 0 0 {name=Q1
-model=pnpMPA
-spiceprefix=X
-w=1.0u
-l=2.0u}
 C {devices/ammeter.sym} -110 -80 1 0 {name=Ve}
 C {devices/ammeter.sym} -300 30 0 0 {name=Vb}
 C {devices/ammeter.sym} -170 50 0 0 {name=Vc}
 C {devices/isource.sym} -40 -10 2 0 {name=I0 value=1u}
 C {devices/lab_pin.sym} -170 -60 0 0 {name=p1 sig_type=std_logic lab=E1}
+C {sg13g2_pr/pnpMPA.sym} -190 -10 0 0 {name=Q1
+model=pnpMPA
+spiceprefix=X
+w=1.0e-6
+l=2.0e-6
+m=1
+}

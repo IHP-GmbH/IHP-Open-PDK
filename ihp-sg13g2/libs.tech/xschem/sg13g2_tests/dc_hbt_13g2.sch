@@ -7,7 +7,7 @@ S {}
 E {}
 B 2 -280 -540 520 -140 {flags=graph
 
-y2=0.017
+y2=0.0027
 ypos1=0
 ypos2=2
 divy=5
@@ -24,7 +24,7 @@ logx=0
 logy=0
 color=4
 node=i(Vc)
-y1=-0.00023
+y1=-1.9e-05
 rainbow=0}
 T {Nx - number of emitters} -210 110 0 0 0.2 0.2 {}
 N -300 60 -300 80 {
@@ -62,7 +62,7 @@ save all
 op
 print I(Vc)
 reset 
-dc Vce 0 2 0.01 I0 0 5u 0.1u
+dc Vce 0 1.5 0.01 I0 0 5u 0.1u
 write test_npn_13G2.raw
 .endc
 "}
@@ -82,4 +82,4 @@ C {sg13g2_pr/npn13G2.sym} -190 -10 0 0 {name=Q1
 model=npn13G2
 spiceprefix=X
 Nx=1
-le=0.9e-6}
+}

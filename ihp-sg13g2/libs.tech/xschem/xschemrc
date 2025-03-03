@@ -424,7 +424,7 @@ if {[info exists PDK_ROOT]} {
 # Set variables after ${PDK_ROOT} is known
 # This overrides some of the variables set above.
 
-set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_tests/IHP_testcases.sch
+set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/start_page.sch
 append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
 
 # allow a user-specific path add-on (https://github.com/iic-jku/iic-osic-tools/issues/7)
@@ -532,10 +532,10 @@ proc mim_drc {instance symbol model w l } {
   return $res
 }
 # IHP SG13G2 HBT dimension checks
-proc hbt_drc {instance symbol model Nx le } {
+proc hbt_drc {instance symbol model Nx El } {
   set res {}
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
-  if { [string is integer $Nx] && [string is double $le]} {
+  if { [string is integer $Nx] || [string is double $El]} {
     
     
     switch -regexp $model {
@@ -554,28 +554,65 @@ proc hbt_drc {instance symbol model Nx le } {
         if { $Nx > 4 } {
           append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
         }
-        if { $le < 1.0e-6 } {
-          append res "${instance} ($model): Emitter length le = $le too small, min. le > 1.0 um" \n
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
         }
-        if { $le > 2.5e-6 } {
-          append res "${instance} ($model): Emitter length le = $le too big, max. le < 2.5 um" \n
+        if { $El > 2.5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
         }
       }
       {npn13G2v$} {
         if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-8" \n
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
         }
-        if { $Nx > 8 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-8" \n
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
         }
-        if { $le < 1.0e-6 } {
-          append res "${instance} ($model): Emitter length le = $le too small, min. le > 1.0 um" \n
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
         }
-        if { $le > 5.0e-6 } {
-          append res "${instance} ($model): Emitter length le = $le too big, max. le < 5.0 um" \n
+        if { $El > 5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
         }
+      }
+      
+      {npn13G2_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
+        }
+        if { $Nx > 10 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-10" \n
+        }
+      }
+      {npn13G2l_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 2.5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
+        }
+      }
+      {npn13G2v_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
+        }
+      }
     } ;# switch
-  }
   }
   return $res
 }

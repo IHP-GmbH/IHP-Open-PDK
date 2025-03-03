@@ -1,0 +1,60 @@
+puts stdout "Sourcing design .magicrc for technology ihp-sg13g2 ..."
+
+# Put grid on 0.005 pitch.  This is important, as some commands don't
+# rescale the grid automatically (such as lef read?).
+
+set scalefac [tech lambda]
+if {[lindex $scalefac 1] < 2} {
+    scalegrid 1 2
+}
+
+# drc off
+drc euclidean on
+# Change this to a fixed number for repeatable behavior with GDS writes
+# e.g., "random seed 12345"
+catch {random seed}
+
+# Turn off the scale option on ext2spice or else it conflicts with the
+# scale in the model files.
+ext2spice scale off
+
+# Allow override of PDK path from environment variable PDK_ROOT
+# "file nativename" guards against a local PDK_ROOT with "~" in the name
+#if {[catch {set PDK_ROOT [file nativename $env(PDK_ROOT)]}]} {
+#    set PDK_ROOT /usr/share/pdk
+#}
+
+# loading technology
+tech load [file dirname [file normalize [info script]]]/ihp-sg13g2.tech
+
+# halt on error
+if {[tech name] != "ihp-sg13g2"} {quit -noprompt}
+
+# load device generator
+# NOTE:  Commented out for alpha pre-release.
+# source [file dirname [file normalize [info script]]]/ihp-sg13g2.tcl
+
+# load bind keys (optional)
+# source [file dirname [file normalize [info script]]]/ihp-sg13g2-BindKeys
+
+# set units to lambda grid 
+snap lambda
+
+# set sg13g2 standard power, ground, and substrate names
+set VDD VDD
+set GND VSS
+set SUB VSUB
+
+# Allow override of type of magic library views used, "mag" or "maglef",
+# from environment variable MAGTYPE
+
+if {[catch {set MAGTYPE $env(MAGTYPE)}]} {
+   set MAGTYPE mag
+}
+
+# add path to reference cells
+addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_pr/${MAGTYPE}
+addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_io/${MAGTYPE}
+addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_stdcell/${MAGTYPE}
+addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_sram/${MAGTYPE}
+

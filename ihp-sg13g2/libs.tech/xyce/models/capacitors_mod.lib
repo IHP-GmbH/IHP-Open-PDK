@@ -1,0 +1,136 @@
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2023 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+******************************************************************************* 
+
+.model cmim_core C (TC1=3.6E-6 TC2=2E-9 TNOM=27 CJ=cap_carea CJSW=40E-18)
+
+*******************************************************************************
+* parasitics 
+*******************************************************************************
+
+* SiO2: only area cap., prozess tol. cap_cpara
+* C value is taken from extraction routine
+
+* hard coded typ corner (cap_cpara=1.0)
+*.param cap_cpara=1.0
+
+.subckt cparasitic PLUS MINUS 
+.param c=0
+.param w=0
+.param l=0
+.param ic=1E10
+.param tc1=0
+.param tc2=0
+*.if (ic>1E9)
+C1 PLUS MINUS c=c*cap_cpara tc1=tc1 tc2=tc2
+*.else
+*  C1 PLUS MINUS c=c*cap_cpara tc1=tc1 tc2=tc2 ic=ic
+*.endif  
+.ends cparasitic
+
+*******************************************************************************
+* cmim 
+*******************************************************************************
+
+* subcircuit for cmim
+* Note: top/bottom plate parasitic capacitance is included by parasiticC extraction!
+* Note: top (Metal3) corresponds to PLUS pin
+*
+.subckt cap_cmim PLUS MINUS 
+.param l=7u
+.param w=7u
+.param sf=1E-6
+.param ic=1E10
+R1 PLUS 1 r=55m
+*.if (ic>1E9)
+C1 1 MINUS cmim_core l=l/sf w=w/sf 
+*.else
+*  C1 1 MINUS cmim_core m l=l/sf w=w/sf ic=ic
+*.endif  
+.ends cap_cmim
+
+
+*******************************************************************************
+* rfcmim 
+*******************************************************************************
+
+
+* subcircuit for rfcmim
+* Note: top plate (Metal3) corresponds to PLUS pin, bottom plate corresponds to MINUS pin, bn is substrate bulk node
+* Note: valid parameter range for w and l: 7um to 75um
+* Note: valid parameter range for wfeed: 1um to 30um but maximum wfeed = w-1.2um
+*
+.subckt cap_rfcmim PLUS MINUS bn
+.param l=7u
+.param w=7u
+.param wfeed=2E-6
+
+.param ic=1E10
+.param sf=1E-6
+.param cic0=1E-18
+
+.param lplate_val = {(0.353158 * (l/sf) + 0.485684*l/w) * 1e-12}
+.param lfeed_val  = {(6.03468  + 0.0814268* (w/sf) - 0.821243*log(wfeed/sf)/log(1.55)) * 1e-12}
+.param lskin_val  = {1.18545e-012 + 6.95462e-014*(l/sf)}
+.param cox_val    = {(0.48922 + 0.0965145*(w+l)/sf + 0.00610947   * (w*l)/(sf*sf) + 0.017*(wfeed/sf)*5)*1e-15}
+.param csub_val   = {(50.1021 + 0.277881 *(w+l)/sf + 1.25023e-005 * (w*l)/(sf*sf))*1e-15}
+.param rsub_val   = {610.132  - 1.11685  *(w+l)/sf + 0.00434371   * (w*l)/(sf*sf)}
+.param rmim_val   = {0.0463973 + 0.00219577*l/w + 0.961292/(wfeed/sf) + 0.00307712 *(l/sf) + 0.000217076*(l/sf)*l/w}
+.param rskin_val  = {0.154618 + 0.00702016*(l/sf)}
+
+* add tiny element to allow passing an IC value
+*.if (ic>1e9)
+Cic1 PLUS bn c=cic0
+Cic2 MINUS bn c=cic0
+*.else 
+*  Cic1 PLUS bn c=cic0 ic=ic
+*  Cic2 MINUS bn c=cic0 ic=ic
+*.endif
+
+* --------- model subcircuit ------------------------------
+Lskin PLUS 2 l=lskin_val
+Rskin PLUS 2 r=rskin_val 
+
+
+*.if ((lplate_val+lfeed_val-lskin_val)>1E-18)
+Lmim 2 3 l=(lplate_val+lfeed_val-lskin_val)
+*.else
+*Lmim 2 3 l=1E-18
+*.endif
+
+Rmim 3 4 r=rmim_val 
+Cmim 4 5 cmim_core l=l/sf w=w/sf 
+Cox  5 51  c=cox_val
+Csub 51 bn c=csub_val 
+
+*.if (rsub_val>10m)
+Rsub 51 bn r=rsub_val
+*.else
+*  Rsub 51 bn r=10m 
+*.endif 
+
+*.if (lfeed_val>1E-18)
+Lfeed 5 MINUS l=lfeed_val
+*else
+*  Lfeed 5 MINUS l=1E-18
+*.endif
+
+*avoid floating node for initial condition
+Rdummy 5 bn r=1G   
+
+.ends cap_rfcmim
+

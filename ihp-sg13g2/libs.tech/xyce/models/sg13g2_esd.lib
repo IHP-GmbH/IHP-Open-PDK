@@ -1,0 +1,91 @@
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2025 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+*                        COMMON ESD MODELS                                    *
+*******************************************************************************
+
+.MODEL diodevdd_mod D (tnom = 27 level = 1 is=4.911e-019 rs=289.6 n=1.04 isr = 5.422E-015 ikf=10m cj0=8.716e-016 m=0.3294 vj=0.6621  bv=11.81 ibv=4.744e-016 ibvl=1.067e-012 nbv=1 nbvl=35.32  eg=1.11 xti=4 tbv1=-0.0008212 )          
+.MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 ibvl=1E-018 nbv=1.324 nbvl=1  eg=1.17 xti=3 tbv1=-0.000724 )
+.MODEL dsub_2kv_mod D (tnom = 27 is = 1.7E-016 rs = 4.759 n = 1  ikf = 10m  cj = 99.77E-018   vj = 0.4547 bv = 10 ibv = 1E-019  xti = 3 tbv1 = 0 eg = 1.11 )
+.MODEL dsub_4kv_mod D (tnom = 27 is = 1.7E-016 rs = 4.759 n = 1  ikf = 100u cj = 99.77E-018   vj = 0.4547 bv = 10 ibv = 0       xti = 3 tbv1 = 0 eg = 1.11 )
+
+ 
+.subckt diodevdd_2kv VDD PAD VSS
+.param DEV_A=35 DEV_P=58.08 sub_A=224.9559 sub_P=81.12 m=1
+
+diodevdd_2kv PAD VDD diodevdd_mod area =DEV_A pj=DEV_P m=m 
+dsub_2kv VSS VDD dsub_2kv_mod area=sub_A pj=sub_P m=m
+.ends diodevdd_2kv 
+ 
+*************************************
+
+.subckt idiodevdd_2kv VDD PAD VSS
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+diodevdd_2kv PAD  VDD diodevdd_mod area = DEV_A pj=DEV_P m=m 
+dsub_2kv VSS  VDD dsub_2kv_mod area = sub_A  pj=DEV_P m=m
+.ends idiodevdd_2kv
+**************************************
+
+.subckt diodevdd_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32 m= 1
+
+diodevdd_4kv PAD  VDD diodevdd_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends diodevdd_4kv_mod
+
+*******************************************************
+.subckt idiodevdd_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32 m=1
+
+diodevdd_4kv PAD  VDD diodevdd_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends idiodevdd_4kv_mod
+************************************************************
+
+.subckt diodevss_2kv VDD PAD VSS
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+diodevss_2kv VSS PAD diodevss_mod area = DEV_A pj=DEV_P m=m          
+dsub_2kv VSS VDD dsub_2kv_mod area = sub_A pj=sub_P m=m
+.ends diodevss_2kv
+***********************************************************
+
+.subckt idiodevss_2kv VDD PAD VSS
+.param DEV_A=35  DEV_P=58.08  sub_A=224.9559  sub_P=81.12 m=1
+
+diodevss_2kv VSS PAD diodevss_mod area = DEV_A pj=DEV_P m=m          
+dsub_2kv VSS VDD dsub_2kv_mod area = sub_A pj=sub_P m=m
+.ends idiodevss_2kv
+************************************************************
+
+.subckt diodevss_4kv VDD PAD VSS
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32 m=1
+
+diodevss_4kv VSS PAD diodevss_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends diodevss_4kv
+***************************************************************
+
+.subckt idiodevss_4kv VDD PAD VSS 
+.param DEV_A=70  DEV_P=116.2  sub_A=381.0339  sub_P=90.32 m=1
+
+diodevss_4kv VSS PAD diodevss_mod area = DEV_A pj=DEV_P m=m 
+dsub_4kv VSS  VDD dsub_4kv_mod area = sub_A pj=sub_P m=m 
+.ends idiodevss_4kv
+****************************************************************
+

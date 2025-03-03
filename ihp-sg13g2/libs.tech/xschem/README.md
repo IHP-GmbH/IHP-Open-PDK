@@ -8,7 +8,7 @@ the xschem editor to in order to include PDK root directory, library directories
 Do it only once:
 ```bash
 export PDK_ROOT=<your_path>/IHP-Open-PDK
-python3 install.py
+./install.py
 ```
 Now you can run xschem and enjoy the examples:
 
@@ -49,7 +49,7 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 
 The top level schematic is `IHP_testcases.sch` can be found at `libs.tech/xschem/sg13g2_tests` directory. 
 By default each test case exports the netlist to the `simulations` directory where `.spiceinit`file is used to configure NGSpice in HSPICE compatibility mode. Also a `psp103_nqs.osdi` file is 
-by default placed in this directory in order to simulate the MOSFET devices using PSP103 model. This file can be regenerated and updated (if necessary) using method described [here](../ngspice/openvaf/README.md).
+by default placed in this directory in order to simulate the MOSFET devices using PSP103 model. This file can be regenerated and updated (if necessary) using method described [here](../verilog-a/README.md).
 It is important to notice that the NGSpice version should be 40+ and it has to be compiled using `--enable-osdi` flag as follows:
 ```
 git clone https://git.code.sf.net/p/ngspice/ngspice ngspice-ngspice
