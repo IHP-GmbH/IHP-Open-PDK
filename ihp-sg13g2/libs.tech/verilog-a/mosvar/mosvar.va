@@ -1,0 +1,867 @@
+//======================================================================================
+//======================================================================================
+// Filename: mosvar.va
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright 2008, All Rights Reserved, Arizona State University and
+//  Freescale Semiconductor
+//
+//  (c) Copyright 2015, All Rights Reserved, Silicon Integration Initiative, Inc.
+//
+//
+//  Version: 1.3.0, July 2015
+//
+//======================================================================================
+//======================================================================================
+//
+//   Software is distributed as is, completely without expressed or implied warranty or
+//  service support.  ASU, Si2, their members and employees are not liable for the
+//  condition or performance of the software.
+//
+//   ASU and Si2 own the copyright and grants users a perpetual, irrevocable, worldwide,
+//  non-exclusive, royalty-free license with respect to the software as set forth below.
+//
+//   ASU and Si2 hereby disclaims all implied warranties.
+//
+//   ASU and Si2 grant the users the right to modify, copy, and redistribute the
+//  software and documentation, both within the user's organization and externally,
+//  subject to the following restrictions:
+//
+//  1. The users agree not to charge for the code itself but may charge for additions,
+//     extensions, or support.
+//
+//  2. In any product based on the software, the users agree to acknowledge developers
+//     of the software. This acknowledgment shall appear in the product documentation.
+//
+//  3. The users agree to obey all government restrictions governing redistribution or
+//     export of the software.
+//
+//  4. The users agree to reproduce any copyright notice which appears on the software
+//     and documentation on any copy or modification of such made available to others.
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file MOSVAR1p3p0.pdf
+//
+
+`define VERSION    1.3
+`define SUBVERSION 0.0
+`define REVISION   0.0
+`define LEVEL      1000
+
+
+// mosvar: MOS varactor model.
+
+// Version 1.3
+// Revision 0.0
+// Date     2015 July 1
+
+// Revision notes. Si2/CMC 7/1/2015
+// -Extend ranges of parameters TOXO, NSUBO
+// -Replace V(b_cf) with V(b_ov) for Igov calculation
+// -Replace V(b_cf) with V(b_ci) for Igc calculation
+// -Remove ifdef __VAMS_COMPACT_MODELING__ (assume true)
+// -Remove simulator-specific code
+
+// Version 1.2
+// Revision 0.0
+// Date     2013 September 25
+
+// Revision notes. Si2/CMC 9/25/2013
+// -Added parameter EPSROXO for relative dielectric permittivity
+// -Revised gate current computations to avoid numerical problems
+//  and to use GC3HVO for HVB current
+// -Added parameter RACNOISE to select noise equations for Rac
+// -Added more descriptive noise names
+// -Added shot noise for gate currents
+
+// Version 1.1
+// Revision 0.0
+// Date     2008 December
+// - Changed upper bound of rgsal from 10 to 1000 Ohms
+// - Added parameter IGMAX and corresponding warning message
+// - Removed redundant parameters IGCEVLW, IGOVEVW, GCOEVO, GC2EVO, and GC3EVO
+// - Corrected smoothing function in equation for factrac
+
+// Version 1.0
+// Revision 0.0
+// Date     2007 December 14
+
+// Revision notes. ASU 12/14/2007.
+// The revision index is reset to 0.0 after CMC standardization. All revision notes before standardization
+// are documented in the MOSVAR manual appendix.
+
+//  The format of the model has been based on the r2_cmc format
+//  and the common macros and definitions are in the file
+//  macrosAndDefines_cmc.va.
+//
+
+//
+//  Model topology:
+//
+//                       |------ Igov ->---------------|
+//                       |                             |
+//                       |                             |
+//                       |-- Igc ->---|                |
+//                       |            |                |
+//                       |            |                |
+//  g        gii         |gi   ||     |ci              |bi              b
+//  o-/\/\/\--o--/\/\/\--o-----||-----o-----/\/\/\-----o-----/\/\/\-----o
+//     Rgsal  |   Rgpv         ||C    |      Rsub      |      Rend
+//            |                       |                |
+//            |                       |-----/\/\/\-----|
+//            |                              Rac       |
+//            |                ||                      |
+//            |----------------||----------------------|
+//                             ||Cfr
+//
+//                     n Qi=QiStatic-ddt(tau*Qi)
+//            ---------o--------
+//            |        |       |
+//            /        |tau    |
+//          1 \      -----    (^)QiStatic
+//         Ohm/      -----     |
+//            \        |       |
+//            |        |       |
+//            ------------------
+//                     |
+//                     |
+//                    ---
+//                     -
+//
+//  Note: the key to the way the time/frequency dependence works is
+//        that you *cannot* just time delay Qi, all of the device
+//        charges must be done self-consistently. So once Qi is determined,
+//        the surface potential must be re-calculated so gate and
+//        substrate charges balance, given Qi.
+//
+
+//
+//  Instance parameters are:
+//           m multiplicity factor (number in parallel, implicit for LRM2.2)
+//           W design width  of varactor
+//           L design length of varactor
+//       NGCON number of gate contacts
+//       TRISE/DTA local temperature delta to ambient
+//
+
+//
+//  Useful quantities and macros
+//
+
+`ifdef cmcSetupDone
+`else
+    `include "discipline.h"
+    `include "macrosAndDefines_cmc.va"
+`endif
+`include "mosvarpspMacros.va"
+
+`define MIN_R           0.001
+
+//
+//  ******************
+//  ******************
+//  main mosvar module
+//  ******************
+//  ******************
+//
+
+
+module mosvar(g,bi,b);
+
+
+//
+//  Node definitions
+//
+
+inout      g,b,bi;
+electrical g,b,bi;        // external nodes
+electrical gii,gi,ci,n;   // internal nodes, n is the time-constant node
+
+//
+//  Branch definitions
+//
+
+branch (n) b_cn;      // internal time-constant node
+branch (n) b_nc;      // 2nd instance to fool topology checker in some compilers
+
+branch (g,  gii)  b_rgs, s_rgs; // salicide gate resistance branch
+branch (gii, gi)  b_rgc, s_rgc; // contact poly resistance branch
+branch (gi,  ci)  b_ci;         // intrinsic mos varactor branch
+branch (gi,  bi)  b_ov;         // overlap gate current branch
+branch (gii, bi)  b_cf;         // fringe capacitance branch
+branch (ci,  bi)  b_bi, s_bi;   // resistance under   cap branch (intrinsic)
+branch (bi,  b )  b_bx, s_bx;   // resistance outside cap branch (extrinsic)
+
+//
+//  Instance parameters
+//
+
+`IPRoo( W        , 1.0e-06   , "m"        , 0.0     , inf     , "design width  of varactor")
+`IPRoo( L        , 1.0e-06   , "m"        , 0.0     , inf     , "design length of varactor")
+`IPIcc( NGCON    , 1         , ""         , 1       , 2       , "number of gate contacts")
+`IPRnb( DTA      , 0.0       , "degC"                         , "local temperature delta to ambient")
+aliasparam TRISE = DTA;
+
+//
+//  Special model parameters, some may be simulator global parameters
+//
+
+`MPRnb( VERSION   , `VERSION  , ""                             , "model version")
+`MPRnb( SUBVERSION,`SUBVERSION, ""                             , "model subversion")
+`MPRnb( REVISION  , `REVISION , ""                             , "model revision")
+`MPRnb( LEVEL     , `LEVEL    , ""                             , "model level")
+`MPRcc( TMIN      , -100.0    , "degC"     , -250.0  ,   21.0  , "minimum reference/ambient temperature")
+`MPRcc( TMAX      , 500.0     , "degC"     ,  21.0   , 1000.0  , "maximum reference/ambient temperature")
+`MPRco( VMAX      , 10000.0   , "V"        ,  0.5    , inf     , "maximum voltage applied between nodes g and b")
+
+//
+//  Model parameters
+//
+
+`MPRcc( TR       , 21.0      , "degC"     , -250.0  , 1000.0  , "nominal (reference) temperature")
+`MPRoo( LMIN     , 1.0e-08   , "m"        , 0.0     , inf     , "minimum allowed drawn length")
+`MPRoo( LMAX     , 9.9e+09   , "m"        , 0.0     , inf     , "maximum allowed drawn length")
+`MPRoo( WMIN     , 1.0e-08   , "m"        , 0.0     , inf     , "minimum allowed drawn width")
+`MPRoo( WMAX     , 9.9e+09   , "m"        , 0.0     , inf     , "maximum allowed drawn width")
+`MPIsw( SWRES    , 1         , ""                             , "switch to control series resistance: 0=exclude and 1=include")
+`MPIty( TYPE     , -1        , ""                             , "substrate   doping TYPE: -1=n-TYPE and +1=p-TYPE")
+`MPIty( TYPEP    , -1        , ""                             , "polysilicon doping TYPE: -1=n-TYPE and +1=p-TYPE")
+`MPRcc( TOXO     , 20.0e-10  , "m"        , 5.0e-10 , 2.0e-06 , "oxide thickness")
+`MPRco( EPSROXO  , 3.9       , ""         , 1.0     , inf     , "relative permittivity")
+`MPRcc( TAU      , 0.1       , "s"        , 0.0     , 10.0    , "time constant for inversion charge recombination/generation")
+`MPRnb( VFBO     , 0.0       , "V"                            , "flatband voltage (for p-TYPE substrate)")
+`MPRcc( NSUBO    , 3.0e+23   , "/m^3"     , 1.0e+18 , 1.0e+25 , "substrate   doping level")
+`MPRcc( MNSUBO   , 1.0       , ""         , 1.0     , 10.0    , "maximum change in absolute doping, limited to 1 order of mag up")
+`MPRcc( DNSUBO   , 0.0       , ""         , 0       , 100     , "doping profile slope parameter")
+`MPRcc( VNSUBO   , 0.0       , ""         , -5      , 5       , "doping profile corner voltage parameter")
+`MPRcc( NSLPO    , 0.1       , ""         , 0.1     , 1       , "doping profile smoothing parameter")
+`MPRcc( NPO      , 1.0e+27   , "/m^3"     , 1.0e+24 , 1.0e+27 , "polysilicon doping level")
+`MPRco( QMC      , 1.0       , ""         , 0.0     , inf     , "quantum mechanical correction factor")
+`MPRnb( DLQ      , 0.0       , "m"                            , "length delta for capacitor size")
+`MPRnb( DWQ      , 0.0       , "m"                            , "width  delta for capacitor size")
+`MPRnb( DWR      , 0.0       , "m"                            , "width  delta for substrate resistance calculation")
+`MPRco( CFRL     , 0.0       , "F/m"      , 0.0     , inf     , "fringing capacitance in length direction")
+`MPRco( CFRW     , 0.0       , "F/m"      , 0.0     , inf     , "fringing capacitance in width  direction")
+`MPRco( RSHG     , 1.0       , "Ohm/sq"   , 0.0     , inf     , "gate sheet resistance")
+`MPRco( RPV      , 0.0       , "Ohm*m^2"  , 0.0     , inf     , "vertical resistance down through gate in units of ohm*m^2")
+`MPRco( REND     , 1.0e-04   , "Ohm*m"    , 0.0     , inf     , "end resistance (extrinsic well res. plus vertical contact res. to well) per width")
+`MPRcc( RSHS     , 1000.0    , "Ohm/sq"   , 0.0     , 10000.0 , "substrate sheet resistance")
+`MPRoo( UAC      , 5.0e-02   , "m^2/V/s"  , 0.0     , inf     , "accumulation layer zero bias mobility")
+`MPRco( UACRED   , 0.0       , "/V"       , 0.0     , inf     , "accumulation layer mobility degradation factor")
+`MPRnb( STVFB    , 0.0       , "V/K"                          , "temperature dependence of VFB")
+`MPRnb( STRSHG   , 0.0       , ""                             , "temperature dependence of RSHG")
+`MPRnb( STRPV    , 0.0       , ""                             , "temperature dependence of RPV")
+`MPRnb( STREND   , 0.0       , ""                             , "temperature dependence of REND")
+`MPRnb( STRSHS   , 0.0       , ""                             , "temperature dependence of RSHS")
+`MPRnb( STUAC    , 0.0       , ""                             , "temperature dependence of UAC")
+`MPRco( FETA     , 1.0       , ""         , 0.0     , inf     , "Effective field parameter")
+
+
+//
+// additional model parameters for gate tunneling leakage
+//
+
+`MPIsw( SWIGATE  , 0         , ""                             , "flag for gate current: 0=turn off and 1=turn on")
+`MPRco( CHIBO    , 3.1       , "V"        , 1.0     , inf     , "tunneling barrier height for electrons")
+`MPRco( CHIBPO   , 4.5       , "V"        , 1.0     , inf     , "tunneling barrier height for holes")
+`MPRnb( STIG     , 2.0       , ""                             , "temperature dependence for gate current densities of ECB, HVB")
+`MPRco( LOV      , 0.0       , "m"        , 0.0     , inf     , "overlap length")
+`MPRcc( NOVO     , 5.0e+25   , "/m^3"     , 1.0e+22 , 1.0e+26 , "effective doping level of overlap regions")
+`MPRco( IGINVLW  , 0.0       , "A"        , 0.0     , inf     , "ECB gate channel current pre-factor for 1 um^2 channel area")
+`MPRco( IGOVW    , 0.0       , "A"        , 0.0     , inf     , "ECB gate overlap current pre-factor for 1 um wide gate overlap region")
+`MPRcc( GCOO     , 0.0       , ""         , -10.0   , 10.0    , "ECB gate tunneling energy adjustment")
+`MPRcc( GC2O     , 0.375     , ""         , 0.0     , 10      , "ECB gate current slope factor")
+`MPRcc( GC3O     , 0.063     , ""         , -10     , 10      , "ECB gate current curvature factor")
+`MPRco( IGCHVLW  , 0.0       , "A"        , 0.0     , inf     , "HVB gate channel current pre-factor for 1 um^2 channel area")
+`MPRco( IGOVHVW  , 0.0       , "A"        , 0.0     , inf     , "HVB gate overlap current pre-factor for 1 um wide gate overlap region")
+`MPRcc( GCOHVO   , 0.0       , ""         , -10.0   , 10.0    , "HVB gate tunneling energy adjustment")
+`MPRcc( GC2HVO   , 0.375     , ""         , 0.0     , 10.0    , "HVB gate current slope factor")
+`MPRcc( GC3HVO   , 0.063     , ""         , -10.0   , 10.0    , "HVB gate current curvature factor")
+`MPRco( IGMAX    , 1.0e-05   , "A"        , 0.0     , inf     , "maximum gate tunneling current")
+
+// selector for Rac noise computation
+`MPIcc( RACNOISE , 1         , ""         , 0       , 2       , "Rac noise selector")
+
+//
+//  These variables will be displayed as part of operating point information.
+//
+
+`OPP( v       ,"V"    ,"voltage across capacitor")
+`OPM( i       ,"A"    ,"current through capacitor")
+`OPM( cap     ,"F"    ,"low frequency capacitance")
+`OPM( Qg      ,"C"    ,"intrinsic charge")
+`OPM( Igc     ,"A"    ,"gate tunneling current")
+`OPM( Igov    ,"A"    ,"gate overlap tunneling current")
+
+analog begin : analogBlock
+
+    real tmp, tmp1, tmp2, tempM, INV_ni;
+    real Cox_m, gamma_s, gamma_p;
+    real TKD, TKD_sq, TR1, TKR, dT, rT, rTn, l_m, w_m, leff_m, weff_m, phit, inv_phit;
+    real tc, vfb_t, rshg_t, rpv_t, rend_t, rshs_t, uac_t;
+    real G_s, G_p, G2_s, inv_G2_s, G2_p, inv_G2_p, margin_s, margin_p, Eg;
+    real xi_s, inv_xi_s, xi_p, inv_xi_p;
+    real phib, phibFac, Pf_p, xn_s, xn_p, delta_ns, delta_np, qq, qb0, dphibq, qlim2, Cox_qm, qeff, xg1;
+    real cfr, rgsal, ggsal, rgpv, ggpv, rsub, gsub, rend, gend, gac0, nt0;
+    real rgsalnoise, rgpvnoise, rendnoise, rsubnoise, rac0noise;
+    real Vgb1, xg, xphi_s0, xgp, xphi_p0, phi_p0;
+    real delta_1s, eta_mu, Es, Ps, Ds, Sqs, xgs, qis, qbs, Qi0;
+    real alpha_b_s;
+    real xgt, xphi_s, phi_s, xgpt, xphi_p, phi_p;
+    real factrac, sqrtfac, qac, maxs, gac;
+    real Qi, Qfr;
+    real nb_v, nb_lim;
+    real gamma_ov_s, GOV_s, GOV2_s, xi_ov_s, margin_ov_s;
+    real xg_ov, xphi_ov_s0, xg1_ov, Vox, Vov;
+    real tfg, QCQ, Dch;
+    real BCH, BOV, INV_CHIB, iginv, igov;
+    real Vb_ov_ig, Vb_ci_ig;
+    real Dch_HVB, QCQ_HVB;
+    real INV_CHIB_HVB, BCH_HVB, BOV_HVB;
+    real alpha_b_ov, phib_ov;
+    real vfb_ov;
+    real igc_HVB, igov_HVB;
+    real eps, norm_nsub, norm_tox;
+    real tdevC;
+
+    //
+    //  Code independent of bias or instance parameters
+    //
+
+    begin : initializeModel
+        if (LEVEL!=`LEVEL) begin
+            `ERROR("ERROR: mosvar model called with incorrect level parameter")
+        end
+        Cox_m      = `EPSOX * (EPSROXO/3.9) /TOXO;
+        gamma_s    =  sqrt(2.0*`QELE*`EPSSI*NSUBO) / Cox_m;
+        gamma_p    =  sqrt(2.0*`QELE*`EPSSI*NPO) / Cox_m;
+        // overlap gate tunneling current calculations
+        gamma_ov_s =  sqrt(2.0*`QELE*`EPSSI*NOVO) / Cox_m;
+        // QM correction
+        if (QMC > 0.0) begin
+            qq       =  0.4 * `QMN * QMC * pow(Cox_m, `twoThirds);
+            if (TYPE < 0)  begin
+                qq   =  `QMP / `QMN * qq;
+            end
+        end else
+            qq       =  0.0;
+        if (TYPE < 0)
+            eta_mu   =  `oneThird * FETA;
+        else
+            eta_mu   =  0.5 * FETA;
+        norm_tox     = TOXO / 1.0e-09;
+    end // initializeModel
+
+    //
+    //  Code independent of bias but dependent on instance parameters
+    //  NOTE: temperature dependent code is here because DTA is an instance parameter
+    //
+
+    begin : initializeInstance
+        // Transistor temperature
+        TR1      =  `CLIP_LOW(TR, -273);
+        if (TR1 < TMIN) begin
+            $strobe("WARNING: reference temperature is lower than allowed minimum TMIN (degC) = ", TMIN);
+        end
+        if (TR1 > TMAX) begin
+            $strobe("WARNING: reference temperature is higher than allowed maximum TMAX (degC) = ", TMAX);
+        end
+        TKR      =  `KELVINCONVERSION + TR1;    // in initializeModel block
+        tdevC    =  $temperature + DTA - `KELVINCONVERSION;
+        if (tdevC < TMIN) begin
+            $strobe("WARNING: ambient temperature is lower than allowed minimum TMIN (degC) = ", TMIN);
+        end
+        if (tdevC > TMAX) begin
+            $strobe("WARNING: ambient temperature is higher than allowed maximum TMAX (degC) = ", TMAX);
+        end
+        TKD      =  tdevC + `KELVINCONVERSION;
+        TKD_sq   =  TKD * TKD;
+        dT       =  TKD - TKR;
+        rT       =  TKD / TKR;
+        rTn      =  TKR / TKD;
+        phit     =  TKD * `KBOL / `QELE;
+        qlim2    =  100.0 * phit * phit;
+        inv_phit =  1.0 / phit;
+        vfb_t    =  VFBO + dT*STVFB;
+        tc       =  pow(rTn, STRSHG);
+        rshg_t   =  RSHG * tc;
+        tc       =  pow(rTn, STRPV);
+        rpv_t    =  RPV * tc;
+        tc       =  pow(rTn, STREND);
+        rend_t   =  REND * tc;
+        tc       =  pow(rTn, STRSHS);
+        rshs_t   =  RSHS * tc;
+        tc       =  pow(rT, STUAC);
+        uac_t    =  UAC * tc;
+
+        // nt0 for thermal noise calculation
+        nt0 = 4 * `KBOL * TKD; // parameter for white noise of parasitic resistances
+
+        l_m      =  L;
+        w_m      =  W;
+        if (l_m < LMIN) begin
+            $strobe("WARNING: drawn length is smaller than allowed minimum");
+        end
+        if (l_m > LMAX) begin
+            $strobe("WARNING: drawn length is greater than allowed maximum");
+        end
+        if (w_m < WMIN) begin
+            $strobe("WARNING: drawn width is smaller than allowed minimum");
+        end
+        if (w_m > WMAX) begin
+            $strobe("WARNING: drawn width is greater than allowed maximum");
+        end
+        leff_m   =  l_m + DLQ;
+        weff_m   =  w_m + DWQ;
+        if (leff_m <= 0.0) begin
+            `ERROR("ERROR: effective varactor length is <= 0.0")
+        end
+        if (weff_m <= 0.0) begin
+            `ERROR("ERROR: effective varactor width  is <= 0.0")
+        end
+
+        // local process parameters
+        `egTsividis(Eg,TKD)
+        phibFac  =  (1.045 + 4.5e-04 * TKD) * (0.523 + 1.4e-03 * TKD - 1.48e-06 * TKD_sq) * TKD_sq / 9.0e+04;
+        phibFac  =  `MAX(phibFac, 1.0e-03);
+        tmp1     =  sqrt(phibFac);
+        tmp2     =  sqrt(tmp1);
+        INV_ni   =  1.0 / (2.5e+25 * tmp1 * tmp2);
+        phib     =  Eg + 2.0 * phit * ln(NSUBO * INV_ni);
+        Pf_p     =  Eg + 2.0 * phit * ln(NPO * INV_ni);
+        phib_ov  =  Eg + 6.0 * phit;
+
+        // surface potential at polysilicon side
+        tmp      =  sqrt(inv_phit);
+        G_p      =  gamma_p * tmp;
+        G2_p     =  G_p * G_p;
+        inv_G2_p =  1.0 / G2_p;
+        xi_p     =  1.0 + G_p * `invSqrt2;
+        inv_xi_p =  1.0 / xi_p;
+        margin_p =  1.0e-05 * xi_p;
+        xn_p     =  Pf_p * inv_phit;
+
+        // Overlap gate tunneling current
+        GOV_s       =  gamma_ov_s * tmp;
+        GOV2_s      =  GOV_s * GOV_s;
+        xi_ov_s     =  1.0 + GOV_s * `invSqrt2;
+        margin_ov_s =  1.0e-05 * xi_ov_s;
+        xg1_ov      = `X1 + GOV_s * `sqt_exp;
+
+        if (xn_p < `se)
+            delta_np =  exp(-xn_p);
+        else
+            delta_np = `ke / `P3(xn_p-`se);
+
+        // fringing capacitance
+        cfr          =  2.0 * (CFRW*w_m + CFRL*l_m);
+
+        // resistance network
+        if (SWRES) begin
+            rgsal =  rshg_t * w_m / ((3.0 + (NGCON-1.0) * 9.0) * l_m);
+            rgpv  =  rpv_t  / (w_m * l_m);
+            rend  =  rend_t / (2.0 * (w_m + DWR));
+            rsub  =  rshs_t * l_m / (12.0 * (w_m+DWR));
+            rgsal =  `CLIP_BOTH(rgsal, 1.0e-03, 1.0e+03);
+            rgpv  =  `CLIP_BOTH(rgpv,  1.0e-03, 1.0e+02);
+            rend  =  `CLIP_BOTH(rend,  1.0e-03, 1.0e+03);
+            rsub  =  `CLIP_BOTH(rsub,  1.0e-03, 1.0e+03);
+            uac_t =  `CLIP_BOTH(uac_t, 1.0e-03, 2.0e+01);
+            ggsal =  1.0 / rgsal;
+            ggpv  =  1.0 / rgpv;
+            gend  =  1.0 / rend;
+            gsub  =  1.0 / rsub;
+            gac0  =  12.0 * uac_t * w_m / l_m;
+        end else begin
+            ggsal = 0.0;
+            ggpv  = 0.0;
+            gend  = 0.0;
+            gsub  = 0.0;
+            gac0  = 0.0;
+        end
+
+        // add parasitic resistance noise
+        rgsalnoise =  nt0 * ggsal;
+        rgpvnoise  =  nt0 * ggpv;
+        rendnoise  =  nt0 * gend;
+        rsubnoise  =  nt0 * gsub;
+        if (RACNOISE == 0)
+            rac0noise  =  0.0;
+        else
+            rac0noise  =  nt0 * gac0;
+
+        // gate tunneling current instance initializations
+        Vb_ov_ig = 0;
+        Vb_ci_ig = 0;
+        if (SWIGATE) begin
+            iginv        =  IGINVLW * weff_m * leff_m  * 1.0e+12;
+            igov         =  2.0 * IGOVW * LOV * weff_m * 1.0e+12; //2 sides
+            igc_HVB      =  IGCHVLW * weff_m * leff_m  * 1.0e+12;
+            igov_HVB     =  2.0 * IGOVHVW * LOV * weff_m * 1.0e+12; //2 sides
+            tfg          =  pow(rT, STIG);
+            iginv        =  iginv * tfg;
+            igov         =  igov  * tfg;
+            igc_HVB      =  igc_HVB * tfg;
+            igov_HVB     =  igov_HVB * tfg; //2 sides
+            INV_CHIB     =  1.0 / CHIBO;
+            INV_CHIB_HVB =  1.0 / CHIBPO;
+            tempM        =  4.0 * `oneThird * sqrt(2 * `QELE * `MELE * CHIBO) / `HBAR;
+            BCH          =  tempM * TOXO;
+            BOV          =  BCH;
+            tempM        =  4.0 * `oneThird * sqrt(2 * `QELE * `MELE * CHIBPO) / `HBAR;
+            BCH_HVB      =  tempM * TOXO;
+            BOV_HVB      =  BCH_HVB;
+            if (GC3O < 0) begin
+                QCQ      =  -0.495 * GC2O / GC3O;
+            end else begin
+                QCQ      =  0.0;
+            end
+            if (GC3HVO < 0) begin
+                QCQ_HVB      =  -0.495 * GC2HVO / GC3HVO;
+            end else begin
+                QCQ_HVB      =  0.0;
+            end
+            alpha_b_s    =  0.5 * (TYPE*phib + Eg);
+            alpha_b_ov   =  0.5 * (TYPE*phib_ov + Eg);
+
+            Dch          =  GCOO * phit; // no diff. b/w Dch and Dov in mosvar
+            // no CT, interface states parameter like PSP
+            Dch_HVB      =  GCOHVO * phit;
+        end else begin
+            iginv        =  0.0;
+            igov         =  0.0;
+            igc_HVB      =  0.0;
+            igov_HVB     =  0.0;
+            Dch          =  0.0;
+            Dch_HVB      =  0.0;
+            QCQ          =  0.0;
+            QCQ_HVB      =  0.0;
+            INV_CHIB     =  0.1;
+            INV_CHIB_HVB =  0.1;
+            BCH          =  0.0;
+            BOV          =  0.0;
+            BCH_HVB      =  0.0;
+            BOV_HVB      =  0.0;
+            alpha_b_s    =  0.0;
+            alpha_b_ov   =  0.0;
+        end
+
+
+    end // initializeInstance
+
+    //
+    //  DC bias dependent quantities
+    //
+    //  Note: much of the calculation for the
+    //        charge is done here also, it is needed for
+    //        the Rac computation.
+    //
+
+    begin : evaluateStatic
+
+        nb_lim   =  1.0 + DNSUBO * `MAXA((TYPE * (V(b_ci) - VNSUBO)), 0.0, NSLPO);
+        nb_v     =  NSUBO * `MINA(nb_lim, MNSUBO, 1.0e-06);
+        norm_nsub=  nb_v / 1.0e+23;
+        phib     =  Eg + 2.0 * phit * ln(nb_v * INV_ni);
+        gamma_s  =  sqrt(2.0 * `QELE * `EPSSI * nb_v) / Cox_m;
+
+        // QM correction
+        if (QMC > 0.0) begin
+            qb0      =  sqrt(gamma_s * gamma_s * phib);
+            dphibq   =  0.75 * qq * pow(qb0, `twoThirds);
+            phib     =  phib + dphibq;
+            gamma_s  =  gamma_s * (1.0 + 2.0 * `twoThirds * dphibq / qb0);
+        end
+
+        // decrease gives funny behavior right now so not supported
+        tmp      =  sqrt(inv_phit);
+        G_s      =  gamma_s * tmp;
+        G2_s     =  G_s * G_s;
+        inv_G2_s =  1.0 / G2_s;
+        xi_s     =  1.0 + G_s * `invSqrt2;
+        inv_xi_s =  1.0 / xi_s;
+        margin_s =  1.0e-05 * xi_s;
+        xn_s     =  phib * inv_phit;
+        if (xn_s < `se)
+            delta_ns =  exp(-xn_s);
+        else
+            delta_ns = `ke / `P3(xn_s - `se);
+
+        xg1      = `X1 + G_s * `sqt_exp;
+
+        // gate tunneling current
+        xg1_ov   = `X1 + GOV_s * `sqt_exp;
+
+        //
+        //      Static silicon surface potential calculation without poly doping
+        //
+
+        Vgb1     =  TYPE * (V(b_ci) - vfb_t);
+        xg       =  Vgb1 * inv_phit;
+        `sp_s(xphi_s0,xg,xn_s,delta_ns,G_s,G2_s,inv_G2_s,xi_s,inv_xi_s,margin_s,phi0Static,phi0Static_dn1,phi0Static_dn2)
+
+        //
+        //      If needed, the static poly surface potential is calculated, and
+        //      the silicon surface potential corrected for that. Note that this
+        //      is not just for poly depletion but handles all charge conditions
+        //      in the poly (depletion, accumulation, inversion) as unlike a MOSFET
+        //      these can become important as poly and silicon doping types
+        //      can be the same or different. The poly inversion does not have
+        //      a time delay associated with it, therefore it is the low frequency
+        //      poly inversion that is modeled.
+        //
+
+        if (NPO < 1.0e+27) begin
+            xgp      = -TYPE * TYPEP * (Vgb1 - xphi_s0*phit) * inv_phit;
+            `sp_s(xphi_p0,xgp,xn_p,delta_np,G_p,G2_p,inv_G2_p,xi_p,inv_xi_p,margin_p,phip0Static,phip0Static_dn1,phip0Static_dn2)
+            phi_p0   = -TYPE * TYPEP * xphi_p0 * phit;
+            xg       =  (Vgb1 - phi_p0) / phit;
+            `sp_s(xphi_s0,xg,xn_s,delta_ns,G_s,G2_s,inv_G2_s,xi_s,inv_xi_s,margin_s,phi0Staticp,phi0Staticp_dn1,phi0Staticp_dn2)
+        end else begin
+            phi_p0   =  0.0;
+        end
+
+        // Static inversion charge calculation from ASU input on May 23
+        if ( xg <= 0) begin // accu. region
+            qis      =  0.0;
+        end else begin           // depl. + inv. regions
+            delta_1s =  0.0;
+            if (xphi_s0 < `se05) begin
+                delta_1s =  exp(xphi_s0);
+                Es       =  1.0 / delta_1s;
+                delta_1s =  delta_ns * delta_1s;
+                Ds       =  delta_ns * (1.0 / Es - xphi_s0 - 1.0);
+            end else if (xphi_s0 > (xn_s - `se05)) begin
+                delta_1s =  exp(xphi_s0 - xn_s);
+                Es       =  delta_ns / delta_1s;
+                Ds       =  delta_1s - delta_ns * (xphi_s0 + 1.0);
+            end else begin
+                delta_1s = `ke05 / `P3(xn_s - xphi_s0 - `se05);
+                Es       = `ke05 / `P3(xphi_s0 - `se05);
+                Ds       =  delta_1s - delta_ns * (xphi_s0 + 1.0);
+            end
+
+            if (xphi_s0 < 1.0e-05) begin
+                Ps       =  0.5 * xphi_s0 * xphi_s0 * (1.0 - `oneThird * xphi_s0 * (1.0 - 0.25 * xphi_s0));
+                Ds       =  `oneSixth * delta_ns * xphi_s0 * xphi_s0 * xphi_s0 * (1.0 + 1.75 * xphi_s0);
+                tmp      =  sqrt(1.0 - `oneThird * xphi_s0 * (1.0 - 0.25 * xphi_s0));
+                Sqs      =  `invSqrt2 * xphi_s0 * tmp;
+            end else begin
+                Ps       =  xphi_s0 - 1.0 + Es;
+                Sqs      =  sqrt(Ps);
+            end
+
+            xgs      =  G_s * sqrt(Ps + Ds);
+            qis      =  phit * G2_s * Ds / (xgs + G_s*Sqs);
+        end
+
+        Qi0      = -qis;
+
+        //
+        //      Time-dependent silicon surface potential calculation without poly doping
+        //
+
+        xgt      =  (Vgb1 + V(b_cn)) * inv_phit;
+        `sp_ov(xphi_s,xgt,G_s,G2_s,margin_s,xi_s,xg1,phi0,phi0_dn1)
+        phi_s    =  xphi_s * phit;
+
+        //
+        //      Time-dependent poly surface potential calculation correction
+        //
+
+        if (NPO < 1.0e+27) begin
+            xgpt     = -TYPE * TYPEP * (Vgb1 - xphi_s*phit) * inv_phit;
+            `sp_s(xphi_p,xgpt,xn_p,delta_np,G_p,G2_p,inv_G2_p,xi_p,inv_xi_p,margin_p,phip,phip_dn1,phip_dn2)
+            phi_p    = -TYPE * TYPEP * xphi_p * phit;
+            xgt      =  (Vgb1 + V(b_cn) - phi_p) / phit;
+            `sp_ov(xphi_s,xgt,G_s,G2_s,margin_s,xi_s,xg1,phi0p,phi0p_dn1)
+            phi_s    =  xphi_s * phit;
+        end else begin
+            phi_p    =  0.0;
+        end
+
+
+        // QM correction from ASU input on May 23; Revised on June 28 by ADI/Jazz/ASU.
+        delta_1s =  0.0;
+        if (xphi_s < `se05) begin
+            delta_1s =  exp(xphi_s);
+            Es       =  1.0 / delta_1s;
+        end else if (xphi_s > (xn_s - `se05)) begin
+            delta_1s =  exp(xn_s - xphi_s);
+            Es       =  delta_ns * delta_1s;
+        end else begin
+            Es       = `ke05 / `P3(xphi_s - `se05);
+        end
+
+        if (xphi_s < -margin_s) begin
+            Ps       =  Es + xphi_s - 1.0;
+            Sqs      =  -sqrt(Ps);
+        end else if (abs(xphi_s) <= margin_s) begin
+            tmp      =  1.0 - `oneThird * xphi_s * (1.0 - 0.25 * xphi_s);
+            Ps       =  0.5 * xphi_s * xphi_s * tmp;
+            Sqs      =  `invSqrt2 * xphi_s * sqrt(tmp);
+        end else begin
+            Ps       =  xphi_s - 1.0 + Es;
+            Sqs      =  sqrt(Ps);
+        end
+
+        qbs      =  phit * Sqs * G_s;
+        eps      =  1.62 * (1.0 + norm_nsub) * (1.0 + norm_nsub) * (1.0 + 0.37 * norm_tox) * (1.0 + 0.37 * norm_tox) * rTn * sqrt(rTn) * phit * phit;
+        qeff     =  `MAXA(qbs, -qbs, eps) + eta_mu * `MAXA(-V(b_cn), V(b_cn), eps);
+
+        Cox_qm   =  Cox_m;
+        if (qq > 0.0) begin
+            Cox_qm   =  Cox_m / (1.0 + qq * pow(qeff * qeff + qlim2, -1.0 * `oneSixth));
+        end
+
+        //
+        //      Accumulation resistance bias dependence
+        //
+
+        factrac  =  phit * exp(-1.0 * `MINA(xphi_s0,10.0,0.01));
+        sqrtfac  =  sqrt(factrac);
+        qac      =  gamma_s * Cox_qm * sqrtfac;
+        maxs     =  0.5 * (-Vgb1 + sqrt(Vgb1*Vgb1 + 0.04));
+        gac      =  gac0 * qac/(1.0 + UACRED*maxs);
+        if (RACNOISE == 2)
+            rac0noise  =  nt0 * gac;
+
+        //
+        //      Gate leakage current (without channel position dependence)
+        //
+        // overlap region surface potential calculations
+        vfb_ov   =  0;
+        if (TYPEP*TYPE == -1) begin
+            vfb_ov   =  TYPEP * Eg;
+        end
+        xg_ov    =  TYPE * (V(b_ov) - vfb_ov) * inv_phit;
+        if ( (SWIGATE != 0) && (igov > 0 || igov_HVB > 0)) begin
+            `sp_ov(xphi_ov_s0,xg_ov,GOV_s,GOV2_s,margin_ov_s,xi_ov_s,xg1_ov,phi0_ovStatic,phi0_ovStatic_dn1)
+            Vov      = phit * (xg_ov - xphi_ov_s0);
+        end else begin
+            Vov        =  0.0;
+            xphi_ov_s0 =  0.0;
+        end
+
+        Igc      =  0.0;
+        Igov     =  0.0;
+        if (SWIGATE) begin
+            // overlap region gate-tunneling current: static
+            if (igov > 0 || igov_HVB > 0) begin
+                Vb_ov_ig  =  TYPE * V(b_ov);
+                `igate(Igov,igov,igov_HVB,Eg,Vov,Dch,Dch_HVB,INV_CHIB,INV_CHIB_HVB,GC2O,GC3O,GC2HVO,GC3HVO,QCQ,QCQ_HVB,0,xphi_ov_s0,alpha_b_s,alpha_b_ov,inv_phit,TYPEP,TYPE,Vb_ov_ig,BOV,BOV_HVB,IG_ov)
+            end
+
+            // Gate-channel tunneling current: static
+            if (iginv > 0 || igc_HVB > 0) begin
+                Vb_ci_ig  =  TYPE * V(b_ci);
+                Vox   =  (xg - xphi_s) * phit;        // use time dependent
+                `igate(Igc,iginv,igc_HVB,Eg,Vox,Dch,Dch_HVB,INV_CHIB,INV_CHIB_HVB,GC2O,GC3O,GC2HVO,GC3HVO,QCQ,QCQ_HVB,1,xphi_s,alpha_b_s,alpha_b_ov,inv_phit,TYPEP,TYPE,Vb_ci_ig,BCH,BCH_HVB,IG_ch)
+            end
+
+        end // (SWIGATE)
+
+
+    end // evaluateStatic
+
+    //
+    //  AC bias dependent quantities
+    //
+    //  Note: as many charge calculations are done in the evaluateStatic block
+    //        only a small number appear here
+    //
+
+    begin : evaluateDynamic
+        Qg       =  (Vgb1-phi_s-phi_p) * leff_m * weff_m * Cox_qm * TYPE;
+        Qi       =  TAU * V(b_cn);
+        Qfr      =  cfr * V(b_cf);
+    end // evaluateDynamic
+
+    //
+    //  DC contributions
+    //
+
+    begin : loadStatic
+        I(b_cn)  <+  V(b_cn);
+
+        // resistances or shorts
+        if (SWRES) begin
+            I(b_rgs) <+  V(b_rgs) *  ggsal;
+            I(b_rgc) <+  V(b_rgc) *  ggpv;
+            I(b_bi)  <+  V(b_bi)  *  (gsub+gac);
+            I(b_bx)  <+  V(b_bx)  *  gend;
+        end else begin
+`ifdef __XYCE__
+            I(s_rgs) <+  V(s_rgs) / `MIN_R;
+            I(s_rgc) <+  V(s_rgc) / `MIN_R;
+            I(s_bi)  <+  V(s_bi)  / `MIN_R;
+            I(s_bx)  <+  V(s_bx)  / `MIN_R;
+`else
+            V(s_rgs) <+  0.0;
+            V(s_rgc) <+  0.0;
+            V(s_bi)  <+  0.0;
+            V(s_bx)  <+  0.0;
+`endif
+        end
+
+        // gate tunneling current
+        I(b_ci)  <+ TYPE * Igc;
+        I(b_ov)  <+ TYPE * Igov;
+//        if (abs(I(b_rgs)) > IGMAX) begin
+//            $strobe("WARNING: either extracted magnitude of gate tunneling current or resistance(s) might be unphysical since the total gate tunneling current is larger than allowed maximum IGMAX (A) = ", IGMAX);
+//        end
+
+    end // loadStatic
+
+    //
+    //  AC (charge) contributions
+    //
+
+    begin : loadDynamic
+        I(b_ci)  <+  ddt(Qg);
+        I(b_nc)  <+ -Qi0;
+        I(b_cn)  <+  ddt(Qi);
+        I(b_cf)  <+  ddt(Qfr);
+    end // loadDynamic
+
+    //
+    //  Noise contributions -- from parasitic resistance
+    //
+
+    begin : noise
+        if (SWIGATE) begin
+            I(b_ci)   <+  white_noise( 2.0 * `QELE * abs(Igc), "Igc");
+            I(b_ov)   <+  white_noise( 2.0 * `QELE * abs(Igov),"Igov");
+        end
+        if (SWRES) begin
+            I(b_rgs)  <+  white_noise( rgsalnoise, "rgsal");
+            I(b_rgc)  <+  white_noise( rgpvnoise, "rgpv");
+            I(b_bx)   <+  white_noise( rendnoise, "rend");
+            I(b_bi)   <+  white_noise( rsubnoise, "rsub");
+            I(b_bi)   <+  white_noise( rac0noise, "rac");
+        end
+    end // noise
+
+    //
+    //  Operating point information
+    //
+
+    begin : OPinfo
+        v   = V(g,b);
+//        if (abs(v) > VMAX) begin
+//            $strobe("WARNING: absolute value of voltage between nodes g and b is higher than allowed maximum VMAX (V) = ", VMAX);
+//        end
+        if (SWRES) begin
+            i   =  V(b_rgs) * ggsal;
+        end else begin
+            i   =  I(s_rgs);
+        end
+        cap =  ddx(Qg, V(gi));
+    end
+
+end // analog
+
+endmodule

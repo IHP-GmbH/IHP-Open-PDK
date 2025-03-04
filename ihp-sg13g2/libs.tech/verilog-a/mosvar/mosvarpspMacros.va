@@ -1,0 +1,314 @@
+//======================================================================================
+//======================================================================================
+// Filename: mosvarpspMacros.va
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright 2008, All Rights Reserved, Arizona State University and
+//  Freescale Semiconductor
+//
+//  (c) Copyright 2015, All Rights Reserved, Silicon Integration Initiative, Inc.
+//
+//
+//  Version: 1.3.0-beta, March 2015
+//
+//======================================================================================
+//======================================================================================
+//
+//   Software is distributed as is, completely without expressed or implied warranty or
+//  service support.  ASU, Si2, their members and employees are not liable for the
+//  condition or performance of the software.
+//
+//   ASU and Si2 own the copyright and grants users a perpetual, irrevocable, worldwide,
+//  non-exclusive, royalty-free license with respect to the software as set forth below.
+//
+//   ASU and Si2 hereby disclaims all implied warranties.
+//
+//   ASU and Si2 grant the users the right to modify, copy, and redistribute the
+//  software and documentation, both within the user's organization and externally,
+//  subject to the following restrictions:
+//
+//  1. The users agree not to charge for the code itself but may charge for additions,
+//     extensions, or support.
+//
+//  2. In any product based on the software, the users agree to acknowledge developers
+//     of the software. This acknowledgment shall appear in the product documentation.
+//
+//  3. The users agree to obey all government restrictions governing redistribution or
+//     export of the software.
+//
+//  4. The users agree to reproduce any copyright notice which appears on the software
+//     and documentation on any copy or modification of such made available to others.
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file MOSVAR1p3p0.pdf
+//
+
+//
+//  quantities and macros for MOSVAR surface potential model
+//
+
+`define X1                    1.25
+`define invSqrt2              7.0710678118654746e-01
+
+`define P3(u) (1.0 + (u) * (1.0 + 0.5 * (u) * (1.0 + (u) * `oneThird)))
+`define sqt_exp  sqrt(exp(-`X1)+`X1-1.0 )
+
+// Constants needed in safe exponential function (called "expl")
+`define se                    4.6051701859880916e+02
+`define se05                  2.3025850929940458e+02
+`define ke                    1.0e-200
+`define ke05                  1.0e-100
+`define keinv                 1.0e200
+`define ke05inv               1.0e100
+
+
+//  expl     exp() with 3rd order polynomial extrapolation
+//           for very low values (exp_low), very high
+//           values (exp_high), or both (expl), to avoid overflows
+//           and underflows and retain C-3 continuity
+`define expl(x, res) \
+    if (abs(x) < `se05) begin \
+        res       = exp(x); \
+    end else begin \
+        if ((x) < -`se05) begin \
+            res       = `ke05 / `P3(-`se05 - (x)); \
+        end else begin \
+            res       =  `ke05inv * `P3((x) - `se05); \
+        end \
+    end
+
+`define expl_low(x, res) \
+    if ((x) > -`se05) begin \
+        res =  exp(x); \
+    end else begin \
+        res = (`ke05 / `P3(-`se05 - (x))); \
+    end
+
+`define expl_high(x, res) \
+    if ((x) < `se05) begin \
+        res = exp(x); \
+    end else begin \
+        res =  `ke05inv * `P3((x) - `se05); \
+    end
+
+
+//  sigma    function used in surface potential and other calculations
+`define sigma(a,c,tau,eta,y,blockName) \
+    begin : blockName \
+        real nu, mutau; \
+        nu =  (a) + (c); \
+        mutau =  nu * nu + (0.5 * (c) * (c) - (a)) * tau; \
+        y  =  (eta) + (a) * nu * tau / (mutau + (nu * tau * tau / mutau) * (c) * ((c) * (c) * `oneThird - (a))); \
+    end
+
+// modified version of sigma, which takes 4 arguments
+`define sigma2(a,b,c,tau,eta,y,blockName) \
+    begin : blockName \
+        real nu, mutau; \
+        nu = (a) + (c); \
+        if (abs(tau) < 1e-120) begin /*sometimes tau is extremely small...*/ \
+            y     =  (eta); \
+        end else begin \
+            mutau =  (nu) * (nu) + (0.5 * (c) * (c) - (a) * (b)) * tau; \
+            y     =  (eta) + (a) * nu * tau / (mutau + (nu * tau * tau / mutau) * (c) * ((c) * (c) * `oneThird - (a) * (b))); \
+        end \
+    end
+
+
+//
+//  Macro for analytical evaluation of surface potential
+//  Macro for surface potential, returns Phi_ss/vkt
+//
+
+// xg xn delta calculated in block "evaluateStatic"
+`define sp_s(sp,xg,xn,delta,Gf,Gf2,inv_Gf2,xi,inv_xi,margin,blockName,spSigName,sp2SigName) \
+    begin: blockName \
+        real SP_xg1,  SP_S_temp, SP_S_temp1; \
+        real SP_S_yg, SP_S_ysub, SP_S_y0, SP_S_a, SP_S_b, SP_S_c; \
+        real SP_S_bx, SP_S_tau, SP_S_eta, SP_S_delta0, SP_S_delta1; \
+        real SP_S_pC, SP_S_qC, SP_S_A_fac; \
+        real SP_S_x1, SP_S_w, SP_S_xbar, SP_S_x0; \
+        if (abs(xg) <= margin) begin \
+            SP_S_temp1 =  inv_xi * inv_xi * `oneSixth * `invSqrt2; \
+            sp         =  xg * inv_xi * (1.0 + xg * (1.0 - (delta)) * Gf * SP_S_temp1); \
+        end else begin \
+            if (xg < -margin) begin \
+                SP_S_yg     = -xg; \
+                SP_S_ysub   = 1.25 * SP_S_yg * inv_xi; \
+                SP_S_eta    = 0.5 * (SP_S_ysub + 10 - sqrt((SP_S_ysub - 6.0) * (SP_S_ysub - 6.0) + 64.0)); \
+                SP_S_temp   = SP_S_yg - SP_S_eta; \
+                SP_S_a      = SP_S_temp * SP_S_temp + Gf2*(SP_S_eta + 1.0); \
+                SP_S_c      = 2.0 * SP_S_temp - Gf2; \
+                SP_S_tau    = -SP_S_eta + ln(SP_S_a * inv_Gf2); \
+                `sigma(SP_S_a, SP_S_c, SP_S_tau, SP_S_eta, SP_S_y0, spSigName) \
+                `expl_high(SP_S_y0, SP_S_delta0) \
+                SP_S_delta1 = 1.0 / SP_S_delta0; \
+                SP_S_temp   = 1.0 / (2.0 + SP_S_y0 * SP_S_y0); \
+                SP_S_temp   = SP_S_yg - SP_S_y0; \
+                SP_S_temp1  = (delta) * SP_S_delta1; \
+                SP_S_pC     = 2.0 * SP_S_temp + Gf2 * (SP_S_delta0 - 1.0 - SP_S_temp1 + delta); \
+                SP_S_qC     = SP_S_temp * SP_S_temp - Gf2 * (SP_S_delta0 - SP_S_y0 - 1.0 + SP_S_temp1 + (delta) * (SP_S_y0 - 1.0)); \
+                SP_S_temp   = 2.0 - Gf2*(SP_S_delta0 + SP_S_temp1); \
+                SP_S_temp   = SP_S_pC * SP_S_pC - 2.0 * SP_S_qC * SP_S_temp; \
+                sp          = -SP_S_y0 - 2.0 * SP_S_qC / (SP_S_pC + sqrt(SP_S_temp)); \
+            end else begin \
+                SP_xg1    = 1.0 / (`X1 + Gf * 7.324648775608221e-001); \
+                SP_S_A_fac= (xi * `X1 * SP_xg1 - 1.0) * SP_xg1; \
+                SP_S_xbar = xg * inv_xi * (1.0 + SP_S_A_fac * xg); \
+                `expl_low(-SP_S_xbar, SP_S_temp) \
+                SP_S_w    = 1.0 - SP_S_temp; \
+                SP_S_x1   = xg + Gf2 * 0.5 - Gf * sqrt(xg + Gf2 * 0.25 - SP_S_w); \
+                SP_S_bx   = (xn) + 3.0; \
+                SP_S_eta  = `MINA(SP_S_x1, SP_S_bx, 5.0) - 0.5 * (SP_S_bx - sqrt(SP_S_bx * SP_S_bx + 5.0)); \
+                SP_S_temp = xg - SP_S_eta; \
+                SP_S_temp1= exp(-SP_S_eta); \
+                SP_S_a    = max(1.0e-40, SP_S_temp * SP_S_temp - Gf2 * (SP_S_temp1 + SP_S_eta - 1.0 - (delta) * (SP_S_eta + 1.0))); \
+                SP_S_b    = 1.0 - 0.5 * Gf2 * SP_S_temp1; \
+                SP_S_c    = 2.0 * SP_S_temp + Gf2 * (1.0 - SP_S_temp1 - delta); \
+                SP_S_tau  = (xn) - SP_S_eta + ln(SP_S_a / Gf2); \
+                `sigma2(SP_S_a, SP_S_b, SP_S_c, SP_S_tau, SP_S_eta, SP_S_x0, sp2SigName) \
+                if (SP_S_x0 < `se05) begin \
+                    SP_S_delta0 = exp(SP_S_x0); \
+                    SP_S_delta1 = 1.0 / SP_S_delta0; \
+                    SP_S_delta0 = (delta) * SP_S_delta0; \
+                end else begin \
+                    if (SP_S_x0 > (xn) - `se05) begin \
+                        SP_S_delta0 = exp(SP_S_x0 - (xn)); \
+                        SP_S_delta1 = (delta) / SP_S_delta0; \
+                    end else begin \
+                        SP_S_delta0 = `ke05 / `P3((xn) - SP_S_x0 - `se05); \
+                        SP_S_delta1 = `ke05 / `P3(SP_S_x0 - `se05); \
+                    end \
+                end \
+                SP_S_temp   = 1.0 / (2.0 + SP_S_x0 * SP_S_x0); \
+                SP_S_temp   = xg - SP_S_x0; \
+                SP_S_pC     = 2.0 * SP_S_temp + Gf2 * (1.0 - SP_S_delta1 + SP_S_delta0 - delta); \
+                SP_S_qC     = SP_S_temp * SP_S_temp - Gf2 * (SP_S_delta1 + SP_S_x0 - 1.0 + SP_S_delta0 - (delta) * (SP_S_x0 + 1.0)); \
+                SP_S_temp   = 2.0 - Gf2 * (SP_S_delta1 + SP_S_delta0); \
+                SP_S_temp   = SP_S_pC * SP_S_pC - 2.0 * SP_S_qC * SP_S_temp; \
+                sp          = SP_S_x0 + 2.0 * SP_S_qC / (SP_S_pC + sqrt(SP_S_temp)); \
+            end \
+        end \
+    end
+
+
+//
+//  Macro for surface potential in the overlap region
+//  No inversion charge present, used for time-dependent surface potential solve
+//
+
+`define sp_ov(sp,xg,G,G2,margin,a_factor,xg1,blockName,ovSigName) \
+    begin : blockName \
+        real SPOV_yg,   SPOV_z,    SPOV_eta, SPOV_a,  SPOV_c,  SPOV_tau; \
+        real SPOV_y0,   SPOV_D0,   SPOV_xi,  SPOV_p,  SPOV_q,  SPOV_temp; \
+        real SPOV_Afac, SPOV_xbar, SPOV_w,   SPOV_x0, SPOV_u; \
+        if (abs(xg)<=margin) begin \
+            sp        =  (xg/a_factor); \
+        end else if (xg>margin) begin \
+            SPOV_Afac =  (a_factor*`X1/xg1-1.0)/xg1; \
+            SPOV_xbar =  (xg/a_factor)*(1.0+SPOV_Afac*xg); \
+            if (SPOV_xbar<`se) begin \
+                SPOV_temp =  exp(-SPOV_xbar); \
+            end else begin \
+                SPOV_temp = `ke/`P3(SPOV_xbar-`se); \
+            end \
+            SPOV_w    =  1.0-SPOV_temp; \
+            SPOV_x0   =  xg+0.5*G2-G*sqrt(xg+0.25*G2-SPOV_w); \
+            if (SPOV_x0<`se) begin \
+                SPOV_D0   =  exp(-SPOV_x0); \
+            end else begin \
+                SPOV_D0   = `ke/`P3(SPOV_x0-`se); \
+            end \
+            SPOV_xi   =  1.0-0.5*G2*SPOV_D0; \
+            SPOV_p    =  2.0*(xg-SPOV_x0)+G2*(1.0-SPOV_D0); \
+            SPOV_q    =  (xg-SPOV_x0)*(xg-SPOV_x0)-G2*(SPOV_x0-1.0+SPOV_D0); \
+            SPOV_temp =  SPOV_p*SPOV_p-4.0*SPOV_xi*SPOV_q; \
+            SPOV_u    =  2.0*SPOV_q/(SPOV_p+sqrt(SPOV_temp)); \
+            sp        =  SPOV_x0+SPOV_u; \
+        end else begin \
+            SPOV_yg   = -xg; \
+            SPOV_z    =  1.25*SPOV_yg/a_factor; \
+            SPOV_eta  =  0.5*(SPOV_z+10.0-sqrt((SPOV_z-6.0)*(SPOV_z-6.0)+64.0)); \
+            SPOV_a    =  (SPOV_yg-SPOV_eta)*(SPOV_yg-SPOV_eta)+G2*(SPOV_eta+1.0); \
+            SPOV_c    =  2.0*(SPOV_yg-SPOV_eta)-G2; \
+            SPOV_tau  =  ln(SPOV_a/G2)-SPOV_eta; \
+            `sigma(SPOV_a,SPOV_c,SPOV_tau,SPOV_eta,SPOV_y0,ovSigName) \
+            `expl(SPOV_y0, SPOV_D0) \
+            SPOV_xi   =  1.0-0.5*G2*SPOV_D0; \
+            SPOV_p    =  2.0*(SPOV_yg-SPOV_y0)+G2*(SPOV_D0-1.0); \
+            SPOV_q    =  (SPOV_yg-SPOV_y0)*(SPOV_yg-SPOV_y0)+G2*(SPOV_y0+1.0-SPOV_D0); \
+            SPOV_temp =  SPOV_p*SPOV_p-4.0*SPOV_xi*SPOV_q; \
+            SPOV_w    =  2.0*SPOV_q/(SPOV_p+sqrt(SPOV_temp)); \
+            sp        = -(SPOV_y0+SPOV_w); \
+        end \
+    end
+
+
+//
+//  Macro for gate current
+//  gate-tunneling current: static
+//
+
+`define igate(Igout,igin,igin_HVB,Eg,Vov,Dch,Dch_HVB,INV_CHIB,INV_CHIB_HVB,GC2O,GC3O,GC2HVO,GC3HVO,gcQ,gcQ_HVB,ig_type,xphi_s,alpha_b_s,alpha_b_ov,inv_phit,TYPEP,TYPE,Vb_ig,BOV,BOV_HVB,blockName) \
+    begin : blockName \
+        real IG_arg2mina, IG_arg2maxa, IG_psi_t, IG_zg, IG_arg1, IG_arg2, IG_lnDgate, IG_TP, IG_tmp, IG_lnDsi; \
+        Igout        =  0; \
+        if (TYPEP == 1 && igin_HVB > 0.0) begin \
+            IG_arg2maxa  =  TYPE*Vov + Dch_HVB; \
+            IG_psi_t     = `MAXA(0.0, IG_arg2maxa, 0.01); \
+            IG_zg        =  sqrt(Vov * Vov + 1.0e-6) * INV_CHIB_HVB; \
+            if (GC3HVO < 0) begin \
+                IG_zg    = `MINA(IG_zg, gcQ_HVB, 1.0e-6); \
+            end \
+            if (ig_type == 0) begin \
+                IG_arg1      =  -(TYPE*xphi_s + (Eg - alpha_b_ov + IG_psi_t) * inv_phit); \
+            end else begin \
+                IG_arg1      =  -(TYPE*xphi_s + (Eg - alpha_b_s + IG_psi_t) * inv_phit); \
+            end \
+            if (IG_arg1 < `se05) \
+                IG_lnDsi     = ln(1.0 + exp(IG_arg1)); \
+            else \
+                IG_lnDsi     = IG_arg1; \
+            IG_arg2  = IG_arg1 + TYPE*Vb_ig * inv_phit; \
+            if (IG_arg2 < `se05) \
+                IG_lnDgate   = ln(1.0 + exp(IG_arg2)); \
+            else \
+                IG_lnDgate   = IG_arg2; \
+            IG_tmp       =  BOV_HVB * (-1.5 + IG_zg * (GC2HVO + GC3HVO * IG_zg)); \
+            if (IG_tmp > 0) begin \
+                IG_TP    = `P3(IG_tmp); \
+            end else begin \
+                `expl_low(IG_tmp, IG_TP) \
+            end \
+            Igout        =  igin_HVB * IG_TP * TYPE * (IG_lnDgate - IG_lnDsi); \
+        end \
+        if (igin > 0.0) begin \
+            IG_arg2mina  =  TYPE*Vov + Dch; \
+            IG_psi_t     = `MINA(0.0, IG_arg2mina, 0.01); \
+            IG_zg        =  sqrt(Vov * Vov + 1.0e-6) * INV_CHIB; \
+            if (GC3O < 0) begin \
+                IG_zg    = `MINA(IG_zg, gcQ, 1.0e-6); \
+            end \
+            if (ig_type == 0) begin \
+                IG_arg1      =  (TYPE*xphi_s + (IG_psi_t - alpha_b_ov) * inv_phit); \
+            end else begin \
+                IG_arg1      =  (TYPE*xphi_s + (IG_psi_t - alpha_b_s) * inv_phit); \
+            end \
+            if (IG_arg1 < `se05) \
+                IG_lnDsi     = ln(1.0 + exp(IG_arg1)); \
+            else \
+                IG_lnDsi     = IG_arg1; \
+            IG_arg2  = IG_arg1 -TYPE*Vb_ig * inv_phit; \
+            if (IG_arg2 < `se05) \
+                IG_lnDgate   = ln(1.0 + exp(IG_arg2)); \
+            else \
+                IG_lnDgate   = IG_arg2; \
+            IG_tmp   = BOV * (-1.5 + IG_zg * (GC2O + GC3O * IG_zg)); \
+            `expl(IG_tmp, IG_TP) \
+            Igout    = Igout + igin * IG_TP * TYPE * (IG_lnDsi - IG_lnDgate); \
+        end \
+    end
+
