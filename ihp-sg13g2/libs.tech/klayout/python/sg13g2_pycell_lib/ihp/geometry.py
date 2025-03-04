@@ -434,7 +434,7 @@ def dbCreatePin(self, name, shape):
 #***********************************************************************************************************************
 # MkPin
 #***********************************************************************************************************************
-def MkPin(self, termName, termIndex, bBox, layerId, label=False, labelHight = -1):
+def MkPin(self, termName, termIndex, bBox, layerId, label=False, labelHeight = -1):
     if type(layerId) == str :
         layerId = Layer(layerId, 'pin')
 
@@ -442,15 +442,15 @@ def MkPin(self, termName, termIndex, bBox, layerId, label=False, labelHight = -1
 
     self.addPin(termName, termName, bBox, layerId)
 
-    pcInst = dbCreateRect(self, layerId, bBox) # 17.6.11 GG
+    pcInst = dbCreateRect(self, layerId, bBox)
 
     # pin label
     if label and termName :
-        if labelHight == -1 :
+        if labelHeight == -1 :
             pcLabelHeight = 0.5*min(bBox.getWidth(), abs(bBox.getHeight()))
         else :
-            pcLabelHeight = labelHight
-        dbCreateLabel(self, layerId, bBox.getCenter(), termName, 'centerCenter', 'R0', Font.EURO_STYLE, pcLabelHeight)
+            pcLabelHeight = labelHeight
+        dbCreateLabel(self, Layer('TEXT', 'drawing'), bBox.getCenter(), termName, 'centerCenter', 'R0', Font.EURO_STYLE, pcLabelHeight)
 
 #***********************************************************************************************************************
 # dbCreateVia

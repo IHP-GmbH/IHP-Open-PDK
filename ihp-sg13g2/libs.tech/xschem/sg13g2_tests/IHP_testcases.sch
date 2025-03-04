@@ -1,4 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
+v {xschem version=3.4.6 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,6 @@ C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2023 IHP PDK Author
 C {devices/launcher.sym} 90 -780 0 0 {name=h1
 descr="IHP-Open-PDK"
 url="https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main"}
-C {sg13g2_tests/dc_lv_nmos.sym} 180 -630 0 0 {name=x5}
 C {sg13g2_tests/dc_hv_nmos.sym} 180 -600 0 0 {name=x6}
 C {sg13g2_tests/dc_lv_pmos.sym} 180 -570 0 0 {name=x7}
 C {sg13g2_tests/dc_hv_pmos.sym} 180 -540 0 0 {name=x8}
@@ -65,3 +64,7 @@ C {sg13g2_tests/tran_logic_not.sym} 520 -590 0 0 {name=x27}
 C {sg13g2_tests/dc_logic_not.sym} 180 -190 0 0 {name=x28}
 C {sg13g2_tests/tran_logic_nand.sym} 520 -550 0 0 {name=x29}
 C {sg13g2_tests/dc_pnpMPA.sym} 180 -230 0 0 {name=x30}
+C {sg13g2_tests/dc_lv_nmos.sym} 180 -630 0 0 {name=x5}
+C {sg13g2_tests/tran_bondpad.sym} 520 -510 0 0 {name=x31}
+C {sg13g2_tests/dc_esd_diodes.sym} 180 -150 0 0 {name=x31}
+C {sg13g2_tests/dc_esd_nmos_cl.sym} 180 -110 0 0 {name=x32}
