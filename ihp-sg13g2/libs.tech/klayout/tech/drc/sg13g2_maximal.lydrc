@@ -131,6 +131,11 @@ if defined? $sanityRules
 else
     $sanityRules = true
 end
+if defined? $latchUpRules
+    $latchUpRules = $latchUpRules.to_s.downcase == "true"
+else
+    $latchUpRules = false
+end
 
 class AbuttingEdges &lt; RBA::EdgePairToEdgeOperator
     def initialize
@@ -3054,37 +3059,41 @@ end.().output("MIM.g", "Max. MIM area per MIM device (µm²) = 5625.00")
 -&gt; do
     MIM.ext_not(temp_layer_1)
 end.().output("MIM.h", "TopVia1 must be over MIM")
--&gt; (;x) do
-    x = all_ntie.ext_enlarge_inside(NWell, 20.0.um, 0.1.um)
-    PAct_NWell.ext_not(x).ext_outside(devExclud)
-end.().output("LU.a", "Max. space from any portion of P+Activ inside NWell to an nSD-NWell tie = 20.00")
--&gt; (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
-    sizedA = Abut_NWell_Tie_Cont.ext_enlarge_inside(Act_connect.ext_interacting(Gate), 6.0.um, 0.21.um).ext_interacting(Cont_not_outside_NAct, inverted: true)
-    drcErrA = Abut_NWell_Tie.ext_not(sizedA)
-    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
-    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
-    drcErrA_Poly.ext_interacting(Cont_not_outside_NAct, inverted: true)
-end.().output("LU.c", "Max. extension of an abutted NWell tie beyond Cont = 6.00")
--&gt; (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
-    sizedA = Abut_PWell_Tie_Cont.ext_enlarge_inside(Act_connect, 6.0.um, 0.21.um).ext_interacting(Cont_not_outside_PAct, inverted: true)
-    drcErrA = Abut_PWell_Tie.ext_not(sizedA)
-    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
-    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
-    drcErrA_Poly.ext_interacting(Cont_not_outside_PAct, inverted: true)
-end.().output("LU.c1", "Max. extension of an abutted substrate tie beyond Cont = 6.00")
--&gt; (;sizedA, tmp, drcErrA, drcErrA_Edge) do
-    sizedA = size_Cont.dup
-    tmp = NAct_NWell.ext_outside(scr1).ext_interacting(Activ.ext_interacting(GatPoly), inverted: true)
-    drcErrA = tmp.ext_not(sizedA)
-    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
-    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
-end.().output("LU.d", "Max. extension of NWell tie Activ tie beyond Cont = 6.00")
--&gt; (;sizedA, drcErrA, drcErrA_Edge) do
-    sizedA = Cont.ext_enlarge_inside(Act_connect, 6.0.um, 0.21.um)
-    drcErrA = PWell_Tie_wo_varicap_abut.ext_not(sizedA).ext_not(GatPoly)
-    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
-    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
-end.().output("LU.d1", "Max. extension of an substrate tie Activ beyond Cont = 6.00")
+
+if $latchUpRules
+	-&gt; (;x) do
+	    x = all_ntie.ext_enlarge_inside(NWell, 20.0.um, 0.1.um)
+	    PAct_NWell.ext_not(x).ext_outside(devExclud)
+	end.().output("LU.a", "Max. space from any portion of P+Activ inside NWell to an nSD-NWell tie = 20.00")
+	-&gt; (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
+	    sizedA = Abut_NWell_Tie_Cont.ext_enlarge_inside(Act_connect.ext_interacting(Gate), 6.0.um, 0.21.um).ext_interacting(Cont_not_outside_NAct, inverted: true)
+	    drcErrA = Abut_NWell_Tie.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	    drcErrA_Poly.ext_interacting(Cont_not_outside_NAct, inverted: true)
+	end.().output("LU.c", "Max. extension of an abutted NWell tie beyond Cont = 6.00")
+	-&gt; (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
+	    sizedA = Abut_PWell_Tie_Cont.ext_enlarge_inside(Act_connect, 6.0.um, 0.21.um).ext_interacting(Cont_not_outside_PAct, inverted: true)
+	    drcErrA = Abut_PWell_Tie.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	    drcErrA_Poly.ext_interacting(Cont_not_outside_PAct, inverted: true)
+	end.().output("LU.c1", "Max. extension of an abutted substrate tie beyond Cont = 6.00")
+	-&gt; (;sizedA, tmp, drcErrA, drcErrA_Edge) do
+	    sizedA = size_Cont.dup
+	    tmp = NAct_NWell.ext_outside(scr1).ext_interacting(Activ.ext_interacting(GatPoly), inverted: true)
+	    drcErrA = tmp.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	end.().output("LU.d", "Max. extension of NWell tie Activ tie beyond Cont = 6.00")
+	-&gt; (;sizedA, drcErrA, drcErrA_Edge) do
+	    sizedA = Cont.ext_enlarge_inside(Act_connect, 6.0.um, 0.21.um)
+	    drcErrA = PWell_Tie_wo_varicap_abut.ext_not(sizedA).ext_not(GatPoly)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	end.().output("LU.d1", "Max. extension of an substrate tie Activ beyond Cont = 6.00")
+end
+
 -&gt; do
     Metal1_slit_not_pad.ext_width(2.8.um)
 end.().output("Slt.a.M1", "Min. Metal1:slit width = 2.80")
