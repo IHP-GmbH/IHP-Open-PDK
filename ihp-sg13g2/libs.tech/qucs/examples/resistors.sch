@@ -35,14 +35,14 @@
   <GND * 1 1040 920 0 0 0 0>
   <Idc I1 1 790 890 18 -26 0 1 "1 mA" 1>
   <Idc I2 1 1040 890 18 -26 0 1 "1 mA" 1>
-  <Lib rsil2 1 250 880 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
-  <Lib rppd1 1 420 740 25 -1 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
-  <Lib rhigh1 1 610 740 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
-  <Lib rppd2 1 420 880 25 -1 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
-  <Lib rhigh2 1 610 880 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
-  <Lib rsil1 1 250 740 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
-  <Lib rsil4 1 1120 870 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "0.5u" 1 "2u" 1 "1" 1>
-  <Lib rsil3 1 890 870 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "0.5" 1 "2u" 1 "1" 1>
+  <Lib rsil2 1 250 880 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
+  <Lib rppd1 1 420 740 25 -1 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
+  <Lib rhigh1 1 610 740 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
+  <Lib rppd2 1 420 880 25 -1 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rppd" 0 "10u" 1 "25u" 1 "1" 1>
+  <Lib rhigh2 1 610 880 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "10u" 1 "30u" 1 "1" 1>
+  <Lib rsil1 1 250 740 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "10u" 1 "40u" 1 "1" 1>
+  <Lib rsil4 1 1120 870 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "0.5u" 1 "2u" 1 "1" 1>
+  <Lib rsil3 1 890 870 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rsil" 0 "0.5" 1 "2u" 1 "1" 1>
 </Components>
 <Wires>
   <110 830 110 950 "" 0 0 0 "">

@@ -22,11 +22,11 @@
   <Vac V1 1 70 570 18 -26 0 1 "1 V" 1 "1 kHz" 0 "0" 0 "0" 0 "0" 0 "0" 0>
   <GND * 1 70 650 0 0 0 0>
   <GND * 1 360 930 0 0 0 0>
-  <Lib cap_cmim1 1 360 610 30 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_cmim" 0 "70u" 1 "70u" 1>
-  <Lib rhigh3 1 250 500 -16 -113 0 1 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "1.0u" 1 "1" 1>
-  <Lib rhigh4 1 250 780 -16 -113 0 1 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "1.0u" 1 "1" 1>
+  <Lib cap_cmim1 1 360 610 30 -26 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_cmim" 0 "70u" 1 "70u" 1>
+  <Lib rhigh3 1 250 500 -16 -113 0 1 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "1.0u" 1 "1" 1>
+  <Lib rhigh4 1 250 780 -16 -113 0 1 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "rhigh" 0 "1.0u" 1 "1.0u" 1 "1" 1>
   <GND * 1 280 930 0 0 0 0>
-  <Lib cap_rfcmim1 1 360 870 30 -26 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_rfcmim" 0 "70u" 1 "70u" 1>
+  <Lib cap_rfcmim1 1 360 870 30 -26 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "cap_rfcmim" 0 "70u" 1 "70u" 1>
 </Components>
 <Wires>
   <70 600 70 650 "" 0 0 0 "">

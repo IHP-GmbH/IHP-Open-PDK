@@ -24,8 +24,8 @@
   <GND * 1 470 840 0 0 0 0>
   <IProbe Pr2 1 470 640 -37 -26 0 3>
   <SpiceLib SpiceLib1 1 100 80 -13 18 0 0 "cornerMOSlv.lib" 1 "mos_tt" 1>
-  <Lib nmoscl_1 1 270 760 16 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_2" 0 "1" 1>
-  <Lib nmoscl_2 1 470 750 16 -20 0 3 "/home/herman/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_4" 0 "1" 1>
+  <Lib nmoscl_1 1 270 760 16 -20 0 3 "$HOME/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_2" 0 "1" 1>
+  <Lib nmoscl_2 1 470 750 16 -20 0 3 "$HOME/.qucs/user_lib/IHP_PDK_nonlinear_components" 0 "nmoscl_4" 0 "1" 1>
 </Components>
 <Wires>
   <270 590 270 610 "" 0 0 0 "">
