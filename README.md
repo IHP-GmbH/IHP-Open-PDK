@@ -1,6 +1,13 @@
 # IHP Open Source PDK
 130nm BiCMOS Open Source PDK, dedicated for Analog/Digital, Mixed Signal and RF Design
 
+## Acknowledgment
+Special thanks to the following publicly funded German projects for their financial support, which has contributed to this work:  
+IHP Open130-G2 (16ME0852) https://www.elektronikforschung.de/projekte/ihp-open130-g2  
+FMD-QNC (16ME0831) https://www.elektronikforschung.de/projekte/fmd-qnc  
+![image](https://github.com/user-attachments/assets/2ffcc0ba-ef9b-4b2a-9738-b1dc077d0207)
+
+---
 IHP Open Source PDK project goal is to provide a fully open source Process
 Design Kit and related data, which can be used to create manufacturable
 designs at IHP’s facility.
@@ -115,7 +122,7 @@ The IHP Open Source PDK is released under the [Apache 2.0 license](LICENSE).
 
 The copyright details are:
     
-    Copyright 2024 IHP PDK Authors
+    Copyright 2025 IHP PDK Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

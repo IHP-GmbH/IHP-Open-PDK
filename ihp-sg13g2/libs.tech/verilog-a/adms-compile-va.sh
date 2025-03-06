@@ -5,7 +5,7 @@
 # License: New BSD
 
 
-DIRECTORY="../plugins"
+DIRECTORY="../xyce/plugins"
 
 if [ ! -d "$DIRECTORY" ]; then
   # Directory does not exist, so create it
@@ -13,7 +13,13 @@ if [ ! -d "$DIRECTORY" ]; then
 fi
 
 cd ./psp103/
-buildxyceplugin psp103.va ../../plugins
+buildxyceplugin psp103.va ../../xyce/plugins
+rm *.la *.log
+rm -rfd .libs/
+cd ..
+
+cd ./r3_cmc/
+buildxyceplugin r3_cmc.va ../../xyce/plugins
 rm *.la *.log
 rm -rfd .libs/
 cd ..

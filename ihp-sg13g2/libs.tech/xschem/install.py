@@ -42,7 +42,7 @@ def is_program_installed(program_name):
 def info():
     msg = """
     This script:
-    - compiles and places PSP103 model in ../ngspice/openvaf/ location. 
+    - compiles and places Verilog-A models in ../ngspice/osdi location. 
     - creates a symlink to the ../ngspice/.spiceinit file in your $HOME directory
     Please make sure that you have set up the PDK_ROOT env variable export PDK_ROOT=your_location/IHP-Open-PDK 
     """
@@ -56,21 +56,26 @@ if __name__ == "__main__":
     if not pdk_root:
         print("setup PDK_ROOT environmental variable to IHP-Open-PDK location")
     else:
-        source_directory=pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
+        source_directory=pdk_root + "/ihp-sg13g2/libs.tech/verilog-a"
 
     username = os.environ.get("USER")
-    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/openvaf"
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/osdi"
     
     # Check if the source directory exists
     if not os.path.exists(source_directory):
         print(f"Source directory '{source_directory}' does not exist.")
     
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
     
     program_name = "openvaf"
     if is_program_installed(program_name):
         command = "openvaf psp103_nqs.va --output " + destination_directory + "/psp103_nqs.osdi"    
         print(f"{program_name} is installed and about to run the command '{command}' in a location: {source_directory} ")	
-        exec_app_in_directory(command, source_directory)
+        exec_app_in_directory(command, source_directory + "/psp103")
+        command = "openvaf r3_cmc.va --output " + destination_directory + "/r3_cmc.osdi"    
+        print(f"{program_name} is installed and about to run the command '{command}' in a location: {source_directory} ")	
+        exec_app_in_directory(command, source_directory + "/r3_cmc")
     else:
         print(f"{program_name} is not installed.")
     	

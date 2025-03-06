@@ -91,7 +91,7 @@ set_sim_defaults
 # Change the Xyce command. In the spice category there are currently
 # 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
 # you can get the number by querying $sim(spice,n)
-set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
+set sim(spice,3,cmd) \{Xyce \\"$N\\"\}
 
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3

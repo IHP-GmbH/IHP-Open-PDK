@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -7,14 +6,14 @@ S {}
 E {}
 B 2 150 -510 950 -110 {flags=graph
 y1=-1.1e-05
-y2=-0
+y2=-2.9e-09
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=-2
-x2=0
+x1=-2.0308261
+x2=-0.030826141
 divx=5
 subdivx=1
 
@@ -24,7 +23,9 @@ unitx=1
 logx=0
 logy=0
 color=4
-node=i(vd)}
+node=i(vd)
+sim_type=dc
+autoload=1}
 N -110 70 -110 90 {
 lab=GND}
 N -110 -0 -110 10 {
@@ -52,12 +53,16 @@ format="tcleval( @value )"
 value="
 .lib cornerMOShv.lib mos_tt
 "}
-C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
+C {devices/code_shown.sym} 290 -20 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .param temp=27
+.options savecurrents
+.include dc_hv_pmos.save
 .control
 save all
 op 
+write dc_hv_pmos.raw
+set appendwrite
 print I(Vd)
 dc Vds 0 -2 -0.01 Vgs -0.45 -1.1 -0.05
 write dc_hv_pmos.raw
@@ -70,10 +75,6 @@ C {devices/vsource.sym} 150 0 0 0 {name=Vds value=-1.5}
 C {devices/gnd.sym} 150 90 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 70 90 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} -230 -150 0 0 {name=h5
-descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/dc_hv_pmos.raw dc"
-}
 C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 2 1 {name=M1
 l=0.45u
 w=1.0u
@@ -83,3 +84,12 @@ model=sg13_hv_pmos
 spiceprefix=X
 }
 C {devices/ammeter.sym} 80 -110 1 0 {name=Vd}
+C {devices/launcher.sym} 550 -90 0 0 {name=h1
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/dc_hv_pmos.raw dc"
+}
+C {devices/launcher.sym} 550 -60 0 0 {name=h2
+descr="OP annotate" 
+tclcommand="xschem annotate_op"
+}
+C {sg13g2_pr/annotate_fet_params.sym} 30 -250 0 0 {name=annot1 ref=M1}

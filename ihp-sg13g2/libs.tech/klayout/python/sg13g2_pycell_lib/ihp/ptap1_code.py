@@ -79,7 +79,8 @@ class ptap1(DloGen):
         #* Layer Definitions
         #*
         #*************************************************************************
-        metall_layer = Layer('Metal1')
+        metal1_layer = Layer('Metal1')
+        metal1_layer_pin = Layer('Metal1','pin')
         ndiff_layer = Layer('Activ')
         pdiff_layer = Layer('Activ')
         pdiffx_layer = Layer('pSD')
@@ -129,15 +130,16 @@ class ptap1(DloGen):
         bBox = DrawContArray(self, cont_layer, Box(0, 0, w, l), cont_size, cont_dist, cont_diff_over)
         
         # change bBox to size of Metal1 drawing
-        bBox = ResizeBBox(bBox, cont_metal_over)
-        dbCreateRect(self, metall_layer, Box(bBox.left, bBox.bottom-cont_metal_endcap, bBox.right, bBox.top+cont_metal_endcap)) # draw min. rec. size
+        ResizeBBox(bBox, cont_metal_over)
+        dbCreateRect(self, metal1_layer,     Box(bBox.left, bBox.bottom - cont_metal_endcap, bBox.right, bBox.top + cont_metal_endcap)) 
+        dbCreateRect(self, metal1_layer_pin, Box(bBox.left, bBox.bottom, bBox.right, bBox.top)) 
         
         # create Pin
-        MkPin(self, 'TIE', 1, Box(bBox.left, bBox.bottom, bBox.right, bBox.top), metall_layer)
+        MkPin(self, 'TIE', 1, bBox, metal1_layer)
         
         dbCreateRect(self, pdiff_layer, Box(0, 0, w, l))
         dbCreateRect(self, pdiffx_layer, Box(-pdiffx_over, -pdiffx_over, w+pdiffx_over, l+pdiffx_over))
 
         MkPin(self, 'SUB', 2, Box(0, 0, w, l), Layer('Substrate', 'drawing'))
-        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)
-        dbCreateLabel(self, Layer('Substrate', 'drawing'), Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.25)    
+        dbCreateLabel(self, textlayer, Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)
+        dbCreateLabel(self, Layer('Substrate', 'drawing'), Point(w/2, 0.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.15)    
