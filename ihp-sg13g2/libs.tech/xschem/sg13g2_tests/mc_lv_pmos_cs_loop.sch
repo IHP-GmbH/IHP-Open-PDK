@@ -72,7 +72,7 @@ C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Autho
 C {devices/isource.sym} 480 -150 2 0 {name=I0 value=10u}
 C {devices/gnd.sym} 480 -200 2 0 {name=l2 lab=GND}
 C {devices/lab_pin.sym} 380 -100 0 0 {name=p1 sig_type=std_logic lab=Vgs}
-C {sg13g2_pr/sg13_lv_pmos.sym} 460 -50 0 0 {name=M1
+C {sg13g2_pr/sg13_lv_pmos.sym} 460 -50 2 1 {name=M1
 l=0.45u
 w=1.0u
 ng=1

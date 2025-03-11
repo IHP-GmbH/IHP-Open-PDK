@@ -75,6 +75,14 @@ C {devices/vsource.sym} 150 0 0 0 {name=Vds value=-1.5}
 C {devices/gnd.sym} 150 90 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 70 90 0 0 {name=l4 lab=GND}
 C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
+C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 2 1 {name=M1
+l=0.45u
+w=1.0u
+ng=1
+m=1
+model=sg13_hv_pmos
+spiceprefix=X
+}
 C {devices/ammeter.sym} 80 -110 1 0 {name=Vd}
 C {devices/launcher.sym} 550 -90 0 0 {name=h1
 descr="load waves Ctrl + left click" 
@@ -85,11 +93,3 @@ descr="OP annotate"
 tclcommand="xschem annotate_op"
 }
 C {sg13g2_pr/annotate_fet_params.sym} 30 -250 0 0 {name=annot1 ref=M1}
-C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 0 0 {name=M1
-l=0.45u
-w=1.0u
-ng=1
-m=1
-model=sg13_hv_pmos
-spiceprefix=X
-}

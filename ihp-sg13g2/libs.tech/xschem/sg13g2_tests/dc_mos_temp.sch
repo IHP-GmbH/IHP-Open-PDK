@@ -5,8 +5,8 @@ V {}
 S {}
 E {}
 B 2 150 -520 950 -120 {flags=graph
-y1=-2e-05
-y2=9.5e-05
+y1=-1.6e-05
+y2=8.4e-05
 ypos1=0
 ypos2=2
 
@@ -170,19 +170,19 @@ m=1
 model=sg13_hv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_lv_pmos.sym} 640 110 0 0 {name=M3
-l=0.45u
-w=1.0u
-ng=1
-m=1
-model=sg13_lv_pmos
-spiceprefix=X
-}
-C {sg13g2_pr/sg13_hv_pmos.sym} 850 110 0 0 {name=M4
+C {sg13g2_pr/sg13_hv_pmos.sym} 850 110 2 1 {name=M3
 l=0.45u
 w=1.0u
 ng=1
 m=1
 model=sg13_hv_pmos
+spiceprefix=X
+}
+C {sg13g2_pr/sg13_lv_pmos.sym} 640 110 2 1 {name=M4
+l=0.45u
+w=1.0u
+ng=1
+m=1
+model=sg13_lv_pmos
 spiceprefix=X
 }
