@@ -24,6 +24,12 @@ rm *.la *.log
 rm -rfd .libs/
 cd ..
 
+cd ./mosvar/
+buildxyceplugin mosvar.va ../../xyce/plugins
+rm *.la *.log
+rm -rfd .libs/
+cd ..
+
 echo Compilation finished! \
 Plugins can be found in $PDK_ROOT/$PDK/libs.tech/xyce/plugins
 

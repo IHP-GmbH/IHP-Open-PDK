@@ -76,6 +76,9 @@ if __name__ == "__main__":
         command = "openvaf r3_cmc.va --output " + destination_directory + "/r3_cmc.osdi"    
         print(f"{program_name} is installed and about to run the command '{command}' in a location: {source_directory} ")	
         exec_app_in_directory(command, source_directory + "/r3_cmc")
+        command = "openvaf mosvar.va --output " + destination_directory + "/mosvar.osdi"    
+        print(f"{program_name} is installed and about to run the command '{command}' in a location: {source_directory} ")	
+        exec_app_in_directory(command, source_directory + "/mosvar")
     else:
         print(f"{program_name} is not installed.")
     	

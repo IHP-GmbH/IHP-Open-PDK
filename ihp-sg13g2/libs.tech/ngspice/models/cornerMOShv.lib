@@ -2,9 +2,9 @@
 *                                                                             *
 * Library:      SG13G2_dev                                                    *
 * Technologies: SG13G2                                                        *
-* Component:    Spectre model file for Spectre 18                             *
+* Component:    Spice model file                                              *
 *                                                                             *
-* Simulator:    Spectre 20.1                                                  *
+* Simulator:    NGSPICE                                                       *
 * Model:        PSP 103.6                                                     *
 * Revision:     210511                                                        *
 *                                                                             *
@@ -112,10 +112,13 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0000
   .param sg13g2_hv_pmos_cjorgat= 1.0000
 
-  .param sg13g2_hv_svaricap_lap   = 0.8
-  .param sg13g2_hv_svaricap_toxo  = 1
+  .param sg13g2_hv_svaricap_vfbo = 1.0
+  .param sg13g2_hv_svaricap_toxo = 1.0
+  .param sg13g2_hv_svaricap_dlq  = 1.0
+  .param sg13g2_hv_svaricap_dwq  = 1.0
 
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_tt
 
 * Typical with statistical
@@ -159,11 +162,14 @@
   .param sg13g2_hv_pmos_cjorsti_norm= 1.0000
   .param sg13g2_hv_pmos_cjorgat_norm= 1.0000
 
-  .param sg13g2_hv_svaricap_lap   = 0.8
-  .param sg13g2_hv_svaricap_toxo  = 1
+  .param sg13g2_hv_svaricap_vfbo_norm  = 1.0
+  .param sg13g2_hv_svaricap_toxo_norm  = 1.0
+  .param sg13g2_hv_svaricap_dlq_norm  = 1.0
+  .param sg13g2_hv_svaricap_dwq_norm  = 1.0
 
   .include sg13g2_moshv_stat.lib
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_tt_stat
 
 * Typical with local statistical modeling
@@ -207,11 +213,14 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0000
   .param sg13g2_hv_pmos_cjorgat= 1.0000
 
-  .param sg13g2_hv_svaricap_lap   = 0.8
-  .param sg13g2_hv_svaricap_toxo  = 1
+  .param sg13g2_hv_svaricap_vfbo  = 1.0
+  .param sg13g2_hv_svaricap_toxo  = 1.0
+  .param sg13g2_hv_svaricap_dlq  = 1.0
+  .param sg13g2_hv_svaricap_dwq  = 1.0
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
 .ENDL mos_tt_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv SS MODEL ****************
@@ -256,10 +265,13 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0800
   .param sg13g2_hv_pmos_cjorgat= 1.0800
 
-  .param sg13g2_hv_svaricap_lap   = 0.6
+  .param sg13g2_hv_svaricap_vfbo  = 0.8
   .param sg13g2_hv_svaricap_toxo  = 1.04
+  .param sg13g2_hv_svaricap_dlq  = 1.05
+  .param sg13g2_hv_svaricap_dwq  = 1.05
 
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ss
 
 * Slow n, Slow p with statistical
@@ -303,11 +315,14 @@
   .param sg13g2_hv_pmos_cjorsti_norm= 1.0800
   .param sg13g2_hv_pmos_cjorgat_norm= 1.0800
 
-  .param sg13g2_hv_svaricap_lap   = 0.6
-  .param sg13g2_hv_svaricap_toxo  = 1.04
+  .param sg13g2_hv_svaricap_vfbo_norm  = 0.8
+  .param sg13g2_hv_svaricap_toxo_norm  = 1.04
+  .param sg13g2_hv_svaricap_dlq_norm  = 1.1
+  .param sg13g2_hv_svaricap_dwq_norm  = 1.1
 
   .include sg13g2_moshv_stat.lib
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ss_stat
 
 .LIB mos_ss_mismatch
@@ -350,11 +365,14 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0800
   .param sg13g2_hv_pmos_cjorgat= 1.0800
 
-  .param sg13g2_hv_svaricap_lap   = 0.6
+  .param sg13g2_hv_svaricap_vfbo  = 0.8
   .param sg13g2_hv_svaricap_toxo  = 1.04
+  .param sg13g2_hv_svaricap_dlq  = 1.1
+  .param sg13g2_hv_svaricap_dwq  = 1.1
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
 .ENDL mos_ss_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv FF MODEL ****************
@@ -399,10 +417,13 @@
   .param sg13g2_hv_pmos_cjorsti= 0.9200
   .param sg13g2_hv_pmos_cjorgat= 0.9200
 
-  .param sg13g2_hv_svaricap_lap   = 1
+  .param sg13g2_hv_svaricap_vfbo  = 1.2
   .param sg13g2_hv_svaricap_toxo  = 0.96
+  .param sg13g2_hv_svaricap_dlq  = 0.90
+  .param sg13g2_hv_svaricap_dwq  = 0.90
 
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ff
 
 * Fast n, Fast p with statistical
@@ -446,11 +467,14 @@
   .param sg13g2_hv_pmos_cjorsti_norm= 0.9200
   .param sg13g2_hv_pmos_cjorgat_norm= 0.9200
 
-  .param sg13g2_hv_svaricap_lap   = 1
-  .param sg13g2_hv_svaricap_toxo  = 0.96
+  .param sg13g2_hv_svaricap_vfbo_norm = 1.2
+  .param sg13g2_hv_svaricap_toxo_norm = 0.96
+  .param sg13g2_hv_svaricap_dlq_norm  = 0.90
+  .param sg13g2_hv_svaricap_dwq_norm  = 0.90
 
   .include sg13g2_moshv_stat.lib
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ff_stat
 
 .LIB mos_ff_mismatch
@@ -493,11 +517,14 @@
   .param sg13g2_hv_pmos_cjorsti= 0.9200
   .param sg13g2_hv_pmos_cjorgat= 0.9200
 
-  .param sg13g2_hv_svaricap_lap   = 1
+  .param sg13g2_hv_svaricap_vfbo  = 1.2
   .param sg13g2_hv_svaricap_toxo  = 0.96
+  .param sg13g2_hv_svaricap_dlq  = 0.90
+  .param sg13g2_hv_svaricap_dwq  = 0.90
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
 .ENDL mos_ff_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv SF MODEL ****************
@@ -542,10 +569,13 @@
   .param sg13g2_hv_pmos_cjorsti= 0.9600
   .param sg13g2_hv_pmos_cjorgat= 0.9600
 
-  .param sg13g2_hv_svaricap_lap   = 0.9
-  .param sg13g2_hv_svaricap_toxo  = 0.98
+  .param sg13g2_hv_svaricap_vfbo  = 0.8
+  .param sg13g2_hv_svaricap_toxo  = 1.02
+  .param sg13g2_hv_svaricap_dlq  = 1.1
+  .param sg13g2_hv_svaricap_dwq  = 1.1
 
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_sf
 
 * Slow n, Fast p with statistical
@@ -589,11 +619,14 @@
   .param sg13g2_hv_pmos_cjorsti_norm= 0.9600
   .param sg13g2_hv_pmos_cjorgat_norm= 0.9600
 
-  .param sg13g2_hv_svaricap_lap   = 0.9
-  .param sg13g2_hv_svaricap_toxo  = 0.98
+  .param sg13g2_hv_svaricap_vfbo_norm = 0.8
+  .param sg13g2_hv_svaricap_toxo_norm = 1.02
+  .param sg13g2_hv_svaricap_dlq_norm  = 1.1
+  .param sg13g2_hv_svaricap_dwq_norm  = 1.1
 
   .include sg13g2_moshv_stat.lib
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_sf_stat
 
 .LIB mos_sf_mismatch
@@ -636,11 +669,14 @@
   .param sg13g2_hv_pmos_cjorsti= 0.9600
   .param sg13g2_hv_pmos_cjorgat= 0.9600
 
-  .param sg13g2_hv_svaricap_lap   = 0.9
-  .param sg13g2_hv_svaricap_toxo  = 0.98
+  .param sg13g2_hv_svaricap_vfbo  = 0.8
+  .param sg13g2_hv_svaricap_toxo  = 1.02
+  .param sg13g2_hv_svaricap_dlq  = 1.1
+  .param sg13g2_hv_svaricap_dwq  = 1.1
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
 .ENDL mos_sf_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv FS MODEL ****************
@@ -685,10 +721,13 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0400
   .param sg13g2_hv_pmos_cjorgat= 1.0400
 
-  .param sg13g2_hv_svaricap_lap   = 0.7
-  .param sg13g2_hv_svaricap_toxo  = 1.02
+  .param sg13g2_hv_svaricap_vfbo  = 1.2
+  .param sg13g2_hv_svaricap_toxo  = 0.98
+  .param sg13g2_hv_svaricap_dlq  = 0.90
+  .param sg13g2_hv_svaricap_dwq  = 0.90
 
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_fs
 
 * Fast n, Slow p with statistical
@@ -732,11 +771,14 @@
   .param sg13g2_hv_pmos_cjorsti_norm= 1.0400
   .param sg13g2_hv_pmos_cjorgat_norm= 1.0400
 
-  .param sg13g2_hv_svaricap_lap   = 0.7
-  .param sg13g2_hv_svaricap_toxo  = 1.02
+  .param sg13g2_hv_svaricap_vfbo_norm = 1.2
+  .param sg13g2_hv_svaricap_toxo_norm = 0.98
+  .param sg13g2_hv_svaricap_dlq_norm  = 0.90
+  .param sg13g2_hv_svaricap_dwq_norm  = 0.90
 
   .include sg13g2_moshv_stat.lib
   .include sg13g2_moshv_mod.lib
+  .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_fs_stat
 
 .LIB mos_fs_mismatch
@@ -779,9 +821,12 @@
   .param sg13g2_hv_pmos_cjorsti= 1.0400
   .param sg13g2_hv_pmos_cjorgat= 1.0400
 
-  .param sg13g2_hv_svaricap_lap   = 0.7
-  .param sg13g2_hv_svaricap_toxo  = 1.02
+  .param sg13g2_hv_svaricap_vfbo  = 1.2
+  .param sg13g2_hv_svaricap_toxo  = 0.98
+  .param sg13g2_hv_svaricap_dlq  = 0.90
+  .param sg13g2_hv_svaricap_dwq  = 0.90
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
 .ENDL mos_fs_mismatch
