@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -134,26 +133,10 @@ C {devices/launcher.sym} -210 -250 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
-C {sg13g2_pr/sg13_lv_nmos.sym} -40 50 2 1 {name=M1
-l=1.0u
-w=2.0u
-ng=1
-m=1
-model=sg13_lv_nmos
-spiceprefix=X
-}
 C {devices/lab_pin.sym} -130 50 0 0 {name=p2 sig_type=std_logic lab=Vgs1}
 C {devices/gnd.sym} 240 140 0 0 {name=l6 lab=GND}
 C {devices/gnd.sym} 290 140 0 0 {name=l7 lab=GND}
 C {devices/lab_pin.sym} 130 50 0 0 {name=p5 sig_type=std_logic lab=Vgs2}
-C {sg13g2_pr/sg13_hv_nmos.sym} 220 50 2 1 {name=M2
-l=1.0u
-w=2.0u
-ng=1
-m=1
-model=sg13_hv_nmos
-spiceprefix=X
-}
 C {devices/gnd.sym} 640 140 0 0 {name=l8 lab=GND}
 C {devices/gnd.sym} 690 140 0 0 {name=l9 lab=GND}
 C {devices/lab_pin.sym} 530 50 0 0 {name=p7 sig_type=std_logic lab=Vgs3}
@@ -185,3 +168,19 @@ C {devices/isource.sym} 870 -60 2 0 {name=I3 value=10u}
 C {devices/gnd.sym} 640 -110 2 0 {name=l12 lab=GND}
 C {devices/gnd.sym} 870 -110 2 0 {name=l13 lab=GND}
 C {devices/gnd.sym} 30 140 0 0 {name=l14 lab=GND}
+C {sg13g2_pr/sg13_hv_nmos.sym} 220 50 0 0 {name=M1
+l=0.45u
+w=1.0u
+ng=1
+m=1
+model=sg13_hv_nmos
+spiceprefix=X
+}
+C {sg13g2_pr/sg13_lv_nmos.sym} -40 50 0 0 {name=M2
+l=0.45u
+w=1.0u
+ng=1
+m=1
+model=sg13_lv_nmos
+spiceprefix=X
+}

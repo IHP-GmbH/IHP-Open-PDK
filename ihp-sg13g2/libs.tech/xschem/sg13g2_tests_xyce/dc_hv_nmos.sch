@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -58,7 +57,7 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/dc_hv_nmos.raw dc"
 }
 C {devices/ammeter.sym} 80 -70 1 0 {name=Vd}
-C {sg13g2_pr/sg13_hv_nmos.sym} 0 0 2 1 {name=M1
+C {sg13g2_pr/sg13_hv_nmos.sym} 0 0 0 0 {name=M1
 l=0.45u
 w=1.0u
 ng=1

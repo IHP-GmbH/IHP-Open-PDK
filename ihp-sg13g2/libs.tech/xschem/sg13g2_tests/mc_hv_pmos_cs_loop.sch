@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -74,8 +73,8 @@ C {devices/isource.sym} 480 -150 2 0 {name=I0 value=10u}
 C {devices/gnd.sym} 480 -200 2 0 {name=l2 lab=GND}
 C {devices/lab_pin.sym} 380 -100 0 0 {name=p1 sig_type=std_logic lab=Vgs}
 C {sg13g2_pr/sg13_hv_pmos.sym} 460 -50 2 1 {name=M1
-l=1.0u
-w=2.0u
+l=0.45u
+w=1.0u
 ng=1
 m=1
 model=sg13_hv_pmos

@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -136,7 +135,7 @@ dc Vds 0 1.2 0.01 Vgs 0.0 0.8 0.05
 write dc_lv_nmos.raw
 .endc
 "}
-C {sg13g2_pr/sg13_lv_nmos.sym} -190 10 2 1 {name=M2
+C {sg13g2_pr/sg13_lv_nmos.sym} -190 10 0 0 {name=M2
 l=0.13u
 w=1.0u
 ng=1
