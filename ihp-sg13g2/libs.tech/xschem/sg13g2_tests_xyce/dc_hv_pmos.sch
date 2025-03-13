@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -59,7 +58,7 @@ C {devices/launcher.sym} -20 -170 0 0 {name=h5
 descr="load waves" 
 tclcommand="xschem raw_read $netlist_dir/dc_hv_pmos.raw dc"
 }
-C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 2 1 {name=M1
+C {sg13g2_pr/sg13_hv_pmos.sym} 0 0 0 0 {name=M1
 l=0.45u
 w=1.0u
 ng=1

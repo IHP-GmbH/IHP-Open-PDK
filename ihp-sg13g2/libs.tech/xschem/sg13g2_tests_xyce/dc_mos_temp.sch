@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -113,7 +112,7 @@ C {devices/launcher.sym} -170 -320 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/mos_temp.raw dc"
 }
-C {sg13g2_pr/sg13_lv_nmos.sym} -40 110 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_nmos.sym} -40 110 0 0 {name=M1
 l=0.35u
 w=1.0u
 ng=1
@@ -131,7 +130,7 @@ C {devices/gnd.sym} 240 200 0 0 {name=l7 lab=GND}
 C {devices/lab_pin.sym} 80 110 0 0 {name=p5 sig_type=std_logic lab=Vgs}
 C {devices/ammeter.sym} 190 30 0 0 {name=Vm2}
 C {devices/lab_pin.sym} 190 -20 2 0 {name=p6 sig_type=std_logic lab=Vds}
-C {sg13g2_pr/sg13_hv_nmos.sym} 170 110 2 1 {name=M2
+C {sg13g2_pr/sg13_hv_nmos.sym} 170 110 0 0 {name=M2
 l=0.35u
 w=1.0u
 ng=1
@@ -149,7 +148,7 @@ C {devices/gnd.sym} 920 200 0 0 {name=l11 lab=GND}
 C {devices/lab_pin.sym} 760 110 0 0 {name=p9 sig_type=std_logic lab=Vgsp}
 C {devices/ammeter.sym} 870 30 0 0 {name=Vm4}
 C {devices/lab_pin.sym} 870 -20 2 0 {name=p10 sig_type=std_logic lab=Vdsp}
-C {sg13g2_pr/sg13_lv_pmos.sym} 640 110 2 1 {name=M3
+C {sg13g2_pr/sg13_lv_pmos.sym} 640 110 0 0 {name=M3
 l=0.35u
 w=1.0u
 ng=1
@@ -157,7 +156,7 @@ m=1
 model=sg13_lv_pmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_hv_pmos.sym} 850 110 2 1 {name=M4
+C {sg13g2_pr/sg13_hv_pmos.sym} 850 110 0 0 {name=M4
 l=0.35u
 w=1.0u
 ng=1

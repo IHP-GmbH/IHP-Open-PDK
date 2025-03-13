@@ -75,18 +75,18 @@ descr="load waves Ctrl + left click"
 tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
 }
 C {devices/ammeter.sym} 440 -340 1 0 {name=Vd}
-C {sg13g2_pr/sg13_lv_nmos.sym} 360 -250 2 1 {name=M1
-l=0.13u
-w=1.0u
-ng=1
-m=1
-model=sg13_lv_nmos
-spiceprefix=X
-}
 C {sg13g2_pr/annotate_fet_params.sym} 260 -380 0 0 {name=annot1 ref=M1}
 C {lab_pin.sym} 250 -250 0 0 {name=p1 sig_type=std_logic lab=G}
 C {lab_pin.sym} 510 -340 0 1 {name=p2 sig_type=std_logic lab=D}
 C {devices/launcher.sym} 710 -300 0 0 {name=h1
 descr="OP annotate" 
 tclcommand="xschem annotate_op"
+}
+C {sg13g2_pr/sg13_lv_nmos.sym} 360 -250 0 0 {name=M1
+l=0.45u
+w=1.0u
+ng=1
+m=1
+model=sg13_lv_nmos
+spiceprefix=X
 }
