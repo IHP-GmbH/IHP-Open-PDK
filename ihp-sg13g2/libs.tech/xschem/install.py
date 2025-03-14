@@ -42,7 +42,7 @@ def is_program_installed(program_name):
 def info():
     msg = """
     This script:
-    - compiles and places Verilog-A models in ../verilog-a location. 
+    - compiles and places Verilog-A models in ../ngspice/osdi location. 
     - creates a symlink to the ../ngspice/.spiceinit file in your $HOME directory
     Please make sure that you have set up the PDK_ROOT env variable export PDK_ROOT=your_location/IHP-Open-PDK 
     """
@@ -59,12 +59,14 @@ if __name__ == "__main__":
         source_directory=pdk_root + "/ihp-sg13g2/libs.tech/verilog-a"
 
     username = os.environ.get("USER")
-    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a"
+    destination_directory = pdk_root + "/ihp-sg13g2/libs.tech/ngspice/osdi"
     
     # Check if the source directory exists
     if not os.path.exists(source_directory):
         print(f"Source directory '{source_directory}' does not exist.")
     
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
     
     program_name = "openvaf"
     if is_program_installed(program_name):

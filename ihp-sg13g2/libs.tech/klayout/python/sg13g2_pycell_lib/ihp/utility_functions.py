@@ -656,3 +656,29 @@ def pylist(*args) :
         mlist.append(key)
 
     return mlist
+    
+#***********************************************************************************************************************
+# get_git_commit_version
+#***********************************************************************************************************************
+import subprocess
+import os
+
+def get_git_commit_version():
+    try:
+        # Find the absolute path of the script
+        script_path = os.path.abspath(__file__)
+        script_dir = os.path.dirname(script_path)
+
+        # Navigate up to find the .git directory
+        repo_dir = subprocess.check_output(
+            ['git', '-C', script_dir, 'rev-parse', '--show-toplevel']
+        ).decode().strip()
+
+        # Get commit hash from the found repository
+        commit_hash = subprocess.check_output(
+            ['git', '-C', repo_dir, 'rev-parse', 'HEAD']
+        ).decode().strip()
+
+        return commit_hash
+    except subprocess.CalledProcessError:
+        return "Unknown (Not a Git repo or Git not installed)"

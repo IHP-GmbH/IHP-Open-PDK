@@ -33,7 +33,7 @@ append XSCHEM_LIBRARY_PATH :${XSCHEM_SHAREDIR}/xschem_library
 #### include skywater libraries. Here i use [pwd]. This works if i start xschem from here.
 append XSCHEM_LIBRARY_PATH :[file dirname [info script]]
 #### add ~/.xschem/xschem_library (USER_CONF_DIR is normally ~/.xschem)
-append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library 
+append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library
 
 ###########################################################################
 #### SET CUSTOM COLORS FOR XSCHEM LIBRARIES MATCHING CERTAIN PATTERNS
@@ -50,7 +50,7 @@ set dircolor(devices$) red
 ###########################################################################
 #### DIRECTORY WHERE SIMULATIONS, NETLIST AND SIMULATOR OUTPUTS ARE PLACED
 ###########################################################################
-#### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations) 
+#### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations)
 set netlist_dir $env(PWD)/simulations
 #### if this is set to '1' netlists and simulations will go into a simulation/ folder
 #### inside the directory containing the top level schematic. Default: not set (0)
@@ -77,13 +77,13 @@ set netlist_dir $env(PWD)/simulations
 # set nolist_libs {}
 
 ###########################################################################
-#### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS 
-#### IN SPICE NETLISTS (EXAMPLE: DATA[7] --> DATA<7>) 
+#### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS
+#### IN SPICE NETLISTS (EXAMPLE: DATA[7] --> DATA<7>)
 ###########################################################################
 #### default: empty (use xschem default, [ ])
 # set bus_replacement_char {<>}
 #### for XSPICE: replace square brackets as the are used for XSPICE vector nodes.
-# set bus_replacement_char {__} 
+# set bus_replacement_char {__}
 
 ###########################################################################
 #### SOME DEFAULT BEHAVIOR
@@ -135,12 +135,12 @@ set zoom_full_center 1
 # set connect_by_kissing 1
 
 #### if set to 1 automatically join/trim wires while editing
-#### this may slow down on rally big designs. Can be disabled via menu 
+#### this may slow down on rally big designs. Can be disabled via menu
 #### default: 0
 set autotrim_wires 1
 
 #### set widget scaling (mainly for font display), this is useful on 4K displays
-#### default: unset (tk uses its default) > 1.0 ==> bigger 
+#### default: unset (tk uses its default) > 1.0 ==> bigger
 # set tk_scaling 1.7
 
 #### use the tclreadline package if available , Default: 1 (enabled).
@@ -179,7 +179,7 @@ set autotrim_wires 1
 ###########################################################################
 #### EXPORT FORMAT TRANSLATORS, PNG AND PDF
 ###########################################################################
-#### command to translate xpm to png; (assumes command takes source 
+#### command to translate xpm to png; (assumes command takes source
 #### and dest file as arguments, example: gm convert plot.xpm plot.png)
 #### default: {gm convert}
 #### Windows ghostscript uses gswin64c
@@ -197,7 +197,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### UNDO: SAVE ON DISK OR KEEP IN MEMORY
 ###########################################################################
-#### Alloved: 'disk'or 'memory'. 
+#### Alloved: 'disk'or 'memory'.
 #### Saving undo on disk is safer but slower on extremely big schematics.
 #### In most cases you won't notice any delay. Undo on disk allows previous
 #### state recovery in case of crashes. In-memory undo is extremely fast
@@ -238,7 +238,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 #### Scale all fonts by this number
 # set cairo_font_scale 1.0
 
-#### default for following two is 0.85 (xscale) and 0.88 (yscale) to 
+#### default for following two is 0.85 (xscale) and 0.88 (yscale) to
 #### match cairo font spacing
 # set nocairo_font_xscale 1.0
 #### set nocairo_font_yscale 1.0
@@ -272,7 +272,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### default for linux: xterm
 # set terminal {xterm -geometry 100x35 -fn 9x15 -bg black -fg white -cr white -ms white }
-#### lxterminal is not OK since it will not inherit env vars: 
+#### lxterminal is not OK since it will not inherit env vars:
 #### In order to reduce memory usage and increase the performance, all instances
 #### of the lxterminal are sharing a single process. LXTerminal is part of LXDE
 
@@ -297,7 +297,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### ALWAYS SHOW ERC INFO WINDOW AFTER NETLIST
 ###########################################################################
-#### default: 0 
+#### default: 0
 # set show_infowindow_after_netlist 0
 
 ###########################################################################
@@ -345,7 +345,7 @@ set toolbar_visible 1
 ###########################################################################
 #### TABBED WINDOWS
 ###########################################################################
-# default: not enabled. Interface can be changed runtime if only one window 
+# default: not enabled. Interface can be changed runtime if only one window
 # or tab is open.
 set tabbed_interface 1
 
@@ -373,7 +373,7 @@ set tabbed_interface 1
 #### SHOW HIDDEN TEXTS
 ###########################################################################
 ## This option shows text objects even if they have attribute 'hide=true' set
-## default: 0 (not set) 
+## default: 0 (not set)
 # set show_hidden_texts 1
 
 ###########################################################################
@@ -395,7 +395,7 @@ if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
   }
   set PDK_ROOT $env(PDK_ROOT)
 } else {
-  ## not existing or empty. 
+  ## not existing or empty.
   puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find an open_pdks install"
   if {[file isdir /usr/share/pdk]} {set PDK_ROOT /usr/share/pdk
   } elseif {[file isdir /usr/local/share/pdk]} {set PDK_ROOT /usr/local/share/pdk
@@ -441,10 +441,10 @@ proc fet_drc {instance symbol model w l ng } {
   regsub {u$} $l {} l
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
   if { [string is double $w] && [string is double $l] && [string is integer $ng]} {
-    
-  # calculate finger width 
+
+  # calculate finger width
     set w [expr { double($w) / double($ng)}]
-    
+
     switch -regexp $model {
       {sg13_lv_nmos$} {
         if { $w < 0.13 } {
@@ -469,25 +469,25 @@ proc fet_drc {instance symbol model w l ng } {
         }
       }
       {sg13_hv_nmos$} {
-        if { $w < 0.45 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min w/ng > 0.45u" \n
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min w/ng > 0.3u" \n
         }
         if { $w > 10.0 } {
           append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
         }
-        if { $l < 0.13 } {
-         append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
+        if { $l < 0.45 } {
+         append res "${instance} ($model): length is too small, l = $l, min. l > 0.45u" \n
         }
       }
       {sg13_hv_pmos$} {
-        if { $w < 0.4 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.4u" \n
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.3u" \n
         }
         if { $w > 10.0 } {
           append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
         }
-        if { $l < 0.13 } {
-          append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
+        if { $l < 0.4 } {
+          append res "${instance} ($model): length is too small, l = $l, min. l > 0.4u" \n
         }
       }
     } ;# switch
@@ -499,7 +499,7 @@ proc res_drc {instance symbol model w l } {
   set res {}
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
   if { [string is double $w] && [string is double $l] } {
-    
+
     if { $w < 0.5e-6 } {
       append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
     }
@@ -513,18 +513,18 @@ proc res_drc {instance symbol model w l } {
 # IHP SG13G2 MiM capacitor dimension checks
 proc mim_drc {instance symbol model w l } {
   set res {}
-  
+
   if { [string is double $w] && [string is double $l] } {
     set area [expr { double($w) * double($l) * 1.0e+12}]
- 
+
     if { $w < 1.14e-6 } {
       append res "${instance} ($model): MiM capacitor width is too small, w = $w, min. w > 1.14 um" \n
     }
-    
+
     if { $area < 1.3 } {
        append res "${instance} ($model): MiM capacitor area is too small, area = $area, min. area > 1.3 um2" \n
     }
-    
+
     if { $area > 5625.0 } {
        append res "${instance} ($model): MiM capacitor area is too big, area = $area, max. area < 5625.0 um2" \n
     }
@@ -536,8 +536,8 @@ proc hbt_drc {instance symbol model Nx El } {
   set res {}
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
   if { [string is integer $Nx] || [string is double $El]} {
-    
-    
+
+
     switch -regexp $model {
       {npn13G2$} {
         if { $Nx < 1 } {
@@ -575,7 +575,7 @@ proc hbt_drc {instance symbol model Nx El } {
           append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
         }
       }
-      
+
       {npn13G2_5t$} {
         if { $Nx < 1 } {
           append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
@@ -623,7 +623,7 @@ proc diode_drc {instance symbol model w l } {
   regsub {u$} $l {} l
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
   if { [string is double $w] && [string is double $l]} {
-    
+
     switch -regexp $model {
       {dantenna} {
         if { $w < 0.78 } {
@@ -645,3 +645,183 @@ proc diode_drc {instance symbol model w l } {
   }
   return $res
 }
+
+
+##################### save and display MOSFET parameters #####################
+
+# writes the .save instructions for given FET instance
+proc write_save_lines {type model schpath spiceprefix instname} {
+  global sch_expand
+  if {[regexp {[pn]mos} $type]} {
+    set m n$model
+    set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
+
+    append sch_expand(savelist) ".save $devpath\[gm\]\n"
+    append sch_expand(savelist) ".save $devpath\[gds\]\n"
+    append sch_expand(savelist) ".save $devpath\[vth\]\n"
+    append sch_expand(savelist) ".save $devpath\[vdss\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgg\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgsol\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgdol\]\n"
+  }
+}
+
+############ sch_expand
+# This proc traverses the hierarchy and prints all instances in design.
+proc sch_expand {{only_subckts 1} {all_hierarchy 1} {pattern {.*}}} {
+  global sch_expand keep_symbols
+  set sch_expand(savelist) {}
+  set sch_expand(only_subckts) $only_subckts
+  set sch_expand(all_hierarchy) $all_hierarchy
+  set sch_expand(startpath) [string length [xschem get sch_path]]
+  set save_keep $keep_symbols
+  set keep_symbols 1
+  xschem unselect_all
+  xschem set no_draw 1 ;# disable screen update
+  xschem set no_undo 1 ;# disable undo
+
+  hier_sch_expand 0 $only_subckts $all_hierarchy $pattern
+
+  xschem set no_draw 0
+  xschem set no_undo 0
+  set keep_symbols $save_keep
+  return {}
+}
+
+# recursive procedure used by sch_expand
+proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}}} {
+  global nolist_libs sch_expand
+
+  set schpath [string range [xschem get sch_path] $sch_expand(startpath) end]
+  set instances  [xschem get instances]
+  for {set i 0} { $i < $instances} { incr i} {
+    set instname [xschem getprop instance $i name]
+    # puts "hier_sch_expand: instname=$instname schpath=$schpath"
+    set symbol [xschem getprop instance $i cell::name]
+    set spiceprefix [xschem getprop instance $i spiceprefix]
+    set model [xschem translate $instname @model]
+    set abs_symbol [abs_sym_path $symbol]
+    set type [xschem getprop symbol $symbol type]
+
+    if {$only_subckts && ($type ne {subcircuit})} { continue }
+    set skip 0
+    foreach j $nolist_libs {
+      if {[regexp $j $abs_symbol]} {
+        set skip 1
+        break
+      }
+    }
+    if {$skip} { continue }
+    if {$type ne {subcircuit} && ![regexp $pattern $type]} {
+      continue
+    }
+
+    write_save_lines $type $model $schpath $spiceprefix $instname
+
+    if {$type eq {subcircuit} && $all_hierarchy} {
+      xschem select instance $i fast nodraw
+      # puts "descend: [xschem translate $i @name]"
+      set descended [xschem descend 1 6]
+      if {$descended} {
+        incr level
+        set dp [hier_sch_expand $level $only_subckts 1 $pattern]
+        xschem go_back 1
+        incr level -1
+      }
+    }
+  }
+  return 1
+}
+############ /sch_expand
+
+# generate the .save lines to save all mos parameters
+proc save_fet_params {} {
+  global sch_expand
+  sch_expand 0 1 {[pn]mos}
+  return "* Place this .save file with a .include line in your testbench\n\n$sch_expand(savelist)"
+}
+
+# displays mos parameters simulation data , used in symbol sky130_fd_pr/annotate_fet_params.sym
+proc display_fet_params {instname} {
+  set txt {}
+  set schpath [xschem get sim_sch_path]
+  set symbol [xschem getprop instance $instname cell::name]
+  set spiceprefix [xschem getprop instance $instname spiceprefix]
+  set model [xschem translate $instname @model]
+  set type [xschem getprop symbol $symbol type]
+
+  if {[regexp {[pn]mos} $type]} {
+    set m n$model
+    set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
+
+    append txt "gm    = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
+    append txt "gds   = [to_eng [xschem raw value $devpath\[gds\] -1]]\n"
+    append txt "vth   = [to_eng [xschem raw value v($devpath\[vth\]) -1]]\n"
+    append txt "vdss  = [to_eng [xschem raw value v($devpath\[vdss\]) -1]]\n"
+    append txt "cgg   = [to_eng [xschem raw value $devpath\[cgg\] -1]]\n"
+    append txt "cgdol = [to_eng [xschem raw value $devpath\[cgdol\] -1]]\n"
+    append txt "cgsol = [to_eng [xschem raw value $devpath\[cgsol\] -1]]\n"
+    set pi 3.141592654
+    set gm [xschem raw value $devpath\[gm\] -1]
+    set cgg [xschem raw value $devpath\[cgg\] -1]
+    set cgdol [xschem raw value $devpath\[cgdol\] -1]
+    set cgsol [xschem raw value $devpath\[cgsol\] -1]
+    if {[catch { expr $gm / 2 / $pi / ($cgg + $cgdol + $cgsol)} ft]} {
+      set ft {}
+    }
+    append txt "ft    = [to_eng ${ft}]\n"
+  }
+  return $txt
+}
+
+
+# these commands are executed when xschem has completed initialization.
+# add a SKY130 menu entry
+proc menupdk {} {
+  global has_x netlist_dir
+  if { [info exists has_x] } {
+    set topwin [xschem get top_path]
+
+    # insert before the 'Netlist' menu
+    $topwin.menubar insert Netlist cascade -label IHP -menu $topwin.menubar.ihp
+    menu $topwin.menubar.ihp -tearoff 0
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Create FET .save file} -command {
+      write_data [save_fet_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+      textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+    }
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add models symbol} -command {
+      xschem place_symbol devices/code_shown.sym {
+name=TT_MODELS
+only_toplevel=true
+value="
+** IHP models
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
+"
+spice_ignore=false
+      }
+    }
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add FET param annotator} -command {
+      proc get_sel_inst_name {} {
+        set selset [lindex [xschem selected_set] 0]
+        if {$selset ne {}} {
+          set name [xschem getprop instance $selset name]
+          xschem place_symbol sg13g2_pr/annotate_fet_params.sym "name=annot1 ref=$name"
+        } else {
+          xschem place_symbol sg13g2_pr/annotate_fet_params.sym
+        }
+      }
+      get_sel_inst_name
+    }
+  }
+}
+
+# execute menupdk when xschem initialization is completed
+append postinit_commands "menupdk\n"
+
+##################### /save and display MOSFET parameters #####################

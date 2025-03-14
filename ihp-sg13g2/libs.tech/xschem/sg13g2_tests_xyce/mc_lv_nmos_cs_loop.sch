@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -31,7 +30,7 @@ C {devices/title.sym} -130 260 0 0 {name=l5 author="Copyright 2023 IHP PDK Autho
 C {devices/isource.sym} 1050 -220 0 0 {name=I0 value=10u}
 C {devices/gnd.sym} 1050 -270 2 0 {name=l2 lab=GND}
 C {devices/lab_pin.sym} 950 -170 0 0 {name=p1 sig_type=std_logic lab=Vgs}
-C {sg13g2_pr/sg13_lv_nmos.sym} 1030 -120 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_nmos.sym} 1030 -120 0 0 {name=M1
 l=1.0u
 w=2.0u
 ng=1
