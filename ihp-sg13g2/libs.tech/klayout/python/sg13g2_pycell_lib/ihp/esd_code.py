@@ -46,11 +46,9 @@ class esd(DloGen):
         
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('model', model, 'Model name', ChoiceConstraint(['diodevdd_2kv', 'diodevss_2kv', 'diodevdd_4kv', 'diodevss_4kv', 'nmoscl_2', 'nmoscl_4']) )
-        specs('isolated', False, 'Make dovice isolated')
 
     def setupParams(self, params):
         self.model = params['model']
-        self.isolated = params['isolated']
         pass
 
     def genLayout(self):
@@ -58,7 +56,6 @@ class esd(DloGen):
         self.techparams = self.tech.getTechParams()
         epsilon = self.techparams['epsilon1']
 
-        isolated = self.isolated
         # layers
         metal1_layer = Layer('Metal1')
         metal1_layer_pin = Layer('Metal1','pin')
@@ -92,7 +89,7 @@ class esd(DloGen):
         cont_sep = 0.2
 
 
-        if self.model == 'diodevdd_2kv' and self.isolated == False:  
+        if self.model == 'diodevdd_2kv':  
             outer_box = Box(0, 0, 9.72, 37.05)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             
@@ -171,9 +168,6 @@ class esd(DloGen):
             outer_box = Box(0, 0, 9.72, 37.05)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             
-            if self.isolated: 
-                dbCreateRect(self, nbul_layer, outer_box)  
-
             # labels
             dbCreateLabel(self, textlayer, Point(-0.2, 18.535), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
             dbCreateLabel(self, textlayer, Point(9.15, 18.99), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
@@ -247,9 +241,6 @@ class esd(DloGen):
             outer_box = Box(0, 0, 14.32, 37.05)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             
-            if self.isolated: 
-                dbCreateRect(self, nbul_layer, outer_box)  
-
             # labels
             dbCreateLabel(self, textlayer, Point(-0.51, 18.442), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
             dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
@@ -334,7 +325,7 @@ class esd(DloGen):
             metal2_layer_pin_polygon_list_1 = PointList([Point(11.82000, 3.72000), Point(11.82000, 33.33000), Point(15.46000, 33.33000), Point(15.46000, 3.72000)])
             dbCreatePolygon(self, metal2_layer_pin, metal2_layer_pin_polygon_list_1)
         
-        if self.model == 'diodevdd_4kv' and self.isolated == False:
+        if self.model == 'diodevdd_4kv':
             outer_box = Box(0, 0, 14.32, 37.05)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             
@@ -801,176 +792,3 @@ class esd(DloGen):
             nbul_layer_polygon_list_0 = PointList([Point(-1.89000, -1.59000), Point(-1.89000, 19.26000), Point(66.52000, 19.26000), Point(66.52000, -1.59000)])
             dbCreatePolygon(self, nbul_layer, nbul_layer_polygon_list_0)
 
-        if self.model == 'diodevdd_2kv' and self.isolated: 
-            
-            outer_box = Box(0, 0, 9.72, 37.05)
-            dbCreateRect(self, diodeesd_recog_layer, outer_box)  
-            
-            #label 
-            dbCreateLabel(self, textlayer, Point(-0.32, 18.535), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
-            dbCreateLabel(self, textlayer, Point(9.15, 18.99), 'VDD', 'centerCenter', 'R0', Font.MATH, 0.2)
-            dbCreateLabel(self, textlayer, Point(4.86, 0.675), 'VSS', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            dbCreateLabel(self, textlayer, Point(8.33, 0.625), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            #  contact layer
-            dbCreateRectArray(self, cont_layer, origin=(0.4,  0.37), n=1, m=25, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(0.4, 36.52), n=1, m=25, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(0.34,  0.905), n=98, m=1, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(9.22,  0.905), n=98, m=1, x1=cont_size, off1=cont_sep)
-            
-            dbCreateRectArray(self, cont_layer, origin=(4.44,  4.89),  n=77, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(2.165,  3.405),  n=85, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(6.695,  3.405),  n=85, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(2.055,  2.19),  n=3, m=16, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(2.055,  34.02),  n=3, m=16, x1=cont_size, off1=cont_sep)
-            #  via1 layer
-            dbCreateRectArray(self, via1_layer, origin=(1.99,  3.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(1.99, 12.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(1.99, 21.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(1.99, 30.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.55,  3.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.55, 12.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.55, 21.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.55, 30.74), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(4.305,  7.76), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(4.305, 16.76), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(4.305, 25.76), n=8, m=3, x1=via1_size, off1=via1_sep)
-            
-# Extracted activ_layer
-            activ_layer_polygon_list_0 = PointList([Point(1.98000, 1.98000), Point(1.98000, 3.24000), Point(6.51000, 3.24000), Point(6.51000, 33.81000), Point(3.24000, 33.81000), Point(3.24000, 3.24000), Point(1.98000, 3.24000), Point(1.98000, 35.07000), Point(7.77000, 35.07000), Point(7.77000, 1.98000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_0)
-            activ_layer_polygon_list_1 = PointList([Point(0.18000, 0.21000), Point(0.18000, 0.69000), Point(9.06000, 0.69000), Point(9.06000, 36.36000), Point(0.66000, 36.36000), Point(0.66000, 0.69000), Point(0.18000, 0.69000), Point(0.18000, 36.84000), Point(9.54000, 36.84000), Point(9.54000, 0.21000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_1)
-            activ_layer_polygon_list_2 = PointList([Point(4.23000, 4.73000), Point(4.23000, 32.51000), Point(5.49000, 32.51000), Point(5.49000, 4.73000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_2)
-# Extracted pSD_layer
-            pSD_layer_polygon_list_0 = PointList([Point(-0.24000, -0.24000), Point(-0.24000, 1.11000), Point(8.64000, 1.11000), Point(8.64000, 35.94000), Point(1.11000, 35.94000), Point(1.11000, 1.11000), Point(-0.24000, 1.11000), Point(-0.24000, 37.29000), Point(9.96000, 37.29000), Point(9.96000, -0.24000)])
-            dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_0)
-            pSD_layer_polygon_list_1 = PointList([Point(3.81000, 4.07000), Point(3.81000, 33.14000), Point(5.91000, 33.14000), Point(5.91000, 4.07000)])
-            dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_1)
-# Extracted nbul_layer
-            nbul_layer_polygon_list_0 = PointList([Point(1.56000, 1.56000), Point(1.56000, 35.49000), Point(8.19000, 35.49000), Point(8.19000, 1.56000)])
-            dbCreatePolygon(self, nbul_layer, nbul_layer_polygon_list_0)
-# Extracted metal1_layer
-            metal1_layer_polygon_list_0 = PointList([Point(1.83000, 1.89000), Point(1.83000, 3.30000), Point(6.36000, 3.30000), Point(6.36000, 33.75000), Point(3.36000, 33.75000), Point(3.36000, 3.30000), Point(1.83000, 3.30000), Point(1.83000, 35.16000), Point(7.92000, 35.16000), Point(7.92000, 1.89000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_0)
-            metal1_layer_polygon_list_1 = PointList([Point(-0.24000, -0.24000), Point(-0.24000, 1.11000), Point(8.64000, 1.11000), Point(8.64000, 35.94000), Point(1.11000, 35.94000), Point(1.11000, 1.11000), Point(-0.24000, 1.11000), Point(-0.24000, 37.29000), Point(9.96000, 37.29000), Point(9.96000, -0.24000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_1)
-            metal1_layer_polygon_list_2 = PointList([Point(3.96000, 4.43000), Point(3.96000, 32.78000), Point(5.76000, 32.78000), Point(5.76000, 4.43000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_2)
-# Extracted metal1_layer_pin
-            metal1_layer_pin_polygon_list_0 = PointList([Point(-0.24000, -0.24000), Point(-0.24000, 1.11000), Point(9.96000, 1.11000), Point(9.96000, -0.24000)])
-            dbCreatePolygon(self, metal1_layer_pin, metal1_layer_pin_polygon_list_0)
-# Extracted PWell_layer_block
-            PWell_layer_block_polygon_list_0 = PointList([Point(0.90000, 0.93000), Point(0.90000, 36.12000), Point(8.82000, 36.12000), Point(8.82000, 0.93000), Point(1.56000, 0.93000), Point(1.56000, 1.56000), Point(8.19000, 1.56000), Point(8.19000, 35.49000), Point(1.56000, 35.49000), Point(1.56000, 0.93000)])
-            dbCreatePolygon(self, PWell_layer_block, PWell_layer_block_polygon_list_0)
-# Extracted metal2_layer
-            metal2_layer_polygon_list_0 = PointList([Point(1.94000, 3.73500), Point(1.94000, 6.33500), Point(7.34000, 6.33500), Point(7.34000, 12.73500), Point(1.94000, 12.73500), Point(1.94000, 15.33500), Point(7.34000, 15.33500), Point(7.34000, 21.73500), Point(1.94000, 21.73500), Point(1.94000, 24.33500), Point(7.34000, 24.33500), Point(7.34000, 30.73500), Point(1.94000, 30.73500), Point(1.94000, 33.33500), Point(10.94000, 33.33500), Point(10.94000, 3.73500)])
-            dbCreatePolygon(self, metal2_layer, metal2_layer_polygon_list_0)
-            metal2_layer_polygon_list_1 = PointList([Point(-2.12000, 7.75500), Point(-2.12000, 29.31500), Point(5.50500, 29.31500), Point(5.50500, 25.75500), Point(1.48000, 25.75500), Point(1.48000, 20.31500), Point(5.50500, 20.31500), Point(5.50500, 16.75500), Point(1.48000, 16.75500), Point(1.48000, 11.31500), Point(5.50500, 11.31500), Point(5.50500, 7.75500)])
-            dbCreatePolygon(self, metal2_layer, metal2_layer_polygon_list_1)
-# Extracted metal2_layer_pin
-            metal2_layer_pin_polygon_list_0 = PointList([Point(-2.12000, 7.75500), Point(-2.12000, 29.31500), Point(1.48000, 29.31500), Point(1.48000, 7.75500)])
-            dbCreatePolygon(self, metal2_layer_pin, metal2_layer_pin_polygon_list_0)
-            metal2_layer_pin_polygon_list_1 = PointList([Point(7.34000, 3.73500), Point(7.34000, 33.33500), Point(10.94000, 33.33500), Point(10.94000, 3.73500)])
-            dbCreatePolygon(self, metal2_layer_pin, metal2_layer_pin_polygon_list_1)
-# Extracted well_layer
-            well_layer_polygon_list_0 = PointList([Point(1.56000, 1.56000), Point(1.56000, 35.49000), Point(8.19000, 35.49000), Point(8.19000, 1.56000)])
-            dbCreatePolygon(self, well_layer, well_layer_polygon_list_0)
-        
-
-
-        if self.model == 'diodevdd_4kv' and self.isolated == True:
-            outer_box = Box(0, 0, 14.8, 37.53)
-            dbCreateRect(self, diodeesd_recog_layer, outer_box)  
-            
-
-            # labels
-            dbCreateLabel(self, textlayer, Point(-0.51, 18.442), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
-            dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
-            dbCreateLabel(self, textlayer, Point(7.16, 36.375), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            dbCreateLabel(self, textlayer, Point(3.445, 2.495), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            # contact 
-            dbCreateRectArray(self, cont_layer, origin=(0.62,  0.61), n=1, m=38, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(0.62, 36.76), n=1, m=38, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(0.58,  1.105), n=98, m=1, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(14.02,  1.105), n=98, m=1, x1=cont_size, off1=cont_sep)
-            
-            dbCreateRectArray(self, cont_layer, origin=(4.68,  5.05),  n=77, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(9.21,  5.05),  n=77, m=3, x1=cont_size, off1=cont_sep)  
-            
-            dbCreateRectArray(self, cont_layer, origin=(2.405,  3.645),  n=85, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(6.965,  3.645),  n=85, m=3, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(11.525,  3.645),  n=85, m=3, x1=cont_size, off1=cont_sep)
-            
-            dbCreateRectArray(self, cont_layer, origin=(2.475,  2.43),  n=3, m=28, x1=cont_size, off1=cont_sep)
-            dbCreateRectArray(self, cont_layer, origin=(2.475,  34.26),  n=3, m=28, x1=cont_size, off1=cont_sep)
-            #  via1 layer
-            dbCreateRectArray(self, via1_layer, origin=(2.245,  3.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(2.245, 12.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(2.245, 21.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(2.245, 30.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            
-            dbCreateRectArray(self, via1_layer, origin=(6.805,  3.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.805, 12.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.805, 21.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(6.805, 30.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            
-            dbCreateRectArray(self, via1_layer, origin=(11.365,  3.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(11.365, 12.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(11.365, 21.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(11.365, 30.96), n=6, m=3, x1=via1_size, off1=via1_sep)
-            
-            dbCreateRectArray(self, via1_layer, origin=(4.545,  7.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(4.545, 16.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(4.545, 25.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-           
-            dbCreateRectArray(self, via1_layer, origin=(9.075,  7.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(9.075, 16.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-            dbCreateRectArray(self, via1_layer, origin=(9.075, 25.92), n=8, m=3, x1=via1_size, off1=via1_sep)
-# Extracted activ_layer
-            activ_layer_polygon_list_0 = PointList([Point(2.22000, 2.22000), Point(2.22000, 3.48000), Point(11.29000, 3.48000), Point(11.29000, 34.05000), Point(8.01000, 34.05000), Point(8.01000, 3.48000), Point(6.75000, 3.48000), Point(6.75000, 34.05000), Point(3.48000, 34.05000), Point(3.48000, 3.48000), Point(2.22000, 3.48000), Point(2.22000, 35.31000), Point(12.55000, 35.31000), Point(12.55000, 2.22000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_0)
-            activ_layer_polygon_list_1 = PointList([Point(0.42000, 0.45000), Point(0.42000, 0.93000), Point(13.90000, 0.93000), Point(13.90000, 36.60000), Point(0.90000, 36.60000), Point(0.90000, 0.93000), Point(0.42000, 0.93000), Point(0.42000, 37.08000), Point(14.38000, 37.08000), Point(14.38000, 0.45000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_1)
-            activ_layer_polygon_list_2 = PointList([Point(9.00000, 4.89000), Point(9.00000, 32.67000), Point(10.26000, 32.67000), Point(10.26000, 4.89000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_2)
-            activ_layer_polygon_list_3 = PointList([Point(4.47000, 4.89000), Point(4.47000, 32.67000), Point(5.73000, 32.67000), Point(5.73000, 4.89000)])
-            dbCreatePolygon(self, activ_layer, activ_layer_polygon_list_3)
-# Extracted pSD_layer
-            pSD_layer_polygon_list_0 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(13.48000, 1.35000), Point(13.48000, 36.18000), Point(1.35000, 36.18000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.53000), Point(14.80000, 37.53000), Point(14.80000, 0.00000)])
-            dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_0)
-            pSD_layer_polygon_list_1 = PointList([Point(8.58000, 4.23000), Point(8.58000, 33.30000), Point(10.68000, 33.30000), Point(10.68000, 4.23000)])
-            dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_1)
-            pSD_layer_polygon_list_2 = PointList([Point(4.05000, 4.23000), Point(4.05000, 33.30000), Point(6.15000, 33.30000), Point(6.15000, 4.23000)])
-            dbCreatePolygon(self, pSD_layer, pSD_layer_polygon_list_2)
-# Extracted well_layer
-            well_layer_polygon_list_0 = PointList([Point(1.80000, 1.80000), Point(1.80000, 35.73000), Point(13.03000, 35.73000), Point(13.03000, 1.80000)])
-            dbCreatePolygon(self, well_layer, well_layer_polygon_list_0)
-# Extracted nbul_layer
-            nbul_layer_polygon_list_0 = PointList([Point(1.80000, 1.80000), Point(1.80000, 35.73000), Point(13.03000, 35.73000), Point(13.03000, 1.80000)])
-            dbCreatePolygon(self, nbul_layer, nbul_layer_polygon_list_0)
-# Extracted metal1_layer_pin
-            metal1_layer_pin_polygon_list_0 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(14.80000, 1.35000), Point(14.80000, 0.00000)])
-            dbCreatePolygon(self, metal1_layer_pin, metal1_layer_pin_polygon_list_0)
-# Extracted metal1_layer
-            metal1_layer_polygon_list_0 = PointList([Point(2.07000, 2.13000), Point(2.07000, 3.54000), Point(11.14000, 3.54000), Point(11.14000, 33.99000), Point(8.16000, 33.99000), Point(8.16000, 3.54000), Point(6.60000, 3.54000), Point(6.60000, 33.99000), Point(3.60000, 33.99000), Point(3.60000, 3.54000), Point(2.07000, 3.54000), Point(2.07000, 35.40000), Point(12.70000, 35.40000), Point(12.70000, 2.13000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_0)
-            metal1_layer_polygon_list_1 = PointList([Point(0.00000, 0.00000), Point(0.00000, 1.35000), Point(13.48000, 1.35000), Point(13.48000, 36.18000), Point(1.35000, 36.18000), Point(1.35000, 1.35000), Point(0.00000, 1.35000), Point(0.00000, 37.53000), Point(14.80000, 37.53000), Point(14.80000, 0.00000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_1)
-            metal1_layer_polygon_list_2 = PointList([Point(8.73000, 4.59000), Point(8.73000, 32.94000), Point(10.53000, 32.94000), Point(10.53000, 4.59000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_2)
-            metal1_layer_polygon_list_3 = PointList([Point(4.20000, 4.59000), Point(4.20000, 32.94000), Point(6.00000, 32.94000), Point(6.00000, 4.59000)])
-            dbCreatePolygon(self, metal1_layer, metal1_layer_polygon_list_3)
-# Extracted metal2_layer_pin
-            metal2_layer_pin_polygon_list_0 = PointList([Point(-2.06000, 7.97500), Point(-2.06000, 29.53500), Point(1.54500, 29.53500), Point(1.54500, 7.97500)])
-            dbCreatePolygon(self, metal2_layer_pin, metal2_layer_pin_polygon_list_0)
-            metal2_layer_pin_polygon_list_1 = PointList([Point(12.10000, 3.95500), Point(12.10000, 33.55500), Point(15.74500, 33.55500), Point(15.74500, 3.95500)])
-            dbCreatePolygon(self, metal2_layer_pin, metal2_layer_pin_polygon_list_1)
-# Extracted metal2_layer
-            metal2_layer_polygon_list_0 = PointList([Point(2.19500, 3.95500), Point(2.19500, 6.55500), Point(12.10000, 6.55500), Point(12.10000, 12.95500), Point(2.19500, 12.95500), Point(2.19500, 15.55500), Point(12.10000, 15.55500), Point(12.10000, 21.95500), Point(2.19500, 21.95500), Point(2.19500, 24.55500), Point(12.10000, 24.55500), Point(12.10000, 30.95500), Point(2.19500, 30.95500), Point(2.19500, 33.55500), Point(15.74500, 33.55500), Point(15.74500, 3.95500)])
-            dbCreatePolygon(self, metal2_layer, metal2_layer_polygon_list_0)
-            metal2_layer_polygon_list_1 = PointList([Point(4.49500, 7.91500), Point(4.49500, 7.97500), Point(-2.06000, 7.97500), Point(-2.06000, 29.53500), Point(9.78000, 29.53500), Point(9.78000, 29.47500), Point(10.27500, 29.47500), Point(10.27500, 25.91500), Point(9.02500, 25.91500), Point(9.02500, 25.97500), Point(5.74500, 25.97500), Point(5.74500, 25.91500), Point(4.49500, 25.91500), Point(4.49500, 25.97500), Point(1.54500, 25.97500), Point(1.54500, 20.53500), Point(9.78000, 20.53500), Point(9.78000, 20.47500), Point(10.27500, 20.47500), Point(10.27500, 16.91500), Point(9.02500, 16.91500), Point(9.02500, 16.97500), Point(5.74500, 16.97500), Point(5.74500, 16.91500), Point(4.49500, 16.91500), Point(4.49500, 16.97500), Point(1.54500, 16.97500), Point(1.54500, 11.53500), Point(9.78000, 11.53500), Point(9.78000, 11.47500), Point(10.27500, 11.47500), Point(10.27500, 7.91500), Point(9.02500, 7.91500), Point(9.02500, 7.97500), Point(5.74500, 7.97500), Point(5.74500, 7.91500)])
-            dbCreatePolygon(self, metal2_layer, metal2_layer_polygon_list_1)
-# Extracted PWell_layer_block
-            PWell_layer_block_polygon_list_0 = PointList([Point(1.14000, 1.17000), Point(1.14000, 36.36000), Point(13.66000, 36.36000), Point(13.66000, 1.17000), Point(1.80000, 1.17000), Point(1.80000, 1.80000), Point(13.03000, 1.80000), Point(13.03000, 35.73000), Point(1.80000, 35.73000), Point(1.80000, 1.17000)])
-            dbCreatePolygon(self, PWell_layer_block, PWell_layer_block_polygon_list_0)
