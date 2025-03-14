@@ -61,6 +61,35 @@ def info():
     print(msg)
 
 
+def create_symlinks(source_directory, destination_directory):
+    """
+    Creates symbolic links for all files in source_directory inside destination_directory.
+    """
+    # Ensure both directories exist
+    if not os.path.exists(source_directory):
+        print(f"Error: Source directory '{source_directory}' does not exist.")
+        return
+    
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+
+    # Iterate over files in the source directory
+    for file_name in os.listdir(source_directory):
+        source_path = os.path.join(source_directory, file_name)
+        dest_path = os.path.join(destination_directory, file_name)
+
+        # Only create symlinks for files
+        if os.path.isfile(source_path):
+            try:
+                if os.path.exists(dest_path) or os.path.islink(dest_path):
+                    print(f"Skipping existing: {dest_path}")
+                else:
+                    os.symlink(source_path, dest_path)
+                    print(f"Linked: {source_path} -> {dest_path}")
+            except OSError as e:
+                print(f"Error creating symlink for {source_path}: {e}")
+
+
 if __name__ == "__main__":
     # Example usage:
     info()
@@ -99,8 +128,8 @@ if __name__ == "__main__":
             os.makedirs(destination_directory)
             print(f"Destination directory '{destination_directory}' created.")
         
-        copy_files(source_directory, destination_directory)
-
+        #copy_files(source_directory, destination_directory)
+        create_symlinks(source_directory, destination_directory)
         # Copy examples to "Qucs Home" (<userhome>/[.qucs|QucsWorkspace]/)
         print("Copying examples into Qucs-S Home...")
         source_directory = pdk_root + "/ihp-sg13g2/libs.tech/qucs/examples"
