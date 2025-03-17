@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -79,7 +78,7 @@ C {devices/launcher.sym} 420 180 0 0 {name=h5
 descr="load waves Ctrl + left click" 
 tclcommand="xschem raw_read $netlist_dir/dc_logic_not.raw dc"
 }
-C {sg13g2_pr/sg13_lv_nmos.sym} 0 30 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_nmos.sym} 0 30 0 0 {name=M1
 l=0.13u
 w=0.7u
 ng=1
@@ -87,7 +86,7 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_lv_pmos.sym} 0 -70 0 0 {name=M2
+C {sg13g2_pr/sg13_lv_pmos.sym} 0 -70 2 1 {name=M2
 l=0.13u
 w=1.2u
 ng=1

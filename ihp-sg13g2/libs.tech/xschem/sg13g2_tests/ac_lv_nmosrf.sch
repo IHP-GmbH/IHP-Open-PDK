@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -164,7 +163,7 @@ spiceprefix=X
 b=0
 m=1
 }
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 0 0 {name=M1
 l=0.35u
 w=1.0u
 ng=1
@@ -173,7 +172,7 @@ rfmode=0
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M2
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 0 0 {name=M2
 l=0.35u
 w=1.0u
 ng=1

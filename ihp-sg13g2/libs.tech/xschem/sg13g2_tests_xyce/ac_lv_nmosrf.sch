@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -114,7 +113,7 @@ C {devices/vsource.sym} -40 -30 0 0 {name=Vds2 value=1.2}
 C {devices/gnd.sym} -40 60 0 0 {name=l8 lab=GND}
 C {devices/gnd.sym} -120 60 0 0 {name=l9 lab=GND}
 C {devices/lab_pin.sym} -180 -100 1 0 {name=p2 sig_type=std_logic lab=Vout2}
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 2 1 {name=M1
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} -190 -30 0 0 {name=M1
 l=0.35u
 w=1.0u
 ng=1
@@ -123,7 +122,7 @@ rfmode=0
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 2 1 {name=M2
+C {sg13g2_pr/sg13_lv_rf_nmos.sym} 140 -40 0 0 {name=M2
 l=0.35u
 w=1.0u
 ng=1

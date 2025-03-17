@@ -1,4 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
+v {xschem version=3.4.6 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@ K {}
 V {}
 S {}
 E {}
-L 7 2140 -730 2140 -60 {}
 T {NGSPICE} 100 -350 0 0 0.6 0.6 {}
 T {NGSPICE + XYCE} 380 -350 0 0 0.6 0.6 {}
 T {STANDARD CELLS} 740 -350 0 0 0.6 0.6 {}
