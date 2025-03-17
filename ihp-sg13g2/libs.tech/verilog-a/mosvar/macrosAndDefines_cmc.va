@@ -1,0 +1,199 @@
+//======================================================================================
+//======================================================================================
+// Filename: macroAndDefines_cmc.va
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright 2008, All Rights Reserved, Arizona State University and
+//  Freescale Semiconductor
+//
+//  (c) Copyright 2015, All Rights Reserved, Silicon Integration Initiative, Inc.
+//
+//
+//  Version: 1.3.0-beta, March 2015
+//
+//======================================================================================
+//======================================================================================
+//
+//   Software is distributed as is, completely without expressed or implied warranty or
+//  service support.  ASU, Si2, their members and employees are not liable for the
+//  condition or performance of the software.
+//
+//   ASU and Si2 own the copyright and grants users a perpetual, irrevocable, worldwide,
+//  non-exclusive, royalty-free license with respect to the software as set forth below.
+//
+//   ASU and Si2 hereby disclaims all implied warranties.
+//
+//   ASU and Si2 grant the users the right to modify, copy, and redistribute the
+//  software and documentation, both within the user's organization and externally,
+//  subject to the following restrictions:
+//
+//  1. The users agree not to charge for the code itself but may charge for additions,
+//     extensions, or support.
+//
+//  2. In any product based on the software, the users agree to acknowledge developers
+//     of the software. This acknowledgment shall appear in the product documentation.
+//
+//  3. The users agree to obey all government restrictions governing redistribution or
+//     export of the software.
+//
+//  4. The users agree to reproduce any copyright notice which appears on the software
+//     and documentation on any copy or modification of such made available to others.
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file MOSVAR1p3p0.pdf
+//
+
+//
+//  This file contains standard macro and constant definitions for use across compact models.
+//
+//  NOTE: macros that can be embedded in expressions to not include a trailing ";" termination
+//        whereas those that are to be used stand-alone do. If you add an extra ";" to the latter
+//        this is an error as NULL statements are not legal in Verilog-AMS.
+//
+
+// added for PSP, need to reconcile
+// Physical constants
+`define KELVINCONVERSION      273.15
+`define KBOL                  1.3806505E-23
+`define QELE                  1.6021918E-19
+`define HBAR                  1.05457168E-34
+`define MELE                  9.1093826E-31
+`define EPSSI                 1.045E-10
+`define EPSOX                 3.453E-11
+`define QMN                   5.951993
+`define QMP                   7.448711
+// end added for PSP, need to reconcile
+//
+//  Physical constants and other generally useful numbers
+//
+
+`define oneSixth          0.1666666666666667
+`define oneThird          3.3333333333333333e-01
+`define twoThirds         6.6666666666666667e-01
+`define sqrtTwo           1.414213562373095
+`define inv_sqrtTwo       0.7071067811865475
+`define egTsividis(Eg,t_K) \
+    Eg = 1.179-t_K*(9.025e-05+t_K*3.05e-07);
+
+//
+//  Clipping macros, these smoothly limit to lower, upper, or both lower and upper
+//  limits. Rather than using a sqrt or log-exp form, which affects values
+//  everywhere, these use a conditional form that is continuous in function
+//  and derivative. If a value is not clipped then no exp() evaluation occurs.
+//  Smooth limiting is preferable to hard limiting (although latter can still
+//  be useful for enforcing parameter limits) for bias dependent quantities
+//  as derivatives do not become zero or have discontinuities.
+//
+
+`define CLIPL0p1(XCLIP,X,LOWER) \
+    if (X<(LOWER+0.1)) \
+        XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPU0p1(XCLIP,X,UPPER) \
+    if (X>(UPPER-0.1)) \
+        XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPB0p1(XCLIP,X,LOWER,UPPER) \
+    if (X<(LOWER+0.1)) \
+        XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+    else if (X>(UPPER-0.1)) \
+        XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+    else \
+        XCLIP    =  X;
+
+`define CLIPL1p0(XCLIP,X,LOWER) \
+    if (X<(LOWER+1.0)) \
+        XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPU1p0(XCLIP,X,UPPER) \
+    if (X>(UPPER-1.0)) \
+        XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+    else \
+        XCLIP    =  X;
+`define CLIPB1p0(XCLIP,X,LOWER,UPPER) \
+    if (X<(LOWER+1.0)) \
+        XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+    else if (X>(UPPER-1.0)) \
+        XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+    else \
+        XCLIP    =  X;
+
+//
+//  Hard clamping and sqrt clamping macros
+//
+
+`define CLIP_LOW(val,min)      ((val)>(min)?(val):(min))
+`define CLIP_HIGH(val,max)     ((val)<(max)?(val):(max))
+`define CLIP_BOTH(val,min,max) ((val)>(min)?((val)<(max)?(val):(max)):(min))
+
+`define MAX(x,y)            ((x)>(y)?(x):(y))
+`define MIN(x,y)            ((x)<(y)?(x):(y))
+`define CLAMP(val,min,max) `MIN(max,`MAX(val,min))
+`define MAXA(x,y,a)         (0.5*((x)+(y)+sqrt(((x)-(y))*((x)-(y))+(a))))
+`define MINA(x,y,a)         (0.5*((x)+(y)-sqrt(((x)-(y))*((x)-(y))+(a))))
+`define LIMA(x,y,signf,a)         (0.5*((x)+(y)-signf*sqrt(((x)-(y))*((x)-(y))+(a))))
+// signf=+1 max function, signf=-1 min function
+`define SGNF(x)         (x/(sqrt(x*x)+1e-16))
+
+//
+//  Macros for parameter and operating-point declarations.
+//  The "des" description argument is intended to be a short description.
+//
+//  MPR      model    parameter real
+//  MPI      model    parameter integer
+//  IPR      instance parameter real
+//  IPI      instance parameter integer
+//  IPM      instance parameter mFactor (multiplicity, implicit for LRM2.2)
+//  OPP      operating point parameter, includes units and description for printing
+//  OPM      operating point parameter, scaled by $mfactor when printed
+//  OPD      operating point parameter, scaled by 1/$mfactor when printed
+//
+//  There are some issues with passing range directives with some compilers,
+//  so for each parameter declaration there are multiple versions:
+//  cc       closed lower bound, closed upper bound
+//  co       closed lower bound, open   upper bound
+//  oc       open   lower bound, closed upper bound
+//  oo       open   lower bound, open   upper bound
+//  nb       no bounds
+//  sw       switch (integer only, values  0=false  and  1=true)
+//  ty       switch (integer only, values -1=n-type and +1=p-type)
+//
+
+`define ERROR(str) \
+    begin \
+        $strobe(str); \
+        $finish(1); \
+    end
+
+`define ALIAS(alias,parameter) aliasparam alias = parameter;
+`define OPP(nam,uni,des)               (*units=uni,                             desc=des*)           real    nam;
+`define OPM(nam,uni,des)               (*units=uni, multiplicity="multiply",    desc=des*)           real    nam;
+`define OPD(nam,uni,des)               (*units=uni, multiplicity="divide",      desc=des*)           real    nam;
+`define MPRcc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from[lwr:upr];
+`define MPRco(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from[lwr:upr);
+`define MPRoc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from(lwr:upr];
+`define MPRoo(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from(lwr:upr);
+`define MPRnb(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def;
+`define MPIcc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[lwr:upr];
+`define MPIco(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[lwr:upr);
+`define MPIoc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from(lwr:upr];
+`define MPIoo(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from(lwr:upr);
+`define MPInb(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def;
+`define MPIsw(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[  0:  1];
+`define MPIty(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[ -1:  1] exclude 0;
+`define IPRcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from[lwr:upr];
+`define IPRco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from[lwr:upr);
+`define IPRoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from(lwr:upr];
+`define IPRoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from(lwr:upr);
+`define IPRnb(nam,def,uni,        des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def;
+`define IPIcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from[lwr:upr];
+`define IPIco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from[lwr:upr);
+`define IPIoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from(lwr:upr];
+`define IPIoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from(lwr:upr);
+`define IPInb(nam,def,uni,        des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def;
