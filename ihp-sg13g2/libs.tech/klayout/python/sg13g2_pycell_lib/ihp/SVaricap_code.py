@@ -1,3 +1,21 @@
+########################################################################
+#
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
@@ -15,25 +33,30 @@ class SVaricap(DloGen):
         CDFVersion = techparams['CDFVersion']
         model      = 'sg13_hv_svaricap'
         defL       = '0.3u'
-        defW       = '3.74u'
-        deftox     = '0.004u' 
+        defW       = '3.74u' 
+#ifdef KLAYOUT
+        specs('model', model, 'Model name')
+        specs('w', defW, 'Width' , ChoiceConstraint(['3.74u', '9.74u']))
+        specs('l', defL, 'Length', ChoiceConstraint(['0.3u' , '0.8u']))
+        specs('Nx', 1, 'Choose the columns number', RangeConstraint(1, 10))
+        specs('bn', 'sub!', 'Bulk node connection')
+#else
         specs('cdf_version', CDFVersion, 'CDF Version')
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('model', model, 'Model name')
         
         specs('w', defW, 'Width' , ChoiceConstraint(['3.74u', '9.74u']))
         specs('l', defL, 'Length', ChoiceConstraint(['0.3u' , '0.8u']))
-        specs('Nx', 1, 'Choose the columns number', RangeConstraint(1, 20))
+        specs('Nx', 1, 'Choose the columns number', RangeConstraint(1, 10))
         specs('bn', 'sub!', 'Bulk node connection')
-        specs('thickO', deftox, 'ThickGateOxide')
-
+#endif
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
         self.Nx = params['Nx']
         self.l = Numeric(params['l'])
         self.w = Numeric(params['w'])
-        self.thickO = params['thickO']
+        
 
     def genLayout(self):
         l = Numeric(self.l)*1e6
@@ -66,12 +89,8 @@ class SVaricap(DloGen):
             gateOnbulay = 0.1
             
         x1 = 0.73
-
-        if self.thickO :
-            gateS = 0.25
-            dbCreateRect(self, gateOx, Box(-0.1, -0.79, x1-gateS+NX*(gateS+l)*2+0.67, 0.39+gateS+w+0.5+0.68))
-        else :
-            gateS = 0.19
+        gateS = 0.25
+         
 
         psdStep = 10
         y1 = 0.39+gateS
