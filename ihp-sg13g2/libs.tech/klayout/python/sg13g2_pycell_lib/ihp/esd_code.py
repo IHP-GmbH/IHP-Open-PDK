@@ -331,9 +331,9 @@ class esd(DloGen):
             
             # labels
             dbCreateLabel(self, textlayer, Point(-0.51, 18.442), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
-            dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
-            dbCreateLabel(self, textlayer, Point(7.16, 36.375), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            dbCreateLabel(self, textlayer, Point(3.445, 2.495), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VDD', 'centerCenter', 'R0', Font.MATH, 0.2)
+            dbCreateLabel(self, textlayer, Point(7.16, 36.375), 'VSS', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(3.445, 0.495), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
             # contact 
             dbCreateRectArray(self, cont_layer, origin=(0.62,  0.61), n=1, m=37, x1=cont_size, off1=cont_sep)
             dbCreateRectArray(self, cont_layer, origin=(0.62, 36.28), n=1, m=37, x1=cont_size, off1=cont_sep)
