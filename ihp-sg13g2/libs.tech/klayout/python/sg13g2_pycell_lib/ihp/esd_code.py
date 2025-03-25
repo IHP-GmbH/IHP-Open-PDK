@@ -1,3 +1,21 @@
+########################################################################
+#
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
 __version__ = "$Revision: #3 $"
 
 from cni.dlo import *
@@ -44,7 +62,6 @@ class esd(DloGen):
 
         model = 'diodevdd_2kv'
         
-        specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('model', model, 'Model name', ChoiceConstraint(['diodevdd_2kv', 'diodevss_2kv', 'diodevdd_4kv', 'diodevss_4kv', 'nmoscl_2', 'nmoscl_4']) )
 
     def setupParams(self, params):
@@ -75,6 +92,7 @@ class esd(DloGen):
         diodeesd_recog_layer = Layer('Recog', 'esd')
         recog_layer = Layer('Recog')
         textlayer = Layer('TEXT', 'drawing')
+        substratelayer = Layer('Substrate', 'drawing')
         nbul_layer = Layer('nBuLay', 'drawing')
         PWell_layer_block = Layer('PWell', 'block')
         # DRC rules
@@ -331,9 +349,9 @@ class esd(DloGen):
             
             # labels
             dbCreateLabel(self, textlayer, Point(-0.51, 18.442), 'PAD', 'centerCenter', 'R0', Font.SCRIPT, 0.2)
-            dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
-            dbCreateLabel(self, textlayer, Point(7.16, 36.375), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
-            dbCreateLabel(self, textlayer, Point(3.445, 2.495), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(13.64, 18.525), 'VDD', 'centerCenter', 'R0', Font.MATH, 0.2)
+            dbCreateLabel(self, textlayer, Point(7.16, 36.375), 'VSS', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(3.445, 0.495), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
             # contact 
             dbCreateRectArray(self, cont_layer, origin=(0.62,  0.61), n=1, m=37, x1=cont_size, off1=cont_sep)
             dbCreateRectArray(self, cont_layer, origin=(0.62, 36.28), n=1, m=37, x1=cont_size, off1=cont_sep)
@@ -419,6 +437,12 @@ class esd(DloGen):
             outer_box = Box(-2.25, -1.95, 34.96, 19.62)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             dbCreateRect(self, recog_layer, outer_box)  
+            # labels
+            dbCreateLabel(self, textlayer, Point(1.811, -1.245), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
+            dbCreateLabel(self, textlayer, Point(1.592, 19.26), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(1.45, 17.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(20.45, 10.01), 'nmoscl_2', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, substratelayer, Point(1.45, 17.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
             # contact
             dbCreateRectArray(self, cont_layer, origin=(-0.71,  -1.315), n=1, m=91, x1=cont_size, off1=0.22)
             dbCreateRectArray(self, cont_layer, origin=(0.47,  16.945), n=1, m=89, x1=cont_size, off1=cont_sep)
@@ -569,6 +593,12 @@ class esd(DloGen):
             outer_box = Box(-2.25, -1.95, 66.88, 19.62)
             dbCreateRect(self, diodeesd_recog_layer, outer_box)  
             dbCreateRect(self, recog_layer, outer_box)  
+            # labels
+            dbCreateLabel(self, textlayer, Point(1.295, -0.751), 'VSS', 'centerCenter', 'R0', Font.MATH, 0.2)
+            dbCreateLabel(self, textlayer, Point(0.96, 19.11), 'VDD', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(1.45, 17.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, substratelayer, Point(1.45, 17.01), 'sub!', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
+            dbCreateLabel(self, textlayer, Point(20.45, 10.01), 'nmoscl_4', 'centerCenter', 'R0', Font.EURO_STYLE, 0.2)
             # contact
             dbCreateRectArray(self, cont_layer, origin=(-0.755,  -1.51), n=1, m=172, x1=cont_size, off1=0.22)
             dbCreateRectArray(self, cont_layer, origin=(-0.755,  -1.13), n=1, m=172, x1=cont_size, off1=0.22)
