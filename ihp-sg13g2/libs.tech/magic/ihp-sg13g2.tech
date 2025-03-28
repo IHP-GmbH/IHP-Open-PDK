@@ -1785,6 +1785,9 @@ style patternfill variants (),(tiled)
 	 # Each tile imposes the full keepout distance rule of
 	 # 3um on all sides.
 	 shrink 1500
+	 # This fills out the square where comment collides
+	 # with fillblock because they are on the same plane.
+	 maxrect external
 
  variants *
 
@@ -1806,6 +1809,19 @@ style patternfill variants (),(tiled)
 	bloat-all gec,nec,hvnec nemitter,hvnemitter,*ndiff,space/a 3430
 	shrink 200
 
+ # Precompute diffusion and pSD for poly:fill keep-out areas,
+ # because it is compute-intensive and is used multiple times
+
+ templayer obstruct_diff_psd hvpfet
+	grow 100
+	or pfet
+	grow 120
+	or allpactivetap
+	grow 150
+	or allpactivenontap
+	grow 30
+	or alldiff,difffill,allcont
+
 #------------------------------------------------------------------------
 # Diffusion filler keep-out areas
 # Spacing to diffusion:  0.42um (AFil.c1)
@@ -1823,7 +1839,7 @@ style patternfill variants (),(tiled)
 	grow	580
 	or	alldiff,difffill,obsactive
 
- templayer      obstruct_poly alldiff,difffill,allcont
+ templayer      obstruct_poly obstruct_diff_psd
 	grow	100
 	or	trans
 	grow	580
@@ -1861,7 +1877,7 @@ style patternfill variants (),(tiled)
 	grow	580
 	or	alldiff,difffill,obsactive,difffill_coarse
 
- templayer      obstruct_poly_medium alldiff,difffill,allcont
+ templayer      obstruct_poly_medium obstruct_diff_psd
 	or	difffill_coarse
 	grow	100
 	or	trans
@@ -1893,7 +1909,7 @@ style patternfill variants (),(tiled)
 	or	alldiff,difffill,obsactive
 	or	difffill_coarse,difffill_medium
 
- templayer      obstruct_poly_fine alldiff,difffill,allcont
+ templayer      obstruct_poly_fine obstruct_diff_psd
 	or	difffill_coarse,difffill_medium
 	grow	100
 	or	trans
