@@ -29,7 +29,7 @@ end
 version
  version 0.2.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.508
+ requires magic-8.3.524
 end
 
 #------------------------------------------------------------------------
@@ -546,6 +546,10 @@ compose
   paint  sealv4	 m4	sealv4
   paint  sealv5	 m5	sealv5
   paint  sealv6	 m6	sealv6
+
+  # To preserve keep-out areas for pattern fill,
+  # do not allow comment to overwrite fillblock.
+  paint  fillblock comment fillblock
 end
 
 #-----------------------------------------------------
@@ -1945,6 +1949,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 2000 0 5000 2000 1500 500
         and-not obstruct_m1
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -1958,6 +1963,7 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m1_medium
 	and	topbox
+	orthogonal
         shrink  995
         grow    995
 
@@ -1971,6 +1977,7 @@ style patternfill variants (),(tiled)
         slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m1_fine
 	and	topbox
+	orthogonal
         shrink  595
         grow    595
 
@@ -1995,6 +2002,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 2000 0 5000 2000 2500 1500
         and-not obstruct_m2
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2008,6 +2016,7 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m2_medium
 	and	topbox
+	orthogonal
         shrink  995
         grow    995
 
@@ -2021,6 +2030,7 @@ style patternfill variants (),(tiled)
         slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m2_fine
 	and	topbox
+	orthogonal
         shrink  595
         grow    595
 
@@ -2045,6 +2055,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 2000 0 5000 2000 3500 2500
         and-not obstruct_m3
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2058,6 +2069,7 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m3_medium
 	and	topbox
+	orthogonal
         shrink  995
         grow    995
 
@@ -2071,6 +2083,7 @@ style patternfill variants (),(tiled)
         slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m3_fine
 	and	topbox
+	orthogonal
         shrink  595
         grow    595
 
@@ -2095,6 +2108,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 2000 0 5000 2000 4500 3500
         and-not obstruct_m4
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2108,6 +2122,7 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m4_medium
 	and	topbox
+	orthogonal
         shrink  995
         grow    995
 
@@ -2121,6 +2136,7 @@ style patternfill variants (),(tiled)
         slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m4_fine
 	and	topbox
+	orthogonal
         shrink  595
         grow    595
 
@@ -2145,6 +2161,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 2000 0 5000 2000 500 4500
         and-not obstruct_m5
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2158,6 +2175,7 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m5_medium
 	and	topbox
+	orthogonal
         shrink  995
         grow    995
 
@@ -2171,6 +2189,7 @@ style patternfill variants (),(tiled)
         slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m5_fine
 	and	topbox
+	orthogonal
         shrink  595
         grow    595
 
@@ -2195,6 +2214,7 @@ style patternfill variants (),(tiled)
         slots   0 10000 4000 0 10000 4000 2500 3500
         and-not obstruct_m6
 	and	topbox
+	orthogonal
         shrink  4995
         grow    4995
 
@@ -2208,6 +2228,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 3000 0 5000 3000 1000 500
         and-not obstruct_m6_medium
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2230,6 +2251,7 @@ style patternfill variants (),(tiled)
         slots   0 10000 4000 0 10000 4000 4500 1500
         and-not obstruct_m7
 	and	topbox
+	orthogonal
         shrink  4995
         grow    4995
 
@@ -2243,9 +2265,9 @@ style patternfill variants (),(tiled)
         slots   0 5000 3000 0 5000 3000 1000 500
         and-not obstruct_m7_medium
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
-
 
  layer	MET7FILL met7fill_coarse
 	or	met7fill_medium
@@ -3798,9 +3820,13 @@ drc
  # To do:  add spacing requirements to devices with P+, N+-block, and SBLK
  spacing polyfill,fillfet alldiff,*poly,obspoly 1100 touching_illegal \
 	"Poly fill spacing to Poly and Diffusion < %d (GFil.d)"
- spacing polyfill,fillfet nwell 1100 touching_illegal \
+ spacing polyfill,fillfet nwell 1100 surround_ok \
 	"Poly fill spacing to Nwell < %d (GFil.e)"
- spacing polyfill,fillfet dnwell 1100 touching_illegal \
+ spacing polyfill,fillfet dnwell 1100 surround_ok \
+	"Poly fill spacing to Deep nwell < %d (GFil.e)"
+ surround polyfill,fillfet nwell 1100 absence_ok \
+	"Poly fill spacing to Nwell < %d (GFil.e)"
+ surround polyfill,fillfet dnwell 1100 absence_ok \
 	"Poly fill spacing to Deep nwell < %d (GFil.e)"
  spacing polyfill  npn,pnp 1100 touching_illegal \
 	"Poly fill spacing to bipolar transistor < %d (GFil.f)"

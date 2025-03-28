@@ -221,6 +221,7 @@ if __name__ == '__main__':
     print('', file=ofile)
     # Use FIXED_BBOX as the boundary if it exists
     # (Note:  Actual boundary should be computed by position of SEALBOUND.)
+    print('select top cell', file=ofile)
     print('catch {box values {*}[property FIXED_BBOX]}', file=ofile)
     print('set fullbox [box values]', file=ofile)
     print('set xmax [lindex $fullbox 2]', file=ofile)
@@ -235,6 +236,42 @@ if __name__ == '__main__':
     print('set xbase [lindex $fullbox 0]', file=ofile)
     print('set ybase [lindex $fullbox 1]', file=ofile)
     print('', file=ofile)
+
+    # Protect the boundary between the layout border and the seal ring
+    # If a seal ring does not exist, then the exclusion area will encompass
+    # the entire layout, so ensure that doesn't happen.
+    print('select top cell', file=ofile)
+    print('select area sealvia6', file=ofile)
+    print('set found [what -list]', file=ofile)
+    print('if {[lindex $found 0] == "sealvia6"} {', file=ofile)
+    print('    box select', file=ofile)
+    print('    set sealbox [box values]', file=ofile)
+    print('    set seallx [lindex $sealbox 0]', file=ofile)
+    print('    set seally [lindex $sealbox 1]', file=ofile)
+    print('    set sealux [lindex $sealbox 2]', file=ofile)
+    print('    set sealuy [lindex $sealbox 3]', file=ofile)
+    print('    box values $xmin $ymin $seallx $ymax', file=ofile)
+    print('    paint fillblock; paint obsactive', file=ofile)
+    print('    box values $xmin $ymin $xmax $seallx', file=ofile)
+    print('    paint fillblock; paint obsactive', file=ofile)
+    print('    box values $sealux $ymin $xmax $ymax', file=ofile)
+    print('    paint fillblock; paint obsactive', file=ofile)
+    print('    box values $xmin $sealuy $xmax $ymax', file=ofile)
+    print('    paint fillblock; paint obsactive', file=ofile)
+    # Block fill in the corners
+    print('    box position $seallx $seally', file=ofile)
+    print('    box size 21um 21um', file=ofile)
+    print('    splitpaint sw fillblock,obsactive', file=ofile)
+    print('    box position $sealux $seally', file=ofile)
+    print('    box move w 21um', file=ofile)
+    print('    splitpaint se fillblock,obsactive', file=ofile)
+    print('    box position $seallx $sealuy', file=ofile)
+    print('    box move s 21um', file=ofile)
+    print('    splitpaint nw fillblock,obsactive', file=ofile)
+    print('    box position $sealux $sealuy', file=ofile)
+    print('    box move sw 21um', file=ofile)
+    print('    splitpaint ne fillblock,obsactive', file=ofile)
+    print('}', file=ofile) 
 
     # Break layout into tiles and process each separately
     print('for {set y 0} {$y < $ytiles} {incr y} {', file=ofile)
