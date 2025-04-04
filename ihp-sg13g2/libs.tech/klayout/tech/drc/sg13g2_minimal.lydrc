@@ -712,15 +712,9 @@ class DRC::DRCLayer
                   include_min_angle: true,
                   include_max_angle: false,
                   polygon_output: false)
-        if self.polygons?
-            self_min_coherence_state = self.data.min_coherence?
-            self.data.min_coherence = true
-            self_edges = self.edges
-            self.data.min_coherence = self_min_coherence_state
-        else
-            self_edges = self
-        end
-        output_layer = self_edges.width(value, metric, @engine.angle_limit(max_angle))
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = false
+        output_layer = self.width(value, metric, @engine.angle_limit(max_angle))
         if !consider_intersecting_edges and !consider_touch_points
             output_layer = output_layer.with_distance(1, nil)
             if ignore_non_axis_aligned_edges
@@ -742,10 +736,10 @@ class DRC::DRCLayer
                 false)
         end
         if polygon_output
-            return output_layer.polygons.merge(true, 0)
-        else
-            return output_layer
+            output_layer = output_layer.polygons.merge(true, 0)
         end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
     end
 
     def ext_interacting_with_text(text_layer, text)
