@@ -161,12 +161,6 @@ class sealring(DloGen):
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
         
-        # Filler processing enhancement
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(edgeBox, corner_end, corner_width + edgeBox, w - corner_end))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(corner_end, edgeBox, l - corner_end, corner_width + edgeBox))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
-
         for layer in layers :
             dbCreateRect(self, Layer(layer, 'drawing'), Box(metalOffset, corner_end, metalOffset + corner_width, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, metalOffset, l - corner_end, metalOffset + corner_width))
