@@ -99,7 +99,7 @@ def createSimulation (exciteport):
 
     # SiO2
     SiO2 = CSX.AddMaterial('SiO2', epsilon=4.1)
-    SiO2_thick = 17.73
+    SiO2_thick = 15.73
     SiO2_zmin = EPI_zmax
     SiO2_zmax = SiO2_zmin + SiO2_thick
 

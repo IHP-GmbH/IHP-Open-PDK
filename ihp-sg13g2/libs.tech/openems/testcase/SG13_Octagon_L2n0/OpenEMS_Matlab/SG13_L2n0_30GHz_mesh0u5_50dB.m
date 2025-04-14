@@ -58,7 +58,7 @@ mesh.z = [mesh.z linspace(EPI.zmin,EPI.zmax,2)];
 %% SiO2
 CSX = AddMaterial( CSX, 'SiO2' );
 CSX = SetMaterialProperty( CSX, 'SiO2', 'Epsilon', 4.1 );
-SiO2.thick = 17.73;
+SiO2.thick = 15.73;
 SiO2.zmin = EPI.zmax;
 SiO2.zmax = SiO2.zmin + SiO2.thick;
 
