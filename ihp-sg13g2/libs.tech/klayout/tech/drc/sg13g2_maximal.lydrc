@@ -1274,9 +1274,14 @@ class DRC::DRCLayer
         return result
     end
 
-    def _ext_with_density(inverse, range, *args)
-        if self.is_empty?
-            return DRC::DRCLayer::new(@engine, RBA::Region::new())
+    def _ext_with_density(inverse,
+                          range,
+                          *args,
+                          tiles_stay_inside: false)
+        if inverse
+            method = :without_density
+        else
+            method = :with_density
         end
         if self.is_merged?
           merged_layer = self
@@ -1306,43 +1311,93 @@ class DRC::DRCLayer
             origin_x = bbox.left
             origin_y = bbox.bottom
             if tile_size and tile_step and (tile_size.get[0] != tile_step.get[0] or tile_size.get[1] != tile_step.get[1])
-              origin_x = bbox.left + tile_step.get[0]/2
-              origin_y = bbox.bottom + tile_step.get[1]/2
+                origin_x = bbox.left + (tile_size.get[0]-tile_step.get[0])/2
+                origin_y = bbox.bottom + (tile_size.get[1]-tile_step.get[1])/2
             end
             tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
             arguments.push(tile_origin)
-        elsif origin != 'cc'
+        elsif origin == 'cc'
+            origin_x = bbox.center.x
+            origin_y = bbox.center.y
+            tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
+        else
             raise "Unknown origin: 'cc' or 'll' expected"
         end
         if tile_size
             boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu)))
             tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
-            if inverse
-                return merged_layer.without_density(*arguments, tile_boundary, @engine.padding_ignore)
+            if tiles_stay_inside
+                if origin != 'll'
+                    raise "Option 'tiles_stay_inside' requires origin='ll'"
+                end
+                tile_width = tile_size.get[0]
+                tile_height = tile_size.get[1]
+                enlarged_bbox = bbox.dup
+                if tile_width &gt; bbox.width
+                    enlarged_bbox.right = bbox.left + tile_width
+                end
+                if tile_height &gt; bbox.height
+                    enlarged_bbox.top = bbox.bottom + tile_height
+                end
+                enlarged_boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox.to_itype(@engine.dbu)))
+                if tile_step
+                    tile_step_x = tile_step.get[0]
+                    tile_step_y = tile_step.get[1]
+                else
+                    tile_step_x = tile_width
+                    tile_step_y = tile_height
+                end
+                tile_count_x = 1 + ((bbox.width - tile_width) / tile_step_x).floor()
+                tile_count_x = tile_count_x &lt; 1 ? 1 : tile_count_x
+                tile_count_y = 1 + ((bbox.height - tile_height) / tile_step_y).floor()
+                tile_count_y = tile_count_y &lt; 1 ? 1 : tile_count_y
+                if tile_count_x == 1 and tile_count_y == 1
+                    tile_count = DRC::DRCTileCount::new(tile_count_x, 2)
+                else
+                    tile_count = DRC::DRCTileCount::new(tile_count_x, tile_count_y)
+                end
+                result = merged_layer.public_send(method, *arguments, tile_count, tile_boundary, @engine.padding_ignore)
+                need_top_row = false
+                need_right_column = false
+                if bbox.height &gt; tile_height + (tile_count_y-1)*tile_step_y
+                    need_top_row = true
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0], tile_origin.get[1]+bbox.height-tile_height)
+                    tile_count = DRC::DRCTileCount::new([2, tile_count_x].max, 1)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                if bbox.width &gt; tile_width + (tile_count_x-1)*tile_step_x
+                    need_right_column = true
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0]+bbox.width-tile_width, tile_origin.get[1])
+                    tile_count = DRC::DRCTileCount::new(1, [2, tile_count_y].max)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                if (need_top_row and bbox.width &gt; tile_width) or (need_right_column and bbox.height &gt; tile_height)
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0]+bbox.width-tile_width, tile_origin.get[1]+bbox.height-tile_height)
+                    tile_count = DRC::DRCTileCount::new(1, 2)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                result.raw.select_inside(enlarged_boundary_layer)
             else
-                return merged_layer.with_density(*arguments, tile_boundary, @engine.padding_ignore)
+                result = merged_layer.public_send(method, *arguments, tile_boundary, @engine.padding_ignore)
             end
+            return result.and(boundary_layer)
         else
             tile_size = DRC::DRCTileSize::new(bbox.width, bbox.height)
-            tile_count = DRC::DRCTileCount::new(1,2)
+            tile_count = DRC::DRCTileCount::new(1,3)
             enlarged_bbox = bbox.enlarged(1.1).to_itype(@engine.dbu)
             boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox))
             tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
-            if inverse
-                result = merged_layer.without_density(*arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
-            else
-                result = merged_layer.with_density(*arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
-            end
+            result = merged_layer.public_send(method, *arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
             return result.raw.overlapping(DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu))))
         end
     end
 
-    def ext_with_density(*args)
-        self._ext_with_density(false, *args)
+    def ext_with_density(*args, **kargs)
+        self._ext_with_density(false, *args, **kargs)
     end
 
-    def ext_without_density(*args)
-        self._ext_with_density(true, *args)
+    def ext_without_density(*args, **kargs)
+        self._ext_with_density(true, *args, **kargs)
     end
 
     def ext_outside(other)
@@ -2014,7 +2069,7 @@ if $densityRules
 	    Act_density.ext_without_density(0.35 .. 0.55, 'll')
 	end.().output("AFil.g/g1", "Global Activ density [%] = 35.00 .. 55.00")
 	-&gt; do
-	    Act_density.ext_without_density(0.25 .. 0.65, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    Act_density.ext_without_density(0.25 .. 0.65, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("AFil.g2/g3", "Activ coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 65.00")
 end
 
@@ -2448,7 +2503,7 @@ end
 
 if $densityRules
 	-&gt; do
-	    M1_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    M1_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("M1Fil.h/k", "Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 75.00")
 end
 
@@ -2471,7 +2526,7 @@ end
 
 if $densityRules
 	-&gt; do
-	    M2_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    M2_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("M2Fil.h/k", "Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 75.00")
 end
 
@@ -2494,7 +2549,7 @@ end
 
 if $densityRules
 	-&gt; do
-	    M3_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    M3_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("M3Fil.h/k", "Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 75.00")
 end
 
@@ -2517,7 +2572,7 @@ end
 
 if $densityRules
 	-&gt; do
-	    M4_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    M4_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("M4Fil.h/k", "Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 75.00")
 end
 
@@ -2540,7 +2595,7 @@ end
 
 if $densityRules
 	-&gt; do
-	    M5_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um))
+	    M5_density.ext_without_density(0.25 .. 0.75, 'll', tile_size(800.0.um), tile_step(400.0.um), tiles_stay_inside: true)
 	end.().output("M5Fil.h/k", "Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] = 25.00 .. 75.00")
 end
 
