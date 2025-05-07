@@ -649,23 +649,39 @@ proc diode_drc {instance symbol model w l } {
 
 ##################### save and display MOSFET parameters #####################
 
-# writes the .save instructions for given FET instance
+# writes the .save instructions for given FET or BIP instance
 proc write_save_lines {type model schpath spiceprefix instname} {
   global sch_expand
   if {[regexp {[pn]mos} $type]} {
     set m n$model
     set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
 
+    append sch_expand(savelist) ".save $devpath\[ids\]\n"
     append sch_expand(savelist) ".save $devpath\[gm\]\n"
     append sch_expand(savelist) ".save $devpath\[gds\]\n"
     append sch_expand(savelist) ".save $devpath\[vth\]\n"
+    append sch_expand(savelist) ".save $devpath\[vgs\]\n"
     append sch_expand(savelist) ".save $devpath\[vdss\]\n"
+    append sch_expand(savelist) ".save $devpath\[vds\]\n"
     append sch_expand(savelist) ".save $devpath\[cgg\]\n"
     append sch_expand(savelist) ".save $devpath\[cgsol\]\n"
     append sch_expand(savelist) ".save $devpath\[cgdol\]\n"
-  }
-}
+  } elseif {[regexp {vertical_npn} $type]} {
+    set m q$model
+    set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
 
+    append sch_expand(savelist) ".save $devpath\[gm\]\n"
+    append sch_expand(savelist) ".save $devpath\[go\]\n"
+    append sch_expand(savelist) ".save $devpath\[vbe\]\n"
+    append sch_expand(savelist) ".save $devpath\[vbc\]\n"
+    append sch_expand(savelist) ".save $devpath\[ib\]\n"
+    append sch_expand(savelist) ".save $devpath\[ic\]\n"
+    append sch_expand(savelist) ".save $devpath\[cbe\]\n"
+    append sch_expand(savelist) ".save $devpath\[cbep\]\n"
+    append sch_expand(savelist) ".save $devpath\[cbcp\]\n"
+  }
+  
+}
 ############ sch_expand
 # This proc traverses the hierarchy and prints all instances in design.
 proc sch_expand {{only_subckts 1} {all_hierarchy 1} {pattern {.*}}} {
@@ -735,13 +751,16 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
 ############ /sch_expand
 
 # generate the .save lines to save all mos parameters
-proc save_fet_params {} {
+proc save_params {} {
   global sch_expand
+  sch_expand 0 1 {vertical_npn}
+  append fet_bip_list $sch_expand(savelist)
   sch_expand 0 1 {[pn]mos}
-  return "* Place this .save file with a .include line in your testbench\n\n$sch_expand(savelist)"
+  append fet_bip_list $sch_expand(savelist)
+  return "* Place this .save file with a .include line in your testbench\n\n$fet_bip_list"
 }
 
-# displays mos parameters simulation data , used in symbol sky130_fd_pr/annotate_fet_params.sym
+# displays mos parameters simulation data , used in symbol annotate_fet_params.sym
 proc display_fet_params {instname} {
   set txt {}
   set schpath [xschem get sim_sch_path]
@@ -754,10 +773,13 @@ proc display_fet_params {instname} {
     set m n$model
     set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
 
+    append txt "ids   = [to_eng [xschem raw value i($devpath\[ids\]) -1]]\n"
     append txt "gm    = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
     append txt "gds   = [to_eng [xschem raw value $devpath\[gds\] -1]]\n"
     append txt "vth   = [to_eng [xschem raw value v($devpath\[vth\]) -1]]\n"
+    append txt "vgs   = [to_eng [xschem raw value v($devpath\[vgs\]) -1]]\n"
     append txt "vdss  = [to_eng [xschem raw value v($devpath\[vdss\]) -1]]\n"
+    append txt "vds   = [to_eng [xschem raw value v($devpath\[vds\]) -1]]\n"
     append txt "cgg   = [to_eng [xschem raw value $devpath\[cgg\] -1]]\n"
     append txt "cgdol = [to_eng [xschem raw value $devpath\[cgdol\] -1]]\n"
     append txt "cgsol = [to_eng [xschem raw value $devpath\[cgsol\] -1]]\n"
@@ -766,11 +788,54 @@ proc display_fet_params {instname} {
     set cgg [xschem raw value $devpath\[cgg\] -1]
     set cgdol [xschem raw value $devpath\[cgdol\] -1]
     set cgsol [xschem raw value $devpath\[cgsol\] -1]
+    set ids [xschem raw value i($devpath\[ids\]) -1]
+    if {[catch { expr $gm / $ids} gmid]} {
+      set gmid {}
+    }
     if {[catch { expr $gm / 2 / $pi / ($cgg + $cgdol + $cgsol)} ft]} {
       set ft {}
     }
     append txt "ft    = [to_eng ${ft}]\n"
+    append txt "gm/id = [to_eng [expr $gmid]]\n"
   }
+  return $txt
+}
+
+# displays biploar parameters simulation data , used in symbol annotate_bip_params.sym
+proc display_bip_params {instname} {
+  set txt {}
+  set schpath [xschem get sim_sch_path]
+  set symbol [xschem getprop instance $instname cell::name]
+  set spiceprefix [xschem getprop instance $instname spiceprefix]
+  set model [xschem translate $instname @model]
+  set type [xschem getprop symbol $symbol type]
+
+  set m q$model 
+  set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
+
+  append txt "gm   = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
+  append txt "go   = [to_eng [xschem raw value $devpath\[go\] -1]]\n"
+  append txt "vbe  = [to_eng [xschem raw value v($devpath\[vbe\]) -1]]\n"
+  set vbe [xschem raw value v($devpath\[vbe\]) -1]
+  set vbc [xschem raw value v($devpath\[vbc\]) -1]
+  if {[catch { expr $vbe - $vbc} vce]} {
+    set vce {}
+  }
+  append txt "vce  = [to_eng ${vce}]\n"
+  append txt "ib   = [to_eng [xschem raw value i($devpath\[ib\]) -1]]\n"
+  append txt "ic   = [to_eng [xschem raw value i($devpath\[ic\]) -1]]\n"
+  append txt "cbe  = [to_eng [xschem raw value $devpath\[cbe\] -1]]\n"
+  append txt "cbep = [to_eng [xschem raw value $devpath\[cbep\] -1]]\n"
+  append txt "cbcp = [to_eng [xschem raw value $devpath\[cbcp\] -1]]\n"
+  set pi 3.141592654
+  set gm [xschem raw value $devpath\[gm\] -1]
+  set cbe [xschem raw value $devpath\[cbe\] -1]
+  set cbep [xschem raw value $devpath\[cbep\] -1]
+  set cbcp [xschem raw value $devpath\[cbcp\] -1]
+  if {[catch { expr $gm / 2 / $pi / ($cbe + $cbep + $cbcp)} ft]} {
+    set ft {}
+  }
+  append txt "ft    = [to_eng ${ft}]\n"
   return $txt
 }
 
@@ -787,8 +852,8 @@ proc menupdk {} {
     menu $topwin.menubar.ihp -tearoff 0
 
     ## Create one entry
-    $topwin.menubar.ihp add command -label {Create FET .save file} -command {
-      write_data [save_fet_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+    $topwin.menubar.ihp add command -label {Create FET and BIP .save file} -command {
+      write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
       textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
     }
     ## Create one entry
