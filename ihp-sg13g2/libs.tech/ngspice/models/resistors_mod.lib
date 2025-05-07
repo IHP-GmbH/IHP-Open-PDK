@@ -16,6 +16,7 @@
 *
 *#######################################################################
 
+**ptap1 (TIE SUB)
 * In order to have consistency between the netlisted device format 
 * the w and l parameters are defined but not used.
 * The value of R is calculated by schematic capture tool.
@@ -33,7 +34,6 @@ R1 1 2 R=R
 R1 1 2 R=R
 .ends ntap1
 
-
 * Parasitic R/C models
 * aluminum: prozess tol. res_rpara
 * value is taken from extraction routine
@@ -43,7 +43,7 @@ R1 1 2 R=r*res_rpara TC1=TC1 TC2=TC2
 .ends Rparasitic
 
 .subckt rsil 1 3
-.param w=0.5e-6 l=0.5e-6 b=0 m=1 trise=0 sw_et=0
+.param w=0.5e-6 l=0.5e-6 mm_ok=1 b=0 m=1 trise=0 sw_et=0
 +postsim=0
 +kappa=1.85
 +ps=0.18e-6
@@ -70,6 +70,10 @@ NR1 1 0 2 dt rmod_rsil L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
++sw_mman=1
++nsmm_rsh='gauss(1, 1, (mm_ok != 1 ? 0 : 1))' ; number of standard deviations for rsh
++nsmm_w='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for w
++nsmm_l='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for l
 
 R2 2 3 R=res_rzspec TC1=3100e-6 TC2=0.3e-6 m=m
 
@@ -97,11 +101,14 @@ R2 2 3 R=res_rzspec TC1=3100e-6 TC2=0.3e-6 m=m
 +kfn=2.812e-12
 +afn=1.607
 +bfn=1.267
++smm_rsh=1.2 ; relative standard deviation for rsh [%]
++smm_w=0.01  ; absolute standard deviation for w [um]
++smm_l=0.01  ; absolute standard deviation for l [um]
 
 .ends rsil
 
 .subckt rhigh 1 3
-.param w=0.5e-6 l=0.96e-6 b=0 trise=0 m=1 sw_et=0
+.param w=0.5e-6 l=0.96e-6 mm_ok=1 b=0 trise=0 m=1 sw_et=0
 +postsim=0
 +kappa=1.85
 +ps=0.18e-6
@@ -128,6 +135,10 @@ NR1 1 0 2 dt rmod_rhigh L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=1
++sw_mman=1
++nsmm_rsh='gauss(1, 1, (mm_ok != 1 ? 0 : 1))' ; number of standard deviations for rsh
++nsmm_w='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for w
++nsmm_l='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for l
 
 R2 2 3 R=res_rzspec TC1=-2300e-6 TC2=2.1e-6 m=m
 
@@ -155,11 +166,14 @@ R2 2 3 R=res_rzspec TC1=-2300e-6 TC2=2.1e-6 m=m
 +kfn=5.205e-10
 +afn=1.935
 +bfn=0.9086
++smm_rsh=5  ; relative standard deviation for rsh [%]
++smm_w=0.01 ; absolute standard deviation for w [um]
++smm_l=0.01 ; absolute standard deviation for l [um]
 
 .ends rhigh
 
 .subckt rppd 1 3
-.param w=0.5e-6 l=0.5e-6 b=0 ps=0.18e-6 trise=0 m=1 sw_et=0
+.param w=0.5e-6 l=0.5e-6 mm_ok=1 b=0 ps=0.18e-6 trise=0 m=1 sw_et=0
 +postsim=0
 +kappa=1.85
 +weff=w+0.006e-6
@@ -184,6 +198,10 @@ NR1 1 0 2 dt res_rppd L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
++sw_mman=1
++nsmm_rsh='gauss(1, 1, (mm_ok != 1 ? 0 : 1))' ; number of standard deviations for rsh
++nsmm_w='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for w
++nsmm_l='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for l
 
 R2 2 3 R=res_rzspec TC1=-950e-6 m=m
 
@@ -210,5 +228,8 @@ R2 2 3 R=res_rzspec TC1=-950e-6 m=m
 +kfn=4.601e-11
 +afn=1.886
 +bfn=0.9963
++smm_rsh=1.5 ; relative standard deviation for rsh [%]
++smm_w=0.01  ; absolute standard deviation for w [um]
++smm_l=0.01  ; absolute standard deviation for l [um]
 
 .ends rppd
