@@ -672,11 +672,15 @@ proc write_save_lines {type model schpath spiceprefix instname} {
 
     append sch_expand(savelist) ".save $devpath\[gm\]\n"
     append sch_expand(savelist) ".save $devpath\[go\]\n"
+    append sch_expand(savelist) ".save $devpath\[gmu\]\n"
+    append sch_expand(savelist) ".save $devpath\[gpi\]\n"
+    append sch_expand(savelist) ".save $devpath\[gx\]\n"
     append sch_expand(savelist) ".save $devpath\[vbe\]\n"
     append sch_expand(savelist) ".save $devpath\[vbc\]\n"
     append sch_expand(savelist) ".save $devpath\[ib\]\n"
     append sch_expand(savelist) ".save $devpath\[ic\]\n"
     append sch_expand(savelist) ".save $devpath\[cbe\]\n"
+    append sch_expand(savelist) ".save $devpath\[cbc\]\n"
     append sch_expand(savelist) ".save $devpath\[cbep\]\n"
     append sch_expand(savelist) ".save $devpath\[cbcp\]\n"
   }
@@ -781,8 +785,6 @@ proc display_fet_params {instname} {
     append txt "vdss  = [to_eng [xschem raw value v($devpath\[vdss\]) -1]]\n"
     append txt "vds   = [to_eng [xschem raw value v($devpath\[vds\]) -1]]\n"
     append txt "cgg   = [to_eng [xschem raw value $devpath\[cgg\] -1]]\n"
-    append txt "cgdol = [to_eng [xschem raw value $devpath\[cgdol\] -1]]\n"
-    append txt "cgsol = [to_eng [xschem raw value $devpath\[cgsol\] -1]]\n"
     set pi 3.141592654
     set gm [xschem raw value $devpath\[gm\] -1]
     set cgg [xschem raw value $devpath\[cgg\] -1]
@@ -815,6 +817,13 @@ proc display_bip_params {instname} {
 
   append txt "gm   = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
   append txt "go   = [to_eng [xschem raw value $devpath\[go\] -1]]\n"
+  set gx [xschem raw value $devpath\[gx\] -1]
+  set gmu [xschem raw value $devpath\[gmu\] -1]
+  set gpi [xschem raw value $devpath\[gpi\] -1]
+  if {[catch { expr 1/($gx + $gmu + $gpi)} rin]} {
+    set rin {}
+  }
+  append txt "rin  = [to_eng ${rin}]\n"
   append txt "vbe  = [to_eng [xschem raw value v($devpath\[vbe\]) -1]]\n"
   set vbe [xschem raw value v($devpath\[vbe\]) -1]
   set vbc [xschem raw value v($devpath\[vbc\]) -1]
@@ -825,17 +834,17 @@ proc display_bip_params {instname} {
   append txt "ib   = [to_eng [xschem raw value i($devpath\[ib\]) -1]]\n"
   append txt "ic   = [to_eng [xschem raw value i($devpath\[ic\]) -1]]\n"
   append txt "cbe  = [to_eng [xschem raw value $devpath\[cbe\] -1]]\n"
-  append txt "cbep = [to_eng [xschem raw value $devpath\[cbep\] -1]]\n"
-  append txt "cbcp = [to_eng [xschem raw value $devpath\[cbcp\] -1]]\n"
+  append txt "cbc  = [to_eng [xschem raw value $devpath\[cbc\] -1]]\n"
   set pi 3.141592654
   set gm [xschem raw value $devpath\[gm\] -1]
   set cbe [xschem raw value $devpath\[cbe\] -1]
+  set cbc [xschem raw value $devpath\[cbc\] -1]
   set cbep [xschem raw value $devpath\[cbep\] -1]
   set cbcp [xschem raw value $devpath\[cbcp\] -1]
-  if {[catch { expr $gm / 2 / $pi / ($cbe + $cbep + $cbcp)} ft]} {
+  if {[catch { expr $gm / 2 / $pi / ($cbe + $cbc + $cbep + $cbcp)} ft]} {
     set ft {}
   }
-  append txt "ft    = [to_eng ${ft}]\n"
+  append txt "ft   = [to_eng ${ft}]\n"
   return $txt
 }
 
@@ -865,6 +874,8 @@ value="
 ** IHP models
 .lib cornerMOSlv.lib mos_tt
 .lib cornerMOShv.lib mos_tt
+.lib cornerHBT.lib hbt_typ
+.lib cornerRES.lib res_typ
 "
 spice_ignore=false
       }
@@ -879,6 +890,20 @@ spice_ignore=false
           xschem place_symbol sg13g2_pr/annotate_fet_params.sym "name=annot1 ref=$name"
         } else {
           xschem place_symbol sg13g2_pr/annotate_fet_params.sym
+        }
+      }
+      get_sel_inst_name
+    }
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add BIP param annotator} -command {
+      proc get_sel_inst_name {} {
+        set selset [lindex [xschem selected_set] 0]
+        if {$selset ne {}} {
+          set name [xschem getprop instance $selset name]
+          xschem place_symbol sg13g2_pr/annotate_bip_params.sym "name=annot1 ref=$name"
+        } else {
+          xschem place_symbol sg13g2_pr/annotate_bip_params.sym
         }
       }
       get_sel_inst_name
