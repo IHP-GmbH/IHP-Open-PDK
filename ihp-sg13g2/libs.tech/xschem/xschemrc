@@ -667,6 +667,9 @@ proc write_save_lines {type model schpath spiceprefix instname} {
     append sch_expand(savelist) ".save $devpath\[cgsol\]\n"
     append sch_expand(savelist) ".save $devpath\[cgdol\]\n"
   } elseif {[regexp {vertical_npn} $type]} {
+    if {[regexp {_5t$} $model]} {
+      set model [string range $model 0 end-3]
+    }
     set m q$model
     set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
 
@@ -812,39 +815,44 @@ proc display_bip_params {instname} {
   set model [xschem translate $instname @model]
   set type [xschem getprop symbol $symbol type]
 
-  set m q$model 
-  set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
+  if {[regexp {vertical_npn} $type]} {
+    if {[regexp {_5t$} $model]} {
+      set model [string range $model 0 end-3]
+    }
+    set m q$model
+    set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
 
-  append txt "gm   = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
-  append txt "go   = [to_eng [xschem raw value $devpath\[go\] -1]]\n"
-  set gx [xschem raw value $devpath\[gx\] -1]
-  set gmu [xschem raw value $devpath\[gmu\] -1]
-  set gpi [xschem raw value $devpath\[gpi\] -1]
-  if {[catch { expr 1/($gx + $gmu + $gpi)} rin]} {
-    set rin {}
+    append txt "gm   = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
+    append txt "go   = [to_eng [xschem raw value $devpath\[go\] -1]]\n"
+    set gx [xschem raw value $devpath\[gx\] -1]
+    set gmu [xschem raw value $devpath\[gmu\] -1]
+    set gpi [xschem raw value $devpath\[gpi\] -1]
+    if {[catch { expr 1/($gx + $gmu + $gpi)} rin]} {
+      set rin {}
+    }
+    append txt "rin  = [to_eng ${rin}]\n"
+    append txt "vbe  = [to_eng [xschem raw value v($devpath\[vbe\]) -1]]\n"
+    set vbe [xschem raw value v($devpath\[vbe\]) -1]
+    set vbc [xschem raw value v($devpath\[vbc\]) -1]
+    if {[catch { expr $vbe - $vbc} vce]} {
+      set vce {}
+    }
+    append txt "vce  = [to_eng ${vce}]\n"
+    append txt "ib   = [to_eng [xschem raw value i($devpath\[ib\]) -1]]\n"
+    append txt "ic   = [to_eng [xschem raw value i($devpath\[ic\]) -1]]\n"
+    append txt "cbe  = [to_eng [xschem raw value $devpath\[cbe\] -1]]\n"
+    append txt "cbc  = [to_eng [xschem raw value $devpath\[cbc\] -1]]\n"
+    set pi 3.141592654
+    set gm [xschem raw value $devpath\[gm\] -1]
+    set cbe [xschem raw value $devpath\[cbe\] -1]
+    set cbc [xschem raw value $devpath\[cbc\] -1]
+    set cbep [xschem raw value $devpath\[cbep\] -1]
+    set cbcp [xschem raw value $devpath\[cbcp\] -1]
+    if {[catch { expr $gm / 2 / $pi / ($cbe + $cbc + $cbep + $cbcp)} ft]} {
+      set ft {}
+    }
+    append txt "ft   = [to_eng ${ft}]\n"
   }
-  append txt "rin  = [to_eng ${rin}]\n"
-  append txt "vbe  = [to_eng [xschem raw value v($devpath\[vbe\]) -1]]\n"
-  set vbe [xschem raw value v($devpath\[vbe\]) -1]
-  set vbc [xschem raw value v($devpath\[vbc\]) -1]
-  if {[catch { expr $vbe - $vbc} vce]} {
-    set vce {}
-  }
-  append txt "vce  = [to_eng ${vce}]\n"
-  append txt "ib   = [to_eng [xschem raw value i($devpath\[ib\]) -1]]\n"
-  append txt "ic   = [to_eng [xschem raw value i($devpath\[ic\]) -1]]\n"
-  append txt "cbe  = [to_eng [xschem raw value $devpath\[cbe\] -1]]\n"
-  append txt "cbc  = [to_eng [xschem raw value $devpath\[cbc\] -1]]\n"
-  set pi 3.141592654
-  set gm [xschem raw value $devpath\[gm\] -1]
-  set cbe [xschem raw value $devpath\[cbe\] -1]
-  set cbc [xschem raw value $devpath\[cbc\] -1]
-  set cbep [xschem raw value $devpath\[cbep\] -1]
-  set cbcp [xschem raw value $devpath\[cbcp\] -1]
-  if {[catch { expr $gm / 2 / $pi / ($cbe + $cbc + $cbep + $cbcp)} ft]} {
-    set ft {}
-  }
-  append txt "ft   = [to_eng ${ft}]\n"
   return $txt
 }
 

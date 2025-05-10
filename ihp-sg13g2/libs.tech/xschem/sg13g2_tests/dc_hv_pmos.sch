@@ -84,12 +84,12 @@ model=sg13_hv_pmos
 spiceprefix=X
 }
 C {devices/ammeter.sym} 80 -110 1 0 {name=Vd}
-C {devices/launcher.sym} 550 -90 0 0 {name=h1
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/dc_hv_pmos.raw dc"
-}
 C {devices/launcher.sym} 550 -60 0 0 {name=h2
 descr="OP annotate" 
 tclcommand="xschem annotate_op"
 }
 C {sg13g2_pr/annotate_fet_params.sym} 30 -250 0 0 {name=annot1 ref=M1}
+C {devices/launcher.sym} 550 -90 0 0 {name=h1
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
+}
