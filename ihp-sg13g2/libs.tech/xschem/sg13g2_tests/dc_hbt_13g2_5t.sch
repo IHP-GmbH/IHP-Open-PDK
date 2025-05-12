@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -13,7 +12,7 @@ ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=0
+x1=-1.3877788e-17
 x2=1.5
 divx=5
 subdivx=1
@@ -23,7 +22,7 @@ unitx=1
 logx=0
 logy=0
 color="4 7"
-node="i(Vc)
+node="i(vc)
 i(vc1)"
 y1=-3.3e-05
 rainbow=0}
@@ -74,22 +73,18 @@ N 40 -80 150 -80 {
 lab=#net3}
 N 330 -0 400 -0 {
 lab=#net4}
-C {devices/code_shown.sym} -750 -480 0 0 {name=MODEL only_toplevel=true
-format="tcleval( @value )"
-value="
-.lib $::SG13G2_MODELS/cornerHBT.lib hbt_typ
-"}
 C {devices/code_shown.sym} -650 -380 0 0 {name=NGSPICE only_toplevel=true 
 value="
+.options savecurrents
+.include dc_hbt_13g2_5t.save
 .param temp=27
 .control
 save all 
 op
-print I(Vc)
-print V(tmp)
-reset 
-dc Vce 0 1.5 0.01 
-write test_npn_13G2.raw
+write dc_hbt_13g2_5t.raw
+set appendwrite
+dc Vce 0 1.5 0.01
+write dc_hbt_13g2_5t.raw
 .endc
 "}
 C {devices/gnd.sym} -170 80 0 0 {name=l1 lab=GND}
@@ -107,10 +102,6 @@ device=resistor
 m=1}
 C {devices/gnd.sym} -80 80 0 0 {name=l6 lab=GND}
 C {lab_wire.sym} -80 -20 0 0 {name=p1 sig_type=std_logic lab=tmp}
-C {devices/launcher.sym} 600 -160 0 0 {name=h5
-descr="load waves" 
-tclcommand="xschem raw_read $netlist_dir/test_npn_13G2.raw dc"
-}
 C {devices/gnd.sym} 400 90 0 0 {name=l7 lab=GND}
 C {devices/isource.sym} 400 40 2 0 {name=I1 value=1u}
 C {devices/gnd.sym} 290 80 0 0 {name=l8 lab=GND}
@@ -125,4 +116,19 @@ C {sg13g2_pr/npn13G2_5t.sym} -190 -10 0 0 {name=Q2
 model=npn13G2_5t
 spiceprefix=X
 Nx=1
+}
+C {devices/code_shown.sym} -660 -490 0 0 {name=MODEL only_toplevel=true
+format="tcleval( @value )"
+value="
+.lib cornerHBT.lib hbt_typ
+"}
+C {sg13g2_pr/annotate_bip_params.sym} -410 -170 0 0 {name=annot1 ref=Q2}
+C {sg13g2_pr/annotate_bip_params.sym} 470 -40 0 0 {name=annot2 ref=Q1}
+C {devices/launcher.sym} 400 -70 0 0 {name=h2
+descr="OP annotate" 
+tclcommand="xschem annotate_op"
+}
+C {devices/launcher.sym} 400 -110 0 0 {name=h1
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
 }
