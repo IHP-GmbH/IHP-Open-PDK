@@ -31,6 +31,17 @@ def generate_sealring(width: float, heigth: float, output: str):
     layout.dbu = 0.001
 
     lib = pya.Library.library_by_name(LIB)
+    if lib is None:
+        raise RuntimeError(
+            "Could not find the 'SG13_dev' PCell library in the current KLayout environment.\n"
+            "Please make sure the SG13G2 PDK is properly installed and configured in KLayout.\n"
+            "This may involve:\n"
+            "- Cloning the IHP-Open-PDK repository with all submodules (use --recursive)\n"
+            "- Ensuring the SG13G2 technology is registered in KLayout (e.g. using -n sg13g2)\n"
+            "- Running KLayout with a version that supports Python PCells and properly loads them\n"
+            "- Verifying that 'SG13_dev' appears in the Library Browser under PCells"
+        )
+    
     pcell_decl = lib.layout().pcell_declaration(PCELL)
 
     # Remove space around the sealring from width/height arguments.
