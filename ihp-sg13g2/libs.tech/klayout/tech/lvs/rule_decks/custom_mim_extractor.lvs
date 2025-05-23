@@ -45,6 +45,9 @@ class DeviceCustomMIM < RBA::DeviceClassCapacitor
     ter1.name = "mim_top"
     ter2.name = "mim_btm"
 
+    # Note: combiner is set for both cap_cmim and cap_rfcmim devices
+    self.combiner = MIMCAPNDeviceCombiner.new
+
     # Adding extra param & terminal for rfcmim
     return unless name.downcase.include?('rfcmim')
 
@@ -74,12 +77,14 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
     # Register device class for extraction.
     @reg_dev = DeviceCustomMIM.new(name)
 
+    # Setting the combiner here, works for the extracted device but not the source device.
+    # Move the assignment to the layout/source common DeviceCustomMIM function.
     # Disable combination for rfcmim
-    if name.downcase.include?('rfcmim')
-      @reg_dev.combiner = nil 
-    else
-      @reg_dev.combiner = MIMCAPNDeviceCombiner.new
-    end
+    #if name.downcase.include?('rfcmim')
+    #  @reg_dev.combiner = nil
+    #else
+    #  @reg_dev.combiner = MIMCAPNDeviceCombiner.new
+    #end
     register_device_class(@reg_dev)
   end
 
@@ -105,7 +110,7 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
     conn.connect(top_mim, dev_mk)
     conn.connect(btm_mim, dev_mk)
 
-    # Sub connection for rfcmim
+    # Sub connection for cap_rfcmim
     if name.downcase.include?('rfcmim')
       sub_mk = layers[5]
       conn.connect(sub_mk, dev_mk)
@@ -188,7 +193,7 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
     # Wfeed
     wfeed_edges = meas_mk.edges.and(dev_mk.edges)
     wfeed = get_uniq_length(wfeed_edges)
-  
+
     # Default values
     width ||= 0
     length ||= 0
