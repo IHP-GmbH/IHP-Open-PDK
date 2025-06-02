@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.7 file_version=1.2}
 G {}
 K {}
 V {}
@@ -27,6 +27,8 @@ i(vc1)"
 y1=-3.3e-05
 rainbow=0}
 T {Nx - number of emitters} -210 110 0 0 0.2 0.2 {}
+T {Ctrl-Click to execute launcher} 520 -100 0 0 0.3 0.3 {layer=11}
+T {.save file can be created with IHP->"Create FET and BIP .save file"} 520 20 0 0 0.3 0.3 {layer=11}
 N -300 60 -300 80 {
 lab=GND}
 N -300 -10 -300 0 {
@@ -124,13 +126,40 @@ format="tcleval( @value )"
 value="
 .lib cornerHBT.lib hbt_typ
 "}
-C {devices/launcher.sym} 390 -70 0 0 {name=h2
+C {sg13g2_pr/annotate_bip_params.sym} 450 -10 0 0 {name=annot1 ref=Q1}
+C {sg13g2_pr/annotate_bip_params.sym} -420 -90 0 0 {name=annot2 ref=Q2}
+C {devices/launcher.sym} 580 -30 0 0 {name=h3
 descr="OP annotate" 
 tclcommand="xschem annotate_op"
 }
-C {devices/launcher.sym} 390 -110 0 0 {name=h1
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
+C {devices/launcher.sym} 580 0 0 0 {name=h4
+descr="Load waves" 
+tclcommand="
+xschem raw_read $netlist_dir/[file rootname [file tail [xschem get current_name]]].raw dc
+xschem setprop rect 2 0 fullxzoom
+"
 }
-C {sg13g2_pr/annotate_bip_params.sym} 450 -10 0 0 {name=annot1 ref=Q1}
-C {sg13g2_pr/annotate_bip_params.sym} -420 -90 0 0 {name=annot2 ref=Q2}
+C {launcher.sym} 580 -60 0 0 {name=h5
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# Create FET and BIP .save file
+mkdir -p $netlist_dir
+write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}

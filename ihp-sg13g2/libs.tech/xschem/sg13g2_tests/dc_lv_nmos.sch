@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.7 file_version=1.2}
 G {}
 K {}
 V {}
@@ -24,6 +24,8 @@ logx=0
 logy=0
 sim_type=dc
 autoload=1}
+T {Ctrl-Click to execute launcher} 650 -330 0 0 0.3 0.3 {layer=11}
+T {.save file can be created with IHP->"Create FET and BIP .save file"} 650 -210 0 0 0.3 0.3 {layer=11}
 N 250 -160 250 -140 {
 lab=GND}
 N 250 -250 250 -220 {
@@ -74,7 +76,7 @@ C {devices/ammeter.sym} 440 -340 1 0 {name=Vd}
 C {sg13g2_pr/annotate_fet_params.sym} 240 -400 0 0 {name=annot1 ref=M1}
 C {lab_pin.sym} 250 -250 0 0 {name=p1 sig_type=std_logic lab=G}
 C {lab_pin.sym} 510 -340 0 1 {name=p2 sig_type=std_logic lab=D}
-C {devices/launcher.sym} 710 -300 0 0 {name=h1
+C {devices/launcher.sym} 710 -260 0 0 {name=h1
 descr="OP annotate" 
 tclcommand="xschem annotate_op"
 }
@@ -86,7 +88,34 @@ m=1
 model=sg13_lv_nmos
 spiceprefix=X
 }
-C {devices/launcher.sym} 710 -330 0 0 {name=h2
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
+C {devices/launcher.sym} 710 -230 0 0 {name=h2
+descr="Load waves" 
+tclcommand="
+xschem raw_read $netlist_dir/[file rootname [file tail [xschem get current_name]]].raw dc
+xschem setprop rect 2 0 fullxzoom
+"
 }
+C {launcher.sym} 710 -290 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# Create FET and BIP .save file
+mkdir -p $netlist_dir
+write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}

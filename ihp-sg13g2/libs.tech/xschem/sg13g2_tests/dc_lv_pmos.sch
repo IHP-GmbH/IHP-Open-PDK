@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.7 file_version=1.2}
 G {}
 K {}
 V {}
@@ -28,6 +28,8 @@ T {The Vds source is inverted in
 order to plot positive value of 
 the current, which corresponds 
 to real value of Ic} -290 -110 0 0 0.3 0.3 {}
+T {Ctrl-Click to execute launcher} 630 -90 0 0 0.3 0.3 {layer=11}
+T {.save file can be created with IHP->"Create FET and BIP .save file"} 630 30 0 0 0.3 0.3 {layer=11}
 N -110 70 -110 90 {
 lab=GND}
 N -110 -0 -110 10 {
@@ -55,7 +57,7 @@ format="tcleval( @value )"
 value="
 .lib cornerMOSlv.lib mos_tt
 "}
-C {devices/code_shown.sym} 290 -10 0 0 {name=NGSPICE only_toplevel=true 
+C {devices/code_shown.sym} 220 -10 0 0 {name=NGSPICE only_toplevel=true 
 value="
 .options savecurrents
 .include dc_lv_pmos.save
@@ -85,12 +87,39 @@ model=sg13_lv_pmos
 spiceprefix=X
 }
 C {devices/ammeter.sym} 80 -110 1 0 {name=Vd}
-C {devices/launcher.sym} 610 -50 0 0 {name=h2
+C {sg13g2_pr/annotate_fet_params.sym} 10 -270 0 0 {name=annot1 ref=M1}
+C {devices/launcher.sym} 690 -20 0 0 {name=h1
 descr="OP annotate" 
 tclcommand="xschem annotate_op"
 }
-C {sg13g2_pr/annotate_fet_params.sym} 10 -270 0 0 {name=annot1 ref=M1}
-C {devices/launcher.sym} 610 -80 0 0 {name=h1
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
+C {devices/launcher.sym} 690 10 0 0 {name=h2
+descr="Load waves" 
+tclcommand="
+xschem raw_read $netlist_dir/[file rootname [file tail [xschem get current_name]]].raw dc
+xschem setprop rect 2 0 fullxzoom
+"
 }
+C {launcher.sym} 690 -50 0 0 {name=h3
+descr=SimulateNGSPICE
+tclcommand="
+# Setup the default simulation commands if not already set up
+# for example by already launched simulations.
+set_sim_defaults
+puts $sim(spice,1,cmd) 
+
+# Change the Xyce command. In the spice category there are currently
+# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
+# you can get the number by querying $sim(spice,n)
+set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
+
+# change the simulator to be used (Xyce)
+set sim(spice,default) 0
+
+# Create FET and BIP .save file
+mkdir -p $netlist_dir
+write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+
+# run netlist and simulation
+xschem netlist
+simulate
+"}
