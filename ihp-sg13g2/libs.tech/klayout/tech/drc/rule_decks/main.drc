@@ -204,12 +204,12 @@ logger.info("Total area of the design is #{CHIP.area} um^2.")
 logger.info('Starting general IHP-SG13G2 derivations.')
 
 # n & p activ
-logger.info('Starting n/p Activ derivations')
+logger.info('Starting n/p activ general derivations')
 nactiv  = activ_drw.not(psd_drw.join(nsd_block))
 pactiv  = activ_drw.and(psd_drw)
 
 # Gate FETs
-logger.info('Starting Gate derivations')
+logger.info('Starting gate general derivations')
 res_mk = polyres_drw.join(res_drw)
 gate   = gatpoly_drw.and(activ_drw).not(res_mk)
 ngate  = nactiv.and(gate)
@@ -222,13 +222,13 @@ pgate_lv = pgate.not(thickgateox_drw)
 pgate_hv = pgate.and(thickgateox_drw)
 
 # Pwell
-logger.info('Starting Pwell derivations')
+logger.info('Starting pwell general derivations')
 pwell_allowed = CHIP.not(pwell_block)
 digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
 pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
 
 # tap1 labels
-logger.info('Starting Taps derivations')
+logger.info('Starting taps general derivations')
 well_patt = glob_to_case_insensitive_glob('well')
 sub_patt = glob_to_case_insensitive_glob('sub!')
 ntap1_lbl = text_drw.texts(well_patt)
@@ -243,12 +243,13 @@ ntap = nactiv.and(nwell_drw).not(ntap1_mk).not(recog_diode).not(gatpoly_drw)
 ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly_drw)
 
 # Cont derivations
-logger.info('Starting cont/contbar derivations')
+logger.info('Starting cont/contbar general derivations')
 cont_nseal = cont_drw.not(edgeseal_drw)
 contbar = cont_nseal.with_bbox_aspect_ratio(1.001..nil)
 cont_sq = cont_nseal.not(contbar)
 
 # Pad derivations
+logger.info('Starting pad general derivations')
 cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(topmetal2_drw)
 sbumppad = dfpad_sbump.and(passiv_sbump).and(topmetal2_drw)
 pad = passiv_drw.and(dfpad_drw).and(topmetal2_drw)
@@ -260,58 +261,6 @@ drc_tole = 0.005.um
 #------------- LAYERS CONNECTIONS ---------------
 #================================================
 
-if CONNECTIVITY_RULES
-
-  logger.info('Starting IHP-SG13G2 DRC connectivity related derivations.')
-  # nwell
-  nwell_iso = nwell_drw.and(nbulay_drw)
-  nwell_holes = nwell_drw.holes.not(nwell_drw)
-
-  # General pwell
-  pwell_sub = pwell_allowed.not(digisub_drw).not(nbulay_drw.interacting(nwell_holes))
-
-  # conn layers
-  poly_con      = gatpoly_drw.not(res_mk)
-  metal1_con    = metal1_drw.not(metal1_res)
-  metal2_con    = metal2_drw.not(metal2_res)
-  metal3_con    = metal3_drw.not(metal3_res)
-  metal4_con    = metal4_drw.not(metal4_res)
-  metal5_con    = metal5_drw.not(metal5_res)
-  topmetal1_con = topmetal1_drw.not(topmetal1_res).not(ind_drw)
-  topmetal2_con = topmetal2_drw.not(topmetal2_res).not(ind_drw)
-
-  # S/D FETs
-  nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
-  psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
-
-  # Mimcap
-  mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
-  topvia1_n_cap = topvia1_drw.not(mim_via)
-
-  logger.info('Starting IHP-SG13G2 DRC connectivity setup')
-  # Inter-layer
-  connect(pwell_sub, pwell)
-  connect(pwell, ptap)
-  connect(nwell_drw, ntap)
-  connect(ntap, cont_drw)
-  connect(ptap, cont_drw)
-  connect(poly_con, cont_drw)
-  connect(nsd_fet, cont_drw)
-  connect(psd_fet, cont_drw)
-  connect(cont_drw, metal1_con)
-  connect(metal1_con, via1_drw)
-  connect(via1_drw, metal2_con)
-  connect(metal2_con, via2_drw)
-  connect(via2_drw, metal3_con)
-  connect(metal3_con, via3_drw)
-  connect(via3_drw, metal4_con)
-  connect(metal4_con, via4_drw)
-  connect(via4_drw, metal5_con)
-  connect(metal5_con, topvia1_n_cap)
-  connect(topvia1_n_cap, topmetal1_con)
-  connect(topmetal1_con, topvia2_drw)
-  connect(topvia2_drw, topmetal2_con)
-end
 
 #================================================
 #------------ PRE-DEFINED FUNCTIONS -------------
@@ -418,12 +367,6 @@ def get_octagon(polygon_check)
   maybe_oct4 = maybe_oct3.interacting(v_edges_check, 2, 2)
   diag_edges_check = maybe_oct4.edges.with_angle(44.5, 45.5, absolute)
   maybe_oct4.interacting(diag_edges_check, 4, 4)
-end
-
-# === IMPLICIT EXTRACTION ===
-if CONNECTIVITY_RULES
-  logger.info('Connectivity rules enabled, Netlist object will be generated.')
-  netlist
 end
 
 #================================================
