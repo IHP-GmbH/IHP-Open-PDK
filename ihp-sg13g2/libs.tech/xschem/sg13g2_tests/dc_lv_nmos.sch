@@ -70,12 +70,8 @@ C {devices/vsource.sym} 510 -250 0 0 {name=Vds value=1.5}
 C {devices/gnd.sym} 510 -160 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 450 -160 0 0 {name=l4 lab=GND}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
-C {devices/launcher.sym} 710 -330 0 0 {name=h5
-descr="load waves Ctrl + left click" 
-tclcommand="xschem raw_read $netlist_dir/dc_lv_nmos.raw dc"
-}
 C {devices/ammeter.sym} 440 -340 1 0 {name=Vd}
-C {sg13g2_pr/annotate_fet_params.sym} 260 -380 0 0 {name=annot1 ref=M1}
+C {sg13g2_pr/annotate_fet_params.sym} 240 -400 0 0 {name=annot1 ref=M1}
 C {lab_pin.sym} 250 -250 0 0 {name=p1 sig_type=std_logic lab=G}
 C {lab_pin.sym} 510 -340 0 1 {name=p2 sig_type=std_logic lab=D}
 C {devices/launcher.sym} 710 -300 0 0 {name=h1
@@ -89,4 +85,8 @@ ng=1
 m=1
 model=sg13_lv_nmos
 spiceprefix=X
+}
+C {devices/launcher.sym} 710 -330 0 0 {name=h2
+descr="load waves Ctrl + left click" 
+tclcommand="xschem raw_read $netlist_dir/[file rootname [xschem get current_name]].raw dc"
 }

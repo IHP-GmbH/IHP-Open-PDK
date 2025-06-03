@@ -1,37 +1,18 @@
-*******************************************************************************
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2025 IHP PDK Authors                                              *
 *                                                                             *
-* Library:      SG13_dev                                                      *
-* Technologies: SG13S                                                         *
-* Component:    Spice model file                                              *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
 *                                                                             *
-* Simulator:    NGSPICE                                                       *
-* Model:        MOSVAR 1.3                                                    *
-* Revision:     14/02/25                                                      *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
 *                                                                             *
-* Copyright (c) 2002,2021 IHP microelectronics GmbH                           *
-* Copyright (c) 2002,2021 AdMOS GmbH                                          *
-*                                                                             *
-* IHP GmbH, Im Technologiepark 25, 15236 Frankfurt (Oder), Germany            *
-* Phone: +49 335 5625 0, Fax: +49 335 5625 300                                *
-* E-Mail: ihp@ihp-microelectronics.com                                        *
-*                                                                             *
-*******************************************************************************
-*                                                                             *
-* This file contains proprierary confidential informations.                   *
-* Unauthorized use, duplication or disclosure prohibited                      *
-*                                                                             *
-* This file contains data which are subject to be changed by                  *
-* IHP without notice.  This proprietary data is intended                      *
-* for use by the recipient under the terms and conditions of the existing     *
-* Confidential Exchange/Disclosure Agreement.                                 *
-*                                                                             *
-* WITH RESPECT TO MATERIALS AND INFORMATION PROVIDED BY IHP, NO               *
-* WARRANTIES EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF          *
-* MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, ARE OFFERED HEREIN.    *
-* In no event shall IHP be liable for any actual, incidental,                 *
-* consequential or other damages, including lost profits or lost savings,     *
-* even if it is given prior notice of the same, which result from any use     *
-* of the materials or information.                                            *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
 *                                                                             *
 *******************************************************************************
 *******************************************************************************
@@ -44,7 +25,7 @@
 *                        |  |  |  Substrate
 *                        |  |  |  |
 .subckt sg13_hv_svaricap G1 W G2 bn
-.params l=600e-9  w=3e-6  Nx=1  Ny=1  trise=0  ic_=1e10
+.params l=600e-9  w=3e-6  mm_ok=1 Nx=1  Ny=1  trise=0  ic_=1e10
 
 *LowL  paramtest warnif = (l<300n)  message="Channel length must be >=300n."
 *HiL  paramtest warnif = (l>800n)  message="Channel length must be <=800n."
@@ -90,13 +71,13 @@ rdummy2 bn 4 r = 0.0001
 
 * --------- MOS Varactor 1 ------------------------------
 nmvcap1 G1 bi1 W0 sg13_hv_svaricap m = 'Nx*Ny' dta = trise
-+ w='agauss(w, sg13g2_hv_svaricap_dw_mm, 1)'
-+ l='agauss(l, sg13g2_hv_svaricap_dl_mm, 1)'
++ w='agauss(w, sg13g2_hv_svaricap_dw_mm, (mm_ok != 1 ? 0 : 1))'
++ l='agauss(l, sg13g2_hv_svaricap_dl_mm, (mm_ok != 1 ? 0 : 1))'
 
 * --------- MOS Varactor 2 ------------------------------
 nmvcap2 G2 bi2 W0 sg13_hv_svaricap m = 'Nx*Ny' dta = trise
-+ w='agauss(w, sg13g2_hv_svaricap_dw_mm, 1)'
-+ l='agauss(l, sg13g2_hv_svaricap_dl_mm, 1)'
++ w='agauss(w, sg13g2_hv_svaricap_dw_mm, (mm_ok != 1 ? 0 : 1))'
++ l='agauss(l, sg13g2_hv_svaricap_dl_mm, (mm_ok != 1 ? 0 : 1))'
 
 * --------- Well Parasitic --------------------
 rww   W  W0 r = '((((rwell0+(rwellvw*(v(2, 4))))+((rwellw+(rwellwvw*(v(2, 4))))*w))+(((rwellnx+(rwellnxvw*(v(2, 4))))*w)/(Nx*Ny)))*Nx)*Ny'

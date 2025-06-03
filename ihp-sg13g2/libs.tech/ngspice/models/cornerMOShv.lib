@@ -71,7 +71,7 @@
 *******************************************************************************
 
 **************** CORNER_LIB OF sg13g2_hv TT MODEL ****************
-* Typical without statistical
+* Typical
 .LIB mos_tt
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -120,6 +120,57 @@
   .include sg13g2_moshv_mod.lib
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_tt
+
+* Typical with mismatch
+.LIB mos_tt_mismatch
+  .param sg13g2_hv_nmos_vfbo   = 1.0
+  .param sg13g2_hv_nmos_rsgo   = 1.0000
+  .param sg13g2_hv_nmos_rsw1   = 0.7886
+  .param sg13g2_hv_nmos_mueo   = 1.0780
+  .param sg13g2_hv_nmos_dphibo = 1.4388
+  .param sg13g2_hv_nmos_dphibl = 1.5299
+  .param sg13g2_hv_nmos_dphibw = 1.0000
+  .param sg13g2_hv_nmos_dphiblw= 0.8712
+  .param sg13g2_hv_nmos_ctl    = 1.0000
+  .param sg13g2_hv_nmos_thesato= 1.0000
+  .param sg13g2_hv_nmos_thesatl= 1.0350
+  .param sg13g2_hv_nmos_thesatw= 1.0000
+  .param sg13g2_hv_nmos_thesatlw= 1.6050
+  .param sg13g2_hv_nmos_toxo   = 1.0000
+  .param sg13g2_hv_nmos_toxovo = 1.0000
+  .param sg13g2_hv_nmos_cjorbot= 1.0000
+  .param sg13g2_hv_nmos_cjorsti= 1.0000
+  .param sg13g2_hv_nmos_cjorgat= 1.0000
+
+  .param sg13g2_hv_pmos_vfbo   = 1.0
+  .param sg13g2_hv_pmos_rsgo   = 1.1110
+  .param sg13g2_hv_pmos_rsw1   = 1.0000
+  .param sg13g2_hv_pmos_mueo   = 0.9605
+  .param sg13g2_hv_pmos_dphibo = 1.0010
+  .param sg13g2_hv_pmos_dphibl = 0.9504
+  .param sg13g2_hv_pmos_dphibw = 1.4080
+  .param sg13g2_hv_pmos_dphiblw= -0.1693
+  .param sg13g2_hv_pmos_bgidlo = 0.8409
+  .param sg13g2_hv_pmos_thesato= 1.0000
+  .param sg13g2_hv_pmos_thesatl= 0.4814
+  .param sg13g2_hv_pmos_thesatw= 5.7745
+  .param sg13g2_hv_pmos_thesatlw= 1.0000
+  .param sg13g2_hv_pmos_csl    = 1.0000
+  .param sg13g2_hv_pmos_toxo   = 1.0000
+  .param sg13g2_hv_pmos_toxovo = 1.0000
+  .param sg13g2_hv_pmos_cjorbot= 1.0000
+  .param sg13g2_hv_pmos_cjorsti= 1.0000
+  .param sg13g2_hv_pmos_cjorgat= 1.0000
+
+  .param sg13g2_hv_svaricap_vfbo = 1.0
+  .param sg13g2_hv_svaricap_toxo = 1.0
+  .param sg13g2_hv_svaricap_dlq  = 1.0
+  .param sg13g2_hv_svaricap_dwq  = 1.0
+
+  .include sg13g2_moshv_mismatch.lib
+  .include sg13g2_moshv_mod_mismatch.lib
+  .include sg13g2_svaricaphv_mod_mismatch.lib
+.ENDL mos_tt_mismatch
 
 * Typical with statistical
 .LIB mos_tt_stat
@@ -172,59 +223,8 @@
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_tt_stat
 
-* Typical with local statistical modeling
-.LIB mos_tt_mismatch
-  .param sg13g2_hv_nmos_vfbo   = 1.0
-  .param sg13g2_hv_nmos_rsgo   = 1.0000
-  .param sg13g2_hv_nmos_rsw1   = 0.7886
-  .param sg13g2_hv_nmos_mueo   = 1.0780
-  .param sg13g2_hv_nmos_dphibo = 1.4388
-  .param sg13g2_hv_nmos_dphibl = 1.5299
-  .param sg13g2_hv_nmos_dphibw = 1.0000
-  .param sg13g2_hv_nmos_dphiblw= 0.8712
-  .param sg13g2_hv_nmos_ctl    = 1.0000
-  .param sg13g2_hv_nmos_thesato= 1.0000
-  .param sg13g2_hv_nmos_thesatl= 1.0350
-  .param sg13g2_hv_nmos_thesatw= 1.0000
-  .param sg13g2_hv_nmos_thesatlw= 1.6050
-  .param sg13g2_hv_nmos_toxo   = 1.0000
-  .param sg13g2_hv_nmos_toxovo = 1.0000
-  .param sg13g2_hv_nmos_cjorbot= 1.0000
-  .param sg13g2_hv_nmos_cjorsti= 1.0000
-  .param sg13g2_hv_nmos_cjorgat= 1.0000
-
-  .param sg13g2_hv_pmos_vfbo   = 1.0
-  .param sg13g2_hv_pmos_rsgo   = 1.1110
-  .param sg13g2_hv_pmos_rsw1   = 1.0000
-  .param sg13g2_hv_pmos_mueo   = 0.9605
-  .param sg13g2_hv_pmos_dphibo = 1.0010
-  .param sg13g2_hv_pmos_dphibl = 0.9504
-  .param sg13g2_hv_pmos_dphibw = 1.4080
-  .param sg13g2_hv_pmos_dphiblw= -0.1693
-  .param sg13g2_hv_pmos_bgidlo = 0.8409
-  .param sg13g2_hv_pmos_thesato= 1.0000
-  .param sg13g2_hv_pmos_thesatl= 0.4814
-  .param sg13g2_hv_pmos_thesatw= 5.7745
-  .param sg13g2_hv_pmos_thesatlw= 1.0000
-  .param sg13g2_hv_pmos_csl    = 1.0000
-  .param sg13g2_hv_pmos_toxo   = 1.0000
-  .param sg13g2_hv_pmos_toxovo = 1.0000
-  .param sg13g2_hv_pmos_cjorbot= 1.0000
-  .param sg13g2_hv_pmos_cjorsti= 1.0000
-  .param sg13g2_hv_pmos_cjorgat= 1.0000
-
-  .param sg13g2_hv_svaricap_vfbo  = 1.0
-  .param sg13g2_hv_svaricap_toxo  = 1.0
-  .param sg13g2_hv_svaricap_dlq  = 1.0
-  .param sg13g2_hv_svaricap_dwq  = 1.0
-
-  .include sg13g2_moshv_mismatch.lib
-  .include sg13g2_moshv_mod_mismatch.lib
-  .include sg13g2_svaricaphv_mod_mismatch.lib
-.ENDL mos_tt_mismatch
-
 **************** CORNER_LIB OF sg13g2_hv SS MODEL ****************
-* Slow n, Slow p without statistical
+* Slow n, Slow p
 .LIB mos_ss
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -274,6 +274,7 @@
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ss
 
+* Slow n, Slow p with mismatch
 .LIB mos_ss_mismatch
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -316,8 +317,8 @@
 
   .param sg13g2_hv_svaricap_vfbo  = 0.8
   .param sg13g2_hv_svaricap_toxo  = 1.04
-  .param sg13g2_hv_svaricap_dlq  = 1.1
-  .param sg13g2_hv_svaricap_dwq  = 1.1
+  .param sg13g2_hv_svaricap_dlq  = 1.05
+  .param sg13g2_hv_svaricap_dwq  = 1.05
 
   .include sg13g2_moshv_mismatch.lib
   .include sg13g2_moshv_mod_mismatch.lib
@@ -325,7 +326,7 @@
 .ENDL mos_ss_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv FF MODEL ****************
-* Fast n, Fast p without statistical
+* Fast n, Fast p
 .LIB mos_ff
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -375,6 +376,7 @@
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_ff
 
+* Fast n, Fast p with mismatch
 .LIB mos_ff_mismatch
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -426,7 +428,7 @@
 .ENDL mos_ff_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv SF MODEL ****************
-* Slow n, Fast p without statistical
+* Slow n, Fast p
 .LIB mos_sf
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -476,6 +478,7 @@
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_sf
 
+* Slow n, Fast p with mismatch
 .LIB mos_sf_mismatch
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -527,7 +530,7 @@
 .ENDL mos_sf_mismatch
 
 **************** CORNER_LIB OF sg13g2_hv FS MODEL ****************
-* Fast n, Slow p without statistical
+* Fast n, Slow p
 .LIB mos_fs
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -577,6 +580,7 @@
   .include sg13g2_svaricaphv_mod.lib
 .ENDL mos_fs
 
+* Fast n, Slow p with mismatch
 .LIB mos_fs_mismatch
   .param sg13g2_hv_nmos_vfbo   = 1.0
   .param sg13g2_hv_nmos_rsgo   = 1.0000

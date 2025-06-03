@@ -42,11 +42,11 @@
 .param Nx=1 dtemp=0
 +Ny=1 le=0.96e-6 we=0.12e-6
 +El=le*1e6
-+selft=0
-+area=1
-.param mm_ok=1
++selft=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2_NX_vbic npn
@@ -116,7 +116,7 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '0.585*(Nx*0.25)'
 + tr = 3.50E-13
-+ td = '2.80E-13*(Nx*0.25)**0'
++ td = 'sw_nqs*2.80E-13*(Nx*0.25)**0'
 + cth = '1.60E-12*(Nx*0.25)**0.95'
 + rth = '1*selft*3.26E+03*(4/Nx)**0.9'
 + ea = 1.056
@@ -142,6 +142,7 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 
 Rsub s1 bn R = '300+100*Nx'
 Csub s1 bn C = '2.30E-14-(1.50E-15*Nx)'
+Rt t 0 R = 1e9
 .ends npn13G2
 
 * 5 terminal version of npn13G2 device
@@ -152,10 +153,10 @@ Csub s1 bn C = '2.30E-14-(1.50E-15*Nx)'
 +Ny=1 le=0.96e-6 we=0.12e-6
 +El=le*1e6
 +selft=1
-+area=1
-.param mm_ok=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2_NX_vbic npn
@@ -225,7 +226,7 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '0.585*(Nx*0.25)'
 + tr = 3.50E-13
-+ td = '2.80E-13*(Nx*0.25)**0'
++ td = 'sw_nqs*2.80E-13*(Nx*0.25)**0'
 + cth = '1.60E-12*(Nx*0.25)**0.95'
 + rth = '1*selft*3.26E+03*(4/Nx)**0.9'
 + ea = 1.056
@@ -250,8 +251,8 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1 area=qarea
 + bfn = 1.00
 
 Rsub s1 bn R = '300+100*Nx'
-Rt t 0 R = 1e9
 Csub s1 bn C = '2.30E-14-(1.50E-15*Nx)'
+Rt t 0 R = 1e9
 .ends npn13G2_5t
 
 *--------------------npn13g2l----------------------------------------------------
@@ -281,11 +282,11 @@ Csub s1 bn C = '2.30E-14-(1.50E-15*Nx)'
 .param Nx=1 le=2.50e-6 dtemp=0
 +Ny=1 we=0.12e-6
 +El=le*1e6
-+selft=0
-+area=1
-.param mm_ok=1
++selft=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2l_NX_vbic npn
@@ -355,7 +356,7 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '1.658*(El/2.5)*(Nx*0.25)'
 + tr = 5.00E-13
-+ td = '2.8e-13*(El/2.5)'
++ td = 'sw_nqs*2.8e-13*(El/2.5)'
 + cth = '4.18E-12*(El/2.5)**0.8*(Nx*0.25)**0.8'
 + rth = 'selft*1.63E+03*(2.5/El)**0.85*(4/Nx)**0.8'
 + ea = 1.045
@@ -381,6 +382,7 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1 area=qarea
 
 Rsub s1 bn R = '(300+(400*Nx))*(El/2.5)**0.5'
 Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
+Rt t 0 R = 1e9
 .ends npn13G2l
 
 * a five terminal version of npn13G2l device
@@ -389,10 +391,10 @@ Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
 +Ny=1 we=0.12e-6
 +El=le*1e6
 +selft=1
-+area=1
-.param mm_ok=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2l_NX_vbic npn
@@ -462,7 +464,7 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '1.658*(El/2.5)*(Nx*0.25)'
 + tr = 5.00E-13
-+ td = '2.8e-13*(El/2.5)'
++ td = 'sw_nqs*2.8e-13*(El/2.5)'
 + cth = '4.18E-12*(El/2.5)**0.8*(Nx*0.25)**0.8'
 + rth = 'selft*1.63E+03*(2.5/El)**0.85*(4/Nx)**0.8'
 + ea = 1.045
@@ -513,16 +515,17 @@ Rt t 0 R = 1e9
 * model card checked with SPECTRE 10.x and ADS2009U1
 * ________________________________________________________________________
 
+
 * a four terminal npn13G2v device model 
 .subckt npn13G2v c b e bn
 .param Nx=1 le=2.50e-6 dtemp=0
 +Ny=1 we=0.12e-6
 +El=le*1e6
-+selft=0
-+area=1
-.param mm_ok=1
++selft=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2v_NX_vbic npn
@@ -592,7 +595,7 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '0.390*(El/2.5)*(Nx*0.25)'
 + tr = 1.50E-12
-+ td = '5.60E-13*(El/2.5)'
++ td = 'sw_nqs*5.60E-13*(El/2.5)'
 + cth = '4.40E-12*(El/2.5)**1*(Nx*0.25)**0.8'
 + rth = 'selft*1.55E+03*(2.5/El)**1*(4/Nx)**0.88'
 + ea = 1.030
@@ -618,6 +621,7 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1 area=qarea
 
 Rsub s1 bn R = '(300+(400*Nx))*(El/2.5)**0.85'
 Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
+Rt t 0 R = 1e9
 .ends npn13G2v
 
 * a five terminal npn13G2v device model 
@@ -626,10 +630,10 @@ Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
 +Ny=1 we=0.12e-6
 +El=le*1e6
 +selft=1
-+area=1
-.param mm_ok=1
++sw_nqs=0
++mm_ok=1
 
-.param qarea='agauss(area, 0.1, mm_ok)'
+.param qarea='agauss(1, 0.1, (mm_ok != 1 ? 0 : 1))'
 Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1 area=qarea
 
 .model npn13G2v_NX_vbic npn
@@ -699,7 +703,7 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1 area=qarea
 + vtf = 20.0
 + itf = '0.390*(El/2.5)*(Nx*0.25)'
 + tr = 1.50E-12
-+ td = '5.60E-13*(El/2.5)'
++ td = 'sw_nqs*5.60E-13*(El/2.5)'
 + cth = '4.40E-12*(El/2.5)**1*(Nx*0.25)**0.8'
 + rth = 'selft*1.55E+03*(2.5/El)**1*(4/Nx)**0.88'
 + ea = 1.030
