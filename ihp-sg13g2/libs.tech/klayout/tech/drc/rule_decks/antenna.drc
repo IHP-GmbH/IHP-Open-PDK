@@ -1,0 +1,106 @@
+#====================================================================================================================
+#--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
+#====================================================================================================================
+require 'time'
+require 'logger'
+require 'etc'
+
+exec_start_time = Time.now
+
+logger = Logger.new($stdout)
+
+logger.formatter = proc do |_severity, datetime, _progname, msg|
+  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10, 40].strip + ") : #{msg}
+"
+end
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running IHP-SG13G2 Klayout DRC Antenna runset on #{$input}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $input
+  if $topcell
+    source($input, $topcell)
+  else
+    source($input)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report
+  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at: #{$report}")
+  report('Antenna DRC Run Report at', $report)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join('sg13g2_drc_antenna.lyrdb').to_s
+  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at default location: #{report_path}")
+  report('Antenna DRC Run Report at', report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+  obj.to_s.downcase == 'true'
+end
+
+# threads
+if $thr
+  threads($thr)
+else
+  thr ||= Etc.nprocessors
+  threads(thr)
+end
+
+logger.info("Klayout will use #{$thr} thread(s)")
+
+# === TILING MODE ===
+case $run_mode
+## Tiling mode is for testing purpose only [Not used in run_drc.py]
+when 'tiling'
+  tiles(500.um)
+  tile_borders(10.um)
+  logger.info('Tiling  mode is enabled.')
+
+when 'deep'
+  #=== HIER MODE ===
+  deep
+  logger.info("deep  mode is enabled for antenna table")
+else
+  #=== FLAT MODE ===
+  flat
+  logger.info("flat  mode is enabled for antenna table")
+end
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+# %include layers_def.drc
+
+#================================================
+#-------------- COMMON DERIVATIONS --------------
+#================================================
+
+# ==== dantenna diode ====
+dantenna = nactiv.and(recog_diode).and(pwell)
+dpantenna = pactiv.and(recog_diode).and(nwell_drw)
+
+
+
+if BEOL
+  #===============================================
+  # ------------------ 7.1 Antenna ---------------
+  #===============================================
+  logger.info('Starting 7.1 Antenna table')
+
+  # antenna derivations
+
+end
