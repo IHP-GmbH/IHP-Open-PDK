@@ -203,45 +203,6 @@ logger.info("Total area of the design is #{CHIP.area} um^2.")
 # === General Derivations ===
 logger.info('Starting general IHP-SG13G2 derivations.')
 
-# n & p activ
-logger.info('Starting n/p activ general derivations')
-nactiv  = activ_drw.not(psd_drw.join(nsd_block))
-pactiv  = activ_drw.and(psd_drw)
-
-# Gate FETs
-logger.info('Starting gate general derivations')
-res_mk = polyres_drw.join(res_drw)
-gate   = gatpoly_drw.and(activ_drw).not(res_mk)
-ngate  = nactiv.and(gate)
-pgate  = pactiv.and(gate)
-
-# GatPoly types
-ngate_lv = ngate.not(thickgateox_drw)
-ngate_hv = ngate.and(thickgateox_drw)
-pgate_lv = pgate.not(thickgateox_drw)
-pgate_hv = pgate.and(thickgateox_drw)
-
-# Pwell
-logger.info('Starting pwell general derivations')
-pwell_allowed = CHIP.not(pwell_block)
-digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
-pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
-
-# tap1 labels
-logger.info('Starting taps general derivations')
-well_patt = glob_to_case_insensitive_glob('well')
-sub_patt = glob_to_case_insensitive_glob('sub!')
-ntap1_lbl = text_drw.texts(well_patt)
-ptap1_lbl = text_drw.texts(sub_patt)
-# ntap1 marker
-ntap1_mk = nwell_drw.interacting(ntap1_lbl)
-# ptap1 marker
-ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
-
-# n & p taps (short connections)
-ntap = nactiv.and(nwell_drw).not(ntap1_mk).not(recog_diode).not(gatpoly_drw)
-ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly_drw)
-
 # Cont derivations
 logger.info('Starting cont/contbar general derivations')
 cont_nseal = cont_drw.not(edgeseal_drw)
