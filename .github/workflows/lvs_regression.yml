@@ -36,7 +36,7 @@ jobs:
       - name: Installing Klayout
         run: |
           sudo apt update -qq -y
-          curl -L --retry 5 --retry-delay 5 -o klayout.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 -o klayout.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
           # The dpkg command will fail complaining about missing dependencies.
           sudo dpkg -i ./klayout.deb || true
           # The apt install command should install the missing dependencies
@@ -60,7 +60,7 @@ jobs:
       - name: Installing Klayout
         run: |
           sudo apt update -qq -y
-          curl -L --retry 5 --retry-delay 5 -o klayout.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 -o klayout.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
           # The dpkg command will fail complaining about missing dependencies.
           sudo dpkg -i ./klayout.deb || true
           # The apt install command should install the missing dependencies
