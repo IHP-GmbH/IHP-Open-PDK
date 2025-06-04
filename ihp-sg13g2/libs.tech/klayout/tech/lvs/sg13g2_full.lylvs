@@ -3281,18 +3281,18 @@ nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(re
 psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
 
 
-# n1/p1 taps labels
+# tap1 labels
 well_patt = glob_to_case_insensitive_glob("well")
 sub_patt = glob_to_case_insensitive_glob("sub!")
-
 ntap1_lbl = text_drw.texts(well_patt)
-ntap1_mk = nwell_drw.interacting(ntap1_lbl)
-
 ptap1_lbl = text_drw.texts(sub_patt)
+# ntap1 marker
+ntap1_mk = nwell_drw.interacting(ntap1_lbl)
+# ptap1 marker
 ptap1_mk = substrate_drw.and(pwell).interacting(ptap1_lbl)
 
 # n & p taps (short connections)
-ntap = nactiv.and(nwell_drw).not(recog_diode).not(gatpoly).not(ntap1_mk)
+ntap = nactiv.and(nwell_drw).not(ntap1_mk).not(recog_diode).not(gatpoly)
 ptap = pactiv.and(pwell).not(ptap1_mk).not(recog_diode).not(gatpoly)
 ptap_holes = ptap.holes
 ntap_holes = ntap.holes
@@ -3321,6 +3321,7 @@ mos_exclude = pwell_block.join(nsd_drw).join(trans_drw)
                 .join(activ_mask).join(recog_diode).join(recog_esd)
                 .join(ind_drw).join(ind_pin).join(ind_drw)
                 .join(substrate_drw).join(nsd_block)
+                .join(gatpoly_filler.not_overlapping(cont_drw.and(metal1_drw)))
 
 # ==== General FETs & RF-FETs =====
 
@@ -3579,16 +3580,19 @@ polyres_mk = polyres_drw.and(extblock_drw).interacting(gatpoly).not(polyres_excl
 
 ## rhigh
 rhigh_res = polyres_mk.and(psd_drw).and(nsd_drw).and(salblock_drw)
-rhigh_ports = gatpoly.interacting(rhigh_res).not(rhigh_res)
+rhigh_ports_pre = gatpoly.interacting(rhigh_res).not(rhigh_res)
+rhigh_ports = rhigh_ports_pre.edges.and(rhigh_res.edges).extended(0, 0, 5.nm, 5.nm).not(rhigh_res)
 
 ## rppd
 rppd_res = polyres_mk.and(psd_drw).and(salblock_drw).not(nsd_block).not(nsd_drw)
-rppd_ports = gatpoly.interacting(rppd_res).not(rppd_res)
+rppd_ports_pre = gatpoly.interacting(rppd_res).not(rppd_res)
+rppd_ports = rppd_ports_pre.edges.and(rppd_res.edges).extended(0, 0, 5.nm, 5.nm).not(rppd_res)
 
 ## rsil
 rsil_exc = psd_drw.join(salblock_drw).join(nsd_drw).join(nsd_block)
 rsil_res = polyres_mk.and(res_drw).not(rsil_exc)
-rsil_ports = gatpoly.interacting(rsil_res).not(rsil_res)
+rsil_ports_pre = gatpoly.interacting(rsil_res).not(rsil_res)
+rsil_ports = rsil_ports_pre.edges.and(rsil_res.edges).extended(0, 0, 5.nm, 5.nm).not(rsil_res)
 
 # ===============
 # ---- METAL ----
@@ -3853,14 +3857,14 @@ taps_exclude = gatpoly.join(nsd_drw).join(trans_drw)
 # === ntap1 ===
 ntap1_exc = pwell.join(psd_drw).join(taps_exclude)
 
-ntap1_tie = nactiv.and(ntap1_mk).extents.not(ntap1_exc)
+ntap1_tie = nactiv.and(ntap1_mk).not(ntap1_exc)
 ntap1_well = ntap1_mk.covering(ntap1_tie)
 
 # === ptap1 ===
 ptap1_exc = nwell_drw.join(taps_exclude)
 
-ptap1_tie = pactiv.and(ptap1_mk).extents.not(ptap1_exc)
-ptap1_sub = pwell.covering(ptap1_tie)
+ptap1_tie = pactiv.and(ptap1_mk).not(ptap1_exc)
+ptap1_sub = ptap1_mk.covering(ptap1_tie)
 
 #================================================
 #------------ DEVICES CONNECTIVITY --------------
@@ -4007,13 +4011,13 @@ connect(schottcky_n_con, metal1_con)
 logger.info('Starting RESISTOR CONNECTIONS')
 
 # === rsil ===
-connect(rsil_ports, cont_drw)
+connect(rsil_ports, poly_con)
 
 # === rppd ===
-connect(rppd_ports, cont_drw)
+connect(rppd_ports, poly_con)
 
 # === rhigh ===
-connect(rhigh_ports, cont_drw)
+connect(rhigh_ports, poly_con)
 
 # === Metal Res ===
 # Added in general connections
