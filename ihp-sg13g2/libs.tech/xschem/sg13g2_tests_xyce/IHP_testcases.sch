@@ -1,4 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
+v {xschem version=3.4.7 file_version=1.2
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,9 +38,7 @@ url="https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main"}
 C {sg13g2_tests/mc_hv_nmos_cs_loop.sym} 1200 -590 0 0 {name=x2}
 C {sg13g2_tests/mc_lv_pmos_cs_loop.sym} 1200 -550 0 0 {name=x3}
 C {sg13g2_tests/mc_hv_pmos_cs_loop.sym} 1200 -510 0 0 {name=x4}
-C {sg13g2_tests/mc_hbt_13g2.sym} 1200 -380 0 0 {name=x18}
 C {sg13g2_tests/mc_hbt_13g2_ac.sym} 1200 -350 0 0 {name=x19}
-C {sg13g2_tests/mc_mim_cap_ac.sym} 1200 -300 0 0 {name=x24}
 C {sg13g2_tests/sp_mim_cap.sym} 1560 -630 0 0 {name=x20}
 C {sg13g2_tests/sp_parasitic_cap.sym} 1560 -590 0 0 {name=x22}
 C {sg13g2_tests/sp_rfmim_cap.sym} 1560 -550 0 0 {name=x23}
@@ -69,3 +67,5 @@ C {sg13g2_tests_xyce/dc_esd_diodes.sym} 180 -150 0 0 {name=x31}
 C {sg13g2_tests_xyce/dc_esd_nmos_cl.sym} 180 -110 0 0 {name=x32}
 C {sg13g2_tests_xyce/dc_ntap1.sym} 180 -400 0 0 {name=x25}
 C {sg13g2_tests_xyce/dc_ptap1.sym} 180 -360 0 0 {name=x26}
+C {sg13g2_tests_xyce/mc_hbt_13g2.sym} 1200 -380 0 0 {name=x18}
+C {sg13g2_tests_xyce/mc_mim_cap_ac.sym} 1200 -290 0 0 {name=x24}
