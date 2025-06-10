@@ -33,7 +33,7 @@
 # log_file    - path to the log file [default: no log file]
 # in_gds      - path to the GDS layout to check (required in batch mode)
 # cell        - name of the cell to check
-# report_file - path to the report database [default: sg13g2_maximal.lyrdb in the script directory]
+# report_file - path to the report database [default: sg13g2_maximal.lyrdb in the layout directory]
 
 # to set logfile: -rd logfile="sg13g2_maximal.log"
 if $log_file
@@ -52,6 +52,12 @@ if main_window and not $in_gds
         main_window.load_layout(layout_path, 1)
         curr_layout_view = main_window.current_view()
     end
+    active_filename = RBA::CellView::active.filename
+    if active_filename != ""
+        report_dir = File.dirname(active_filename)
+    else
+        report_dir = "/tmp"
+    end
     active_layout = RBA::CellView::active.layout
     active_cellname = RBA::CellView::active.cell_name
     source(active_layout, active_cellname)
@@ -69,6 +75,7 @@ else
         active_layout = source.layout
         active_cellname = source.cell_name
     end
+    report_dir = File.dirname($in_gds)
 end
 
 unless active_layout or $in_gds
@@ -79,7 +86,8 @@ if active_layout.dbu != 0.001
     puts "WARNING: Layout dbu value (" + active_layout.dbu.to_s + " ) deviates from rule file dbu value (0.001). This will scale the layout and may not be intended."
 end
 
-report_file = __dir__ + "/sg13g2_maximal.lyrdb"
+report_dir = File.expand_path(report_dir)
+report_file = report_dir + "/sg13g2_maximal.lyrdb"
 # to set report file: -rd report_file="sg13g2_maximal.lyrdb"
 if $report_file
     report_file = File.expand_path($report_file)
@@ -99,7 +107,7 @@ class DRC::DRCLayer
     def output(*args)
         count = self.hier_count()
         $drc_error_count += count
-        puts("Rule %s: %d error(s)" % [args[0], count])
+        puts("%s: %d" % [args[0], count])
         original_output(*args)
     end
 end
@@ -325,6 +333,12 @@ class DRC::DRCEngine
 end
 
 class DRC::DRCLayer
+    def ext_convert_to_edge_pair_layer()
+        return self.collect_to_edge_pairs { |edge|
+            RBA::DEdgePair::new(edge, edge, true)
+        }
+    end
+
     def ext_and(other)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
@@ -590,8 +604,10 @@ class DRC::DRCLayer
                      metric: @engine.euclidian,
                      consider_intersecting_edges: true,
                      consider_touch_points: true,
-                     consider_overlaps_as_errors: false,
+                     consider_overlaps: false,
                      ignore_non_axis_aligned_edges: false,
+                     inside_edges_are_errors: false,
+                     outside_edges_are_errors: false,
                      min_angle: 0,
                      max_angle: 90,
                      include_min_angle: true,
@@ -602,7 +618,7 @@ class DRC::DRCLayer
         self.data.min_coherence = true
         other.data.min_coherence = true
         metric = @engine.projection
-        if consider_overlaps_as_errors
+        if consider_overlaps
             output_layer = self.enclosed(other, value, metric,
                                          @engine.angle_limit(180), @engine.without_touching_corners)
             abutting_edges = output_layer.data.processed(AbuttingEdges::new)
@@ -638,6 +654,12 @@ class DRC::DRCLayer
                     false)
             end
         end
+        if inside_edges_are_errors
+            output_layer = output_layer.join(other.edges.inside_part(self).ext_convert_to_edge_pair_layer())
+        end
+        if outside_edges_are_errors
+            output_layer = output_layer.join(self.edges.not(other).join(self.ext_coincident_part(other, outside: true)).ext_convert_to_edge_pair_layer())
+        end
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         if polygon_output
@@ -645,6 +667,33 @@ class DRC::DRCLayer
         else
             return output_layer
         end
+    end
+
+    def ext_encloses_box(l, w, check_rotated: true)
+        sl = -0.5 * l + 1.dbu
+        sl = sl &gt; 0.0 ? 0.0 : sl
+        sw = -0.5 * w + 1.dbu
+        sw = sw &gt; 0.0 ? 0.0 : sw
+        if (sl - sw).abs &gt; 1e-6
+            r0 = self
+            r90 = self
+            if sl &lt; 0.0
+                r0 = r0.sized(sl, 0).sized(-sl, 0)
+                r90 = r90.sized(0, sl).sized(0, -sl)
+            end
+            if sw &lt; 0.0
+                r0 = r0.sized(0, sw).sized(0, -sw)
+                r90 = r90.sized(sw, 0).sized(-sw, 0)
+            end
+            output_layer = r0.or(r90)
+        else
+            output_layer = self.sized(sl, 0).sized(-sl, 0).sized(0, sl).sized(0, -sl)
+        end
+        if check_rotated then
+            rotated = self.rotated(45)
+            output_layer = output_layer.or(rotated.ext_encloses_box(l, w, check_rotated: false).rotated(-45))
+        end
+        return output_layer
     end
 
     def ext_extended(outside = 0, inside = 0)
@@ -731,8 +780,9 @@ class DRC::DRCLayer
                        metric: @engine.euclidian,
                        consider_intersecting_edges: true,
                        consider_touch_points: true,
-                       consider_overlaps_as_errors: false,
+                       consider_overlaps: false,
                        ignore_non_axis_aligned_edges: false,
+                       inside_edges_are_errors: false,
                        min_angle: 0,
                        max_angle: 90,
                        include_min_angle: true,
@@ -742,7 +792,7 @@ class DRC::DRCLayer
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
         other.data.min_coherence = true
-        if consider_overlaps_as_errors
+        if consider_overlaps
             output_layer = self.separation(other, value, metric,
                                            @engine.angle_limit(180), @engine.without_touching_corners)
             abutting_edges = output_layer.data.processed(AbuttingEdges::new)
@@ -777,6 +827,9 @@ class DRC::DRCLayer
                     include_max_angle,
                     false)
             end
+        end
+        if inside_edges_are_errors
+            output_layer = output_layer.join(self.and(other).edges.ext_convert_to_edge_pair_layer())
         end
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
@@ -1519,8 +1572,10 @@ Gat_density = GatPoly.ext_or(GatPoly_filler)
 Cont_SQ = Cont.ext_rectangles(true, false, [["==", 0.16.um]], [["==", 0.16.um]], nil)
 ContBar = Cont.ext_with_area([["&gt;", (0.16*0.16).um2]])
 Activ_and_nSD_block = Activ.ext_and(nSD_block)
+Metal1_Nslit = Metal1.ext_not(Metal1_slit)
 selring_pass = Passiv.with_holes
 Passiv_Pad_a1 = Passiv.sized(-150.0.um/2.0, acute_limit).sized(150.0.um/2.0, acute_limit)
+Metal2_Nslit = Metal2.ext_not(Metal2_slit)
 X2 = nSD_block.ext_or(pSD)
 pSD_not_nSD = nSD.ext_not(pSD)
 subst_tie_hole = (pSD.holes - pSD.with_holes).without_holes
@@ -1531,10 +1586,8 @@ pSD_Nsram = pSD.ext_not(SRAM)
 GP_Nsram = GatPoly.ext_not(SRAM)
 Cont_Nsram = Cont.ext_not(SRAM)
 V1_Nsram = Via1.ext_not(SRAM)
-M1_Nsram = Metal1.ext_not(SRAM)
-M2_Nsram = Metal2.ext_not(SRAM)
 V2_Nsram = Via2.ext_not(SRAM)
-M3_Nsram = Metal3.ext_not(SRAM)
+Metal3_Nslit = Metal3.ext_not(Metal3_slit)
 Act_NWell = Activ.ext_and(NWell)
 NWell_Nsram = NWell.ext_not(SRAM)
 NWell_NW_a = NWell.ext_width(0.62.um)
@@ -1549,9 +1602,6 @@ sealring = EdgeSeal.with_holes
 Act_EdgeSeal = Activ.ext_and(EdgeSeal)
 Act_Not_EdgeSeal = Activ.ext_not(EdgeSeal)
 pSD_edgA1_in = pSD.ext_and(EdgeSeal)
-Metal1_edgA1_in = Metal1.ext_and(EdgeSeal)
-Metal2_edgA1_in = Metal2.ext_and(EdgeSeal)
-Metal3_edgA1_in = Metal3.ext_and(EdgeSeal)
 Cont_edgC1_in = Cont.ext_and(EdgeSeal)
 Via1_edgC1_in = Via1.ext_and(EdgeSeal)
 Via1_edgC1_out = Via1.ext_not(EdgeSeal)
@@ -1570,19 +1620,17 @@ ThickGateOx_TGO_f = ThickGateOx.ext_width(0.86.um, consider_intersecting_edges: 
 X1 = NWell.ext_or(PWell_block)
 PWell_block_PWB_a = PWell_block.ext_width(0.62.um)
 PWell_block_PWB_b = PWell_block.ext_space(0.62.um, consider_intersecting_edges: false, polygon_output: true)
+Activ_outside_PWell_block = Activ.ext_outside(PWell_block)
 V3_Nsram = Via3.ext_not(SRAM)
 Via3_edgC1_in = Via3.ext_and(EdgeSeal)
 Via3_edgC1_out = Via3.ext_not(EdgeSeal)
-M4_Nsram = Metal4.ext_not(SRAM)
-Metal4_edgA1_in = Metal4.ext_and(EdgeSeal)
 Metal4_outside_EdgeSeal = Metal4.ext_outside(EdgeSeal)
+Metal4_Nslit = Metal4.ext_not(Metal4_slit)
 V4_Nsram = Via4.ext_not(SRAM)
 Via4_edgC1_in = Via4.ext_and(EdgeSeal)
 Via4_edgC1_out = Via4.ext_not(EdgeSeal)
-M5_Nsram = Metal5.ext_not(SRAM)
-belowTopMetaln_dfpad = Metal5.ext_and(dfpad)
-Metal5_edgA1_in = Metal5.ext_and(EdgeSeal)
 Metal5_outside_EdgeSeal = Metal5.ext_outside(EdgeSeal)
+Metal5_Nslit = Metal5.ext_not(Metal5_slit)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp1 = Metal5_slit.ext_separation(MIM, 0.6.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp2 = MIM.ext_coincident_edges(Metal5_slit, outside: true, consider_touch_points: true)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp5 = Metal5_slit.ext_and(MIM)
@@ -1592,7 +1640,7 @@ nmoscl_4 = Recog_esd.ext_interacting_with_text(TEXT_0, "nmoscl_4")
 Rhigh_recognition_0 = EXTBlock.ext_and(pSD)
 TopVia1_edgC1_in = TopVia1.ext_and(EdgeSeal)
 TopVia1_edgC1_out = TopVia1.ext_not(EdgeSeal)
-TopMetal1_edgA1_in = TopMetal1.ext_and(EdgeSeal)
+TopMetal1_Nslit = TopMetal1.ext_not(TopMetal1_slit)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp1 = TopMetal1_slit.ext_separation(MIM, 0.6.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp2 = MIM.ext_coincident_edges(TopMetal1_slit, outside: true, consider_touch_points: true)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp5 = TopMetal1_slit.ext_and(MIM)
@@ -1600,8 +1648,9 @@ GatPoly_res = GatPoly.ext_or(PolyRes)
 TopVia1_or_Vmim = TopVia1.ext_or(Vmim)
 TopVia2_edgC1_in = TopVia2.ext_and(EdgeSeal)
 TopVia2_edgC1_out = TopVia2.ext_not(EdgeSeal)
-TopMetal2_edgA1_in = TopMetal2.ext_and(EdgeSeal)
 holes_TopMetal2 = TopMetal2.holes.merge
+TopMetal2_outside_EdgeSeal = TopMetal2.ext_outside(EdgeSeal)
+TopMetal2_Nslit = TopMetal2.ext_not(TopMetal2_slit)
 M1_density = Metal1.ext_or(Metal1_filler).ext_not(Metal1_slit)
 M2_density = Metal2.ext_or(Metal2_filler).ext_not(Metal2_slit)
 DigiBnd_ring = DigiBnd.sized(0.01.um, acute_limit).ext_not(DigiBnd)
@@ -1629,6 +1678,10 @@ ContBar_not_M1 = ContBar.ext_not(Metal1)
 ContBar_Act_GP = ContBar.ext_and(Gate)
 ContBar_outside_TRANS = ContBar.ext_outside(TRANS)
 dschottky_1 = Activ_and_nSD_block.ext_and(nBuLay)
+M1_Nsram = Metal1_Nslit.ext_not(SRAM)
+Metal1_edgA1_in = Metal1_Nslit.ext_and(EdgeSeal)
+M2_Nsram = Metal2_Nslit.ext_not(SRAM)
+Metal2_edgA1_in = Metal2_Nslit.ext_and(EdgeSeal)
 dpin_0 = BasPoly.ext_and(Activ).ext_and(BiWind).ext_and(nSD_block)
 nSD_not_pSD = pSD_not_nSD.dup
 subst_tie_hole_w_npn = subst_tie_hole.ext_interacting_with_text(TEXT_0, "npn*")
@@ -1640,6 +1693,8 @@ GP_Nsram_Gat_b = GP_Nsram.ext_space(0.18.um, consider_intersecting_edges: false,
 V1_Nsram_outside_EdgeSeal = V1_Nsram.ext_outside(EdgeSeal)
 npnMPA_0 = nBuLay.ext_and(Activ.ext_and(SalBlock.ext_and(nSD_block)))
 V2_Nsram_outside_EdgeSeal = V2_Nsram.ext_outside(EdgeSeal)
+M3_Nsram = Metal3_Nslit.ext_not(SRAM)
+Metal3_edgA1_in = Metal3_Nslit.ext_and(EdgeSeal)
 nBuLay_nBuLay_block_enc_tmp3 = nBuLay_nBuLay_block_enc_tmp + nBuLay_nBuLay_block_enc_tmp2
 ring_passiv = selring_pass.ext_outside(sealring)
 Act_EdgeSeal_not_HRACT = Act_EdgeSeal.ext_not(Recog)
@@ -1660,23 +1715,32 @@ TopMetal2_slit_not_pad = TopMetal2_slit.ext_not(pad)
 Recog_or_dfpad_all = Recog.ext_or(dfpad_all)
 Recog_or_MIM_or_dfpad_all = MIM.ext_or(Recog, dfpad_all)
 Iso_PWell_Act = Activ.ext_and(nBuLay).ext_not(X1)
+lPWB_e_1 = Activ_outside_PWell_block.ext_not(pSD)
+lPWB_f_1 = Activ_outside_PWell_block.ext_and(pSD)
 V3_Nsram_outside_EdgeSeal = V3_Nsram.ext_outside(EdgeSeal)
 Act_EdgeSeal_Via3_edgC1_in_enc_tmp = Via3_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
 Act_EdgeSeal_Via3_edgC1_in_enc_tmp2 = Via3_edgC1_in.ext_overlapping(Act_EdgeSeal)
+M4_Nsram = Metal4_Nslit.ext_not(SRAM)
+Metal4_edgA1_in = Metal4_Nslit.ext_and(EdgeSeal)
 V4_Nsram_outside_EdgeSeal = V4_Nsram.ext_outside(EdgeSeal)
 Act_EdgeSeal_Via4_edgC1_in_enc_tmp = Via4_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
 Act_EdgeSeal_Via4_edgC1_in_enc_tmp2 = Via4_edgC1_in.ext_overlapping(Act_EdgeSeal)
 cmim_a = MIM.not_outside(Metal5).not_outside(TopMetal1).not_outside(Vmim)
+M5_Nsram = Metal5_Nslit.ext_not(SRAM)
+belowTopMetaln_dfpad = Metal5_Nslit.ext_and(dfpad)
+Metal5_edgA1_in = Metal5_Nslit.ext_and(EdgeSeal)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp3 = Metal5_slit.ext_with_coincident_edges(Metal5_slit_MIM_Slt_g_M5_sep_tmp2)
 nmoscl = nmoscl_2.ext_or(nmoscl_4)
 Rhigh_recognition_1 = Rhigh_recognition_0.ext_and(nSD)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp = TopVia1_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp2 = TopVia1_edgC1_in.ext_overlapping(Act_EdgeSeal)
+TopMetal1_edgA1_in = TopMetal1_Nslit.ext_and(EdgeSeal)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp3 = TopMetal1_slit.ext_with_coincident_edges(TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp2)
 temp_layer_1 = MIM.ext_covering(TopVia1_or_Vmim)
 Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp = TopVia2_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
 Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp2 = TopVia2_edgC1_in.ext_overlapping(Act_EdgeSeal)
 temp_layer_6 = TopMetal2.ext_or(holes_TopMetal2)
+TopMetal2_edgA1_in = TopMetal2_Nslit.ext_and(EdgeSeal)
 Cont_not_Act_GP = Cont_SQ.ext_not(GP_or_Act).ext_outside(TRANS)
 ContBar_not_Act_GP = ContBar.ext_not(GP_or_Act).ext_outside(TRANS)
 nSD_drv = nSD.ext_or(Activ.ext_not(X2))
@@ -1715,42 +1779,42 @@ ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp5 = ring_passiv.ext_and(Metal2_
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp1 = ring_passiv.ext_separation(Metal3_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp2 = Metal3_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp5 = ring_passiv.ext_and(Metal3_edgA1_in)
-ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 = ring_passiv.ext_separation(Metal4_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
-ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2 = Metal4_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
-ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp5 = ring_passiv.ext_and(Metal4_edgA1_in)
-ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 = ring_passiv.ext_separation(Metal5_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
-ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2 = Metal5_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
-ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp5 = ring_passiv.ext_and(Metal5_edgA1_in)
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 = ring_passiv.ext_separation(TopMetal1_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2 = TopMetal1_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5 = ring_passiv.ext_and(TopMetal1_edgA1_in)
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 = ring_passiv.ext_separation(TopMetal2_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2 = TopMetal2_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5 = ring_passiv.ext_and(TopMetal2_edgA1_in)
 ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp1 = ring_passiv.ext_separation(Activ_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
 ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp2 = Activ_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
 ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp5 = ring_passiv.ext_and(Activ_edgA1_in)
 Act_EdgeSeal_Cont_edgC1_in_enc_tmp3 = Act_EdgeSeal_Cont_edgC1_in_enc_tmp + Act_EdgeSeal_Cont_edgC1_in_enc_tmp2
 Act_EdgeSeal_Via1_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via1_edgC1_in_enc_tmp + Act_EdgeSeal_Via1_edgC1_in_enc_tmp2
 Act_EdgeSeal_Via2_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via2_edgC1_in_enc_tmp + Act_EdgeSeal_Via2_edgC1_in_enc_tmp2
-sltc_M1 = Metal1.ext_not(Recog_or_dfpad_all)
-sltc_M2 = Metal2.ext_not(Recog_or_dfpad_all)
-sltc_M3 = Metal3.ext_not(Recog_or_dfpad_all)
-sltc_M4 = Metal4.ext_not(Recog_or_dfpad_all)
-sltc_TM2 = TopMetal2.ext_not(Recog_or_dfpad_all)
-sltc_M5 = Metal5.ext_not(Recog_or_MIM_or_dfpad_all)
-sltc_TM1 = TopMetal1.ext_not(Recog_or_MIM_or_dfpad_all)
+sltc_M1 = Metal1_Nslit.ext_not(Recog_or_dfpad_all)
+sltc_M2 = Metal2_Nslit.ext_not(Recog_or_dfpad_all)
+sltc_M3 = Metal3_Nslit.ext_not(Recog_or_dfpad_all)
+sltc_M4 = Metal4_Nslit.ext_not(Recog_or_dfpad_all)
+sltc_TM2 = TopMetal2_Nslit.ext_not(Recog_or_dfpad_all)
+sltc_M5 = Metal5_Nslit.ext_not(Recog_or_MIM_or_dfpad_all)
+sltc_TM1 = TopMetal1_Nslit.ext_not(Recog_or_MIM_or_dfpad_all)
 nSDBlock_Iso_PWell_Act = nSD_block.not_outside(Iso_PWell_Act)
 SalBlock_Iso_PWell_Act = SalBlock.not_outside(Iso_PWell_Act)
 Act_EdgeSeal_Via3_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via3_edgC1_in_enc_tmp + Act_EdgeSeal_Via3_edgC1_in_enc_tmp2
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 = ring_passiv.ext_separation(Metal4_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2 = Metal4_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp5 = ring_passiv.ext_and(Metal4_edgA1_in)
 Act_EdgeSeal_Via4_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via4_edgC1_in_enc_tmp + Act_EdgeSeal_Via4_edgC1_in_enc_tmp2
 rfcmim_a = cmim_a.not_outside(PWell_block.ext_interacting_with_text(TEXT_0, "rfcmim"))
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 = ring_passiv.ext_separation(Metal5_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2 = Metal5_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp5 = ring_passiv.ext_and(Metal5_edgA1_in)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp4 = Metal5_slit_MIM_Slt_g_M5_sep_tmp1 + Metal5_slit_MIM_Slt_g_M5_sep_tmp3
 Rhigh_recognition = Rhigh_recognition_1.ext_covering(GatPoly)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp3 = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp + Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp2
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 = ring_passiv.ext_separation(TopMetal1_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2 = TopMetal1_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5 = ring_passiv.ext_and(TopMetal1_edgA1_in)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp4 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp1 + TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp3
 Rsil_all = GatPoly_res.ext_and(RES).ext_and(EXTBlock).ext_interacting(SalBlock, inverted: true)
 Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp3 = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp + Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp2
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 = ring_passiv.ext_separation(TopMetal2_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2 = TopMetal2_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5 = ring_passiv.ext_and(TopMetal2_edgA1_in)
 NAct = Activ.ext_and(nSD_drv)
 pSD_nSD = pSD.ext_and(nSD_drv)
 Y2 = X2_Extent.ext_not(X2)
@@ -1772,23 +1836,23 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp3 = ring_passiv.ext_with_coincident_e
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp2)
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp2)
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp2)
-ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2)
-ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2)
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2)
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2)
 ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp2)
 Act_EdgeSeal_Cont_edgC1_in_enc_tmp6 = Act_EdgeSeal_Cont_edgC1_in_enc_tmp3.dup
 Act_EdgeSeal_Via1_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via1_edgC1_in_enc_tmp3.dup
 Act_EdgeSeal_Via2_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via2_edgC1_in_enc_tmp3.dup
 Act_EdgeSeal_Via3_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via3_edgC1_in_enc_tmp3.dup
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2)
 Act_EdgeSeal_Via4_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via4_edgC1_in_enc_tmp3.dup
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp6 = Metal5_slit_MIM_Slt_g_M5_sep_tmp4 + Metal5_slit_MIM_Slt_g_M5_sep_tmp5
 Rhigh_identical_nsd_psd_edge = pSD_not_nSD_or_nSD_not_pSD.ext_coincident_part(Rhigh_recognition, outside: true)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp6 = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp3.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp6 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp4 + TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp5
 rsil_gatpoly = GatPoly_res.not_outside(Rsil_all)
 Rsil_all_not_interact_NWell = Rsil_all.ext_interacting(NWell, inverted: true)
 Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp6 = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp3.dup
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2)
 NGate = Gate.not_outside(NAct)
 PAct = Activ.ext_not(NAct)
 PAct_connect = Act_connect.ext_not(NAct)
@@ -1813,22 +1877,22 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp4 = ring_passiv_pSD_edgA1_in_Seal_f_p
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp4 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp1 + ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp3
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp4 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp1 + ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp3
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp4 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp1 + ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp3
-ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp4 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 + ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3
-ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp4 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 + ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3
 ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp4 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp1 + ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp3
 Act_EdgeSeal_Cont_edgC1_in_enc = Act_EdgeSeal_Cont_edgC1_in_enc_tmp6.dup
 Act_EdgeSeal_Via1_edgC1_in_enc = Act_EdgeSeal_Via1_edgC1_in_enc_tmp6.dup
 Act_EdgeSeal_Via2_edgC1_in_enc = Act_EdgeSeal_Via2_edgC1_in_enc_tmp6.dup
 Act_EdgeSeal_Via3_edgC1_in_enc = Act_EdgeSeal_Via3_edgC1_in_enc_tmp6.dup
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp4 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 + ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3
 Act_EdgeSeal_Via4_edgC1_in_enc = Act_EdgeSeal_Via4_edgC1_in_enc_tmp6.dup
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp4 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 + ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3
 Metal5_slit_MIM_Slt_g_M5_sep_tmp9 = Metal5_slit_MIM_Slt_g_M5_sep_tmp6.dup
 Rhigh_identical_nsd_psd = pSD_not_nSD_or_nSD_not_pSD.ext_with_coincident_edges(Rhigh_identical_nsd_psd_edge)
 Act_EdgeSeal_TopVia1_edgC1_in_enc = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp6.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp9 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp6.dup
 Rsil = Rsil_all_not_interact_NWell.ext_interacting(nBuLay, inverted: true)
 Act_EdgeSeal_TopVia2_edgC1_in_enc = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp6.dup
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3
 PGate = Gate.ext_outside(NGate)
 PActLV = PAct.ext_not(ThickGateOx)
 PAct_NWell = PAct.ext_and(X1)
@@ -1854,14 +1918,14 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp6 = ring_passiv_pSD_edgA1_in_Seal_f_p
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp6 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp4 + ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp5
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp6 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp4 + ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp5
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp6 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp4 + ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp5
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp4 + ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp5
 ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp6 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp4 + ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp5
 ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp6 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp4 + ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp5
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5
-ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp4 + ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp5
 Metal5_slit_MIM_Slt_g_M5_sep_tmp11 = Metal5_slit_MIM_Slt_g_M5_sep_tmp9.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp11 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp9.dup
 GP_Rsil_extended = GatPoly_res.ext_covering(Rsil)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5
 PActHV = PAct.ext_not(PActLV)
 PAct_PWell = PAct.ext_not(PAct_NWell)
 Abut_NWell_Tie_Edge = NAct_NWell.ext_coincident_part(PAct_NWell, outside: true)
@@ -1885,14 +1949,14 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp9 = ring_passiv_pSD_edgA1_in_Seal_f_p
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp9 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp6.dup
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp9 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp6.dup
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp9 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp6.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6.dup
 ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp9 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp6.dup
 ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp9 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp6.dup
-ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp9 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6.dup
-ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp9 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6.dup
-ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6.dup
 Metal5_slit_MIM_Slt_g_M5_sep = Metal5_slit_MIM_Slt_g_M5_sep_tmp11.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp9 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6.dup
 TopMetal1_slit_MIM_Slt_g_TM1_sep = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp11.dup
 GP_Rsil_extended_external_pSD = GP_Rsil_extended.ext_separation(pSD, 0.18.um)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp9 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6.dup
 SVaricap_text = Activ.not_outside(SVaricap_gate_0).ext_interacting_with_text(TEXT_0, "SVaricap")
 PActHV_digi = PActHV.not_outside(DigiBnd_hole)
 PAct_PWellLV = PAct_PWell.ext_not(ThickGateOx)
@@ -1916,11 +1980,11 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp11 = ring_passiv_pSD_edgA1_in_Seal_f_
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp11 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp9.dup
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp11 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp9.dup
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp11 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp9.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9.dup
 ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp11 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp9.dup
 ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp11 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp9.dup
 ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp11 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp9.dup
 ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp11 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp9.dup
-ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9.dup
 SVaricap = NWell.not_outside(SVaricap_text)
 PActHV_ana = PActHV.ext_not(PActHV_digi)
 PAct_PWellHV = PAct_PWell.ext_not(PAct_PWellLV)
@@ -1941,11 +2005,11 @@ ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep = ring_passiv_pSD_edgA1_in_Seal_f_pSD_se
 ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp11.dup
 ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp11.dup
 ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp11.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11.dup
 ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp11.dup
 ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp11.dup
 ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp11.dup
 ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp11.dup
-ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11.dup
 pSD_c_tmp1 = pSD.ext_outside(SVaricap)
 devExclud = Recog_diode.ext_or(SVaricap, nmoscl_2, nmoscl_4, npnMPA, schottky_nbl1, scr1, subst_tie_hole_w_npn, trans_bip)
 SVaricap_or_schottky_nbl1 = SVaricap.ext_or(schottky_nbl1)
@@ -1955,6 +2019,7 @@ Cont_PAct_not_SVaricap = Cont_PAct.ext_not(SVaricap)
 PAct_PWellHV_digi = PAct_PWellHV.not_outside(DigiBnd_hole)
 Abut_PWell_Tie_NAct = NAct.ext_interacting(Abut_PWell_Tie)
 Abut_NWell_Tie_Cont = Cont.inside(Abut_NWell_Tie_PAct)
+lPWB_e_2 = PWell_block.ext_outside(schottky_nbl1_or_schottky_nw1)
 SVaricap_Tie = PAct_PWell.not_outside(Activ.not_outside(SVaricap))
 lNw_c = PActLV.ext_not(PActLV.ext_interacting(SVaricap))
 NwellRing = NWell_Tie.ext_with_coincident_edges(NwellRing_edge)
@@ -1986,22 +2051,22 @@ PWell_Tie_wo_varicap_abut = PAct_PWell.ext_interacting(Abut_PWell_Tie.ext_or(BJT
     NWell_NW_a.dup
 end.().output("NW.a", "Min. NWell width = 0.62")
 -&gt; do
-    lNw_c.ext_enclosed(NWell_Nsram, 0.31.um, consider_overlaps_as_errors: true)
+    lNw_c.ext_enclosed(NWell_Nsram, 0.31.um, consider_overlaps: true)
 end.().output("NW.c", "Min. NWell enclosure of P+Activ not inside ThickGateOx = 0.31")
 -&gt; do
-    PActHV_ana.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.62.um, consider_overlaps_as_errors: true)
+    PActHV_ana.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.62.um, consider_overlaps: true)
 end.().output("NW.c1", "Min. NWell enclosure of P+Activ inside ThickGateOx = 0.62")
 -&gt; do
-    NWell_Nsram.ext_separation(NActLV, 0.31.um, consider_overlaps_as_errors: true)
+    NWell_Nsram.ext_separation(NActLV, 0.31.um, consider_overlaps: true)
 end.().output("NW.d", "Min. NWell space to external N+Activ not inside ThickGateOx = 0.31")
 -&gt; do
     NWell.ext_separation(NActHV_ana, 0.62.um)
 end.().output("NW.d1", "Min. NWell space to external N+Activ inside ThickGateOx = 0.62")
 -&gt; do
-    NAct_NWellLV.ext_not(nw_outDev).ext_enclosed(NWell, 0.24.um, consider_overlaps_as_errors: true)
+    NAct_NWellLV.ext_not(nw_outDev).ext_enclosed(NWell, 0.24.um, consider_overlaps: true)
 end.().output("NW.e", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ not inside ThickGateOx = 0.24")
 -&gt; do
-    NAct_NWellHV_ana.ext_outside(SVaricap.ext_or(schottky_nbl1, schottky_nw1, scr1)).ext_enclosed(NWell, 0.62.um, consider_overlaps_as_errors: true)
+    NAct_NWellHV_ana.ext_outside(SVaricap.ext_or(schottky_nbl1, schottky_nw1, scr1)).ext_enclosed(NWell, 0.62.um, consider_overlaps: true)
 end.().output("NW.e1", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx = 0.62")
 -&gt; (;x, y) do
     x = PAct_PWellLV.ext_coincident_edges(SVaricap, outside: true)
@@ -2020,6 +2085,18 @@ end.().output("PWB.b", "Min. PWell:block space or notch = 0.62")
 -&gt; do
     PWellBlock_unrelatedNWell.ext_separation(PWell_block, 0.62.um, consider_touch_points: false, include_min_angle: false)
 end.().output("PWB.c", "Min. PWell:block space to NWell = 0.62")
+-&gt; do
+    lPWB_e_2.ext_separation(lPWB_e_1.ext_outside(ThickGateOx).ext_outside(NWell), 0.31.um, inside_edges_are_errors: true)
+end.().output("PWB.e", "Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell = 0.31")
+-&gt; do
+    lPWB_e_2.ext_separation(lPWB_e_1.inside(ThickGateOx).ext_outside(NWell), 0.62.um, inside_edges_are_errors: true)
+end.().output("PWB.e1", "Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell = 0.62")
+-&gt; do
+    lPWB_e_2.ext_separation(lPWB_f_1.ext_outside(NWell).ext_outside(ThickGateOx), 0.24.um, inside_edges_are_errors: true)
+end.().output("PWB.f", "Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell = 0.24")
+-&gt; do
+    lPWB_e_2.ext_separation(lPWB_f_1.inside(ThickGateOx).ext_outside(NWell), 0.62.um, inside_edges_are_errors: true)
+end.().output("PWB.f1", "Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell = 0.62")
 -&gt; do
     nBuLayGen_nBuLay_NBL_a.dup
 end.().output("NBL.a", "Min. nBuLay width = 1.00")
@@ -2061,6 +2138,12 @@ if $fillerRules
 	-&gt; do
 	    Activ_filler.ext_space(0.42.um)
 	end.().output("AFil.b", "Min. Activ:filler space = 0.42")
+	-&gt; do
+	    Activ_filler.ext_separation(Activ, 0.42.um, inside_edges_are_errors: true)
+	end.().output("AFil.c1", "Min. Activ:filler space to Activ = 0.42")
+	-&gt; do
+	    Activ_filler.ext_separation(TRANS, 1.0.um, inside_edges_are_errors: true)
+	end.().output("AFil.e", "Min. Activ:filler space to TRANS = 1.00")
 end
 
 
@@ -2292,10 +2375,10 @@ end.().output("Cnt.b", "Min. Cont space = 0.18")
     badViaLine.ext_rectangles(inverted: true)
 end.().output("Cnt.b1", "Min. Cont space in a contact array of more than 4 rows and more then 4 columns (Cnt.b1 is only required in one direction. The distance of the other direction must be at least Cnt.b.) = 0.20")
 -&gt; do
-    temp_layer_4.ext_enclosed(Act_Nsram_or_Activ_mask.ext_not(DigiBnd), 0.07.um, consider_overlaps_as_errors: true)
+    temp_layer_4.ext_enclosed(Act_Nsram_or_Activ_mask.ext_not(DigiBnd), 0.07.um, consider_overlaps: true)
 end.().output("Cnt.c", "Min. Activ enclosure of Cont = 0.07")
 -&gt; do
-    Cont_SQ.ext_enclosed(GP_Nsram, 0.07.um, consider_overlaps_as_errors: true)
+    Cont_SQ.ext_enclosed(GP_Nsram, 0.07.um, consider_overlaps: true)
 end.().output("Cnt.d", "Min. GatPoly enclosure of Cont = 0.07")
 -&gt; do
     Cont_GP.ext_not(SVaricap).ext_separation(Activ, 0.14.um, consider_intersecting_edges: false, consider_touch_points: false)
@@ -2329,14 +2412,18 @@ end.().output("CntB.a1", "Min. ContBar length = 0.34")
 -&gt; do
     ContBar_outside_TRANS.ext_space(0.28.um)
 end.().output("CntB.b", "Min. ContBar space = 0.28")
+-&gt; (;l1) do
+    l1 = ContBar.ext_space(0.36.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(5.001.um, 0.001.um)
+end.().output("CntB.b1", "Min. ContBar space with common run &gt; 5 µm = 0.36")
 -&gt; do
     ContBar.ext_separation(Cont_SQ, 0.22.um)
 end.().output("CntB.b2", "Min. ContBar space to Cont = 0.22")
 -&gt; do
-    ContBar.ext_outside(trans_bip).ext_enclosed(nmosi_relevant_activ, 0.07.um, consider_overlaps_as_errors: true)
+    ContBar.ext_outside(trans_bip).ext_enclosed(nmosi_relevant_activ, 0.07.um, consider_overlaps: true)
 end.().output("CntB.c", "Min. Activ enclosure of ContBar = 0.07")
 -&gt; do
-    ContBar.ext_enclosed(GatPoly, 0.07.um, consider_overlaps_as_errors: true)
+    ContBar.ext_enclosed(GatPoly, 0.07.um, consider_overlaps: true)
 end.().output("CntB.d", "Min. GatPoly enclosure of ContBar = 0.07")
 -&gt; do
     ContBar_GP.ext_separation(Activ, 0.14.um)
@@ -2357,10 +2444,13 @@ end.().output("CntB.g2", "Min. pSD overlap of ContBar on pSD-Activ = 0.09")
     ContBar_not_M1.dup
 end.().output("CntB.h", "ContBar must be covered with Metal1")
 -&gt; do
+    ContBar_outside_TRANS.ext_enclosed(Metal1_Nslit, 0.05.um, outside_edges_are_errors: true)
+end.().output("CntB.h1", "Min. Metal1 enclosure of ContBar = 0.05")
+-&gt; do
     ContBar_Act_GP.dup
 end.().output("CntB.j", "ContBar on GatPoly over Activ is not allowed")
 -&gt; do
-    Metal1.ext_width(0.16.um)
+    Metal1_Nslit.ext_width(0.16.um)
 end.().output("M1.a", "Min. Metal1 width = 0.16")
 -&gt; do
     M1_Nsram.ext_space(0.18.um)
@@ -2369,14 +2459,24 @@ end.().output("M1.b", "Min. Metal1 space or notch = 0.18")
     Cont_Nsram.ext_not(M1_Nsram)
 end.().output("M1.c", "Min. Metal1 enclosure of Cont = 0.00")
 -&gt; do
-    Cont_Nsram.ext_outside(EdgeSeal).drc(if_any(
+    [Cont_Nsram.ext_outside(EdgeSeal), Metal1_outside_EdgeSeal].then { |layer1, layer2| layer1.drc(if_any(
         !rectangles,
-        primary-secondary(Metal1_outside_EdgeSeal),
-        ((enclosed(Metal1_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) &lt; 0.05.um))))
+        primary-secondary(layer2),
+        ((enclosed(layer2, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) &lt; 0.05.um)))) }
 end.().output("M1.c1", "Min. Metal1 endcap enclosure of Cont (For contacts at Metal1 corners at least one side must be treated as an endcap and for the other sides rule M1.c can be applied.) = 0.05")
 -&gt; do
     Metal1_outside_EdgeSeal.ext_with_area([["&lt;", 0.09.um2]])
 end.().output("M1.d", "Min. Metal1 area (µm²) = 0.09")
+-&gt; (;wide_Metal1, l1) do
+    wide_Metal1 = Metal1_outside_EdgeSeal.sized(-0.3.um/2.0, acute_limit).sized(0.3.um/2.0, acute_limit)
+    l1 = Metal1_outside_EdgeSeal.ext_separation(wide_Metal1, 0.22.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(1.001.um, 0.001.um)
+end.().output("M1.e", "Min. space of Metal1 lines if, at least one line is wider than 0.3 µm and the parallel run is more than 1.0 µm = 0.22")
+-&gt; (;wide_Metal1, l1) do
+    wide_Metal1 = Metal1_outside_EdgeSeal.sized(-10.0.um/2.0, acute_limit).sized(10.0.um/2.0, acute_limit)
+    l1 = Metal1_outside_EdgeSeal.ext_separation(wide_Metal1, 0.6.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(10.001.um, 0.001.um)
+end.().output("M1.f", "Min. space of Metal1 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm = 0.60")
 
 if $densityRules
 	-&gt; do
@@ -2385,7 +2485,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal2.ext_width(0.2.um)
+    Metal2_Nslit.ext_width(0.2.um)
 end.().output("M2.a", "Min. Metal2 width = 0.20")
 -&gt; do
     M2_Nsram.ext_space(0.21.um)
@@ -2402,6 +2502,16 @@ end.().output("M2.c1", "Min. Metal2 endcap enclosure of Via1 (For vias at Metal2
 -&gt; do
     Metal2_outside_EdgeSeal.ext_with_area([["&lt;", 0.144.um2]])
 end.().output("M2.d", "Min. Metal2 area (µm²) = 0.144")
+-&gt; (;wide_Metal2, l1) do
+    wide_Metal2 = Metal2_outside_EdgeSeal.sized(-0.39.um/2.0, acute_limit).sized(0.39.um/2.0, acute_limit)
+    l1 = Metal2_outside_EdgeSeal.ext_separation(wide_Metal2, 0.24.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(1.001.um, 0.001.um)
+end.().output("M2.e", "Min. space of Metal2 lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm = 0.24")
+-&gt; (;wide_Metal2, l1) do
+    wide_Metal2 = Metal2_outside_EdgeSeal.sized(-10.0.um/2.0, acute_limit).sized(10.0.um/2.0, acute_limit)
+    l1 = Metal2_outside_EdgeSeal.ext_separation(wide_Metal2, 0.6.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(10.001.um, 0.001.um)
+end.().output("M2.f", "Min. space of Metal2 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm = 0.60")
 
 if $densityRules
 	-&gt; do
@@ -2410,7 +2520,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal3.ext_width(0.2.um)
+    Metal3_Nslit.ext_width(0.2.um)
 end.().output("M3.a", "Min. Metal3 width = 0.20")
 -&gt; do
     M3_Nsram.ext_space(0.21.um)
@@ -2427,6 +2537,16 @@ end.().output("M3.c1", "Min. Metal3 endcap enclosure of Via2 (For vias at Metal3
 -&gt; do
     Metal3_outside_EdgeSeal.ext_with_area([["&lt;", 0.144.um2]])
 end.().output("M3.d", "Min. Metal3 area (µm²) = 0.144")
+-&gt; (;wide_Metal3, l1) do
+    wide_Metal3 = Metal3_outside_EdgeSeal.sized(-0.39.um/2.0, acute_limit).sized(0.39.um/2.0, acute_limit)
+    l1 = Metal3_outside_EdgeSeal.ext_separation(wide_Metal3, 0.24.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(1.001.um, 0.001.um)
+end.().output("M3.e", "Min. space of Metal3 lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm = 0.24")
+-&gt; (;wide_Metal3, l1) do
+    wide_Metal3 = Metal3_outside_EdgeSeal.sized(-10.0.um/2.0, acute_limit).sized(10.0.um/2.0, acute_limit)
+    l1 = Metal3_outside_EdgeSeal.ext_separation(wide_Metal3, 0.6.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(10.001.um, 0.001.um)
+end.().output("M3.f", "Min. space of Metal3 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm = 0.60")
 
 if $densityRules
 	-&gt; do
@@ -2435,7 +2555,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal4.ext_width(0.2.um)
+    Metal4_Nslit.ext_width(0.2.um)
 end.().output("M4.a", "Min. Metal4 width = 0.20")
 -&gt; do
     M4_Nsram.ext_space(0.21.um)
@@ -2452,6 +2572,16 @@ end.().output("M4.c1", "Min. Metal4 endcap enclosure of Via3 (For vias at Metal4
 -&gt; do
     Metal4_outside_EdgeSeal.ext_with_area([["&lt;", 0.144.um2]])
 end.().output("M4.d", "Min. Metal4 area (µm²) = 0.144")
+-&gt; (;wide_Metal4, l1) do
+    wide_Metal4 = Metal4_outside_EdgeSeal.sized(-0.39.um/2.0, acute_limit).sized(0.39.um/2.0, acute_limit)
+    l1 = Metal4_outside_EdgeSeal.ext_separation(wide_Metal4, 0.24.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(1.001.um, 0.001.um)
+end.().output("M4.e", "Min. space of Metal4 lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm = 0.24")
+-&gt; (;wide_Metal4, l1) do
+    wide_Metal4 = Metal4_outside_EdgeSeal.sized(-10.0.um/2.0, acute_limit).sized(10.0.um/2.0, acute_limit)
+    l1 = Metal4_outside_EdgeSeal.ext_separation(wide_Metal4, 0.6.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(10.001.um, 0.001.um)
+end.().output("M4.f", "Min. space of Metal4 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm = 0.60")
 
 if $densityRules
 	-&gt; do
@@ -2460,7 +2590,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal5.ext_width(0.2.um)
+    Metal5_Nslit.ext_width(0.2.um)
 end.().output("M5.a", "Min. Metal5 width = 0.20")
 -&gt; do
     M5_Nsram.ext_space(0.21.um)
@@ -2477,6 +2607,16 @@ end.().output("M5.c1", "Min. Metal5 endcap enclosure of Via4 (For vias at Metal5
 -&gt; do
     Metal5_outside_EdgeSeal.ext_with_area([["&lt;", 0.144.um2]])
 end.().output("M5.d", "Min. Metal5 area (µm²) = 0.144")
+-&gt; (;wide_Metal5, l1) do
+    wide_Metal5 = Metal5_outside_EdgeSeal.sized(-0.39.um/2.0, acute_limit).sized(0.39.um/2.0, acute_limit)
+    l1 = Metal5_outside_EdgeSeal.ext_separation(wide_Metal5, 0.24.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(1.001.um, 0.001.um)
+end.().output("M5.e", "Min. space of Metal5 lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm = 0.24")
+-&gt; (;wide_Metal5, l1) do
+    wide_Metal5 = Metal5_outside_EdgeSeal.sized(-10.0.um/2.0, acute_limit).sized(10.0.um/2.0, acute_limit)
+    l1 = Metal5_outside_EdgeSeal.ext_separation(wide_Metal5, 0.6.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    l1.ext_encloses_box(10.001.um, 0.001.um)
+end.().output("M5.f", "Min. space of Metal5 lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm = 0.60")
 
 if $densityRules
 	-&gt; do
@@ -2493,7 +2633,7 @@ if $fillerRules
 	    Metal1_filler.ext_space(0.42.um)
 	end.().output("M1Fil.b", "Min. Metal1:filler space = 0.42")
 	-&gt; do
-	    Metal1_filler.ext_separation(Metal1, 0.42.um)
+	    Metal1_filler.ext_separation(Metal1_Nslit, 0.42.um)
 	end.().output("M1Fil.c", "Min. Metal1:filler space to Metal1 = 0.42")
 	-&gt; do
 	    Metal1_filler.ext_separation(TRANS, 1.0.um)
@@ -2516,7 +2656,7 @@ if $fillerRules
 	    Metal2_filler.ext_space(0.42.um)
 	end.().output("M2Fil.b", "Min. Metal2:filler space = 0.42")
 	-&gt; do
-	    Metal2_filler.ext_separation(Metal2, 0.42.um)
+	    Metal2_filler.ext_separation(Metal2_Nslit, 0.42.um)
 	end.().output("M2Fil.c", "Min. Metal2:filler space to Metal2 = 0.42")
 	-&gt; do
 	    Metal2_filler.ext_separation(TRANS, 1.0.um)
@@ -2539,7 +2679,7 @@ if $fillerRules
 	    Metal3_filler.ext_space(0.42.um)
 	end.().output("M3Fil.b", "Min. Metal3:filler space = 0.42")
 	-&gt; do
-	    Metal3_filler.ext_separation(Metal3, 0.42.um)
+	    Metal3_filler.ext_separation(Metal3_Nslit, 0.42.um)
 	end.().output("M3Fil.c", "Min. Metal3:filler space to Metal3 = 0.42")
 	-&gt; do
 	    Metal3_filler.ext_separation(TRANS, 1.0.um)
@@ -2562,7 +2702,7 @@ if $fillerRules
 	    Metal4_filler.ext_space(0.42.um)
 	end.().output("M4Fil.b", "Min. Metal4:filler space = 0.42")
 	-&gt; do
-	    Metal4_filler.ext_separation(Metal4, 0.42.um)
+	    Metal4_filler.ext_separation(Metal4_Nslit, 0.42.um)
 	end.().output("M4Fil.c", "Min. Metal4:filler space to Metal4 = 0.42")
 	-&gt; do
 	    Metal4_filler.ext_separation(TRANS, 1.0.um)
@@ -2585,7 +2725,7 @@ if $fillerRules
 	    Metal5_filler.ext_space(0.42.um)
 	end.().output("M5Fil.b", "Min. Metal5:filler space = 0.42")
 	-&gt; do
-	    Metal5_filler.ext_separation(Metal5, 0.42.um)
+	    Metal5_filler.ext_separation(Metal5_Nslit, 0.42.um)
 	end.().output("M5Fil.c", "Min. Metal5:filler space to Metal5 = 0.42")
 	-&gt; do
 	    Metal5_filler.ext_separation(TRANS, 1.0.um)
@@ -2615,6 +2755,9 @@ end.().output("V1.b", "Min. Via1 space = 0.22")
     via1SepErr_2 = via1SepErr_1.ext_not(via1SepErr_1.ext_rectangles)
     via1SepErr_2.ext_or(via1In.ext_touching(via1SepErr_2))
 end.().output("V1.b1", "Min. Via1 space in an array of more than 3 rows and more then 3 columns (V1.b1 is only required in one direction. The distance of the other direction must be at least V1.b.) = 0.29")
+-&gt; do
+    Via1.ext_enclosed(Metal1_Nslit, 0.01.um, outside_edges_are_errors: true)
+end.().output("V1.c", "Min. Metal1 enclosure of Via1 = 0.01")
 -&gt; (;x) do
     x = V1_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
     x.drc(if_any(
@@ -2638,6 +2781,9 @@ end.().output("V2.b", "Min. Via2 space = 0.22")
     via2SepErr_2 = via2SepErr_1.ext_not(via2SepErr_1.ext_rectangles)
     via2SepErr_2.ext_or(via2In.ext_touching(via2SepErr_2))
 end.().output("V2.b1", "Min. Via2 space in an array of more than 3 rows and more then 3 columns (V2.b1 is only required in one direction. The distance of the other direction must be at least V2.b.) = 0.29")
+-&gt; do
+    Via2.ext_enclosed(Metal2_Nslit, 0.005.um, outside_edges_are_errors: true)
+end.().output("V2.c", "Min. Metal2 enclosure of Via2 = 0.005")
 -&gt; (;x) do
     x = V2_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
     x.drc(if_any(
@@ -2661,6 +2807,9 @@ end.().output("V3.b", "Min. Via3 space = 0.22")
     via3SepErr_2 = via3SepErr_1.ext_not(via3SepErr_1.ext_rectangles)
     via3SepErr_2.ext_or(via3In.ext_touching(via3SepErr_2))
 end.().output("V3.b1", "Min. Via3 space in an array of more than 3 rows and more then 3 columns (V3.b1 is only required in one direction. The distance of the other direction must be at least V3.b.) = 0.29")
+-&gt; do
+    Via3.ext_enclosed(Metal3_Nslit, 0.005.um, outside_edges_are_errors: true)
+end.().output("V3.c", "Min. Metal3 enclosure of Via3 = 0.005")
 -&gt; (;x) do
     x = V3_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
     x.drc(if_any(
@@ -2684,6 +2833,9 @@ end.().output("V4.b", "Min. Via4 space = 0.22")
     via4SepErr_2 = via4SepErr_1.ext_not(via4SepErr_1.ext_rectangles)
     via4SepErr_2.ext_or(via4In.ext_touching(via4SepErr_2))
 end.().output("V4.b1", "Min. Via4 space in an array of more than 3 rows and more then 3 columns (V4.b1 is only required in one direction. The distance of the other direction must be at least V4.b.) = 0.29")
+-&gt; do
+    Via4.ext_enclosed(Metal4_Nslit, 0.005.um, outside_edges_are_errors: true)
+end.().output("V4.c", "Min. Metal4 enclosure of Via4 = 0.005")
 -&gt; (;x) do
     x = V4_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
     x.drc(if_any(
@@ -2698,10 +2850,16 @@ end.().output("TV1.a", "Min. and max. TopVia1 width = 0.42")
     TopVia1_or_Vmim.ext_space(0.42.um)
 end.().output("TV1.b", "Min. TopVia1 space = 0.42")
 -&gt; do
-    TopMetal1.ext_width(1.64.um)
+    TopVia1.ext_enclosed(Metal5_Nslit, 0.1.um, outside_edges_are_errors: true)
+end.().output("TV1.c", "Min. Metal5 enclosure of TopVia1 = 0.1")
+-&gt; do
+    TopVia1.ext_enclosed(TopMetal1_Nslit, 0.42.um, outside_edges_are_errors: true)
+end.().output("TV1.d", "Min. TopMetal1 enclosure of TopVia1 = 0.42")
+-&gt; do
+    TopMetal1_Nslit.ext_width(1.64.um)
 end.().output("TM1.a", "Min. TopMetal1 width = 1.64")
 -&gt; do
-    TopMetal1.ext_space(1.64.um)
+    TopMetal1_Nslit.ext_space(1.64.um)
 end.().output("TM1.b", "Min. TopMetal1 space or notch = 1.64")
 
 if $densityRules
@@ -2719,7 +2877,7 @@ if $fillerRules
 	    TopMetal1_filler.ext_space(3.0.um)
 	end.().output("TM1Fil.b", "Min. TopMetal1:filler space = 3.00")
 	-&gt; do
-	    TopMetal1_filler.ext_separation(TopMetal1, 3.0.um)
+	    TopMetal1_filler.ext_separation(TopMetal1_Nslit, 3.0.um)
 	end.().output("TM1Fil.c", "Min. TopMetal1:filler space to TopMetal1 = 3.00")
 	-&gt; do
 	    TopMetal1_filler.ext_separation(TRANS, 4.9.um)
@@ -2733,11 +2891,26 @@ end.().output("TV2.a", "Min. and max. TopVia2 width = 0.90")
     TopVia2.ext_space(1.06.um)
 end.().output("TV2.b", "Min. TopVia2 space = 1.06")
 -&gt; do
-    TopMetal2.ext_width(2.0.um)
+    TopVia2.ext_enclosed(TopMetal1_Nslit, 0.5.um, outside_edges_are_errors: true)
+end.().output("TV2.c", "Min. TopMetal1 enclosure of TopVia2 = 0.50")
+-&gt; do
+    TopVia2.ext_enclosed(TopMetal2_Nslit, 0.5.um, outside_edges_are_errors: true)
+end.().output("TV2.d", "Min. TopMetal2 enclosure of TopVia2 = 0.50")
+-&gt; do
+    TopMetal2_Nslit.ext_width(2.0.um)
 end.().output("TM2.a", "Min. TopMetal2 width = 2.00")
 -&gt; do
-    TopMetal2.ext_space(2.0.um)
+    TopMetal2_Nslit.ext_space(2.0.um)
 end.().output("TM2.b", "Min. TopMetal2 space or notch = 2.00")
+
+if $recommendedRules
+	-&gt; (;wide_TMetal2, l1) do
+	    wide_TMetal2 = TopMetal2_outside_EdgeSeal.sized(-5.0.um/2.0, acute_limit).sized(5.0.um/2.0, acute_limit)
+	    l1 = TopMetal2_outside_EdgeSeal.ext_separation(wide_TMetal2, 5.0.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+	    l1.ext_encloses_box(50.001.um, 0.001.um)
+	end.().output("TM2.bR", "Min. space of TopMetal2 lines if, at least one line is wider than 5.0 µm and the parallel run is more than 50.0 µm (Not checked within IND regions.) = 5.00")
+end
+
 
 if $densityRules
 	-&gt; do
@@ -2754,7 +2927,7 @@ if $fillerRules
 	    TopMetal2_filler.ext_space(3.0.um)
 	end.().output("TM2Fil.b", "Min. TopMetal2:filler space = 3.00")
 	-&gt; do
-	    TopMetal2_filler.ext_separation(TopMetal2, 3.0.um)
+	    TopMetal2_filler.ext_separation(TopMetal2_Nslit, 3.0.um)
 	end.().output("TM2Fil.c", "Min. TopMetal2:filler space to TopMetal2 = 3.00")
 	-&gt; do
 	    TopMetal2_filler.ext_separation(TRANS, 4.9.um)
@@ -3057,13 +3230,16 @@ end.().output("Seal.f.TopMetal1", "Min. Passiv ring outside of sealring space to
     ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep.dup
 end.().output("Seal.f.TopMetal2", "Min. Passiv ring outside of sealring space to EdgeSeal-TopMetal2 = 1.00")
 -&gt; do
+    EdgeSeal.ext_with_angle([["==", 45]]).ext_with_length([["&lt;", 21.0.um]])
+end.().output("Seal.k", "Min. EdgeSeal 45-degree corner length = 21.00")
+-&gt; do
     MIM_Mim_a.dup
 end.().output("MIM.a", "Min. MIM width = 1.14")
 -&gt; do
     MIM.ext_space(0.6.um)
 end.().output("MIM.b", "Min. MIM space = 0.60")
 -&gt; do
-    TopMetal1.ext_separation(MIM, 0.6.um)
+    TopMetal1_Nslit.ext_separation(MIM, 0.6.um)
 end.().output("MIM.e", "Min. TopMetal1 space to MIM = 0.60")
 -&gt; do
     MIM_Mim_f.dup
@@ -3307,19 +3483,19 @@ end.().output("Pin.g", "Min. TopMetal1 enclosure of TopMetal1:pin = 0.00")
     TopMetal2_pin.ext_not(TopMetal2)
 end.().output("Pin.h", "Min. TopMetal2 enclosure of TopMetal2:pin = 0.00")
 -&gt; do
-    PActHV_digi.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.31.um, consider_overlaps_as_errors: true)
+    PActHV_digi.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.31.um, consider_overlaps: true)
 end.().output("NW.c1.dig", "Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd = 0.31")
 -&gt; do
     NWell.ext_separation(NActHV_digi, 0.31.um)
 end.().output("NW.d1.dig", "Min. NWell space to external N+Activ inside ThickGateOx inside DigiBnd = 0.31")
 -&gt; do
-    NAct_NWellHV_digi.ext_enclosed(NWell, 0.24.um, consider_overlaps_as_errors: true)
+    NAct_NWellHV_digi.ext_enclosed(NWell, 0.24.um, consider_overlaps: true)
 end.().output("NW.e1.dig", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx inside DigiBnd = 0.24")
 -&gt; do
     NWell.ext_separation(PAct_PWellHV_digi, 0.24.um)
 end.().output("NW.f1.dig", "Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd = 0.24")
 -&gt; do
-    Cont_SQ.ext_not(SVaricap_or_trans_bip).ext_enclosed(Act_Nsram_or_Activ_mask.ext_and(DigiBnd), 0.05.um, consider_overlaps_as_errors: true)
+    Cont_SQ.ext_not(SVaricap_or_trans_bip).ext_enclosed(Act_Nsram_or_Activ_mask.ext_and(DigiBnd), 0.05.um, consider_overlaps: true)
 end.().output("Cnt.c.Digi", "Min. Activ enclosure of Cont inside DigiBnd = 0.05")
 -&gt; do
     LBE.ext_width(100.0.um)
