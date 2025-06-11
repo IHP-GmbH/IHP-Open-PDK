@@ -50,11 +50,12 @@ Options:
 
 from docopt import docopt
 import os
+from pathlib import Path
 import xml.etree.ElementTree as ET
 import logging
 import klayout.db
-import glob
 from datetime import datetime, timezone
+import time
 from subprocess import check_call
 import shutil
 import concurrent.futures
@@ -140,7 +141,7 @@ def merge_klayout_drc_reports(input_files: List[str], output_file: str):
 
 
 def check_drc_results(
-    results_db_files: list, run_dir: str, layout_path: str, switches: dict = None
+    results_db_files: list, run_dir: Path, layout_path: str, switches: dict = None
 ):
     """
     check_drc_results Checks the results db generated from run and report at the end if the DRC run failed or passed.
@@ -162,9 +163,9 @@ def check_drc_results(
         exit(1)
 
     if len(results_db_files) > 1:
-        layout_name = os.path.basename(layout_path).split(".")[0]
+        layout_name = Path(layout_path).stem
         topcell = switches["topcell"]
-        report_path = os.path.join(run_dir, f"{layout_name}_{topcell}_full.lyrdb")
+        report_path = run_dir / f"{layout_name}_{topcell}_full.lyrdb"
         merge_klayout_drc_reports(results_db_files, report_path)
         list(map(os.remove, [f for f in results_db_files if f != report_path]))
     else:
@@ -196,7 +197,7 @@ def check_drc_results(
         )
 
 
-def generate_drc_run_template(drc_dir: str, run_dir: str, run_tables_list: list = []):
+def generate_drc_run_template(drc_dir: str, run_dir: Path, run_tables_list: list = None):
     """
     generate_drc_run_template will generate the template file to run drc in the run_dir path.
 
@@ -216,17 +217,17 @@ def generate_drc_run_template(drc_dir: str, run_dir: str, run_tables_list: list 
     str
         Absolute path to the generated DRC file.
     """
-    drc_files = glob.glob(os.path.join(drc_dir, "rule_decks", "*.drc"))
+    if run_tables_list is None:
+        run_tables_list = []
+
+    deck_name = "main"
+    drc_files = list((Path(drc_dir) / "rule_decks").glob("*.drc"))
+    exclude_decks = {"antenna", "density", "maximal", "main", "layers_def", "tail"}
     if len(run_tables_list) < 1:
         all_tables = [
-            os.path.basename(f)
+            Path(f).name
             for f in drc_files
-            if "antenna" not in f
-            and "density" not in f
-            and "maximal" not in f
-            and "main" not in f
-            and "layers_def" not in f
-            and "tail" not in f
+            if not any(deck in Path(f).stem for deck in exclude_decks)
         ]
         # Sort by the numeric prefix
         all_tables.sort(
@@ -243,36 +244,31 @@ def generate_drc_run_template(drc_dir: str, run_dir: str, run_tables_list: list 
                 ),
             )
         )
-        deck_name = "main"
     elif len(run_tables_list) == 1:
         deck_name = str(run_tables_list[0]).split("_")[-1]
-        drc_decks = [os.path.basename(f) for f in drc_files]
+        drc_decks = [Path(f).name for f in drc_files]
         all_tables = [d for d in drc_decks if d.split("_")[-1] == f"{deck_name}.drc"]
     else:
-        deck_name = "main"
-        drc_decks = [os.path.basename(f) for f in drc_files]
+        drc_decks = [Path(f).name for f in drc_files]
         all_tables = [
             d for d in drc_decks if any(f"{t}.drc" in d for t in run_tables_list)
         ]
-        print(all_tables)
 
-    logging.info(
-        f"# Generating template with for the following rule tables: {all_tables}"
-    )
-    logging.info(f"# Your run dir located at: {run_dir}")
+    logging.info(f"Generating DRC rule deck template using tables: {all_tables}")
+    logging.info(f"Your run dir located at: {run_dir}")
 
     all_tables.insert(0, "main.drc")
     all_tables.append("tail.drc")
 
     # Adding layers_def to run  dir to used in main rule deck
-    lyrs_def_path = os.path.join(drc_dir, "rule_decks", "layers_def.drc")
-    lyrs_def_loc = os.path.join(run_dir, "layers_def.drc")
+    lyrs_def_path = Path(drc_dir) / "rule_decks" / "layers_def.drc"
+    lyrs_def_loc = run_dir / "layers_def.drc"
     shutil.copyfile(lyrs_def_path, lyrs_def_loc)
 
-    gen_rule_deck_path = os.path.join(run_dir, "{}.drc".format(deck_name))
-    with open(gen_rule_deck_path, "wb") as wfd:
+    gen_rule_deck_path = run_dir / f"{deck_name}.drc"
+    with open(gen_rule_deck_path, "w") as wfd:
         for f in all_tables:
-            with open(os.path.join(drc_dir, "rule_decks", f), "rb") as fd:
+            with open(Path(drc_dir) / "rule_decks" / f, "r") as fd:
                 shutil.copyfileobj(fd, wfd)
 
     return gen_rule_deck_path
@@ -309,19 +305,12 @@ def get_list_of_tables(drc_dir: str):
         Path to the DRC folder to get the list of tables from.
     """
 
-    exc_list = ("antenna", "density", "maximal", "main", "layers_def", "tail")
-    if arguments["--run_mode"] == "flat":
-        return [
-            os.path.basename(f).replace(".drc", "")
-            for f in glob.glob(os.path.join(drc_dir, "rule_decks", "*.drc"))
-            if all(t not in f for t in exc_list)
-        ]
-    else:
-        return [
-            os.path.basename(f).replace(".drc", "")
-            for f in glob.glob(os.path.join(drc_dir, "rule_decks", "*.drc"))
-            if all(t not in f for t in exc_list)
-        ]
+    exclude_decks = {"antenna", "density", "maximal", "main", "layers_def", "tail"}
+    return [
+        f.stem
+        for f in (Path(drc_dir) / "rule_decks").glob("*.drc")
+        if not any(deck in f.stem for deck in exclude_decks)
+    ]
 
 
 def get_run_top_cell_name(arguments, layout_path):
@@ -385,13 +374,9 @@ def generate_klayout_switches(arguments, layout_path):
         exit(1)
 
     # JSON file with DRC rules values
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    tech_rule_path = os.path.abspath(
-        os.path.join(script_dir, "../../python/sg13g2_pycell_lib/sg13g2_tech.json")
-    )
-    default_rule_path = os.path.abspath(
-        os.path.join(script_dir, "rule_decks/sg13g2_tech_default.json")
-    )
+    script_dir = Path(__file__).resolve().parent
+    tech_rule_path = (script_dir / "../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json").resolve()
+    default_rule_path = (script_dir / "rule_decks/sg13g2_tech_default.json").resolve()
 
     # Always assign default path
     switches["drc_json_default"] = default_rule_path
@@ -409,7 +394,7 @@ def generate_klayout_switches(arguments, layout_path):
 
     # Find the first existing file
     for path in candidate_paths:
-        if os.path.isfile(path):
+        if Path(path).is_file():
             logging.info(f"Using DRC JSON file: {path}")
             switches["drc_json"] = path
             break
@@ -503,7 +488,7 @@ def check_layout_path(layout_path):
         string that represent full absolute layout path.
     """
 
-    if not os.path.isfile(layout_path):
+    if not Path(layout_path).is_file():
         logging.error(
             f"# GDS file path {layout_path} provided doesn't exist or not a file."
         )
@@ -515,7 +500,7 @@ def check_layout_path(layout_path):
         )
         exit(1)
 
-    return os.path.abspath(layout_path)
+    return str(Path(layout_path).resolve())
 
 
 def build_switches_string(sws: dict):
@@ -530,7 +515,7 @@ def build_switches_string(sws: dict):
     return " ".join(f"-rd {k}={v}" for k, v in sws.items())
 
 
-def run_check(drc_file: str, drc_table: str, path: str, run_dir: str, sws: dict):
+def run_check(drc_file: str, drc_table: str, path: str, run_dir: Path, sws: dict):
     """
     run_antenna_check run DRC check based on DRC file provided.
 
@@ -542,8 +527,8 @@ def run_check(drc_file: str, drc_table: str, path: str, run_dir: str, sws: dict)
         str that holds the name of drc table to be run.
     path : str
         String that holds the full path of the layout.
-    run_dir : str
-        String that holds the full path of the run location.
+    run_dir : Path
+        Holds the full path of the run location.
     sws : dict
         Dictionary that holds all switches that needs to be passed to the antenna checks.
 
@@ -560,11 +545,13 @@ def run_check(drc_file: str, drc_table: str, path: str, run_dir: str, sws: dict)
             path, drc_table, sws["topcell"]
         )
     )
-    layout_name = os.path.basename(path).split(".")[0]
+    layout_name = Path(path).stem
     topcell = sws["topcell"]
-    report_path = os.path.join(run_dir, f"{layout_name}_{topcell}_{drc_table}.lyrdb")
+    report_path = run_dir / f"{layout_name}_{topcell}_{drc_table}.lyrdb"
+    log_path = run_dir / f"{layout_name}_{topcell}_{drc_table}.log"
     new_sws = sws.copy()
     new_sws["report"] = report_path
+    new_sws["log"] = log_path
     new_sws["run_mode"] = arguments["--run_mode"]
     sws_str = build_switches_string(new_sws)
     sws_str += f" -rd table_name={drc_table}"
@@ -577,10 +564,10 @@ def run_check(drc_file: str, drc_table: str, path: str, run_dir: str, sws: dict)
 
 def run_parallel_run(
     arguments: dict,
-    rule_deck_full_path: str,
+    rule_deck_full_path: Path,
     layout_path: str,
     switches: dict,
-    run_dir: str,
+    run_dir: Path,
 ):
     """
     Run DRC checks in parallel using multiple threads.
@@ -591,7 +578,7 @@ def run_parallel_run(
     rule_deck_full_path (str): Path to the base dir containing rule decks.
     layout_path (str): Path to the layout file to be checked.
     switches (dict): Switches to be passed to klayout.
-    run_dir (str): Path where the DRC run output will be stored.
+    run_dir (Path): Path where the DRC run output will be stored.
     """
     if arguments.get("--macro_gen"):
         generate_drc_run_template(rule_deck_full_path, run_dir)
@@ -601,19 +588,17 @@ def run_parallel_run(
 
     # Handle Antenna check
     if arguments.get("--antenna"):
-        antenna_path = os.path.join(rule_deck_full_path, "rule_decks", "antenna.drc")
+        antenna_path = rule_deck_full_path / "rule_decks" / "antenna.drc"
         rule_deck_files["antenna"] = antenna_path
 
     # Handle Density check
     if arguments.get("--density"):
-        density_path = os.path.join(rule_deck_full_path, "rule_decks", "density.drc")
+        density_path = rule_deck_full_path / "rule_decks" / "density.drc"
         rule_deck_files["density"] = density_path
 
     # Handle maximum check
     if arguments.get("--MaxRuleSet"):
-        max_rules_path = os.path.join(
-            rule_deck_full_path, "rule_decks", "sg13g2_maximal.drc"
-        )
+        max_rules_path = rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
         rule_deck_files["sg13g2_maximal"] = max_rules_path
 
     # Determine tables to run
@@ -649,10 +634,10 @@ def run_parallel_run(
 
 def run_single_processor(
     arguments: Dict,
-    rule_deck_full_path: str,
+    rule_deck_full_path: Path,
     layout_path: str,
     switches: Dict,
-    run_dir: str,
+    run_dir: Path,
 ) -> int:
     """
     Runs the DRC checks as a single process.
@@ -667,7 +652,7 @@ def run_single_processor(
         Path to the layout file (GDS/OAS).
     switches : dict
         Dictionary of switches passed to klayout.
-    run_dir : str
+    run_dir : Path
         Output directory for the DRC run.
     """
     result_dbs: List[str] = []
@@ -681,7 +666,7 @@ def run_single_processor(
         """
         Utility to run optional check based on the flag.
         """
-        drc_path = os.path.join(rule_deck_full_path, "rule_decks", f"{name}.drc")
+        drc_path = rule_deck_full_path / "rule_decks" / f"{name}.drc"
         result_dbs.append(run_check(drc_path, name, layout_path, run_dir, switches))
         logging.info(f"Completed running {name.capitalize()} checks.")
 
@@ -718,27 +703,27 @@ def run_single_processor(
     return 0
 
 
-def main(run_dir: str, arguments: dict):
+def main(run_dir: Path, arguments: dict):
     """
     main function to run the DRC.
 
     Parameters
     ----------
-    run_dir : str
-        String with absolute path of the full run dir.
+    run_dir : Path
+        Absolute path of the full run dir.
     arguments : dict
         Dictionary that holds the arguments used by user in the run command. This is generated by docopt library.
     """
 
     # Check gds file existance
-    if not os.path.exists(arguments["--path"]):
+    if not Path(arguments["--path"]).exists():
         file_path = arguments["--path"]
         logging.error(
             f"The input GDS file path {file_path} doesn't exist, please recheck."
         )
         exit(1)
 
-    rule_deck_full_path = os.path.dirname(os.path.abspath(__file__))
+    rule_deck_full_path = Path(__file__).resolve().parent
 
     # Check Klayout version
     check_klayout_version()
@@ -780,9 +765,9 @@ if __name__ == "__main__":
         or arguments["--run_dir"] == ""
         or arguments["--run_dir"] is None
     ):
-        run_dir = os.path.join(os.path.abspath(os.getcwd()), now_str)
+        run_dir = Path.cwd().resolve() / now_str
     else:
-        run_dir = os.path.abspath(arguments["--run_dir"])
+        run_dir = Path(arguments["--run_dir"]).resolve()
 
     os.makedirs(run_dir, exist_ok=True)
 
@@ -790,7 +775,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(os.path.join(run_dir, "{}.log".format(now_str))),
+            logging.FileHandler(run_dir / f"{now_str}.log"),
             logging.StreamHandler(),
         ],
         format="%(asctime)s | %(levelname)-7s | %(message)s",
@@ -799,5 +784,14 @@ if __name__ == "__main__":
 
     workers_count = int(arguments["--mp"]) if arguments["--mp"] else os.cpu_count()
 
+    # Start of execution time
+    time_start = time.time()
+
     # Calling main function
     main(run_dir, arguments)
+
+    #  End of execution time
+    elapsed_time = time.time() - time_start
+    logging.info(
+        f"Total DRC Run time: {elapsed_time:.2f} seconds (including execution, analysis, and reporting)"
+    )

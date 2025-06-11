@@ -27,12 +27,41 @@ require 'pathname'
 
 exec_start_time = Time.now
 
-logger = Logger.new($stdout)
-
-logger.formatter = proc do |_severity, datetime, _progname, msg|
-  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10, 40].strip + ") : #{msg}
-"
+# Custom formatter including timestamp and memory usage
+formatter = proc do |_severity, datetime, _progname, msg|
+  memory_usage = `pmap #{Process.pid} | tail -1`[10, 40].strip
+  "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
 end
+
+# Create file logger
+file_logger = Logger.new($log)
+file_logger.formatter = formatter
+
+# Create stdout logger
+stdout_logger = Logger.new($stdout)
+stdout_logger.formatter = formatter
+
+# MultiLogger class to broadcast to multiple loggers
+class MultiLogger
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def info(msg)
+    @targets.each { |t| t.info(msg) }
+  end
+
+  def warn(msg)
+    @targets.each { |t| t.warn(msg) }
+  end
+
+  def error(msg)
+    @targets.each { |t| t.error(msg) }
+  end
+end
+
+# Use the multi-logger for your application
+logger = MultiLogger.new(stdout_logger, file_logger)
 
 #================================================
 #----------------- FILE SETUP -------------------
@@ -158,7 +187,8 @@ drc_rules = get_drc_values(logger)
 
 # === LAYOUT EXTENT ===
 CHIP = extent.sized(0.0)
-logger.info("Total area of the design is #{CHIP.area} um^2.")
+chip_area = CHIP.area
+logger.info("Total area of the design is #{chip_area} um^2.")
 tiles_boundary = tile_boundary(CHIP)
 chip_bbox = CHIP.bbox
 
@@ -183,10 +213,13 @@ logger.info('Starting IHP-SG13G2 DENSITY DRC rules.')
 # --------------------- ActFil ---------------------
 #===================================================
 
+act_area = activ.area
+act_dens_ratio = act_area / chip_area
+
 # Rule AFil.g: Min. global Activ density [%]= 35.0.
 logger.info('Executing rule AFil.g')
 afil_g_val = drc_rules['AFil_g'].to_f
-if (activ.area / CHIP.area) < afil_g_val
+if act_dens_ratio < afil_g_val
   CHIP.output('AFil.g',
               "5.6. AFil.g: Min. global Activ density [%]: #{afil_g_val * 100}.")
 end
@@ -194,7 +227,7 @@ end
 # Rule AFil.g1: Max. global Activ density [%]= 55.0.
 logger.info('Executing rule AFil.g1')
 afil_g1_val = drc_rules['AFil_g1'].to_f
-if (activ.area / CHIP.area) > afil_g1_val
+if act_dens_ratio > afil_g1_val
   CHIP.output('AFil.g1',
               "5.6. AFil.g1: Max. global Activ density [%]: #{afil_g1_val * 100}.")
 end
@@ -240,10 +273,13 @@ afilg3_max.forget
 # -------------------- GatPoly --------------------
 #==================================================
 
+poly_area = poly.area
+poly_dens_ratio = poly_area / chip_area
+
 # Rule GFil.g: Min. global GatPoly density [%]= 15.0.
 logger.info('Executing rule GFil.g')
 gfil_g_val = drc_rules['GFil_g'].to_f
-if (poly.area / CHIP.area) < gfil_g_val
+if poly_dens_ratio < gfil_g_val
   CHIP.output('GFil.g',
               "5.9. GFil.g: Min. global GatPoly density [%]: #{gfil_g_val * 100}.")
 end
@@ -252,19 +288,22 @@ end
 # -------------------- Metal1 --------------------
 #=================================================
 
+m1_area = metal1.area
+m1_dens_ratio = m1_area / chip_area
+
 m1_j_val = drc_rules['M1_j'].to_f
 m1_k_val = drc_rules['M1_k'].to_f
 
 # Rule Mn.j: Min. global Metaln density [%]= 35.0.
 logger.info('Executing rule M1.j')
-if (metal1.area / CHIP.area) < m1_j_val
+if m1_dens_ratio < m1_j_val
   CHIP.output('M1.j',
               "5.9. M1.j: Min. global Metal1 density [%]: #{m1_j_val * 100}.")
 end
 
 # Rule Mn.k: Max. global Metaln density [%]= 60.0.
 logger.info('Executing rule M1.k')
-if (metal1.area / CHIP.area) > m1_k_val
+if m1_dens_ratio > m1_k_val
   CHIP.output('M1.k',
               "5.9. M1.k: Max. global Metal1 density [%]: #{m1_k_val * 100}.")
 end
@@ -273,24 +312,36 @@ end
 # -------------------- Metaln --------------------
 #=================================================
 
+m2_area = metal2.area
+m3_area = metal3.area
+m4_area = metal4.area
+m5_area = metal5.area
+m2_dens_ratio = m2_area / chip_area
+m3_dens_ratio = m3_area / chip_area
+m4_dens_ratio = m4_area / chip_area
+m5_dens_ratio = m5_area / chip_area
+
 mets_lay = [metal2, metal3, metal4, metal5]
+dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio, m5_dens_ratio]
+
 metal_start_index = 2
 mn_j_val = drc_rules['Mn_j'].to_f
 mn_k_val = drc_rules['Mn_k'].to_f
 
 mets_lay.each_with_index do |met_lay, index|
   met_no = index + metal_start_index
+  ratio = dens_ratios[index]
 
   # Rule Mn.j: Min. global Metaln density [%]= 35.0.
   logger.info("Executing rule M#{met_no}.j")
-  if (met_lay.area / CHIP.area) < mn_j_val
+  if ratio < mn_j_val
     CHIP.output("M#{met_no}.j",
                 "5.9. M#{met_no}.j: Min. global Metal#{met_no} density [%]: #{mn_j_val * 100}.")
   end
 
   # Rule Mn.k: Max. global Metaln density [%]= 60.0.
   logger.info("Executing rule M#{met_no}.k")
-  if (met_lay.area / CHIP.area) > mn_k_val
+  if ratio > mn_k_val
     CHIP.output("M#{met_no}.k",
                 "5.9. M#{met_no}.k: Max. global Metal#{met_no} density [%]: #{mn_k_val * 100}.")
   end
@@ -348,17 +399,20 @@ end
 # ------------------ TopMetal1 ------------------
 #================================================
 
+tm1_area = topmetal1.area
+tm1_dens_ratio = tm1_area / chip_area
+
 # Rule TM1.c: Min. global TopMetal1 density [%]= 25.0.
 logger.info('Executing rule TM1.c')
 tm1_c_val = drc_rules['TM1_c'].to_f
-if (topmetal1.area / CHIP.area) < tm1_c_val
+if tm1_dens_ratio < tm1_c_val
   CHIP.output('TM1.c', "5.22. TM1.c: Min. global TopMetal1 density [%]: #{tm1_c_val * 100}.")
 end
 
 # Rule TM1.d: Max. global TopMetal1 density [%]= 70.0.
 logger.info('Executing rule TM1.d')
 tm1_d_val = drc_rules['TM1_d'].to_f
-if (topmetal1.area / CHIP.area) > tm1_d_val
+if tm1_dens_ratio > tm1_d_val
   CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}")
 end
 
@@ -366,17 +420,20 @@ end
 # ------------------ TopMetal2 ------------------
 #================================================
 
+tm2_area = topmetal2.area
+tm2_dens_ratio = tm2_area / chip_area
+
 # Rule TM2.c: Min. global TopMetal2 density [%]= 25.0.
 logger.info('Executing rule TM2.c')
 tm2_c_val = drc_rules['TM2_c'].to_f
-if (topmetal2.area / CHIP.area) < tm2_c_val
+if tm2_dens_ratio < tm2_c_val
   CHIP.output('TM2.c', "5.22. TM2.c: Min. global TopMetal2 density [%]: #{tm2_c_val * 100}.")
 end
 
 # Rule TM2.d: Max. global TopMetal2 density [%]= 70.0.
 logger.info('Executing rule TM2.d')
 tm2_d_val = drc_rules['TM2_d'].to_f
-if (topmetal2.area / CHIP.area) > tm2_d_val
+if tm2_dens_ratio > tm2_d_val
   CHIP.output('TM2.d', "5.22. TM2.d: Max. global TopMetal2 density [%]: #{tm2_d_val * 100}.")
 end
 
@@ -384,10 +441,13 @@ end
 # --------------------- LBE ---------------------
 #================================================
 
+lbe_area = lbe_drw.area
+lbe_dens_ratio = lbe_area / chip_area
+
 # Rule LBE.i: Max. global LBE density [%]= 20.00.
 logger.info('Executing rule LBE.i')
 lbe_i_val = drc_rules['LBE_i'].to_f
-if (lbe_drw.area / CHIP.area) > lbe_i_val
+if lbe_dens_ratio > lbe_i_val
   CHIP.output('LBE.i',
               "5.22. LBE.i: Max. global LBE density [%]: #{lbe_i_val * 100}.")
 end
@@ -396,10 +456,56 @@ end
 # ---------------- Metal Slits ------------------
 #================================================
 
+
+#================================================
+# -------------- Density Report -----------------
+#================================================
+
+logger.info("#" * 50)
+logger.info("#{"Density Report".center(48)}#")
+logger.info("#" * 50)
+logger.info("")
+
+logger.info("Layer areas and percentages (units: um^2)")
+logger.info("-" * 50)
+logger.info("")
+
+logger.info("Total Area     = %.2f um^2" % chip_area)
+logger.info("")
+
+# Logs the area and density percentage of a given layer, with optional min/max limits.
+def log_layer_density(logger, layer_name, area, ratio, min = nil, max = nil)
+  percentage = ratio * 100
+  limits_str = if min && max
+                 "[Min = %.2f%%,  Max = %.2f%%]" % [min * 100, max * 100]
+               elsif min
+                 "[Min = %.2f%%]" % (min * 100)
+               elsif max
+                 "[Max = %.2f%%]" % (max * 100)
+               else
+                 ""
+               end
+
+  logger.info("%-10s Area      = %5.2f µm²" % [layer_name, area])
+  logger.info("%-10s Density %% = %5.2f%%  %s" % [layer_name, percentage, limits_str])
+  logger.info("")  # Blank line for spacing
+end
+
+log_layer_density(logger, "Activ",     act_area,  act_dens_ratio,  afil_g_val, afil_g1_val)
+log_layer_density(logger, "GatPoly",   poly_area, poly_dens_ratio, gfil_g_val)
+log_layer_density(logger, "Metal1",    m1_area,   m1_dens_ratio,   m1_j_val, m1_k_val)
+log_layer_density(logger, "Metal2",    m2_area,   m2_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, "Metal3",    m3_area,   m3_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, "Metal4",    m4_area,   m4_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, "Metal5",    m5_area,   m5_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, "TopMetal1", tm1_area,  tm1_dens_ratio, tm1_c_val, tm1_d_val)
+log_layer_density(logger, "TopMetal2", tm2_area,  tm2_dens_ratio, tm2_c_val, tm2_d_val)
+log_layer_density(logger, "LBE",       lbe_area,  lbe_dens_ratio, nil,         tm2_d_val)
+
 # ===================================
 exec_end_time = Time.now
 run_time = exec_end_time - exec_start_time
-logger.info(format('DRC Total Run time %f seconds', run_time))
+logger.info("KLayout DRC run for density table completed in #{run_time.round(2)} seconds")
 
 #===================================
 #--------------- END ---------------

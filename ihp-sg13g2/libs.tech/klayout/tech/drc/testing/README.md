@@ -52,7 +52,6 @@ Golden unit tests are generated for all implemented and verified DRC rules and a
 To regenerate golden results based on the current rule implementation, use the following script:
 
 ```bash
-Usage:
     gen_golden.py (--help | -h)
     gen_golden.py [--table_name=<table_name>] [--run_dir=<dir>] [--mp=<num>] [--keep]
 
@@ -76,7 +75,6 @@ python3 gen_golden.py --table_name=activ --run_dir=testcases/unit_golden
 Use the regression script to validate current rule outputs against the golden references.
 
 ```bash
-Usage:
     run_regression.py (--help | -h)
     run_regression.py [--run_dir=<run_dir>] [--table_name=<table_name>] [--mp=<num>]
 

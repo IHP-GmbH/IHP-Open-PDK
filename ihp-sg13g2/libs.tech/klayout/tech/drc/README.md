@@ -39,7 +39,7 @@ We have tested this using the following setup:
 
 ## Installation
 
-To install the required Python packages, execute the following command:
+To install the required Python packages, execute the following command in the DRC directory:
 
 ```bash
 pip install -r ../../../../../requirements.txt
@@ -108,7 +108,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
 - `--macro_gen`                         Generating the full rule deck without run.
 
 > **Note**
-> If the `--drc_json=<json_path>` option is not provided, the script will attempt to use the [SG13G2 tech JSON](../../python/sg13g2_pycell_lib/sg13g2_tech.json) file. If that file is missing, it will fall back to the [default tech DRC values](./rule_decks/default_drc_rules.json) file.
+> If the `--drc_json=<json_path>` option is not provided, the script will attempt to use the [SG13G2 tech JSON](../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json) file. If that file is missing, it will fall back to the [default tech DRC values](./rule_decks/default_drc_rules.json) file.
 
 #### DRC Outputs
 
@@ -207,7 +207,7 @@ Upon executing the DRC, the result database will appear on your layout interface
   <img src="images/drc_menus_5.png" width="80%" >
 </p>
 <p align="center">
-  Fig. 7. Running DRC using Klayout menus
+  Fig. 8. Running DRC using Klayout menus
 </p>
 
 ---

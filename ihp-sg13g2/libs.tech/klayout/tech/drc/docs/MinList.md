@@ -2,6 +2,7 @@
 |------------------|-----------------------------------------------------------------------------------------------|------|--------|
 |Act.a             |5.5.  Act.a Min. Activ width                                                                   |0.15  |Min     |
 |Act.b             |5.5.  Act.b Min. Activ space or notch                                                          |0.21  |Min     |
+|AFil.c1           |5.6.  AFil.c1 Min. Activ:filler space to Activ                                                 |0.42  |Min     |
 |AFil.g            |5.6.  AFil.g Min. global Activ density [%]                                                     |35    |Min     |
 |AFil.g1           |5.6.  AFil.g1 Max. global Activ density [%]                                                    |55    |Min     |
 |AFil.g2           |5.6.  AFil.g2 Min. Activ coverage ratio for any 800 x 800 µm² chip area [%]                    |25    |Min     |
@@ -10,6 +11,7 @@
 |Gat.a             |5.8.  Gat.a Min. GatPoly width                                                                 |0.13  |Min     |
 |Gat.b             |5.8.  Gat.b Min. GatPoly space or notch                                                        |0.18  |Min     |
 |Gat.d             |5.8.  Gat.d Min. GatPoly space to Activ                                                        |0.07  |Min     |
+|GFil.d            |5.9.  GFil.d Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock       |1.1   |Min     |
 |GFil.g            |5.9.  GFil.g Min. global GatPoly density [%]                                                   |15    |Min     |
 |Cnt.a             |5.14.  Cnt.a Min. and max. Cont width                                                          |0.16  |Min     |
 |Cnt.b             |5.14.  Cnt.b Min. Cont space                                                                   |0.18  |Min     |
@@ -33,14 +35,19 @@
 |M5.b              |5.17. M5.b Min. Metal5 space or notch                                                          |0.21  |Min     |
 |M5.j              |5.17. M5.j Min. global Metal5 density [%]                                                      |35    |Min     |
 |M5.k              |5.17. M5.k Max. global Metal5 density [%]                                                      |60    |Min     |
+|M1Fil.c           |5.18. M1Fil.c Min. Metal1:filler space to Metal1                                               |0.42  |Min     |
 |M1Fil.h           |5.18. M1Fil.h Min. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] |25    |Min     |
 |M1Fil.k           |5.18. M1Fil.k Max. Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] |75    |Min     |
+|M2Fil.c           |5.18. M2Fil.c Min. Metal2:filler space to Metal2                                               |0.42  |Min     |
 |M2Fil.h           |5.18. M2Fil.h Min. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] |25    |Min     |
 |M2Fil.k           |5.18. M2Fil.k Max. Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] |75    |Min     |
+|M3Fil.c           |5.18. M3Fil.c Min. Metal3:filler space to Metal3                                               |0.42  |Min     |
 |M3Fil.h           |5.18. M3Fil.h Min. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] |25    |Min     |
 |M3Fil.k           |5.18. M3Fil.k Max. Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] |75    |Min     |
+|M4Fil.c           |5.18. M4Fil.c Min. Metal4:filler space to Metal4                                               |0.42  |Min     |
 |M4Fil.h           |5.18. M4Fil.h Min. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] |25    |Min     |
 |M4Fil.k           |5.18. M4Fil.k Max. Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] |75    |Min     |
+|M5Fil.c           |5.18. M5Fil.c Min. Metal5:filler space to Metal5                                               |0.42  |Min     |
 |M5Fil.h           |5.18. M5Fil.h Min. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] |25    |Min     |
 |M5Fil.k           |5.18. M5Fil.k Max. Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] |75    |Min     |
 |V1.a              |5.19.  V1.a Min. and max. Via1 width                                                           |0.19  |Min     |
@@ -57,12 +64,14 @@
 |TM1.b             |5.22.  TM1.b Min. TopMetal1 space or notch                                                     |1.64  |Min     |
 |TM1.c             |5.22.  TM1.c Min. global TopMetal1 density [%]                                                 |25    |Min     |
 |TM1.d             |5.22.  TM1.d Max. global TopMetal1 density [%]                                                 |70    |Min     |
+|TM1Fil.c          |5.23.  TM1Fil.c Min. TopMetal1:filler space to TopMetal1                                       |3     |Min     |
 |TV2.a             |5.24.  TV2.a Min. and max. TopVia2 width                                                       |0.9   |Min     |
 |TV2.b             |5.24.  TV2.b Min. TopVia2 space                                                                |1.06  |Min     |
 |TM2.a             |5.25.  TM2.a Min. TopMetal2 width                                                              |2     |Min     |
 |TM2.b             |5.25.  TM2.b Min. TopMetal2 space or notch                                                     |2     |Min     |
 |TM2.c             |5.25.  TM2.c Min. global TopMetal2 density [%]                                                 |25    |Min     |
 |TM2.d             |5.25.  TM2.d Max. global TopMetal2 density [%]                                                 |70    |Min     |
+|TM2Fil.c          |5.26.  TM2Fil.c Min. TopMetal2:filler space to TopMetal2                                       |3     |Min     |
 |Pas.a             |5.27.  Pas.a Min. Passiv width                                                                 |2.1   |Min     |
 |Pas.b             |5.27.  Pas.b Min. Passiv space or notch                                                        |3.5   |Min     |
 |Padb.a            |6.9.  Padb.a SBumpPad size                                                                     |60    |Min     |
