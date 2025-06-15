@@ -14,32 +14,17 @@
 # limitations under the License.
 # =========================================================================================
 
-"""
-Run IHP-SG13G2 Golden DRC Results Generation
-
-Usage:
-    gen_golden.py (--help| -h)
-    gen_golden.py [--table_name=<table_name>] [--run_dir=<dir>] [--mp=<num>] [--keep]
-
-Options:
-    --table_name=<table>   Target rule table name to generate golden results for.
-    --run_dir=<dir>        Directory to store output.
-    --mp=<num>             The number of cores used in run.
-    --keep                 Keep output logs and intermediate files after processing.
-"""
-
 from subprocess import check_call
 import concurrent.futures
 import traceback
 import yaml
-from docopt import docopt
+import argparse
 import os
 from datetime import datetime, timezone
 import xml.etree.ElementTree as ET
 import time
 import pandas as pd
 import logging
-import glob
 from pathlib import Path
 from tqdm import tqdm
 import re
@@ -92,94 +77,100 @@ def check_klayout_version():
     logging.info(f"KLayout version: {version_str}")
 
 
-def clean_run_dir(run_dir):
+def _move_and_rename_golden_files(run_dir: Path, pattern_merged: str, pattern_golden: str):
+    for path in run_dir.rglob(f"*{pattern_merged}"):
+        if path.is_file():
+            base_name = path.name.replace(pattern_merged, "")
+            tokens = base_name.split("_")
+            simplified_name = "_".join(dict.fromkeys(tokens))
+            new_filename = f"{simplified_name}{pattern_golden}"
+            dest_path = run_dir / new_filename
+
+            try:
+                if path.resolve() != dest_path.resolve():
+                    shutil.move(str(path), str(dest_path))
+                elif path != dest_path:
+                    path.rename(dest_path)
+            except Exception as e:
+                logging.warning(f"Failed to move/rename {path} → {dest_path}: {e}")
+
+
+def _remove_unwanted_top_level_files(run_dir: Path, pattern_golden: str):
+    for file in run_dir.glob("*"):
+        if file.is_file() and not fnmatch(file.name, f"*{pattern_golden}"):
+            try:
+                file.unlink()
+            except Exception as e:
+                logging.warning(f"Failed to remove file {file}: {e}")
+
+
+def _remove_subdir_files_and_dirs(run_dir: Path):
+    for sub_path in run_dir.rglob("*"):
+        if sub_path.is_file() and sub_path.parent != run_dir:
+            try:
+                sub_path.unlink()
+            except Exception as e:
+                logging.warning(f"Failed to remove file {sub_path}: {e}")
+
+    for sub_dir in sorted(run_dir.rglob("*"), reverse=True):
+        if sub_dir.is_dir():
+            try:
+                sub_dir.rmdir()
+            except Exception as e:
+                logging.warning(f"Failed to remove directory {sub_dir}: {e}")
+
+
+def clean_run_dir(run_dir: Path):
     """
     Cleans the run_dir by:
-    - Moving all *_golden_merged.gds files from subdirectories to the top level of run_dir.
-    - Renaming them to remove duplicated name segments (e.g., activ_activ_golden_merged.gds → activ_golden_merged.gds).
+    - Moving all *_golden_merged.gds files from subdirectories to the top level.
+    - Renaming them to remove duplicated name segments (e.g., activ_activ → activ).
     - Removing all other files and directories.
     """
-    # Move and rename golden GDS files to top-level
     pattern_merged = "_golden_merged.gds"
     pattern_golden = "_golden.gds"
-    for root, _, files in os.walk(run_dir):
-        for file in files:
-            if fnmatch(file, f"*{pattern_merged}"):
-                src_path = os.path.join(root, file)
 
-                # Simplify the filename if it has repeated parts
-                name_parts = file.replace(pattern_merged, "").split("_")
-                simplified_name = "_".join(dict.fromkeys(name_parts))
-                new_name = f"{simplified_name}{pattern_golden}"
-
-                dest_path = os.path.join(run_dir, new_name)
-
-                try:
-                    if os.path.abspath(src_path) != os.path.abspath(dest_path):
-                        shutil.move(src_path, dest_path)
-                    elif src_path != dest_path:
-                        os.rename(src_path, dest_path)
-                except Exception as e:
-                    logging.warning(
-                        f"Failed to move/rename {src_path} → {dest_path}: {e}"
-                    )
-
-    # Remove all files except simplified golden GDS files in top-level
-    for root, dirs, files in os.walk(run_dir):
-        for file in files:
-            file_path = os.path.join(root, file)
-            if root != run_dir or not fnmatch(file, f"*{pattern_golden}"):
-                try:
-                    os.remove(file_path)
-                except Exception as e:
-                    logging.warning(f"Failed to remove file {file_path}: {e}")
-
-    # Remove all subdirectories (bottom-up)
-    for root, dirs, _ in os.walk(run_dir, topdown=False):
-        for d in dirs:
-            dir_path = os.path.join(root, d)
-            try:
-                shutil.rmtree(dir_path)
-            except Exception as e:
-                logging.warning(f"Failed to remove directory {dir_path}: {e}")
+    _move_and_rename_golden_files(run_dir, pattern_merged, pattern_golden)
+    _remove_unwanted_top_level_files(run_dir, pattern_golden)
+    _remove_subdir_files_and_dirs(run_dir)
 
 
-def merge_cells(input_dir, prefix, remove_org_gds=True):
+def merge_cells(input_dir: Path, prefix: str, remove_org_gds: bool = True):
     """
     Merges all GDS files in `input_dir` starting with `prefix` into a single GDS file.
     Each file contributes its top-level cell as a new top cell in the merged output.
 
     Parameters:
-    - input_dir (str): Directory containing the GDS files.
+    - input_dir (Path): Directory containing the GDS files.
     - prefix (str): File prefix (e.g., 'density_pass').
     - remove_org_gds (bool): If True, delete original GDS files after merging.
     """
-    gds_files = [
-        f for f in os.listdir(input_dir)
-        if f.endswith(".gds") and f.startswith(f"{prefix}_")
-    ]
+    gds_files = sorted(input_dir.glob(f"{prefix}_*.gds"))
 
     if not gds_files:
         return
 
     merged_lib = gdstk.Library()
 
-    for filename in gds_files:
-        filepath = os.path.join(input_dir, filename)
-        gds_lib = gdstk.read_gds(filepath)
+    for file_path in gds_files:
+        gds_lib = gdstk.read_gds(str(file_path))
 
         # Derive the top cell name from the filename suffix
-        suffix = filename[len(prefix) + 1:-4]  # Strip prefix + '_' and '.gds'
+        suffix = file_path.stem[len(prefix) + 1:]  # Strip prefix + '_'
         top_cell = gds_lib.top_level()[0].copy(name=suffix)
         merged_lib.add(top_cell)
 
     # Write merged GDS output
-    output_file = os.path.join(input_dir, f"{prefix}_golden.gds")
-    merged_lib.write_gds(output_file)
+    output_file = input_dir / f"{prefix}_golden.gds"
+    merged_lib.write_gds(str(output_file))
 
+    # Optionally remove the original GDS files
     if remove_org_gds:
-        for filename in gds_files:
-            os.remove(os.path.join(input_dir, filename))
+        for file_path in gds_files:
+            try:
+                file_path.unlink()
+            except Exception as e:
+                logging.warning(f"Failed to delete original GDS file {file_path}: {e}")
 
 
 def generate_merged_testcase(original_testcase, marker_testcase, cell_name):
@@ -229,7 +220,7 @@ def generate_merged_testcase(original_testcase, marker_testcase, cell_name):
     new_lib.add(top_cell_org.flatten(apply_repetitions=True))
 
     # Writing final merged gds file
-    merged_gds_path = f'{marker_testcase.replace(".gds", "")}_merged.gds'
+    merged_gds_path = marker_testcase.with_name(marker_testcase.stem + "_merged.gds")
     new_lib.write_gds(merged_gds_path)
 
     return merged_gds_path
@@ -315,14 +306,14 @@ def draw_polygons(polygon_data, cell, lay_num, lay_dt, path_width):
         logging.error(f"# Unknown type: {tag} ignored")
 
 
-def convert_db_to_gds(results_database: str):
+def convert_db_to_gds(results_database: Path):
     """
     This function will parse Klayout database for analysis.
     It converts the lyrdb klayout database file to GDSII file
 
     Parameters
     ----------
-    results_database : str or Path object
+    results_database : Path
         Path string to the results file
 
     Returns
@@ -397,10 +388,10 @@ def convert_db_to_gds(results_database: str):
         in_item = False
         elem.clear()
 
-    # Writing final marker gds file
+    # Writing final marker GDS file
     if lib is not None:
-        output_gds_path = f'{results_database.replace(".lyrdb", "")}_golden.gds'
-        lib.write_gds(output_gds_path)
+        output_gds_path = results_database.with_suffix('').with_name(f"{results_database.stem}_golden.gds")
+        lib.write_gds(str(output_gds_path))
     else:
         logging.error(f"Failed to get any results in the {results_database} database.")
         return False
@@ -433,23 +424,23 @@ def get_switches(yaml_file, testcase_basename):
 
 
 def run_test_case(
-    drc_dir,
-    layout_path,
-    run_dir,
-    testcase_basename,
-    table_name,
-    cell_name,
+    drc_dir: Path,
+    layout_path: str,
+    run_dir: Path,
+    testcase_basename: str,
+    table_name: str,
+    cell_name: str,
 ):
     """
     This function run a single test case using the correct DRC file.
 
     Parameters
     ----------
-    drc_dir : str or Path
+    drc_dir : Path
         Path to the location where all runsets exist.
-    layout_path : stirng or Path object
+    layout_path : str or Path object
         Path string to the layout of the test pattern we want to test.
-    run_dir : stirng or Path object
+    run_dir : Path
         Path to the location where is the regression run is done.
     testcase_basename : str
         Testcase name that we are running on.
@@ -464,9 +455,7 @@ def run_test_case(
         A dict with all rule counts
     """
     # Get switches used for each run
-    sw_file = os.path.join(
-        Path(layout_path.parent).absolute(), f"{testcase_basename}.{SUPPORTED_SW_EXT}"
-    )
+    sw_file = Path(layout_path.parent).absolute() / f"{testcase_basename}.{SUPPORTED_SW_EXT}"
 
     if os.path.exists(sw_file):
         switches = " ".join(get_switches(sw_file, testcase_basename))
@@ -481,8 +470,8 @@ def run_test_case(
 
     # Creating run folder structure
     pattern_name = f"{testcase_basename}_{cell_name}"
-    output_loc = os.path.join(run_dir, table_name, cell_name)
-    pattern_log = os.path.join(output_loc, f"{pattern_name}_drc.log")
+    output_loc = run_dir / table_name / cell_name
+    pattern_log = output_loc / f"{pattern_name}_drc.log"
 
     # command to run drc
     call_str = (
@@ -493,22 +482,23 @@ def run_test_case(
         f"--topcell={cell_name} "
         f"--run_dir={output_loc} "
         f"--run_mode=flat "
+        f"--no_density "
         f"> {pattern_log} 2>&1"
     )
 
     # Starting klayout run
-    os.makedirs(output_loc, exist_ok=True)
+    output_loc.mkdir(parents=True, exist_ok=True)
     try:
         check_call(call_str, shell=True)
     except Exception as e:
-        pattern_results = glob.glob(os.path.join(output_loc, f"{pattern_name}*.lyrdb"))
+        pattern_results = list(output_loc.glob(f"{pattern_name}*.lyrdb"))
         if len(pattern_results) < 1:
             logging.error("%s generated an exception: %s" % (pattern_name, e))
             traceback.print_exc()
             raise Exception("Failed DRC run.")
 
     # dumping log into output to make CI have the log
-    if os.path.isfile(pattern_log):
+    if pattern_log.is_file():
         logging.info("# Dumping drc run output log:")
         with open(pattern_log, "r") as f:
             for line in f:
@@ -516,12 +506,11 @@ def run_test_case(
                 logging.info(f"{line}")
 
     # Checking if run is completed or failed
-    pattern_results = glob.glob(os.path.join(output_loc, f"{pattern_name}*.lyrdb"))
+    pattern_results = list(output_loc.glob(f"{pattern_name}*.lyrdb"))
 
     if len(pattern_results) > 0:
         # db to gds conversion
         marker_output = convert_db_to_gds(pattern_results[0])
-
         # Generating merged testcase for violated rules
         generate_merged_testcase(layout_path, marker_output, cell_name)
 
@@ -532,7 +521,7 @@ def run_test_case(
         return False
 
 
-def run_all_test_cases(tc_df, drc_dir, run_dir, num_workers):
+def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: Path, run_dir: Path, num_workers: int):
     """
     This function run all test cases from the input dataframe.
 
@@ -540,10 +529,10 @@ def run_all_test_cases(tc_df, drc_dir, run_dir, num_workers):
     ----------
     tc_df : pd.DataFrame
         DataFrame that holds all the test cases information for running.
-    drc_dir : str or Path
-        Path string to the location of the drc runsets.
-    run_dir : str or Path
-        Path string to the location of the testing code and output.
+    drc_dir : Path
+        Path to the location of the drc runsets.
+    run_dir : Path
+        Path to the location of the testing code and output.
     num_workers : int
         Number of workers to use for running the regression.
 
@@ -651,7 +640,7 @@ def get_top_cell_names(gds_path):
     return top_cells
 
 
-def gen_golden(drc_dir, output_path, target_table, cpu_count):
+def gen_golden(drc_dir: Path, output_path: Path, target_table: str, cpu_count: int):
     """
     Running Golden Results Generation Procedure.
 
@@ -659,10 +648,10 @@ def gen_golden(drc_dir, output_path, target_table, cpu_count):
 
     Parameters
     ----------
-    drc_dir : str
-        Path string to the DRC directory where all the DRC files are located.
-    output_path : str
-        Path string to the location of the output results of the run.
+    drc_dir : Path
+        Path to the DRC directory where all the DRC files are located.
+    output_path : Path
+        Path to the location of the output results of the run.
     target_table : str or None
         Name of table that we want to run regression for. If None, run all found.
     cpu_count : int
@@ -674,7 +663,7 @@ def gen_golden(drc_dir, output_path, target_table, cpu_count):
     """
 
     # Get all test cases available in the repo.
-    unit_tests_path = os.path.join(drc_dir, "testing", "testcases", "unit")
+    unit_tests_path = drc_dir / "testing" / "testcases" / "unit"
     tc_df = build_tests_dataframe(unit_tests_path, target_table)
     logging.info("# Total table gds files found: {}".format(len(tc_df)))
     logging.info("# Found testcases: \n" + str(tc_df))
@@ -683,7 +672,7 @@ def gen_golden(drc_dir, output_path, target_table, cpu_count):
     run_all_test_cases(tc_df, drc_dir, output_path, cpu_count)
 
 
-def main(drc_dir: str, output_path: str, target_table: str):
+def main(drc_dir: Path, output_path: Path, target_table: str):
     """
     Main Procedure.
 
@@ -691,10 +680,10 @@ def main(drc_dir: str, output_path: str, target_table: str):
 
     Parameters
     ----------
-    drc_dir : str
-        Path string to the DRC directory where all the DRC files are located.
-    output_path : str
-        Path string to the location of the output results of the run.
+    drc_dir : Path
+        Path to the DRC directory where all the DRC files are located.
+    output_path : Path
+        Path to the location of the output results of the run.
     target_table : str or None
         Name of table that we want to run regression for. If None, run all found.
     Returns
@@ -704,7 +693,7 @@ def main(drc_dir: str, output_path: str, target_table: str):
     """
 
     # No. of threads
-    cpu_count = os.cpu_count() if arguments["--mp"] is None else int(arguments["--mp"])
+    workers_count = int(args.mp) if args.mp else os.cpu_count()
 
     # Pandas printing setup
     pd.set_option("display.max_columns", None)
@@ -716,19 +705,14 @@ def main(drc_dir: str, output_path: str, target_table: str):
     logging.info(f"# === Run folder is: {output_path}")
     logging.info(f"# === Target Table is: {target_table}")
 
-    # Start of execution time
-    time_start = time.time()
-
     # Check Klayout version
     check_klayout_version()
 
     # Calling regression function
-    gen_golden(drc_dir, output_path, target_table, cpu_count)
+    gen_golden(drc_dir, output_path, target_table, workers_count)
 
     # keep output dir
-    keep = arguments["--keep"]
-
-    if not keep:
+    if not args.keep:
         logging.info(
             f"Cleaning {output_path} and preserving only *_golden_merged.gds files.."
         )
@@ -736,9 +720,46 @@ def main(drc_dir: str, output_path: str, target_table: str):
         merge_cells(output_path, "density_pass")
         merge_cells(output_path, "density_fail")
 
-    #  End of execution time
-    logging.info(f"Total execution time {time.time() - time_start}s")
 
+def parse_args():
+    USAGE = """
+    gen_golden.py (--help | -h)
+    gen_golden.py [--table_name=<table_name>] [--run_dir=<dir>] [--mp=<num>] [--keep]
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Run IHP-SG13G2 Golden DRC Results Generation.",
+        usage=USAGE,
+    )
+
+    parser.add_argument(
+        "--table_name",
+        type=str,
+        default=None,
+        help="Target rule table name to generate golden results for."
+    )
+
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Directory to store output. If not specified, a timestamped folder will be created."
+    )
+
+    parser.add_argument(
+        "--mp",
+        type=int,
+        default=1,
+        help="The number of cores used in the run. [default: 1]"
+    )
+
+    parser.add_argument(
+        "--keep",
+        action="store_true",
+        help="Keep output logs and intermediate files after processing."
+    )
+
+    return parser.parse_args()
 
 # ================================================================
 # -------------------------- MAIN --------------------------------
@@ -746,42 +767,44 @@ def main(drc_dir: str, output_path: str, target_table: str):
 
 
 if __name__ == "__main__":
+    # Parse CLI arguments
+    args = parse_args()
 
-    # arguments
-    arguments = docopt(__doc__, version="Gen Golden DRC Results: 1.0")
-
-    # run dir format
+    # Timestamp for this run
     now_str = datetime.now(timezone.utc).strftime("gen_golden_%Y_%m_%d_%H_%M_%S")
 
-    # Paths of regression dirs
-    testing_dir = os.path.dirname(os.path.abspath(__file__))
-    drc_dir = os.path.dirname(testing_dir)
+    # Determine paths
+    testing_dir = Path(__file__).resolve().parent
+    drc_dir = testing_dir.parent
 
-    if (
-        arguments["--run_dir"] == "pwd"
-        or arguments["--run_dir"] == ""
-        or arguments["--run_dir"] is None
-    ):
-        output_path = os.path.join(testing_dir, "testcases", "unit_golden")
+    if args.run_dir in ["pwd", "", None]:
+        output_path = testing_dir / "testcases" / "unit_golden"
     else:
-        output_path = os.path.abspath(arguments["--run_dir"])
+        output_path = Path(args.run_dir).resolve()
 
-    # target table
-    target_table = arguments["--table_name"]
+    # Extract table name
+    target_table = args.table_name
 
-    # Creating output dir
-    os.makedirs(output_path, exist_ok=True)
+    # Ensure output directory exists
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    # logs format
+    # Set up logging
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(os.path.join(output_path, f"{now_str}.log")),
+            logging.FileHandler(output_path / f"{now_str}.log"),
             logging.StreamHandler(),
         ],
         format="%(asctime)s | %(levelname)-7s | [%(threadName)s | %(message)s",
         datefmt="%d-%b-%Y %H:%M:%S",
     )
 
-    # Calling main function
+    # Start timing
+    time_start = time.time()
+
+    # Call main processing function
     main(drc_dir, output_path, target_table)
+
+    # End timing
+    elapsed_time = time.time() - time_start
+    logging.info(f"Total DRC Golden Unit Generation Run time: {elapsed_time:.2f} seconds")

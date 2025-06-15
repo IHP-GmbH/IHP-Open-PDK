@@ -121,12 +121,12 @@
       'no_beol' => false,
       'MaxRuleSet' => false,
       'no_connectivity' => true,
-      'density' => false,
+      'no_density' => true,
       'density_only' => false,
       'antenna' => false,
       'antenna_only' => false,
       'no_offgrid' => false,
-    }    
+    }
     save_options(yaml_file_path, default_options)
     default_options
   end
@@ -199,7 +199,7 @@
     advanced_layout.setSpacing(10)
     # Advanced options - checkboxes with tooltips and styling
     chk_conn = create_check_box("Disable Connectivity Checks", options['no_connectivity'], "Disables checks that require connectivity.")
-    chk_density = create_check_box("Enable Density Checks", options['density'], "Enables density rule checks.")
+    chk_density = create_check_box("Disable Density Checks", options['no_density'], "Disables density rule checks.")
     chk_density_only = create_check_box("Run Only Density Checks", options['density_only'], "Runs *only* density checks and skips others.")
     chk_antenna = create_check_box("Enable Antenna Checks", options['antenna'], "Enables antenna rule checks.")
     chk_antenna_only = create_check_box("Run Only Antenna Checks", options['antenna_only'], "Runs *only* antenna checks and skips others.")
@@ -446,7 +446,7 @@
     advanced_layout = tab_widget.widget(1).layout
     options['run_dir'] = advanced_layout.itemAt(1).widget.layout.itemAt(0).widget.text
     options['no_connectivity'] = advanced_layout.itemAt(2).widget.checked if advanced_layout.itemAt(2).widget
-    options['density'] = advanced_layout.itemAt(3).widget.checked if advanced_layout.itemAt(3).widget
+    options['no_density'] = advanced_layout.itemAt(3).widget.checked if advanced_layout.itemAt(3).widget
     options['density_only'] = advanced_layout.itemAt(4).widget.checked if advanced_layout.itemAt(4).widget
     options['antenna'] = advanced_layout.itemAt(5).widget.checked if advanced_layout.itemAt(5).widget
     options['antenna_only'] = advanced_layout.itemAt(6).widget.checked if advanced_layout.itemAt(6).widget

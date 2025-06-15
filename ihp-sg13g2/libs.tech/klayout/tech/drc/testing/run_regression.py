@@ -14,32 +14,17 @@
 # limitations under the License.
 # =========================================================================================
 
-"""
-Run IHP-SG13G2 DRC Unit Regression.
-
-Usage:
-    run_regression.py (--help| -h)
-    run_regression.py [--run_dir=<run_dir_path>] [--table_name=<table_name>] [--mp=<num>]
-
-Options:
-    --help -h                           Print this help message.
-    --run_dir=<run_dir>                 Run directory to save all the results.
-    --table_name=<table_name>           Target specific table.
-    --mp=<num>                          The number of threads used in run.
-"""
-
 from subprocess import check_call
 import concurrent.futures
 import traceback
 import yaml
-from docopt import docopt
+import argparse
 import os
 from datetime import datetime, timezone
 import xml.etree.ElementTree as ET
 import time
 import pandas as pd
 import logging
-import glob
 from pathlib import Path
 from tqdm import tqdm
 import re
@@ -331,32 +316,32 @@ def get_top_cell_names(gds_path):
 
 
 def run_test_case(
-    drc_dir,
-    layout_path,
-    run_dir,
-    testcase_basename,
-    table_name,
-    cell_name,
-    test_criteria,
+    drc_dir: Path,
+    layout_path: str,
+    run_dir: Path,
+    testcase_basename: str,
+    table_name: str,
+    cell_name: str,
+    test_criteria: str,
 ):
     """
     This function run a single test case using the correct DRC file.
 
     Parameters
     ----------
-    drc_dir : string or Path
-        Path to the location where all runsets exist.
-    layout_path : stirng or Path object
+    drc_dir : Path
+        Path to the location where all runset exist.
+    layout_path : string or Path object
         Path string to the layout of the test pattern we want to test.
-    run_dir : stirng or Path object
+    run_dir : Path
         Path to the location where is the regression run is done.
-    testcase_basename : string
+    testcase_basename : str
         Testcase name that we are running on.
-    table_name : string
+    table_name : str
         Table name that we are running on.
-    cell_name : string
+    cell_name : str
         Cell name that we are running on.
-    test_criteria : string
+    test_criteria : str
         Type of test that we are running on.
 
     Returns
@@ -369,9 +354,7 @@ def run_test_case(
     rule_counts = defaultdict(int)
 
     # Get switches used for each run
-    sw_file = os.path.join(
-        Path(layout_path.parent).absolute(), f"{testcase_basename}.{SUPPORTED_SW_EXT}"
-    )
+    sw_file = Path(layout_path.parent).absolute() / f"{testcase_basename}.{SUPPORTED_SW_EXT}"
 
     if os.path.exists(sw_file):
         switches = " ".join(get_switches(sw_file, testcase_basename))
@@ -386,8 +369,8 @@ def run_test_case(
 
     # Creating run folder structure
     pattern_name = f"{testcase_basename}_{cell_name}"
-    output_loc = os.path.join(run_dir, table_name, cell_name)
-    pattern_log = os.path.join(output_loc, f"{pattern_name}_drc.log")
+    output_loc = run_dir / table_name / cell_name
+    pattern_log = output_loc / f"{pattern_name}_drc.log"
 
     # command to run drc
     call_str = (
@@ -398,22 +381,23 @@ def run_test_case(
         f"--topcell={cell_name} "
         f"--run_dir={output_loc} "
         f"--run_mode=flat "
+        f"--no_density "
         f"> {pattern_log} 2>&1"
     )
 
     # Starting klayout run
-    os.makedirs(output_loc, exist_ok=True)
+    output_loc.mkdir(parents=True, exist_ok=True)
     try:
         check_call(call_str, shell=True)
     except Exception as e:
-        pattern_results = glob.glob(os.path.join(output_loc, f"{pattern_name}*.lyrdb"))
+        pattern_results = list(output_loc.glob(f"{pattern_name}*.lyrdb"))
         if len(pattern_results) < 1:
             logging.error("%s generated an exception: %s" % (pattern_name, e))
             traceback.print_exc()
             raise Exception("Failed DRC run.")
 
     # dumping log into output to make CI have the log
-    if os.path.isfile(pattern_log):
+    if pattern_log.is_file():
         logging.info("# Dumping drc run output log:")
         with open(pattern_log, "r") as f:
             for line in f:
@@ -421,7 +405,7 @@ def run_test_case(
                 logging.info(f"{line}")
 
     # Checking if run is completed or failed
-    pattern_results = glob.glob(os.path.join(output_loc, f"{pattern_name}*.lyrdb"))
+    pattern_results = list(output_loc.glob(f"{pattern_name}*.lyrdb"))
 
     # Analysis of splitted testcases into patterns
     if test_criteria in ["pass", "fail"]:
@@ -486,7 +470,7 @@ def run_test_case(
             return rule_counts
 
 
-def run_all_test_cases(tc_df, drc_dir, run_dir, num_workers):
+def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: Path, run_dir: Path, num_workers: int):
     """
     This function run all test cases from the input dataframe.
 
@@ -494,9 +478,9 @@ def run_all_test_cases(tc_df, drc_dir, run_dir, num_workers):
     ----------
     tc_df : pd.DataFrame
         DataFrame that holds all the test cases information for running.
-    drc_dir : string or Path
+    drc_dir : Path
         Path string to the location of the drc runsets.
-    run_dir : string or Path
+    run_dir : Path
         Path string to the location of the testing code and output.
     num_workers : int
         Number of workers to use for running the regression.
@@ -641,17 +625,15 @@ def parse_existing_rules(
     rules_vars = RULES_VAR or {}
 
     if target_table is None:
-        drc_files = glob.glob(os.path.join(rule_deck_path, "rule_decks", "*.drc"))
+        drc_files = list((rule_deck_path / "rule_decks").glob("*.drc"))
     else:
-        pattern = os.path.join(rule_deck_path, "rule_decks", f"*{target_table}.drc")
-        matched_files = glob.glob(pattern)
+        matched_files = list((rule_deck_path / "rule_decks").glob(f"*{target_table}.drc"))
 
         if not matched_files:
-            logging.error(f"No DRC rule deck matched the table name: '{pattern}'")
+            logging.error(f"No DRC rule deck matched the table name: '{target_table}'")
             raise FileNotFoundError(
                 errno.ENOENT,
-                f"No file found for target table '{target_table}'",
-                pattern,
+                f"No file found for target table '{target_table}'"
             )
 
         # Take first match if multiple
@@ -682,7 +664,7 @@ def parse_existing_rules(
     df.drop_duplicates(inplace=True)
     # Drop maximal runset rules
     df.drop(df[df["table_name"] == "maximal"].index, inplace=True)
-    df.to_csv(os.path.join(output_path, "rule_deck_rules.csv"), index=False)
+    df.to_csv(output_path / "rule_deck_rules.csv", index=False)
     return df
 
 
@@ -831,12 +813,11 @@ def convert_results_db_to_gds(results_database: str, rules_tested: list):
     output_runset_path : str
         Path to the generated DRC analysis runset.
     """
-
-    if not os.path.isfile(results_database):
+    if not results_database.is_file():
         logging.error(f"Results database file does not exist: {results_database}")
         raise FileNotFoundError(results_database)
 
-    base_path = results_database.replace(".lyrdb", "")
+    base_path = results_database.with_suffix("")  # removes .lyrdb suffix
     output_gds_path = f"{base_path}_markers.gds"
     output_runset_path = f"{base_path}_analysis.drc"
 
@@ -1070,7 +1051,7 @@ def aggregate_results(
     return df
 
 
-def run_regression(drc_dir, output_path, target_table, cpu_count):
+def run_regression(drc_dir: Path, output_path: Path, target_table: str, cpu_count: int):
     """
     Running Regression Procedure.
 
@@ -1078,14 +1059,14 @@ def run_regression(drc_dir, output_path, target_table, cpu_count):
 
     Parameters
     ----------
-    drc_dir : string
-        Path string to the DRC directory where all the DRC files are located.
-    output_path : str
-        Path string to the location of the output results of the run.
+    drc_dir : Path
+        Path to the DRC directory where all the DRC files are located.
+    output_path : Path
+        Path to the location of the output results of the run.
     target_table : string or None
         Name of table that we want to run regression for. If None, run all found.
     cpu_count : int
-        Number of cpus to use in running testcases.
+        Number of cpu cores to use in running testcases.
     Returns
     -------
     bool
@@ -1100,9 +1081,9 @@ def run_regression(drc_dir, output_path, target_table, cpu_count):
     logging.info("# Parsed Rules: \n" + str(rules_df))
 
     # Get all test cases available in the repo.
-    test_cases_path = os.path.join(drc_dir, "testing", "testcases")
-    unit_golden_tests_path = os.path.join(test_cases_path, "unit_golden")
-    unit_density_path = os.path.join(test_cases_path, "unit", "density")
+    test_cases_path = drc_dir / "testing" / "testcases"
+    unit_golden_tests_path = test_cases_path / "unit_golden"
+    unit_density_path = test_cases_path / "unit" / "density"
     unit_tests_paths = [unit_golden_tests_path, unit_density_path]
     tc_df = build_tests_dataframe(unit_tests_paths, target_table)
     logging.info("# Total table gds files found: {}".format(len(tc_df)))
@@ -1119,7 +1100,7 @@ def run_regression(drc_dir, output_path, target_table, cpu_count):
     logging.info("# Final analysis table: \n" + str(df))
 
     # Generate error if there are any missing info or fails.
-    df.to_csv(os.path.join(output_path, "all_test_cases_results.csv"), index=False)
+    df.to_csv(output_path / "all_test_cases_results.csv", index=False)
 
     # Check if there any rules that generated false positive or false negative
     failing_results = df[~df["rule_status"].isin(["Passed"])]
@@ -1133,7 +1114,7 @@ def run_regression(drc_dir, output_path, target_table, cpu_count):
         return True
 
 
-def main(drc_dir: str, output_path: str, target_table: str):
+def main(drc_dir: Path, output_path: Path, target_table: str):
     """
     Main Procedure.
 
@@ -1141,10 +1122,10 @@ def main(drc_dir: str, output_path: str, target_table: str):
 
     Parameters
     ----------
-    drc_dir : str
-        Path string to the DRC directory where all the DRC files are located.
-    output_path : str
-        Path string to the location of the output results of the run.
+    drc_dir : Path
+        Path to the DRC directory where all the DRC files are located.
+    output_path : Path
+        Path to the location of the output results of the run.
     target_table : str or None
         Name of table that we want to run regression for. If None, run all found.
     Returns
@@ -1153,8 +1134,8 @@ def main(drc_dir: str, output_path: str, target_table: str):
         If all regression passed, it returns true. If any of the rules failed it returns false.
     """
 
-    # No. of threads
-    cpu_count = os.cpu_count() if arguments["--mp"] is None else int(arguments["--mp"])
+    # Determine number of workers
+    workers_count = int(args.mp) if args.mp else os.cpu_count()
 
     # Pandas printing setup
     pd.set_option("display.max_columns", None)
@@ -1170,7 +1151,7 @@ def main(drc_dir: str, output_path: str, target_table: str):
     check_klayout_version()
 
     # Calling regression function
-    run_status = run_regression(drc_dir, output_path, target_table, cpu_count)
+    run_status = run_regression(drc_dir, output_path, target_table, workers_count)
 
     if run_status:
         logging.info("Test completed successfully.")
@@ -1179,57 +1160,85 @@ def main(drc_dir: str, output_path: str, target_table: str):
         exit(1)
 
 
+def parse_args():
+    USAGE = """
+    run_regression.py (--help | -h)
+    run_regression.py [--run_dir=<run_dir>] [--table_name=<table_name>] [--mp=<num>]
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Run IHP-SG13G2 DRC Unit Regression.",
+        usage=USAGE,
+    )
+
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Run directory to save all the results. If not provided, a timestamped directory will be created."
+    )
+
+    parser.add_argument(
+        "--table_name",
+        type=str,
+        default=None,
+        help="Target specific rule table to run."
+    )
+
+    parser.add_argument(
+        "--mp",
+        type=int,
+        default=1,
+        help="The number of parts to split the rule deck for parallel execution. [default: 1]"
+    )
+
+    return parser.parse_args()
+
 # ================================================================
 # -------------------------- MAIN --------------------------------
 # ================================================================
 
 
 if __name__ == "__main__":
+    # Parse command-line arguments
+    args = parse_args()
 
-    # arguments
-    arguments = docopt(__doc__, version="DRC Regression: 1.0")
-
-    # run dir format
+    # Generate timestamped run directory name
     now_str = datetime.now(timezone.utc).strftime("unit_tests_%Y_%m_%d_%H_%M_%S")
 
-    if (
-        arguments["--run_dir"] == "pwd"
-        or arguments["--run_dir"] == ""
-        or arguments["--run_dir"] is None
-    ):
-        output_path = os.path.join(os.path.abspath(os.getcwd()), now_str)
+    # Determine run directory
+    if args.run_dir in [None, "", "pwd"]:
+        run_dir = Path.cwd().resolve() / now_str
     else:
-        output_path = os.path.abspath(arguments["--run_dir"])
+        run_dir = Path(args.run_dir).resolve()
 
-    # target table
-    target_table = arguments["--table_name"]
+    run_name = run_dir.name
 
-    # Paths of regression dirs
-    testing_dir = os.path.dirname(os.path.abspath(__file__))
-    drc_dir = os.path.dirname(testing_dir)
-    rules_dir = os.path.join(drc_dir, "rule_decks")
-    run_name = os.path.basename(output_path)
+    # Setup paths
+    testing_dir = Path(__file__).resolve().parent
+    drc_dir = testing_dir.parent
+    rules_dir = drc_dir / "rule_decks"
 
-    # Creating output dir
-    os.makedirs(output_path, exist_ok=True)
+    # Create output directory
+    run_dir.mkdir(parents=True, exist_ok=True)
 
-    # logs format
+    # Setup logging
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(os.path.join(output_path, "{}.log".format(now_str))),
+            logging.FileHandler(run_dir / f"{now_str}.log"),
             logging.StreamHandler(),
         ],
         format="%(asctime)s | %(levelname)-7s | %(message)s",
         datefmt="%d-%b-%Y %H:%M:%S",
     )
 
-    # Start of execution time
+    # Start timing
     time_start = time.time()
 
-    # Calling main function
-    main(drc_dir, output_path, target_table)
+    # Run main logic
+    main(drc_dir, run_dir, args.table_name)
 
-    #  End of execution time
+    # End timing
     elapsed_time = time.time() - time_start
     logging.info(f"Total DRC Regression Run time: {elapsed_time:.2f} seconds")

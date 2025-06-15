@@ -56,10 +56,12 @@ To regenerate golden results based on the current rule implementation, use the f
     gen_golden.py [--table_name=<table_name>] [--run_dir=<dir>] [--mp=<num>] [--keep]
 
 Options:
-    --table_name=<table_name>   Specify the rule table name for which to generate golden results.
-    --run_dir=<dir>             Directory to store the output golden results.
-    --mp=<num>                  Number of CPU cores to utilize for parallel processing.
-    --keep                      Retain output logs and intermediate files after execution.
+  -h, --help            show this help message and exit
+  --table_name TABLE_NAME
+                        Target rule table name to generate golden results for.
+  --run_dir RUN_DIR     Directory to store output. If not specified, a timestamped folder will be created.
+  --mp MP               The number of cores used in the run. [default: 1]
+  --keep                Keep output logs and intermediate files after processing.
 ```
 
 **Example:**
@@ -79,10 +81,11 @@ Use the regression script to validate current rule outputs against the golden re
     run_regression.py [--run_dir=<run_dir>] [--table_name=<table_name>] [--mp=<num>]
 
 Options:
-    --help -h                   Display this help message.
-    --run_dir=<run_dir>         Directory where the regression results will be stored.
-    --table_name=<table_name>   Specify the rule table to test.
-    --mp=<num>                  Number of threads to use during the run.
+  -h, --help            show this help message and exit
+  --run_dir RUN_DIR     Run directory to save all the results. If not provided, a timestamped directory will be created.
+  --table_name TABLE_NAME
+                        Target specific rule table to run.
+  --mp MP               The number of parts to split the rule deck for parallel execution. [default: 1]
 ```
 
 **Example:**

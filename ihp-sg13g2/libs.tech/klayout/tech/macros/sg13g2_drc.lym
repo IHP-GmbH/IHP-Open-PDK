@@ -58,20 +58,20 @@ end
 # Set default options
 def set_default_options
   {
-    'table' => 'all',
     'top_cell' => '',
     'run_mode' => 'deep',
+    'table' => 'all',
+    'run_dir' => '',
     'parallel_runs' => 1,
     'no_feol' => false,
     'no_beol' => false,
     'MaxRuleSet' => false,
     'no_connectivity' => true,
-    'density' => false,
+    'no_density' => true,
     'density_only' => false,
     'antenna' => false,
     'antenna_only' => false,
     'no_offgrid' => false,
-    'run_dir' => ''
   }
 end
 
@@ -139,7 +139,7 @@ cmd_opts = [
   "--mp=#{options['parallel_runs']}"
 ]
 
-%w[no_feol no_beol MaxRuleSet no_connectivity density density_only antenna antenna_only no_offgrid].each do |flag|
+%w[no_feol no_beol MaxRuleSet no_connectivity no_density density_only antenna antenna_only no_offgrid].each do |flag|
   cmd_opts &lt;&lt; "--#{flag}" if options[flag]
 end
 

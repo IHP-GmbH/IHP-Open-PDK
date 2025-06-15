@@ -3,44 +3,31 @@
 #====================================================================================================================
 require 'time'
 require 'logger'
-require 'etc'
 
 exec_start_time = Time.now
 
 # Custom formatter including timestamp and memory usage
 formatter = proc do |_severity, datetime, _progname, msg|
-  memory_usage = `pmap #{Process.pid} | tail -1`[10, 40].strip
+  memory_usage = "#{RBA::Timer.memory_size / 1024}K"
   "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
 end
 
-# Create file logger
+# Create file and stdout loggers
 file_logger = Logger.new($log)
 file_logger.formatter = formatter
-
-# Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
 
-# MultiLogger class to broadcast to multiple loggers
+# Multi-logger
 class MultiLogger
   def initialize(*targets)
     @targets = targets
   end
-
-  def info(msg)
-    @targets.each { |t| t.info(msg) }
-  end
-
-  def warn(msg)
-    @targets.each { |t| t.warn(msg) }
-  end
-
-  def error(msg)
-    @targets.each { |t| t.error(msg) }
-  end
+  def info(msg) @targets.each { |t| t.info(msg) } end
+  def warn(msg) @targets.each { |t| t.warn(msg) } end
+  def error(msg) @targets.each { |t| t.error(msg) } end
 end
 
-# Use the multi-logger for your application
 logger = MultiLogger.new(stdout_logger, file_logger)
 
 #================================================
@@ -81,13 +68,7 @@ def bool_check?(obj)
 end
 
 # threads
-if $thr
-  threads($thr)
-else
-  thr ||= Etc.nprocessors
-  threads(thr)
-end
-
+threads($thr.to_i)
 logger.info("Klayout will use #{$thr} thread(s)")
 
 # === TILING MODE ===

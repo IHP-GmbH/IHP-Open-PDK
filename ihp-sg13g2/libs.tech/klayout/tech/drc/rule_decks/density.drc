@@ -21,7 +21,6 @@
 #====================================================================================================================
 require 'time'
 require 'logger'
-require 'etc'
 require 'json'
 require 'pathname'
 
@@ -29,7 +28,7 @@ exec_start_time = Time.now
 
 # Custom formatter including timestamp and memory usage
 formatter = proc do |_severity, datetime, _progname, msg|
-  memory_usage = `pmap #{Process.pid} | tail -1`[10, 40].strip
+  memory_usage = "#{RBA::Timer.memory_size / 1024}K"
   "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
 end
 
@@ -101,13 +100,7 @@ def bool_check?(obj)
 end
 
 # threads
-if $thr
-  threads($thr)
-else
-  thr ||= Etc.nprocessors
-  threads(thr)
-end
-
+threads($thr.to_i)
 logger.info("Klayout will use #{$thr} thread(s)")
 
 # === TILING MODE ===
