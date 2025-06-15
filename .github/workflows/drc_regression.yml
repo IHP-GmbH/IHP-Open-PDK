@@ -33,19 +33,29 @@ jobs:
   drc_regression:
     runs-on: ubuntu-latest
     steps:
-      - name: Installing Klayout
+      - name: 🔄 Cache KLayout v0.30.2 .deb Installer
+        uses: actions/cache@v4
+        with:
+          path: klayout-0_30_2.deb
+          key: ${{ runner.os }}-klayout-0.30.2
+
+      - name: ⬇️ Download KLayout v0.30.2 if not cached
+        run: |
+          if [ ! -f klayout-0_30_2.deb ]; then
+            curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 \
+              -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+          fi
+
+      - name: ⚙️ Install KLayout v0.30.2
         run: |
           sudo apt update -qq -y
-          # Download KLayout .deb using curl with retry options
-          curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 -o klayout.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
-          # Install KLayout
-          sudo apt install ./klayout.deb
-          # Check that KLayout was successfully installed!
+          sudo apt install ./klayout-0_30_2.deb
           klayout -v
 
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-      - name: Testing SG13G2 Klayout DRC Regression
+
+      - name: 🧪 Run SG13G2 KLayout DRC Regression
         run: |
           make test-DRC-main

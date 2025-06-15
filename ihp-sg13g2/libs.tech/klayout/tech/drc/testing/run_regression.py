@@ -1166,17 +1166,11 @@ def main(drc_dir: str, output_path: str, target_table: str):
     logging.info(f"# === Run folder is: {output_path}")
     logging.info(f"# === Target Table is: {target_table}")
 
-    # Start of execution time
-    time_start = time.time()
-
     # Check Klayout version
     check_klayout_version()
 
     # Calling regression function
     run_status = run_regression(drc_dir, output_path, target_table, cpu_count)
-
-    #  End of execution time
-    logging.info(f"Total execution time {time.time() - time_start}s")
 
     if run_status:
         logging.info("Test completed successfully.")
@@ -1230,5 +1224,12 @@ if __name__ == "__main__":
         datefmt="%d-%b-%Y %H:%M:%S",
     )
 
+    # Start of execution time
+    time_start = time.time()
+
     # Calling main function
     main(drc_dir, output_path, target_table)
+
+    #  End of execution time
+    elapsed_time = time.time() - time_start
+    logging.info(f"Total DRC Regression Run time: {elapsed_time:.2f} seconds")
