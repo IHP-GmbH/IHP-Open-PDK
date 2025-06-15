@@ -17,8 +17,6 @@
 
 name: LVS Regression Testing
 
-# Prevent keeping resources busy when a branch/PR is updated
-# https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
   group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -33,59 +31,67 @@ jobs:
   lvs_regression:
     runs-on: ubuntu-latest
     steps:
-      - name: 🔄 Cache KLayout v0.30.2 .deb Installer
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 💾 Restore KLayout .deb from cache
+        id: cache-klayout
         uses: actions/cache@v4
         with:
           path: klayout-0_30_2.deb
-          key: ${{ runner.os }}-klayout-0.30.2
+          key: klayout-deb-cache-ubuntu-0_30_2
+          restore-keys: |
+            klayout-deb-cache-
 
-      - name: ⬇️ Download KLayout v0.30.2 if not cached
+      - name: 🔽 Download KLayout .deb if not cached
+        if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
-          if [ ! -f klayout-0_30_2.deb ]; then
-            curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 \
-              -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
-          fi
+          echo "Downloading KLayout .deb..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
+            -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
 
-      - name: ⚙️ Install KLayout v0.30.2
+      - name: ⚙️ Install KLayout
         run: |
-          sudo apt update -qq -y
-          sudo apt install ./klayout-0_30_2.deb
+          sudo apt-get update -qq
+          sudo apt-get install -y ./klayout-0_30_2.deb
+          echo "✅ KLayout version:"
           klayout -v
 
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
       - name: 🧪 Run SG13G2 KLayout LVS Regression
-        run: |
-          make test-LVS-main
+        run: make test-LVS-main
 
   lvs_regression_cells:
     runs-on: ubuntu-latest
     steps:
-      - name: 🔄 Cache KLayout v0.30.2 .deb Installer
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 💾 Restore KLayout .deb from cache
+        id: cache-klayout
         uses: actions/cache@v4
         with:
           path: klayout-0_30_2.deb
-          key: ${{ runner.os }}-klayout-0.30.2
+          key: klayout-deb-cache-ubuntu-0_30_2
+          restore-keys: |
+            klayout-deb-cache-
 
-      - name: ⬇️ Download KLayout v0.30.2 if not cached
+      - name: 🔽 Download KLayout .deb if not cached
+        if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
-          if [ ! -f klayout-0_30_2.deb ]; then
-            curl -L --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 60 \
-              -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
-          fi
+          echo "Downloading KLayout .deb..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
+            -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
 
-      - name: ⚙️ Install KLayout v0.30.2
+      - name: ⚙️ Install KLayout
         run: |
           sudo apt update -qq -y
           sudo apt install ./klayout-0_30_2.deb
+          echo "✅ KLayout version:"
           klayout -v
 
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
       - name: 🧪 Run LVS Regression for SG13G2 Cells
-        run: |
-          make test-LVS-cells
+        run: make test-LVS-cells
