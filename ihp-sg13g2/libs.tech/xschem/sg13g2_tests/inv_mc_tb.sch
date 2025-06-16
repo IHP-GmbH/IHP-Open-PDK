@@ -130,12 +130,12 @@ meas ac fc_l when gain_dB = gain_fc_dB
 meas ac fc_u when gain_dB = gain_fc_dB cross=last
 let GBW = gain_lin[0] * (fc_u-fc_l)
 
-echo results_sweep_begin
+echo results_save_begin
 print gain_passband_dB
 print fc_l
 print fc_u
 print GBW
-echo results_sweep_end
+echo results_save_end
 
 .endc
 "

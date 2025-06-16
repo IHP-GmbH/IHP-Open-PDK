@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import math
 
 #begin/end tags
-results_begin_tag = "results_sweep_begin"
-results_end_tag = "results_sweep_end"
+results_begin_tag = "results_save_begin"
+results_end_tag = "results_save_end"
 plot_begin_tag = "**results_plot_begin"
 plot_end_tag = "**results_plot_end"
 
