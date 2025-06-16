@@ -8,9 +8,9 @@ T {used to run ngspice mc simulation in parallel} 1440 -1000 0 0 0.3 0.3 {layer=
 T {used to check OP, AC and TRAN} 920 -1000 0 0 0.3 0.3 {layer=11}
 T {Ctrl-Click to execute launcher} 170 -910 0 0 0.3 0.3 {layer=11}
 T {.save file can be created with IHP->"Create FET and BIP .save file"} 170 -810 0 0 0.3 0.3 {layer=11}
-T {each printed value will be saved in csv file} 1710 -510 0 0 0.3 0.3 {layer=11}
+T {each printed value will be saved in csv file} 1700 -650 0 0 0.3 0.3 {layer=11}
 T {_stat ... with staticstial modelling (process) without mismatch!} 150 -750 0 0 0.3 0.3 {layer=11}
-T {set num_threads to 1 for small circuits} 1680 -760 0 0 0.3 0.3 {layer=11}
+T {set num_threads to 1 for small circuits} 1700 -880 0 0 0.3 0.3 {layer=11}
 N 180 -270 180 -250 {lab=vdd}
 N 180 -190 180 -170 {lab=GND}
 N 550 -400 610 -400 {lab=vdd}
@@ -118,13 +118,6 @@ C {simulator_commands_shown.sym} 1435 -915 0 0 {name=MC_SIM
 simulator=ngspice
 only_toplevel=false 
 value="
-.param temp=27
-.param c1_val=1p
-.param r1_val=100Meg
-.param m1_w_val=0.15u
-.param m2_w_val=0.15u
-.param l_val=0.13u
-
 .control
 set num_threads 1
 
@@ -191,7 +184,7 @@ tclcommand="xschem annotate_op"
 }
 C {sg13g2_pr/annotate_fet_params.sym} 630 -570 0 0 {name=annot1 ref=M2}
 C {sg13g2_pr/annotate_fet_params.sym} 640 -200 0 0 {name=annot2 ref=M1}
-C {code_shown.sym} 1450 -360 0 0 {name=MC_SETTINGS
+C {code_shown.sym} 1450 -450 0 0 {name=MC_SETTINGS
 only_toplevel=false
 value="
 **nr_workers=50
