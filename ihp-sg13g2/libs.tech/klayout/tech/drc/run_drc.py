@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import time
 from subprocess import check_call
 import shutil
+import multiprocessing as mp
 import concurrent.futures
 import traceback
 from typing import Dict, List, Optional, Set, Union
@@ -224,7 +225,7 @@ def generate_drc_run_template(
         selected_tables = []
         for table in run_tables_list:
             match = next(
-                (name for name in all_drc_names if name.endswith(f"_{table}.drc")),
+                (name for name in all_drc_names if name == f"{table}.drc"),
                 None
             )
             if match:
@@ -357,9 +358,7 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
     switches = {}
 
     # Number of threads
-    mp = arguments.mp
-    thr_count = os.cpu_count() if mp <= 1 else 2 * mp
-    switches["thr"] = str(thr_count)
+    switches["thr"] = arguments.density_thr
 
     # Locate JSON rule file paths
     script_dir = Path(__file__).resolve().parent
@@ -586,7 +585,7 @@ def run_parallel_run(
         rule_deck_files[table] = drc_file
 
     result_db_files = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers_count) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers_count) as executor:
         future_to_name = {
             executor.submit(run_check, rule_file, name, layout_path, run_dir, switches): name
             for name, rule_file in rule_deck_files.items()
@@ -681,6 +680,9 @@ def main(run_dir: Path, args):
         Parsed command-line arguments containing user-provided options.
     """
 
+    # Set multiprocessing to use 'spawn' — safer when called from GUI-based tools like KLayout
+    mp.set_start_method("spawn", force=True)
+
     # Check that input GDS file exists
     if not Path(args.path).exists():
         logging.error(f"The input GDS file path '{args.path}' does not exist. Please recheck.")
@@ -714,9 +716,10 @@ def parse_args():
     run_drc.py (--help | -h)
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
-            [--topcell=<topcell_name>] [--thr=<threads>] [--run_mode=<mode>] [--drc_json=<json_path>]
+            [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
             [--no_feol] [--no_beol] [--MaxRuleSet] [--no_connectivity] [--no_density]
-            [--density_only] [--antenna] [--antenna_only] [--no_offgrid] [--macro_gen]
+            [--density_thr=<density_threads>] [--density_only] [--antenna]
+            [--antenna_only] [--no_offgrid] [--macro_gen]
     """
 
     parser = argparse.ArgumentParser(
@@ -751,8 +754,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--thr", type=int,
-        help="Number of threads to use during the run."
+        "--density_thr",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of threads to use during the density run (default: number of CPU cores)."
     )
 
     parser.add_argument(

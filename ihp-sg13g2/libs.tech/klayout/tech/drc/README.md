@@ -54,12 +54,13 @@ You have the option to execute the SG13G2-DRC through either a Python script via
 The `run_drc.py` script takes your gds to run DRC rule decks with switches to select subsets of all checks.
 
 ```bash
-  run_drc.py (--help | -h)
-  run_drc.py --path=<file_path>
-          [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
-          [--topcell=<topcell_name>] [--thr=<threads>] [--run_mode=<mode>] [--drc_json=<json_path>]
-          [--no_feol] [--no_beol] [--MaxRuleSet] [--no_connectivity] [--no_density]
-          [--density_only] [--antenna] [--antenna_only] [--no_offgrid] [--macro_gen]
+    run_drc.py (--help | -h)
+    run_drc.py --path=<file_path>
+            [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
+            [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
+            [--no_feol] [--no_beol] [--MaxRuleSet] [--no_connectivity] [--no_density]
+            [--density_thr=<density_threads>] [--density_only] [--antenna]
+            [--antenna_only] [--no_offgrid] [--macro_gen]
 ```
 
 **Example:**
@@ -77,7 +78,8 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --mp MP               Number of parts to split the rule deck for parallel execution. [default: 1]
   --run_dir RUN_DIR     Dir to store all run results. If not specified, a timestamped dir under the current path will be used.
   --topcell TOPCELL     Top-level cell name to use from the input GDS.
-  --thr THR             Number of threads to use during the run.
+  --density_thr DENSITY_THR
+                        Number of threads to use during the density run (default: number of CPU cores).
   --run_mode {flat,deep}
                         KLayout execution mode: flat, deep, or tiling. [default: deep]
   --drc_json DRC_JSON   Path to a JSON file that defines rule values to use.

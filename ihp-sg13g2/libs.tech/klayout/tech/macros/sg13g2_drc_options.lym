@@ -37,6 +37,7 @@
  module SG13G2DRCOptions
   require 'yaml'
   require 'open3'
+  require 'fileutils'
   include RBA
 
   # Main function to manage DRC options
@@ -63,7 +64,7 @@
     end
 
     # Construct the absolute path to the YAML file
-    yaml_file_path = "#{__dir__}/drc_options.yml"
+    yaml_file_path = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13g2_drc_options.yml")
 
     # Load options from YAML file
     options = load_options(yaml_file_path)
@@ -112,20 +113,21 @@
   # Returns a hash containing the default options
   def self.set_default_options(yaml_file_path)
     default_options = {
-      'top_cell' => '',
-      'run_mode' => 'deep',
-      'table' => 'all',
-      'run_dir' => '',
-      'parallel_runs' => 1,
-      'no_feol' => false,
-      'no_beol' => false,
-      'MaxRuleSet' => false,
-      'no_connectivity' => true,
-      'no_density' => true,
-      'density_only' => false,
-      'antenna' => false,
-      'antenna_only' => false,
-      'no_offgrid' => false,
+      'top_cell' =&gt; '',
+      'run_mode' =&gt; 'deep',
+      'table' =&gt; 'all',
+      'run_dir' =&gt; '',
+      'parallel_runs' =&gt; 1,
+      'density_thr' =&gt; 1,
+      'no_feol' =&gt; false,
+      'no_beol' =&gt; false,
+      'MaxRuleSet' =&gt; false,
+      'no_connectivity' =&gt; true,
+      'no_density' =&gt; true,
+      'density_only' =&gt; false,
+      'antenna' =&gt; false,
+      'antenna_only' =&gt; false,
+      'no_offgrid' =&gt; false,
     }
     save_options(yaml_file_path, default_options)
     default_options
@@ -134,6 +136,8 @@
   # Save options to a YAML file
   def self.save_options(yaml_file_path, options)
     begin
+      dir = File.dirname(yaml_file_path)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
       File.open(yaml_file_path, 'w') { |file| file.write(options.to_yaml) }
       true
     rescue => e
@@ -181,7 +185,7 @@
     basic_layout.addRow("Top Cell:", create_combo_box(options['top_cell'], get_top_cell_names))
     basic_layout.addRow("Run Mode:", create_combo_box(options['run_mode'], ['deep', 'flat']))
     basic_layout.addRow("DRC Table:", create_combo_box(options['table'] || "main", get_table_files))
-    basic_layout.addRow("Parallel Runs:", create_parallel_runs_no(options['parallel_runs']))
+    basic_layout.addRow("Parallel Runs:", create_cores_threads_no(options['parallel_runs']))
     basic_layout.addItem(spacer)
     basic_layout.setSpacing(10)
     # Checkboxes - BASIC tab
@@ -196,7 +200,9 @@
     advanced_tab = RBA::QWidget.new
     advanced_layout = RBA::QFormLayout.new(advanced_tab)
     advanced_layout.addRow('Output Run Directory:', create_dir_input(options['run_dir'], dialog))
-    advanced_layout.setSpacing(10)
+    advanced_layout.setSpacing(30)
+    advanced_layout.addRow("Density Run Threads:", create_cores_threads_no(options['density_thr']))
+    advanced_layout.setSpacing(5)
     # Advanced options - checkboxes with tooltips and styling
     chk_conn = create_check_box("Disable Connectivity Checks", options['no_connectivity'], "Disables checks that require connectivity.")
     chk_density = create_check_box("Disable Density Checks", options['no_density'], "Disables density rule checks.")
@@ -341,11 +347,11 @@
   end
 
   # Create a spin box widget for numerical inputs
-  def self.create_parallel_runs_no(default_value)
+  def self.create_cores_threads_no(default_value)
     spin_box = RBA::QSpinBox.new
     spin_box.setRange(1, 128)  # Set range for the number of cores
     spin_box.setValue(default_value)
-    spin_box.setToolTip("Set the number of cores to use (1-128)")
+    spin_box.setToolTip("Set the number of cores/threads to use (1-128)")
     spin_box
   end
 
@@ -445,12 +451,13 @@
 
     advanced_layout = tab_widget.widget(1).layout
     options['run_dir'] = advanced_layout.itemAt(1).widget.layout.itemAt(0).widget.text
-    options['no_connectivity'] = advanced_layout.itemAt(2).widget.checked if advanced_layout.itemAt(2).widget
-    options['no_density'] = advanced_layout.itemAt(3).widget.checked if advanced_layout.itemAt(3).widget
-    options['density_only'] = advanced_layout.itemAt(4).widget.checked if advanced_layout.itemAt(4).widget
-    options['antenna'] = advanced_layout.itemAt(5).widget.checked if advanced_layout.itemAt(5).widget
-    options['antenna_only'] = advanced_layout.itemAt(6).widget.checked if advanced_layout.itemAt(6).widget
-    options['no_offgrid'] = advanced_layout.itemAt(7).widget.checked if advanced_layout.itemAt(7).widget
+    options['density_thr'] = advanced_layout.itemAt(3).widget.value if advanced_layout.itemAt(3).widget
+    options['no_connectivity'] = advanced_layout.itemAt(4).widget.checked if advanced_layout.itemAt(4).widget
+    options['no_density'] = advanced_layout.itemAt(5).widget.checked if advanced_layout.itemAt(5).widget
+    options['density_only'] = advanced_layout.itemAt(6).widget.checked if advanced_layout.itemAt(6).widget
+    options['antenna'] = advanced_layout.itemAt(7).widget.checked if advanced_layout.itemAt(7).widget
+    options['antenna_only'] = advanced_layout.itemAt(8).widget.checked if advanced_layout.itemAt(8).widget
+    options['no_offgrid'] = advanced_layout.itemAt(9).widget.checked if advanced_layout.itemAt(9).widget
   end
 
  end
