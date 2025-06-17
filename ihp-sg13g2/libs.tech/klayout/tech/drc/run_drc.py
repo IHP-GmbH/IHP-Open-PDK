@@ -225,7 +225,7 @@ def generate_drc_run_template(
         selected_tables = []
         for table in run_tables_list:
             match = next(
-                (name for name in all_drc_names if name == f"{table}.drc"),
+                (name for name in all_drc_names if name.endswith(f"_{table}.drc")),
                 None
             )
             if match:
@@ -295,14 +295,19 @@ def get_list_of_tables(drc_dir: str):
     drc_dir : str
         Path to the DRC folder to get the list of tables from.
     """
-
     exclude_decks = {"antenna", "density", "sg13g2_maximal", "main", "layers_def", "tail"}
-    return [
-        f.stem
-        for f in (Path(drc_dir) / "rule_decks").glob("*.drc")
-        if not any(deck in f.stem for deck in exclude_decks)
-    ]
+    tables = []
+    for f in (Path(drc_dir) / "rule_decks").glob("*.drc"):
+        parts = f.stem.split("_")
+        if len(parts) >= 3:
+            name = "_".join(parts[2:])
+        else:
+            name = f.stem  # fallback: keep the full name
 
+        if name not in exclude_decks:
+            tables.append(name)
+
+    return tables
 
 def get_run_top_cell_name(args, layout_path: str):
     """
