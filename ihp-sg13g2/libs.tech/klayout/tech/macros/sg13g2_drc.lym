@@ -102,19 +102,20 @@ end
 # Paths and context
 macro_dir = File.dirname(File.expand_path(__FILE__))
 project_root = File.expand_path("..", macro_dir)
-layout_path = Pathname.new(RBA::CellView.active.filename)
-layout = RBA::CellView.active.layout
+@layout_name = RBA::CellView.active.filename
+layout_path = Pathname.new(@layout_name)
+@layout = RBA::CellView.active.layout
 gds_path = layout_path.to_s
 gds_name = layout_path.basename(".gds").to_s
 
 # Get layout cells
 cell_names = []
-layout.each_cell do |cell|
+@layout.each_cell do |cell|
   cell_names &lt;&lt; cell.name
 end
 
 # Get layout active cell
-act_cell_name = RBA::CellView.active.cell.name
+@act_cell_name = RBA::CellView.active.cell.name
 
 # Load options from global config location
 yaml_file = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13g2_drc_options.yml")
@@ -123,7 +124,7 @@ options = load_options(yaml_file)
 # Determine top cell
 top_cell = options['top_cell']
 if top_cell.nil? || top_cell.strip.empty? || !cell_names.include?(top_cell)
-  top_cell = act_cell_name
+  top_cell = @act_cell_name
 end
 
 run_dir = options['run_dir']
@@ -192,45 +193,46 @@ class CustomDialog &lt; RBA::QDialog
     super(event)
   end
 end
-@dlg = CustomDialog.new(RBA::Application.instance.main_window)
+@app_window = RBA::Application.instance.main_window
+@dlg = CustomDialog.new(@app_window)
 @dlg.setWindowTitle("DRC Run Logs")
 @main_layout = RBA::QVBoxLayout.new(@dlg)
 
 # Header with logo and title
-header_layout = RBA::QHBoxLayout.new
+@header_layout = RBA::QHBoxLayout.new
 logo_path = File.join(File.dirname(__FILE__), "ihp_logo.png")
 if File.exist?(logo_path)
-  logo_label = RBA::QLabel.new
-  logo_pixmap = RBA::QPixmap.new(logo_path)
-  logo_label.setPixmap(logo_pixmap.scaled(40, 40))
-  header_layout.addWidget(logo_label)
+  @logo_label = RBA::QLabel.new
+  @logo_pixmap = RBA::QPixmap.new(logo_path)
+  @logo_label.setPixmap(@logo_pixmap.scaled(40, 40))
+  @header_layout.addWidget(@logo_label)
 end
 
-title_label = RBA::QLabel.new("SG13G2 DRC - Logs")
-title_font = RBA::QFont.new
-title_font.setPointSize(14)
-title_font.setBold(true)
-title_label.setFont(title_font)
-title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-header_layout.addWidget(title_label)
-header_layout.addStretch
-@main_layout.addLayout(header_layout)
+@title_label = RBA::QLabel.new("SG13G2 DRC - Logs")
+@title_font = RBA::QFont.new
+@title_font.setPointSize(14)
+@title_font.setBold(true)
+@title_label.setFont(@title_font)
+@title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
+@header_layout.addWidget(@title_label)
+@header_layout.addStretch
+@main_layout.addLayout(@header_layout)
 
 # Log output area
-log_output = RBA::QTextEdit.new
-log_output.setReadOnly(true)
-log_output.setStyleSheet("background-color: #f4f4f4; font-family: monospace;")
-@main_layout.addWidget(log_output)
+@log_output = RBA::QTextEdit.new
+@log_output.setReadOnly(true)
+@log_output.setStyleSheet("background-color: #f4f4f4; font-family: monospace;")
+@main_layout.addWidget(@log_output)
 
 # Close button
-button_layout = RBA::QHBoxLayout.new
-button_layout.addStretch
+@button_layout = RBA::QHBoxLayout.new
+@button_layout.addStretch
 @close_button = RBA::QPushButton.new("Close")
 @close_button.clicked.connect(proc {
   @dlg.close
 })
-button_layout.addWidget(@close_button)
-@main_layout.addLayout(button_layout)
+@button_layout.addWidget(@close_button)
+@main_layout.addLayout(@button_layout)
 
 # Show the dialog
 @dlg.resize(1000, 800)
@@ -243,7 +245,7 @@ button_layout.addWidget(@close_button)
 @timer.timeout.connect(Proc.new {
   until lines_queue.empty?
     line = lines_queue.pop
-    log_output.append(line)
+    @log_output.append(line)
     puts line
   end
 
@@ -261,12 +263,13 @@ button_layout.addWidget(@close_button)
     result_db = Dir.glob(pattern).first
     if result_db &amp;&amp; File.exist?(result_db)
       begin
-        rdb = RBA::ReportDatabase.new
-        rdb.load(result_db)
-        mw = RBA::MainWindow.instance
-        if mw &amp;&amp; mw.current_view
-          lv = mw.current_view
-          rdb_index = lv.add_rdb(rdb)
+        @rdb = RBA::ReportDatabase.new
+        @rdb.load(result_db)
+        
+        @main_window = RBA::MainWindow.instance
+        if @main_window &amp;&amp; @main_window.current_view
+          lv = @main_window.current_view
+          rdb_index = lv.add_rdb(@rdb)
           cv_index = lv.active_cellview_index
           lv.show_rdb(rdb_index, cv_index)
         else

@@ -309,6 +309,7 @@ def get_list_of_tables(drc_dir: str):
 
     return tables
 
+
 def get_run_top_cell_name(args, layout_path: str):
     """
     Get the top cell name to use for DRC. If the user provides it, use that;
