@@ -1,8 +1,8 @@
 Tech Info
 ------------------------------------------------------------------------------------------
 Technology   : SG13G2
-Revision     : rev0.1.0
-Date         : 26 Mar 2024
+Revision     : rev0.1.3
+Date         : 20 Jun 2025
 
 ------------------------------------------------------------------------------------------
 The 0.13-micron standard cells can be used for the BiCMOS technology with a 0.13 CMOS process.
@@ -11,8 +11,49 @@ For more details about the available process modules please refer to the related
 Important Notes:
 ------------------------------------------------------------------------------------------
 
-1. Reasons for Release:
+1. Changes for Release:
 ==========================================================================================
+Rev0.1.3: !IMPORTANT!: It is strongly recommended to save previous library version for debugging early implemented designs. It is NOT ALLOWED simple cell layout replacement in existing designs. Designs require re-synthesis of layout. 
+Changes:
+- routing directions of metal were changed to opposite state in technology LEF file: M1(H), M2(V), M3(H), M4(V), M5(H), TM1(V), TM2(H),
+- new via definition section is implemented in technology LEF file: set of vias is minimized, layout of vias is simplified,
+- 6 new standard cells were added in the library (scan and non-scan flip-flop functionality is aligned) to enable DFT flow: 
+	sg13g2_dfrbpq_1
+	sg13g2_dfrbpq_2
+	sg13g2_sdfrbp_1
+	sg13g2_sdfrbp_2
+	sg13g2_sdfrbpq_1
+	sg13g2_sdfrbpq_2,
+- all cells were re-characterized (Liberty/verilog models were updated and set of power arcs was optimized),
+- layout of cell sg13g2_tiehi is modified to add metal contacts to substrate,
+- the cell sg13g2_sdfbbp_1 is obsolete, it is not recommended to use.
+- the library contains 84 cells instead of 78.
+
+
+Rev0.1.2: !IMPORTANT!: It is strongly recommended to save previous library version for debugging early implemented designs. It is NOT ALLOWED simple cell layout replacement in existing designs. Designs require re-synthesis of layout.
+
+- M2 was removed from following cells:
+	sg13g2_buf_16 area: no changes
+	sg13g2_dfrbp_1 area: new value is 52.6176 um2
+	sg13g2_dfrbp_2 area: no changes
+	sg13g2_ebufn_4 area: new value is 27.216 um2
+	sg13g2_inv_16 area: no changes
+	sg13g2_slgcp_1 area: no changes
+
+- Cell sg13g2_sdfbbp_1 is not changed full re-design required
+(will be re-designed). sg13g2_dfrbp_1 cell requires area optimization. It will be done together with scan flip-flop re-design.
+
+- Layout cleanup was provided for most of all cells (contacts alignment and pin placement optimization). 
+
+- Multiplier m=1 for all transistors, NG parameter is used now in CDL and schematics. 
+
+- Schematics inhereted bulk connection are drawn with the same stile.
+
+- List of updated views: CDL, GDS, LEF, Liberty (cells area updated only), schematics, layouts and abstracts.
+
+
+Rev0.1.1: Layout and LEF of some cells were updated to fix abbutments DRC errors.
+
 Rev0.1.0: VSS and VDD are defined as global nets with inherited connection. LEF was updated
           with this change. Liberty models and datasheets were regenerated, standard cells
           were re-characterized with updated QRC tech file and 'buf_1' active driver setting

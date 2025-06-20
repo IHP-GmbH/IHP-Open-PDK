@@ -27,11 +27,17 @@ module sg13g2_a21o_1 (X, A1, A2, B1);
 
 	// Timing
 	specify
-		(A1 => X) = 0;
-		(A2 => X) = 0;
+		if (B1 == 1'b0)
+			(A1 => X) = 0;
+		ifnone (A1 => X) = 0;
+		if (B1 == 1'b0)
+			(A2 => X) = 0;
+		ifnone (A2 => X) = 0;
 		if (A1 == 1'b1 & A2 == 1'b0)
 			(B1 => X) = 0;
 		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => X) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
 			(B1 => X) = 0;
 		ifnone (B1 => X) = 0;
 	endspecify
@@ -53,11 +59,17 @@ module sg13g2_a21o_2 (X, A1, A2, B1);
 
 	// Timing
 	specify
-		(A1 => X) = 0;
-		(A2 => X) = 0;
+		if (B1 == 1'b0)
+			(A1 => X) = 0;
+		ifnone (A1 => X) = 0;
+		if (B1 == 1'b0)
+			(A2 => X) = 0;
+		ifnone (A2 => X) = 0;
 		if (A1 == 1'b1 & A2 == 1'b0)
 			(B1 => X) = 0;
 		if (A1 == 1'b0 & A2 == 1'b1)
+			(B1 => X) = 0;
+		if (A1 == 1'b0 & A2 == 1'b0)
 			(B1 => X) = 0;
 		ifnone (B1 => X) = 0;
 	endspecify
@@ -82,11 +94,11 @@ module sg13g2_a21oi_1 (Y, A1, A2, B1);
 	specify
 		(A1 => Y) = 0;
 		(A2 => Y) = 0;
-		if (A1 == 1'b1 & A2 == 1'b0)
+		if ((A1 == 1'b1 && A2 == 1'b0))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b0 && A2 == 1'b1))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b0)
+		if ((A1 == 1'b0 && A2 == 1'b0))
 			(B1 => Y) = 0;
 		ifnone (B1 => Y) = 0;
 	endspecify
@@ -111,11 +123,11 @@ module sg13g2_a21oi_2 (Y, A1, A2, B1);
 	specify
 		(A1 => Y) = 0;
 		(A2 => Y) = 0;
-		if (A1 == 1'b1 & A2 == 1'b0)
+		if ((A1 == 1'b1 && A2 == 1'b0))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b0 && A2 == 1'b1))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b0)
+		if ((A1 == 1'b0 && A2 == 1'b0))
 			(B1 => Y) = 0;
 		ifnone (B1 => Y) = 0;
 	endspecify
@@ -139,35 +151,43 @@ module sg13g2_a221oi_1 (Y, A1, A2, B1, B2, C1);
 
 	// Timing
 	specify
-		if (B1 == 1'b1 & B2 == 1'b0)
+		if ((A2 == 1'b1 && B1 == 1'b1 && B2 == 1'b0 && C1 == 1'b0))
 			(A1 => Y) = 0;
-		if (B1 == 1'b0 & B2 == 1'b1)
+		if ((A2 == 1'b1 && B1 == 1'b0 && B2 == 1'b1 && C1 == 1'b0))
 			(A1 => Y) = 0;
-		if (B1 == 1'b0 & B2 == 1'b0)
+		if ((A2 == 1'b1 && B1 == 1'b0 && B2 == 1'b0 && C1 == 1'b0))
 			(A1 => Y) = 0;
 		ifnone (A1 => Y) = 0;
-		if (B1 == 1'b1 & B2 == 1'b0)
+		if ((A1 == 1'b1 && B1 == 1'b1 && B2 == 1'b0 && C1 == 1'b0))
 			(A2 => Y) = 0;
-		if (B1 == 1'b0 & B2 == 1'b1)
+		if ((A1 == 1'b1 && B1 == 1'b0 && B2 == 1'b1 && C1 == 1'b0))
 			(A2 => Y) = 0;
-		if (B1 == 1'b0 & B2 == 1'b0)
+		if ((A1 == 1'b1 && B1 == 1'b0 && B2 == 1'b0 && C1 == 1'b0))
 			(A2 => Y) = 0;
 		ifnone (A2 => Y) = 0;
-		if (A1 == 1'b1 & A2 == 1'b0)
+		if ((A1 == 1'b1 && A2 == 1'b0 && B2 == 1'b1 && C1 == 1'b0))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b0 && A2 == 1'b1 && B2 == 1'b1 && C1 == 1'b0))
 			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b0)
+		if ((A1 == 1'b0 && A2 == 1'b0 && B2 == 1'b1 && C1 == 1'b0))
 			(B1 => Y) = 0;
 		ifnone (B1 => Y) = 0;
-		if (A1 == 1'b1 & A2 == 1'b0)
+		if ((A1 == 1'b1 && A2 == 1'b0 && B1 == 1'b1 && C1 == 1'b0))
 			(B2 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b0 && A2 == 1'b1 && B1 == 1'b1 && C1 == 1'b0))
 			(B2 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b0)
+		if ((A1 == 1'b0 && A2 == 1'b0 && B1 == 1'b1 && C1 == 1'b0))
 			(B2 => Y) = 0;
 		ifnone (B2 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b1 && A2 == 1'b0 && B1 == 1'b0 && B2 == 1'b0))
+			(C1 => Y) = 0;
+		if ((A1 == 1'b0 && A2 == 1'b1 && B1 == 1'b0 && B2 == 1'b0))
+			(C1 => Y) = 0;
+		if ((A1 == 1'b0 && A2 == 1'b0 && B1 == 1'b1 && B2 == 1'b0))
+			(C1 => Y) = 0;
+		if ((A1 == 1'b0 && A2 == 1'b0 && B1 == 1'b0 && B2 == 1'b1))
+			(C1 => Y) = 0;
+		if ((A1 == 1'b0 && A2 == 1'b0 && B1 == 1'b0 && B2 == 1'b0))
 			(C1 => Y) = 0;
 		ifnone (C1 => Y) = 0;
 	endspecify
@@ -191,14 +211,25 @@ module sg13g2_a22oi_1 (Y, A1, A2, B1, B2);
 
 	// Timing
 	specify
-		(A1 => Y) = 0;
-		(A2 => Y) = 0;
-		(B1 => Y) = 0;
-		(B2 => Y) = 0;
+		if (A2 == 1'b1 && B1 == 1'b1)
+			(A1 => Y) = 0;
+		ifnone (A1 => Y) = 0;
+		if (A1 == 1'b1 && B1 == 1'b1)
+			(A2 => Y) = 0;
+		ifnone (A2 => Y) = 0;
+		if (A1 == 1'b1 && A2 == 1'b0)
+			(B1 => Y) = 0;
+		if (A1 == 1'b0 && A2 == 1'b1)
+			(B1 => Y) = 0;
+		ifnone (B1 => Y) = 0;
+		if (A1 == 1'b1 && A2 == 1'b0)
+			(B2 => Y) = 0;
+		if (A1 == 1'b0 && A2 == 1'b1)
+			(B2 => Y) = 0;
+		ifnone (B2 => Y) = 0;
 	endspecify
 endmodule
 `endcelldefine
-
 
 // type: AND2 
 `timescale 1ns/10ps
@@ -492,6 +523,68 @@ module sg13g2_dfrbp_2 (Q, Q_N, D, RESET_B, CLK);
 		(posedge CLK => (Q+:D)) = 0;
 		(negedge RESET_B => (Q_N-:1'b0)) = 0;
 		(posedge CLK => (Q_N-:D)) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
+// type: dfrbpq 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_dfrbpq_1 (Q, D, RESET_B, CLK);
+	output Q;
+	input D, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_IQ, int_fwire_r, xcr_0;
+
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, delayed_D, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, delayed_D, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		(posedge CLK => (Q+:D)) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
+// type: dfrbpq 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_dfrbpq_2 (Q, D, RESET_B, CLK);
+	output Q;
+	input D, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_IQ, int_fwire_r, xcr_0;
+
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, delayed_D, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, delayed_D, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		(posedge CLK => (Q+:D)) = 0;
 		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
 		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
 		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
@@ -1408,9 +1501,7 @@ module sg13g2_o21ai_1 (Y, A1, A2, B1);
 	specify
 		(A1 => Y) = 0;
 		(A2 => Y) = 0;
-		if (A1 == 1'b1 & A2 == 1'b0)
-			(B1 => Y) = 0;
-		if (A1 == 1'b0 & A2 == 1'b1)
+		if ((A1 == 1'b0 && A2 == 1'b1))
 			(B1 => Y) = 0;
 		ifnone (B1 => Y) = 0;
 	endspecify
@@ -1582,6 +1673,176 @@ module sg13g2_sdfbbp_1 (Q, Q_N, D, SCD, SCE, RESET_B, SET_B, CLK);
 endmodule
 `endcelldefine
 
+// type: sdfrbp 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_sdfrbp_1 (Q, Q_N, D, SCD, SCE, RESET_B, CLK);
+	output Q, Q_N;
+	input D, SCD, SCE, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_SCD, delayed_SCE, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_d, int_fwire_IQ, int_fwire_IQN;
+	wire int_fwire_r, xcr_0;
+
+	ihp_mux2 (int_fwire_d, delayed_D, delayed_SCD, delayed_SCE);
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, int_fwire_d, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+	not (int_fwire_IQN, int_fwire_IQ);
+	buf (Q_N, int_fwire_IQN);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		(negedge RESET_B => (Q_N-:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q_N-:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q_N-:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, posedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, negedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, posedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$setuphold (posedge CLK, negedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
+// type: sdfrbp 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_sdfrbp_2 (Q, Q_N, D, SCD, SCE, RESET_B, CLK);
+	output Q, Q_N;
+	input D, SCD, SCE, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_SCD, delayed_SCE, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_d, int_fwire_IQ, int_fwire_IQN;
+	wire int_fwire_r, xcr_0;
+
+	ihp_mux2 (int_fwire_d, delayed_D, delayed_SCD, delayed_SCE);
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, int_fwire_d, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+	not (int_fwire_IQN, int_fwire_IQ);
+	buf (Q_N, int_fwire_IQN);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		(negedge RESET_B => (Q_N-:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q_N-:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q_N-:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, posedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, negedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, posedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$setuphold (posedge CLK, negedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
+// type: sdfrbpq 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_sdfrbpq_1 (Q, D, SCD, SCE, RESET_B, CLK);
+	output Q;
+	input D, SCD, SCE, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_SCD, delayed_SCE, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_d, int_fwire_IQ, int_fwire_r;
+	wire xcr_0;
+
+	ihp_mux2 (int_fwire_d, delayed_D, delayed_SCD, delayed_SCE);
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, int_fwire_d, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		if (SCE == 1'b0)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, posedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, negedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, posedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$setuphold (posedge CLK, negedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
+// type: sdfrbpq 
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_sdfrbpq_2 (Q, D, SCD, SCE, RESET_B, CLK);
+	output Q;
+	input D, SCD, SCE, RESET_B, CLK;
+	reg notifier;
+	wire delayed_D, delayed_SCD, delayed_SCE, delayed_RESET_B, delayed_CLK;
+
+	// Function
+	wire int_fwire_d, int_fwire_IQ, int_fwire_r;
+	wire xcr_0;
+
+	ihp_mux2 (int_fwire_d, delayed_D, delayed_SCD, delayed_SCE);
+	not (int_fwire_r, delayed_RESET_B);
+	ihp_dff_r_err (xcr_0, delayed_CLK, int_fwire_d, int_fwire_r);
+	ihp_dff_r (int_fwire_IQ, notifier, delayed_CLK, int_fwire_d, int_fwire_r, xcr_0);
+	buf (Q, int_fwire_IQ);
+
+	// Timing
+	specify
+		(negedge RESET_B => (Q+:1'b0)) = 0;
+		if (SCE == 1'b1)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		if (SCE == 1'b0)
+			(posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		ifnone (posedge CLK => (Q+:((D && SCD) || (D && !SCD && !SCE) || (!D && SCD && SCE)))) = 0;
+		$setuphold (posedge CLK, posedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, negedge D, 0, 0, notifier,,, delayed_CLK, delayed_D);
+		$setuphold (posedge CLK, posedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, negedge SCD, 0, 0, notifier,,, delayed_CLK, delayed_SCD);
+		$setuphold (posedge CLK, posedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$setuphold (posedge CLK, negedge SCE, 0, 0, notifier,,, delayed_CLK, delayed_SCE);
+		$recrem (posedge RESET_B, posedge CLK, 0, 0, notifier,,, delayed_RESET_B, delayed_CLK);
+		$width (negedge RESET_B, 0, 0, notifier);
+		$width (posedge CLK, 0, 0, notifier);
+		$width (negedge CLK, 0, 0, notifier);
+	endspecify
+endmodule
+`endcelldefine
+
 // type: keepstate 
 `timescale 1ns/10ps
 `celldefine
@@ -1669,10 +1930,16 @@ module sg13g2_xnor2_1 (Y, A, B);
 
 	// Timing
 	specify
-		(posedge A => (Y:A)) = 0;
-		(negedge A => (Y:A)) = 0;
-		(posedge B => (Y:B)) = 0;
-		(negedge B => (Y:B)) = 0;
+		if ((B == 1'b1))
+			(A => Y) = 0;
+		ifnone (A => Y) = 0;
+		if ((B == 1'b0))
+			(A => Y) = 0;
+		if ((A == 1'b1))
+			(B => Y) = 0;
+		ifnone (B => Y) = 0;
+		if ((A == 1'b0))
+			(B => Y) = 0;
 	endspecify
 endmodule
 `endcelldefine
@@ -1689,10 +1956,16 @@ module sg13g2_xor2_1 (X, A, B);
 
 	// Timing
 	specify
-		(posedge A => (X:A)) = 0;
-		(negedge A => (X:A)) = 0;
-		(posedge B => (X:B)) = 0;
-		(negedge B => (X:B)) = 0;
+		if ((B == 1'b0))
+			(A => X) = 0;
+		ifnone (A => X) = 0;
+		if ((B == 1'b1))
+			(A => X) = 0;
+		if ((A == 1'b0))
+			(B => X) = 0;
+		ifnone (B => X) = 0;
+		if ((A == 1'b1))
+			(B => X) = 0;
 	endspecify
 endmodule
 `endcelldefine
