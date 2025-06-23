@@ -416,14 +416,10 @@ if {[info exists PDK_ROOT]} {
   set SG13G2_MODELS_XYCE ${PDK_ROOT}/${PDK}/libs.tech/xyce/models
   puts stderr "SG13G2_MODELS: $SG13G2_MODELS"
   puts stderr "SG13G2_MODELS_XYCE: $SG13G2_MODELS_XYCE"
-  #puts stderr "SKYWATER_STDCELLS: $SG13G2_STDCELLS"
 }
 
 
-# open_pdks specific:
-# Set variables after ${PDK_ROOT} is known
 # This overrides some of the variables set above.
-
 set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/start_page.sch
 append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
 
@@ -432,18 +428,10 @@ if { [info exists ::env(XSCHEM_USER_LIBRARY_PATH) ] } {
     append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
 }
 
-
-# Source the PDK xschemrc file
+# Source auxiliary xschem files
 if {[info exists PDK_ROOT]} {
   if {[info exists env(PDK)]} {
     source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-drc
-  }
-}
-
-
-# Source the PDK xschemrc file
-if {[info exists PDK_ROOT]} {
-  if {[info exists env(PDK)]} {
     source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-menu
   }
 }
