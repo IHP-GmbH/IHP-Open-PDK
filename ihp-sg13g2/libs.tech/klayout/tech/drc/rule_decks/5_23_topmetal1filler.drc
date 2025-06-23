@@ -17,6 +17,11 @@
 #=========================================================================================
 
 if BEOL
+
+  # Run mode
+  setup_run_mode('tiling')
+  logger.info('Tiling mode is enabled for TopMetal1:filler table.')
+
   #================================================
   #----------------- 5.23 TopMetal1:filler --------
   #================================================
@@ -26,8 +31,11 @@ if BEOL
   # Rule TM1Fil.c : Min. TopMetal1:filler space to TopMetal1 is 3 um
   logger.info('Executing rule TM1Fil.c')
   tm1fil_c_value = drc_rules["TM1Fil_c"].to_f
-  tm1fil_c = topmetal1_filler.sep(topmetal1_drw , tm1fil_c_value.um ,euclidian)
+  tm1fil_c = topmetal1_drw.sep(topmetal1_filler, tm1fil_c_value.um ,euclidian)
   tm1fil_c.output('TM1Fil.c', "5.23. TM1Fil.c : Min. TopMetal1:filler space to TopMetal1 is #{tm1fil_c_value} um")
   tm1fil_c.forget
 
+  # Run mode
+  setup_run_mode($run_mode)
+  logger.info("#{$run_mode} mode is enabled after TopMetal1:filler table.")
 end

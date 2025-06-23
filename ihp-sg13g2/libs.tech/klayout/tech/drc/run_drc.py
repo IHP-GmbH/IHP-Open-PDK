@@ -390,6 +390,7 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
         raise FileNotFoundError("DRC JSON not found in user or fallback paths.")
 
     # Optional switches
+    switches["run_mode"] = arguments.run_mode if arguments.run_mode else "deep"
     switches["MaxRuleSet"] = "true" if arguments.MaxRuleSet else "false"
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
@@ -533,7 +534,7 @@ def run_check(
     new_sws.update({
         "report": report_path,
         "log": log_path,
-        "run_mode": sws.get("run_mode", "deep"),  # default fallback
+        "run_mode": sws["run_mode"]
     })
 
     sws_str = build_switches_string(new_sws)

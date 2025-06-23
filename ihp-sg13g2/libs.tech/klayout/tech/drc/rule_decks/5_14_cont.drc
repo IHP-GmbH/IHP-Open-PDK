@@ -28,12 +28,8 @@ if FEOL
   # Rule Cnt.a: Min. and max. Cont width is 0.16µm
   logger.info('Executing rule Cnt.a')
   cnt_a_value = drc_rules["Cnt_a"].to_f
-  cnta_l1 = cont_sq.without_bbox_min(cnt_a_value.um)
-  cnta_l2 = cont_sq.without_bbox_max(cnt_a_value.um)
-  cnta_l = cnta_l1.join(cnta_l2)
+  cnta_l = cont_sq.without_bbox_width(cnt_a_value.um)
   cnta_l.output('Cnt.a', "5.14. Cnt.a : Min. and max. Cont width: #{cnt_a_value} µm")
-  cnta_l1.forget
-  cnta_l2.forget
   cnta_l.forget
 
   # Rule Cnt.b: Min. Cont space is 0.18µm

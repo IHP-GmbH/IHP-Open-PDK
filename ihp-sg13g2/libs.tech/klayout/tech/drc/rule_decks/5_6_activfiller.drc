@@ -17,6 +17,11 @@
 #=========================================================================================
 
 if FEOL
+
+  # Run mode
+  setup_run_mode('tiling')
+  logger.info('Tiling mode is enabled for Activ:filler table.')
+
   #================================================
   #------------------ 5.6 Activ:filler ------------
   #================================================
@@ -25,11 +30,14 @@ if FEOL
 
   # Activ:filler derivations
 
-    # Rule AFil.c1: Min. Activ:filler space to Activ is 0.42 um
-    logger.info('Executing rule AFil.c1')
-    afil_c1_value = drc_rules["AFil_c1"].to_f
-    afil_c1 = activ_filler.sep(activ_drw, afil_c1_value.um, euclidian)
-    afil_c1.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
-    afil_c1.forget
+  # Rule AFil.c1: Min. Activ:filler space to Activ is 0.42 um
+  logger.info('Executing rule AFil.c1')
+  afil_c1_value = drc_rules["AFil_c1"].to_f
+  afil_c1 = activ_drw.sep(activ_filler, afil_c1_value.um, euclidian)
+  afil_c1.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
+  afil_c1.forget
 
+  # Run mode
+  setup_run_mode($run_mode)
+  logger.info("#{$run_mode} mode is enabled after Activ:filler table.")
 end
