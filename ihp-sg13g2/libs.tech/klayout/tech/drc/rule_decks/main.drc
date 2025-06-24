@@ -121,7 +121,7 @@ def setup_run_mode(run_mode)
   case run_mode
   when 'tiling'
     tiles(500.um)
-    tile_borders(10.um)
+    tile_borders(30.um)
   when 'flat'
     flat
   else
@@ -219,11 +219,16 @@ drc_rules = get_drc_values(logger)
 
 # === LAYOUT EXTENT ===
 CHIP = extent.sized(0.0)
+chip_area = CHIP.area
 chip_bbox = CHIP.bbox
 chip_w = chip_bbox.width
 chip_l = chip_bbox.height
-logger.info("Total area of the design is #{CHIP.area} um^2.")
+
+logger.info("Total area of the design is #{chip_area} um^2.")
 logger.info("The design dimensions are #{chip_w} µm * #{chip_l} µm.")
+
+# Enable tiling if chip area exceeds 100,000 µm²
+en_tiles = chip_area > 1000_000.um2
 
 # === General Derivations ===
 logger.info('Starting general IHP-SG13G2 derivations.')

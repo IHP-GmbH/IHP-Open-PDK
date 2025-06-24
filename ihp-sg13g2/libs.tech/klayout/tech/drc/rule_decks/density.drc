@@ -103,23 +103,9 @@ end
 threads($thr.to_i)
 logger.info("Klayout will use #{$thr} thread(s)")
 
-# === TILING MODE ===
-case $run_mode
-## Tiling mode is for testing purpose only [Not used in run_drc.py]
-when 'tiling'
-  tiles(500.um)
-  tile_borders(10.um)
-  logger.info('Tiling  mode is enabled.')
-
-when 'deep'
-  #=== HIER MODE ===
-  deep
-  logger.info('deep  mode is enabled for density table')
-else
-  #=== FLAT MODE ===
-  flat
-  logger.info('flat  mode is enabled for density table')
-end
+# Enable deep mode for reading layers and processing general derivations
+deep
+logger.info('Deep mode enabled: reading layers and preparing general derivations.')
 
 # MinRuleSet
 MaxRuleSet = bool_check?($MaxRuleSet)
@@ -129,7 +115,121 @@ logger.info("Maximum rule set enabled:  #{MaxRuleSet}")
 #------------- LAYERS DEFINITIONS ---------------
 #================================================
 
-# %include layers_def.drc
+polygons_count = 0
+logger.info('Read in polygons from layers.')
+
+def get_polygons(layer, data_type)
+  ps = polygons(layer, data_type)
+  $run_mode == 'deep' ? ps : ps.merged
+end
+
+activ_drw = get_polygons(1, 0)
+count = activ_drw.count
+logger.info("activ_drw has #{count} polygons")
+
+activ_mask = get_polygons(1, 20)
+count = activ_mask.count
+logger.info("activ_mask has #{count} polygons")
+
+activ_filler = get_polygons(1, 22)
+count = activ_filler.count
+logger.info("activ_filler has #{count} polygons")
+
+gatpoly_drw = get_polygons(5, 0)
+count = gatpoly_drw.count
+logger.info("gatpoly_drw has #{count} polygons")
+
+gatpoly_filler = get_polygons(5, 22)
+count = gatpoly_filler.count
+logger.info("gatpoly_filler has #{count} polygons")
+
+metal1_drw = get_polygons(8, 0)
+count = metal1_drw.count
+logger.info("metal1_drw has #{count} polygons")
+
+metal1_filler = get_polygons(8, 22)
+count = metal1_filler.count
+logger.info("metal1_filler has #{count} polygons")
+
+metal1_slit = get_polygons(8, 24)
+count = metal1_slit.count
+logger.info("metal1_slit has #{count} polygons")
+
+metal2_drw = get_polygons(10, 0)
+count = metal2_drw.count
+logger.info("metal2_drw has #{count} polygons")
+
+metal2_filler = get_polygons(10, 22)
+count = metal2_filler.count
+logger.info("metal2_filler has #{count} polygons")
+
+metal2_slit = get_polygons(10, 24)
+count = metal2_slit.count
+logger.info("metal2_slit has #{count} polygons")
+
+metal3_drw = get_polygons(30, 0)
+count = metal3_drw.count
+logger.info("metal3_drw has #{count} polygons")
+
+metal3_filler = get_polygons(30, 22)
+count = metal3_filler.count
+logger.info("metal3_filler has #{count} polygons")
+
+metal3_slit = get_polygons(30, 24)
+count = metal3_slit.count
+logger.info("metal3_slit has #{count} polygons")
+
+metal4_drw = get_polygons(50, 0)
+count = metal4_drw.count
+logger.info("metal4_drw has #{count} polygons")
+
+metal4_filler = get_polygons(50, 22)
+count = metal4_filler.count
+logger.info("metal4_filler has #{count} polygons")
+
+metal4_slit = get_polygons(50, 24)
+count = metal4_slit.count
+logger.info("metal4_slit has #{count} polygons")
+
+metal5_drw = get_polygons(67, 0)
+count = metal5_drw.count
+logger.info("metal5_drw has #{count} polygons")
+
+metal5_filler = get_polygons(67, 22)
+count = metal5_filler.count
+logger.info("metal5_filler has #{count} polygons")
+
+metal5_slit = get_polygons(67, 24)
+count = metal5_slit.count
+logger.info("metal5_slit has #{count} polygons")
+
+topmetal1_drw = get_polygons(126, 0)
+count = topmetal1_drw.count
+logger.info("topmetal1_drw has #{count} polygons")
+
+topmetal1_filler = get_polygons(126, 22)
+count = topmetal1_filler.count
+logger.info("topmetal1_filler has #{count} polygons")
+
+topmetal1_slit = get_polygons(126, 24)
+count = topmetal1_slit.count
+logger.info("topmetal1_slit has #{count} polygons")
+
+topmetal2_drw = get_polygons(134, 0)
+count = topmetal2_drw.count
+logger.info("topmetal2_drw has #{count} polygons")
+
+topmetal2_filler = get_polygons(134, 22)
+count = topmetal2_filler.count
+logger.info("topmetal2_filler has #{count} polygons")
+
+topmetal2_slit = get_polygons(134, 24)
+count = topmetal2_slit.count
+logger.info("topmetal2_slit has #{count} polygons")
+
+lbe_drw = get_polygons(157, 0)
+count = lbe_drw.count
+logger.info("lbe_drw has #{count} polygons")
 
 #================================================
 # -------------------- UTILS --------------------
@@ -186,6 +286,8 @@ tiles_boundary = tile_boundary(CHIP)
 chip_bbox = CHIP.bbox
 
 # Density derivations
+logger.info('Starting density IHP-SG13G2 derivations.')
+
 activ = activ_drw.join(activ_filler).join(activ_mask)
 poly = gatpoly_drw.join(gatpoly_filler)
 metal1 = metal1_drw.join(metal1_filler).not(metal1_slit)
@@ -196,16 +298,50 @@ metal5 = metal5_drw.join(metal5_filler).not(metal5_slit)
 topmetal1 = topmetal1_drw.join(topmetal1_filler).not(topmetal1_slit)
 topmetal2 = topmetal2_drw.join(topmetal2_filler).not(topmetal2_slit)
 
+# Forget unused layers to free memory
+activ_drw.forget
+activ_filler.forget
+activ_mask.forget
+gatpoly_drw.forget
+gatpoly_filler.forget
+metal1_drw.forget
+metal1_filler.forget
+metal1_slit.forget
+metal2_drw.forget
+metal2_filler.forget
+metal2_slit.forget
+metal3_drw.forget
+metal3_filler.forget
+metal3_slit.forget
+metal4_drw.forget
+metal4_filler.forget
+metal4_slit.forget
+metal5_drw.forget
+metal5_filler.forget
+metal5_slit.forget
+topmetal1_drw.forget
+topmetal1_filler.forget
+topmetal1_slit.forget
+topmetal2_drw.forget
+topmetal2_filler.forget
+topmetal2_slit.forget
+
 #===================================================================================
 # --------------------------------- DENSITY RUNSET ---------------------------------
 #===================================================================================
 
 logger.info('Starting IHP-SG13G2 DENSITY DRC rules.')
 
+# Enable tiling mode for rule execution
+tiles(500.um)
+tile_borders(nil)
+logger.info('Tiling mode enabled: executing rules with chip tiling applied.')
+
 #===================================================
 # --------------------- ActFil ---------------------
 #===================================================
 
+logger.info('Computing activ area and density...')
 act_area = activ.area
 act_dens_ratio = act_area / chip_area
 
@@ -261,11 +397,13 @@ afilg3_max = activ.with_density(afil_g3_val..1.0,
 afilg3_max.output('AFil.g3',
                   "5.6. AFil.g3: Max. Activ coverage ratio for any any #{afil_g_w} x #{afil_g_w} µm2 chip area [%]: #{afil_g3_val * 100}.")
 afilg3_max.forget
+activ.forget
 
 #==================================================
 # -------------------- GatPoly --------------------
 #==================================================
 
+logger.info('Computing poly area and density...')
 poly_area = poly.area
 poly_dens_ratio = poly_area / chip_area
 
@@ -276,11 +414,13 @@ if poly_dens_ratio < gfil_g_val
   CHIP.output('GFil.g',
               "5.9. GFil.g: Min. global GatPoly density [%]: #{gfil_g_val * 100}.")
 end
+poly.forget
 
 #=================================================
 # -------------------- Metal1 --------------------
 #=================================================
 
+logger.info('Computing metal1 area and density...')
 m1_area = metal1.area
 m1_dens_ratio = m1_area / chip_area
 
@@ -305,25 +445,26 @@ end
 # -------------------- Metaln --------------------
 #=================================================
 
+logger.info('Computing metal2 area and density...')
 m2_area = metal2.area
-m3_area = metal3.area
-m4_area = metal4.area
-m5_area = metal5.area
 m2_dens_ratio = m2_area / chip_area
+logger.info('Computing metal3 area and density...')
+m3_area = metal3.area
 m3_dens_ratio = m3_area / chip_area
+logger.info('Computing metal4 area and density...')
+m4_area = metal4.area
 m4_dens_ratio = m4_area / chip_area
+logger.info('Computing metal5 area and density...')
+m5_area = metal5.area
 m5_dens_ratio = m5_area / chip_area
 
-mets_lay = [metal2, metal3, metal4, metal5]
 dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio, m5_dens_ratio]
-
 metal_start_index = 2
 mn_j_val = drc_rules['Mn_j'].to_f
 mn_k_val = drc_rules['Mn_k'].to_f
 
-mets_lay.each_with_index do |met_lay, index|
+dens_ratios.each_with_index do |ratio, index|
   met_no = index + metal_start_index
-  ratio = dens_ratios[index]
 
   # Rule Mn.j: Min. global Metaln density [%]= 35.0.
   logger.info("Executing rule M#{met_no}.j")
@@ -387,10 +528,17 @@ mets_lay.each_with_index do |met_lay, index|
                    "5.6. M#{metalfiller_no}Fil.k: Max. Activ coverage ratio for any #{mfil_h_w} x #{mfil_h_w} µm2 chip area [%]: #{mfil_k_val * 100}.")
   mfilk_max.forget
 end
+metal1.forget
+metal2.forget
+metal3.forget
+metal4.forget
+metal5.forget
 
 #================================================
 # ------------------ TopMetal1 ------------------
 #================================================
+
+logger.info('Computing TopMetal1 area and density...')
 
 tm1_area = topmetal1.area
 tm1_dens_ratio = tm1_area / chip_area
@@ -408,10 +556,13 @@ tm1_d_val = drc_rules['TM1_d'].to_f
 if tm1_dens_ratio > tm1_d_val
   CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}")
 end
+topmetal1.forget
 
 #================================================
 # ------------------ TopMetal2 ------------------
 #================================================
+
+logger.info('Computing TopMetal2 area and density...')
 
 tm2_area = topmetal2.area
 tm2_dens_ratio = tm2_area / chip_area
@@ -429,10 +580,13 @@ tm2_d_val = drc_rules['TM2_d'].to_f
 if tm2_dens_ratio > tm2_d_val
   CHIP.output('TM2.d', "5.22. TM2.d: Max. global TopMetal2 density [%]: #{tm2_d_val * 100}.")
 end
+topmetal2.forget
 
 #================================================
 # --------------------- LBE ---------------------
 #================================================
+
+logger.info('Computing LBE area and density...')
 
 lbe_area = lbe_drw.area
 lbe_dens_ratio = lbe_area / chip_area
@@ -444,6 +598,7 @@ if lbe_dens_ratio > lbe_i_val
   CHIP.output('LBE.i',
               "5.22. LBE.i: Max. global LBE density [%]: #{lbe_i_val * 100}.")
 end
+lbe_drw.forget
 
 #================================================
 # ---------------- Metal Slits ------------------

@@ -17,11 +17,6 @@
 #=========================================================================================
 
 if FEOL
-
-  # Run mode
-  setup_run_mode('tiling')
-  logger.info('Tiling mode is enabled for GatPoly:filler table.')
-
   #================================================
   #----------------- 5.9 GatPoly:filler -----------
   #================================================
@@ -29,17 +24,26 @@ if FEOL
   logger.info('Starting 5.9 GatPoly:filler')
 
   # GatPoly filler derivations
+  gfil_d_g = activ_drw.join(gatpoly_drw).join(cont_drw).join(psd_drw).join(nsd_block).join(salblock_drw)
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for GatPoly:filler table.')
+  end
 
   # Rule GFil.d: Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is 1.1 um
   logger.info('Executing rule GFil.d')
   gfil_d_value = drc_rules["GFil_d"].to_f
-  gfil_d_g = activ_drw.join(gatpoly_drw).join(cont_drw).join(psd_drw).join(nsd_block).join(salblock_drw)
   gfil_d = gfil_d_g.sep(gatpoly_filler, gfil_d_value.um, euclidian)
   gfil_d.output('GFil.d', "5.9. GFil.d : Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is #{gfil_d_value} um")
   gfil_d_g.forget
   gfil_d.forget
 
-  # Run mode
-  setup_run_mode($run_mode)
-  logger.info("#{$run_mode} mode is enabled after GatPoly:filler table.")
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after GatPoly:filler table.")
+  end
 end
