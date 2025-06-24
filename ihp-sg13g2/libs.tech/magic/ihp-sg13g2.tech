@@ -29,7 +29,7 @@ end
 version
  version 0.2.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.508
+ requires magic-8.3.524
 end
 
 #------------------------------------------------------------------------
@@ -546,6 +546,10 @@ compose
   paint  sealv4	 m4	sealv4
   paint  sealv5	 m5	sealv5
   paint  sealv6	 m6	sealv6
+
+  # To preserve keep-out areas for pattern fill,
+  # do not allow comment to overwrite fillblock.
+  paint  fillblock comment fillblock
 end
 
 #-----------------------------------------------------
@@ -700,8 +704,8 @@ style gdsii
 # DIFF (Fill)
 #----------------------------------------------------------------
 
- layer DIFFFILL	difffill
-	labels	difffill
+ layer DIFFFILL	difffill,fillfet
+	labels	difffill,fillfet
 	calma	1 22
 
 # Identify a varactor area, which generates its own thick oxide mask
@@ -857,6 +861,7 @@ style gdsii
  layer EDGESEAL seal
 	grow 7375
 	and DIFF
+	calma 39 0
 
 #----------------------------------------------------------------
 # POLY (GatPoly)
@@ -869,8 +874,8 @@ style gdsii
 	labels  allpolynonres port
 	calma	5 2
 
- layer POLYFILL	polyfill
-	labels 	polyfill
+ layer POLYFILL	polyfill,fillfet
+	labels 	polyfill,fillfet
 	calma	5 22
 
 #----------------------------------------------------------------
@@ -1725,23 +1730,23 @@ style density
  options calma-permissive-labels
  gridlimit 5
 
- templayer diff_all alldiff,difffill
+ templayer diff_all alldiff,difffill,fillfet,sealcont
 
- templayer poly_all allpoly,polyfill
+ templayer poly_all allpoly,polyfill,fillfet
 
- templayer m1_all allm1,m1fill,diffprobe
+ templayer m1_all allm1,m1fill,diffprobe,sealcont,sealv1
 
- templayer m2_all allm2,m2fill
+ templayer m2_all allm2,m2fill,sealv1,sealv2
 
- templayer m3_all allm3,m3fill
+ templayer m3_all allm3,m3fill,sealv2,sealv3
 
- templayer m4_all allm4,m4fill
+ templayer m4_all allm4,m4fill,sealv3,sealv4
 
- templayer m5_all allm5,m5fill
+ templayer m5_all allm5,m5fill,sealv4,sealv5
 
- templayer m6_all allm6,m6fill
+ templayer m6_all allm6,m6fill,sealv5,sealv6
 
- templayer m7_all allm7,m7fill
+ templayer m7_all allm7,m7fill,sealv6,pillar,solder
 
 #----------------------------------------------------------------
 style patternfill variants (),(tiled)
@@ -1776,26 +1781,47 @@ style patternfill variants (),(tiled)
 	 # Each tile imposes the full keepout distance rule of
 	 # 3um on all sides.
 	 shrink 1500
+	 # This fills out the square where comment collides
+	 # with fillblock because they are on the same plane.
+	 maxrect external
 
  variants *
 
 #----------------------------------------------------------------
 # Generate guard-band around nwells to keep DIFF from crossing
-# Spacing from nwell = AFil.d = 1um
-# Enclosure by nwell = AFil.d = 1um
+# Spacing from nwell = AFil.d = 1.0um, GFil.e = 1.1um
+# Enclosure by nwell = AFil.d = 1.0um, GFil.e = 1.1um
+#
+# The well guardband is used for both poly and diff fill, and
+# since it is costly to differentiate between the two, the
+# simplest solution is to use the poly distance rule (1.1um)
+# for both.
 #----------------------------------------------------------------
 
  templayer	well_shrink nwell,dnwell
-	shrink  1000
+	shrink  1100
 
  templayer	well_guardband nwell,dnwell
-	grow	1000
+	grow	1100
 	and-not	well_shrink
 
  # Generate area of TRANS for diffusion fill keep-out 
  templayer trans
 	bloat-all gec,nec,hvnec nemitter,hvnemitter,*ndiff,space/a 3430
 	shrink 200
+
+ # Precompute diffusion and pSD for poly:fill keep-out areas,
+ # because it is compute-intensive and is used multiple times
+
+ templayer obstruct_diff_psd hvpfet
+	grow 100
+	or pfet
+	grow 120
+	or allpactivetap
+	grow 150
+	or allpactivenontap
+	grow 30
+	or alldiff,difffill,allcont
 
 #------------------------------------------------------------------------
 # Diffusion filler keep-out areas
@@ -1813,88 +1839,101 @@ style patternfill variants (),(tiled)
 	or	trans
 	grow	580
 	or	alldiff,difffill,obsactive
+
+ templayer      obstruct_poly obstruct_diff_psd
+	grow	100
+	or	trans
+	grow	580
+	or	allpoly,polyfill,obspoly
+
+ templayer	obstruct_diffpoly obstruct_diff,obstruct_poly
 	grow	420
 	or	well_guardband
 
-#------------------------------------------------------------------------
-# Poly filler keep-out areas determined by diffusion obstruction areas.
-# Spacing to diffusion, poly, contact: 1.1um (GFil.d)
-# Spacing to nwell, dnwell:  1.1um (GFil.e)
-# Spacing to TRANS: 1.1um (GFil.f)
-#------------------------------------------------------------------------
-
- templayer      obstruct_poly 	alldiff,allpoly,difffill,polyfill,obsactive
-	or	trans
-	grow	1000
-	or	well_guardband
-	grow	100
-
 #---------------------------------------------------
 # DIFF and POLY fill
-# Done in three passes at sizes 4600, 2000, and 1000
-# on diffusion.  Poly overlaps diffusion with
-# extensions, lengths 5000, 2400, and 1400; and
-# widths 4300, 1700, and 700
+# Done in three passes at sizes 5000x4600, 2400x2000,
+# and 1000x1100 on diffusion.  Poly overlaps diffusion
+# with extensions, with sizes 5000x3000, 2400x1400,
+# and 1400x700
 #---------------------------------------------------
 
- templayer	difffill_coarse topbox
-        slots   0 4600 820 0 5000 420 1360 0
-        and-not obstruct_diff
+ templayer	diffpolyfill_coarse topbox
+        slots   0 5000 2000 0 5000 2000 1360 0
+        and-not obstruct_diffpoly
 	and	topbox
         shrink  2295
         grow    2295
 
- templayer	polyfill_coarse topbox
-	slots	0 5000 420 0 3000 2420 1560 1000
-        and-not obstruct_diff
-	and	topbox
-        shrink  2495
-        grow    2495
+ templayer	difffill_coarse diffpolyfill_coarse
+	slots	200 4600 1000 0 5000 1000 0 0
+
+ templayer	polyfill_coarse diffpolyfill_coarse
+	slots	0 5000 1000 1000 3000 1000 0 0
 
  templayer      obstruct_diff_medium allpoly,polyfill,allcont
+	or	polyfill_coarse
 	grow	100
 	or	trans
 	grow	580
 	or	alldiff,difffill,obsactive,difffill_coarse
+
+ templayer      obstruct_poly_medium obstruct_diff_psd
+	or	difffill_coarse
+	grow	100
+	or	trans
+	grow	580
+	or	allpoly,polyfill,obspoly,polyfill_coarse
+
+ templayer      obstruct_diffpoly_medium obstruct_diff_medium,obstruct_poly_medium
 	grow	420
 	or	well_guardband
 
- templayer	difffill_medium topbox
-        slots   0 2000 820 0 2000 420 750 0
-        and-not obstruct_diff_medium
+ templayer	diffpolyfill_medium topbox
+        slots   0 2400 1200 0 2400 1200 750 0
+        and-not obstruct_diffpoly_medium
 	and	topbox
-        shrink  995
-        grow    995
+        shrink  1195
+        grow    1195
 
- templayer	polyfill_medium topbox
-	slots	0 2400 420 0 1000 1420 550 500
-        and-not obstruct_diff
-	and	topbox
-        shrink  995
-        grow    995
+ templayer	difffill_medium diffpolyfill_medium
+	slots	200 2000 1000 0 2400 1000 0 0
+
+ templayer	polyfill_medium diffpolyfill_medium
+	slots	0 2400 1000 500 1400 1000 0 0
 
  templayer      obstruct_diff_fine allpoly,polyfill,allcont
+	or	polyfill_coarse,polyfill_medium
 	grow	100
 	or	trans
 	grow	580
 	or	alldiff,difffill,obsactive
 	or	difffill_coarse,difffill_medium
+
+ templayer      obstruct_poly_fine obstruct_diff_psd
+	or	difffill_coarse,difffill_medium
+	grow	100
+	or	trans
+	grow	580
+	or	allpoly,polyfill,obspoly
+	or	polyfill_coarse,polyfill_medium
+
+ templayer      obstruct_diffpoly_fine obstruct_diff_fine,obstruct_poly_fine
 	grow	420
 	or	well_guardband
 
- templayer	difffill_fine topbox
-        slots   0 1000 820 0 1000 420 360 0
-        and-not obstruct_diff_fine
+ templayer	diffpolyfill_fine topbox
+        slots   0 1400 1200 0 1100 1200 360 0
+        and-not obstruct_diffpoly_fine
 	and	topbox
-        shrink  495
-        grow    495
+        shrink  545
+        grow    545
 
- templayer	polyfill_fine topbox
-	slots	0 1400 420 0 700 720 160 150
-        and-not obstruct_diff
-	and	topbox
-        shrink  995
-        grow    995
+ templayer	difffill_fine diffpolyfill_fine
+	slots	200 1000 1000 0 1100 1000 0 0
+
+ templayer	polyfill_fine diffpolyfill_fine
+	slots	0 1400 1000 200 700 1000 0 0
 
 #---------------------------------------------------
  layer  DIFFFILL difffill_coarse
@@ -1917,19 +1956,21 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m1 trans,pad
+ templayer	obstruct_m1 trans,pad,seal
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
         grow    420
 
  templayer	met1fill_coarse topbox
-        slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 1500 500
         and-not obstruct_m1
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
- templayer      obstruct_m1_medium trans,pad
+ templayer      obstruct_m1_medium trans,pad,seal
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse
@@ -1939,21 +1980,23 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m1_medium
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  995
+        grow    995
 
- templayer      obstruct_m1_fine trans,pad
+ templayer      obstruct_m1_fine trans,pad,seal
 	grow	580
 	or	allm1,obsm1,m1fill,fillblock
 	or	met1fill_coarse,met1fill_medium
         grow    420
 
  templayer	met1fill_fine topbox
-        slots   0 1000 420 0 1000 420 300 0
+        slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m1_fine
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  595
+        grow    595
 
  layer	MET1FILL met1fill_coarse
 	or	met1fill_medium
@@ -1965,19 +2008,22 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m2 trans,pad
+ templayer	obstruct_m2 trans,pad,seal
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
         grow    420
 
  templayer	met2fill_coarse topbox
-        slots   0 5000 420 0 5000 420 1700 850
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 2500 1500
         and-not obstruct_m2
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
- templayer      obstruct_m2_medium trans,pad
+ templayer      obstruct_m2_medium trans,pad,seal
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse
@@ -1987,21 +2033,23 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m2_medium
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  995
+        grow    995
 
- templayer      obstruct_m2_fine trans,pad
+ templayer      obstruct_m2_fine trans,pad,seal
 	grow	580
 	or	allm2,obsm2,m2fill,fillblock
 	or	met2fill_coarse,met2fill_medium
         grow    420
 
  templayer	met2fill_fine topbox
-        slots   0 1000 420 0 1000 420 300 0
+        slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m2_fine
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  595
+        grow    595
 
  layer	MET2FILL met2fill_coarse
 	or met2fill_medium
@@ -2013,19 +2061,22 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m3 trans,pad
+ templayer	obstruct_m3 trans,pad,seal
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
         grow    420
 
  templayer	met3fill_coarse topbox
-        slots   0 5000 420 0 5000 420 1700 850
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 3500 2500
         and-not obstruct_m3
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
- templayer      obstruct_m3_medium trans,pad
+ templayer      obstruct_m3_medium trans,pad,seal
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse
@@ -2035,21 +2086,23 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m3_medium
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  995
+        grow    995
 
- templayer      obstruct_m3_fine trans,pad
+ templayer      obstruct_m3_fine trans,pad,seal
 	grow	580
 	or	allm3,obsm3,m3fill,fillblock
 	or	met3fill_coarse,met3fill_medium
         grow    420
 
  templayer	met3fill_fine topbox
-        slots   0 1000 420 0 1000 420 300 0
+        slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m3_fine
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  595
+        grow    595
 
  layer	MET3FILL met3fill_coarse
 	or	met3fill_medium
@@ -2061,19 +2114,22 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m4 trans,pad
+ templayer	obstruct_m4 trans,pad,seal
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
         grow    420
 
  templayer	met4fill_coarse topbox
-        slots   0 5000 420 0 5000 420 1700 850
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 4500 3500
         and-not obstruct_m4
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
- templayer      obstruct_m4_medium trans,pad
+ templayer      obstruct_m4_medium trans,pad,seal
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
 	or	met4fill_coarse
@@ -2083,21 +2139,23 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m4_medium
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  995
+        grow    995
 
- templayer      obstruct_m4_fine trans,pad
+ templayer      obstruct_m4_fine trans,pad,seal
 	grow	580
 	or	allm4,obsm4,m4fill,fillblock
 	or	met4fill_coarse,met4fill_medium
         grow    420
 
  templayer	met4fill_fine topbox
-        slots   0 1000 420 0 1000 420 300 0
+        slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m4_fine
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  595
+        grow    595
 
  layer	MET4FILL met4fill_coarse
 	or	met4fill_medium
@@ -2109,19 +2167,22 @@ style patternfill variants (),(tiled)
 # Three passes in sizes 5000, 2000, and 1000
 #---------------------------------------------------
 
- templayer	obstruct_m5 trans,pad
+ templayer	obstruct_m5 trans,pad,seal
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
         grow    420
 
  templayer	met5fill_coarse topbox
-        slots   0 5000 420 0 5000 420 1700 850
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 500 4500
         and-not obstruct_m5
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
- templayer      obstruct_m5_medium trans,pad
+ templayer      obstruct_m5_medium trans,pad,seal
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
 	or	met5fill_coarse
@@ -2131,21 +2192,23 @@ style patternfill variants (),(tiled)
         slots   0 2000 420 0 2000 420 650 320
         and-not obstruct_m5_medium
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  995
+        grow    995
 
- templayer      obstruct_m5_fine trans,pad
+ templayer      obstruct_m5_fine trans,pad,seal
 	grow	580
 	or	allm5,obsm5,m5fill,fillblock
 	or	met5fill_coarse,met5fill_medium
         grow    420
 
  templayer	met5fill_fine topbox
-        slots   0 1000 420 0 1000 420 300 0
+        slots   0 1200 420 0 1200 420 300 0
         and-not obstruct_m5_fine
 	and	topbox
-        shrink  495
-        grow    495
+	orthogonal
+        shrink  595
+        grow    595
 
  layer	MET5FILL met5fill_coarse
 	or	met5fill_medium
@@ -2159,19 +2222,20 @@ style patternfill variants (),(tiled)
 # Also:  Prohibiting metal6 fill under pads.
 # Two passes in sizes 10000, 5000
 #---------------------------------------------------
- templayer	obstruct_m6 trans,pad,solder,pillar
+ templayer	obstruct_m6 trans,pad,seal,solder,pillar
 	grow	1900
 	or	allm6,obsm6,m6fill,fillblock
         grow    3000
 
  templayer	met6fill_coarse topbox
-        slots   0 10000 3000 0 10000 3000 3000 1500
+        slots   0 10000 4000 0 10000 4000 2500 3500
         and-not obstruct_m6
 	and	topbox
+	orthogonal
         shrink  4995
         grow    4995
 
- templayer      obstruct_m6_medium trans,pad,solder,pillar
+ templayer      obstruct_m6_medium trans,pad,seal,solder,pillar
 	grow	1900
 	or	allm6,obsm6,m6fill,fillblock
 	or	met6fill_coarse
@@ -2181,6 +2245,7 @@ style patternfill variants (),(tiled)
         slots   0 5000 3000 0 5000 3000 1000 500
         and-not obstruct_m6_medium
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
 
@@ -2194,19 +2259,20 @@ style patternfill variants (),(tiled)
 # Space to TRANS: 4.9 (TM2Fil.d)
 # Two passes in sizes 10000, 5000
 #---------------------------------------------------
- templayer	obstruct_m7 trans,pad,solder,pillar
+ templayer	obstruct_m7 trans,pad,seal,solder,pillar
 	grow	1900
 	or	allm7,obsm7,m7fill,fillblock
         grow    3000
 
  templayer	met7fill_coarse topbox
-        slots   0 10000 3000 0 10000 3000 3000 1500
+        slots   0 10000 4000 0 10000 4000 4500 1500
         and-not obstruct_m7
 	and	topbox
+	orthogonal
         shrink  4995
         grow    4995
 
- templayer      obstruct_m7_medium trans,pad,solder,pillar
+ templayer      obstruct_m7_medium trans,pad,seal,solder,pillar
 	grow	1900
 	or	allm7,obsm7,m7fill,fillblock
 	or	met7fill_coarse
@@ -2216,9 +2282,9 @@ style patternfill variants (),(tiled)
         slots   0 5000 3000 0 5000 3000 1000 500
         and-not obstruct_m7_medium
 	and	topbox
+	orthogonal
         shrink  2495
         grow    2495
-
 
  layer	MET7FILL met7fill_coarse
 	or	met7fill_medium
@@ -3771,9 +3837,13 @@ drc
  # To do:  add spacing requirements to devices with P+, N+-block, and SBLK
  spacing polyfill,fillfet alldiff,*poly,obspoly 1100 touching_illegal \
 	"Poly fill spacing to Poly and Diffusion < %d (GFil.d)"
- spacing polyfill,fillfet nwell 1100 touching_illegal \
+ spacing polyfill,fillfet nwell 1100 surround_ok \
 	"Poly fill spacing to Nwell < %d (GFil.e)"
- spacing polyfill,fillfet dnwell 1100 touching_illegal \
+ spacing polyfill,fillfet dnwell 1100 surround_ok \
+	"Poly fill spacing to Deep nwell < %d (GFil.e)"
+ surround polyfill,fillfet nwell 1100 absence_ok \
+	"Poly fill spacing to Nwell < %d (GFil.e)"
+ surround polyfill,fillfet dnwell 1100 absence_ok \
 	"Poly fill spacing to Deep nwell < %d (GFil.e)"
  spacing polyfill  npn,pnp 1100 touching_illegal \
 	"Poly fill spacing to bipolar transistor < %d (GFil.f)"

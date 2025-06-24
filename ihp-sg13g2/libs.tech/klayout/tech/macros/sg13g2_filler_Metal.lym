@@ -111,70 +111,207 @@
 	LBE = source.input("157/0")
 	NoMetFiller = source.input("160/0")
 
+
+	# Create a line edit widget
+	#
+	# text - The default text for the line edit
+	#
+	# Returns a QCheckBox instance
+	def self.create_input_field(text)
+		line_edit = RBA::QLineEdit.new()
+		line_edit.setText(text)
+		line_edit
+	end
+
+	# Create buttons for the distance dialog
+	#
+	# dialog - The distances dialog
+	#
+	# Returns a QWidget instance containing the buttons
+	def self.create_buttons(dialog)
+		container = RBA::QWidget.new
+		layout = RBA::QHBoxLayout.new(container)
+
+		ok_button = RBA::QPushButton.new('OK')
+		ok_button.clicked.connect(Proc.new { dialog.accept })
+		cancel_button = RBA::QPushButton.new('Cancel')
+		cancel_button.clicked.connect(Proc.new { dialog.reject })
+
+		layout.addWidget(ok_button)
+		layout.addWidget(cancel_button)
+
+		container
+	end
+
+	# Create dialog to select custom distances between Mx filler
+	#
+	# defaults - Default distances to add to the input fields
+	def self.create_options_dialog(defaults)
+		dialog = RBA::QDialog.new
+		dialog.windowTitle = "Metal Fill Distances"
+		layout = RBA::QFormLayout.new(dialog)
+
+		layout.addRow('M1 Distance', create_input_field(defaults['distance_m1']))
+		layout.addRow('M2 Distance', create_input_field(defaults['distance_m2']))
+		layout.addRow('M3 Distance', create_input_field(defaults['distance_m3']))
+		layout.addRow('M4 Distance', create_input_field(defaults['distance_m4']))
+		layout.addRow('M5 Distance', create_input_field(defaults['distance_m5']))
+
+		layout.addRow('', create_buttons(dialog))
+
+		dialog
+	end
+
+	# Update distance map from the dialog
+	#
+	# distances - The distances map to be updated
+	# dialog    - The dialog containing the updated options
+	def self.update_distances_from_dialog(distances, dialog)
+		distances['distance_m1'] = dialog.layout.itemAt(1).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M1fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal1:Filler\n")
+			distances['distance_m1'] = 0.42
+		end
+		distances['distance_m2'] = dialog.layout.itemAt(3).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M2fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal2:Filler\n")
+			distances['distance_m2'] = 0.42
+		end
+		distances['distance_m3'] = dialog.layout.itemAt(5).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M3fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal3:Filler\n")
+			distances['distance_m3'] = 0.42
+		end
+		distances['distance_m4'] = dialog.layout.itemAt(7).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M4fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal4:Filler\n")
+			distances['distance_m4'] = 0.42
+		end
+		distances['distance_m5'] = dialog.layout.itemAt(9).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M5fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal5:Filler\n")
+			distances['distance_m5'] = 0.42
+		end
+	end
+
+	distances = {
+		'distance_m1' => 1.5,
+		'distance_m2' => 1.5,
+		'distance_m3' => 2.0,
+		'distance_m4' => 2.0,
+		'distance_m5' => 2.0
+	}
+
+	batch_mode = !RBA::Application::instance.main_window
+	if !batch_mode
+		dialog = create_options_dialog(distances)
+		# Show the dialog box and handle user input
+		if dialog.exec == 1 #RBA::QDialog::Accepted
+			update_distances_from_dialog(distances, dialog)
+		end
+	end
+
 	# Paramter
-	width_m1 = 2.0
-	height_m1 = 2.0
-	distance_m1 = 1.2
-	
-	width_m2 = 2.0
-	height_m2 = 2.0
-	distance_m2 = 1.0
+	width_m1_s = 1.0
+	height_m1_s = 1.0
+	distance_m1_s = distances['distance_m1']
+	width_m1_m = width_m1_s + distance_m1_s + width_m1_s
+	height_m1_m = height_m1_s + distance_m1_s + height_m1_s
+	distance_m1_m = distance_m1_s
 
-	width_m3 = 2.0
-	height_m3 = 2.0
-	distance_m3 = 1.8
-	
-	width_m4 = 2.0
-	height_m4 = 2.0
-	distance_m4 = 1.8
+	width_m2_s = 1.0
+	height_m2_s = 1.0
+	distance_m2_s = distances['distance_m2']
+	width_m2_m = width_m2_s + distance_m2_s + width_m2_s
+	height_m2_m = height_m2_s + distance_m2_s + height_m2_s
+	distance_m2_m = distance_m2_s
 
-	width_m5 = 2.0
-	height_m5 = 2.0
-	distance_m5 = 2.2
+	width_m3_s = 1.0
+	height_m3_s = 1.0
+	distance_m3_s = distances['distance_m3']
+	width_m3_m = width_m3_s + distance_m3_s + width_m3_s
+	height_m3_m = height_m3_s + distance_m3_s + height_m3_s
+	distance_m3_m = distance_m3_s
+
+	width_m4_s = 1.0
+	height_m4_s = 1.0
+	distance_m4_s = distances['distance_m4']
+	width_m4_m = width_m4_s + distance_m4_s + width_m4_s
+	height_m4_m = height_m4_s + distance_m4_s + height_m4_s
+	distance_m4_m = distance_m4_s
+
+	width_m5_s = 1.0
+	height_m5_s = 1.0
+	distance_m5_s = distances['distance_m5']
+	width_m5_m = width_m5_s + distance_m5_s + width_m5_s
+	height_m5_m = height_m5_s + distance_m5_s + height_m5_s
+	distance_m5_m = distance_m5_s
 
 	# Create filler cell
-	pattern_m1 = fill_pattern("Met1_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1, height_m1))
-	pattern_m2 = fill_pattern("Met1_FILL_CELL").shape(10, 22, box(0.0, 0.0, width_m2, height_m2))
-	pattern_m3 = fill_pattern("Met1_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3, height_m3))
-	pattern_m4 = fill_pattern("Met1_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4, height_m4))
-	pattern_m5 = fill_pattern("Met1_FILL_CELL").shape(67, 22, box(0.0, 0.0, width_m5, height_m5))
-	 
-	# Define noFill exclusion layer
+	pattern_m1_s = fill_pattern("Met1_S_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1_s, height_m1_s))
+	pattern_m1_m = fill_pattern("Met1_M_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1_m, height_m1_m))
+	pattern_m2_s = fill_pattern("Met2_S_FILL_CELL").shape(10, 22, box(0.0, 0.0, width_m2_s, height_m2_s))
+	pattern_m2_m = fill_pattern("Met2_M_FILL_CELL").shape(10, 22, box(0.0, 0.0, width_m2_m, height_m2_m))
+	pattern_m3_s = fill_pattern("Met3_S_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3_s, height_m3_s))
+	pattern_m3_m = fill_pattern("Met3_M_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3_m, height_m3_m))
+	pattern_m4_s = fill_pattern("Met4_S_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_s, height_m4_s))
+	pattern_m4_m = fill_pattern("Met4_M_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_m, height_m4_m))
+	pattern_m5_s = fill_pattern("Met5_S_FILL_CELL").shape(67, 22, box(0.0, 0.0, width_m5_s, height_m5_s))
+	pattern_m5_m = fill_pattern("Met5_M_FILL_CELL").shape(67, 22, box(0.0, 0.0, width_m5_m, height_m5_m))
+
+	print("Filling M1\n")
+	M1Fil_b = Metal1_filler.dup
+	M1Fil_b.size(0.42, 0.42, "square_limit")
 	M1Fil_c = Metal1.dup
 	M1Fil_c.size(0.42, 0.42, "square_limit")
 	M1Fil_d = TRANS.dup
 	M1Fil_d.size(1.0, 1.0, "square_limit")
-	exclLayM1 = M1Fil_c | M1Fil_d | Metal1_filler | Metal1_nofill | Metal1_slit | TRANS
+	M1Fil = EdgeSeal.holes - (M1Fil_b | M1Fil_c | M1Fil_d | Metal1_nofill | Metal1_slit | TRANS)
+	M1Fil_left = M1Fil.fill_with_left(pattern_m1_m, hstep(width_m1_m + distance_m1_m), vstep(height_m1_m + distance_m1_m))
+	M1Fil_left.fill(pattern_m1_s, hstep(width_m1_s + distance_m1_s), vstep(height_m1_s + distance_m1_s))
 
+	print("Filling M2\n")
+	M2Fil_b = Metal2_filler.dup
+	M2Fil_b.size(0.42, 0.42, "square_limit")
 	M2Fil_c = Metal2.dup
 	M2Fil_c.size(0.42, 0.42, "square_limit")
 	M2Fil_d = TRANS.dup
 	M2Fil_d.size(1.0, 1.0, "square_limit")
-	exclLayM2 = M2Fil_c | M2Fil_d | Metal2_filler | Metal2_nofill | Metal2_slit | TRANS
+	M2Fil = EdgeSeal.holes - (M2Fil_b | M2Fil_c | M2Fil_d | Metal2_nofill | Metal2_slit | TRANS)
+	M2Fil_left = M2Fil.fill_with_left(pattern_m2_m, hstep(width_m2_m + distance_m2_m), vstep(height_m2_m + distance_m2_m))
+	M2Fil_left.fill(pattern_m2_s, hstep(width_m2_s + distance_m2_s), vstep(height_m2_s + distance_m2_s))
 
+	print("Filling M3\n")
+	M3Fil_b = Metal3_filler.dup
+	M3Fil_b.size(0.42, 0.42, "square_limit")
 	M3Fil_c = Metal3.dup
 	M3Fil_c.size(0.42, 0.42, "square_limit")
 	M3Fil_d = TRANS.dup
 	M3Fil_d.size(1.0, 1.0, "square_limit")
-	exclLayM3 = M3Fil_c | M3Fil_d | Metal3_filler | Metal3_nofill | Metal3_slit | TRANS
+	M3Fil = EdgeSeal.holes - (M3Fil_b | M3Fil_c | M3Fil_d | Metal3_nofill | Metal3_slit | TRANS)
+	M3Fil_left = M3Fil.fill_with_left(pattern_m3_m, hstep(width_m3_m + distance_m3_m), vstep(height_m3_m + distance_m3_m))
+	M3Fil_left.fill(pattern_m3_s, hstep(width_m3_s + distance_m3_s), vstep(height_m3_s + distance_m3_s))
 
+	print("Filling M4\n")
+	M4Fil_b = Metal4_filler.dup
+	M4Fil_b.size(0.42, 0.42, "square_limit")
 	M4Fil_c = Metal4.dup
 	M4Fil_c.size(0.42, 0.42, "square_limit")
 	M4Fil_d = TRANS.dup
 	M4Fil_d.size(1.0, 1.0, "square_limit")
-	exclLayM4 = M4Fil_c | M4Fil_d | Metal4_filler | Metal4_nofill | Metal4_slit | TRANS
+	M4Fil = EdgeSeal.holes - (M4Fil_b | M4Fil_c | M4Fil_d | Metal4_nofill | Metal4_slit | TRANS)
+	M4Fil_left = M4Fil.fill_with_left(pattern_m4_m, hstep(width_m4_m + distance_m4_m), vstep(height_m4_m + distance_m4_m))
+	M4Fil_left.fill(pattern_m4_s, hstep(width_m4_s + distance_m4_s), vstep(height_m4_s + distance_m4_s))
 
+	print("Filling M5\n")
+	M5Fil_b = Metal5_filler.dup
+	M5Fil_b.size(0.42, 0.42, "square_limit")
 	M5Fil_c = Metal5.dup
 	M5Fil_c.size(0.42, 0.42, "square_limit")
 	M5Fil_d = TRANS.dup
 	M5Fil_d.size(1.0, 1.0, "square_limit")
-	exclLayM5 = M5Fil_c | M5Fil_d | Metal5_filler | Metal5_nofill | Metal5_slit | TRANS
-	
-	# perform fill
-	(EdgeSeal.holes - exclLayM1).fill(pattern_m1, hstep(width_m1 + distance_m1), vstep(height_m1 + distance_m1))
-	(EdgeSeal.holes - exclLayM2).fill(pattern_m2, hstep(width_m2 + distance_m2), vstep(height_m2 + distance_m2))
-	(EdgeSeal.holes - exclLayM3).fill(pattern_m3, hstep(width_m3 + distance_m3), vstep(height_m3 + distance_m3))
-	(EdgeSeal.holes - exclLayM4).fill(pattern_m4, hstep(width_m4 + distance_m4), vstep(height_m4 + distance_m4))
-	(EdgeSeal.holes - exclLayM5).fill(pattern_m5, hstep(width_m5 + distance_m5), vstep(height_m5 + distance_m5))
+	M5Fil = EdgeSeal.holes - (M5Fil_b | M5Fil_c | M5Fil_d | Metal5_nofill | Metal5_slit | TRANS)
+	M5Fil_left = M5Fil.fill_with_left(pattern_m5_m, hstep(width_m5_m + distance_m5_m), vstep(height_m5_m + distance_m5_m))
+	M5Fil_left.fill(pattern_m5_s, hstep(width_m5_s + distance_m5_s), vstep(height_m5_s + distance_m5_s))
 	</text>
 </klayout-macro>
