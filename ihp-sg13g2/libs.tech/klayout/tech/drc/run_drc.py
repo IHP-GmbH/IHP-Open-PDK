@@ -84,9 +84,10 @@ def merge_klayout_drc_reports(input_files: List[str], output_file: str):
 
     # Locate primary mergeable elements in the base document
     base_categories = base_root.find("categories")
+    base_cells = base_root.find("cells")
     base_items = base_root.find("items")
 
-    if base_categories is None or base_items is None:
+    if base_categories is None or base_cells is None or base_items is None:
         raise ValueError(
             f"Base file '{input_files[0]}' is missing required elements, failed in merging result database."
         )
@@ -102,7 +103,33 @@ def merge_klayout_drc_reports(input_files: List[str], output_file: str):
                 for category in categories.findall("category"):
                     base_categories.append(category)
 
-            # Append each <item> from this file
+            # # Append each <cells> from this file
+            # cells = root.find("cells")
+            # if cells is not None:
+            #     for cell in cells.findall("cell"):
+            #         logging.debug(f"Adding cell: {cell}")
+            #         logging.debug(f"Adding cell: {type(cell)}")
+            #         base_cells.append(cell)
+
+            # Collect existing cell names from base_cells
+            existing_names = set()
+            for cell in base_cells.findall("cell"):
+                name_elem = cell.find("name")
+                if name_elem is not None and name_elem.text:
+                    existing_names.add(name_elem.text.strip())
+
+            # Append new <cell> only if not already present
+            cells = root.find("cells")
+            if cells is not None:
+                for cell in cells.findall("cell"):
+                    name_elem = cell.find("name")
+                    if name_elem is not None and name_elem.text:
+                        name = name_elem.text.strip()
+                        if name not in existing_names:
+                            base_cells.append(cell)
+                            existing_names.add(name)
+
+            # # Append each <items> from this file
             items = root.find("items")
             if items is not None:
                 for item in items.findall("item"):
