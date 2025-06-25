@@ -2540,6 +2540,12 @@ end
 
 
 if $fillerRules
+	-&gt; (;shpX, shpY, shp_err) do
+	    shpX = GatPoly_nofill.sized(-(400*0.5).um, 0)
+	    shpY = GatPoly_nofill.sized(0, -(400*0.5).um)
+	    shp_err = shpX.sized((0.18*0.5).um, acute_limit).and(GatPoly_nofill).ext_or(shpY.sized((0.18*0.5).um, acute_limit).and(GatPoly_nofill))
+	    GatPoly_nofill.ext_covering(shp_err)
+	end.().output("GFil.i", "Max. GatPoly:nofill area (µm²) = 400 x 400")
 	-&gt; do
 	    Activ_filler.ext_enclosed(GatPoly_filler, 0.18.um)
 	end.().output("GFil.j", "Min. GatPoly:filler extension over Activ:filler (end cap) = 0.18")
@@ -2916,6 +2922,11 @@ if $fillerRules
 	-&gt; do
 	    Metal1_filler.ext_width(1.0.um)
 	end.().output("M1Fil.a1", "Min. Metal1:filler width = 1.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = Metal1_filler.sized(-(5.0*0.5).um, 0)
+	    tmpY = Metal1_filler.sized(0, -(5.0*0.5).um)
+	    Metal1_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("M1Fil.a2", "Max. Metal1:filler width = 5.00")
 	-&gt; do
 	    Metal1_filler.ext_space(0.42.um)
 	end.().output("M1Fil.b", "Min. Metal1:filler space = 0.42")
@@ -2939,6 +2950,11 @@ if $fillerRules
 	-&gt; do
 	    Metal2_filler.ext_width(1.0.um)
 	end.().output("M2Fil.a1", "Min. Metal2:filler width = 1.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = Metal2_filler.sized(-(5.0*0.5).um, 0)
+	    tmpY = Metal2_filler.sized(0, -(5.0*0.5).um)
+	    Metal2_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("M2Fil.a2", "Max. Metal2:filler width = 5.00")
 	-&gt; do
 	    Metal2_filler.ext_space(0.42.um)
 	end.().output("M2Fil.b", "Min. Metal2:filler space = 0.42")
@@ -2962,6 +2978,11 @@ if $fillerRules
 	-&gt; do
 	    Metal3_filler.ext_width(1.0.um)
 	end.().output("M3Fil.a1", "Min. Metal3:filler width = 1.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = Metal3_filler.sized(-(5.0*0.5).um, 0)
+	    tmpY = Metal3_filler.sized(0, -(5.0*0.5).um)
+	    Metal3_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("M3Fil.a2", "Max. Metal3:filler width = 5.00")
 	-&gt; do
 	    Metal3_filler.ext_space(0.42.um)
 	end.().output("M3Fil.b", "Min. Metal3:filler space = 0.42")
@@ -2985,6 +3006,11 @@ if $fillerRules
 	-&gt; do
 	    Metal4_filler.ext_width(1.0.um)
 	end.().output("M4Fil.a1", "Min. Metal4:filler width = 1.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = Metal4_filler.sized(-(5.0*0.5).um, 0)
+	    tmpY = Metal4_filler.sized(0, -(5.0*0.5).um)
+	    Metal4_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("M4Fil.a2", "Max. Metal4:filler width = 5.00")
 	-&gt; do
 	    Metal4_filler.ext_space(0.42.um)
 	end.().output("M4Fil.b", "Min. Metal4:filler space = 0.42")
@@ -3008,6 +3034,11 @@ if $fillerRules
 	-&gt; do
 	    Metal5_filler.ext_width(1.0.um)
 	end.().output("M5Fil.a1", "Min. Metal5:filler width = 1.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = Metal5_filler.sized(-(5.0*0.5).um, 0)
+	    tmpY = Metal5_filler.sized(0, -(5.0*0.5).um)
+	    Metal5_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("M5Fil.a2", "Max. Metal5:filler width = 5.00")
 	-&gt; do
 	    Metal5_filler.ext_space(0.42.um)
 	end.().output("M5Fil.b", "Min. Metal5:filler space = 0.42")
@@ -3160,6 +3191,11 @@ if $fillerRules
 	-&gt; do
 	    TopMetal1_filler.ext_width(5.0.um)
 	end.().output("TM1Fil.a", "Min. TopMetal1:filler width = 5.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = TopMetal1_filler.sized(-(10.0*0.5).um, 0)
+	    tmpY = TopMetal1_filler.sized(0, -(10.0*0.5).um)
+	    TopMetal1_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("TM1Fil.a1", "Max. TopMetal1:filler width = 10.00")
 	-&gt; do
 	    TopMetal1_filler.ext_space(3.0.um)
 	end.().output("TM1Fil.b", "Min. TopMetal1:filler space = 3.00")
@@ -3210,6 +3246,11 @@ if $fillerRules
 	-&gt; do
 	    TopMetal2_filler.ext_width(5.0.um)
 	end.().output("TM2Fil.a", "Min. TopMetal2:filler width = 5.00")
+	-&gt; (;tmpX, tmpY) do
+	    tmpX = TopMetal2_filler.sized(-(10.0*0.5).um, 0)
+	    tmpY = TopMetal2_filler.sized(0, -(10.0*0.5).um)
+	    TopMetal2_filler.ext_interacting(tmpX.ext_or(tmpY)).dup
+	end.().output("TM2Fil.a1", "Max. TopMetal2:filler width = 10.00")
 	-&gt; do
 	    TopMetal2_filler.ext_space(3.0.um)
 	end.().output("TM2Fil.b", "Min. TopMetal2:filler space = 3.00")
