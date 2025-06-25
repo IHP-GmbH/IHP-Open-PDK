@@ -38,7 +38,6 @@
 |GFil.a     |5.9.  GFil.a Max. GatPoly:filler width                                                                                          |5          |Max     |
 |GFil.b     |5.9.  GFil.b Min. GatPoly:filler width                                                                                          |0.7        |Max     |
 |GFil.c     |5.9.  GFil.c Min. GatPoly:filler space                                                                                          |0.8        |Max     |
-|GFil.d     |5.9.  GFil.d Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock                                        |1.1        |Max     |
 |GFil.f     |5.9.  GFil.f Min. GatPoly:filler space to TRANS                                                                                 |1.1        |Max     |
 |GFil.j     |5.9.  GFil.j Min. GatPoly:filler extension over Activ:filler (end cap)                                                          |0.18       |Max     |
 |pSD.a      |5.10.  pSD.a Min. pSD width                                                                                                     |0.31       |Max     |
@@ -169,8 +168,6 @@
 |nmosi.b                 |6.5.  nmosi.b Min. nBuLay enclosure of Iso-PWell-Activ (Note 1)                                                    |1.24       |Max     |
 |nmosi.c                 |6.5.  nmosi.c Min. NWell space to Iso-PWell-Activ                                                                  |0.39       |Max     |
 |nmosi.d                 |6.5.  nmosi.d Min. NWell-nBuLay width forming an unbroken ring around any,Iso-PWell-Activ (Note 2)                 |0.62       |Max     |
-|nmosi.e1                |6.5.  nmosi.e1 A separate Iso-PWell contact unabutted to a nmosi device is not allowed                             |-          |Max     |
-|nmosi.e2                |6.5.  nmosi.e2 nmosi unabutted to an Iso-PWell-Activ tie is not allowed                                            |-          |Max     |
 |nmosi.f                 |6.5.  nmosi.f Min. nSD:block width to separate ptap in nmosi                                                       |0.62       |Max     |
 |nmosi.g                 |6.5.  nmosi.g Min. SalBlock overlap of nSD:block over Activ                                                        |0.15       |Max     |
 |Sdiod.a                 |6.7.  Sdiod.a Min. and max. PWell:block enclosure of ContBar                                                       |0.25       |Max     |
