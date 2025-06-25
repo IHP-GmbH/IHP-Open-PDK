@@ -119,22 +119,15 @@ set_sim_defaults
 set plugin_dir "$env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/"
 set plugin_file_name "sg13g2-plugins.txt"
 set plugin_file $plugin_dir$plugin_file_name
-
 set fh [open $plugin_file r]
 set plugin_list \{\}
-
 while \{[gets $fh line] >= 0\} \{
    set line [string trim $line]
    lappend plugin_list $plugin_dir$line
 \}
 close $fh
-
 set plugin_args [join $plugin_list ","]
-puts $plugin_args
-
-
-set sim(spice,3,cmd) \{Xyce -plugins \\"$plugin_args\\" \\"$N\\"\}
-
+set sim(spice,3,cmd) [list Xyce -plugin $plugin_args "\\\\$N"]
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3
 
