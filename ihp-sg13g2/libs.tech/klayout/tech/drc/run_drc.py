@@ -103,14 +103,6 @@ def merge_klayout_drc_reports(input_files: List[str], output_file: str):
                 for category in categories.findall("category"):
                     base_categories.append(category)
 
-            # # Append each <cells> from this file
-            # cells = root.find("cells")
-            # if cells is not None:
-            #     for cell in cells.findall("cell"):
-            #         logging.debug(f"Adding cell: {cell}")
-            #         logging.debug(f"Adding cell: {type(cell)}")
-            #         base_cells.append(cell)
-
             # Collect existing cell names from base_cells
             existing_names = set()
             for cell in base_cells.findall("cell"):
