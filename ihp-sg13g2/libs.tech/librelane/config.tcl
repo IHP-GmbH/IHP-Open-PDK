@@ -82,18 +82,18 @@ set ::env(RCX_RULES) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/IHP_rcx_p
 set ::env(FP_PDN_RAIL_LAYER) Metal1
 set ::env(FP_PDN_RAIL_OFFSET) 0
 
-set ::env(FP_PDN_VERTICAL_LAYER) Metal5
-set ::env(FP_PDN_HORIZONTAL_LAYER) TopMetal1
+set ::env(FP_PDN_VERTICAL_LAYER) TopMetal1
+set ::env(FP_PDN_HORIZONTAL_LAYER) TopMetal2
 
 set ::env(FP_PDN_VWIDTH) 2.2
 set ::env(FP_PDN_VSPACING) 4.0
 set ::env(FP_PDN_VPITCH) 75.6
 set ::env(FP_PDN_VOFFSET) 13.6
 
-set ::env(FP_PDN_HWIDTH) 1.8
+set ::env(FP_PDN_HWIDTH) 2.2
 set ::env(FP_PDN_HSPACING) 4.0
 set ::env(FP_PDN_HPITCH) 75.6
-set ::env(FP_PDN_HOFFSET) 13.57
+set ::env(FP_PDN_HOFFSET) 13.6
 
 
 # Core Ring PDN defaults
@@ -105,7 +105,7 @@ set ::env(FP_PDN_CORE_RING_VOFFSET) 4.5
 set ::env(FP_PDN_CORE_RING_HOFFSET) 4.5
 
 # PDN Macro blockages list
-set ::env(MACRO_BLOCKAGES_LAYER) "Metal1 Metal2 Metal3 Metal4 Metal5"
+set ::env(MACRO_BLOCKAGES_LAYER) "Metal1 Metal2 Metal3 Metal4 Metal5 TopMetal1"
 
 # Used for parasitics estimation, IR drop analysis, etc
 set ::env(LAYERS_RC) [dict create]
@@ -147,14 +147,14 @@ set ::env(LAYERS_RC) [dict create]
 #set ::env(CLOCK_WIRE_RC_LAYER) "Metal5"
 
 # I/O Layer info
-set ::env(FP_IO_HLAYER) "Metal2"
-set ::env(FP_IO_VLAYER) "Metal3"
+set ::env(FP_IO_HLAYER) "Metal3"
+set ::env(FP_IO_VLAYER) "Metal2"
 
 # Routing Layer Info
-set ::env(GRT_LAYER_ADJUSTMENTS) "0.00,0.05,0.05,0.05,0.05,0.00,0.00"
+set ::env(GRT_LAYER_ADJUSTMENTS) "0.00,0.00,0.00,0.00,0.00,0.00,0.00"
 
 set ::env(RT_MIN_LAYER) "Metal2"
-set ::env(RT_MAX_LAYER) "Metal5"
+set ::env(RT_MAX_LAYER) "TopMetal2"
 
 #set ::env(RT_CLOCK_MIN_LAYER) "met3"
 
