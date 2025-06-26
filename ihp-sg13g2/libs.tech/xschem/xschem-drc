@@ -1,0 +1,226 @@
+############################################################### DRC checks #######################################
+# IHP SG13G2 mosfets dimension checks
+proc fet_drc {instance symbol model w l ng } {
+  set res {}
+  # strip off the "u" suffix
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l] && [string is integer $ng]} {
+
+  # calculate finger width
+    set w [expr { double($w) / double($ng)}]
+
+    switch -regexp $model {
+      {sg13_lv_nmos$} {
+        if { $w < 0.13 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.13 } {
+          append res "${instance} ($model): length is too small, l = $l, min l > 0.13u" \n
+        } 
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_lv_pmos$} {
+        if { $w < 0.13 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.13 } {
+          append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_hv_nmos$} {
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min w/ng > 0.3u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.45 } {
+         append res "${instance} ($model): length is too small, l = $l, min. l > 0.45u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_hv_pmos$} {
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.3u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.4 } {
+          append res "${instance} ($model): length is too small, l = $l, min. l > 0.4u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
+# IHP SG13G2 resistors dimension checks
+proc res_drc {instance symbol model w l } {
+  set res {}
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l] } {
+
+    if { $w < 0.5e-6 } {
+      append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
+    }
+
+    if { $l < 0.5e-6 } {
+       append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.5u" \n
+    }
+  }
+  return $res
+}
+# IHP SG13G2 MiM capacitor dimension checks
+proc mim_drc {instance symbol model w l } {
+  set res {}
+
+  if { [string is double $w] && [string is double $l] } {
+    set area [expr { double($w) * double($l) * 1.0e+12}]
+
+    if { $w < 1.14e-6 } {
+      append res "${instance} ($model): MiM capacitor width is too small, w = $w, min. w > 1.14 um" \n
+    }
+
+    if { $area < 1.3 } {
+       append res "${instance} ($model): MiM capacitor area is too small, area = $area, min. area > 1.3 um2" \n
+    }
+
+    if { $area > 5625.0 } {
+       append res "${instance} ($model): MiM capacitor area is too big, area = $area, max. area < 5625.0 um2" \n
+    }
+  }
+  return $res
+}
+# IHP SG13G2 HBT dimension checks
+proc hbt_drc {instance symbol model Nx El } {
+  set res {}
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is integer $Nx] || [string is double $El]} {
+
+
+    switch -regexp $model {
+      {npn13G2$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
+        }
+        if { $Nx > 10 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-10" \n
+        }
+      }
+      {npn13G2l$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 2.5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
+        }
+      }
+      {npn13G2v$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
+        }
+      }
+
+      {npn13G2_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
+        }
+        if { $Nx > 10 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-10" \n
+        }
+      }
+      {npn13G2l_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 2.5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
+        }
+      }
+      {npn13G2v_5t$} {
+        if { $Nx < 1 } {
+          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $Nx > 4 } {
+          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
+        }
+        if { $El < 1.0 } {
+          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
+        }
+        if { $El > 5 } {
+          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
+# IHP SG13G2 HBT diodes checks
+proc diode_drc {instance symbol model w l } {
+  set res {}
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l]} {
+
+    switch -regexp $model {
+      {dantenna} {
+        if { $w < 0.78 } {
+          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
+        }
+        if { $l < 0.78 } {
+          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
+        }
+      }
+      {dpantenna} {
+        if { $w < 0.78 } {
+          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
+        }
+        if { $l < 0.78 } {
+          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
+
