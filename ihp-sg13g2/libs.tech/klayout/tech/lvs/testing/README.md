@@ -95,7 +95,7 @@ The following table explains the list of available SG13G2 devices we have suppor
 Example:
 
 ```bash
-  python3 run_regression.py --device_name=MOS --run_dir=test_mos
+  python3 run_regression.py --device=MOS --run_dir=test_mos
 ```
 
 **Options**

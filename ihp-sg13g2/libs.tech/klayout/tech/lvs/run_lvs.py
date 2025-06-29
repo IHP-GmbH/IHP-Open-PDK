@@ -49,7 +49,7 @@ from docopt import docopt
 import os
 import logging
 import klayout.db
-from datetime import datetime
+from datetime import datetime, timezone
 from subprocess import check_call
 import time
 
@@ -272,8 +272,10 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
     layout_base_name = os.path.basename(path).split(".")[0]
     new_sws = sws.copy()
     report_path = os.path.join(run_dir, f"{layout_base_name}.lvsdb")
+    log_path = os.path.join(run_dir, f"{layout_base_name}.log")
     ext_net_path = os.path.join(run_dir, f"{layout_base_name}_extracted.cir")
     new_sws["report"] = report_path
+    new_sws["log"] = log_path
     new_sws["target_netlist"] = ext_net_path
 
     sws_str = build_switches_string(new_sws)
@@ -344,7 +346,8 @@ if __name__ == "__main__":
     # arguments
     arguments = docopt(__doc__, version="RUN LVS: 1.0")
 
-    now_str = datetime.utcnow().strftime("lvs_run_%Y_%m_%d_%H_%M_%S")
+    # Generate a timestamped run directory name
+    now_str = datetime.now(timezone.utc).strftime("lvs_run_%Y_%m_%d_%H_%M_%S")
 
     if (
         arguments["--run_dir"] == "pwd"
