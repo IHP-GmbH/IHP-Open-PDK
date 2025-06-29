@@ -251,3 +251,39 @@ known sheet resistance values.
 |-------------|-----------------------------------------------------|
 | hvpvaractor | parasitic device formed at the ends of SVaricap     |
 | fillfet     | device formed at the junction of fill diff and poly |
+
+## Fill pattern generation
+
+Fill pattern generation is implemented as an alternative "cif ostyle"
+in the magic tech file.  It is only marginally useful in an
+interactive layout session;  generally, it is meant to be used with
+the standalone python script "generate_fill.py".  Running the python
+script (run without arguments to get a usage statement) on a magic or
+GDS database of a chip top level (including seal ring) will produce
+a compressed GDS file containing a overlay cell with the fill
+patterns.  The fill pattern GDS must be integrated with the chip top
+level (the script does not do this) by including the fill patterns
+into the top level layout, with the origins aligned.
+
+If the intention is to pre-fill an area of layout, magic can do this
+with the command "cif ostyle patternfill()", placing the cursor box
+around the area to be filled, and typing, e.g., "cif paint MET1FILL
+met1fill".  Each fill layer must be generated individually.
+
+## Auxiliary DRC checks
+
+Not all DRC rules are implemented directly by magic's DRC checker.
+The two main exceptions are density and antenna rules.  Density rules
+are only meaningful if done on an entire top-level layout, after
+running pattern generation.  If the final design (including fill
+patterns) is saved as a .mag file or GDS file, then the script
+"check_density.py" will perform the entire set of density rule
+checks.
+
+Antenna violations can be checked by extracting the layout and
+then using the command "antennacheck [run]".  It is generally
+preferable to run the command "antennacheck debug" prior to the
+command "antennacheck", so that detailed output for each error is
+printed to the terminal output.  Otherwise, all errors are in the
+form of feedback entries which can be queried with "feedback find"
+or written to a file with "feedback save <filename>".

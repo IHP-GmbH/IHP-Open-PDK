@@ -28,7 +28,7 @@ exec_start_time = Time.now
 logger = Logger.new($stdout)
 
 logger.formatter = proc do |_severity, datetime, _progname, msg|
-  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10, 40].strip + ") : #{msg}
+  "#{datetime}: Memory Usage (#{RBA::Timer.memory_size / 1024}K) : #{msg}
 "
 end
 

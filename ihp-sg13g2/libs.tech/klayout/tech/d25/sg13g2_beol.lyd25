@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ # Copytight 2025, IHP Open PDK Authors
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+ # You may obtain a copy of the License at
+ #
+ #     http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # This file incorporates code from sky130_klayout_pdk
+ # (https://github.com/efabless/sky130_klayout_pdk, licensed under Apache License 2.0.
+ # Modifications:
+ # - The metal stack describes the BEOL stack of the SG13G2 PDK.
+ # - The structure of the macro is based on the sky130_klayout_pdk.
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ #
+-->
+
+<klayout-macro>
+ <description>BEOL 2.5D Viewer</description>
+ <version>0.1</version>
+ <category>misc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>BEOL-Viewer</group-name>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>d25-dsl-xml</dsl-interpreter-name>
+ <text># Stack definition
+
+Activ = input(1,0)
+nSD = input(7,0) 
+pSD = input(14,0)
+
+Metal1 = input(8, 0)
+Metal2 = input(10, 0)
+Metal3 = input(30, 0)
+Metal4 = input(50, 0)
+Metal5 = input(67, 0)
+MIM = input(36, 0)
+TopMetal1 = input(126, 0)
+TopMetal2 = input(134, 0)
+TopVia2 = input(133, 0)
+TopVia1 = input(125, 0)
+Vmim = input(129, 0)
+Via4 = input(66, 0)
+Via3 = input(49, 0)
+Via2 = input(29, 0)
+Via1 = input(19, 0)
+Cont = input(6, 0)
+
+# Resistor modelling
+SalBlock = input(28,0)
+PolyRes  = input(128,0) 
+GatPoly  = input(5,0) | PolyRes
+Rhigh = SalBlock &amp; pSD &amp; nSD # SalBlock + pSD + nSD only in Rhigh
+Rppd  = SalBlock &amp; pSD - nSD # SalBlock + pSD only in Rppd
+Rsil  = PolyRes - Rhigh - Rppd 
+RGatPoly = GatPoly - Rhigh - Rppd - Rsil # Gatpoly around resistor
+
+# Cont can go down to substrate or stop at poly resistors
+Cont_to_Gatpoly = Cont &amp; GatPoly
+Cont_to_Activ   = Cont - GatPoly
+
+z(TopMetal2, name:"TopMetal2",  zstart: 11.230, height: 3.000, color: 0xff8000)
+z(TopVia2,   name:"TopVia2",    zstart: 8.430,  height: 2.800, color: 0xff8000)
+z(TopMetal1, name:"TopMetal1",  zstart: 6.430,  height: 2.000, color: 0xffe6bf)
+z(TopVia1,   name:"TopVia1",    zstart: 5.580,  height: 0.850, color: 0xffe6bf)
+z(Vmim, name:"Vmim", zstart: 5.754, height: 0.676, color: 0xc0c0c0)
+z(MIM,    name:"MIM",     zstart: 5.604, height: 0.150, color: 0x268c6b)
+z(Metal5, name:"Metal5",  zstart: 5.090, height: 0.490, color: 0xdcd146)
+z(Via4, name:"Via4", zstart: 4.550, height: 0.540, color: 0xdeac5e)
+z(Metal4, name:"Metal4",  zstart: 4.060, height: 0.490, color: 0x93e837)
+z(Via3, name:"Via3", zstart: 3.520, height: 0.540, color: 0x9ba940)
+z(Metal3, name:"Metal3",  zstart: 3.030, height: 0.490, color: 0xd80000)
+z(Via2, name:"Via2", zstart: 2.490, height: 0.540, color: 0xff3736)
+z(Metal2, name:"Metal2",  zstart: 2.000, height: 0.490, color: 0xccccd9)
+z(Via1, name:"Via1", zstart: 1.460, height: 0.540, color: 0xccccff)
+z(Metal1, name:"Metal1",  zstart: 1.040, height: 0.420, color: 0x39bfff)
+z(Cont_to_Gatpoly, name:"Cont-&gt;Gatpoly", zstart: 0.560, height: 0.500, color: 0x00ffff)
+z(RGatPoly,name:"GatPoly", zstart: 0.400, height: 0.140, color: 0x0000ff)
+z(Rsil,   name:"Rsil",    zstart: 0.400, height: 0.140, color: 0xaa0000)
+z(Rhigh,  name:"Rhigh",   zstart: 0.400, height: 0.140, color: 0xcc0044)
+z(Rppd,   name:"Rppd",    zstart: 0.400, height: 0.140, color: 0xff0088)
+z(Cont_to_Activ,   name:"Cont-&gt;Activ",   zstart: 0.400, height: 0.640, color: 0x00ffff)
+z(Activ,  name:"Activ",   zstart: 0.000, height: 0.400, color: 0x00ff00)
+ </text>
+</klayout-macro>
