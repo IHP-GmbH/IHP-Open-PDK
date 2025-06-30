@@ -42,7 +42,7 @@ R1 1 2 R=R
 R1 1 2 R=r*res_rpara TC1=TC1 TC2=TC2
 .ends Rparasitic
 
-.subckt rsil 1 2
+.subckt rsil 1 2 bn
 .param w=0.5e-6 l=0.5e-6 mm_ok=1 b=0 m=1 trise=0 sw_et=0
 +postsim=0
 +kappa=1.85
@@ -63,16 +63,16 @@ R1 1 2 R=r*res_rpara TC1=TC1 TC2=TC2
 +rqrc=4.5e-6
 +rz=rzspec/w-(postsim>0)*rqrc/w
 
-Yr3_cmc R1 1 0 2 dt rmod_rsil L=leff W=weff mult=m
+Yr3_cmc R1 1 bn 2 dt rmod_rsil L=leff W=weff mult=m
 +a1=a a2=a
 +p1=p p2=p
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
 +sw_mman=1
-+nsmm_rsh='gauss(1, 1, (mm_ok != 1 ? 0 : 1))' ; number of standard deviations for rsh
-+nsmm_w='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for w
-+nsmm_l='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for l
++nsmm_rsh= 1 ; number of standard deviations for rsh
++nsmm_w= 1  ; number of standard deviations for w
++nsmm_l= 1   ; number of standard deviations for l
 
 .model rmod_rsil r3_cmc
 +rsh=rsh_rsil
@@ -104,7 +104,7 @@ Yr3_cmc R1 1 0 2 dt rmod_rsil L=leff W=weff mult=m
 
 .ends rsil
 
-.subckt rhigh 1 2
+.subckt rhigh 1 2 bn
 .param w=0.5e-6 l=0.96e-6 mm_ok=1 b=0 trise=0 m=1 sw_et=0
 +postsim=0
 +kappa=1.85
@@ -125,16 +125,16 @@ Yr3_cmc R1 1 0 2 dt rmod_rsil L=leff W=weff mult=m
 +rqrc=4.5e-6
 +rz=rzspec/w-(postsim>0)*rqrc/w
 
-Yr3_cmc R1 1 0 2 dt rmod_rhigh L=leff W=weff mult=m
+Yr3_cmc R1 1 bn 2 dt rmod_rhigh L=leff W=weff mult=m
 +a1=a a2=a
 +p1=p p2=p
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
 +sw_mman=1
-+nsmm_rsh='gauss(1, 1, (mm_ok != 1 ? 0 : 1))' ; number of standard deviations for rsh
-+nsmm_w='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for w
-+nsmm_l='gauss(1, 1, (mm_ok != 1 ? 0 : 1))'   ; number of standard deviations for l
++nsmm_rsh=1
++nsmm_w=1
++nsmm_l=1
 
 .model rmod_rhigh r3_cmc
 +rsh=rsh_rhigh
@@ -166,7 +166,7 @@ Yr3_cmc R1 1 0 2 dt rmod_rhigh L=leff W=weff mult=m
 
 .ends rhigh
 
-.subckt rppd 1 2
+.subckt rppd 1 2 bn
 .param w=0.5e-6 l=0.5e-6 mm_ok=1 b=0 ps=0.18e-6 trise=0 m=1 sw_et=0
 +postsim=0
 +kappa=1.85
@@ -185,7 +185,7 @@ Yr3_cmc R1 1 0 2 dt rmod_rhigh L=leff W=weff mult=m
 +rqrc=4.5e-6
 +rz=rzspec/w-(postsim>0)*rqrc/w
 
-Yr3_cmc R1 1 0 2 dt rmod_rppd L=leff W=weff mult=m
+Yr3_cmc R1 1 bn 2 dt rmod_rppd L=leff W=weff mult=m
 +a1=a a2=a
 +p1=p p2=p
 +c1=1 c2=1
