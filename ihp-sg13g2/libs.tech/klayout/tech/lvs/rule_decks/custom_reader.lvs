@@ -47,8 +47,18 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Override parse_element method to handle exceptions gracefully
   def parse_element(line, element)
-    # clean line
-    line = line.delete('[]$\\/')
+
+    # Remove the slash that separates the pins from the device type:
+    # XDECINV net1 CS_OUT VDD VSS / RSC_IHPSG13_INVX4
+    # to
+    # XDECINV net1 CS_OUT VDD VSS RSC_IHPSG13_INVX4
+    line = line.gsub(/\s+\/\s+/, ' ')
+    
+    # Remove $[...] around the device type:
+    # C0 PLUS1 MINUS1 $[cap_cmim] 74.620f w=6.99u l=6.99u m=1
+    # to
+    # C0 PLUS1 MINUS1 cap_cmim 74.620f w=6.99u l=6.99u m=1
+    line = line.gsub(/\$\[(.+)\]/, '\1')
 
     # Prep sch for R, C
     line = clean_sch(line, element) if %w[R C].include?(element)

@@ -229,8 +229,18 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Override parse_element method to handle exceptions gracefully
   def parse_element(line, element)
-    # clean line
-    line = line.delete('[]$\\/')
+
+    # Remove the slash that separates the pins from the device type:
+    # XDECINV net1 CS_OUT VDD VSS / RSC_IHPSG13_INVX4
+    # to
+    # XDECINV net1 CS_OUT VDD VSS RSC_IHPSG13_INVX4
+    line = line.gsub(/\s+\/\s+/, ' ')
+    
+    # Remove $[...] around the device type:
+    # C0 PLUS1 MINUS1 $[cap_cmim] 74.620f w=6.99u l=6.99u m=1
+    # to
+    # C0 PLUS1 MINUS1 cap_cmim 74.620f w=6.99u l=6.99u m=1
+    line = line.gsub(/\$\[(.+)\]/, '\1')
 
     # Prep sch for R, C
     line = clean_sch(line, element) if %w[R C].include?(element)
@@ -3517,12 +3527,12 @@ antenna_d_exc = pwell_block.join(salblock_drw)
 antenna_d_mk = recog_diode.not(antenna_d_exc)
 
 # ==== dantenna diode ====
-dantenna_n = activ.and(antenna_d_mk).not(psd_drw).not(nwell_drw)
-dantenna_p = pwell.and(antenna_d_mk).covering(dantenna_n)
+dantenna_n = antenna_d_mk.and(activ).not(psd_drw).not(nwell_drw)
+dantenna_p = antenna_d_mk.and(pwell).covering(dantenna_n)
 
 # ==== dpantenna diode ====
-dpantenna_p = pactiv.and(antenna_d_mk)
-dpantenna_n = nwell_drw.covering(dpantenna_p)
+dpantenna_p = antenna_d_mk.and(pactiv)
+dpantenna_n = dpantenna_p.inside(nwell_drw)
 
 # ==== schottky_nbl1 diode ====
 schottky_mk = recog_diode.and(thickgateox_drw).not(diode_exclude)
