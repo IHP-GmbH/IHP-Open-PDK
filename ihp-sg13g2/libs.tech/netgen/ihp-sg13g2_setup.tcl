@@ -51,7 +51,7 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete b
+	property "-circuit2 $dev" delete b ps
     }
 }
 
@@ -249,7 +249,7 @@ foreach dev $devices {
 
 set devices {}
 lappend devices cap_cmim
-lappend devices cap_rfcmim
+lappend devices rfcmim
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -266,7 +266,7 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete ic
+	property "-circuit2 $dev" delete ic A P
     }
 }
 
