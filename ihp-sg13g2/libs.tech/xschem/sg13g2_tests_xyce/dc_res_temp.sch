@@ -6,7 +6,7 @@ S {}
 E {}
 B 2 -290 -610 510 -210 {flags=graph
 
-y2=0.15
+y2=0.041
 ypos1=0
 ypos2=2
 divy=5
