@@ -85,13 +85,22 @@ tclcommand="
 # for example by already launched simulations.
 set_sim_defaults
 
-# Change the Xyce command. In the spice category there are currently
-# 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
-# you can get the number by querying $sim(spice,n)
-set sim(spice,3,cmd) \{Xyce -plugin $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_PSP103_VA.so \\"$N\\"\}
-
+########################## Xyce #####################################
+set plugin_dir "$env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/"
+set plugin_file_name "sg13g2-plugins.txt"
+set plugin_file $plugin_dir$plugin_file_name
+set fh [open $plugin_file r]
+set plugin_list \{\}
+while \{[gets $fh line] >= 0\} \{
+   set line [string trim $line]
+   lappend plugin_list $plugin_dir$line
+\}
+close $fh
+set plugin_args [join $plugin_list ","]
+set sim(spice,3,cmd) [list Xyce -plugin $plugin_args "\\\\$N"]
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3
+########################## Xyce #####################################
 
 # run netlist and simulation
 xschem netlist
