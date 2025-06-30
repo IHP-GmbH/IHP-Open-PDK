@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -90,31 +89,39 @@ C {devices/ammeter.sym} 610 -30 0 0 {name=Vsil}
 C {devices/gnd.sym} 760 100 0 0 {name=l2 lab=GND}
 C {devices/ammeter.sym} 760 -30 0 0 {name=Vppd}
 C {devices/gnd.sym} 940 100 0 0 {name=l4 lab=GND}
-C {sg13g2_pr/rhigh.sym} 940 50 0 0 {name=R3
-w=1.0e-6
-l=1.0e-6
-model=rhigh
-spiceprefix=X
-m=1
-R=3.061e+3
-Imax=0.11e-4
-}
 C {devices/ammeter.sym} 940 -30 0 0 {name=Vrh}
-C {sg13g2_pr/rsil.sym} 610 50 0 0 {name=R1
-w=0.5e-6
-l=0.5e-5
-model=rsil
-spiceprefix=X
-m=1
-R=7.0
-Imax=0.3e-6
-}
-C {sg13g2_pr/rppd.sym} 760 50 0 0 {name=R2
+C {sg13g2_pr/rppd.sym} 760 50 0 0 {name=R1
 w=0.5e-6
 l=0.5e-6
 model=rppd
+body=sub!
 spiceprefix=X
+b=0
 m=1
-R=7.0
-Imax=0.3e-6
 }
+C {sg13g2_pr/rsil.sym} 610 50 0 0 {name=R2
+w=0.5e-6
+l=0.5e-6
+model=rsil
+body=sub!
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rhigh.sym} 940 50 0 0 {name=R3
+w=0.5e-6
+l=0.5e-6
+model=rhigh
+body=sub!
+spiceprefix=X
+b=0
+m=1
+}
+C {devices/gnd.sym} 490 30 2 0 {name=l6 lab=GND}
+C {sg13g2_pr/ptap1.sym} 490 60 0 0 {name=R4
+model=ptap1
+spiceprefix=X
+w=0.78e-6
+l=0.78e-6
+}
+C {sg13g2_pr/sub.sym} 490 90 0 0 {name=l7 lab=sub!}
