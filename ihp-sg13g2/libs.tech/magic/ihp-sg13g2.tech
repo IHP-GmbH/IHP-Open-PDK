@@ -27,13 +27,13 @@ tech
 end
 
 version
- version 0.2.0
+ version 0.3.0
  description "IHP SG13G2: Open Source rules and DRC"
  requires magic-8.3.524
 end
 
 #------------------------------------------------------------------------
-# Status 12/23/24: Version 0.2.0 (alpha):
+# Status 12/23/24: Version 0.3.0 (alpha):
 # Pre-release
 #------------------------------------------------------------------------
 
@@ -1631,18 +1631,27 @@ style drc
 
  # Identify butted p-tap areas
  templayer butted_tap
-	bloat-all ndiff psd
-	bloat-all hvndiff hvpsd
-	bloat-all pdiff nsd
-	bloat-all hvpdiff hvnsd
+	bloat-all ndiff *psd
+	bloat-all hvndiff *hvpsd
+	bloat-all pdiff *nsd
+	bloat-all hvpdiff *hvnsd
 	and-not ndiff,hvndiff,pdiff,hvpdiff
 
- # No butted tap area should be more than 6um away from a contact.
- templayer diff_contact_halo
-	bloat-all pdc,ndc,hvpdc,hvndc alldiff 6000
+ templayer butted_diff
+ 	bloat-all psd *ndiff
+ 	bloat-all hvpsd *hvndiff
+ 	bloat-all nsd *pdiff
+ 	bloat-all hvnsd *hvpdiff
+ 	and-not psd,hvpsd,nsd,hvnsd
 
- templayer tap_far_from_contact butted_tap
-	and-not diff_contact_halo
+ # No uncontacted butted tap area should be more than 6um away from a contact.
+ templayer tap_far_from_contact
+	bloat-all pdc,ndc,hvpdc,hvndc alldiff 6000
+	and butted_tap,butted_diff
+	noninteracting psc,nsc,hvpsc,hvnsc
+
+ templayer latchup_error butted_tap
+	and-not tap_far_from_contact
 
  templayer tap_contact_halo
 	bloat-all psc,nsc,hvpsc,hvnsc allnactivetap,allpactivetap 6000
