@@ -1,8 +1,28 @@
-// r3_cmc version 1.1.1
+// r3_cmc version 1.1.2
 
 /*
-Copyright (c) 2020 Silicon Integration Initiative, Inc.
+ # Copytight 2025, IHP Open PDK Authors
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+ # You may obtain a copy of the License at
+ #
+ #     http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # This file incorporates code from the orginal R3_CMC model released under 
+ # the Educational Community License, Version 2.0 (the "Original License"); 
+ # http://www.si2.org/cmc
+ # Modifications:
+ # - __XYCE__ macro added to support ADMS compiler
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ #
+*/
 
+/*
+Original License
 Licensed under Educational Community License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may
 obtain a copy of the license at
@@ -15,8 +35,8 @@ specific language governing permissions and limitations under the License.
 
 The R3_CMC standard has been developed by the Silicon Integration Initiative's Compact Model Coalition.
 
-CMC Release Date: June 1, 2020
-Public Release Date: December 1, 2021
+CMC Release Date: June 16, 2023
+Public Release Date: December 16, 2024
 
 A link to the most recent version of this standard can be found at:
 http://www.si2.org/cmc
@@ -24,14 +44,14 @@ http://www.si2.org/cmc
 
 `define VERSION     1
 `define SUBVERSION  1
-`define REVISION    1
+`define REVISION    2
 `define LEVEL       1003
 
 //
 //  Verilog-A definition of the CMC 3-terminal resistor model, r3_cmc.
 //
 //  See the file r3_cmc.txt for a quick description of the model,
-//  and see the r3_cmc_v111.pdf file for complete documentation.
+//  and see the r3_cmc_v112.pdf file for complete documentation.
 //
 
 `include "discipline.h"
@@ -83,7 +103,7 @@ branch (dt   )   b_rth;   // local thermal branch
 `IPRnb( nsmm_w    ,   0.0     ,""                        , "number of standard deviations of local variation for w")
 `IPRnb( nsmm_l    ,   0.0     ,""                        , "number of standard deviations of local variation for l")
 `ifdef __XYCE__
-    `IPIcz(mult           ,1          ,""                                   ,"Number of devices in parallel")
+    `IPIoz(mult           ,1          ,""                    ,"Number of devices in parallel")
 `endif
 
 //
@@ -295,25 +315,23 @@ analog begin : analog_block
 
     begin : initializeModel
         if (`LEVEL!=level) begin
-            `ERROR("ERROR: r3_cmc model called with incorrect level parameter")
+            $error("ERROR: r3_cmc model called with incorrect level parameter");
         end
         if (`VERSION!=version) begin
-            `ERROR("ERROR: r3_cmc model version is inconsistent with the parameter set")
+            $error("ERROR: r3_cmc model version is inconsistent with the parameter set");
         end
         if (`SUBVERSION<subversion) begin
-            `ERROR("ERROR: r3_cmc model subversion is less than required for the parameter set")
+            $error("ERROR: r3_cmc model subversion is less than required for the parameter set");
         end
 `ifdef __XYCE__
-        mMod    = mult;
+            mMod    = mult;
 `else
-        mMod    = $mfactor;
+            mMod    = $mfactor;
 `endif
         gmin    = $simparam("gmin", 0.0);
         lFactor  =  (1.0-0.01*shrink)*scale*1.0e6;      // linear dimension conversion factor
         aFactor  =  lFactor*lFactor;                    // area conversion factor
         tiniK    = `TABS_NIST2004+tnom;
-        dfmin    =  sqrt(dp)/(dp+1.0e4);       // minimum value of df to ensure numerical stability
-        if ($port_connected(dt));              // make 'dt' optional
     end // initializeModel
 
 //
@@ -321,12 +339,13 @@ analog begin : analog_block
 //
 
     begin : initializeInstance
+        if ($port_connected(dt));                        // make 'dt' optional
         tdevC    = $temperature+trise-`TABS_NIST2004;    // device temperature
         if (tdevC<tmin) begin
-            `WARNING("WARNING: ambient temperature is lower than allowed minimum")
+            $warning("WARNING: ambient temperature is lower than allowed minimum");
         end
         if (tdevC>tmax) begin
-            `WARNING("WARNING: ambient temperature is higher than allowed maximum")
+            $warning("WARNING: ambient temperature is higher than allowed maximum");
         end
         `CLIPB1p0(tdevC,tdevC,tminclip,tmaxclip)
         tdevK    =  tdevC+`TABS_NIST2004;
@@ -336,16 +355,16 @@ analog begin : analog_block
         w_um     =  w*lFactor;                  // w       in um
         l_um     =  l*lFactor;                  // l       in um
         if (w_um<wmin) begin
-            `WARNING("WARNING: drawn width is smaller than allowed minimum")
+            $warning("WARNING: drawn width is smaller than allowed minimum");
         end
         if (w_um>wmax) begin
-            `WARNING("WARNING: drawn width is greater than allowed maximum")
+            $warning("WARNING: drawn width is greater than allowed maximum");
         end
         if (l_um<lmin) begin
-            `WARNING("WARNING: drawn length is smaller than allowed minimum")
+            $warning("WARNING: drawn length is smaller than allowed minimum");
         end
         if (l_um>lmax) begin
-            `WARNING("WARNING: drawn length is greater than allowed maximum")
+            $warning("WARNING: drawn length is greater than allowed maximum");
         end
         wd_um    =  wd*lFactor;                         // dogbone in um
         a1_um2   =  a1*aFactor;                         // a1      in um^2
@@ -406,14 +425,14 @@ analog begin : analog_block
             end
         end
         if (weff_um<=0.0) begin
-            `ERROR("ERROR: calculated effective r3_cmc resistor width is <= 0.0")
+            $error("ERROR: calculated effective r3_cmc resistor width is <= 0.0");
         end
         if (leff_um<=0.0) begin
-            `ERROR("ERROR: calculated effective r3_cmc resistor length is <= 0.0")
+            $error("ERROR: calculated effective r3_cmc resistor length is <= 0.0");
         end
         leffE_um =  leff_um+dxlsat;
         if (leffE_um<=0.0) begin
-            `ERROR("ERROR: calculated effective r3_cmc resistor length for velocity saturation is <= 0.0")
+            $error("ERROR: calculated effective r3_cmc resistor length for velocity saturation is <= 0.0");
         end
 
 //
@@ -464,7 +483,7 @@ analog begin : analog_block
         end
         r0       =  rsh*delr_rsh*(leff_um/weff_um)*(1.0-df*sqrt(dp_i));
         if (r0<=1.0e-99) begin
-            `ERROR("ERROR: calculated zero bias resistance is too small")
+            $error("ERROR: calculated zero bias resistance is too small");
         end
         if ((rc>0.0)&&(c1>0)) begin
             rc1_tnom =  (rc+rcw/w_um)/c1;
@@ -624,8 +643,8 @@ analog begin : analog_block
 //      Self-heating components
 //
 
+        power = (Irb*Vrb+Ip1*Vc1+Ip2*Vc2)+I(b_re1)*V(b_re1)+I(b_re2)*V(b_re2);
         if ((gth>0.0)&&(sw_et)&&(!sw_lin)) begin
-            power    =  (Irb*Vrb+Ip1*Vc1+Ip2*Vc2)+I(b_re1)*V(b_re1)+I(b_re2)*V(b_re2);
             Ith      = -power;         // negative as it flows dt->0
             if (tegth==0.0) begin
                 Irth     =  gth*dt_et;
@@ -640,7 +659,6 @@ analog begin : analog_block
                 end
             end
         end else begin                 // treat gth=0 as gth=inf
-            power    =  0.0;
             Ith      =  0.0;
             Irth     =  1.0e6*dt_et;   // becomes singular without this
         end
@@ -662,19 +680,19 @@ analog begin : analog_block
 //
 
         if (abs(Irb/weff_um)>jmax) begin
-            `WARNING("WARNING: Irb current density is greater than specified by jmax")
+            $warning("WARNING: Irb current density is greater than specified by jmax");
         end
         if (abs(Ip1/weff_um)>jmax) begin
-            `WARNING("WARNING: Ip1 current density is greater than specified by jmax")
+            $warning("WARNING: Ip1 current density is greater than specified by jmax");
         end
         if (abs(Vc1)>vmax) begin
-            `WARNING("WARNING: V(i1,c) voltage is greater than specified by vmax")
+            $warning("WARNING: V(i1,c) voltage is greater than specified by vmax");
         end
         if (abs(Ip2/weff_um)>jmax) begin
-            `WARNING("WARNING: Ip2 current density is greater than specified by jmax")
+            $warning("WARNING: Ip2 current density is greater than specified by jmax");
         end
         if (abs(Vc2)>vmax) begin
-            `WARNING("WARNING: V(i2,c) voltage is greater than specified by vmax")
+            $warning("WARNING: V(i2,c) voltage is greater than specified by vmax");
         end
     end // evaluateStatic
 
@@ -727,6 +745,10 @@ analog begin : analog_block
         I(b_pc2)   <+  Ip2;
         Pwr(b_rth) <+  Irth;
         Pwr(b_rth) <+  Ith;
+`ifdef __XYCE__
+        I(b_re1) <+  V(b_re1)/(rc1_tnom*tcrc);
+        I(b_re2) <+  V(b_re2)/(rc2_tnom*tcrc);
+`else
         if ((rc1_tnom/mMod)<=rthresh) begin    // V=R*I formulation
             V(b_re1) <+  I(b_re1)*rc1_tnom*tcrc;
         end else begin                         // I=G*V formulation
@@ -737,6 +759,7 @@ analog begin : analog_block
         end else begin                         // I=G*V formulation
             I(b_re2) <+  V(b_re2)/(rc2_tnom*tcrc);
         end
+`endif
     end // loadStatic
 
     begin : loadDynamic

@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -7,7 +6,7 @@ S {}
 E {}
 B 2 -290 -610 510 -210 {flags=graph
 
-y2=0.0065
+y2=0.041
 ypos1=0
 ypos2=2
 divy=5
@@ -72,30 +71,6 @@ C {devices/gnd.sym} 90 180 0 0 {name=l2 lab=GND}
 C {devices/ammeter.sym} 90 50 0 0 {name=Vppd}
 C {devices/gnd.sym} 270 180 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 270 50 0 0 {name=Vrh}
-C {sg13g2_pr/rsil.sym} -60 130 0 0 {name=R1
-w=0.5e-6
-l=10e-6
-model=rsil
-spiceprefix=X
-b=0
-m=1
-}
-C {sg13g2_pr/rppd.sym} 90 130 0 0 {name=R2
-w=0.5e-6
-l=0.5e-6
-model=rppd
-spiceprefix=X
-b=0
-m=1
-}
-C {sg13g2_pr/rhigh.sym} 270 130 0 0 {name=R3
-w=0.5e-6
-l=0.5e-6
-model=rhigh
-spiceprefix=X
-b=0
-m=1
-}
 C {simulator_commands_shown.sym} 1020 -300 0 0 {name=Simulator1
 simulator=xyce
 only_toplevel=false 
@@ -115,7 +90,7 @@ set_sim_defaults
 # Change the Xyce command. In the spice category there are currently
 # 5 commands (0, 1, 2, 3, 4). Command 3 is the Xyce batch
 # you can get the number by querying $sim(spice,n)
-set sim(spice,3,cmd) \{Xyce \\"$N\\"\}
+set sim(spice,3,cmd) \{Xyce -plugin  $env(PDK_ROOT)/$env(PDK)/libs.tech/xyce/plugins/Xyce_Plugin_r3_cmc.so \\"$N\\"\}
 
 # change the simulator to be used (Xyce)
 set sim(spice,default) 3
@@ -167,3 +142,38 @@ dc Vres 0 1 1m
 write dc_res_temp.raw
 .endc
 "}
+C {sg13g2_pr/sub.sym} -170 180 0 0 {name=l6 lab=sub!}
+C {sg13g2_pr/ptap1.sym} -170 150 0 0 {name=R1
+model=ptap1
+spiceprefix=X
+w=10.78e-6
+l=10.78e-6
+}
+C {sg13g2_pr/rsil.sym} -60 130 0 0 {name=R2
+w=0.5e-6
+l=0.5e-6
+model=rsil
+body=sub!
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rppd.sym} 90 130 0 0 {name=R3
+w=0.5e-6
+l=0.5e-6
+model=rppd
+body=sub!
+spiceprefix=X
+b=0
+m=1
+}
+C {sg13g2_pr/rhigh.sym} 270 130 0 0 {name=R4
+w=0.5e-6
+l=0.5e-6
+model=rhigh
+body=sub!
+spiceprefix=X
+b=0
+m=1
+}
+C {devices/gnd.sym} -170 120 2 0 {name=l7 lab=GND}

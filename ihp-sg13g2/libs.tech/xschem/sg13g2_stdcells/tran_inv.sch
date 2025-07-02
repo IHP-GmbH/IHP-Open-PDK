@@ -1,5 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -54,7 +53,6 @@ value="
 vvdd vdd 0 dc 1.8
 vvss vss 0 0
 .control
-pre_osdi ./psp103_nqs.osdi
 save all 
 tran 50p 20n
 meas tran tdelay TRIG v(in) VAL=0.9 FALL=1 TARG v(out) VAL=0.9 RISE=1
