@@ -24,12 +24,12 @@ if BEOL
   logger.info('Starting 6.9.1 Solder Bump')
 
   # Solder Bump derivations
- 
+
   # Rule Padb.a: SBumpPad size is 60.00 um
   logger.info('Executing rule Padb.a')
-  padb_a_value = drc_rules["Padb_a"].to_f
-  padb_a_l1 = sbumppad.width((padb_a_value.um - drc_tole), projection, projection_limits(nil, 10*drc_tole)).polygons
-  padb_a_l2 = sbumppad.with_bbox_width(nil,(padb_a_value.um))
+  padb_a_value = drc_rules['Padb_a'].to_f
+  padb_a_l1 = sbumppad.width(padb_a_value.um - drc_tole, projection, projection_limits(nil, 10 * drc_tole)).polygons
+  padb_a_l2 = sbumppad.with_bbox_width(nil, padb_a_value.um)
   padb_a = padb_a_l1.join(padb_a_l2)
   padb_a.output('Padb.a', "6.9. Padb.a : SBumpPad size is #{padb_a_value} um")
   padb_a_l1.forget
@@ -38,15 +38,15 @@ if BEOL
 
   # Rule Padb.b: Min. SBumpPad space is 70.00 um
   logger.info('Executing rule Padb.b')
-  padb_b_value = drc_rules["Padb_b"].to_f
+  padb_b_value = drc_rules['Padb_b'].to_f
   padb_b = sbumppad.space(padb_b_value.um, euclidian)
   padb_b.output('Padb.b', "6.9. Padb.b : Min. SBumpPad space is #{padb_b_value} um")
   padb_b.forget
 
   # Rule Padb.c: Min. TopMetal2 (within dfpad) enclosure of SBumpPad is 10.00 um
   logger.info('Executing rule Padb.c')
-  padb_c_value = drc_rules["Padb_c"].to_f
-  padb_c_l1 = sbumppad.enclosed(topmetal2_drw, padb_c_value.um - 2*drc_tole, projection).polygons
+  padb_c_value = drc_rules['Padb_c'].to_f
+  padb_c_l1 = sbumppad.enclosed(topmetal2_drw, padb_c_value.um - 2 * drc_tole, projection).polygons
   padb_c_l2 = dfpad_sbump.and(passiv_sbump).not(topmetal2_drw)
   padb_c = padb_c_l1.join(padb_c_l2)
   padb_c.output('Padb.c', "6.9. Padb.c : Min. TopMetal2 (within dfpad) enclosure of SBumpPad is #{padb_c_value} um")
@@ -64,4 +64,12 @@ if BEOL
   padb_f_l2.forget
   padb_f.forget
 
+  unless SHORT_DRC
+    # Rule Padb.d: Min. SBumpPad space to EdgeSeal is 50.00 um
+    logger.info('Executing rule Padb.d')
+    padb_d_value = drc_rules['Padb_d'].to_f
+    padb_d = sbumppad.sep(edgeseal_drw, padb_d_value.um, euclidian)
+    padb_d.output('Padb.d', "6.9. Padb.d : Min. SBumpPad space to EdgeSeal is #{padb_d_value} um")
+    padb_d.forget
+  end
 end

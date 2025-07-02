@@ -28,20 +28,35 @@ if BEOL
 
   # Rule TV1.a: Min. and max. TopVia1 width is 0.42µm
   logger.info('Executing rule TV1.a')
-  tv1_a_value = drc_rules["TV1_a"].to_f
-  tv1a_l1 = topvia1_nseal.without_bbox_min(tv1_a_value.um)
-  tv1a_l2 = topvia1_nseal.without_bbox_max(tv1_a_value.um)
-  tv1a_l = tv1a_l1.join(tv1a_l2)
-  tv1a_l.output('TV1.a', "5.21. TV1.a : Min. and max. TopVia1 width: #{tv1_a_value} µm")
-  tv1a_l1.forget
-  tv1a_l2.forget
-  tv1a_l.forget
+  tv1_a_value = drc_rules['TV1_a'].to_f
+  tv1_a_l1 = topvia1_nseal.without_bbox_min(tv1_a_value.um)
+  tv1_a_l2 = topvia1_nseal.without_bbox_max(tv1_a_value.um)
+  tv1_a_l = tv1_a_l1.join(tv1_a_l2)
+  tv1_a_l.output('TV1.a', "5.21. TV1.a : Min. and max. TopVia1 width: #{tv1_a_value} µm")
+  tv1_a_l1.forget
+  tv1_a_l2.forget
+  tv1_a_l.forget
 
   # Rule TV1.b: Min. TopVia1 space is 0.42µm
   logger.info('Executing rule TV1.b')
-  tv1_b_value =  drc_rules["TV1_b"].to_f
-  tv1b_l1 = topvia1_nseal.space(tv1_b_value.um, euclidian)
-  tv1b_l1.output('TV1.b', "5.21. TV1.b : Min. TopVia1 space: #{tv1_b_value} µm")
-  tv1b_l1.forget
+  tv1_b_value = drc_rules['TV1_b'].to_f
+  tv1_b_l = topvia1_nseal.space(tv1_b_value.um, euclidian)
+  tv1_b_l.output('TV1.b', "5.21. TV1.b : Min. TopVia1 space: #{tv1_b_value} µm")
+  tv1_b_l.forget
 
+  unless SHORT_DRC
+    # Rule TV1.c: Min. Metal5 enclosure of TopVia is 0.10 um
+    logger.info('Executing rule TV1.c')
+    tv1_c_value = drc_rules['TV1_c'].to_f
+    tv1_c_l = topvia1_nseal.enclosed(metal5_drw, tv1_c_value.um, euclidian)
+    tv1_c_l.output('TV1.c', "5.21. TV1.c : Min. Metal5 enclosure of TopVia1 is #{tv1_c_value} um")
+    tv1_c_l.forget
+
+    # Rule TV1.d: Min. TopMetal1 enclosure of TopVia1 is 0.42 um
+    logger.info('Executing rule TV1.d')
+    tv1_d_value = drc_rules['TV1_d'].to_f
+    tv1_d_l = topvia1_nseal.enclosed(topmetal1_drw, tv1_d_value.um, euclidian)
+    tv1_d_l.output('TV1.d', "5.21. TV1.d : Min. TopMetal1 enclosure of TopVia1 is #{tv1_d_value} um")
+    tv1_d_l.forget
+  end
 end

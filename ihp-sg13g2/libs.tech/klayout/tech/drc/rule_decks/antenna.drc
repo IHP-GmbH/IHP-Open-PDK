@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #====================================================================================================================
 #--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
 #====================================================================================================================
@@ -23,9 +25,18 @@ class MultiLogger
   def initialize(*targets)
     @targets = targets
   end
-  def info(msg) @targets.each { |t| t.info(msg) } end
-  def warn(msg) @targets.each { |t| t.warn(msg) } end
-  def error(msg) @targets.each { |t| t.error(msg) } end
+
+  def info(msg)
+    @targets.each { |t| t.info(msg) }
+  end
+
+  def warn(msg)
+    @targets.each { |t| t.warn(msg) }
+  end
+
+  def error(msg)
+    @targets.each { |t| t.error(msg) }
+  end
 end
 
 logger = MultiLogger.new(stdout_logger, file_logger)
@@ -78,11 +89,11 @@ when 'tiling'
 when 'deep'
   #=== HIER MODE ===
   deep
-  logger.info("deep  mode is enabled for antenna table")
+  logger.info('deep  mode is enabled for antenna table')
 else
   #=== FLAT MODE ===
   flat
-  logger.info("flat  mode is enabled for antenna table")
+  logger.info('flat  mode is enabled for antenna table')
 end
 
 #================================================

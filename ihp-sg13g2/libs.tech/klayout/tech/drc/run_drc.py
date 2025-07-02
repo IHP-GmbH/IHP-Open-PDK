@@ -156,7 +156,9 @@ def check_drc_results(
     """
 
     if len(results_db_files) < 1:
-        logging.error("❌ KLayout did not generate any result database (.lyrdb). Please check the logs.")
+        logging.error(
+            "❌ KLayout did not generate any result database (.lyrdb). Please check the logs."
+        )
         exit(1)
 
     results_db_files = [Path(f) for f in results_db_files]
@@ -180,20 +182,30 @@ def check_drc_results(
     violating_rules = get_rules_with_violations(report_path)
 
     if violating_rules:
-        logging.error("==================================================================================")
-        logging.error("❌ --- KLayout DRC Check Failed: Violations were detected in the layout. --- ❌")
-        logging.error("==================================================================================")
+        logging.error(
+            "=================================================================================="
+        )
+        logging.error(
+            "❌ --- KLayout DRC Check Failed: Violations were detected in the layout. --- ❌"
+        )
+        logging.error(
+            "=================================================================================="
+        )
         logging.error(f"Violated rules are : {str(violating_rules)}\n")
     else:
-        logging.info("=====================================================================================")
-        logging.info("✅ --- KLayout DRC Check Passed: No DRC violations detected in the layout. --- ✅")
-        logging.info("=====================================================================================")
+        logging.info(
+            "====================================================================================="
+        )
+        logging.info(
+            "✅ --- KLayout DRC Check Passed: No DRC violations detected in the layout. --- ✅"
+        )
+        logging.info(
+            "====================================================================================="
+        )
 
 
 def generate_drc_run_template(
-    drc_dir: str,
-    run_dir: Path,
-    run_tables_list: Optional[List[str]] = None
+    drc_dir: str, run_dir: Path, run_tables_list: Optional[List[str]] = None
 ) -> Path:
     """
     Generate the rule deck template to run DRC from individual table files.
@@ -218,7 +230,14 @@ def generate_drc_run_template(
     run_tables_list = run_tables_list or []
 
     deck_name = "main"
-    exclude_decks = {"antenna", "density", "sg13g2_maximal", "main", "layers_def", "tail"}
+    exclude_decks = {
+        "antenna",
+        "density",
+        "sg13g2_maximal",
+        "main",
+        "layers_def",
+        "tail",
+    }
 
     # Gather all available .drc files in rule_decks/
     all_drc_files = list(rule_deck_dir.glob("*.drc"))
@@ -227,10 +246,7 @@ def generate_drc_run_template(
     # Determine which tables to include
     if not run_tables_list:
         # Default: include all except excluded
-        selected_tables = [
-            f.name for f in all_drc_files
-            if f.stem not in exclude_decks
-        ]
+        selected_tables = [f.name for f in all_drc_files if f.stem not in exclude_decks]
 
         # Sort by numeric prefix
         selected_tables.sort(
@@ -244,8 +260,7 @@ def generate_drc_run_template(
         selected_tables = []
         for table in run_tables_list:
             match = next(
-                (name for name in all_drc_names if name.endswith(f"_{table}.drc")),
-                None
+                (name for name in all_drc_names if name.endswith(f"_{table}.drc")), None
             )
             if match:
                 selected_tables.append(match)
@@ -314,7 +329,14 @@ def get_list_of_tables(drc_dir: str):
     drc_dir : str
         Path to the DRC folder to get the list of tables from.
     """
-    exclude_decks = {"antenna", "density", "sg13g2_maximal", "main", "layers_def", "tail"}
+    exclude_decks = {
+        "antenna",
+        "density",
+        "sg13g2_maximal",
+        "main",
+        "layers_def",
+        "tail",
+    }
     tables = []
     for f in (Path(drc_dir) / "rule_decks").glob("*.drc"):
         parts = f.stem.split("_")
@@ -387,7 +409,9 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
 
     # Locate JSON rule file paths
     script_dir = Path(__file__).resolve().parent
-    tech_rule_path = (script_dir / "../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json").resolve()
+    tech_rule_path = (
+        script_dir / "../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json"
+    ).resolve()
     default_rule_path = (script_dir / "rule_decks/sg13g2_tech_default.json").resolve()
     switches["drc_json_default"] = default_rule_path
 
@@ -410,11 +434,11 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
 
     # Optional switches
     switches["run_mode"] = arguments.run_mode if arguments.run_mode else "deep"
-    switches["MaxRuleSet"] = "true" if arguments.MaxRuleSet else "false"
+    switches["short_drc"] = "true" if arguments.short_drc else "false"
+    switches["extra_rules"] = "true" if arguments.extra_rules else "false"
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
     switches["no_offgrid"] = "true" if arguments.no_offgrid else "false"
-    switches["no_connectivity"] = "true" if arguments.no_connectivity else "false"
     switches["density"] = "false" if arguments.no_density else "true"
 
     # Set topcell and input layout
@@ -440,7 +464,9 @@ def check_klayout_version():
         exit(1)
 
     if not klayout_version_output:
-        logging.error("KLayout is not found. Please make sure it is installed and in your PATH.")
+        logging.error(
+            "KLayout is not found. Please make sure it is installed and in your PATH."
+        )
         exit(1)
 
     version_str = klayout_version_output.split()[-1]
@@ -451,7 +477,9 @@ def check_klayout_version():
         minor = int(version_parts[1]) if len(version_parts) > 1 else 0
         patch = int(version_parts[2]) if len(version_parts) > 2 else 0
     except ValueError:
-        logging.error(f"Failed to parse KLayout version string: '{klayout_version_output}'")
+        logging.error(
+            f"Failed to parse KLayout version string: '{klayout_version_output}'"
+        )
         exit(1)
 
     if (major, minor, patch) < (0, 29, 11):
@@ -485,7 +513,9 @@ def check_layout_path(layout_path: str) -> str:
     path = Path(layout_path)
 
     if not path.is_file():
-        logging.error(f"Layout file path '{layout_path}' does not exist or is not a file.")
+        logging.error(
+            f"Layout file path '{layout_path}' does not exist or is not a file."
+        )
         exit(1)
 
     if not layout_path.endswith((".gds", ".oas")):
@@ -545,16 +575,16 @@ def run_check(
     layout_name = Path(layout_path).stem
     topcell = sws["topcell"]
 
-    logging.info(f"Running IHP-SG13G2 {drc_table} checks on design {layout_path}, topcell: {topcell}")
+    logging.info(
+        f"Running IHP-SG13G2 {drc_table} checks on design {layout_path}, topcell: {topcell}"
+    )
 
     report_path = run_dir / f"{layout_name}_{topcell}_{drc_table}.lyrdb"
     log_path = run_dir / f"{layout_name}_{topcell}_{drc_table}.log"
     new_sws = sws.copy()
-    new_sws.update({
-        "report": report_path,
-        "log": log_path,
-        "run_mode": sws["run_mode"]
-    })
+    new_sws.update(
+        {"report": report_path, "log": log_path, "run_mode": sws["run_mode"]}
+    )
 
     sws_str = build_switches_string(new_sws)
     sws_str += f" -rd table_name={drc_table}"
@@ -601,8 +631,10 @@ def run_parallel_run(
     if not args.no_density:
         rule_deck_files["density"] = rule_deck_full_path / "rule_decks" / "density.drc"
 
-    if args.MaxRuleSet:
-        rule_deck_files["sg13g2_maximal"] = rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
+    if args.extra_rules:
+        rule_deck_files["sg13g2_maximal"] = (
+            rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
+        )
 
     # Main table-based checks
     table_list = args.table if args.table else get_list_of_tables(rule_deck_full_path)
@@ -613,7 +645,9 @@ def run_parallel_run(
     result_db_files = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers_count) as executor:
         future_to_name = {
-            executor.submit(run_check, rule_file, name, layout_path, run_dir, switches): name
+            executor.submit(
+                run_check, rule_file, name, layout_path, run_dir, switches
+            ): name
             for name, rule_file in rule_deck_files.items()
         }
 
@@ -687,7 +721,7 @@ def run_single_processor(
     # Run additional checks if requested
     run_check_by_flag(args.antenna, "antenna")
     run_check_by_flag(not args.no_density, "density")
-    run_check_by_flag(args.MaxRuleSet, "sg13g2_maximal")
+    run_check_by_flag(args.extra_rules, "sg13g2_maximal")
 
     # Final result verification
     check_drc_results(result_dbs, run_dir, layout_path, switches)
@@ -711,7 +745,9 @@ def main(run_dir: Path, args):
 
     # Check that input GDS file exists
     if not Path(args.path).exists():
-        logging.error(f"The input GDS file path '{args.path}' does not exist. Please recheck.")
+        logging.error(
+            f"The input GDS file path '{args.path}' does not exist. Please recheck."
+        )
         exit(1)
 
     # Get rule deck directory
@@ -728,13 +764,9 @@ def main(run_dir: Path, args):
 
     # Choose between single-core and multi-core run
     if workers_count == 1 or args.antenna_only or args.density_only:
-        run_single_processor(
-            args, rule_deck_full_path, layout_path, switches, run_dir
-        )
+        run_single_processor(args, rule_deck_full_path, layout_path, switches, run_dir)
     else:
-        run_parallel_run(
-            args, rule_deck_full_path, layout_path, switches, run_dir
-        )
+        run_parallel_run(args, rule_deck_full_path, layout_path, switches, run_dir)
 
 
 def parse_args():
@@ -743,7 +775,7 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--no_feol] [--no_beol] [--MaxRuleSet] [--no_connectivity] [--no_density]
+            [--short_drc] [--extra_rules] [--no_feol] [--no_beol] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--macro_gen]
     """
@@ -754,60 +786,98 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--path", type=str, required=True,
-        help="Path to the input GDS file to be processed."
+        "--path",
+        type=str,
+        required=True,
+        help="Path to the input GDS file to be processed.",
     )
 
     parser.add_argument(
-        "--table", action='append', default=[],
+        "--table",
+        action="append",
+        default=[],
         help="DRC table name(s) to execute (e.g., activ, metal1). "
-             "This option can be used multiple times."
+        "This option can be used multiple times.",
     )
 
     parser.add_argument(
-        "--mp", type=int, default=1,
-        help="Number of parts to split the rule deck for parallel execution. [default: 1]"
+        "--mp",
+        type=int,
+        default=1,
+        help="Number of parts to split the rule deck for parallel execution. [default: 1]",
     )
 
     parser.add_argument(
-        "--run_dir", type=str, default=None,
-        help="Dir to store all run results. If not specified, a timestamped dir under the current path will be used."
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Dir to store all run results. If not specified, a timestamped dir under the current path will be used.",
     )
 
     parser.add_argument(
-        "--topcell", type=str,
-        help="Top-level cell name to use from the input GDS."
+        "--topcell", type=str, help="Top-level cell name to use from the input GDS."
     )
 
     parser.add_argument(
         "--density_thr",
         type=int,
         default=os.cpu_count(),
-        help="Number of threads to use during the density run (default: number of CPU cores)."
+        help="Number of threads to use during the density run (default: number of CPU cores).",
     )
 
     parser.add_argument(
-        "--run_mode", type=str, choices=["flat", "deep", "tiling"], default="deep",
-        help="KLayout execution mode: flat, deep, or tiling. [default: deep]"
+        "--run_mode",
+        type=str,
+        choices=["flat", "deep", "tiling"],
+        default="deep",
+        help="KLayout execution mode: flat, deep, or tiling. [default: deep]",
     )
 
     parser.add_argument(
-        "--drc_json", type=str,
-        help="Path to a JSON file that defines rule values to use."
+        "--drc_json",
+        type=str,
+        help="Path to a JSON file that defines rule values to use.",
     )
 
-    parser.add_argument("--no_feol", action="store_true", help="Disable all FEOL-related DRC checks.")
-    parser.add_argument("--no_beol", action="store_true", help="Disable all BEOL-related DRC checks.")
-    parser.add_argument("--MaxRuleSet", action="store_true", help="Force execution of the full rule deck.")
-    parser.add_argument("--no_connectivity", action="store_true", help="Skip connectivity-related rules.")
-    parser.add_argument("--no_density", action="store_true", help="Disable density rule checks.")
-    parser.add_argument("--density_only", action="store_true", help="Run only density rules.")
-    parser.add_argument("--antenna", action="store_true", help="Enable antenna rule checks.")
-    parser.add_argument("--antenna_only", action="store_true", help="Run only antenna rules.")
-    parser.add_argument("--no_offgrid", action="store_true", help="Disable offgrid rule checks.")
-    parser.add_argument("--macro_gen", action="store_true", help="Only generate the DRC rule deck without running.")
+    parser.add_argument(
+        "--short_drc",
+        action="store_true",
+        help="Run only a minimal DRC checks using a short rule set.",
+    )
+    parser.add_argument(
+        "--no_feol", action="store_true", help="Disable all FEOL-related DRC checks."
+    )
+    parser.add_argument(
+        "--no_beol", action="store_true", help="Disable all BEOL-related DRC checks."
+    )
+    parser.add_argument(
+        "--extra_rules",
+        action="store_true",
+        help="Run the remaining DRC rules from the full rule set (may be slower).",
+    )
+    parser.add_argument(
+        "--no_density", action="store_true", help="Disable density rule checks."
+    )
+    parser.add_argument(
+        "--density_only", action="store_true", help="Run only density rules."
+    )
+    parser.add_argument(
+        "--antenna", action="store_true", help="Enable antenna rule checks."
+    )
+    parser.add_argument(
+        "--antenna_only", action="store_true", help="Run only antenna rules."
+    )
+    parser.add_argument(
+        "--no_offgrid", action="store_true", help="Disable offgrid rule checks."
+    )
+    parser.add_argument(
+        "--macro_gen",
+        action="store_true",
+        help="Only generate the DRC rule deck without running.",
+    )
 
     return parser.parse_args()
+
 
 # ================================================================
 # -------------------------- MAIN --------------------------------

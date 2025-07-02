@@ -107,9 +107,9 @@ logger.info("Klayout will use #{$thr} thread(s)")
 deep
 logger.info('Deep mode enabled: reading layers and preparing general derivations.')
 
-# MinRuleSet
-MaxRuleSet = bool_check?($MaxRuleSet)
-logger.info("Maximum rule set enabled:  #{MaxRuleSet}")
+# Short DRC
+SHORT_DRC = bool_check?($short_drc)
+logger.info("Short DRC enabled: #{SHORT_DRC}")
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
@@ -304,27 +304,31 @@ activ_filler.forget
 activ_mask.forget
 gatpoly_drw.forget
 gatpoly_filler.forget
-metal1_drw.forget
 metal1_filler.forget
-metal1_slit.forget
-metal2_drw.forget
 metal2_filler.forget
-metal2_slit.forget
-metal3_drw.forget
 metal3_filler.forget
-metal3_slit.forget
-metal4_drw.forget
 metal4_filler.forget
-metal4_slit.forget
-metal5_drw.forget
 metal5_filler.forget
-metal5_slit.forget
-topmetal1_drw.forget
 topmetal1_filler.forget
-topmetal1_slit.forget
-topmetal2_drw.forget
 topmetal2_filler.forget
-topmetal2_slit.forget
+
+if SHORT_DRC
+  # Forget unused layers to free memory
+  metal1_drw.forget
+  metal1_slit.forget
+  metal2_drw.forget
+  metal2_slit.forget
+  metal3_drw.forget
+  metal3_slit.forget
+  metal4_drw.forget
+  metal4_slit.forget
+  metal5_drw.forget
+  metal5_slit.forget
+  topmetal1_drw.forget
+  topmetal1_slit.forget
+  topmetal2_drw.forget
+  topmetal2_slit.forget
+end
 
 #===================================================================================
 # --------------------------------- DENSITY RUNSET ---------------------------------
@@ -553,9 +557,7 @@ end
 # Rule TM1.d: Max. global TopMetal1 density [%]= 70.0.
 logger.info('Executing rule TM1.d')
 tm1_d_val = drc_rules['TM1_d'].to_f
-if tm1_dens_ratio > tm1_d_val
-  CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}")
-end
+CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}") if tm1_dens_ratio > tm1_d_val
 topmetal1.forget
 
 #================================================
@@ -604,51 +606,93 @@ lbe_drw.forget
 # ---------------- Metal Slits ------------------
 #================================================
 
+unless SHORT_DRC
+  # layer lists
+  metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit, topmetal1_slit, topmetal2_slit]
+  metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw]
+  metals_names = %w[metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2]
+  metals_abbrev = %w[M1 M2 M3 M4 M5 TM1 TM2]
+
+  slt_i_val = drc_rules['Slt_i'].to_f
+  slt_i_inverse = 1.0 / slt_i_val
+  slt_i_w = drc_rules['Slt_i_w'].to_f
+  slt_i_w_sz = 0.5 * slt_i_w.um
+
+  # Rule Slt.i: Min. Metal:slit density for any Metal plate bigger than 35 µm x 35 µm [%] is 6.00 %
+  metals_slit_lay.zip(metals_lay, metals_names, metals_abbrev).each do |met_slit, met, met_name, met_abbrev|
+    logger.info("Executing rule Slt.i_#{met_abbrev}")
+    slt_i_l1 = met.sized(-slt_i_w_sz).sized(slt_i_w_sz)
+    slt_i_l2 = met_slit.and(slt_i_l1)
+    connect(slt_i_l2, slt_i_l1)
+    slt_i_l3 = antenna_check(slt_i_l2, slt_i_l1, slt_i_inverse)
+    slt_i_l3.output("Slt.i_#{met_abbrev}",
+                    "Min. #{met_name}:slit density for any Metal plate bigger than 35 µm x35 µm [%] is #{slt_i_val * 100}.")
+    slt_i_l1.forget
+    slt_i_l2.forget
+    slt_i_l3.forget
+  end
+  # Forget unused layers to free memory
+  metal1_drw.forget
+  metal1_slit.forget
+  metal2_drw.forget
+  metal2_slit.forget
+  metal3_drw.forget
+  metal3_slit.forget
+  metal4_drw.forget
+  metal4_slit.forget
+  metal5_drw.forget
+  metal5_slit.forget
+  topmetal1_drw.forget
+  topmetal1_slit.forget
+  topmetal2_drw.forget
+  topmetal2_slit.forget
+end
 
 #================================================
 # -------------- Density Report -----------------
 #================================================
 
-logger.info("#" * 50)
-logger.info("#{"Density Report".center(48)}#")
-logger.info("#" * 50)
-logger.info("")
+logger.info('#' * 50)
+logger.info("#{'Density Report'.center(48)}#")
+logger.info('#' * 50)
+logger.info('')
 
-logger.info("Layer areas and percentages (units: um^2)")
-logger.info("-" * 50)
-logger.info("")
+logger.info('Layer areas and percentages (units: um^2)')
+logger.info('-' * 50)
+logger.info('')
 
-logger.info("Total Area     = %.2f um^2" % chip_area)
-logger.info("")
+logger.info(format('Total Area     = %<area>.2f um^2', area: chip_area))
+logger.info('')
 
 # Logs the area and density percentage of a given layer, with optional min/max limits.
 def log_layer_density(logger, layer_name, area, ratio, min = nil, max = nil)
   percentage = ratio * 100
   limits_str = if min && max
-                 "[Min = %.2f%%,  Max = %.2f%%]" % [min * 100, max * 100]
+                 format('[Min = %<min>.2f%%,  Max = %<max>.2f%%]', min: min * 100, max: max * 100)
                elsif min
-                 "[Min = %.2f%%]" % (min * 100)
+                 format('[Min = %<min>.2f%%]', min: min * 100)
                elsif max
-                 "[Max = %.2f%%]" % (max * 100)
+                 format('[Max = %<max>.2f%%]', max: max * 100)
                else
-                 ""
+                 ''
                end
 
-  logger.info("%-10s Area      = %5.2f µm²" % [layer_name, area])
-  logger.info("%-10s Density %% = %5.2f%%  %s" % [layer_name, percentage, limits_str])
-  logger.info("")  # Blank line for spacing
+  logger.info(format('%<name>-10s Area      = %<area>5.2f µm²', name: layer_name, area: area))
+  logger.info(format('%<name>-10s Density %% = %<density>5.2f%%  %<limits>s',
+                     name: layer_name, density: percentage, limits: limits_str))
+  logger.info('') # Blank line for spacing
 end
 
-log_layer_density(logger, "Activ",     act_area,  act_dens_ratio,  afil_g_val, afil_g1_val)
-log_layer_density(logger, "GatPoly",   poly_area, poly_dens_ratio, gfil_g_val)
-log_layer_density(logger, "Metal1",    m1_area,   m1_dens_ratio,   m1_j_val, m1_k_val)
-log_layer_density(logger, "Metal2",    m2_area,   m2_dens_ratio,   mn_j_val, mn_k_val)
-log_layer_density(logger, "Metal3",    m3_area,   m3_dens_ratio,   mn_j_val, mn_k_val)
-log_layer_density(logger, "Metal4",    m4_area,   m4_dens_ratio,   mn_j_val, mn_k_val)
-log_layer_density(logger, "Metal5",    m5_area,   m5_dens_ratio,   mn_j_val, mn_k_val)
-log_layer_density(logger, "TopMetal1", tm1_area,  tm1_dens_ratio, tm1_c_val, tm1_d_val)
-log_layer_density(logger, "TopMetal2", tm2_area,  tm2_dens_ratio, tm2_c_val, tm2_d_val)
-log_layer_density(logger, "LBE",       lbe_area,  lbe_dens_ratio, nil,         tm2_d_val)
+log_layer_density(logger, 'Activ',     act_area,  act_dens_ratio,  afil_g_val, afil_g1_val)
+log_layer_density(logger, 'GatPoly',   poly_area, poly_dens_ratio, gfil_g_val)
+log_layer_density(logger, 'Metal1',    m1_area,   m1_dens_ratio,   m1_j_val, m1_k_val)
+log_layer_density(logger, 'Metal2',    m2_area,   m2_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, 'Metal3',    m3_area,   m3_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, 'Metal4',    m4_area,   m4_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, 'Metal5',    m5_area,   m5_dens_ratio,   mn_j_val, mn_k_val)
+log_layer_density(logger, 'TopMetal1', tm1_area,  tm1_dens_ratio, tm1_c_val, tm1_d_val)
+log_layer_density(logger, 'TopMetal2', tm2_area,  tm2_dens_ratio, tm2_c_val, tm2_d_val)
+log_layer_density(logger, 'LBE',       lbe_area,  lbe_dens_ratio, nil, tm2_d_val)
 
 # ===================================
 exec_end_time = Time.now

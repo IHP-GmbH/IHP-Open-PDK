@@ -30,4 +30,53 @@ if BEOL
   pad_m.output('Pad.m', '6.9. Pad.m : SBumpPad and CuPillarPad in same layout not allowed')
   pad_m.forget
 
+  unless SHORT_DRC
+    # metal list
+    metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw]
+    metals_upper_lay = [topmetal1_drw, topmetal2_drw]
+
+    metal_start_index = 1
+
+    metals_lay.each_with_index do |metal_lay, index|
+      met_no = metal_start_index + index
+
+      # Rule Pad.fR: Min. recommended Metal(1:5) exit length is 7.00 um
+      logger.info("Executing rule Pad.fR_M#{met_no}")
+      pad_fr_value = drc_rules['Pad_fR'].to_f
+      pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
+      pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
+      pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
+      pad_fr = pad_fr_l3.not(pad_fr_l1)
+      pad_fr.output("Pad.fR_M#{met_no}",
+                    "6.9. Pad.fR_M#{met_no} : Min. recommended Metal#{met_no} exit length is #{pad_fr_value} um")
+      pad_fr_l1.forget
+      pad_fr_l2.forget
+      pad_fr_l3.forget
+      pad_fr.forget
+    end
+
+    metals_upper_lay.each_with_index do |metal_lay, index|
+      met_no = metal_start_index + index
+
+      # Rule Pad.fR: Min. recommended Top Metal(1,2) exit length is 7.00 um
+      logger.info("Executing rule Pad.fR_TM#{met_no}")
+      pad_fr_value = drc_rules['Pad_fR'].to_f
+      pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
+      pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
+      pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
+      pad_fr = pad_fr_l3.not(pad_fr_l1)
+      pad_fr.output("Pad.fR_TM#{met_no}",
+                    "6.9. Pad.fR_TM#{met_no} : Min. recommended TopMetal#{met_no} exit length is #{pad_fr_value} um")
+      pad_fr_l1.forget
+      pad_fr_l2.forget
+      pad_fr_l3.forget
+      pad_fr.forget
+    end
+
+    # Rule Pad.i: dfpad without TopMetal2 not allowed
+    logger.info('Executing rule Pad.i')
+    pad_i = dfpad_drw.not(topmetal2_drw)
+    pad_i.output('Pad.i', '6.9. Pad.i : dfpad without TopMetal2 not allowed')
+    pad_i.forget
+  end
 end

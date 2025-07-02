@@ -103,19 +103,6 @@ TABLE_NAME = $table_name || 'main'
 
 logger.info("table_name selected  #{TABLE_NAME}")
 
-# connectivity rules
-CONNECTIVITY_EN = !bool_check?($conn_drc)
-
-conn_tables = %w[main nwell nbulay]
-
-CONNECTIVITY_RULES = if conn_tables.include?(TABLE_NAME) && CONNECTIVITY_EN
-                       true
-                     else
-                       false
-                     end
-
-logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}")
-
 # Run mode setup
 def setup_run_mode(run_mode)
   case run_mode
@@ -149,9 +136,14 @@ logger.info("BEOL enabled: #{BEOL}")
 OFFGRID = !bool_check?($no_offgrid)
 logger.info("OffGrid enabled: #{OFFGRID}")
 
-# MinRuleSet
-MaxRuleSet = bool_check?($MaxRuleSet)
-logger.info("Maximum rule set enabled: #{MaxRuleSet}")
+# Short DRC
+SHORT_DRC = bool_check?($short_drc)
+logger.info("Short DRC enabled: #{SHORT_DRC}")
+
+# Connectivity rules
+conn_tables = %w[main nwell nbulay]
+CONNECTIVITY_RULES = conn_tables.include?(TABLE_NAME)
+logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES} for table #{TABLE_NAME}")
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
@@ -162,21 +154,6 @@ logger.info("Maximum rule set enabled: #{MaxRuleSet}")
 #================================================
 # -------------------- UTILS --------------------
 #================================================
-
-# Method to convert glob pattern to a case-insensitive glob-style pattern
-def glob_to_case_insensitive_glob(glob)
-  wildcards = ['*', '?']
-
-  glob.chars.map do |c|
-    if c =~ /[A-Za-z]/
-      "[#{c.upcase}#{c.downcase}]"
-    elsif wildcards.include?(c)
-      c # Keep wildcard characters as they are
-    else
-      Regexp.escape(c)
-    end
-  end.join
-end
 
 # Method to get DRC values from JSON files
 def get_drc_values(logger)
@@ -207,7 +184,7 @@ def get_drc_values(logger)
   # Report any fallback rules used
   missing_keys = default_rules.keys - tech_rules.keys
   unless missing_keys.empty?
-    logger.warn("The following rules values were missing in tech json and default values were used:")
+    logger.warn('The following rules values were missing in tech json and default values were used:')
     missing_keys.each { |rule| logger.warn("  - #{rule}") }
   end
 
@@ -232,13 +209,69 @@ logger.info("Total area of the design is #{chip_area} um^2.")
 logger.info("The design dimensions are #{chip_w} µm * #{chip_l} µm.")
 
 # Enable tiling if chip area exceeds 100,000 µm²
-en_tiles = chip_area > 1000_000.um2
+en_tiles = chip_area > 1_000_000.um2
 
 # === General Derivations ===
 logger.info('Starting general IHP-SG13G2 derivations.')
 
+# Pwell
+logger.info('Starting Pwell derivations')
+pwell_allowed = CHIP.not(pwell_block)
+digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
+pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
+
+# n activ
+nact_pact_tables = %w[main pwellblock gatpoly cont]
+if nact_pact_tables.include?(TABLE_NAME)
+  logger.info('Starting n-Activ derivations')
+  nactiv  = activ_drw.not(psd_drw.join(nsd_block))
+end
+
+# p activ
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie]
+if pact_pact_tables.include?(TABLE_NAME)
+  logger.info('Starting p-Activ derivations')
+  pactiv  = activ_drw.and(psd_drw)
+end
+
+# p tap
+ptap_tables = %w[main pwellblock npnsubstratetie]
+if ptap_tables.include?(TABLE_NAME)
+  logger.info('Starting ptap derivations')
+  ptap = pactiv.and(pwell)
+end
+
+# n tap
+ntap_tables = %w[main]
+if ntap_tables.include?(TABLE_NAME)
+  logger.info('Starting ntap derivations')
+  ntap = nactiv.and(nwell_drw)
+end
+
+# activ FETs
+pact_fet_tables = %w[main gatpoly]
+if pact_fet_tables.include?(TABLE_NAME)
+  logger.info('Starting pact FET derivations')
+  pact_fet = pactiv.and(nwell_drw)
+end
+
+nact_fet_tables = %w[main pwellblock gatpoly]
+if nact_fet_tables.include?(TABLE_NAME)
+  logger.info('Starting nact FET derivations')
+  nact_fet = nactiv.and(pwell)
+end
+
+# Gate FETs
+gate_tables = %w[main gatpoly]
+if gate_tables.include?(TABLE_NAME)
+  logger.info('Starting Gate derivations')
+  res_mk = polyres_drw.join(res_drw)
+  ngate = nact_fet.and(gatpoly_drw)
+  pgate = pact_fet.and(gatpoly_drw)
+end
+
 # Cont derivations
-cont_tables = %w[main cont contb]
+cont_tables = %w[main cont contbar]
 if cont_tables.include?(TABLE_NAME)
   logger.info('Starting cont/contbar general derivations')
   cont_nseal = cont_drw.not(edgeseal_drw)
@@ -263,6 +296,54 @@ drc_tole = 0.005.um
 #------------- LAYERS CONNECTIONS ---------------
 #================================================
 
+if CONNECTIVITY_RULES
+
+  logger.info('Starting IHP-SG13G2 DRC connectivity related derivations.')
+  # nwell
+  nwell_iso = nwell_drw.and(nbulay_drw)
+  nwell_holes = nwell_drw.holes.not(nwell_drw)
+
+  # General pwell
+  pwell_sub = pwell_allowed.not(digisub_drw).not(nbulay_drw.interacting(nwell_holes))
+
+  # conn layers
+  poly_con      = gatpoly_drw.not(res_mk)
+  metal1_con    = metal1_drw.not(metal1_res)
+  metal2_con    = metal2_drw.not(metal2_res)
+  metal3_con    = metal3_drw.not(metal3_res)
+  metal4_con    = metal4_drw.not(metal4_res)
+  metal5_con    = metal5_drw.not(metal5_res)
+  topmetal1_con = topmetal1_drw.not(topmetal1_res).not(ind_drw)
+  topmetal2_con = topmetal2_drw.not(topmetal2_res).not(ind_drw)
+
+  # Mimcap
+  mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
+  topvia1_n_cap = topvia1_drw.not(mim_via)
+
+  logger.info('Starting IHP-SG13G2 DRC connectivity setup')
+  # Inter-layer
+  connect(pwell_sub, pwell)
+  connect(pwell, ptap)
+  connect(nwell_drw, ntap)
+  connect(ntap, cont_drw)
+  connect(ptap, cont_drw)
+  connect(poly_con, cont_drw)
+  connect(nact_fet, cont_drw)
+  connect(pact_fet, cont_drw)
+  connect(cont_drw, metal1_con)
+  connect(metal1_con, via1_drw)
+  connect(via1_drw, metal2_con)
+  connect(metal2_con, via2_drw)
+  connect(via2_drw, metal3_con)
+  connect(metal3_con, via3_drw)
+  connect(via3_drw, metal4_con)
+  connect(metal4_con, via4_drw)
+  connect(via4_drw, metal5_con)
+  connect(metal5_con, topvia1_n_cap)
+  connect(topvia1_n_cap, topmetal1_con)
+  connect(topmetal1_con, topvia2_drw)
+  connect(topvia2_drw, topmetal2_con)
+end
 
 #================================================
 #------------ PRE-DEFINED FUNCTIONS -------------
@@ -369,6 +450,12 @@ def get_octagon(polygon_check)
   maybe_oct4 = maybe_oct3.interacting(v_edges_check, 2, 2)
   diag_edges_check = maybe_oct4.edges.with_angle(44.5, 45.5, absolute)
   maybe_oct4.interacting(diag_edges_check, 4, 4)
+end
+
+# === IMPLICIT EXTRACTION ===
+if CONNECTIVITY_RULES
+  logger.info('Connectivity rules enabled, Netlist object will be generated.')
+  netlist
 end
 
 #================================================

@@ -43,10 +43,20 @@ if BEOL
     # Rule MFil.c: Min. Metal(n):filler space to Metal(n)  is 0.42 um
     logger.info("Executing rule M#{metalfiller_no}Fil.c")
     mfil_c_value = drc_rules['MFil_c'].to_f
-    mnfil_c = metalfiller_lay.sep(metal_layer, mfil_c_value.um, euclidian)
-    mnfil_c.output("M#{metalfiller_no}Fil.c",
+    mnfil_c_l = metal_layer.sep(metalfiller_lay, mfil_c_value.um, euclidian)
+    mnfil_c_l.output("M#{metalfiller_no}Fil.c",
                    "5.18. M#{metalfiller_no}Fil.c : Min. Metal#{metalfiller_no}:filler space to Metal#{metalfiller_no} is #{mfil_c_value} um")
-    mnfil_c.forget
+    mnfil_c_l.forget
+
+    next if SHORT_DRC
+
+    # Rule MFil.a2: Max. Metal(n):filler width is 5.00 um
+    logger.info("Executing rule M#{metalfiller_no}Fil.a2")
+    mfil_a2_value = drc_rules['MFil_a2'].to_f
+    mnfil_a2_l = metalfiller_lay.with_bbox_max(mfil_a2_value.um + 0.001.um, nil)
+    mnfil_a2_l.output("M#{metalfiller_no}Fil.a2",
+                    "5.18. M#{metalfiller_no}Fil.a2 : Max. Metal#{metalfiller_no}:filler width is #{mfil_a2_value} um")
+    mnfil_a2_l.forget
   end
 
   if en_tiles
