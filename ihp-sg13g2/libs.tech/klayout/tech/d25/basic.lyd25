@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>d25</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>d25_scripts</group-name>
+ <menu-path>tools_menu.d25.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>d25-dsl-xml</dsl-interpreter-name>
+ <text>
+# Basic stack for SG13G2 process
+#
+# Includes: n-well, diffusion, Poly, M1 to 7, MIM
+
+poly_height   = 0.2
+sti_depth     = 0.4
+nwell_depth   = 0.7
+
+contact_top   = 0.64
+metal1_height = 0.42
+via1_height   = 0.54
+metal2_height = 0.49
+via2_height   = 0.54
+metal3_height = 0.49
+via3_height   = 0.54
+metal4_height = 0.49
+via4_height   = 0.54
+metal5_height = 0.49
+mim_height    = 0.15
+top_via1_height   = 0.85
+top_metal1_height = 2.0
+top_via2_height   = 2.8
+top_metal2_height = 3.0
+
+diff          = input(1, 0)
+poly          = input(5, 0)
+nwell         = input(31, 0)
+cont          = input(6, 0)
+metal1        = input(8, 0)
+via1          = input(19, 0)
+metal2        = input(10, 0)
+via2          = input(29, 0)
+metal3        = input(30, 0)
+via3          = input(49, 0)
+metal4        = input(50, 0)
+via4          = input(66, 0)
+metal5        = input(67, 0)
+mim           = input(36, 0)
+top_via1      = input(125, 0)
+top_metal1    = input(126, 0)
+top_via2      = input(133, 0)
+top_metal2    = input(134, 0)
+
+deep
+
+cont_on_poly  = cont &amp; poly
+cont_on_diff  = cont - poly
+
+top_via1_on_mim       = top_via1 &amp; mim
+top_via1_outside_mim  = top_via1 - mim
+
+flat
+
+# Diff + Nwell
+z(diff, -sti_depth..0)
+# NOTE: nwell is offset be 50nm, so diffusion "wins"
+z(nwell, -nwell_depth..-0.05)
+
+# Poly
+z(poly, 0..poly_height)
+
+# Tracks current level
+y = contact_top
+
+# Contact
+z(cont_on_poly, poly_height..y)
+z(cont_on_diff, 0..y)
+
+# Stack Metal1 to Metal5
+[ 
+  [ metal1, metal1_height ],
+  [ via1, via1_height ],
+  [ metal2, metal2_height ],
+  [ via2, via2_height ],
+  [ metal3, metal3_height ],
+  [ via3, via3_height ],
+  [ metal4, metal4_height ],
+  [ via4, via4_height ],
+  [ metal5, metal5_height ]
+].each do |lay,height|
+  z(lay, zstart: y, height: height)
+  y += height
+end
+
+z(mim, zstart: y, height: mim_height)
+z(top_via1_on_mim, (y + mim_height)..(y + top_via1_height))
+z(top_via1_outside_mim, y..(y + top_via1_height))
+y += top_via1_height
+
+# TopMetal1 to TopMetal2
+[ 
+  [ top_metal1, top_metal1_height ],
+  [ top_via2, top_via2_height ],
+  [ top_metal2, top_metal2_height ]
+].each do |lay,height|
+  z(lay, zstart: y, height: height)
+  y += height
+end
+</text>
+</klayout-macro>
