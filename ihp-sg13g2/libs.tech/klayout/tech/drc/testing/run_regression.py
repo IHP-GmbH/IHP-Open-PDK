@@ -50,7 +50,7 @@ RULES_VAR = {
     "met_no": ("2", "3", "4", "5"),
     "via_no": ("2", "3", "4"),
     "metalfiller_no": ("1", "2", "3", "4", "5"),
-    "slt_met": ("M1", "M2", "M3", "M4", "M5", "TM1", "TM2"),
+    "met_abbrev": ("M1", "M2", "M3", "M4", "M5", "TM1", "TM2"),
     "pin_rule": ("a", "b", "e", "f_M2", "f_M3", "f_M4", "f_M5", "g", "h"),
     "forb_lay": (
         "baspoly",
@@ -65,7 +65,7 @@ RULES_VAR = {
         "pbiwind",
         "pempoly",
     ),
-    "sealb_lay": (
+    "seal_b_lay": (
         "metal1",
         "metal2",
         "metal3",

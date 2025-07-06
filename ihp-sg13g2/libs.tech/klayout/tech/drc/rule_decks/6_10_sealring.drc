@@ -76,43 +76,44 @@ if BEOL
   # Rule Seal.n : Sealring must be enclosed by an unbroken Passiv ring
   logger.info('Executing rule Seal.n')
   seal_n_l1 = passiv_drw.not(edgeseal_drw).holes
-  seal_n = edgeseal_drw.not(seal_n_l1)
-  seal_n.output('Seal.n', '6.10. seal.n : Sealring must be enclosed by an unbroken Passiv ring')
-  seal_n.forget
+  seal_n_l = edgeseal_drw.not(seal_n_l1)
+  seal_n_l.output('Seal.n', '6.10. seal.n : Sealring must be enclosed by an unbroken Passiv ring')
+  seal_n_l.forget
   seal_n_l1.forget
 
   unless SHORT_DRC
-    # sealring list
-    sealring_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw,
+    seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw,
                      activ_drw, psd_drw]
-    sealb_lays = %w[metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2 activ psd]
+    seal_b_names = %w[metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2 activ psd]
 
     # Rule Seal.b: Min. Activ space to EdgeSeal-Activ, EdgeSeal-pSD, EdgeSeal-Metal(n=1-5), EdgeSeal-TopMetal1,
     # EdgeSeal-TopMetal2 is 4.90 um
-    sealb_lays.zip(sealring_lays).each do |sealb_lay, lay|
-      logger.info("Executing rule seal.b_#{sealb_lay}")
-      seal_b_value = drc_rules['Seal_b'].to_f
+    seal_b_value = drc_rules['Seal_b'].to_f
+    seal_b_names.zip(seal_b_lays).each do |seal_b_lay, lay|
+      logger.info("Executing rule seal.b_#{seal_b_lay}")
       seal_b_l1 = lay.and(edgeseal_drw)
-      seal_b = activ_drw.sep(seal_b_l1, seal_b_value.um, euclidian)
-      seal_b.output("Seal.b_#{sealb_lay}",
-                    "6.10. Seal.b_#{sealb_lay} : Min. Activ space to EdgeSeal-#{sealb_lay} is #{seal_b_value} um")
+      seal_b_l = activ_drw.sep(seal_b_l1, seal_b_value.um, euclidian)
+      seal_b_l.output("Seal.b_#{seal_b_lay}",
+                    "6.10. Seal.b_#{seal_b_lay} : Min. Activ space to EdgeSeal-#{seal_b_lay} is #{seal_b_value} um")
       seal_b_l1.forget
-      seal_b.forget
+      seal_b_l.forget
     end
 
     # Rule Seal.k: Min. EdgeSeal 45-degree corner length is 21.00 um
     logger.info('Executing rule Seal.k')
     seal_k_value = drc_rules['Seal_k'].to_f
     seal_k_l1 = edgeseal_drw.edges.with_angle(45, absolute)
-    seal_k = seal_k_l1.with_length(nil, seal_k_value.um)
-    seal_k.output('Seal.k', "6.10. Seal.k : Min. EdgeSeal 45-degree corner length is #{seal_k_value} um")
+    seal_k_l = seal_k_l1.with_length(nil, seal_k_value.um)
+    seal_k_l.output('Seal.k', "6.10. Seal.k : Min. EdgeSeal 45-degree corner length is #{seal_k_value} um")
     seal_k_l1.forget
-    seal_k.forget
+    seal_k_l.forget
 
     # Rule Seal.m : Only one sealring per chip allowed
     logger.info('Executing rule Seal.m')
-    seal_m = CHIP.interacting(edgeseal_drw, 2)
-    seal_m.output('Seal.m', '6.10. Seal.m : Only one sealring per chip allowed')
-    seal_m.forget
+    seal_m_l1 = CHIP.interacting(edgeseal_drw, 2)
+    seal_m_l = edgeseal_drw.and(seal_m_l1)
+    seal_m_l.output('Seal.m', '6.10. Seal.m : Only one sealring per chip allowed')
+    seal_m_l.forget
+    seal_m_l1.forget
   end
 end

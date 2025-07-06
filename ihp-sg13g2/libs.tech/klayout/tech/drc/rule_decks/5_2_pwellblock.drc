@@ -42,7 +42,7 @@ if FEOL
     pwb_e1_l1 = nact_fet.and(thickgateox_drw)
     pwb_e1_l = pwell_block.sep(pwb_e1_l1, pwb_e1_value.um, euclidian)
     pwb_e1_l.output('PWB.e1',
-                  "5.2. PWB.e1 Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell is #{pwb_e1_value} um")
+                    "5.2. PWB.e1 Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell is #{pwb_e1_value} um")
     pwb_e1_l1.forget
     pwb_e1_l.forget
 
@@ -52,18 +52,24 @@ if FEOL
     pwb_f_l1 = ptap.not(thickgateox_drw)
     pwb_f_l = pwell_block.sep(pwb_f_l1, pwb_f_value.um, euclidian)
     pwb_f_l.output('PWB.f',
-                 "5.2. PWB.f Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell is #{pwb_f_value} um")
+                   "5.2. PWB.f Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell is #{pwb_f_value} um")
     pwb_f_l1.forget
     pwb_f_l.forget
 
     # Rule PWB.f1: Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell 0.62 um
     logger.info('Executing rule PWB.f1')
     pwb_f1_value = drc_rules['PWB_f1'].to_f
+    schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+    schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
+    schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
+
     pwb_f1_l1 = ptap.and(thickgateox_drw)
-    pwb_f1_l = pwell_block.sep(pwb_f1_l1, pwb_f1_value.um, euclidian)
+    pwb_f1_l2 = pwell_block.outside(schottky_nbl1)
+    pwb_f1_l = pwb_f1_l2.sep(pwb_f1_l1, pwb_f1_value.um, euclidian)
     pwb_f1_l.output('PWB.f1',
-                  "5.2. PWB.f1 Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell #{pwb_f1_value} um")
+                    "5.2. PWB.f1 Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell #{pwb_f1_value} um")
     pwb_f1_l1.forget
+    pwb_f1_l2.forget
     pwb_f1_l.forget
   end
 end

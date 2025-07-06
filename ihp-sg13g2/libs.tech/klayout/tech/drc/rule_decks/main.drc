@@ -221,21 +221,21 @@ digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
 pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
 
 # n activ
-nact_pact_tables = %w[main pwellblock gatpoly cont]
+nact_pact_tables = %w[main pwellblock gatpoly cont latchup]
 if nact_pact_tables.include?(TABLE_NAME)
   logger.info('Starting n-Activ derivations')
   nactiv  = activ_drw.not(psd_drw.join(nsd_block))
 end
 
 # p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie]
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup]
 if pact_pact_tables.include?(TABLE_NAME)
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup]
 if ptap_tables.include?(TABLE_NAME)
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
@@ -255,7 +255,7 @@ if pact_fet_tables.include?(TABLE_NAME)
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly]
+nact_fet_tables = %w[main pwellblock gatpoly latchup]
 if nact_fet_tables.include?(TABLE_NAME)
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
@@ -271,7 +271,7 @@ if gate_tables.include?(TABLE_NAME)
 end
 
 # Cont derivations
-cont_tables = %w[main cont contbar]
+cont_tables = %w[main cont contbar schottkydiode]
 if cont_tables.include?(TABLE_NAME)
   logger.info('Starting cont/contbar general derivations')
   cont_nseal = cont_drw.not(edgeseal_drw)

@@ -29,7 +29,7 @@ if FEOL
     # Rule pSD.c1: Min. pSD enclosure of P+Activ in PWell is 0.03 um
     logger.info('Executing rule pSD.c1')
     psd_c1_value = drc_rules['pSD_c1'].to_f
-    psd_c1_l1 = activ_drw.not_outside(psd_drw).and(pwell)
+    psd_c1_l1 = activ_drw.not_outside(psd_drw).and(pwell).outside(edgeseal_drw)
     psd_c1_l = psd_c1_l1.enclosed(psd_drw, psd_c1_value.um, euclidian)
     psd_c1_l.output('pSD.c1', "5.10. pSD.c1 Min. pSD enclosure of P+Activ in PWell is #{psd_c1_value} um")
     psd_c1_l1.forget

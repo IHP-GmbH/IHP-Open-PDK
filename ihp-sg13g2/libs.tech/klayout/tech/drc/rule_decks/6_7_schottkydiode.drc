@@ -23,23 +23,22 @@ if FEOL
 
   logger.info('Starting 6.7 Schottky diode table')
 
-  # Schottky diode derivations
-  sdiod = contbar.and(nbulay_drw)
-
   unless SHORT_DRC
+    # Schottky diode derivations
+    contbar_nbulay = contbar.and(nbulay_drw)
+
     # Rule Sdiod.d: Min. and max. ContBar width inside nBuLay is 0.30 um
     logger.info('Executing rule Sdiod.d')
     sdiod_d_value = drc_rules['Sdiod_d'].to_f
-    sdiod_d = sdiod.without_bbox_min(sdiod_d_value.um)
-    sdiod_d.output('Sdiod.d', "6.7. Sdiod.d : Min. and max. ContBar width inside nBuLay is #{sdiod_d_value} um")
-    sdiod_d.forget
+    sdiod_d_l = contbar_nbulay.without_bbox_min(sdiod_d_value.um)
+    sdiod_d_l.output('Sdiod.d', "6.7. Sdiod.d : Min. and max. ContBar width inside nBuLay is #{sdiod_d_value} um")
+    sdiod_d_l.forget
 
     # Rule Sdiod.e: Min. and max. ContBar length inside nBuLay is 1.00 um
     logger.info('Executing rule Sdiod.e')
     sdiod_e_value = drc_rules['Sdiod_e'].to_f
-    sdiod_e = sdiod.without_bbox_max(sdiod_e_value.um)
-    sdiod_e.output('Sdiod.e', "6.7. Sdiod.e : Min. and max. ContBar length inside nBuLay is #{sdiod_e_value} um")
-    sdiod_e.forget
-
+    sdiod_e_l = contbar_nbulay.without_bbox_max(sdiod_e_value.um)
+    sdiod_e_l.output('Sdiod.e', "6.7. Sdiod.e : Min. and max. ContBar length inside nBuLay is #{sdiod_e_value} um")
+    sdiod_e_l.forget
   end
 end

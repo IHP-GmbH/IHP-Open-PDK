@@ -47,8 +47,9 @@ if BEOL
     # Rule MIM.gR: Max. recommended total MIM area per chip (µm²) is 174800.00 µm²
     logger.info('Executing rule MIM.gR')
     mim_gr_value = drc_rules['Mim_gR'].to_f
-    if mim_drw.area > mim_gr_value.um
-      mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm²")
+    mim_total_area = mim_drw.area
+    if mim_total_area > mim_gr_value.um
+      mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm², Total used MIM area is #{mim_total_area} µm²")
     end
   end
 end

@@ -14,13 +14,15 @@ formatter = proc do |_severity, datetime, _progname, msg|
   "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
 end
 
-# Create file and stdout loggers
+# Create file logger
 file_logger = Logger.new($log)
 file_logger.formatter = formatter
+
+# Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
 
-# Multi-logger
+# MultiLogger class to broadcast to multiple loggers
 class MultiLogger
   def initialize(*targets)
     @targets = targets
@@ -39,6 +41,7 @@ class MultiLogger
   end
 end
 
+# Use the multi-logger for your application
 logger = MultiLogger.new(stdout_logger, file_logger)
 
 #================================================
