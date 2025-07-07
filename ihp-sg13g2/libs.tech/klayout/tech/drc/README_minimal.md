@@ -7,7 +7,7 @@ List of available DRC rules:
 | Act.a             | Min. Activ width                                                            |
 | Act.b             | Min. Activ space or notch                                                   |
 | AFil.g/g1         | Global Activ density [%]                                                    |
-| AFil.g2/g3        | Activ coverage ratio for any 800 x 800 µm² chip area [%]                    |
+| AFil.g2/g3        | Activ coverage ratio for any 800 x 800 ÂµmÂ² chip area [%]                    |
 | TGO.f             | Min. ThickGateOx width                                                      |
 | Gat.a             | Min. GatPoly width                                                          |
 | Gat.b             | Min. GatPoly space or notch                                                 |
@@ -30,11 +30,11 @@ List of available DRC rules:
 | M5.a              | Min. Metal5 width                                                           |
 | M5.b              | Min. Metal5 space or notch                                                  |
 | M5.j/k            | Global Metal5 density [%]                                                   |
-| M1Fil.h/k         | Metal1 and Metal1:filler coverage ratio for any 800 x 800 µm² chip area [%] |
-| M2Fil.h/k         | Metal2 and Metal2:filler coverage ratio for any 800 x 800 µm² chip area [%] |
-| M3Fil.h/k         | Metal3 and Metal3:filler coverage ratio for any 800 x 800 µm² chip area [%] |
-| M4Fil.h/k         | Metal4 and Metal4:filler coverage ratio for any 800 x 800 µm² chip area [%] |
-| M5Fil.h/k         | Metal5 and Metal5:filler coverage ratio for any 800 x 800 µm² chip area [%] |
+| M1Fil.h/k         | Metal1 and Metal1:filler coverage ratio for any 800 x 800 ÂµmÂ² chip area [%] |
+| M2Fil.h/k         | Metal2 and Metal2:filler coverage ratio for any 800 x 800 ÂµmÂ² chip area [%] |
+| M3Fil.h/k         | Metal3 and Metal3:filler coverage ratio for any 800 x 800 ÂµmÂ² chip area [%] |
+| M4Fil.h/k         | Metal4 and Metal4:filler coverage ratio for any 800 x 800 ÂµmÂ² chip area [%] |
+| M5Fil.h/k         | Metal5 and Metal5:filler coverage ratio for any 800 x 800 ÂµmÂ² chip area [%] |
 | V1.a              | Min. and max. Via1 width                                                    |
 | V1.b              | Min. Via1 space                                                             |
 | V2.a              | Min. and max. Via2 width                                                    |
@@ -66,7 +66,7 @@ List of available DRC rules:
 | Pin.h             | Min. TopMetal2 enclosure of TopMetal2:pin                                   |
 | LBE.a             | Min. LBE width                                                              |
 | LBE.b             | Max. LBE width                                                              |
-| LBE.b1            | Max. LBE area (µm²)                                                         |
+| LBE.b1            | Max. LBE area (ÂµmÂ²)                                                         |
 | LBE.c             | Min. LBE space or notch                                                     |
 | LBE.d             | Min. LBE space to inner edge of EdgeSeal                                    |
 | LBE.h             | No LBE ring allowed                                                         |
