@@ -8,7 +8,7 @@ Explains how to use the SG13G2 LVS rule decks.
 - [Table of contents](#table-of-contents)
   - [Folder Structure](#folder-structure)
   - [Prerequisites](#prerequisites)
-  - [Devices Status](#devices-status)
+  - [Installation](#installation)
   - [Usage](#usage)
     - [CLI](#cli)
       - [LVS Outputs](#lvs-outputs)

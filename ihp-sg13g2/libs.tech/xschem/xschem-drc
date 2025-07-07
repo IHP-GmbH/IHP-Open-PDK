@@ -224,3 +224,35 @@ proc diode_drc {instance symbol model w l } {
   return $res
 }
 
+# IHP SG13G2 S-Varicap checks
+proc svaricap_drc {instance symbol model w l Nx} {
+  set res {}
+
+  # Validate Nx
+  if {![string is integer -strict $Nx] || $Nx < 1 || $Nx > 10} {
+    append res "${instance} ($model): Nx = $Nx is invalid, must be an integer between 1 and 10" \n
+    return $res
+  }
+
+  # Remove 'u' suffix if present
+  regsub {u$} $w {} w_clean
+  regsub {u$} $l {} l_clean
+
+  # Convert to double
+  if {![string is double $w_clean] || ![string is double $l_clean]} {
+    append res "${instance} ($model): Invalid width or length format" \n
+    return $res
+  }
+
+
+  # Accept only the two valid (w, l) combinations
+  set valid_comb1 [expr abs($w_clean - 3.74) < 1e-6 && abs($l_clean - 0.3) < 1e-6]
+  set valid_comb2 [expr abs($w_clean - 9.74) < 1e-6 && abs($l_clean - 0.8) < 1e-6]
+
+  if {!($valid_comb1 || $valid_comb2)} {
+    append res "${instance} ($model): Invalid (w,l) combination. Allowed: (3.74u, 0.3u) or (9.74u, 0.8u)" \n
+    return $res
+  }
+
+  return $res
+}
