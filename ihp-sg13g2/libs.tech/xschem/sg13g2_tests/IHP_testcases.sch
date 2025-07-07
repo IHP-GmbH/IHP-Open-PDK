@@ -31,6 +31,7 @@ T {Transient} 380 -740 0 0 0.8 0.8 {}
 T {AC} 730 -740 0 0 0.8 0.8 {}
 T {Monte Carlo} 1060 -740 0 0 0.8 0.8 {}
 T {S-param} 1440 -740 0 0 0.8 0.8 {}
+T {Tools} 1800 -740 0 0 0.8 0.8 {}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2023 IHP PDK Authors"}
 C {devices/launcher.sym} 90 -810 0 0 {name=h1
 descr="IHP-Open-PDK"
@@ -69,3 +70,5 @@ C {sg13g2_tests/tran_bondpad.sym} 520 -540 0 0 {name=x31}
 C {sg13g2_tests/dc_esd_diodes.sym} 180 -150 0 0 {name=x31}
 C {sg13g2_tests/dc_esd_nmos_cl.sym} 180 -110 0 0 {name=x32}
 C {sg13g2_tests/dc_hbt_13g2_5t.sym} 180 -260 0 0 {name=x33}
+C {sg13g2_tests/inv_mc_tb.sym} 1930 -630 0 0 {name=x34}
+C {sg13g2_tests/inv_sweep_tb.sym} 1930 -590 0 0 {name=x35}

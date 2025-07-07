@@ -33,7 +33,7 @@
 # log_file    - path to the log file [default: no log file]
 # in_gds      - path to the GDS layout to check (required in batch mode)
 # cell        - name of the cell to check
-# report_file - path to the report database [default: sg13g2_minimal.lyrdb in the script directory]
+# report_file - path to the report database [default: sg13g2_minimal.lyrdb in the layout directory]
 
 # to set logfile: -rd logfile="sg13g2_minimal.log"
 if $log_file
@@ -52,6 +52,12 @@ if main_window and not $in_gds
         main_window.load_layout(layout_path, 1)
         curr_layout_view = main_window.current_view()
     end
+    active_filename = RBA::CellView::active.filename
+    if active_filename != ""
+        report_dir = File.dirname(active_filename)
+    else
+        report_dir = "/tmp"
+    end
     active_layout = RBA::CellView::active.layout
     active_cellname = RBA::CellView::active.cell_name
     source(active_layout, active_cellname)
@@ -69,6 +75,7 @@ else
         active_layout = source.layout
         active_cellname = source.cell_name
     end
+    report_dir = File.dirname($in_gds)
 end
 
 unless active_layout or $in_gds
@@ -79,7 +86,8 @@ if active_layout.dbu != 0.001
     puts "WARNING: Layout dbu value (" + active_layout.dbu.to_s + " ) deviates from rule file dbu value (0.001). This will scale the layout and may not be intended."
 end
 
-report_file = __dir__ + "/sg13g2_minimal.lyrdb"
+report_dir = File.expand_path(report_dir)
+report_file = report_dir + "/sg13g2_minimal.lyrdb"
 # to set report file: -rd report_file="sg13g2_minimal.lyrdb"
 if $report_file
     report_file = File.expand_path($report_file)
@@ -103,7 +111,7 @@ class DRC::DRCLayer
     def output(*args)
         count = self.hier_count()
         $drc_error_count += count
-        puts("Rule %s: %d error(s)" % [args[0], count])
+        puts("%s: %d" % [args[0], count])
         original_output(*args)
     end
 end
@@ -449,8 +457,9 @@ class DRC::DRCLayer
                        metric: @engine.euclidian,
                        consider_intersecting_edges: true,
                        consider_touch_points: true,
-                       consider_overlaps_as_errors: false,
+                       consider_overlaps: false,
                        ignore_non_axis_aligned_edges: false,
+                       inside_edges_are_errors: false,
                        min_angle: 0,
                        max_angle: 90,
                        include_min_angle: true,
@@ -460,7 +469,7 @@ class DRC::DRCLayer
         other_min_coherence_state =  other.data.min_coherence?
         self.data.min_coherence = true
         other.data.min_coherence = true
-        if consider_overlaps_as_errors
+        if consider_overlaps
             output_layer = self.separation(other, value, metric,
                                            @engine.angle_limit(180), @engine.without_touching_corners)
             abutting_edges = output_layer.data.processed(AbuttingEdges::new)
@@ -495,6 +504,9 @@ class DRC::DRCLayer
                     include_max_angle,
                     false)
             end
+        end
+        if inside_edges_are_errors
+            output_layer = output_layer.join(self.and(other).edges.ext_convert_to_edge_pair_layer())
         end
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
@@ -927,7 +939,7 @@ Metal4_pin = source.polygons("50/2")
 Metal4_filler = source.polygons("50/22")
 Metal4_slit = source.polygons("50/24")
 EmPoly = source.polygons("55/0")
-TEXT_0 = source.labels("63/0")
+TEXT = source.labels("63/0")
 Via4 = source.polygons("66/0")
 Metal5 = source.polygons("67/0")
 Metal5_pin = source.polygons("67/2")
@@ -956,33 +968,40 @@ Act_density = Activ.ext_or(Activ_filler)
 Gat_density = GatPoly.ext_or(GatPoly_filler)
 Cont_SQ = Cont.ext_rectangles(true, false, [["==", 0.16.um]], [["==", 0.16.um]], nil)
 ContBar = Cont.ext_with_area([["&gt;", (0.16*0.16).um2]])
+Metal1_Nslit = Metal1.ext_not(Metal1_slit)
+Metal2_Nslit = Metal2.ext_not(Metal2_slit)
 Act_Nsram = Activ.ext_not(SRAM)
 GP_Nsram = GatPoly.ext_not(SRAM)
-M1_Nsram = Metal1.ext_not(SRAM)
-M2_Nsram = Metal2.ext_not(SRAM)
-M3_Nsram = Metal3.ext_not(SRAM)
+Metal3_Nslit = Metal3.ext_not(Metal3_slit)
 Via1_edgC1_out = Via1.ext_not(EdgeSeal)
 Via2_edgC1_out = Via2.ext_not(EdgeSeal)
 Cont_outside_EdgeSeal = Cont.ext_outside(EdgeSeal)
 ThickGateOx_TGO_f = ThickGateOx.ext_width(0.86.um, consider_intersecting_edges: false, polygon_output: true)
 Via3_edgC1_out = Via3.ext_not(EdgeSeal)
-M4_Nsram = Metal4.ext_not(SRAM)
+Metal4_Nslit = Metal4.ext_not(Metal4_slit)
 Via4_edgC1_out = Via4.ext_not(EdgeSeal)
-M5_Nsram = Metal5.ext_not(SRAM)
+Metal5_Nslit = Metal5.ext_not(Metal5_slit)
 TopVia1_edgC1_out = TopVia1.ext_not(EdgeSeal)
+TopMetal1_Nslit = TopMetal1.ext_not(TopMetal1_slit)
 TopVia1_or_Vmim = TopVia1.ext_or(Vmim)
 TopVia2_edgC1_out = TopVia2.ext_not(EdgeSeal)
+TopMetal2_Nslit = TopMetal2.ext_not(TopMetal2_slit)
 M1_density = Metal1.ext_or(Metal1_filler).ext_not(Metal1_slit)
 M2_density = Metal2.ext_or(Metal2_filler).ext_not(Metal2_slit)
-emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(TEXT_0, "E")
+emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(TEXT, "E")
 M3_density = Metal3.ext_or(Metal3_filler).ext_not(Metal3_slit)
 M4_density = Metal4.ext_or(Metal4_filler).ext_not(Metal4_slit)
 M5_density = Metal5.ext_or(Metal5_filler).ext_not(Metal5_slit)
 TM1_density = TopMetal1.ext_or(TopMetal1_filler).ext_not(TopMetal1_slit)
 TM2_density = TopMetal2.ext_or(TopMetal2_filler).ext_not(TopMetal2_slit)
+M1_Nsram = Metal1_Nslit.ext_not(SRAM)
+M2_Nsram = Metal2_Nslit.ext_not(SRAM)
 GP_Nsram_Gat_a = GP_Nsram.ext_width(0.13.um, consider_intersecting_edges: false, polygon_output: true)
 GP_Nsram_Gat_b = GP_Nsram.ext_space(0.18.um, consider_intersecting_edges: false, polygon_output: true)
-transG2L = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2L").ext_covering(emi2Pin)
+M3_Nsram = Metal3_Nslit.ext_not(SRAM)
+M4_Nsram = Metal4_Nslit.ext_not(SRAM)
+M5_Nsram = Metal5_Nslit.ext_not(SRAM)
+transG2L = TRANS.ext_interacting_with_text(TEXT, "npn13G2L").ext_covering(emi2Pin)
 -&gt; do
     Activ_Act_a.dup
 end.().output("Act.a", "Min. Activ width = 0.15")
@@ -1025,7 +1044,7 @@ end.().output("Cnt.a", "Min. and max. Cont width = 0.16")
     Cont_outside_EdgeSeal.ext_space(0.18.um, consider_intersecting_edges: false)
 end.().output("Cnt.b", "Min. Cont space = 0.18")
 -&gt; do
-    Metal1.ext_width(0.16.um)
+    Metal1_Nslit.ext_width(0.16.um)
 end.().output("M1.a", "Min. Metal1 width = 0.16")
 -&gt; do
     M1_Nsram.ext_space(0.18.um)
@@ -1038,7 +1057,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal2.ext_width(0.2.um)
+    Metal2_Nslit.ext_width(0.2.um)
 end.().output("M2.a", "Min. Metal2 width = 0.20")
 -&gt; do
     M2_Nsram.ext_space(0.21.um)
@@ -1051,7 +1070,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal3.ext_width(0.2.um)
+    Metal3_Nslit.ext_width(0.2.um)
 end.().output("M3.a", "Min. Metal3 width = 0.20")
 -&gt; do
     M3_Nsram.ext_space(0.21.um)
@@ -1064,7 +1083,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal4.ext_width(0.2.um)
+    Metal4_Nslit.ext_width(0.2.um)
 end.().output("M4.a", "Min. Metal4 width = 0.20")
 -&gt; do
     M4_Nsram.ext_space(0.21.um)
@@ -1077,7 +1096,7 @@ if $densityRules
 end
 
 -&gt; do
-    Metal5.ext_width(0.2.um)
+    Metal5_Nslit.ext_width(0.2.um)
 end.().output("M5.a", "Min. Metal5 width = 0.20")
 -&gt; do
     M5_Nsram.ext_space(0.21.um)
@@ -1135,10 +1154,10 @@ end.().output("TV1.a", "Min. and max. TopVia1 width = 0.42")
     TopVia1_or_Vmim.ext_space(0.42.um)
 end.().output("TV1.b", "Min. TopVia1 space = 0.42")
 -&gt; do
-    TopMetal1.ext_width(1.64.um)
+    TopMetal1_Nslit.ext_width(1.64.um)
 end.().output("TM1.a", "Min. TopMetal1 width = 1.64")
 -&gt; do
-    TopMetal1.ext_space(1.64.um)
+    TopMetal1_Nslit.ext_space(1.64.um)
 end.().output("TM1.b", "Min. TopMetal1 space or notch = 1.64")
 
 if $densityRules
@@ -1154,10 +1173,10 @@ end.().output("TV2.a", "Min. and max. TopVia2 width = 0.90")
     TopVia2.ext_space(1.06.um)
 end.().output("TV2.b", "Min. TopVia2 space = 1.06")
 -&gt; do
-    TopMetal2.ext_width(2.0.um)
+    TopMetal2_Nslit.ext_width(2.0.um)
 end.().output("TM2.a", "Min. TopMetal2 width = 2.00")
 -&gt; do
-    TopMetal2.ext_space(2.0.um)
+    TopMetal2_Nslit.ext_space(2.0.um)
 end.().output("TM2.b", "Min. TopMetal2 space or notch = 2.00")
 
 if $densityRules
@@ -1179,25 +1198,25 @@ end.().output("Pin.a", "Min. Activ enclosure of Activ:pin = 0.00")
     GatPoly_pin.ext_not(GatPoly)
 end.().output("Pin.b", "Min. GatPoly enclosure of GatPoly:pin = 0.00")
 -&gt; do
-    Metal1_pin.ext_not(Metal1)
+    Metal1_pin.ext_not(Metal1_Nslit)
 end.().output("Pin.e", "Min. Metal1 enclosure of Metal1:pin = 0.00")
 -&gt; do
-    Metal2_pin.ext_not(Metal2)
+    Metal2_pin.ext_not(Metal2_Nslit)
 end.().output("Pin.f.M2", "Min. Metal2 enclosure of Metal2:pin = 0.00")
 -&gt; do
-    Metal3_pin.ext_not(Metal3)
+    Metal3_pin.ext_not(Metal3_Nslit)
 end.().output("Pin.f.M3", "Min. Metal3 enclosure of Metal3:pin = 0.00")
 -&gt; do
-    Metal4_pin.ext_not(Metal4)
+    Metal4_pin.ext_not(Metal4_Nslit)
 end.().output("Pin.f.M4", "Min. Metal4 enclosure of Metal4:pin = 0.00")
 -&gt; do
-    Metal5_pin.ext_not(Metal5)
+    Metal5_pin.ext_not(Metal5_Nslit)
 end.().output("Pin.f.M5", "Min. Metal5 enclosure of Metal5:pin = 0.00")
 -&gt; do
-    TopMetal1_pin.ext_not(TopMetal1)
+    TopMetal1_pin.ext_not(TopMetal1_Nslit)
 end.().output("Pin.g", "Min. TopMetal1 enclosure of TopMetal1:pin = 0.00")
 -&gt; do
-    TopMetal2_pin.ext_not(TopMetal2)
+    TopMetal2_pin.ext_not(TopMetal2_Nslit)
 end.().output("Pin.h", "Min. TopMetal2 enclosure of TopMetal2:pin = 0.00")
 -&gt; do
     LBE.ext_width(100.0.um)

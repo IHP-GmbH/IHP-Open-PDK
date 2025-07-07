@@ -17,8 +17,6 @@
 
 name: LVS Regression Testing
 
-# Prevent keeping resources busy when a branch/PR is updated
-# https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
   group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -30,73 +28,70 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_lvs-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      lvs_table: ${{ steps.set-matrix.outputs.lvs_table }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: set-matrix
-        run: |
-          cd ihp-sg13g2/libs.tech/klayout/tech/lvs/rule_decks/
-          lvs_table=`echo '[' ; find -iname '*_extraction.lvs' | awk -F_ '{print $1}' | awk -F/ '{print $2}' | tr '[:lower:]' '[:upper:]' | tr '\n' ','|sed -e 's/^/\"/'| sed -e 's/,$/\"]/'|sed -e 's/,/\", \"/g'`;
-          lvs_table=`echo $lvs_table | jq -c .`
-          echo $lvs_table
-          echo "lvs_table=$lvs_table" >>$GITHUB_OUTPUT
-
   lvs_regression:
-    needs: build_lvs-matrix
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        part: [lvs]
-        test: ${{ fromJson(needs.build_lvs-matrix.outputs.lvs_table) }}
-
-    name: ${{ matrix.part }} | ${{ matrix.test }}
-
     steps:
-      - name: Installing Klayout
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 💾 Restore KLayout .deb from cache
+        id: cache-klayout
+        uses: actions/cache@v4
+        with:
+          path: klayout-0_30_2.deb
+          key: klayout-deb-cache-ubuntu-0_30_2
+          restore-keys: |
+            klayout-deb-cache-
+
+      - name: 🔽 Download KLayout .deb if not cached
+        if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
-          sudo apt update -qq -y
-          wget https://www.klayout.org/downloads/Ubuntu-24/klayout_0.29.8-1_amd64.deb
-          # The dpkg command will fail complaining about missing dependencies.
-          sudo dpkg -i ./klayout_0.29.8-1_amd64.deb || true
-          # The apt install command should install the missing dependencies
-          # needed by KLayout above and finish the install.
-          sudo apt install -f -y
-          # Reinstall KLayout After Fixing Dependencies
-          sudo dpkg -i ./klayout_0.29.8-1_amd64.deb || true
-          # Check that KLayout was successfully installed!
+          echo "Downloading KLayout .deb..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
+            -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+
+      - name: ⚙️ Install KLayout
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ./klayout-0_30_2.deb
+          echo "✅ KLayout version:"
           klayout -v
 
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-      - name: Testing ${{ matrix.part }} for ${{ matrix.test }}
-        run: |
-          make test-"$(python -c 'print("${{ matrix.part }}".upper())')"-${{ matrix.test }}
+      - name: 🧪 Run SG13G2 KLayout LVS Regression
+        run: make test-LVS-main
 
   lvs_regression_cells:
     runs-on: ubuntu-latest
     steps:
-      - name: Installing Klayout
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 💾 Restore KLayout .deb from cache
+        id: cache-klayout
+        uses: actions/cache@v4
+        with:
+          path: klayout-0_30_2.deb
+          key: klayout-deb-cache-ubuntu-0_30_2
+          restore-keys: |
+            klayout-deb-cache-
+
+      - name: 🔽 Download KLayout .deb if not cached
+        if: steps.cache-klayout.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading KLayout .deb..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
+            -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+
+      - name: ⚙️ Install KLayout
         run: |
           sudo apt update -qq -y
-          wget https://www.klayout.org/downloads/Ubuntu-24/klayout_0.29.8-1_amd64.deb
-          # The dpkg command will fail complaining about missing dependencies.
-          sudo dpkg -i ./klayout_0.29.8-1_amd64.deb || true
-          # The apt install command should install the missing dependencies
-          # needed by KLayout above and finish the install.
-          sudo apt install -f -y
-          # Reinstall KLayout After Fixing Dependencies
-          sudo dpkg -i ./klayout_0.29.8-1_amd64.deb || true
-          # Check that KLayout was successfully installed!
+          sudo apt install ./klayout-0_30_2.deb
+          echo "✅ KLayout version:"
           klayout -v
 
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-      - name: Testing LVS for SG13G2 cells
-        run: |
-          make test-LVS-cells
+      - name: 🧪 Run LVS Regression for SG13G2 Cells
+        run: make test-LVS-cells

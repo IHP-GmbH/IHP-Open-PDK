@@ -37,6 +37,7 @@
  module SG13G2LVSOptions
   require 'yaml'
   require 'open3'
+  require 'fileutils'
   include RBA
 
   # Main function to manage LVS options
@@ -66,7 +67,7 @@
     puts "Your KLayout version is: #{klayout_v}"
 
     # Construct the absolute path to the YAML file
-    yaml_file_path = "#{__dir__}/lvs_options.yml"
+    yaml_file_path = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13g2_lvs_options.yml")
 
     # Load options from YAML file
     options = load_options(yaml_file_path)
@@ -81,9 +82,9 @@
 
       # Save options to YAML file
       if save_options(yaml_file_path, options)
-        puts "=========== LVS Options saved successfully. ==========="
+        puts "✅ --- LVS Options saved successfully. --- ✅"
       else
-        puts "xxxxxxxxxxx Failed to save LVS options. xxxxxxxxxxx"
+        puts "❌ --- Failed to save LVS options. --- ❌"
       end
     end
   end
@@ -311,6 +312,8 @@
   # Returns true if successful, false otherwise
   def self.save_options(yaml_file_path, options)
     begin
+      dir = File.dirname(yaml_file_path)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
       File.open(yaml_file_path, 'w') { |file| file.write(options.to_yaml) }
       true
     rescue => e
