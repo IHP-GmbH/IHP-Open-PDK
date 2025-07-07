@@ -221,48 +221,48 @@ digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
 pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
 
 # n activ
-nact_pact_tables = %w[main pwellblock gatpoly cont latchup]
+nact_pact_tables = %w[main pwellblock gatpoly cont latchup nwell nbulay]
 if nact_pact_tables.include?(TABLE_NAME)
   logger.info('Starting n-Activ derivations')
   nactiv  = activ_drw.not(psd_drw.join(nsd_block))
 end
 
 # p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup]
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup  nwell nbulay]
 if pact_pact_tables.include?(TABLE_NAME)
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie latchup]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay]
 if ptap_tables.include?(TABLE_NAME)
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
 end
 
 # n tap
-ntap_tables = %w[main]
+ntap_tables = %w[main nwell nbulay]
 if ntap_tables.include?(TABLE_NAME)
   logger.info('Starting ntap derivations')
   ntap = nactiv.and(nwell_drw)
 end
 
 # activ FETs
-pact_fet_tables = %w[main gatpoly]
+pact_fet_tables = %w[main gatpoly nwell nbulay]
 if pact_fet_tables.include?(TABLE_NAME)
   logger.info('Starting pact FET derivations')
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly latchup]
+nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay]
 if nact_fet_tables.include?(TABLE_NAME)
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
 end
 
 # Gate FETs
-gate_tables = %w[main gatpoly]
+gate_tables = %w[main gatpoly nwell nbulay]
 if gate_tables.include?(TABLE_NAME)
   logger.info('Starting Gate derivations')
   res_mk = polyres_drw.join(res_drw)
@@ -297,14 +297,12 @@ drc_tole = 0.005.um
 #================================================
 
 if CONNECTIVITY_RULES
-
   logger.info('Starting IHP-SG13G2 DRC connectivity related derivations.')
-  # nwell
-  nwell_iso = nwell_drw.and(nbulay_drw)
-  nwell_holes = nwell_drw.holes.not(nwell_drw)
 
-  # General pwell
-  pwell_sub = pwell_allowed.not(digisub_drw).not(nbulay_drw.interacting(nwell_holes))
+  # Wells
+  nwell_holes = nwell_drw.holes.not(nwell_drw)
+  pwell_iso = nbulay_drw.interacting(nwell_holes)
+  pwell_sub = pwell_allowed.not(digisub_drw).not(pwell_iso)
 
   # conn layers
   poly_con      = gatpoly_drw.not(res_mk)
@@ -325,8 +323,13 @@ if CONNECTIVITY_RULES
   connect(pwell_sub, pwell)
   connect(pwell, ptap)
   connect(nwell_drw, ntap)
+  connect(cont_drw, nactiv)
+  connect(cont_drw, pactiv)
+  connect(nwell_drw, nbulay_drw)
   connect(ntap, cont_drw)
   connect(ptap, cont_drw)
+  connect(pwell_iso, nbulay_drw)
+  connect(pwell_iso, ptap)
   connect(poly_con, cont_drw)
   connect(nact_fet, cont_drw)
   connect(pact_fet, cont_drw)
@@ -343,95 +346,14 @@ if CONNECTIVITY_RULES
   connect(topvia1_n_cap, topmetal1_con)
   connect(topmetal1_con, topvia2_drw)
   connect(topvia2_drw, topmetal2_con)
+
+  # nwell nets
+  nwell_nets = nwell_drw.nets
 end
 
 #================================================
 #------------ PRE-DEFINED FUNCTIONS -------------
 #================================================
-
-def unconn_errors_check(net1, net2, unconnected_errors)
-  if !net1 || !net2
-    logger.error("Connectivity check encountered 2 nets that doesn't exist. Potential issue in klayout...")
-  elsif net1.circuit != net2.circuit || net1.cluster_id != net2.cluster_id
-    # unconnected
-    unconnected_errors.data.insert(ep)
-  end
-  unconnected_errors
-end
-
-def get_nets(_data, layer1, layer2, edge_pairs)
-  net1 = l2n_data.probe_net(layer1.data, edge_pairs.first.p1)
-  net2 = l2n_data.probe_net(layer2.data, edge_pairs.second.p1)
-  [net1, net2]
-end
-
-def conn_space_viol(layer, conn_val, mode)
-  connected_output = layer.space(conn_val.um, mode).polygons(0.001.um)
-  singularity_errors = layer.space(0.001.um, mode).polygons(0.001.um)
-  [connected_output, singularity_errors]
-end
-
-def conn_space_check(layer, not_conn_val, mode)
-  unconnected_errors_unfiltered = layer.space(not_conn_val.um, mode)
-  connected_output, singularity_errors = conn_space_viol(layer, conn_val, mode)
-  # Filter out the errors arising from the same net
-  unconnected_errors = DRC::DRCLayer.new(self, RBA::EdgePairs.new)
-  unconnected_errors_unfiltered.data.each do |ep|
-    net1, net2 = get_nets(l2n_data, layer, layer, ep)
-    unconnected_errors = unconn_errors_check(net1, net2, unconnected_errors)
-  end
-  unconnected_output = unconnected_errors.polygons.join(singularity_errors)
-  [connected_output, unconnected_output]
-end
-
-def conn_space_nets(layer, conn_val, not_conn_val, mode)
-  nets = layer.nets
-  connected_output = nets.space(conn_val.um, mode, props_eq).polygons(0.001.um)
-  singularity_errors = nets.space(0.001.um, mode).polygons(0.001.um)
-  unconnected_output = nets.space(not_conn_val.um, mode, props_ne).polygons(0.001.um).join(singularity_errors)
-  [connected_output, unconnected_output]
-end
-
-def conn_space(layer, conn_val, not_conn_val, mode)
-  if layer.respond_to?(:nets) # KLayout version (>=0.28.4) which supports "nets"
-    connected_output, unconnected_output = conn_space_nets(layer, conn_val, not_conn_val, mode)
-  else
-    raise 'ERROR : Wrong connectivity implementation' if conn_val > not_conn_val
-
-    connected_output, unconnected_output = conn_space_check(layer, not_conn_val, mode)
-  end
-  [connected_output, unconnected_output]
-end
-
-def sep_viol_nets(layer1, layer2, conn_val, not_conn_val, mode)
-  connected_output   = layer1.nets.separation(layer2.nets, conn_val.um,     mode, props_eq).polygons(0.001.um)
-  unconnected_output = layer1.nets.separation(layer2.nets, not_conn_val.um, mode, props_ne).polygons(0.001.um)
-  [connected_output, unconnected_output]
-end
-
-def unconn_separation_check(layer1, layer2, not_conn_val, mode)
-  unconnected_errors_unfiltered = layer1.separation(layer2, not_conn_val.um, mode)
-  # Filter out the errors arising from the same net
-  unconnected_errors = DRC::DRCLayer.new(self, RBA::EdgePairs.new)
-  unconnected_errors_unfiltered.data.each do |ep|
-    net1, net2 = get_nets(l2n_data, layer1, layer2, ep)
-    unconnected_errors = unconn_errors(net1, net2, unconnected_errors)
-  end
-  unconnected_errors
-end
-
-def conn_separation(layer1, layer2, conn_val, not_conn_val, mode)
-  if layer1.respond_to?(:nets) # KLayout version (>=0.28.4) which supports "nets"
-    connected_output, unconnected_output = sep_viol_nets(layer1, layer2, conn_val, not_conn_val, mode)
-  else
-    raise 'ERROR : Wrong connectivity implementation' if conn_val > not_conn_val
-
-    connected_output = layer1.separation(layer2, conn_val.um, mode).polygons(0.001.um)
-    unconnected_errors = unconn_separation_check(layer1, layer2, not_conn_val, mode)
-    unconnected_output = unconnected_errors.polygons(0.001.um)
-  end
-  [connected_output, unconnected_output]
-end
 
 def get_circle(polygon_check)
   maybe_circle1 = polygon_check.with_bbox_aspect_ratio(1)
@@ -450,12 +372,6 @@ def get_octagon(polygon_check)
   maybe_oct4 = maybe_oct3.interacting(v_edges_check, 2, 2)
   diag_edges_check = maybe_oct4.edges.with_angle(44.5, 45.5, absolute)
   maybe_oct4.interacting(diag_edges_check, 4, 4)
-end
-
-# === IMPLICIT EXTRACTION ===
-if CONNECTIVITY_RULES
-  logger.info('Connectivity rules enabled, Netlist object will be generated.')
-  netlist
 end
 
 #================================================
