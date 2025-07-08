@@ -222,22 +222,39 @@ proc menupdk {} {
 
     ## Create one entry
     $topwin.menubar.ihp add command -label {Create FET and BIP .save file} -command {
+      mkdir -p $netlist_dir
       write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
       textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
     }
     ## Create one entry
-    $topwin.menubar.ihp add command -label {Add models symbol} -command {
-      xschem place_symbol devices/code_shown.sym {
-name=TT_MODELS
-only_toplevel=true
+    $topwin.menubar.ihp add command -label {Add Ngspice models symbol} -command {
+      xschem place_symbol devices/simulator_commands_shown.sym {
+name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false
 value="
-** IHP models
 .lib cornerMOSlv.lib mos_tt
 .lib cornerMOShv.lib mos_tt
 .lib cornerHBT.lib hbt_typ
 .lib cornerRES.lib res_typ
+.lib cornerCAP.lib cap_typ
 "
-spice_ignore=false
+      }
+    }
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add Xyce models symbol} -command {
+      xschem place_symbol devices/simulator_commands_shown.sym {
+name=Libs_Xyce
+simulator=xyce
+only_toplevel=false
+value="tcleval(
+.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
+.lib $::SG13G2_MODELS_XYCE/cornerHBT.lib hbt_typ
+.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
+.lib $::SG13G2_MODELS_XYCE/cornerCAP.lib cap_typ
+)"
       }
     }
 
