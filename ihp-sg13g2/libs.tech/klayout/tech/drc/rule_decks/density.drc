@@ -107,9 +107,9 @@ logger.info("Klayout will use #{$thr} thread(s)")
 deep
 logger.info('Deep mode enabled: reading layers and preparing general derivations.')
 
-# Short DRC
-SHORT_DRC = bool_check?($short_drc)
-logger.info("Short DRC enabled: #{SHORT_DRC}")
+# Precheck DRC
+PRECHECK_DRC = bool_check?($precheck_drc)
+logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
@@ -312,7 +312,7 @@ metal5_filler.forget
 topmetal1_filler.forget
 topmetal2_filler.forget
 
-if SHORT_DRC
+if PRECHECK_DRC
   # Forget unused layers to free memory
   metal1_drw.forget
   metal1_slit.forget
@@ -606,7 +606,7 @@ lbe_drw.forget
 # ---------------- Metal Slits ------------------
 #================================================
 
-unless SHORT_DRC
+unless PRECHECK_DRC
   # layer lists
   metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit, topmetal1_slit, topmetal2_slit]
   metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw]

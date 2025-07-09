@@ -434,7 +434,7 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
 
     # Optional switches
     switches["run_mode"] = arguments.run_mode if arguments.run_mode else "deep"
-    switches["short_drc"] = "true" if arguments.short_drc else "false"
+    switches["precheck_drc"] = "true" if arguments.precheck_drc else "false"
     switches["extra_rules"] = "true" if arguments.extra_rules else "false"
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
@@ -775,7 +775,7 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--short_drc] [--extra_rules] [--no_feol] [--no_beol] [--no_density]
+            [--precheck_drc] [--extra_rules] [--no_feol] [--no_beol] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--macro_gen]
     """
@@ -840,9 +840,9 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--short_drc",
+        "--precheck_drc",
         action="store_true",
-        help="Run only a minimal DRC checks using a short rule set.",
+        help="Run a minimal set of DRC checks typically required for foundry prechecks.",
     )
     parser.add_argument(
         "--no_feol", action="store_true", help="Disable all FEOL-related DRC checks."

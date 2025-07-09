@@ -121,7 +121,7 @@
       'no_feol' => false,
       'no_beol' => false,
       'extra_rules' => false,
-      'short_drc' => false,
+      'precheck_drc' => false,
       'no_density' => true,
       'density_only' => false,
       'antenna' => false,
@@ -192,8 +192,8 @@
     chk_feol = create_check_box("Disable FEOL Checks", options['no_feol'], "Skips Front-End-Of-Line rule checks (e.g., active, poly).")
     chk_beol = create_check_box("Disable BEOL Checks", options['no_beol'], "Skips Back-End-Of-Line rule checks (e.g., metals and vias).")
     chk_extra = create_check_box("Enable Extra Rule Set", options['extra_rules'], "Uses the extra rule set available (may be slower).")
-    chk_short = create_check_box("Enable Short Rule Set", options['short_drc'], "Uses the Short rule set available.")
-    @basic_layout_setup.addRow("", chk_short)
+    chk_precheck = create_check_box("Enable Precheck Rule Set", options['precheck_drc'], " Run a minimal set of DRC checks typically required for foundry prechecks.")
+    @basic_layout_setup.addRow("", chk_precheck)
     @basic_layout_setup.addRow("", chk_feol)
     @basic_layout_setup.addRow("", chk_beol)
     @basic_layout_setup.addRow("", chk_extra)
@@ -441,7 +441,7 @@
     options['run_mode'] = @basic_layout_update.itemAt(3).widget.currentText if @basic_layout_update.itemAt(3).widget
     options['table'] = @basic_layout_update.itemAt(5).widget.currentText if @basic_layout_update.itemAt(5).widget
     options['parallel_runs'] = @basic_layout_update.itemAt(7).widget.value if @basic_layout_update.itemAt(7).widget
-    options['short_drc'] = @basic_layout_update.itemAt(9).widget.checked if @basic_layout_update.itemAt(9).widget
+    options['precheck_drc'] = @basic_layout_update.itemAt(9).widget.checked if @basic_layout_update.itemAt(9).widget
     options['no_feol'] = @basic_layout_update.itemAt(10).widget.checked if @basic_layout_update.itemAt(10).widget
     options['no_beol'] = @basic_layout_update.itemAt(11).widget.checked if @basic_layout_update.itemAt(11).widget
     options['extra_rules'] = @basic_layout_update.itemAt(12).widget.checked if @basic_layout_update.itemAt(12).widget
