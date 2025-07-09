@@ -37,7 +37,7 @@ class npn13G2V(DloGen):
         specs('Display', 'Selected', 'Display', ChoiceConstraint(['All', 'Selected']))
         specs('model', model, 'Model name')
 
-        specs('Nx', 2, 'x-Multiplier', RangeConstraint(1, 8))
+        specs('Nx', 1, 'x-Multiplier', RangeConstraint(1, 8))
         specs('le', '1.0u', "Emitter Length")
         specs('we', '0.12u', "Emitter Width")
 

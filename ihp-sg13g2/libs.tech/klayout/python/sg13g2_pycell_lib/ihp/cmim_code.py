@@ -91,8 +91,11 @@ class cmim(DloGen):
         cont_dist = 0.84
         cont_size = self.techparams['TV1_a']
 
+        # how many vias?
         xanz=((self.w-cont_over-cont_over+cont_dist)//(cont_size+cont_dist)+self.epsilon)
+        # width for vias
         w1 = xanz*(cont_size+cont_dist)-cont_dist+cont_over+cont_over
+        # offset to first via
         self.xoffset=GridFix((self.w-w1)/2)
 
         yanz = ((self.l-cont_over-cont_over+cont_dist)//(cont_size+cont_dist)+self.epsilon)
@@ -100,6 +103,7 @@ class cmim(DloGen):
         self.yoffset=GridFix((self.l-l1)/2)
 
         ycont_cnt=cont_over+self.yoffset
+        # draw vias
         while ycont_cnt+cont_size+cont_over <= self.l+self.epsilon:
             xcont_cnt=cont_over+self.xoffset
             while xcont_cnt+cont_size+cont_over <= self.w+self.epsilon:
@@ -108,5 +112,7 @@ class cmim(DloGen):
                 xcont_cnt=xcont_cnt+cont_size+cont_dist
 
             ycont_cnt=ycont_cnt+cont_size+cont_dist
+        
+        # TopMetal1
         self.xcont_cnt=xcont_cnt+self.techparams['TV1_d']-cont_dist
         self.ycont_cnt=ycont_cnt+self.techparams['TV1_d']-cont_dist

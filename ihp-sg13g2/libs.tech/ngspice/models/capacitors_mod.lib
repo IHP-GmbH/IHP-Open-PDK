@@ -16,17 +16,12 @@
 *                                                                             *
 ******************************************************************************* 
 
-.model cmim_core C (TC1=3.6E-6 TC2=2E-9 TNOM=27 CJ=cap_carea CJSW=40E-18)
-
 *******************************************************************************
 * parasitics 
 *******************************************************************************
 
 * SiO2: only area cap., prozess tol. cap_cpara
 * C value is taken from extraction routine
-
-* hard coded typ corner (cap_cpara=1.0)
-*.param cap_cpara=1.0
 
 .subckt cparasitic PLUS MINUS 
 .param c=0
@@ -42,9 +37,12 @@
 .endif  
 .ends cparasitic
 
+
 *******************************************************************************
 * cmim 
 *******************************************************************************
+
+.model cmim_core C (TC1=3.6E-6 TC2=2E-9 TNOM=27 CJ=cap_carea CJSW=40E-18)
 
 * subcircuit for cmim
 * Note: top/bottom plate parasitic capacitance is included by parasiticC extraction!
@@ -53,13 +51,14 @@
 .subckt cap_cmim PLUS MINUS 
 .param l=7u
 .param w=7u
+.param mm_ok=0
 .param sf=1E-6
 .param ic=1E10
 R1 PLUS 1 r=55m
 .if (ic>1E9)
-  C1 1 MINUS cmim_core l=l/sf w=w/sf 
+  C1 1 MINUS cmim_core l=l/sf w=w/sf scale=1
 .else
-  C1 1 MINUS cmim_core m l=l/sf w=w/sf ic=ic
+  C1 1 MINUS cmim_core l=l/sf w=w/sf ic=ic scale=1
 .endif  
 .ends cap_cmim
 
@@ -67,7 +66,6 @@ R1 PLUS 1 r=55m
 *******************************************************************************
 * rfcmim 
 *******************************************************************************
-
 
 * subcircuit for rfcmim
 * Note: top plate (Metal3) corresponds to PLUS pin, bottom plate corresponds to MINUS pin, bn is substrate bulk node
@@ -77,6 +75,7 @@ R1 PLUS 1 r=55m
 .subckt cap_rfcmim PLUS MINUS bn
 .param l=7u
 .param w=7u
+.param mm_ok=0
 .param wfeed=2E-6
 
 .param ic=1E10
@@ -105,7 +104,6 @@ R1 PLUS 1 r=55m
 Lskin PLUS 2 l=lskin_val
 Rskin PLUS 2 r=rskin_val 
 
-
 .if ((lplate_val+lfeed_val-lskin_val)>1E-18)
   Lmim 2 3 l=(lplate_val+lfeed_val-lskin_val)
 .else
@@ -113,7 +111,7 @@ Rskin PLUS 2 r=rskin_val
 .endif
 
 Rmim 3 4 r=rmim_val 
-Cmim 4 5 cmim_core l=l/sf w=w/sf 
+Cmim 4 5 cmim_core l=l/sf w=w/sf scale=1
 Cox  5 51  c=cox_val
 Csub 51 bn c=csub_val 
 
@@ -133,4 +131,3 @@ Csub 51 bn c=csub_val
 Rdummy 5 bn r=1G   
 
 .ends cap_rfcmim
-

@@ -125,7 +125,7 @@ def main(self, lib_gds):
             origin = (xt, 0.0),
         ))
 
-        xt += 50.0
+        xt += 150.0
 
         # Save result
         script_location = os.path.dirname(__file__)

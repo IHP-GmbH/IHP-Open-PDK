@@ -1,13 +1,13 @@
 *#######################################################################
 *
 * Copyright 2023 IHP PDK Authors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *    https://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 *distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,25 +15,45 @@
 * limitations under the License.
 *
 *#######################################################################
+* NOTE:
+* values are one-sigma deviations (1/3 of min-max)
 
-.param mc_ok=1
+.param num_sigmas=1
 
 * ngspice process variation parameters
-.param  vbic_cje  = 'gauss(vbic_cje_norm, 0.058, mc_ok)'
-.param  vbic_cjc  = 'gauss(vbic_cjc_norm, 0.043, mc_ok)'
-.param  vbic_cjcp = 'gauss(vbic_cjcp_norm, 0.037, mc_ok)'
-.param  vbic_is   = 'gauss(vbic_is_norm, 0.087, mc_ok)'
-.param  vbic_ibei = 'gauss(vbic_ibei_norm, 0.11, mc_ok)'
-.param  vbic_re   = 'gauss(vbic_re_norm, 0.09, mc_ok)'
-.param  vbic_rcx  = 'gauss(vbic_rcx_norm, 0.069, mc_ok)'
-.param  vbic_rbx  = 'gauss(vbic_rbx_norm, 0.041, mc_ok)'
-*.param  vbic_tf   = 'gauss(vbic_tf_norm, 0.037, mc_ok)'
+.param  mc_vbic_cje  = 'gauss(vbic_cje_norm, 0.058, num_sigmas)'
+.param  mc_vbic_cjc  = 'gauss(vbic_cjc_norm, 0.043, num_sigmas)'
+.param  mc_vbic_cjcp = 'gauss(vbic_cjcp_norm, 0.037, num_sigmas)'
+.param  mc_vbic_is   = 'gauss(vbic_is_norm, 0.087, num_sigmas)'
+.param  mc_vbic_ibei = 'gauss(vbic_ibei_norm, 0.11, num_sigmas)'
+.param  mc_vbic_re   = 'gauss(vbic_re_norm, 0.09, num_sigmas)'
+.param  mc_vbic_rcx  = 'gauss(vbic_rcx_norm, 0.069, num_sigmas)'
+.param  mc_vbic_rbx  = 'gauss(vbic_rbx_norm, 0.041, num_sigmas)'
+*.param  mc_vbic_tf   = 'gauss(vbic_tf_norm, 0.037, num_sigmas)'
+
+.param  vbic_cje  = mc_vbic_cje
+.param  vbic_cjc  = mc_vbic_cjc
+.param  vbic_cjcp = mc_vbic_cjcp
+.param  vbic_is   = mc_vbic_is
+.param  vbic_ibei = mc_vbic_ibei
+.param  vbic_re   = mc_vbic_re
+.param  vbic_rcx  = mc_vbic_rcx
+.param  vbic_rbx  = mc_vbic_rbx
+*.param  vbic_tf   = mc_vbic_tf
 
 * pnpMPA device
-.param sgp_mpa_cje = 'gauss(sgp_mpa_cje_norm, 0.015, mc_ok)'
-.param sgp_mpa_cjc = 'gauss(sgp_mpa_cjc_norm, 0.007, mc_ok)'
-.param sgp_mpa_is  = 'gauss(sgp_mpa_is_norm, 0.043, mc_ok)'
-.param sgp_mpa_bf  = 'gauss(sgp_mpa_bf_norm, 0.079, mc_ok)'
-.param sgp_mpa_re  = 'gauss(sgp_mpa_re_norm, 0.016, mc_ok)'
-.param sgp_mpa_rb  = 'gauss(sgp_mpa_rb_norm, 0.008, mc_ok)'
-.param sgp_mpa_rc  = 'gauss(sgp_mpa_rc_norm, 0.017, mc_ok)'
+.param mc_sgp_mpa_cje = 'gauss(sgp_mpa_cje_norm, 0.015, num_sigmas)'
+.param mc_sgp_mpa_cjc = 'gauss(sgp_mpa_cjc_norm, 0.007, num_sigmas)'
+.param mc_sgp_mpa_is  = 'gauss(sgp_mpa_is_norm, 0.043, num_sigmas)'
+.param mc_sgp_mpa_bf  = 'gauss(sgp_mpa_bf_norm, 0.079, num_sigmas)'
+.param mc_sgp_mpa_re  = 'gauss(sgp_mpa_re_norm, 0.016, num_sigmas)'
+.param mc_sgp_mpa_rb  = 'gauss(sgp_mpa_rb_norm, 0.008, num_sigmas)'
+.param mc_sgp_mpa_rc  = 'gauss(sgp_mpa_rc_norm, 0.017, num_sigmas)'
+
+.param sgp_mpa_cje = mc_sgp_mpa_cje
+.param sgp_mpa_cjc = mc_sgp_mpa_cjc
+.param sgp_mpa_is  = mc_sgp_mpa_is
+.param sgp_mpa_bf  = mc_sgp_mpa_bf
+.param sgp_mpa_re  = mc_sgp_mpa_re
+.param sgp_mpa_rb  = mc_sgp_mpa_rb
+.param sgp_mpa_rc  = mc_sgp_mpa_rc

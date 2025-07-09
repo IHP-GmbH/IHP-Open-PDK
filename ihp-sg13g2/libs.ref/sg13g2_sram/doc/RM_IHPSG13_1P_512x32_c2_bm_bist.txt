@@ -1,0 +1,317 @@
+# ------------------------------------------------------
+#
+#		Copyright 2023 IHP PDK Authors
+#
+#		Licensed under the Apache License, Version 2.0 (the "License");
+#		you may not use this file except in compliance with the License.
+#		You may obtain a copy of the License at
+#		
+#		   https://www.apache.org/licenses/LICENSE-2.0
+#		
+#		Unless required by applicable law or agreed to in writing, software
+#		distributed under the License is distributed on an "AS IS" BASIS,
+#		WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#		See the License for the specific language governing permissions and
+#		limitations under the License.
+#		
+#		Generated on Wed Apr  2 16:02:44 2025		
+#				
+# ------------------------------------------------------ 
+
+
+#################
+D A T A S H E E T
+#################
+
+
+Name             : RM_IHPSG13_1P_512x32_c2_bm_bist
+Size             : 512 words x 32 bits
+Column Mux       : 2
+Number of Ports  : 1
+Area (h x w)     : 191.34 x 416.64 = 79719.90 square microns
+
+
+##################
+Introduction
+##################
+
+
+This 1-port macro has a one-cycle data-access.
+For timing information overview have a look at the timing diagrams in the "Timing Diagrams" section below.
+
+
+##################
+Schematic View
+##################
+
+
+                    ________________________________________
+                   |                                        |
+                   |                                        |
+                ---|A_DIN[31:0]                             |
+                ---|A_BM[31:0]                              |
+                ---|A_ADDR[8:0]                             |
+                ---|A_MEN                                   |
+                ---|A_REN                                   |
+                ---|A_WEN                                   |
+                ---|A_CLK                                   |
+                   |                                        |
+                ---|A_BIST_DIN[31:0]                        |
+                ---|A_BIST_BM[31:0]                         |
+                ---|A_BIST_ADDR[8:0]                        |
+                ---|A_BIST_MEN                              |
+                ---|A_BIST_REN                              |
+                ---|A_BIST_WEN                              |
+                ---|A_BIST_CLK                              |
+                   |                                        |
+                ---|A_BIST_EN                               |
+                   |                                        |
+                ---|A_DLY                                   |
+                   |                                        |
+                   |                            A_DOUT[31:0]|---
+                   |                                        |
+                   |________________________________________|
+
+
+###########################
+Macro Interface Signal List
+###########################
+
+
+Signal              Sensitivity                 Logic            Direction     Description
+------              -----------                 -----            ---------     -----------
+A_ADDR[8:0]         Positive Clock Edge         Positive         Input         9 address bits  
+A_DIN[31:0]         Positive Clock Edge         Positive         Input         32 data bits 
+A_BM[31:0]          Positive Clock Edge         Positive         Input         32 bit mask bits   
+A_WEN               Positive Clock Edge         Positive         Input         Write-enable  
+A_MEN               Positive Clock Edge         Positive         Input         Memory enable -> if disabled, the memory is deactivated   
+A_REN               Positive Clock Edge         Positive         Input         Read enable 
+A_CLK               Clock                       Positive         Input         Clock pin   
+A_BIST_DIN[31:0]    Positive Clock Edge         Positive         Input         32 data bits 
+A_BIST_BM[31:0]     Positive Clock Edge         Positive         Input         32 bit mask bits   
+A_BIST_ADDR[8:0]    Positive Clock Edge         Positive         Input         9 address bits for BIST mode  
+A_BIST_WEN          Positive Clock Edge         Positive         Input         BIST Write-enable   
+A_BIST_MEN          Positive Clock Edge         Positive         Input         BIST Memory enable -> if disabled, the memory is deactivated  
+A_BIST_REN          Positive Clock Edge         Positive         Input         BIST Read enable  
+A_BIST_CLK          Clock                       Positive         Input         BIST Clock pin  
+A_BIST_EN           Positive Clock Edge         Positive         Input         BIST Enable pin 
+A_DOUT[31:0]        Positive Clock Edge         Positive         Output        32 data bits, no high impedance function   
+A_DLY               Level                       Positive         Input         Delay setting, adjustment of memory internal timings; recommended setting: Tie to 1
+
+VDD                                                                            Macro support logic supply voltage
+VSS                                                                            Macro support logic ground
+VDDARRAY                                                                       Memory array supply voltage
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+###########################
+Operation Tables
+###########################
+
+
+When A_BIST_EN is disabled A_ADDR is used as address input.
+When A_BIST_EN is enabled A_BIST_ADDR is used as address input.
+
+! Note: One cycle before and after A_BIST_EN changes no read, write, or write-through operation is allowed.
+- Set A_MEN and A_BIST_MEN to 0.
+
+A_BIST_EN       A_MEN         A_REN         A_WEN           Operation on Memory
+---------       -----         -----         -----           ----------------------
+    0             0           0 / 1         0 / 1           No Operation
+    0             1             0             0             No Operation
+    0             1             1             0             Read
+    0             1             0             1             Write
+    0             1             1             1             Write-Through
+    1           0 / 1         0 / 1         0 / 1           No Operation
+
+A_BIST_EN    A_BIST_MEN     A_BIST_REN     A_BIST_WEN       Operation on Memory
+---------    ----------     ----------     ----------       ----------------------
+    1             0           0 / 1          0 / 1          No Operation
+    1             1             0              0            No Operation
+    1             1             1              0            Read
+    1             1             0              1            Write
+    1             1             1              1            Write-Through
+    0           0 / 1         0 / 1          0 / 1          No Operation
+
+
+
+
+###########################
+Timing Diagrams
+###########################
+
+
+All timings are identical for BIST mode.
+
+
+                                WRITE                              READ                            WRITE-THROUGH                    NO OPERATION
+
+                                  |-----T_CKH----->|
+     ___________                  | ______________ |                 | _______________                   _______________                  _____________
+ A_CLK          \                 |/              \|                 |/               \                 /               \                /
+                 \_______________/|                |\_______________/|                 \_______________/                 \______________/
+                      |           |                                  |                         |
+                      |<-Tsetup---|                                  |-------T_CLK2DOUT------->|
+     ________________ | __________|__________|___________  _________________________________  _|_______________________________________________________
+ A_ADDR      A_ADDR0 \|/          |          |  A_ADDR1  \/       A_ADDR2                   \/ |        A_ADDR3
+     ________________/|\__________|_________ |___________/\_________________________________/\_|_______________________________________________________
+                      |           |          |                                                 |
+                      |           |---Thold->|                                                 |
+     ________________ | __________|__________|___________  _________________________________  _|_______________________________________________________
+ A_DIN               \|/          |          |  A_D1     \/       don't care                \/ |        A_D3
+     ________________/|\__________|__________|___________/\_________________________________/\_|_______________________________________________________
+                      |           |          |                                                 |
+                      | __________|__________|_________________________________________________|______________________
+ A_MEN                |/          |          |                                                 |                      \
+     ________________/|           |          |                                                 |                       \_______________________________
+                      |           |          |                                                 |
+                      | __________|_________ |                                               __|______________________
+ A_WEN                |/          |         \|                                              /  |                      \
+     ________________/|           |          |\____________________________________________/   |                       \_______________________________
+                      |           |          |                                                 |
+                      |           |          |            _____________________________________|______________________
+ A_REN                |           |          |           /                                     |                      \
+     _________________|___________|__________|__________/                                      |                       \_______________________________
+                      |           |          |                                                 |
+     _________________________________________________________________________________________ | ____________________________________  ________________
+ A_DOUT                            'X'                                                        \|/         MEMORY(A_ADDR2)            \/    A_D3
+     _________________________________________________________________________________________/|\____________________________________/\________________
+                                                                                               |
+     ________________________________________________  __________________________________________________________________________  ____________________
+ A_MEMORY                          'X'               \/          MEMORY(A_ADDR1)=A_D1                                            \/MEMORY(A_ADDR3)=A_D3
+     ________________________________________________/\__________________________________________________________________________/\____________________
+
+
+
+	
+
+
+###########################
+Operating Conditions
+###########################
+
+
++-------------+----------------------+-----------+------+------+-------+
+| Symbol      | Parameter            | Condition | Min  | Max  | Units |
++-------------+----------------------+-----------+------+------+-------+
+| VDD         | Supply Voltage Range | Operating | 1.08 | 1.32 | V     |
+| Temperature |                      | Operating | -55  | 125  | °C    |
+| tCKH        | Min Pulse Width      | Operating | 0.12 | 0.4  | ns    |
++-------------+----------------------+-----------+------+------+-------+
+
+
+
+###########################
+Characterization Corners
+###########################
+
+
++--------------------------+--------------+-----------+-------------+------------------+
+| Operating Condition Name | Model Corner | Condition | Voltage [V] | Temperature [°C] |
++--------------------------+--------------+-----------+-------------+------------------+
+| wc_1d08V_125C            | wc           | working   | 1.08        | 125              |
+| bc_1d32V_m55C            | bc           | working   | 1.32        | -55              |
+| tc_1d20V_25C             | tc           | working   | 1.20        | 25               |
++--------------------------+--------------+-----------+-------------+------------------+
+
+
+
+###########################
+Timing Characteristics
+###########################
+
+
++-------------------+-------------+-----------+---------------+---------------+--------------+-------+
+| Timing            | Timing Type | Direction | wc_1d08V_125C | bc_1d32V_m55C | tc_1d20V_25C | Units |
++-------------------+-------------+-----------+---------------+---------------+--------------+-------+
+| Clock to Data Out | Delay       | Rising    | 6.45e+00      | 2.36e+00      | 3.85e+00     | ns    |
+| Clock to Data Out | Delay       | Falling   | 6.33e+00      | 2.33e+00      | 3.78e+00     | ns    |
+| Data Out          | Transition  | Rising    | 4.08e-02      | 1.62e-02      | 2.59e-02     | ns    |
+| Data Out          | Transition  | Falling   | 3.29e-02      | 1.35e-02      | 2.01e-02     | ns    |
++-------------------+-------------+-----------+---------------+---------------+--------------+-------+
+
+
+
+###########################
+Power Characteristics
+###########################
+
+
+Typical Power Unit : 1e-12 * J/toggle = 1 * uW/MHz
+                            (capacitive_load_unit * voltage_unit^2) per toggle event
+------------------------------------------------------------------------------------------
++---------------------+---------------+---------------+--------------+------------+
+| Power               | wc_1d08V_125C | bc_1d32V_m55C | tc_1d20V_25C | Units      |
++---------------------+---------------+---------------+--------------+------------+
+| Leakage Power       | 1.307e+03     | 4.696e+02     | 1.980e+02    | 1nW        |
+| Total Typical Power | 3.739e+01     | 5.661e+01     | 4.761e+01    | 1 * uW/MHz |
++---------------------+---------------+---------------+--------------+------------+
+
+
+
+#################
+Physical Layout
+#################
+
+
+Metal usage is up to M4. 
+The bottom figure shows the physical layout of the 512x32_c2 SRAM hard macro with its dimensions.
+Note: Row decoder and interface pin locations as well as location, dimension and number of power rails are approximated.
+
+                                                  416.64 microns
+         <-------------------------------------------------------------------------------------------------------->
+          _________________________________________________________________________________________________________
+       ^ |VDD|    |VDD|     |VDD|     |VDD|      |        |VDD|VDD|        |      |VDD|    |VDD|     |VDD|    |VDD|  ^
+       | |VSS|    |VSS|     |VSS|     |VSS|      |        |VSS|VSS|        |      |VSS|    |VSS|     |VSS|    |VSS|  |
+       | |   |    |   |     |   |     |   |      |        |   |   |        |      |   |    |   |     |   |    |   |  |
+       | |PWR|    |ARR|     |PWR|     |ARR|      | L      |PWR|PWR|      R |      |ARR|    |PWR|     |ARR|    |PWR|  |
+       | |   |    |AY |     |   |     |AY |      |  E     |   |   |     I  |      | YA|    |   |     | YA|    |   |  |
+       | |   |    |   |     |   |     |   |      |   F    |   |   |    G   |      |   |    |   |     |   |    |   |  |
+       | |   |    |PWR|     |   |     |PWR|      |    T   |   |   |   H    |      |PWR|    |   |     |PWR|    |   |  |
+       | |   |    |   |     |   |     |   |      |        |   |   |  T     |      |   |    |   |     |   |    |   |  |
+SRAM   | |   |    |   |     |   |     |   |      |  R     |   |   |     R  |      |   |    |   |     |   |    |   |  |
+Array  | |   |    |   |     |   |     |   |      |   O    |   |   |    O   |      |   |    |   |     |   |    |   |  |191.34 microns
+       | |S  |    |S  |     |S  |     |S  |      |    W   |S  |  S|   W    |      |  S|    |  S|	 |  S|    |  S|  |
+       | | T |    | T |     | T |     | T |      |  D     | T | T |     D  |      | T |    | T |	 | T |    | T |  |
+       | |  R|    |  R|     |  R|     |  R|      |   E    |  R|R  |    E   |      |R  |    |R  |	 |R  |    |R  |  |
+       | | I |    | I |     | I |     | I |      |    C   | I | I |   C    |      | I |    | I |	 | I |    | I |  |
+       | |P  |    |P  |     |P  |     |P  |      |        |P  |  P|        |      |  P|    |  P|	 |  P|    |  P|  |
+       | | E |    | E |     | E |     | E |      |        | E | E |        |      | E |    | E |	 | E |    | E |  |
+       v |__S|____|__S|_____|__S|_____|__S|______|________|__S|S__|________|______|S__|____|S__|_____|S__|____|S__|  |
+       ^ |   |              |   |                |        |   |   |        |               |   |              |   |  |
+       | |___|     ___      |___|      ___       |        |___|___|        |       ___     |___|      ___     |___|  |
+Inter- | |VDD|    |VDD|     |VDD|     |VDD|      |        |VDD|VDD|        |      |VDD|    |VDD|     |VDD|    |VDD|  |
+face   | |VSS|    |VSS|     |VSS|     |VSS|      |        |VSS|VSS|        |      |VSS|    |VSS|     |VSS|    |VSS|  |
+Pins   v |___|____|___|_____|___|_____|___|______|________|___|___|________|______|___|____|___|_____|___|____|___|  v
+
+
+
+Address calculation for BIST_ADDR in BIST modeare identical to ADDR as seen below.
+
+The SRAM macro is physically organized in 2 x 64 horizontal x 512 vertical bit cells:
+ - Row address pins (MSB..LSB)     : 7;           ya[6:0]     = ADDR[9:2]         
+ - Column address pins (MSB..LSB)  : 2;           xa[1:0]     = ADDR[1:0]         
+ - Data pins (MSB..LSB)            : 32;          xa[31:0]    = DIN[31:0], DOUT[31:0].
+
+The scrambling scheme reads as follows:
+ - X-Address Scrambling: xa[i] = x[i]
+ - Y-Address Scrambling: ya[j] = not(y[j])
+
+Translation from physical (x,y,d) to topological (x,y) addresses:
+  x_topo = f(x_physical, y_physical, d) =
+                    if (d<12)      {d*32+31-x}    
+                    else           {d*32+x}  
+
+  y_topo = f(x_physical, y_physical, d) = y
+
+Note: The left and right sub-arrays are mirrored with respect to the y axis.
+
+Symbol definition:
+xa[0..n], ya[0..m]: externally applied device addresses
+
+x[0..n], y[0..m]:   internal physical addresses (address complete memory words)
+
+x_topo, y_topo:     internal topological addresses (address single bit cells)
+

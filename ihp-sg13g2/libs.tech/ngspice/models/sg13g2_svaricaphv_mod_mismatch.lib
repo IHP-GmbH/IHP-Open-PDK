@@ -1,0 +1,156 @@
+******************************************************************************* 
+*                                                                             * 
+* Copyright 2025 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+*******************************************************************************
+* MOS SVaricap section
+*******************************************************************************
+*
+*                        Gate1
+*                        |  Well
+*                        |  |  Gate2
+*                        |  |  |  Substrate
+*                        |  |  |  |
+.subckt sg13_hv_svaricap G1 W G2 bn
+.params l=600e-9  w=3e-6  mm_ok=1 Nx=1  Ny=1  trise=0  ic_=1e10
+
+*LowL  paramtest warnif = (l<300n)  message="Channel length must be >=300n."
+*HiL  paramtest warnif = (l>800n)  message="Channel length must be <=800n."
+*LowW  paramtest warnif = (w<3.74um)  message="Channel width must be >=3.74u"
+*HiW  paramtest warnif = (w>9.74um)  message="Channel width must be <=9.74u"
+*LowNX  paramtest warnif = (Nx<1)  message="NX must be >=1."
+*HiNX  paramtest warnif = (Nx>10)  message="NX must be <=10."
+*LowNY  paramtest warnif = (Ny<1)  message="NYmust be >=1."
+*HiNY  paramtest warnif = (Ny>1)  message="NY must be <=1."
+*
+*internal parameters, do not pass from outside
+.params rwell0     = 32.85
+.params rwellw     = -2.499E+06
+.params rwellnx    = 4.759E+06
+.params rwellvw    = 0
+.params rwellwvw   = 0
+.params rwellnxvw  = 0
+.params rsubw0     = 0.2596
+.params rsubwf     = 0.0009212
+.params rsubwexp   = 0.6952
+.params ck0        = 4.267E-16
+.params ckwnx      = -7.948E-11
+.params ckw        = 1.252E-10
+.params cic0       = 1E-18
+.params vfbo       = -0.04009
+.params toxo       = 6.945E-09
+.params rk0        = 346.7
+.params rkwnx      = 0.000631
+
+*
+* add tiny element to allow passing an IC value
+.if (ic_>1e9)
+   Cic1 G1 W0 c=cic0
+   Cic2 G2 W0 c=cic0
+.else
+   Cic1 G1 W0 c=cic0 ic=ic_
+   Cic2 G2 W0 c=cic0 ic=ic_
+.endif
+
+*-- dummy nodes
+rdummy1  W 2 r = 0.0001
+rdummy2 bn 4 r = 0.0001
+
+* --------- MOS Varactor 1 ------------------------------
+nmvcap1 G1 bi1 W0 sg13_hv_svaricap m = 'Nx*Ny' dta = trise
++ w='agauss(w, sg13g2_hv_svaricap_dw_mm, (mm_ok != 1 ? 0 : 1))'
++ l='agauss(l, sg13g2_hv_svaricap_dl_mm, (mm_ok != 1 ? 0 : 1))'
+
+* --------- MOS Varactor 2 ------------------------------
+nmvcap2 G2 bi2 W0 sg13_hv_svaricap m = 'Nx*Ny' dta = trise
++ w='agauss(w, sg13g2_hv_svaricap_dw_mm, (mm_ok != 1 ? 0 : 1))'
++ l='agauss(l, sg13g2_hv_svaricap_dl_mm, (mm_ok != 1 ? 0 : 1))'
+
+* --------- Well Parasitic --------------------
+rww   W  W0 r = '((((rwell0+(rwellvw*(v(2, 4))))+((rwellw+(rwellwvw*(v(2, 4))))*w))+(((rwellnx+(rwellnxvw*(v(2, 4))))*w)/(Nx*Ny)))*Nx)*Ny'
+dsubw W1  W dsubw off area = '(((Nx*0.38u)+(Nx*l))+1.11u)*(Ny*(w+0.97u))' pj = '2*((((Nx*0.38u)+(Nx*l))+1.11u)+(Ny*(w+0.97u)))'
+rsubw W1 bn r = '(rsubw0/(sqrt(pow(Nx, rsubwexp))))/(w+rsubwf)'
+.model dsubw d is = 2.45E-17 jsw = 5.959E-10 n = 4 ns = 1.029 cjo = 1.444E-15 vj = 0.1 m = 0.1052 cjp = 1.117E-09 php = 0.457 mjsw = 0.2595 fc = 0.95 cta = 1E-06
+
+* --------- Coupling G1 G2 capacitance with serial resistor ---------
+ck_g12 G1 G2a c = '(((ck0+(ckw*w))+((ckwnx*w)/(Nx*Ny)))*Nx)*Ny'
+rk G2a G2 r = '(rk0+(rkwnx/w))/(Nx*Ny)'
+
+.model sg13_hv_svaricap mosvar
++ version = 1.3
++ subversion = 0
++ revision = 0
++ level = 1000
++ tmin = -100
++ tmax = 500
++ vmax = 1E+04
++ tr = 27
++ lmin = 2.99E-07
++ lmax = 8.1E-07
++ wmin = 3.7E-06
++ wmax = 9.8E-06
++ swres = 1
++ swigate = 1
++ type = -1
++ typep = -1
++ toxo = 'toxo*sg13g2_hv_svaricap_toxo'
++ tau = 0.1
++ vfbo = 'vfbo*sg13g2_hv_svaricap_vfbo'
++ nsubo = 3.802E+23
++ mnsubo = 1
++ dnsubo = 0
++ vnsubo = 0
++ nslpo = 0.1
++ npo = 1E+27
++ qmc = 1
++ dlq = '4.31E-10*sg13g2_hv_svaricap_dlq'
++ dwq = '-1.081E-07*sg13g2_hv_svaricap_dwq'
++ dwr = 0
++ cfrl = 1.856E-09
++ cfrw = 3.155E-11
++ rshg = 0
++ rpv = 0
++ rend = 0.0003795
++ rshs = 727.8
++ uac = 0.06
++ uacred = 0
++ stvfb = 0
++ strshg = 0
++ strpv = 0
++ strend = 0
++ strshs = 0
++ stuac 40
++ feta = 1
++ chibo = 3.1
++ chibpo = 4.5
++ stig = 2
++ lov = 0
++ novo = 1.311E+25
++ iginvlw = 0
++ igovw = 0
++ gcoo = 0
++ gc2o = 0.375
++ gc3o = 0.063
++ igchvlw = 0
++ igovhvw = 0
++ gcohvo = 0
++ gc2hvo = 0.375
++ gc3hvo = 0.063
+*+ minr = 0.001
+*+ igmax = 1E-05
++ igmax = 1E-02
+
+.ends sg13_hv_svaricap

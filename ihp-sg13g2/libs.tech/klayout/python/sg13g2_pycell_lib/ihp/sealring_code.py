@@ -161,12 +161,6 @@ class sealring(DloGen):
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
         dbCreateRect(self, Layer('Passiv', 'drawing'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
         
-        # Filler processing enhancement
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(edgeBox, corner_end, corner_width + edgeBox, w - corner_end))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(corner_end, edgeBox, l - corner_end, corner_width + edgeBox))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(l - edgeBox, corner_end, l - corner_width - edgeBox, w - corner_end))
-        dbCreateRect(self, Layer('Metal1', 'filler'), Box(corner_end, w - edgeBox, l - corner_end, w - corner_width - edgeBox))
-
         for layer in layers :
             dbCreateRect(self, Layer(layer, 'drawing'), Box(metalOffset, corner_end, metalOffset + corner_width, w - corner_end))
             dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, metalOffset, l - corner_end, metalOffset + corner_width))
@@ -200,3 +194,8 @@ class sealring(DloGen):
         sealringArea = (l * w) / 1e12 # mm2
         pcLabelText = 'Device registration size: x={0:.1f} um ; y={1:.1f} um\nCalculated area: {2:.1e} sq mm'.format(l, w, sealringArea)
         pcInst = dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(5.0, 5.0), pcLabelText, 'lowerLeft', 'R0', Font.EURO_STYLE, 5.0)
+        
+        # Creating text label w/ PDK repo commit version
+        pcLabelText = "PDK version: " + get_git_commit_version()
+        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(5.0, w - 10.0), pcLabelText, 'lowerLeft', 'R0', Font.EURO_STYLE, 5.0)
+        

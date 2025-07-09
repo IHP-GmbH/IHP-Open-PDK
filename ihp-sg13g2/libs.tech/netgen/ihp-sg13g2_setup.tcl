@@ -142,7 +142,6 @@ lappend devices pnpMPA
 # TODO: check parallel merge
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
-	permute "-circuit1 $dev" 1 3
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {le critical}
 	property "-circuit1 $dev" parallel {we add}
@@ -151,7 +150,6 @@ foreach dev $devices {
 	property "-circuit1 $dev" delete Nx Ny
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	permute "-circuit2 $dev" 1 3
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {le critical}
 	property "-circuit2 $dev" parallel {we add}
@@ -233,10 +231,10 @@ foreach dev $devices {
 	property "-circuit1 $dev" delete DEV_A DEV_P DEV_C
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {l critical}
-	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
 	property "-circuit2 $dev" delete DEV_A DEV_P DEV_C
     }
@@ -261,10 +259,10 @@ foreach dev $devices {
 	property "-circuit1 $dev" delete ic
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {l critical}
-	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
 	property "-circuit2 $dev" delete ic
     }

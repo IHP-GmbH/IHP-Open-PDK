@@ -165,6 +165,10 @@ if __name__ == "__main__":
         command = "openvaf r3_cmc.va --output " + destination_directory + "/r3_cmc.osdi"    
         print(f"{program_name} is available and about to run the command '{command}' in a location: {source_directory} ")	
         exec_app_in_directory(command, source_directory)
+        source_directory = pdk_root + "/ihp-sg13g2/libs.tech/verilog-a/mosvar"
+        command = "openvaf mosvar.va --output " + destination_directory + "/mosvar.osdi"    
+        print(f"{program_name} is available and about to run the command '{command}' in a location: {source_directory} ")	
+        exec_app_in_directory(command, source_directory)
     else:
         logging.error(f"{program_name} is not installed.")
         exit(1)

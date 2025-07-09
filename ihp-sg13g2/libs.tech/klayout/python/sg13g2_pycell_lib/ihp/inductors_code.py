@@ -113,6 +113,7 @@ class inductors(DloGen):
         TM1p = Layer('TopMetal1', 'pin')
         TV2 = Layer('TopVia2', 'drawing')
         IND = Layer('IND', 'drawing')
+        INDp = Layer('IND', 'pin')
         PWellBlock = Layer('PWell', 'block')
         NoActFiller = Layer('Activ', 'nofill')
         NoGatFiller = Layer('GatPoly', 'nofill')
@@ -151,8 +152,10 @@ class inductors(DloGen):
         if type3 :
             pathPoints = PointList([Point(0, -1), Point(0, 30)])
             dbCreatePath(self, TM2, pathPoints, w);
-            dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, 0), 'LC', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
+            dbCreateLabel(self, Layer('IND', 'text'), Point(0, 0), 'LC', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
             pcInst = dbCreateRect(self, TM2p, Box(-w/2, -1, w/2, 1))
+            indPin = dbCreateRect(self, INDp, Box(-w/2, -1, w/2, 1))
+            #pcPin = dbCreatePin(self, 'LC', indPin)
             pcPin = dbCreatePin(self, 'LC', pcInst)
 
         x1 = GridFix(lat_sm/2)-w
@@ -167,10 +170,6 @@ class inductors(DloGen):
 
         if type3 or (not oddp(nr_r)) :
             dbCreateRect(self, TM2, Box(-x_via, 30, x_via, w+30))
-            if type2 :
-                dbCreateRect(self, IND, Box(-w/2-grid, 30-grid, w/2+grid, 30+w+grid))
-                dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, w/2+30), 'L2_TM2', 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
 
         lat_big2 = d1_via_cross+grid
         if (nr_r == 2) or (nr_r == 1) :
@@ -241,43 +240,27 @@ class inductors(DloGen):
             if type3 and pcIndexX == nr_r-1 :
                 x_mid = d/2+w/2
                 y_mid = ((y2+w+cateta_sm+lat_sm)-(y2+w+cateta_sm))/2+y2+w+cateta_sm
-                dbCreateRect(self, IND, Box(d/2-grid, y_mid-w/2, (d+2*w)/2+grid, y_mid+w/2))
-                dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid), 'L2_TM2', 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
                 lh = eng_string(Numeric(l)*0.5, 3)
                 rh = eng_string(Numeric(r)*0.5, 3)
 
-                if cellName == 'inductor3' :
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid+w/3), 'l='+lh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'r='+rh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
-                if cellName == 'inductor3_sc' :
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'model='+model, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
+                #if cellName == 'inductor3' :
+#                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid+w/3), 'l='+lh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
+#                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'r='+rh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
 
                 x_mid = -d/2-w/2
-                dbCreateRect(self, IND, Box(-d/2+grid, y_mid-w/2, -(d+2*w)/2-grid, y_mid+w/2))
-                dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid), 'L2_TM2', 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
-                if cellName == 'inductor3' :
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid+w/3), 'l='+lh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'r='+rh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
-                if cellName == 'inductor3_sc' :
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'model='+model, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
+                
+                #if cellName == 'inductor3' :
+#                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid+w/3), 'l='+lh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
+#                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_mid, y_mid-w/3), 'r='+rh, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
 
             if evenp(pcIndexX) :
                 if type2 and (oddp(nr_r) and (pcIndexX == nr_r-1)) :
                     polyPoints4 = PointList([Point(x_via, y2+w+d), Point(x_via, y2+w*2+d), Point(-x_via, y2+w*2+d), Point(-x_via, y2+w+d)])
                     dbCreatePolygon(self, TM2, polyPoints4)
-                    dbCreateRect(self, IND, Box(-w/2-grid, y2+w*2+d+grid, w/2+grid, y2+w+d-grid))
-                    dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d), 'L2_TM2', 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
-                    if cellName == 'inductor2' :
-                        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d+w/3), 'l='+l, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-                        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d-w/3), 'r='+r, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
-
-                    if cellName == 'inductor2_sc' :
-                        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d-w/3), 'model='+model, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
+                    
+                    #if cellName == 'inductor2' :
+#                        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d+w/3), 'l='+l, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
+#                        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+w+w/2+d-w/3), 'r='+r, 'centerCenter', 'R0', Font.EURO_STYLE, w/6)
 
                 else :
                     polyPoints3 = PointList([Point(x_via+w, y2+w+d), Point(x_via+w, y2+w*2+d), Point(x_cross, y2+w*2+d), Point(x_cross-(w+s+2*grid), y2+w*3+s+d+2*grid), Point(-x_via-w, y2+w*3+s+d+2*grid),
@@ -341,16 +324,23 @@ class inductors(DloGen):
             dbCreatePath(self, TM2, pathPoints2, w);
             pcInst1 = dbCreateRect(self, TM2p, Box(x1-w/2, -1, x1+w/2, 1))
             pcInst2 = dbCreateRect(self, TM2p, Box(-x1-w/2, -1, -x1+w/2, 1))
+            indPin1 = dbCreateRect(self, INDp, Box(x1-w/2, -1, x1+w/2, 1))   
+            indPin2 = dbCreateRect(self, INDp, Box(-x1-w/2, -1, -x1+w/2, 1))
         else :
             dbCreatePath(self, TM1, pathPoints1, w);
             dbCreatePath(self, TM1, pathPoints2, w);
             pcInst1 = dbCreateRect(self, TM1p, Box(x1-w/2, -1, x1+w/2, 1))
             pcInst2 = dbCreateRect(self, TM1p, Box(-x1-w/2, -1, -x1+w/2, 1))
+            indPin1 = dbCreateRect(self, INDp, Box(x1-w/2, -1, x1+w/2, 1))   
+            indPin2 = dbCreateRect(self, INDp, Box(-x1-w/2, -1, -x1+w/2, 1))
 
-        pcPin = dbCreatePin(self, 'LB', pcInst1)
-        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x1, 0), 'LB', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
-        pcPin = dbCreatePin(self, 'LA', pcInst2)
-        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(-x1, 0), 'LA', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
+        #dbCreatePin(self, 'LB', indPin1)
+        dbCreateLabel(self, Layer('IND', 'text'), Point(x1, 0), 'LB', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
+        dbCreatePin(self, 'LB', pcInst1)
+        
+        #dbCreatePin(self, 'LA', indPin2)
+        dbCreateLabel(self, Layer('IND', 'text'), Point(-x1, 0), 'LA', 'centerCenter', 'R0', Font.EURO_STYLE, w/2)
+        dbCreatePin(self, 'LA', pcInst2)
 
         dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(0, y2+cateta_sm/2+lat_sm), cellName, 'centerCenter', 'R0', Font.EURO_STYLE, w)
 
@@ -380,6 +370,8 @@ class inductors(DloGen):
         for layer in filler_layers:
             dbCreatePolygon(self, layer, polyPoints1)
         
+        dbCreatePolygon(self, IND, polyPoints1)
+        
         if blockqrc :
             dbCreatePolygon(self, NoRCX, polyPoints1)
 
@@ -388,4 +380,9 @@ class inductors(DloGen):
 
         y2 = 2*nr_r*w+2*(nr_r-1)*s
         d = d1
-
+        
+        # add pcell parameters information for LVS extraction
+        xs = [pt.x for pt in polyPoints1]
+        x_left_edge = min(xs)
+        pcLabelText = '  width={0:.1f}\n  space={1:.1f}\n  diameter={2:.2f}\n  turns={3:d}'.format(w, s, d, nr_r)
+        dbCreateLabel(self, Layer('TEXT', 'drawing'), Point(x_left_edge, y2 + (d - lat_sm) / 4 + lat_sm), pcLabelText, 'leftCenter', 'R0', Font.EURO_STYLE, 2.0)

@@ -15,7 +15,7 @@
 * limitations under the License.
 *
 *#######################################################################
-* Typical without statistical modeling
+* Typical
 .LIB res_typ
   .param rsh_rhigh = 1360
   .param rsh_rppd  = 260.0
@@ -25,6 +25,17 @@
 
 .include resistors_mod.lib
 .ENDL res_typ
+
+* Typical with mismatch modeling
+.LIB res_typ_mismatch
+  .param rsh_rhigh = 1360
+  .param rsh_rppd  = 260.0
+  .param rsh_rsil  = 7.0
+  .param res_area  = 1.0
+  .param res_rpara = 1.0
+
+.include resistors_mod_mismatch.lib
+.ENDL res_typ_mismatch
 
 * Typical with statistical modeling
 .LIB res_typ_stat
@@ -38,18 +49,7 @@
 .include resistors_mod.lib
 .ENDL res_typ_stat
 
-* Typical with mismatch modeling
-.LIB res_typ_mismatch
-  .param rsh_rhigh = 1360
-  .param rsh_rppd  = 260.0
-  .param rsh_rsil  = 7.0
-  .param res_area  = 1.0
-  .param res_rpara = 1.0
-
-.include resistors_mod_mismatch.lib
-.ENDL res_typ
-
-* Best Case without statistical modeling
+* Best Case
 .LIB res_bcs
   .param rsh_rhigh = 1020
   .param rsh_rppd  = 234.0
@@ -60,18 +60,6 @@
 .include resistors_mod.lib
 .ENDL res_bcs
 
-* Best Case with statistical modeling
-.LIB res_bcs_stat
-  .param rsh_rhigh_norm= 1020
-  .param rsh_rppd_norm= 234.0
-  .param rsh_rsil_norm= 6.02
-  .param res_area_norm= 1.0
-  .param res_rpara_norm= 1.0
-
-.include resistors_stat.lib
-.include resistors_mod.lib
-.ENDL res_bcs_stat
-
 * Best Case with mismatch modeling
 .LIB res_bcs_mismatch
   .param rsh_rhigh = 1020
@@ -81,9 +69,9 @@
   .param res_rpara = 1.0
 
 .include resistors_mod_mismatch.lib
-.ENDL res_bcs
+.ENDL res_bcs_mismatch
 
-* Worst Case without statistical modeling
+* Worst Case
 .LIB res_wcs
   .param rsh_rhigh = 1700
   .param rsh_rppd  = 286.0
@@ -94,18 +82,6 @@
 .include resistors_mod.lib
 .ENDL res_wcs
 
-* Worst Case with statistical modeling
-.LIB res_wcs_stat
-  .param rsh_rhigh_norm= 1700
-  .param rsh_rppd_norm= 286.0
-  .param rsh_rsil_norm= 7.98
-  .param res_area_norm= 1.0
-  .param res_rpara_norm= 1.0
-
-.include resistors_stat.lib
-.include resistors_mod.lib
-.ENDL res_wcs_stat
-
 * Worst Case with mismatch modeling
 .LIB res_wcs_mismatch
   .param rsh_rhigh = 1700
@@ -115,4 +91,4 @@
   .param res_rpara = 1.0
 
 .include resistors_mod_mismatch.lib
-.ENDL res_wcs
+.ENDL res_wcs_mismatch

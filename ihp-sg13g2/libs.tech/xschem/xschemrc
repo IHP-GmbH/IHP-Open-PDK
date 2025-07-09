@@ -33,7 +33,7 @@ append XSCHEM_LIBRARY_PATH :${XSCHEM_SHAREDIR}/xschem_library
 #### include skywater libraries. Here i use [pwd]. This works if i start xschem from here.
 append XSCHEM_LIBRARY_PATH :[file dirname [info script]]
 #### add ~/.xschem/xschem_library (USER_CONF_DIR is normally ~/.xschem)
-append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library 
+append XSCHEM_LIBRARY_PATH :$USER_CONF_DIR/xschem_library
 
 ###########################################################################
 #### SET CUSTOM COLORS FOR XSCHEM LIBRARIES MATCHING CERTAIN PATTERNS
@@ -50,7 +50,7 @@ set dircolor(devices$) red
 ###########################################################################
 #### DIRECTORY WHERE SIMULATIONS, NETLIST AND SIMULATOR OUTPUTS ARE PLACED
 ###########################################################################
-#### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations) 
+#### If unset $USER_CONF_DIR/simulations is assumed (normally ~/.xschem/simulations)
 set netlist_dir $env(PWD)/simulations
 #### if this is set to '1' netlists and simulations will go into a simulation/ folder
 #### inside the directory containing the top level schematic. Default: not set (0)
@@ -77,13 +77,13 @@ set netlist_dir $env(PWD)/simulations
 # set nolist_libs {}
 
 ###########################################################################
-#### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS 
-#### IN SPICE NETLISTS (EXAMPLE: DATA[7] --> DATA<7>) 
+#### CHANGE DEFAULT [] WITH SOME OTHER CHARACTERS FOR BUSSED SIGNALS
+#### IN SPICE NETLISTS (EXAMPLE: DATA[7] --> DATA<7>)
 ###########################################################################
 #### default: empty (use xschem default, [ ])
 # set bus_replacement_char {<>}
 #### for XSPICE: replace square brackets as the are used for XSPICE vector nodes.
-# set bus_replacement_char {__} 
+# set bus_replacement_char {__}
 
 ###########################################################################
 #### SOME DEFAULT BEHAVIOR
@@ -135,12 +135,12 @@ set zoom_full_center 1
 # set connect_by_kissing 1
 
 #### if set to 1 automatically join/trim wires while editing
-#### this may slow down on rally big designs. Can be disabled via menu 
+#### this may slow down on rally big designs. Can be disabled via menu
 #### default: 0
 set autotrim_wires 1
 
 #### set widget scaling (mainly for font display), this is useful on 4K displays
-#### default: unset (tk uses its default) > 1.0 ==> bigger 
+#### default: unset (tk uses its default) > 1.0 ==> bigger
 # set tk_scaling 1.7
 
 #### use the tclreadline package if available , Default: 1 (enabled).
@@ -179,7 +179,7 @@ set autotrim_wires 1
 ###########################################################################
 #### EXPORT FORMAT TRANSLATORS, PNG AND PDF
 ###########################################################################
-#### command to translate xpm to png; (assumes command takes source 
+#### command to translate xpm to png; (assumes command takes source
 #### and dest file as arguments, example: gm convert plot.xpm plot.png)
 #### default: {gm convert}
 #### Windows ghostscript uses gswin64c
@@ -197,7 +197,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### UNDO: SAVE ON DISK OR KEEP IN MEMORY
 ###########################################################################
-#### Alloved: 'disk'or 'memory'. 
+#### Alloved: 'disk'or 'memory'.
 #### Saving undo on disk is safer but slower on extremely big schematics.
 #### In most cases you won't notice any delay. Undo on disk allows previous
 #### state recovery in case of crashes. In-memory undo is extremely fast
@@ -238,7 +238,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 #### Scale all fonts by this number
 # set cairo_font_scale 1.0
 
-#### default for following two is 0.85 (xscale) and 0.88 (yscale) to 
+#### default for following two is 0.85 (xscale) and 0.88 (yscale) to
 #### match cairo font spacing
 # set nocairo_font_xscale 1.0
 #### set nocairo_font_yscale 1.0
@@ -272,7 +272,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### default for linux: xterm
 # set terminal {xterm -geometry 100x35 -fn 9x15 -bg black -fg white -cr white -ms white }
-#### lxterminal is not OK since it will not inherit env vars: 
+#### lxterminal is not OK since it will not inherit env vars:
 #### In order to reduce memory usage and increase the performance, all instances
 #### of the lxterminal are sharing a single process. LXTerminal is part of LXDE
 
@@ -297,7 +297,7 @@ set to_pdf {ps2pdf -dAutoRotatePages=/None}
 ###########################################################################
 #### ALWAYS SHOW ERC INFO WINDOW AFTER NETLIST
 ###########################################################################
-#### default: 0 
+#### default: 0
 # set show_infowindow_after_netlist 0
 
 ###########################################################################
@@ -345,7 +345,7 @@ set toolbar_visible 1
 ###########################################################################
 #### TABBED WINDOWS
 ###########################################################################
-# default: not enabled. Interface can be changed runtime if only one window 
+# default: not enabled. Interface can be changed runtime if only one window
 # or tab is open.
 set tabbed_interface 1
 
@@ -373,7 +373,7 @@ set tabbed_interface 1
 #### SHOW HIDDEN TEXTS
 ###########################################################################
 ## This option shows text objects even if they have attribute 'hide=true' set
-## default: 0 (not set) 
+## default: 0 (not set)
 # set show_hidden_texts 1
 
 ###########################################################################
@@ -395,7 +395,7 @@ if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
   }
   set PDK_ROOT $env(PDK_ROOT)
 } else {
-  ## not existing or empty. 
+  ## not existing or empty.
   puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find an open_pdks install"
   if {[file isdir /usr/share/pdk]} {set PDK_ROOT /usr/share/pdk
   } elseif {[file isdir /usr/local/share/pdk]} {set PDK_ROOT /usr/local/share/pdk
@@ -416,14 +416,10 @@ if {[info exists PDK_ROOT]} {
   set SG13G2_MODELS_XYCE ${PDK_ROOT}/${PDK}/libs.tech/xyce/models
   puts stderr "SG13G2_MODELS: $SG13G2_MODELS"
   puts stderr "SG13G2_MODELS_XYCE: $SG13G2_MODELS_XYCE"
-  #puts stderr "SKYWATER_STDCELLS: $SG13G2_STDCELLS"
 }
 
 
-# open_pdks specific:
-# Set variables after ${PDK_ROOT} is known
 # This overrides some of the variables set above.
-
 set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/start_page.sch
 append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
 
@@ -432,216 +428,10 @@ if { [info exists ::env(XSCHEM_USER_LIBRARY_PATH) ] } {
     append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
 }
 
-############################################################### DRC checks #######################################
-# IHP SG13G2 mosfets dimension checks
-proc fet_drc {instance symbol model w l ng } {
-  set res {}
-  # strip off the "u" suffix
-  regsub {u$} $w {} w
-  regsub {u$} $l {} l
-  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
-  if { [string is double $w] && [string is double $l] && [string is integer $ng]} {
-    
-  # calculate finger width 
-    set w [expr { double($w) / double($ng)}]
-    
-    switch -regexp $model {
-      {sg13_lv_nmos$} {
-        if { $w < 0.13 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
-        }
-        if { $w > 10.0 } {
-          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
-        }
-        if { $l < 0.13 } {
-          append res "${instance} ($model): length is too small, l = $l, min l > 0.13u" \n
-        }
-      }
-      {sg13_lv_pmos$} {
-        if { $w < 0.13 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
-        }
-        if { $w > 10.0 } {
-          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
-        }
-        if { $l < 0.13 } {
-          append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
-        }
-      }
-      {sg13_hv_nmos$} {
-        if { $w < 0.45 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min w/ng > 0.45u" \n
-        }
-        if { $w > 10.0 } {
-          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
-        }
-        if { $l < 0.13 } {
-         append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
-        }
-      }
-      {sg13_hv_pmos$} {
-        if { $w < 0.4 } {
-          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.4u" \n
-        }
-        if { $w > 10.0 } {
-          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
-        }
-        if { $l < 0.13 } {
-          append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
-        }
-      }
-    } ;# switch
+# Source auxiliary xschem files
+if {[info exists PDK_ROOT]} {
+  if {[info exists env(PDK)]} {
+    source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-drc
+    source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-menu
   }
-  return $res
-}
-# IHP SG13G2 resistors dimension checks
-proc res_drc {instance symbol model w l } {
-  set res {}
-  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
-  if { [string is double $w] && [string is double $l] } {
-    
-    if { $w < 0.5e-6 } {
-      append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
-    }
-
-    if { $l < 0.5e-6 } {
-       append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.5u" \n
-    }
-  }
-  return $res
-}
-# IHP SG13G2 MiM capacitor dimension checks
-proc mim_drc {instance symbol model w l } {
-  set res {}
-  
-  if { [string is double $w] && [string is double $l] } {
-    set area [expr { double($w) * double($l) * 1.0e+12}]
- 
-    if { $w < 1.14e-6 } {
-      append res "${instance} ($model): MiM capacitor width is too small, w = $w, min. w > 1.14 um" \n
-    }
-    
-    if { $area < 1.3 } {
-       append res "${instance} ($model): MiM capacitor area is too small, area = $area, min. area > 1.3 um2" \n
-    }
-    
-    if { $area > 5625.0 } {
-       append res "${instance} ($model): MiM capacitor area is too big, area = $area, max. area < 5625.0 um2" \n
-    }
-  }
-  return $res
-}
-# IHP SG13G2 HBT dimension checks
-proc hbt_drc {instance symbol model Nx El } {
-  set res {}
-  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
-  if { [string is integer $Nx] || [string is double $El]} {
-    
-    
-    switch -regexp $model {
-      {npn13G2$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
-        }
-        if { $Nx > 10 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-10" \n
-        }
-      }
-      {npn13G2l$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $Nx > 4 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $El < 1.0 } {
-          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
-        }
-        if { $El > 2.5 } {
-          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
-        }
-      }
-      {npn13G2v$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $Nx > 4 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $El < 1.0 } {
-          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
-        }
-        if { $El > 5 } {
-          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
-        }
-      }
-      
-      {npn13G2_5t$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-10" \n
-        }
-        if { $Nx > 10 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-10" \n
-        }
-      }
-      {npn13G2l_5t$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $Nx > 4 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $El < 1.0 } {
-          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
-        }
-        if { $El > 2.5 } {
-          append res "${instance} ($model): Emitter length El = $El too big, max. El < 2.5 " \n
-        }
-      }
-      {npn13G2v_5t$} {
-        if { $Nx < 1 } {
-          append res "${instance} ($model):  Number of emmiters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $Nx > 4 } {
-          append res "${instance} ($model): Number of emitters Nx = $Nx must be in range 1-4" \n
-        }
-        if { $El < 1.0 } {
-          append res "${instance} ($model): Emitter length El = $El too small, min. El > 1.0 " \n
-        }
-        if { $El > 5 } {
-          append res "${instance} ($model): Emitter length El = $El too big, max. El <= 5 " \n
-        }
-      }
-    } ;# switch
-  }
-  return $res
-}
-# IHP SG13G2 HBT diodes checks
-proc diode_drc {instance symbol model w l } {
-  set res {}
-  regsub {u$} $w {} w
-  regsub {u$} $l {} l
-  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
-  if { [string is double $w] && [string is double $l]} {
-    
-    switch -regexp $model {
-      {dantenna} {
-        if { $w < 0.78 } {
-          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
-        }
-        if { $l < 0.78 } {
-          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
-        }
-      }
-      {dpantenna} {
-        if { $w < 0.78 } {
-          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
-        }
-        if { $l < 0.78 } {
-          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
-        }
-      }
-    } ;# switch
-  }
-  return $res
 }

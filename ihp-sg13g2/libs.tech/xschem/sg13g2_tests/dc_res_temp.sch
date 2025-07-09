@@ -1,5 +1,4 @@
-v {xschem version=3.4.5 file_version=1.2
-}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
@@ -7,7 +6,7 @@ S {}
 E {}
 B 2 -130 -610 670 -210 {flags=graph
 
-y2=0.022
+y2=0.076
 ypos1=0
 ypos2=2
 divy=5
@@ -24,7 +23,7 @@ logx=0
 logy=0
 
 
-y1=0.00081
+y1=0.00058
 rainbow=0
 color="4 7 8"
 node="i(vrh)
@@ -97,16 +96,26 @@ C {devices/gnd.sym} 420 90 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 420 -40 0 0 {name=Vrh}
 C {sg13g2_pr/rsil.sym} 90 40 0 0 {name=R1
 w=0.5e-6
-l=1.5e-6
+l=0.5e-6
 model=rsil
+body=sub!
 spiceprefix=X
 b=0
 m=1
 }
+C {sg13g2_pr/sub.sym} -30 90 0 0 {name=l6 lab=sub!}
+C {sg13g2_pr/ptap1.sym} -30 60 0 0 {name=R4
+model=ptap1
+spiceprefix=X
+w=0.78e-6
+l=0.78e-6
+}
+C {devices/gnd.sym} -30 30 2 0 {name=l7 lab=GND}
 C {sg13g2_pr/rppd.sym} 240 40 0 0 {name=R2
 w=0.5e-6
 l=0.5e-6
 model=rppd
+body=sub!
 spiceprefix=X
 b=0
 m=1
@@ -115,6 +124,7 @@ C {sg13g2_pr/rhigh.sym} 420 40 0 0 {name=R3
 w=0.5e-6
 l=0.5e-6
 model=rhigh
+body=sub!
 spiceprefix=X
 b=0
 m=1

@@ -63,12 +63,14 @@ moduleNames = [
         'ntap1_code',
         'bondpad_code',
         'rfcmim_code',
+        'esd_code',
         'rfmosfet_base_code',
         'rfnmos_code',
         'rfnmosHV_code',
         'rfpmos_code',
         'rfpmosHV_code',
-        'NoFillerStack_code'
+        'NoFillerStack_code',
+        'SVaricap_code'
 ]
 
 def getProcessNames():
@@ -108,20 +110,24 @@ def getProcessNames():
             currentPid = ppid
 
     else:
-        import psutil
+        try:
+            import psutil
 
-        parent = None
+            parent = None
 
-        p = psutil.Process()
-        with p.oneshot():
-            processNames.append(p.name().lower())
-            parent = p.parent()
+            p = psutil.Process()
+            with p.oneshot():
+                processNames.append(p.name().lower())
+                parent = p.parent()
 
-        while parent is not None and maxDepth > 0:
-            maxDepth -= 1
-            with parent.oneshot():
-                processNames.append(parent.name().lower())
-                parent = parent.parent()
+            while parent is not None and maxDepth > 0:
+                maxDepth -= 1
+                with parent.oneshot():
+                    processNames.append(parent.name().lower())
+                    parent = parent.parent()
+        except ImportError:
+            pya.Logger.warn(f"Python package 'psutil' not found!")
+            return processNames
 
     assert len(processNames) > 0
 
