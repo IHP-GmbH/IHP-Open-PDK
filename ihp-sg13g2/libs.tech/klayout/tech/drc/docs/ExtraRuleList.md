@@ -103,23 +103,18 @@
 |M5.d      |5.17. M5.d Min. Metal5 area (µm²)                                                                                                |0.144      |Max     |
 |M1Fil.a1  |5.18. M1Fil.a1 Min. Metal1:filler width                                                                                          |1          |Max     |
 |M1Fil.b   |5.18. M1Fil.b Min. Metal1:filler space                                                                                           |0.42       |Max     |
-|M1Fil.c   |5.18. M1Fil.c Min. Metal1:filler space to Metal1                                                                                 |0.42       |Max     |
 |M1Fil.d   |5.18. M1Fil.d Min. Metal1:filler space to TRANS                                                                                  |1          |Max     |
 |M2Fil.a1  |5.18. M2Fil.a1 Min. Metal2:filler width                                                                                          |1          |Max     |
 |M2Fil.b   |5.18. M2Fil.b Min. Metal2:filler space                                                                                           |0.42       |Max     |
-|M2Fil.c   |5.18. M2Fil.c Min. Metal2:filler space to Metal2                                                                                 |0.42       |Max     |
 |M2Fil.d   |5.18. M2Fil.d Min. Metal2:filler space to TRANS                                                                                  |1          |Max     |
 |M3Fil.a1  |5.18. M3Fil.a1 Min. Metal3:filler width                                                                                          |1          |Max     |
 |M3Fil.b   |5.18. M3Fil.b Min. Metal3:filler space                                                                                           |0.42       |Max     |
-|M3Fil.c   |5.18. M3Fil.c Min. Metal3:filler space to Metal3                                                                                 |0.42       |Max     |
 |M3Fil.d   |5.18. M3Fil.d Min. Metal3:filler space to TRANS                                                                                  |1          |Max     |
 |M4Fil.a1  |5.18. M4Fil.a1 Min. Metal4:filler width                                                                                          |1          |Max     |
 |M4Fil.b   |5.18. M4Fil.b Min. Metal4:filler space                                                                                           |0.42       |Max     |
-|M4Fil.c   |5.18. M4Fil.c Min. Metal4:filler space to Metal4                                                                                 |0.42       |Max     |
 |M4Fil.d   |5.18. M4Fil.d Min. Metal4:filler space to TRANS                                                                                  |1          |Max     |
 |M5Fil.a1  |5.18. M5Fil.a1 Min. Metal5:filler width                                                                                          |1          |Max     |
 |M5Fil.b   |5.18. M5Fil.b Min. Metal5:filler space                                                                                           |0.42       |Max     |
-|M5Fil.c   |5.18. M5Fil.c Min. Metal5:filler space to Metal5                                                                                 |0.42       |Max     |
 |M5Fil.d   |5.18. M5Fil.d Min. Metal5:filler space to TRANS                                                                                  |1          |Max     |
 |V1.b1     |5.19.  V1.b1 Min. Via1 space in an array of more than 3 rows and more then 3 columns  (V1.b1 is only required in one direction. The distance of the other direction must be at least V1.b.)                                                                                                                                 |0.29       |Max     |
 |V1.c1     |5.19.  V1.c1 Min. Metal1 endcap enclosure of Via1 (For Via1 at Metal1 corners at  least one side must be treated as an endcap and for the other sides rule V1.c can be applied.)                                                                                                                                    |0.05       |Max     |
@@ -131,11 +126,9 @@
 |V4.c1     |5.20. V4.c1 Min. Metal4 endcap enclosure of Via4 (For Via4 at Metal4 corners at least one side must be treated as an endcap and for the other sides rule V4.c can be applied.)                                                                                                                                    |0.05       |Max     |
 |TM1Fil.a                |5.23.  TM1Fil.a Min. TopMetal1:filler width                                                                        |5          |Max     |
 |TM1Fil.b                |5.23.  TM1Fil.b Min. TopMetal1:filler space                                                                        |3          |Max     |
-|TM1Fil.c                |5.23.  TM1Fil.c Min. TopMetal1:filler space to TopMetal1                                                           |3          |Max     |
 |TM1Fil.d                |5.23. TM1Fil.d Min. TopMetal1:filler space to TRANS                                                                |4.9        |Max     |
 |TM2Fil.a                |5.26.  TM2Fil.a Min. TopMetal2:filler width                                                                        |5          |Max     |
 |TM2Fil.b                |5.26.  TM2Fil.b Min. TopMetal2:filler space                                                                        |3          |Max     |
-|TM2Fil.c                |5.26.  TM2Fil.c Min. TopMetal2:filler space to TopMetal2                                                           |3          |Max     |
 |TM2Fil.d                |5.26.  TM2Fil.d Min. TopMetal2:filler space to TRANS                                                               |4.9        |Max     |
 |npnG2.b                 |6.1.3.  npnG2.b NPN Substrate-Tie must enclose TRANS                                                               |-          |Max     |
 |npnG2.c                 |6.1.3.  npnG2.c Min. pSD enclosure of Activ inside NPN Substrate-Tie                                               |0.2        |Max     |

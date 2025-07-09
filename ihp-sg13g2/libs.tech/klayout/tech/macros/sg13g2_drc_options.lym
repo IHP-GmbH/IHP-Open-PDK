@@ -120,8 +120,8 @@
       'density_thr' => 1,
       'no_feol' => false,
       'no_beol' => false,
-      'MaxRuleSet' => false,
-      'no_connectivity' => true,
+      'extra_rules' => false,
+      'short_drc' => false,
       'no_density' => true,
       'density_only' => false,
       'antenna' => false,
@@ -191,10 +191,12 @@
     # Checkboxes - BASIC tab
     chk_feol = create_check_box("Disable FEOL Checks", options['no_feol'], "Skips Front-End-Of-Line rule checks (e.g., active, poly).")
     chk_beol = create_check_box("Disable BEOL Checks", options['no_beol'], "Skips Back-End-Of-Line rule checks (e.g., metals and vias).")
-    chk_max = create_check_box("Enable Max Rule Set", options['MaxRuleSet'], "Uses the full maximum rule set available (may be slower).")
+    chk_extra = create_check_box("Enable Extra Rule Set", options['extra_rules'], "Uses the extra rule set available (may be slower).")
+    chk_short = create_check_box("Enable Short Rule Set", options['short_drc'], "Uses the Short rule set available.")
+    @basic_layout_setup.addRow("", chk_short)
     @basic_layout_setup.addRow("", chk_feol)
     @basic_layout_setup.addRow("", chk_beol)
-    @basic_layout_setup.addRow("", chk_max)
+    @basic_layout_setup.addRow("", chk_extra)
 
     ## --- Advanced Settings Tab ---
     @advanced_tab = RBA::QWidget.new
@@ -202,15 +204,13 @@
     @advanced_layout_setup.addRow('Output Run Directory:', create_dir_input(options['run_dir'], @dialog_options))
     @advanced_layout_setup.setSpacing(30)
     @advanced_layout_setup.addRow("Density Run Threads:", create_cores_threads_no(options['density_thr']))
-    @advanced_layout_setup.setSpacing(5)
+    @advanced_layout_setup.setSpacing(15)
     # Advanced options - checkboxes with tooltips and styling
-    chk_conn = create_check_box("Disable Connectivity Checks", options['no_connectivity'], "Disables checks that require connectivity.")
     chk_density = create_check_box("Disable Density Checks", options['no_density'], "Disables density rule checks.")
     chk_density_only = create_check_box("Run Only Density Checks", options['density_only'], "Runs *only* density checks and skips others.")
     chk_antenna = create_check_box("Enable Antenna Checks", options['antenna'], "Enables antenna rule checks.")
     chk_antenna_only = create_check_box("Run Only Antenna Checks", options['antenna_only'], "Runs *only* antenna checks and skips others.")
     chk_offgrid = create_check_box("Disable Offgrid Checks", options['no_offgrid'], "Skips offgrid and angles checks.")
-    @advanced_layout_setup.addRow("", chk_conn)
     @advanced_layout_setup.addRow("", chk_density)
     @advanced_layout_setup.addRow("", chk_density_only)
     @advanced_layout_setup.addRow("", chk_antenna)
@@ -441,19 +441,19 @@
     options['run_mode'] = @basic_layout_update.itemAt(3).widget.currentText if @basic_layout_update.itemAt(3).widget
     options['table'] = @basic_layout_update.itemAt(5).widget.currentText if @basic_layout_update.itemAt(5).widget
     options['parallel_runs'] = @basic_layout_update.itemAt(7).widget.value if @basic_layout_update.itemAt(7).widget
-    options['no_feol'] = @basic_layout_update.itemAt(9).widget.checked if @basic_layout_update.itemAt(9).widget
-    options['no_beol'] = @basic_layout_update.itemAt(10).widget.checked if @basic_layout_update.itemAt(10).widget
-    options['MaxRuleSet'] = @basic_layout_update.itemAt(11).widget.checked if @basic_layout_update.itemAt(11).widget
+    options['short_drc'] = @basic_layout_update.itemAt(9).widget.checked if @basic_layout_update.itemAt(9).widget
+    options['no_feol'] = @basic_layout_update.itemAt(10).widget.checked if @basic_layout_update.itemAt(10).widget
+    options['no_beol'] = @basic_layout_update.itemAt(11).widget.checked if @basic_layout_update.itemAt(11).widget
+    options['extra_rules'] = @basic_layout_update.itemAt(12).widget.checked if @basic_layout_update.itemAt(12).widget
 
     @advanced_layout_update = @tab_widget_update.widget(1).layout
     options['run_dir'] = @advanced_layout_update.itemAt(1).widget.layout.itemAt(0).widget.text
     options['density_thr'] = @advanced_layout_update.itemAt(3).widget.value if @advanced_layout_update.itemAt(3).widget
-    options['no_connectivity'] = @advanced_layout_update.itemAt(4).widget.checked if @advanced_layout_update.itemAt(4).widget
-    options['no_density'] = @advanced_layout_update.itemAt(5).widget.checked if @advanced_layout_update.itemAt(5).widget
-    options['density_only'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
-    options['antenna'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
-    options['antenna_only'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
-    options['no_offgrid'] = @advanced_layout_update.itemAt(9).widget.checked if @advanced_layout_update.itemAt(9).widget
+    options['no_density'] = @advanced_layout_update.itemAt(4).widget.checked if @advanced_layout_update.itemAt(4).widget
+    options['density_only'] = @advanced_layout_update.itemAt(5).widget.checked if @advanced_layout_update.itemAt(5).widget
+    options['antenna'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
+    options['antenna_only'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
+    options['no_offgrid'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
   end
 
  end

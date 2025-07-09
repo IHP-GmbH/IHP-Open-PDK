@@ -58,7 +58,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--no_feol] [--no_beol] [--MaxRuleSet] [--no_connectivity] [--no_density]
+            [--short_drc] [--extra_rules] [--no_feol] [--no_beol] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--macro_gen]
 ```
@@ -80,13 +80,13 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --topcell TOPCELL     Top-level cell name to use from the input GDS.
   --density_thr DENSITY_THR
                         Number of threads to use during the density run (default: number of CPU cores).
-  --run_mode {flat,deep}
+  --run_mode {flat,deep,tiling}
                         KLayout execution mode: flat, deep, or tiling. [default: deep]
   --drc_json DRC_JSON   Path to a JSON file that defines rule values to use.
+  --short_drc           Run only a minimal DRC checks using a short rule set.
   --no_feol             Disable all FEOL-related DRC checks.
   --no_beol             Disable all BEOL-related DRC checks.
-  --MaxRuleSet          Force execution of the full rule deck.
-  --no_connectivity     Skip connectivity-related rules.
+  --extra_rules         Run the remaining DRC rules from the full rule set (may be slower).
   --no_density          Disable density rule checks.
   --density_only        Run only density rules.
   --antenna             Enable antenna rule checks.
@@ -212,12 +212,12 @@ Upon executing the DRC, the result database will appear on your layout interface
 
 The current SG13G2 DRC rules are categorized as follows:
 
-- **Minimum Rule Set** – Refer to the [README](docs/MinList.md):  
-  This set contains the essential DRC rules that are required for baseline verification. All rules in this category have been thoroughly verified, tested, and optimized for performance.
+- **Short Rule Set** – Refer to the [README](docs/ShortRuleList.md):  
+  This set contains the essential DRC rules that are required for baseline verification. All rules in this category have been thoroughly verified, tested, and optimized for performance. These rules can be activated by using the `--short_drc` switch when executing the DRC.
 
-- **Maximum Rule Set** – Refer to the [README](docs/MaxList.md):  
-  This set includes additional residual rules that are not part of the minimum set. These rules can be activated by using the `--MaxRuleSet` switch when executing the DRC. Please note that these rules have not been verified or tested.
+- **Main Rule Set** – Refer to the [README](docs/MainRuleList.md):  
+  This set includes rules that were not previously implemented. It also incorporates essential DRC rules already available in the [Short Rule Set](docs/ShortRuleList.md).
 
-- **Missing Rule Set** – Refer to the [README](docs/MissingList.md):  
-  This set lists the DRC rules that have not yet been implemented.
+- **Extra Rule Set** – Refer to the [README](docs/ExtraRuleList.md):  
+  This set includes additional residual rules that are not part of the minimum set. These rules can be activated by using the `--extra_rules` switch when executing the DRC. Please note that these rules have not been verified or tested.
 ---
