@@ -97,27 +97,23 @@ def bool_check?(obj)
     obj.to_s.downcase == 'true'
   end
 
+# Run mode setup
+def setup_run_mode(run_mode)
+  case run_mode
+  when 'flat'
+    flat
+  else
+    deep
+  end
+end
+
 # threads
 threads($thr.to_i)
 logger.info("Klayout will use #{$thr} thread(s)")
 
-# === TILING MODE ===
-case $run_mode
-## Tiling mode is for testing purpose only [Not used in run_drc.py]
-when 'tiling'
-  tiles(500.um)
-  tile_borders(10.um)
-  logger.info('Tiling  mode is enabled.')
-
-when 'deep'
-  #=== HIER MODE ===
-  deep
-  logger.info("deep  mode is enabled")
-else
-  #=== FLAT MODE ===
-  flat
-  logger.info("flat  mode is enabled")
-end
+# Run mode
+setup_run_mode($run_mode)
+logger.info("#{$run_mode} mode is enabled for sg13g2_maximal runset.")
 
 # Tech switches
 # Initial definitions of control flow variables

@@ -80,8 +80,8 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --topcell TOPCELL     Top-level cell name to use from the input GDS.
   --density_thr DENSITY_THR
                         Number of threads to use during the density run (default: number of CPU cores).
-  --run_mode {flat,deep,tiling}
-                        KLayout execution mode: flat, deep, or tiling. [default: deep]
+  --run_mode {deep,flat}
+                        KLayout execution mode: deep, or flat. [default: deep]
   --drc_json DRC_JSON   Path to a JSON file that defines rule values to use.
   --precheck_drc        Run a minimal set of DRC checks typically required for foundry prechecks.
   --no_feol             Disable all FEOL-related DRC checks.

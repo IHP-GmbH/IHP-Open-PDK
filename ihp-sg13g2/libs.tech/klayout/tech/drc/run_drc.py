@@ -828,9 +828,9 @@ def parse_args():
     parser.add_argument(
         "--run_mode",
         type=str,
-        choices=["flat", "deep", "tiling"],
+        choices=["deep", "flat"],
         default="deep",
-        help="KLayout execution mode: flat, deep, or tiling. [default: deep]",
+        help="KLayout execution mode: deep, or flat. [default: deep]",
     )
 
     parser.add_argument(
