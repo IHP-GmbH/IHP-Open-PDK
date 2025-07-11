@@ -61,6 +61,33 @@ else:
     print("Info: **sort_results_index statement not found, setting it to index 0.")
     sort_results_index = 0
 
+#get results_plot_contour_index from netlist
+match = re.search(r"^\s*(\*\*results_plot_contour_index)\s*=\s*(.+)$", netlist, re.MULTILINE)
+if match:
+    results_plot_contour_index_str = match.group(2).strip()
+    results_plot_contour_index = [int(i.strip()) for i in results_plot_contour_index_str.split(',') if i.strip().isdigit()]
+else:
+    print("Info: **results_plot_contour_index statement not found, setting it to be empty.")
+    results_plot_contour_index = []
+
+#get results_plot_logx_index from netlist
+match = re.search(r"^\s*(\*\*results_plot_logx_index)\s*=\s*(.+)$", netlist, re.MULTILINE)
+if match:
+    results_plot_logx_index_str = match.group(2).strip()
+    results_plot_logx_index = [int(i.strip()) for i in results_plot_logx_index_str.split(',') if i.strip().isdigit()]
+else:
+    print("Info: **results_plot_logx_index statement not found, setting it to be empty.")
+    results_plot_logx_index = []
+
+#get results_plot_logy_index from netlist
+match = re.search(r"^\s*(\*\*results_plot_logy_index)\s*=\s*(.+)$", netlist, re.MULTILINE)
+if match:
+    results_plot_logy_index_str = match.group(2).strip()
+    results_plot_logy_index = [int(i.strip()) for i in results_plot_logy_index_str.split(',') if i.strip().isdigit()]
+else:
+    print("Info: **results_plot_logy_index statement not found, setting it to be empty.")
+    results_plot_logy_index = []
+
 #get sweep parameters from netlist
 pattern = re.compile(
     rf"{re.escape(parameter_begin_tag)}(.*?){re.escape(parameter_end_tag)}",
@@ -218,16 +245,16 @@ if __name__ == "__main__":
                 for header in reader.fieldnames:
                     results_dict[header].append(float(row[header]))
 
-        if len(param_name_list) == 1:
-            # Set the number of columns for subplot grid
-            n_cols = 2  # Change this to 1, 2, 3, etc.
-            n_plots = len(results_plot_list)
-            n_rows = math.ceil(n_plots / n_cols)
+        # Set the number of columns for subplot grid
+        n_cols = 2  # Change this to 1, 2, 3, etc.
+        n_plots = len(results_plot_list)
+        n_rows = math.ceil(n_plots / n_cols)
 
-            # Create subplots
-            fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
-            axs = axs.flatten()  # Flatten in case of multiple rows/columns
-            i = 0
+        # Create subplots
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
+        axs = axs.flatten()  # Flatten in case of multiple rows/columns
+        i = 0
+        if len(param_name_list) == 1:
             for var in results_plot_list:
                 axs[i].set_title(var)
                 axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -235,7 +262,14 @@ if __name__ == "__main__":
                 axs[i].set_xlabel(f"{param_name_list[0]}")
                 axs[i].set_ylabel(f"{var}")
                 var = var.lower()
-                axs[i].plot(results_dict[param_name_list[0]], results_dict[var])
+                if i in results_plot_logx_index and i in results_plot_logy_index:
+                    axs[i].loglog(results_dict[param_name_list[0]], results_dict[var])
+                elif i in results_plot_logx_index:
+                    axs[i].semilogx(results_dict[param_name_list[0]], results_dict[var])
+                elif i in results_plot_logy_index:
+                    axs[i].semilogy(results_dict[param_name_list[0]], results_dict[var])
+                else:
+                    axs[i].plot(results_dict[param_name_list[0]], results_dict[var])
                 i = i + 1
             # Hide unused subplots
             for j in range(i, len(axs)):
@@ -243,28 +277,36 @@ if __name__ == "__main__":
             plt.tight_layout()
             plt.show()
         elif len(param_name_list) == 2:
-            # Set the number of columns for subplot grid
-            n_cols = 2  # Change this to 1, 2, 3, etc.
-            n_plots = len(results_plot_list)
-            n_rows = math.ceil(n_plots / n_cols)
-
-            # Create subplots
-            fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
-            axs = axs.flatten()  # Flatten in case of multiple rows/columns
-            i = 0
             for var in results_plot_list:
                 axs[i].set_title(var)
-                axs[i].set_xlabel(f"{param_name_list[0]}")
-                axs[i].set_ylabel(f"{param_name_list[1]}")
+                axs[i].set_xlabel(f"{param_name_list[0]}")              
                 axs[i].grid(True, which='both', linestyle='--', alpha=0.5)
                 axs[i].minorticks_on()
                 x = np.unique(np.array(results_dict[param_name_list[0]]))
                 y = np.unique(np.array(results_dict[param_name_list[1]]))
-                X, Y = np.meshgrid(x,y)
-                Z = np.array(results_dict[var.lower()]).reshape(len(x), len(y)).T
-                contour = axs[i].contourf(X, Y, Z, levels=10, cmap='viridis')
-                cbar = fig.colorbar(contour, ax=axs[i])
-                cbar.set_label(var)
+                Z = np.array(results_dict[var.lower()]).reshape(len(x), len(y)).T # shape: (len(y), len(x))
+                if i in results_plot_contour_index:
+                    axs[i].set_ylabel(f"{param_name_list[1]}")
+                    X, Y = np.meshgrid(x,y)
+                    contour = axs[i].contourf(X, Y, Z, levels=10, cmap='viridis')
+                    cbar = fig.colorbar(contour, ax=axs[i])
+                    cbar.set_label(var)
+                else:
+                    axs[i].set_ylabel(var)
+                    Z = Z.T
+                    if i in results_plot_logx_index and i in results_plot_logy_index:
+                        for l, yl in enumerate(y):
+                            axs[i].loglog(x, Z[:, l], label=f"{yl:.2g}")
+                    elif i in results_plot_logx_index:
+                        for l, yl in enumerate(y):
+                            axs[i].semilogx(x, Z[:, l], label=f"{yl:.2g}")
+                    elif i in results_plot_logy_index:
+                        for l, yl in enumerate(y):
+                            axs[i].semilogy(x, Z[:, l], label=f"{yl:.2g}")
+                    else:
+                        for l, yl in enumerate(y):
+                            axs[i].plot(x, Z[:, l], label=f"{yl:.2g}")
+                    axs[i].legend(title=param_name_list[1], loc='upper right')
                 i = i + 1
             # Hide unused subplots
             for j in range(i, len(axs)):
