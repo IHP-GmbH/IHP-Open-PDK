@@ -1,0 +1,41 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #================================================
+  #----------------- 7.3 Metal Slits --------------
+  #================================================
+
+  logger.info('Starting 7.3 Metal Slits table')
+
+  # Metal slits derivations
+
+  # metal slits lists
+  metals_slit_lays = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit, topmetal1_slit, topmetal2_slit]
+  metals_abbrev = %w[M1 M2 M3 M4 M5 TM1 TM2]
+
+  unless PRECHECK_DRC
+    # Rule Slt.e1: No slits required on MIM
+    metals_slit_lays.zip(metals_abbrev).each do |met_slit_lay, met_abbrev|
+      logger.info("Executing rule Slt.e1_#{met_abbrev}")
+      slt_e1_l = mim_drw.and(met_slit_lay)
+      slt_e1_l.output("Slt.e1_#{met_abbrev}", "7.3. Slt.e1_#{met_abbrev} : No #{met_abbrev}:slit required on MIM")
+      slt_e1_l.forget
+    end
+  end
+end

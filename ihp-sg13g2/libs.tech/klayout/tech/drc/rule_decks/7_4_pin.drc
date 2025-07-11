@@ -1,0 +1,43 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#===============================================
+# ------------------ 7.4. PIN ------------------
+#===============================================
+
+logger.info('Starting 7.4. PIN table')
+
+# Lists for pinLay and ruleNames
+pin_lay = [activ_pin, gatpoly_pin, metal1_pin, metal2_pin, metal3_pin, metal4_pin, metal5_pin, topmetal1_pin,
+           topmetal2_pin]
+drw_lay = [activ_drw, gatpoly_drw, metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw,
+           topmetal2_drw]
+rule_names = %w[a b e f_M2 f_M3 f_M4 f_M5 g h]
+layer_names = %w[activ gatpoly metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2]
+
+pin_lay.each_with_index do |lay_pin, index|
+  lay_drw = drw_lay[index]
+  pin_rule = rule_names[index]
+  layer_name = layer_names[index]
+
+  logger.info("Executing rule Pin.#{pin_rule}")
+  pin_l1 = lay_pin.not(lay_drw)
+  pin_l1.output("Pin.#{pin_rule}",
+                "Pin.#{pin_rule} : 7.4. Pin.#{pin_rule}: Min. #{layer_name} enclosure of #{layer_name}:pin = 0um")
+  pin_l1.forget
+end

@@ -1,0 +1,100 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #===============================================
+  #----------------- 5.17 Metaln -----------------
+  #===============================================
+
+  logger.info('Starting 5.17 Metaln table')
+
+  # Metaln derivations
+
+  # Metals/Vias lists
+  mets_lay = [metal2_drw, metal3_drw, metal4_drw, metal5_drw]
+  vias_lay = [via1_drw, via2_drw, via3_drw, via4_drw]
+  metal_start_index = 2
+
+  mets_lay.each_with_index do |met_lay, index|
+    via_lay = vias_lay[index]
+    met_no = index + metal_start_index
+
+    # Rule Mn.a: Min. Metaln width is 0.20µm
+    logger.info("Executing rule M#{met_no}.a")
+    mn_a_value = drc_rules['Mn_a'].to_f
+    mn_a_l = met_lay.width(mn_a_value.um, euclidian)
+    mn_a_l.output("M#{met_no}.a", "5.17. M#{met_no}.a: Min. Metal#{met_no} width: #{mn_a_value} μm.")
+    mn_a_l.forget
+
+    # Rule Mn.b: Min. Metaln space or notch is 0.21µm
+    logger.info("Executing rule M#{met_no}.b")
+    mn_b_value = drc_rules['Mn_b'].to_f
+    mn_b_l = met_lay.space(mn_b_value.um, euclidian)
+    mn_b_l.output("M#{met_no}.b", "5.17. M#{met_no}.b: Min. Metal#{met_no} space or notch: #{mn_b_value} μm.")
+    mn_b_l.forget
+
+    next if PRECHECK_DRC
+
+    # Rule Mn.e: Min. space of Metal(n) lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm is 0.24 um
+    logger.info("Executing rule M#{met_no}.e")
+    mn_e_value = drc_rules['Mn_e'].to_f
+    mn_e_width = drc_rules['Mn_e_w'].to_f / 2
+    mn_e_length = drc_rules['Mn_e_cr'].to_f
+    mn_e_l1 = met_lay.sized(-1 * mn_e_width.um).sized(mn_e_width.um)
+    mn_e_l = met_lay.sep(mn_e_l1, mn_e_value.um, projection_limits(mn_e_length.um + 0.001.um, nil))
+    mn_e_l.output("M#{met_no}.e",
+                "5.17. M#{met_no}.e Min. space of Metal#{met_no} lines if, at least one line is wider than #{mn_e_width} µm and the parallel run is more than #{mn_e_length} µm is #{mn_e_value} um")
+    mn_e_l1.forget
+    mn_e_l.forget
+
+    # Rule Mn.f: Min. space of Metal(n) lines if, at least one line is wider than 10.0 µm and the parallel run is more than 10.0 µm is 0.60 um
+    logger.info("Executing rule M#{met_no}.f")
+    mn_f_value = drc_rules['Mn_f'].to_f
+    mn_f_width = drc_rules['Mn_f_w'].to_f / 2
+    mn_f_length = drc_rules['Mn_f_cr'].to_f
+    mn_f_l1 = met_lay.sized(-1 * mn_f_width.um).sized(mn_f_width.um)
+    mn_f_l = met_lay.sep(mn_f_l1, mn_f_value.um, projection_limits(mn_f_length.um + 0.001.um, nil))
+    mn_f_l.output("M#{met_no}.f",
+                "5.17. M#{met_no}.f Min. space of Metal#{met_no} lines if, at least one line is wider than #{mn_f_width} µm and the parallel run is more than #{mn_f_length} µm is #{mn_f_value} um")
+    mn_f_l1.forget
+    mn_f_l.forget
+
+    # Rule Mn.g: Min. 45-degree bent Metal(n) width if the bent metal length is > 0.5 µm is 0.24 um
+    logger.info("Executing rule M#{met_no}.g")
+    mn_g_value = drc_rules['Mn_g'].to_f
+    mn_g_length = drc_rules['Mn_g_min'].to_f
+    mn_g_l1 = met_lay.edges.with_angle(45, absolute)
+    mn_g_l2 = mn_g_l1.with_length(mn_g_length.um + 0.001.um, nil)
+    mn_g_l = mn_g_l2.width(mn_g_value.um, euclidian)
+    mn_g_l.output("M#{met_no}.g",
+                "5.17. M#{met_no}.g Min. 45-degree bent Metal#{met_no} width if the bent metal length is > #{mn_g_length} µm is #{mn_g_value} um")
+    mn_g_l1.forget
+    mn_g_l2.forget
+    mn_g_l.forget
+
+    # Rule Mn.i: Min. space of Metal(n) lines of which at least one is bent by 45-degree is 0.24 um
+    logger.info("Executing rule M#{met_no}.i")
+    mn_i_value = drc_rules['Mn_i'].to_f
+    mn_i_l1 = met_lay.edges.with_angle(45, absolute)
+    mn_i_l = met_lay.edges.sep(mn_i_l1, mn_i_value.um, euclidian)
+    mn_i_l.output("M#{met_no}.i",
+                "5.17. M#{met_no}.i Min. space of Metal#{met_no} lines of which at least one is bent by 45-degree is #{mn_i_value} um")
+    mn_i_l1.forget
+    mn_i_l.forget
+  end
+end

@@ -1,0 +1,45 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #==============================================
+  #----------------- 5.15. ContBar --------------
+  #==============================================
+
+  logger.info('Starting 5.15. ContBar table')
+
+  # ContBar derivations
+
+  unless PRECHECK_DRC
+    # Rule CntB.b1: Min. ContBar space with common run > 5 µm is 0.36 um
+    logger.info('Executing rule CntB.b1')
+    cntb_b1_value = drc_rules['CntB_b1'].to_f
+    cntb_b1_length = drc_rules['CntB_b1_l'].to_f
+    cntb_b1_l = contbar.space(cntb_b1_value.um, projection_limits(cntb_b1_length.um + 0.001.um, nil))
+    cntb_b1_l.output('CntB.b1',
+                   "5.15. CntB.b1 Min. ContBar space with common run > #{cntb_b1_length} µm is #{cntb_b1_value} um")
+    cntb_b1_l.forget
+
+    # Rule CntB.h1: Min. Metal1 enclosure of ContBar is 0.05 um
+    logger.info('Executing rule CntB.h1')
+    cntb_h1_value = drc_rules['CntB_h1'].to_f
+    cntb_h1_l = contbar.enclosed(metal1_drw, cntb_h1_value.um, euclidian)
+    cntb_h1_l.output('CntB.h1', "5.15. CntB.h1 Min. Metal1 enclosure of ContBar is #{cntb_h1_value} um")
+    cntb_h1_l.forget
+  end
+end

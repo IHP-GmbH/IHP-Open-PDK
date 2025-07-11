@@ -1,0 +1,55 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #================================================
+  #--------------------- 6.11 MIM -----------------
+  #================================================
+
+  logger.info('Starting 6.11 MIM table')
+
+  # MIM derivations
+
+  unless PRECHECK_DRC
+    # Rule MIM.c: Min. Metal5 enclosure of MIM is 0.60 um
+    logger.info('Executing rule MIM.c')
+    mim_c_value = drc_rules['Mim_c'].to_f
+    mim_c_p1 = mim_drw.enclosed(metal5_drw, mim_c_value.um, euclidian).polygons
+    mim_c_p2 = mim_drw.not(metal5_drw)
+    mim_c = mim_c_p1.join(mim_c_p2)
+    mim_c.output('MIM.c', "6.11. MIM.c : Min. Metal5 enclosure of MIM is #{mim_c_value} um")
+    mim_c_p1.forget
+    mim_c_p2.forget
+    mim_c.forget
+
+    # Rule MIM.d: MIM enclosure of TopVia1 is 0.36 um
+    logger.info('Executing rule MIM.d')
+    mim_d_value = drc_rules['Mim_d'].to_f
+    mim_d = topvia1_drw.enclosed(mim_drw, mim_d_value.um, euclidian)
+    mim_d.output('MIM.d', "6.11. MIM.d : Min. MIM enclosure of TopVia1 is #{mim_d_value} um")
+    mim_d.forget
+
+    # Rule MIM.gR: Max. recommended total MIM area per chip (µm²) is 174800.00 µm²
+    logger.info('Executing rule MIM.gR')
+    mim_gr_value = drc_rules['Mim_gR'].to_f
+    mim_total_area = mim_drw.area
+    if mim_total_area > mim_gr_value.um
+      mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm², Total used MIM area is #{mim_total_area} µm²")
+    end
+  end
+end

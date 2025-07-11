@@ -1,0 +1,45 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #================================================
+  #----------------- 7.2 Latch-up -----------------
+  #================================================
+
+  logger.info('Starting 7.2 Latch-up table')
+
+  # Latch-up derivations
+
+  unless PRECHECK_DRC
+    logger.info("Executing rule LU.b")
+    # sizing of ptap in rule LU.b
+    lu_b_value = drc_rules['LU_b'].to_f
+    lu_b_ptap_sized = ptap
+    sz = 0.0
+    while sz < lu_b_value
+      lu_b_ptap_sized = lu_b_ptap_sized.sized(0.5.um, octagon_limit)
+      sz += 0.5
+    end
+
+    # Rule LU.b : Max. space from any portion of N+Activ inside PWell to an pSD-PWell tie is 20.00 um
+    lu_b = nact_fet.not_interacting(lu_b_ptap_sized)
+    lu_b.output('LU.b',
+                "7.2. LU.b : Max. space from any portion of N+Activ inside PWell to an pSD-PWell tie is #{lu_b_value} um")
+    lu_b.forget
+  end
+end

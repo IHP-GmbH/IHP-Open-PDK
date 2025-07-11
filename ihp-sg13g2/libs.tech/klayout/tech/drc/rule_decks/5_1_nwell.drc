@@ -1,0 +1,50 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #================================================
+  #------------------ 5.1 NWell -------------------
+  #================================================
+
+  logger.info('Starting 5.1 NWell table')
+
+  # Nwell derivations
+
+  if !PRECHECK_DRC && CONNECTIVITY_RULES
+    # Rule NW.b: Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is 0.62 um
+    logger.info('Executing rule NW.b')
+    nw_b_value = drc_rules['NW_b'].to_f
+    nw_b_l = nwell_nets.space(nw_b_value.um, props_eq)
+    nw_b_l.output('NW.b',
+                  "5.1.NW.b : Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is #{nw_b_value} um")
+    nw_b_l.forget
+
+    # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
+    logger.info('Executing rule NW.b1')
+    nw_b1_value = drc_rules['NW_b1'].to_f
+    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne)
+    nw_b1_l2 = pwell_block.interacting(nwell_drw)
+    nw_b1_l3 = nw_b1_l2.sep(nwell_drw, nw_b1_value.um, without_touching_edges)
+    nw_b1 = nw_b1_l1.join(nw_b1_l3)
+    nw_b1.output('NW.b1', "5.1.NW.b1 : Min. PWell width between NWell regions (different net)  is #{nw_b1_value} um")
+    nw_b1_l1.forget
+    nw_b1_l2.forget
+    nw_b1_l3.forget
+    nw_b1.forget
+  end
+end

@@ -1,0 +1,44 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#================================================
+#---------------- 3.2. Forbidden ----------------
+#================================================
+
+logger.info('Starting 3.2. FORBIDDEN table')
+
+forb_lays = {
+  'biwind' => biwind_drw,
+  'pemwind' => pemwind_drw,
+  'baspoly' => baspoly_drw,
+  'deepco' => deepco_drw,
+  'pempoly' => pempoly_drw,
+  'empoly' => empoly_drw,
+  'ldmos' => ldmos_drw,
+  'pbiwind' => pbiwind_drw,
+  'nodrc' => nodrc_drw,
+  'flash' => flash_drw,
+  'colwind' => colwind_drw
+}
+
+# Iterate through each layer and output the forbidden rule
+forb_lays.each do |forb_lay, lay|
+  logger.info("Executing rule forbidden.#{forb_lay}")
+  lay.output("forbidden.#{forb_lay}",
+             "forbidden.#{forb_lay} : 3.2. #{forb_lay} is forbidden in designs submitted for all 0.13 um techs.")
+end
