@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #================================================
+  #------------------ 6.9.1 Solder Bump -----------
+  #================================================
+
+  logger.info('Starting 6.9.1 Solder Bump')
+
+  # Solder Bump derivations
+ 
+  # Rule Padb.a: SBumpPad size is 60.00 um
+  logger.info('Executing rule Padb.a')
+  padb_a_value = drc_rules["Padb_a"].to_f
+  padb_a_l1 = sbumppad.width((padb_a_value.um - drc_tole), projection, projection_limits(nil, 10*drc_tole)).polygons
+  padb_a_l2 = sbumppad.with_bbox_width(nil,(padb_a_value.um))
+  padb_a = padb_a_l1.join(padb_a_l2)
+  padb_a.output('Padb.a', "6.9. Padb.a : SBumpPad size is #{padb_a_value} um")
+  padb_a_l1.forget
+  padb_a_l2.forget
+  padb_a.forget
+
+  # Rule Padb.b: Min. SBumpPad space is 70.00 um
+  logger.info('Executing rule Padb.b')
+  padb_b_value = drc_rules["Padb_b"].to_f
+  padb_b = sbumppad.space(padb_b_value.um, euclidian)
+  padb_b.output('Padb.b', "6.9. Padb.b : Min. SBumpPad space is #{padb_b_value} um")
+  padb_b.forget
+
+  # Rule Padb.c: Min. TopMetal2 (within dfpad) enclosure of SBumpPad is 10.00 um
+  logger.info('Executing rule Padb.c')
+  padb_c_value = drc_rules["Padb_c"].to_f
+  padb_c_l1 = sbumppad.enclosed(topmetal2_drw, padb_c_value.um - 2*drc_tole, projection).polygons
+  padb_c_l2 = dfpad_sbump.and(passiv_sbump).not(topmetal2_drw)
+  padb_c = padb_c_l1.join(padb_c_l2)
+  padb_c.output('Padb.c', "6.9. Padb.c : Min. TopMetal2 (within dfpad) enclosure of SBumpPad is #{padb_c_value} um")
+  padb_c_l1.forget
+  padb_c_l2.forget
+  padb_c.forget
+
+  # Rule Padb.f: Allowed passivation opening shape Octagon , Circle
+  logger.info('Executing rule Padb.f')
+  padb_f_l1 = get_circle(sbumppad)
+  padb_f_l2 = get_octagon(sbumppad)
+  padb_f = sbumppad.not(padb_f_l1).not(padb_f_l2)
+  padb_f.output('padb.f', '6.9. Padb.f: Allowed passivation opening shape Octagon , Circle')
+  padb_f_l1.forget
+  padb_f_l2.forget
+  padb_f.forget
+
+end

@@ -1,0 +1,65 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#===============================================
+# ------------------ 6.9.2 Copper Pillar -------
+#===============================================
+
+if BEOL
+
+  logger.info('Starting 6.9.2 Copper Pillar table')
+
+  # copper pillar pad derivations
+ 
+  # Rule Padc.a: CuPillarPad size is 35 um
+  logger.info('Executing rule Padc.a')
+  padc_a_value = drc_rules["Padc_a"].to_f
+  padc_a_l1 = cu_pillarpad.width(padc_a_value.um - drc_tole, projection, projection_limits(nil, 10*drc_tole)).polygons
+  padc_a_l2 = cu_pillarpad.with_bbox_width(nil, padc_a_value.um)
+  padc_a = padc_a_l1.join(padc_a_l2)
+  padc_a.output('Padc.a', "6.9. Padc.a : CuPillarPad size is #{padc_a_value} um")
+  padc_a_l1.forget
+  padc_a_l2.forget
+  padc_a.forget
+
+  # Rule Padc.b : Min. CuPillarPad space is 40 um
+  logger.info('Executing rule Padc.b')
+  padc_b_value  = drc_rules["Padc_b"].to_f
+  padc_b = cu_pillarpad.space(padc_b_value.um, euclidian)
+  padc_b.output('Padc.b', "6.9. Padc.b : Min. CuPillarPad space is #{padc_b_value} um")
+  padc_b.forget
+
+  # Rule Padc.c: Min. TopMetal2 (within dfpad) enclosure of CuPillarPad is 7.5 um
+  logger.info('Executing rule Padc.c')
+  padc_c_value = drc_rules["Padc_c"].to_f
+  padc_c_l1 = cu_pillarpad.enclosed(topmetal2_drw, padc_c_value.um, projection).polygons
+  padc_c_l2 = dfpad_pillar.and(passiv_pillar).not(topmetal2_drw)
+  padc_c = padc_c_l1.join(padc_c_l2)
+  padc_c.output('Padc.c', "6.9. Padc.c : Min. TopMetal2 (within dfpad) enclosure of CuPillarPad is #{padc_c_value} um")
+  padc_c_l1.forget
+  padc_c_l2.forget
+  padc_c.forget
+
+   # Rule Padc.f: Allowed passivation opening shape Circle
+   logger.info('Executing rule Padb.f')
+   padc_f_l1 = get_circle(cu_pillarpad)
+   padc_f = cu_pillarpad.not(padc_f_l1)
+   padc_f.output('padc.f', '6.9.2. Padc.f: Allowed passivation opening shape Circle')
+   padc_f_l1.forget
+   padc_f.forget
+end

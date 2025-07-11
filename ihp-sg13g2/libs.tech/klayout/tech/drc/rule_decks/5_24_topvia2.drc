@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #==============================================
+  #----------------- 5.24. TopVia2 --------------
+  #==============================================
+
+  logger.info('Starting 5.24. TopVia2 table')
+
+  # TopVia2 derivations
+  topvia2_nseal = topvia2_drw.not(edgeseal_drw)
+
+  # Rule TV2.a: Min. and max. TopVia2 width is 0.90µm
+  logger.info('Executing rule TV2.a')
+  tv2_a_value = drc_rules["TV2_a"].to_f
+  tv2a_l1 = topvia2_nseal.without_bbox_min(tv2_a_value.um)
+  tv2a_l2 = topvia2_nseal.without_bbox_max(tv2_a_value.um)
+  tv2a_l = tv2a_l1.join(tv2a_l2)
+  tv2a_l.output('TV2.a', "5.24. TV2.a : Min. and max. TopVia2 width: #{tv2_a_value} µm")
+  tv2a_l1.forget
+  tv2a_l2.forget
+  tv2a_l.forget
+
+  # Rule TV2.b: Min. TopVia2 space is 1.06µm
+  logger.info('Executing rule TV2.b')
+  tv2_b_value = drc_rules["TV2_b"].to_f
+  tv2b_l1 = topvia2_nseal.space(tv2_b_value.um, euclidian)
+  tv2b_l1.output('TV2.b', "5.24. TV2.b : Min. TopVia2 space: #{tv2_b_value} µm")
+  tv2b_l1.forget
+
+end

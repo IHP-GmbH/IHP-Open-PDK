@@ -1,0 +1,49 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #================================================
+  #----------------- 5.8. GatPoly -----------------
+  #================================================
+
+  logger.info('Starting 5.8. GatPoly table')
+
+  # GatPoly derivations
+
+  # Rule Gat.a: Min. GatPoly width is 0.13µm
+  logger.info('Executing rule Gat.a')
+  gat_a_value = drc_rules["Gat_a"].to_f
+  gata_l1 = gatpoly_drw.width(gat_a_value.um, euclidian)
+  gata_l1.output('Gat.a', "5.8. Gat.a : Min. GatPoly width: #{gat_a_value} µm")
+  gata_l1.forget
+
+  # Rule Gat.b: Min. GatPoly space or notch is 0.18µm.
+  logger.info('Executing rule Gat.b')
+  gat_b_value = drc_rules["Gat_b"].to_f
+  gatb_l1 = gatpoly_drw.space(gat_b_value.um, euclidian)
+  gatb_l1.output('Gat.b', "5.8. Gat.b :Min. GatPoly space or notch: #{gat_b_value} µm.")
+  gatb_l1.forget
+
+  # Rule Gat.d: Min. GatPoly space to Activ is 0.07µm.
+  logger.info('Executing rule Gat.d')
+  gat_d_value = drc_rules["Gat_d"].to_f
+  gatd_l1 = gatpoly_drw.sep(activ_drw, gat_d_value.um, euclidian)
+  gatd_l1.output('Gat.d', "5.8. Gat.d :Min. GatPoly space to Activ: #{gat_d_value} µm.")
+  gatd_l1.forget
+
+end

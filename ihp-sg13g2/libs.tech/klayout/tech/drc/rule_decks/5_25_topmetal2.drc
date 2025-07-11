@@ -1,0 +1,42 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #===============================================
+  #--------------- 5.25. TopMetal2 ---------------
+  #===============================================
+
+  logger.info('Starting 5.25. TopMetal2 table')
+
+  # TopMetal2 derivations
+
+  # Rule TM2.a: Min. TopMetal2 width is 2.00µm
+  logger.info('Executing rule TM2.a')
+  tm2_a_value = drc_rules["TM2_a"].to_f
+  tm2a_l1 = topmetal2_drw.width(tm2_a_value.um, euclidian)
+  tm2a_l1.output('TM2.a', "5.25. TM2.a: Min. TopMetal2 width: #{tm2_a_value} μm.")
+  tm2a_l1.forget
+
+  # Rule TM2.b: Min. TopMetal2 space or notch is 2.00µm
+  logger.info('Executing rule TM2.b')
+  tm2_b_value = drc_rules["TM2_b"].to_f
+  tm2b_l1 = topmetal2_drw.space(tm2_b_value.um, euclidian)
+  tm2b_l1.output('TM2.b', "5.25. TM2.b: Min. TopMetal2 space or notch: #{tm2_b_value} μm.")
+  tm2b_l1.forget
+
+end

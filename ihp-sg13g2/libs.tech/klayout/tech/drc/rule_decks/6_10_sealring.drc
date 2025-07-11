@@ -1,0 +1,76 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#===============================================
+# ------------------ 6.10 Sealring -------------
+#===============================================
+if BEOL
+
+  logger.info('Starting 6.10 Sealring table')
+
+  # Sealring derivations
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for Seal.l rule.')
+  end
+
+  def sructures_outside(layer_def_file, binding_context, boundary)
+    layer_names = []
+    
+    File.readlines(layer_def_file).each do |line|
+      next unless line.strip =~ /^(\w+)\s*=\s*get_polygons\s*\(\s*\d+\s*,\s*\d+\s*\)/
+      var_name = Regexp.last_match(1)
+      layer_names << var_name
+    end
+
+    layers = layer_names.map { |name| eval(name, binding_context) }
+
+    layers.each_with_index do |layer|
+      seal_l = layer.not(boundary)
+      seal_l.output('Seal.l', '6.10. Seal.l : No structures outside sealring boundary allowed')
+      seal_l.forget
+    end
+  end
+
+  # Rule Seal.l : No structures outside sealring boundary allowed
+  logger.info('Executing rule Seal.l')
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  layers_def_path = File.join(script_dir, 'layers_def.drc')
+  seal_l_l1 = edgeseal_bound.interacting(CHIP)
+  if !seal_l_l1.is_empty? 
+    seal_l = sructures_outside(layers_def_path, binding ,seal_l_l1)
+  end
+  seal_l_l1.forget
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after Seal.l rule.")
+  end
+
+  # Rule Seal.n : Sealring must be enclosed by an unbroken Passiv ring
+  logger.info('Executing rule Seal.n')
+  seal_n_l1 = passiv_drw.not(edgeseal_drw).holes
+  seal_n = edgeseal_drw.not(seal_n_l1)
+  seal_n.output('Seal.n', '6.10. seal.n : Sealring must be enclosed by an unbroken Passiv ring')
+  seal_n.forget
+  seal_n_l1.forget
+end
