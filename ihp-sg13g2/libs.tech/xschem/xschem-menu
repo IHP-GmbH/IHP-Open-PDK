@@ -87,21 +87,35 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
       }
     }
     if {$skip} { continue }
-    if {$type ne {subcircuit} && ![regexp $pattern $type]} {
+    if {$type ne {subcircuit} && ![regexp $pattern $symbol]} {
       continue
     }
 
     write_save_lines $type $model $schpath $spiceprefix $instname
-
+ 
     if {$type eq {subcircuit} && $all_hierarchy} {
-      xschem select instance $i fast nodraw
-      # puts "descend: [xschem translate $i @name]"
-      set descended [xschem descend 1 6]
-      if {$descended} {
-        incr level
+      set ninst [lindex [split [xschem expandlabel $instname] { }] 1]
+      for {set n 1} {$n <= $ninst} { incr n} {
+        if {$n == 1} {
+          xschem select instance $i
+          set res [xschem descend $n 2]
+          # ensure previous descend was successful
+          if {$res} {
+            incr level
+          } else { ;# descended into a blank schematic. Go back.
+            xschem go_back 2
+            puts "Can not descend into $instname"
+            break
+          }
+        }
+        if {$n > 1} {
+          xschem change_sch_path $n
+        }
         set dp [hier_sch_expand $level $only_subckts 1 $pattern]
-        xschem go_back 1
-        incr level -1
+        if {$n == $ninst} {
+          xschem go_back 2
+          incr level -1
+        }
       }
     }
   }
