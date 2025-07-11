@@ -254,5 +254,5 @@ write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get curr
 
 # run netlist and simulation
 xschem netlist
-python3 ${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_tests/ngspice_parallel_sweep.py [file tail [xschem get current_name]]
+python3 $\{PDK_ROOT\}/$\{PDK\}/libs.tech/xschem/sg13g2_tests/ngspice_parallel_sweep.py [file tail [xschem get current_name]]
 "}
