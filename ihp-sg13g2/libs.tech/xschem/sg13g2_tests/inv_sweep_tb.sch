@@ -13,8 +13,13 @@ T {possible parameter sweep types:
 Auto:Begin:TotalPoints:End
 Lin:Begin:StepSize:End
 Dec:Begin:PointsPerDecade:End
-Log:Begin:TotalPoints:End} 1780 -300 0 0 0.3 0.3 {layer=11}
+Log:Begin:TotalPoints:End} 1790 -240 0 0 0.3 0.3 {layer=11}
 T {set num_threads to 1 for small circuits} 1710 -760 0 0 0.3 0.3 {layer=11}
+T {which results should be ploted using a contourplot} 1790 -310 0 0 0.3 0.3 {layer=11}
+T {which results should be ploted using a log x-axis} 1790 -290 0 0 0.3 0.3 {layer=11}
+T {which results should be ploted using a log y-axis} 1790 -270 0 0 0.3 0.3 {layer=11}
+T {sort .csv file by given index} 1790 -330 0 0 0.3 0.3 {layer=11}
+T {number of parallel workers} 1790 -350 0 0 0.3 0.3 {layer=11}
 N 180 -270 180 -250 {lab=vdd}
 N 180 -190 180 -170 {lab=GND}
 N 550 -400 610 -400 {lab=vdd}
@@ -210,10 +215,13 @@ only_toplevel=false
 value="
 **nr_workers=50
 **sort_results_index=0
+**results_plot_contour_index=3
+**results_plot_logx_index=1,2
+**results_plot_logy_index=2
 
 **parameter_sweep_begin
-**m1_w_val=Auto:0.5u:10:10u
-**m2_w_val=Auto:0.5u:10:10u
+**m1_w_val=Auto:0.1u:20:10u
+**m2_w_val=Auto:1u:5:5u
 **parameter_sweep_end
 
 **results_plot_begin
@@ -224,7 +232,7 @@ value="
 **results_plot_end
 "
 }
-C {launcher.sym} 1500 -65 0 0 {name=h2
+C {launcher.sym} 1500 -15 0 0 {name=h2
 descr=SimulatePARALLEL
 tclcommand="
 # Setup the default simulation commands if not already set up
