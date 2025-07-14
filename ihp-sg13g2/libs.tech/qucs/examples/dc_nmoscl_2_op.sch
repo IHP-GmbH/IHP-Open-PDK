@@ -1,6 +1,6 @@
 <Qucs Schematic 24.3.0>
 <Properties>
-  <View=-7,24,1560,1014,1.0011,0,0>
+  <View=-7,24,1560,931,1.0011,0,0>
   <Grid=10,10,1>
   <DataSet=dc_nmoscl_2_op.dat>
   <DataDisplay=dc_nmoscl_2_op.dpl>
