@@ -103,8 +103,7 @@ def ihp130_import_netlist():
     netlist_path = pya.FileDialog.ask_open_file_name("Choose the schematic netlist", '.', "SPICE (*.spice)")
 
     print(f'Info: The netlist importer is still experimental.')
-    print(f'Please report issues to: https://github.com/efabless/sky130_klayout_pdk/issues')
-
+    
     # Check whether file exists
     if not netlist_path or not os.path.isfile(netlist_path):
         print(f'Error: {netlist_path} is not a file!')
