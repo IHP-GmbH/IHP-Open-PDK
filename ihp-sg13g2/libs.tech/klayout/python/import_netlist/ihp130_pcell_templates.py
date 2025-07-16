@@ -601,7 +601,7 @@ templates = [
                 "type": "int",
             }
         ],
-        "default_params": {"model": "diodevdd_4kv", "m": 1},
+        "default_params": {"model": "diodevss_4kv", "m": 1},
     },
     {
         "regex": re.compile(r"^.*nmoscl_2(?=.*m=(?P<m>\d+)).*$"),
@@ -616,7 +616,7 @@ templates = [
         "default_params": {"model": "nmoscl_2", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*nmoscl_2(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*nmoscl_4(?=.*m=(?P<m>\d+)).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -625,6 +625,6 @@ templates = [
                 "type": "int",
             }
         ],
-        "default_params": {"model": "nmoscl_2", "m": 1},
+        "default_params": {"model": "nmoscl_4", "m": 1},
     },
 ]
