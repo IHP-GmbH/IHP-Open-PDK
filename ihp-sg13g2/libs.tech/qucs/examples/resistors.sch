@@ -39,11 +39,11 @@
   <GND * 1 1120 750 0 0 0 0>
   <Idc I1 1 870 720 18 -26 0 1 "1 mA" 1>
   <Idc I2 1 1120 720 18 -26 0 1 "1 mA" 1>
-  <Lib ptap1 1 970 700 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
-  <Lib ntap1 1 1200 700 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ntap1" 0 "0.78u" 1 "0.78u" 1>
-  <Lib ptap4 1 180 730 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
-  <Lib ptap3 1 330 730 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
-  <Lib ptap2 1 510 730 25 -16 0 0 "/home/herman/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
+  <Lib ptap1 1 970 700 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
+  <Lib ntap1 1 1200 700 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "ntap1" 0 "0.78u" 1 "0.78u" 1>
+  <Lib ptap4 1 180 730 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
+  <Lib ptap3 1 330 730 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
+  <Lib ptap2 1 510 730 25 -16 0 0 "$HOME/.qucs/user_lib/IHP_PDK_basic_components" 0 "ptap1" 0 "0.78u" 1 "0.78u" 1>
   <GND * 1 180 760 0 0 0 0>
   <GND * 1 510 760 0 0 0 0>
   <GND * 1 330 760 0 0 0 0>
