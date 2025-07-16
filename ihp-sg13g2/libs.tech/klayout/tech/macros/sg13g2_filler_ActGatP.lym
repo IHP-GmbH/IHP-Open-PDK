@@ -154,8 +154,10 @@
   Poly_cpy=GatPoly.dup
   Cnt_cpy=Cont.dup
   TRANS_cpy=TRANS.dup
-  NWell_cpy=NWell.dup
-  NWell_cpy2=NWell.dup
+  NWell_cpy_out=NWell.dup
+  NWell_cpy_in=NWell.dup
+  PWell_block_cpy_out=PWell_block.dup
+  PWell_block_cpy_in=PWell_block.dup
 
   sep=1.1                                     ### AFil.c
   Poly_cpy.size(sep,sep, "square_limit")
@@ -171,12 +173,16 @@
   AFil_e = TRANS_cpy
 
   sep=1.0                                     ### AFil.d
-  NWell_cpy.size(sep, sep, "square_limit")
-  NWell_cpy2.size(-sep, -sep, "square_limit")
-  AFil_d = NWell_cpy - NWell_cpy2
+  NWell_cpy_out.size(sep, sep, "square_limit")
+  NWell_cpy_in.size(-sep, -sep, "square_limit")
+  AFil_d = NWell_cpy_out - NWell_cpy_in
 
-  exclLayAct = AFil_c | AFil_c1 | AFil_e | AFil_d | Activ_nofill
+  sep=1.5                                     ### AFil.i
+  PWell_block_cpy_out.size(sep, sep, "square_limit")
+  PWell_block_cpy_in.size(-sep, -sep, "square_limit")
+  AFil_i = PWell_block_cpy_out - PWell_block_cpy_in
 
+  exclLayAct = AFil_c | AFil_c1 | AFil_e | AFil_d | AFil_i | Activ_nofill
 
   ##########################################################################
   # CREATE GatPoly FILLER
