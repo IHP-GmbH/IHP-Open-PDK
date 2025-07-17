@@ -1,0 +1,3322 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#====================================================================================================================
+#--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
+#====================================================================================================================
+require 'time'
+require 'logger'
+
+exec_start_time = Time.now
+
+# Custom formatter including timestamp and memory usage
+formatter = proc do |_severity, datetime, _progname, msg|
+  memory_usage = "#{RBA::Timer.memory_size / 1024}K"
+  "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
+end
+
+# Create file logger
+file_logger = Logger.new($log)
+file_logger.formatter = formatter
+
+# Create stdout logger
+stdout_logger = Logger.new($stdout)
+stdout_logger.formatter = formatter
+
+# MultiLogger class to broadcast to multiple loggers
+class MultiLogger
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def info(msg)
+    @targets.each { |t| t.info(msg) }
+  end
+
+  def warn(msg)
+    @targets.each { |t| t.warn(msg) }
+  end
+
+  def error(msg)
+    @targets.each { |t| t.error(msg) }
+  end
+end
+
+# Use the multi-logger for your application
+logger = MultiLogger.new(stdout_logger, file_logger)
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running IHP-SG13G2 Klayout DRC maximum runset on #{$input}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $input
+  if $topcell
+    source($input, $topcell)
+  else
+    source($input)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report
+  logger.info("IHP-SG13G2 Klayout DRC maximum runset output at: #{$report}")
+  report('maximum DRC Run Report at', $report)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join('sg13g2_drc_maximal.lyrdb').to_s
+  logger.info("IHP-SG13G2 Klayout DRC maximum runset output at default location: #{report_path}")
+  report('maximum DRC Run Report at', report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+    obj.to_s.downcase == 'true'
+  end
+
+# Run mode setup
+def setup_run_mode(run_mode)
+  case run_mode
+  when 'flat'
+    flat
+  else
+    deep
+  end
+end
+
+# threads
+threads($thr.to_i)
+logger.info("Klayout will use #{$thr} thread(s)")
+
+# Run mode
+setup_run_mode($run_mode)
+logger.info("#{$run_mode} mode is enabled for sg13g2_maximal runset.")
+
+# Tech switches
+# Initial definitions of control flow variables
+# Strings from the command line have to be converted
+if defined? $offGridRules
+    $offGridRules = $offGridRules.to_s.downcase == "true"
+else
+    $offGridRules = true
+end
+
+if defined? $fillerRules
+    $fillerRules = $fillerRules.to_s.downcase == "true"
+else
+    $fillerRules = true
+end
+
+if defined? $latchUpRules
+    $latchUpRules = $latchUpRules.to_s.downcase == "true"
+else
+    $latchUpRules = true
+end
+
+if defined? $recommendedRules
+    $recommendedRules = $recommendedRules.to_s.downcase == "true"
+else
+    $recommendedRules = true
+end
+
+if $threads
+    threads($threads.to_i)
+end
+
+$drc_error_count = 0
+
+class DRC::DRCLayer
+    unless method_defined?(:original_output)
+        alias_method :original_output, :output
+    end
+
+    def output(*args)
+        count = self.hier_count()
+        $drc_error_count += count
+        puts("Rule %s: %d error(s)" % [args[0], count])
+        original_output(*args)
+    end
+end
+
+class AbuttingEdges < RBA::EdgePairToEdgeOperator
+    def initialize
+        self.is_isotropic_and_scale_invariant
+    end
+
+    def process(edge_pair)
+        if edge_pair.first.coincident?(edge_pair.second)
+            if edge_pair.first.length < edge_pair.second.length
+                return [ edge_pair.first ]
+            else
+                return [ edge_pair.second ]
+            end
+        else
+            return []
+        end
+    end
+end
+
+class IntersectingEdgeErrorFilter < RBA::EdgePairOperator
+    def initialize(abutting_edges)
+        @abutting_edges = abutting_edges
+    end
+
+    def process(edge_pair)
+        ip = nil
+        if edge_pair.first.p1 == edge_pair.second.p1 or
+           edge_pair.first.p1 == edge_pair.second.p2
+            ip = edge_pair.first.p1
+        elsif edge_pair.first.p2 == edge_pair.second.p1 or
+              edge_pair.first.p2 == edge_pair.second.p2
+            ip = edge_pair.first.p2
+        end
+        if ip and not edge_pair.first.coincident?(edge_pair.second)
+            edges = RBA::Edges::new([ edge_pair.first, edge_pair.second ])
+            region = @abutting_edges.extents(1)
+            interacting_edges = edges.interacting(region)
+            if interacting_edges.count == 2
+                ep = edge_pair.normalized
+                v1 = ep.first.swapped_points.d
+                v2 = ep.second.d
+                angle = Math.acos((v1*v2)/(v1.length*v2.length))/Math::PI*180
+                if angle >= 90
+                    return []
+                end
+            end
+        end
+        return [ edge_pair ]
+    end
+end
+
+class IntersectingEdgeErrorAngleFilter < RBA::EdgePairOperator
+    def initialize(min_angle, max_angle, include_min_angle, include_max_angle)
+        self.is_isotropic_and_scale_invariant
+        @min_angle = min_angle
+        @max_angle = max_angle
+        if include_min_angle
+            @min_angle -= 1e-6
+        else
+            @min_angle += 1e-6
+        end
+        if include_max_angle
+            @max_angle += 1e-6
+        else
+            @max_angle -= 1e-6
+        end
+    end
+
+    def process(edge_pair)
+        ip = nil
+        if edge_pair.first.p1 == edge_pair.second.p1 or
+           edge_pair.first.p1 == edge_pair.second.p2
+            ip = edge_pair.first.p1
+        elsif edge_pair.first.p2 == edge_pair.second.p1 or
+              edge_pair.first.p2 == edge_pair.second.p2
+            ip = edge_pair.first.p2
+        end
+        if ip
+            ep = edge_pair.normalized
+            v1 = ep.first.swapped_points.d
+            v2 = ep.second.d
+            angle = Math.acos((v1*v2)/(v1.length*v2.length))/Math::PI*180
+            if (angle < @min_angle) or (angle > @max_angle)
+                return []
+            end
+        end
+        return [ edge_pair ]
+    end
+end
+
+class DRC::DRCEngine
+    def find_intersecting_edges_errors(dbu_value,
+                                       error_edge_pairs_90,
+                                       error_edge_pairs_180,
+                                       error_edge_pairs_90_180 = nil,
+                                       inverse_error_edge_pairs_90 = nil,
+                                       inverse_error_edge_pairs_180 = nil,
+                                       options = {})
+        consider_intersecting_edges   = options.fetch(:consider_intersecting_edges, false)
+        consider_touch_points         = options.fetch(:consider_touch_points, false)
+        ignore_non_axis_aligned_edges = options.fetch(:ignore_non_axis_aligned_edges, false)
+        min_angle                     = options.fetch(:min_angle, 0)
+        max_angle                     = options.fetch(:max_angle, 90)
+        include_min_angle             = options.fetch(:include_min_angle, true)
+        include_max_angle             = options.fetch(:include_max_angle, false)
+        area_of_right_angle = dbu_value**2/2
+        errors_ep = RBA::EdgePairs::new()
+        touch_point_errors_ep = RBA::EdgePairs::new()
+        abutting_edges_errors_ep = RBA::EdgePairs::new()
+        intersecting_edges_error_candidates = Hash.new()
+        no_touch_point_error = Hash.new()
+        error_edge_pairs_90.data.each do |edge_pair|
+            ip = nil
+            if edge_pair.first.p1 == edge_pair.second.p1 or
+               edge_pair.first.p1 == edge_pair.second.p2
+                ip = edge_pair.first.p1
+            elsif edge_pair.first.p2 == edge_pair.second.p1 or
+                  edge_pair.first.p2 == edge_pair.second.p2
+                ip = edge_pair.first.p2
+            end
+            if ip and !edge_pair.first.is_degenerate? and !edge_pair.second.is_degenerate?
+                if (edge_pair.first.contains?(edge_pair.second.p1) and
+                   edge_pair.first.contains?(edge_pair.second.p2)) or
+                   (edge_pair.second.contains?(edge_pair.first.p1) and
+                   edge_pair.second.contains?(edge_pair.first.p2))
+                    no_touch_point_error[ip] = true
+                end
+            end
+        end
+        if consider_intersecting_edges or consider_touch_points
+            touch_point_candidates = Hash.new()
+            touch_point_errors = Hash.new()
+            if inverse_error_edge_pairs_90 and inverse_error_edge_pairs_180
+                (inverse_error_edge_pairs_90 + inverse_error_edge_pairs_180).data.each do |edge_pair|
+                    ip = edge_pair.first.intersection_point(edge_pair.second)
+                    if ip
+                        if touch_point_candidates[ip]
+                            touch_point_errors[ip] = true
+                            touch_point_candidates.delete(ip)
+                        elsif !no_touch_point_error[ip]
+                            touch_point_candidates[ip] = edge_pair
+                        end
+                    end
+                end
+            end
+            touch_point_candidates = Hash.new()
+            if !error_edge_pairs_90_180
+                error_edge_pairs_90_180 = error_edge_pairs_90 + error_edge_pairs_180
+            end
+            error_edge_pairs_90_180.data.each do |edge_pair|
+                ip = nil
+                if edge_pair.first.p1 == edge_pair.second.p1 or
+                   edge_pair.first.p1 == edge_pair.second.p2
+                    ip = edge_pair.first.p1
+                elsif edge_pair.first.p2 == edge_pair.second.p1 or
+                      edge_pair.first.p2 == edge_pair.second.p2
+                    ip = edge_pair.first.p2
+                elsif edge_pair.first.intersection_point(edge_pair.second)
+                    abutting_edges_errors_ep.insert(edge_pair)
+                end
+                if ip and !edge_pair.first.is_degenerate? and !edge_pair.second.is_degenerate?
+                    intersecting_edges_error_candidates[ip] = edge_pair
+                    if touch_point_errors[ip]
+                        touch_point_errors_ep.insert(edge_pair)
+                        intersecting_edges_error_candidates.delete(ip)
+                    elsif touch_point_candidates[ip]
+                        touch_point_errors_ep.insert(edge_pair)
+                        touch_point_errors_ep.insert(touch_point_candidates[ip])
+                        touch_point_candidates.delete(ip)
+                        intersecting_edges_error_candidates.delete(ip)
+                    elsif !no_touch_point_error[ip]
+                        touch_point_candidates[ip] = edge_pair
+                    end
+                end
+            end
+            if consider_intersecting_edges
+                errors_ep = RBA::EdgePairs::new(intersecting_edges_error_candidates.values)
+                errors_ep.process(IntersectingEdgeErrorAngleFilter::new(min_angle, max_angle, include_min_angle, include_max_angle))
+                if min_angle == 0 and include_min_angle
+                    errors_ep = errors_ep + abutting_edges_errors_ep
+                end
+            end
+        end
+        if ignore_non_axis_aligned_edges
+            errors_ep = errors_ep.with_angle_both(RBA::Edges::OrthoEdges, false)
+        end
+        if consider_touch_points
+            errors_ep = errors_ep + touch_point_errors_ep
+        end
+        return DRC::DRCLayer::new(self, errors_ep)
+    end
+end
+
+class DRC::DRCLayer
+    def ext_and(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self & other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_with_angle(constraint)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            self_edges = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            self_edges = self
+        end
+        lower_bound = nil
+        upper_bound = nil
+        output_layer = nil
+        constraint.each do |expression|
+            relation = expression[0]
+            value = expression[1]
+            if relation == ">"
+                lower_bound = value + 1e-6
+            elsif relation == "<"
+                upper_bound = value
+            elsif relation == "=="
+                output_layer = self_edges.with_angle(value)
+                if value > 0 and value < 90
+                    output_layer += self_edges.with_angle(-value)
+                end
+            elsif relation == "!="
+                output_layer = self_edges.without_angle(value)
+                if value > 0 and value < 90
+                    output_layer += self_edges.without_angle(-value)
+                end
+            elsif relation == ">="
+                lower_bound = value
+            elsif relation == "<="
+                upper_bound = value + 1e-6
+            else
+                raise "invalid expression"
+            end
+        end
+        if lower_bound or upper_bound
+            output_layer = self_edges.with_angle(lower_bound, upper_bound)
+            output_layer += self_edges.with_angle(-upper_bound, -lower_bound)
+        end
+        return output_layer
+    end
+
+    def ext_with_area(constraint)
+        lower_bound = nil
+        upper_bound = nil
+        output_layer = nil
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        constraint.each do |expression|
+            relation = expression[0]
+            value = expression[1]
+            if relation == ">"
+                lower_bound = value + 1.dbu**2
+            elsif relation == "<"
+                upper_bound = value
+            elsif relation == "=="
+                output_layer = self.with_area(value)
+            elsif relation == "!="
+                output_layer = self.without_area(value)
+            elsif relation == ">="
+                lower_bound = value
+            elsif relation == "<="
+                upper_bound = value + 1.dbu**2
+            else
+                raise "invalid expression"
+            end
+        end
+        if lower_bound or upper_bound
+            output_layer = self.with_area(lower_bound, upper_bound)
+        end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_coincident_part(other, outside: false, inverted: false)
+        if outside and !inverted and self.polygons? and other.polygons?
+            return self.separation(other, 1).first_edges
+        end
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            self_edges = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            self_edges = self
+        end
+        if other.polygons?
+            other_min_coherence_state = other.data.min_coherence?
+            other.data.min_coherence = true
+            other_edges = other.edges
+            other.data.min_coherence = other_min_coherence_state
+        else
+            other_edges = other
+        end
+        if outside
+            if inverted
+                return self_edges.not(self_edges.separation(other_edges, 1).first_edges)
+            else
+                return self_edges.separation(other_edges, 1).first_edges
+            end
+        else
+            if inverted
+                return self_edges.not(other_edges)
+            else
+                return self_edges.and(other_edges)
+            end
+        end
+    end
+
+    def ext_coincident_edges(other, outside: false, consider_touch_points: false)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            self_edges = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            self_edges = self
+        end
+        if other.polygons?
+            other_min_coherence_state = other.data.min_coherence?
+            other.data.min_coherence = true
+            other_edges = other.edges
+            other.data.min_coherence = other_min_coherence_state
+        else
+            other_edges = other
+        end
+        if outside
+            if consider_touch_points
+                return self_edges.not_outside(self_edges.separation(other_edges, 1, @engine.whole_edges).first_edges)
+            else
+                return self_edges.not_outside(self_edges.separation(other_edges, 1, @engine.whole_edges, @engine.without_touching_corners).first_edges)
+            end
+        else
+            if consider_touch_points
+                raise "not implemented"
+            else
+                return met1_edges.not_outside(self_edges & other_edges)
+            end
+        end
+    end
+
+    def ext_constraint_satisfied(value, constraint)
+        output_bool = true
+        constraint.each do |expression|
+            if expression[0] == ">"
+                output_bool = output_bool && (value > expression[1])
+            elsif expression[0] == "<"
+                output_bool = output_bool && (value < expression[1])
+            elsif expression[0] == "=="
+                output_bool = output_bool && (value == expression[1])
+            elsif expression[0] == "!="
+               output_bool = output_bool && (value != expression[1])
+            elsif expression[0] == ">="
+                output_bool = output_bool && (value >= expression[1])
+            elsif expression[0] == "<="
+                output_bool = output_bool && (value <= expression[1])
+            else
+                raise "invalid expression"
+            end
+        end
+        return output_bool
+    end
+
+    def ext_overlapping(other, constraint = [])
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        if other.is_merged?
+            merged_other = other
+        else
+            merged_other = other.merged(true, 0)
+        end
+        overlap_filter = @engine.overlapping(merged_other.not_inside(self))
+        constraint.each do |expression|
+            overlap_filter = overlap_filter.public_send(expression[0], expression[1])
+        end
+        output_layer = self.drc(@engine.if_all(overlap_filter, ! @engine.inside(merged_other)))
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_covering(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self.covering(other.inside(self))
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_enclosed_at_intersecting_edges(other,
+                                           value,
+                                           metric=RBA::Region::Euclidian,
+                                           consider_intersecting_edges=false,
+                                           consider_touch_points=false,
+                                           ignore_non_axis_aligned_edges=false,
+                                           min_angle=0,
+                                           max_angle=90,
+                                           include_min_angle=true,
+                                           include_max_angle=false,
+                                           polygons=false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        if value.is_a? Float
+            dbu_value = (value/1.dbu).round
+        else
+            dbu_value = value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.enclosed_check(other.data, dbu_value, false, metric, 90, 1, nil))
+        error_edge_pairs_90_180 = DRC::DRCLayer::new(@engine,
+            self.data.enclosed_check(other.data, dbu_value, false, metric, 180, nil, nil))
+        enclosed_errors = @engine.find_intersecting_edges_errors(
+            dbu_value,
+            error_edge_pairs_90,
+            nil,
+            error_edge_pairs_90_180,
+            nil,
+            nil,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygons
+            return enclosed_errors.polygons.merge(true, 0)
+        else
+            return enclosed_errors
+        end
+    end
+
+    def ext_enclosed(other,
+                     value,
+                     metric: @engine.euclidian,
+                     consider_intersecting_edges: true,
+                     consider_touch_points: true,
+                     consider_overlaps_as_errors: false,
+                     ignore_non_axis_aligned_edges: false,
+                     min_angle: 0,
+                     max_angle: 90,
+                     include_min_angle: true,
+                     include_max_angle: false,
+                     polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        metric = @engine.projection
+        if consider_overlaps_as_errors
+            output_layer = self.enclosed(other, value, metric,
+                                         @engine.angle_limit(180), @engine.without_touching_corners)
+            abutting_edges = output_layer.data.processed(AbuttingEdges::new)
+            output_layer.data.process(IntersectingEdgeErrorFilter::new(abutting_edges))
+        else
+            angle_limit = max_angle
+            if include_max_angle
+                angle_limit += 1e-6
+            end
+            output_layer = self.enclosed(other, value, metric, @engine.angle_limit(angle_limit))
+            if !consider_intersecting_edges and !consider_touch_points
+                output_layer = output_layer.without_distance(0)
+                if ignore_non_axis_aligned_edges
+                    output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+                end
+            elsif (consider_intersecting_edges ^ consider_touch_points) or
+                  !(min_angle==0 and max_angle==90 and include_min_angle and !include_max_angle)
+                intersecting_edges_errors = output_layer.with_distance(0).edges
+                candidate_layer1 = self.interacting(intersecting_edges_errors)
+                candidate_layer2 = other.interacting(intersecting_edges_errors)
+                output_layer = output_layer.without_distance(0)
+                output_layer = output_layer + candidate_layer1.ext_enclosed_at_intersecting_edges(
+                    candidate_layer2,
+                    value,
+                    metric,
+                    consider_intersecting_edges,
+                    consider_touch_points,
+                    ignore_non_axis_aligned_edges,
+                    min_angle,
+                    max_angle,
+                    include_min_angle,
+                    include_max_angle,
+                    false)
+            end
+        end
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygon_output
+            return output_layer.polygons.merge(true, 0)
+        else
+            return output_layer
+        end
+    end
+
+    def ext_extended(outside = 0, inside = 0)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            edge_layer = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            edge_layer = self
+        end
+        return edge_layer.extended(:out => outside, :in => inside).merge(true, 0)
+    end
+
+    def ext_extents
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        output_layer = self.extents.merge(true, 0)
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_separation_at_intersecting_edges(other,
+                                             value,
+                                             metric=RBA::Region::Euclidian,
+                                             consider_intersecting_edges=false,
+                                             consider_touch_points=false,
+                                             ignore_non_axis_aligned_edges=false,
+                                             min_angle=0,
+                                             max_angle=90,
+                                             include_min_angle=true,
+                                             include_max_angle=false,
+                                             polygons=false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        if value.is_a? Float
+            dbu_value = (value/1.dbu).round
+        else
+            dbu_value = value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.separation_check(other.data, dbu_value, false, metric, 90, 1, nil))
+        error_edge_pairs_90_180 = DRC::DRCLayer::new(@engine,
+            self.data.separation_check(other.data, dbu_value, false, metric, 180))
+        width_error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.width_check(dbu_value, false, metric, 90, 1, nil) +
+            other.data.width_check(dbu_value, false, metric, 90, 1, nil))
+        width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
+            self.data.width_check(dbu_value, false, metric, 180, nil, 1) +
+            other.data.width_check(dbu_value, false, metric, 180, nil, 1))
+        separation_errors = @engine.find_intersecting_edges_errors(
+            dbu_value,
+            error_edge_pairs_90,
+            nil,
+            error_edge_pairs_90_180,
+            width_error_edge_pairs_90,
+            width_error_edge_pairs_180,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygons
+            return separation_errors.polygons.merge(true, 0)
+        else
+            return separation_errors
+        end
+    end
+
+    def ext_separation(other,
+                       value,
+                       metric: @engine.euclidian,
+                       consider_intersecting_edges: true,
+                       consider_touch_points: true,
+                       consider_overlaps_as_errors: false,
+                       ignore_non_axis_aligned_edges: false,
+                       min_angle: 0,
+                       max_angle: 90,
+                       include_min_angle: true,
+                       include_max_angle: false,
+                       polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        if consider_overlaps_as_errors
+            output_layer = self.separation(other, value, metric,
+                                           @engine.angle_limit(180), @engine.without_touching_corners)
+            abutting_edges = output_layer.data.processed(AbuttingEdges::new)
+            output_layer.data.process(IntersectingEdgeErrorFilter::new(abutting_edges))
+        else
+            angle_limit = max_angle
+            if include_max_angle
+                angle_limit += 1e-6
+            end
+            output_layer = self.separation(other, value, metric, @engine.angle_limit(angle_limit))
+            if !consider_intersecting_edges and !consider_touch_points
+                output_layer = output_layer.without_distance(0)
+                if ignore_non_axis_aligned_edges
+                    output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+                end
+            elsif (consider_intersecting_edges ^ consider_touch_points) or
+                  !(min_angle==0 and max_angle==90 and include_min_angle and !include_max_angle)
+                intersecting_edges_errors = output_layer.with_distance(0).edges
+                candidate_layer1 = self.interacting(intersecting_edges_errors)
+                candidate_layer2 = other.interacting(intersecting_edges_errors)
+                output_layer = output_layer.without_distance(0)
+                output_layer = output_layer + candidate_layer1.ext_separation_at_intersecting_edges(
+                    candidate_layer2,
+                    value,
+                    metric,
+                    consider_intersecting_edges,
+                    consider_touch_points,
+                    ignore_non_axis_aligned_edges,
+                    min_angle,
+                    max_angle,
+                    include_min_angle,
+                    include_max_angle,
+                    false)
+            end
+        end
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygon_output
+            return output_layer.polygons.merge(true, 0)
+        else
+            return output_layer
+        end
+    end
+
+    def ext_inside_part(other, inverted: false)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            edge_layer = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            edge_layer = self
+        end
+        if inverted
+            return edge_layer.outside_part(other.merged(true, 0))
+        else
+            return edge_layer.inside_part(other.merged(true, 0))
+        end
+    end
+
+    def ext_interacting(other, constraint=nil, inverted: false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        overlap_filter = @engine.secondary(other).overlapping(@engine.primary)
+        if not constraint
+            touch_filter = @engine.secondary(other).outside(@engine.primary).edges & @engine.primary
+            if inverted
+                output_layer = self.drc(@engine.if_none(overlap_filter, touch_filter))
+            else
+                output_layer = self.drc(@engine.if_any(overlap_filter, touch_filter))
+            end
+        else
+            touch_filter = (@engine.secondary(other).outside(@engine.primary).edges & @engine.primary).polygons(0.1.um).merged
+            filter = (overlap_filter + touch_filter).count
+            constraint.each do |expression|
+                filter = filter.public_send(expression[0], expression[1])
+            end
+            if inverted
+                output_layer = self.drc(@engine.if_none(filter))
+            else
+                output_layer = self.drc(@engine.if_any(filter))
+            end
+        end
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_overlap_at_intersecting_edges(other,
+                                          value,
+                                          metric=RBA::Region::Euclidian,
+                                          consider_intersecting_edges=false,
+                                          consider_touch_points=false,
+                                          ignore_non_axis_aligned_edges=false,
+                                          min_angle=0,
+                                          max_angle=90,
+                                          include_min_angle=true,
+                                          include_max_angle=false,
+                                          polygons=false)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        if value.is_a? Float
+            dbu_value = (value/1.dbu).round
+        else
+            dbu_value = value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine,
+            self.data.overlap_check(other.data, dbu_value, false, metric, 90, 1, nil))
+        error_edge_pairs_180 = DRC::DRCLayer::new(@engine,
+            self.data.overlap_check(other.data, dbu_value, false, metric, 180, nil, 1))
+        overlap_errors = @engine.find_intersecting_edges_errors(
+            dbu_value,
+            error_edge_pairs_90,
+            error_edge_pairs_180,
+            nil,
+            nil,
+            nil,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        if polygons
+            return overlap_errors.polygons.merge(true, 0)
+        else
+            return overlap_errors
+        end
+    end
+
+    def ext_overlap(other,
+                    value,
+                    metric: @engine.euclidian,
+                    consider_intersecting_edges: true,
+                    consider_touch_points: true,
+                    ignore_non_axis_aligned_edges: false,
+                    min_angle: 0,
+                    max_angle: 90,
+                    include_min_angle: true,
+                    include_max_angle: false,
+                    polygon_output: false)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+        end
+        if other.polygons?
+            other_min_coherence_state =  other.data.min_coherence?
+            other.data.min_coherence = true
+        end
+        if self.polygons? and other.polygons?
+            output_layer = self.overlap(other, value)
+        else
+            if self.polygons?
+                self_edges = self.edges
+            else
+                self_edges = self
+            end
+            if other.polygons?
+                other_edges = other.edges
+            else
+                other_edges = other
+            end
+            output_layer = self_edges.overlap(other_edges, value)
+        end
+        if !consider_intersecting_edges and !consider_touch_points
+            output_layer = output_layer.with_distance(1, nil)
+            if ignore_non_axis_aligned_edges
+                output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+            end
+        elsif consider_intersecting_edges ^ consider_touch_points
+            intersecting_edges_errors = output_layer.with_distance(0).edges
+            candidate_layer1 = self.interacting(intersecting_edges_errors)
+            candidate_layer2 = other.interacting(intersecting_edges_errors)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer1.ext_overlap_at_intersecting_edges(
+                candidate_layer2,
+                value,
+                metric,
+                consider_intersecting_edges,
+                consider_touch_points,
+                ignore_non_axis_aligned_edges,
+                min_angle,
+                max_angle,
+                include_min_angle,
+                include_max_angle,
+                false)
+        end
+        if self.polygons?
+            self.data.min_coherence = self_min_coherence_state
+        end
+        if other.polygons?
+            other.data.min_coherence = other_min_coherence_state
+        end
+        if polygon_output
+            return output_layer.polygons.merge(true, 0)
+        else
+            return output_layer
+        end
+    end
+
+    def ext_with_coincident_edges(other)
+        coincident_edges = self.edges & other
+        return self.interacting(coincident_edges)
+    end
+
+    def ext_with_length(constraint)
+        if self.polygons?
+            self_min_coherence_state = self.data.min_coherence?
+            self.data.min_coherence = true
+            edge_layer = self.edges
+            self.data.min_coherence = self_min_coherence_state
+        else
+            edge_layer = self.dup
+        end
+        constraint.each do |expression|
+            if expression[0] == ">"
+                edge_layer = edge_layer.with_length((expression[1] + 1), nil)
+            elsif expression[0] == "<"
+                edge_layer = edge_layer.with_length(nil, expression[1])
+            elsif expression[0] == "=="
+                edge_layer = edge_layer.with_length(expression[1])
+            elsif expression[0] == "!="
+               edge_layer = edge_layer.without_length(expression[1])
+            elsif expression[0] == ">="
+                edge_layer = edge_layer.with_length(expression[1], nil)
+            elsif expression[0] == "<="
+                edge_layer = edge_layer.with_length(nil, (expression[1] + 1))
+            else
+                raise "invalid expression"
+            end
+        end
+        return edge_layer
+    end
+
+    def ext_not(other)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self - other
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_or(other, *further_layers)
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        output_layer = self.join(other)
+        further_layers.each do |further_layer|
+            further_layer_min_coherence_state = further_layer.data.min_coherence?
+            further_layer.data.min_coherence = true
+            output_layer = output_layer.join(further_layer)
+            further_layer.data.min_coherence = further_layer_min_coherence_state
+        end
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_rectangles(axis_aligned = false, use_bbox = false, constraint1 = nil, constraint2 = nil, aspect_ratio_constraint = nil, inverted: false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        if ( ( constraint1 && ( !constraint2 || constraint1.length() > 1 || constraint1[0][0] != "==") ) ||
+             ( constraint2 && ( constraint2.length() > 1 || constraint2[0][0] != "==" ) ) ||
+             ( constraint1 && constraint2 && constraint1[0][1] != constraint2[0][1] ) )
+            raise "ext_rectangle: unsupported options"
+        end
+        square = constraint1 ? true : false
+        shape_filter =
+            if use_bbox
+                @engine.extents
+            elsif axis_aligned
+                @engine.rectangles
+            else
+                @engine.if_all((@engine.corners == 270).count == 4, @engine.corners.count == 4)
+            end
+        if square
+            if use_bbox
+                shape_filter = @engine.if_all((@engine.extents.length == constraint1[0][1]).count == 4)
+            else
+                square_filter = (@engine.length == constraint1[0][1]).count == 4
+                shape_filter = @engine.if_all(shape_filter, square_filter)
+            end
+        end
+        if inverted
+            output_layer = self.drc(! shape_filter)
+        else
+            output_layer = self.drc(shape_filter)
+        end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_space_at_intersecting_edges(value,
+                                        metric=RBA::Region::Euclidian,
+                                        consider_intersecting_edges=false,
+                                        consider_touch_points=false,
+                                        ignore_non_axis_aligned_edges=false,
+                                        min_angle=0,
+                                        max_angle=90,
+                                        include_min_angle=true,
+                                        include_max_angle=false,
+                                        polygons=false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        if value.is_a? Float
+            dbu_value = (value/1.dbu).round
+        else
+            dbu_value = value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 90, 1, nil))
+        error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 180, nil, 1))
+        width_error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 90, 1, nil))
+        width_error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 180, nil, 1))
+        space_errors = @engine.find_intersecting_edges_errors(
+            dbu_value,
+            error_edge_pairs_90,
+            error_edge_pairs_180,
+            nil,
+            width_error_edge_pairs_90,
+            width_error_edge_pairs_180,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        if polygons
+            return space_errors.polygons.merge(true, 0)
+        else
+            return space_errors
+        end
+    end
+
+    def ext_space(value,
+                  metric: @engine.euclidian,
+                  consider_intersecting_edges: true,
+                  consider_touch_points: true,
+                  ignore_non_axis_aligned_edges: false,
+                  min_angle: 0,
+                  max_angle: 90,
+                  include_min_angle: true,
+                  include_max_angle: false,
+                  polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        output_layer = self.space(value, metric, @engine.angle_limit(max_angle))
+        if !consider_intersecting_edges and !consider_touch_points
+            output_layer = output_layer.with_distance(1, nil)
+            if ignore_non_axis_aligned_edges
+                output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+            end
+        elsif consider_intersecting_edges ^ consider_touch_points
+            candidate_layer = self.interacting(output_layer.with_distance(0).edges)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer.ext_space_at_intersecting_edges(
+                value,
+                metric,
+                consider_intersecting_edges,
+                consider_touch_points,
+                ignore_non_axis_aligned_edges,
+                min_angle,
+                max_angle,
+                include_min_angle,
+                include_max_angle,
+                false)
+        end
+        self.data.min_coherence = self_min_coherence_state
+        if polygon_output
+            return output_layer.polygons.merge(true, 0)
+        else
+            return output_layer
+        end
+    end
+
+    def ext_width_at_intersecting_edges(value,
+                  metric=RBA::Region::Euclidian,
+                  consider_intersecting_edges=false,
+                  consider_touch_points=false,
+                  ignore_non_axis_aligned_edges=false,
+                  min_angle=0,
+                  max_angle=90,
+                  include_min_angle=true,
+                  include_max_angle=false,
+                  polygons=false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = true
+        if metric.is_a?(DRC::DRCMetrics)
+            metric = metric.value
+        end
+        if value.is_a? Float
+            dbu_value = (value/1.dbu).round
+        else
+            dbu_value = value
+        end
+        error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 90, 1, nil))
+        error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.width_check(dbu_value, false, metric, 180, nil, 1))
+        space_error_edge_pairs_90 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 90, 1, nil))
+        space_error_edge_pairs_180 = DRC::DRCLayer::new(@engine, self.data.space_check(dbu_value, false, metric, 180, nil, 1))
+        width_errors = @engine.find_intersecting_edges_errors(
+            dbu_value,
+            error_edge_pairs_90,
+            error_edge_pairs_180,
+            nil,
+            space_error_edge_pairs_90,
+            space_error_edge_pairs_180,
+            {
+                consider_intersecting_edges: consider_intersecting_edges,
+                consider_touch_points: consider_touch_points,
+                ignore_non_axis_aligned_edges: ignore_non_axis_aligned_edges,
+                min_angle: min_angle,
+                max_angle: max_angle,
+                include_min_angle: include_min_angle,
+                include_max_angle: include_max_angle
+            }
+        )
+        self.data.min_coherence = self_min_coherence_state
+        if polygons
+            return width_errors.polygons.merge(true, 0)
+        else
+            return width_errors
+        end
+    end
+
+    def ext_width(value,
+                  metric: @engine.euclidian,
+                  consider_intersecting_edges: true,
+                  consider_touch_points: true,
+                  ignore_non_axis_aligned_edges: false,
+                  min_angle: 0,
+                  max_angle: 90,
+                  include_min_angle: true,
+                  include_max_angle: false,
+                  polygon_output: false)
+        self_min_coherence_state = self.data.min_coherence?
+        self.data.min_coherence = false
+        output_layer = self.width(value, metric, @engine.angle_limit(max_angle))
+        if !consider_intersecting_edges and !consider_touch_points
+            output_layer = output_layer.with_distance(1, nil)
+            if ignore_non_axis_aligned_edges
+                output_layer = output_layer.with_angle(@engine.ortho, @engine.both)
+            end
+        elsif consider_intersecting_edges ^ consider_touch_points
+            candidate_layer = self.interacting(output_layer.with_distance(0).edges)
+            output_layer = output_layer.with_distance(1, nil)
+            output_layer = output_layer + candidate_layer.ext_width_at_intersecting_edges(
+                value,
+                metric,
+                consider_intersecting_edges,
+                consider_touch_points,
+                ignore_non_axis_aligned_edges,
+                min_angle,
+                max_angle,
+                include_min_angle,
+                include_max_angle,
+                false)
+        end
+        if polygon_output
+            output_layer = output_layer.polygons.merge(true, 0)
+        end
+        self.data.min_coherence = self_min_coherence_state
+        return output_layer
+    end
+
+    def ext_enlarge_inside(other, distance, step)
+        enlarged_layer = self.dup
+        num_steps = (distance / step + 0.5).to_i
+        for i in 1..num_steps
+            enlarged_layer = enlarged_layer.sized(step, @engine.acute_limit) & other
+        end
+        rest = distance - num_steps * step
+        if rest > 1.dbu
+            enlarged_layer = enlarged_layer.sized(rest, @engine.acute_limit) & other
+        end
+        return enlarged_layer
+    end
+
+    def ext_touching(other, constraint = [[">", 0]])
+        self_min_coherence_state = self.data.min_coherence?
+        other_min_coherence_state =  other.data.min_coherence?
+        self.data.min_coherence = true
+        other.data.min_coherence = true
+        outside_filter = @engine.outside(other)
+        touch_filter = @engine.primary.edges & @engine.secondary(other)
+        if constraint
+            touch_filter = touch_filter.count
+            constraint.each do |expression|
+                touch_filter = touch_filter.public_send(expression[0], expression[1])
+            end
+        end
+        output_layer = self.drc(@engine.if_all(outside_filter, touch_filter))
+        self.data.min_coherence = self_min_coherence_state
+        other.data.min_coherence = other_min_coherence_state
+        return output_layer
+    end
+
+    def ext_interacting_with_text(text_layer, text)
+        if text_layer.is_a? Integer
+            text_layer = @engine.labels(text_layer)
+        end
+        initial_merged_semantics = self.data.merged_semantics?
+        self.data.merged_semantics = false
+        result = self.interacting(text_layer.texts(text))
+        self.data.merged_semantics = initial_merged_semantics
+        return result
+    end
+
+    def _ext_with_density(inverse,
+                          range,
+                          *args,
+                          tiles_stay_inside: false)
+        if inverse
+            method = :without_density
+        else
+            method = :with_density
+        end
+        if self.is_merged?
+          merged_layer = self
+        else
+          merged_layer = self.merged(true, 0)
+        end
+        origin = 'cc'
+        tile_size = nil
+        tile_step = nil
+        arguments = [range]
+        args.each do |a|
+            if a.is_a?(DRC::DRCTileSize)
+                tile_size = a
+                arguments.push(tile_size)
+            elsif a.is_a?(DRC::DRCTileStep)
+                tile_step = a
+                arguments.push(tile_step)
+            elsif a.is_a?(String)
+                origin = a
+            else
+                raise "argument error"
+            end
+        end
+        readonly_extent = DRC::DRCLayer::new(@engine, RBA::Region::new(@engine.source.cell_obj.bbox))
+        bbox = readonly_extent.bbox
+        if origin == 'll'
+            origin_x = bbox.left
+            origin_y = bbox.bottom
+            if tile_size and tile_step and (tile_size.get[0] != tile_step.get[0] or tile_size.get[1] != tile_step.get[1])
+                origin_x = bbox.left + (tile_size.get[0]-tile_step.get[0])/2
+                origin_y = bbox.bottom + (tile_size.get[1]-tile_step.get[1])/2
+            end
+            tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
+            arguments.push(tile_origin)
+        elsif origin == 'cc'
+            origin_x = bbox.center.x
+            origin_y = bbox.center.y
+            tile_origin = DRC::DRCTileOrigin::new(origin_x, origin_y)
+        else
+            raise "Unknown origin: 'cc' or 'll' expected"
+        end
+        if tile_size
+            boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu)))
+            tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
+            if tiles_stay_inside
+                if origin != 'll'
+                    raise "Option 'tiles_stay_inside' requires origin='ll'"
+                end
+                tile_width = tile_size.get[0]
+                tile_height = tile_size.get[1]
+                enlarged_bbox = bbox.dup
+                if tile_width > bbox.width
+                    enlarged_bbox.right = bbox.left + tile_width
+                end
+                if tile_height > bbox.height
+                    enlarged_bbox.top = bbox.bottom + tile_height
+                end
+                enlarged_boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox.to_itype(@engine.dbu)))
+                if tile_step
+                    tile_step_x = tile_step.get[0]
+                    tile_step_y = tile_step.get[1]
+                else
+                    tile_step_x = tile_width
+                    tile_step_y = tile_height
+                end
+                tile_count_x = 1 + ((bbox.width - tile_width) / tile_step_x).floor()
+                tile_count_x = tile_count_x < 1 ? 1 : tile_count_x
+                tile_count_y = 1 + ((bbox.height - tile_height) / tile_step_y).floor()
+                tile_count_y = tile_count_y < 1 ? 1 : tile_count_y
+                if tile_count_x == 1 and tile_count_y == 1
+                    tile_count = DRC::DRCTileCount::new(tile_count_x, 2)
+                else
+                    tile_count = DRC::DRCTileCount::new(tile_count_x, tile_count_y)
+                end
+                result = merged_layer.public_send(method, *arguments, tile_count, tile_boundary, @engine.padding_ignore)
+                need_top_row = false
+                need_right_column = false
+                if bbox.height > tile_height + (tile_count_y-1)*tile_step_y
+                    need_top_row = true
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0], tile_origin.get[1]+bbox.height-tile_height)
+                    tile_count = DRC::DRCTileCount::new([2, tile_count_x].max, 1)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                if bbox.width > tile_width + (tile_count_x-1)*tile_step_x
+                    need_right_column = true
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0]+bbox.width-tile_width, tile_origin.get[1])
+                    tile_count = DRC::DRCTileCount::new(1, [2, tile_count_y].max)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                if (need_top_row and bbox.width > tile_width) or (need_right_column and bbox.height > tile_height)
+                    tile_origin2 = DRC::DRCTileOrigin::new(tile_origin.get[0]+bbox.width-tile_width, tile_origin.get[1]+bbox.height-tile_height)
+                    tile_count = DRC::DRCTileCount::new(1, 2)
+                    result += merged_layer.public_send(method, *arguments, tile_origin2, tile_count, tile_boundary, @engine.padding_ignore)
+                end
+                result.raw.select_inside(enlarged_boundary_layer)
+            else
+                result = merged_layer.public_send(method, *arguments, tile_boundary, @engine.padding_ignore)
+            end
+            return result.and(boundary_layer)
+        else
+            tile_size = DRC::DRCTileSize::new(bbox.width, bbox.height)
+            tile_count = DRC::DRCTileCount::new(1,3)
+            enlarged_bbox = bbox.enlarged(1.1).to_itype(@engine.dbu)
+            boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(enlarged_bbox))
+            tile_boundary = DRC::DRCTileBoundary::new(boundary_layer)
+            result = merged_layer.public_send(method, *arguments, tile_size, tile_count, tile_boundary, @engine.padding_ignore)
+            return result.raw.overlapping(DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu))))
+        end
+    end
+
+    def ext_with_density(*args, **kargs)
+        self._ext_with_density(false, *args, **kargs)
+    end
+
+    def ext_without_density(*args, **kargs)
+        self._ext_with_density(true, *args, **kargs)
+    end
+
+    def ext_outside(other)
+        output_layer = self.dup.raw.outside(other)
+        output_layer.data.merged_semantics = true
+        return output_layer
+    end
+end
+
+$start_time = Time.now
+
+Activ = source.polygons("1/0")
+Activ_pin = source.polygons("1/2")
+Activ_mask = source.polygons("1/20")
+Activ_filler = source.polygons("1/22")
+Activ_nofill = source.polygons("1/23")
+BiWind = source.polygons("3/0")
+GatPoly = source.polygons("5/0")
+GatPoly_pin = source.polygons("5/2")
+GatPoly_filler = source.polygons("5/22")
+GatPoly_nofill = source.polygons("5/23")
+Cont = source.polygons("6/0")
+nSD = source.polygons("7/0")
+nSD_block = source.polygons("7/21")
+Metal1 = source.polygons("8/0")
+Metal1_pin = source.polygons("8/2")
+Metal1_filler = source.polygons("8/22")
+Metal1_nofill = source.polygons("8/23")
+Metal1_slit = source.polygons("8/24")
+Passiv = source.polygons("9/0")
+Metal2 = source.polygons("10/0")
+Metal2_pin = source.polygons("10/2")
+Metal2_filler = source.polygons("10/22")
+Metal2_nofill = source.polygons("10/23")
+Metal2_slit = source.polygons("10/24")
+BasPoly = source.polygons("13/0")
+pSD = source.polygons("14/0")
+DigiBnd = source.polygons("16/0")
+Via1 = source.polygons("19/0")
+RES = source.polygons("24/0")
+SRAM = source.polygons("25/0")
+TRANS = source.polygons("26/0")
+IND = source.polygons("27/0")
+SalBlock = source.polygons("28/0")
+Via2 = source.polygons("29/0")
+Metal3 = source.polygons("30/0")
+Metal3_pin = source.polygons("30/2")
+Metal3_filler = source.polygons("30/22")
+Metal3_nofill = source.polygons("30/23")
+Metal3_slit = source.polygons("30/24")
+NWell = source.polygons("31/0")
+NWell_pin = source.polygons("31/2")
+nBuLay = source.polygons("32/0")
+nBuLay_block = source.polygons("32/21")
+EmWind = source.polygons("33/0")
+DeepCo = source.polygons("35/0")
+MIM = source.polygons("36/0")
+EdgeSeal = source.polygons("39/0")
+dfpad = source.polygons("41/0")
+dfpad_pillar = source.polygons("41/35")
+dfpad_sbump = source.polygons("41/36")
+ThickGateOx = source.polygons("44/0")
+PWell = source.polygons("46/0")
+PWell_block = source.polygons("46/21")
+Via3 = source.polygons("49/0")
+Metal4 = source.polygons("50/0")
+Metal4_pin = source.polygons("50/2")
+Metal4_filler = source.polygons("50/22")
+Metal4_nofill = source.polygons("50/23")
+Metal4_slit = source.polygons("50/24")
+EmPoly = source.polygons("55/0")
+DigiSub = source.polygons("60/0")
+TEXT_0 = source.labels("63/0")
+Via4 = source.polygons("66/0")
+Metal5 = source.polygons("67/0")
+Metal5_pin = source.polygons("67/2")
+Metal5_filler = source.polygons("67/22")
+Metal5_nofill = source.polygons("67/23")
+Metal5_slit = source.polygons("67/24")
+Polimide = source.polygons("98/0")
+Recog = source.polygons("99/0")
+Recog_esd = source.polygons("99/30")
+Recog_diode = source.polygons("99/31")
+Recog_tsv = source.polygons("99/32")
+EXTBlock = source.polygons("111/0")
+TopVia1 = source.polygons("125/0")
+TopMetal1 = source.polygons("126/0")
+TopMetal1_pin = source.polygons("126/2")
+TopMetal1_filler = source.polygons("126/22")
+TopMetal1_nofill = source.polygons("126/23")
+TopMetal1_slit = source.polygons("126/24")
+PolyRes = source.polygons("128/0")
+Vmim = source.polygons("129/0")
+TopVia2 = source.polygons("133/0")
+TopMetal2 = source.polygons("134/0")
+TopMetal2_pin = source.polygons("134/2")
+TopMetal2_filler = source.polygons("134/22")
+TopMetal2_nofill = source.polygons("134/23")
+TopMetal2_slit = source.polygons("134/24")
+ColWind = source.polygons("139/0")
+RFMEM = source.polygons("147/0")
+DeepVia = source.polygons("152/0")
+LBE = source.polygons("157/0")
+NoMetFiller = source.polygons("160/0")
+PEmWind = source.polygons("11/0")
+PEmPoly = source.polygons("53/0")
+LDMOS = source.polygons("57/0")
+PBiWind = source.polygons("58/0")
+Flash = source.polygons("71/0")
+Activ_Act_a = Activ.ext_width(0.15.um)
+Activ_Act_d = Activ.ext_with_area([["<", 0.122.um2]])
+nmosi_relevant_activ = Activ.ext_or(Activ_mask)
+Act_density = Activ.ext_or(Activ_filler)
+GP_or_Act = Activ.ext_or(GatPoly)
+Gate = Activ.ext_and(GatPoly)
+Act_connect = Activ.ext_not(GatPoly)
+GatPoly_Gat_e = GatPoly.ext_with_area([["<", 0.09.um2]])
+Gat_density = GatPoly.ext_or(GatPoly_filler)
+Cont_SQ = Cont.ext_rectangles(true, false, [["==", 0.16.um]], [["==", 0.16.um]], nil)
+ContBar = Cont.ext_with_area([[">", (0.16*0.16).um2]])
+Activ_and_nSD_block = Activ.ext_and(nSD_block)
+selring_pass = Passiv.with_holes
+Passiv_Pad_a1 = Passiv.sized(-150.0.um/2.0, acute_limit).sized(150.0.um/2.0, acute_limit)
+X2 = nSD_block.ext_or(pSD)
+pSD_not_nSD = nSD.ext_not(pSD)
+subst_tie_hole = (pSD.holes - pSD.with_holes).without_holes
+pSD_pSD_a = pSD.ext_width(0.31.um)
+pSD_pSD_k = pSD.ext_with_area([["<", 0.25.um2]])
+Act_Nsram = Activ.ext_not(SRAM)
+pSD_Nsram = pSD.ext_not(SRAM)
+GP_Nsram = GatPoly.ext_not(SRAM)
+Cont_Nsram = Cont.ext_not(SRAM)
+V1_Nsram = Via1.ext_not(SRAM)
+M1_Nsram = Metal1.ext_not(SRAM)
+M2_Nsram = Metal2.ext_not(SRAM)
+V2_Nsram = Via2.ext_not(SRAM)
+M3_Nsram = Metal3.ext_not(SRAM)
+Act_NWell = Activ.ext_and(NWell)
+NWell_Nsram = NWell.ext_not(SRAM)
+NWell_NW_a = NWell.ext_width(0.62.um)
+NWell_nBuLay = NWell.ext_and(nBuLay)
+isoPWell = nBuLay.ext_not(NWell)
+nBuLay_block_NBLB_a = nBuLay_block.ext_width(1.5.um)
+nBuLay_nBuLay_block_enc_tmp = nBuLay_block.ext_enclosed(nBuLay, 1.0.um, consider_touch_points: false, polygon_output: true)
+nBuLay_nBuLay_block_enc_tmp2 = nBuLay_block.ext_overlapping(nBuLay)
+MIM_Mim_a = MIM.ext_width(1.14.um, consider_intersecting_edges: false, polygon_output: true)
+MIM_Mim_f = MIM.ext_with_area([["<", 1.3.um2]])
+sealring = EdgeSeal.with_holes
+Act_EdgeSeal = Activ.ext_and(EdgeSeal)
+Act_Not_EdgeSeal = Activ.ext_not(EdgeSeal)
+pSD_edgA1_in = pSD.ext_and(EdgeSeal)
+Metal1_edgA1_in = Metal1.ext_and(EdgeSeal)
+Metal2_edgA1_in = Metal2.ext_and(EdgeSeal)
+Metal3_edgA1_in = Metal3.ext_and(EdgeSeal)
+Cont_edgC1_in = Cont.ext_and(EdgeSeal)
+Via1_edgC1_in = Via1.ext_and(EdgeSeal)
+Via1_edgC1_out = Via1.ext_not(EdgeSeal)
+Via2_edgC1_in = Via2.ext_and(EdgeSeal)
+Via2_edgC1_out = Via2.ext_not(EdgeSeal)
+Cont_outside_EdgeSeal = Cont.ext_outside(EdgeSeal)
+Metal1_outside_EdgeSeal = Metal1.ext_outside(EdgeSeal)
+Metal2_outside_EdgeSeal = Metal2.ext_outside(EdgeSeal)
+Metal3_outside_EdgeSeal = Metal3.ext_outside(EdgeSeal)
+Passiv_dfpad = Passiv.ext_and(dfpad)
+pad = dfpad.not_outside(Passiv)
+cupPad_candidat = Passiv.ext_and(dfpad_pillar)
+dfpad_all = dfpad.ext_or(dfpad_pillar, dfpad_sbump)
+ThickGateOx_TGO_e = ThickGateOx.ext_space(0.86.um, consider_intersecting_edges: false, polygon_output: true)
+ThickGateOx_TGO_f = ThickGateOx.ext_width(0.86.um, consider_intersecting_edges: false, polygon_output: true)
+X1 = NWell.ext_or(PWell_block)
+PWell_block_PWB_a = PWell_block.ext_width(0.62.um)
+PWell_block_PWB_b = PWell_block.ext_space(0.62.um, consider_intersecting_edges: false, polygon_output: true)
+V3_Nsram = Via3.ext_not(SRAM)
+Via3_edgC1_in = Via3.ext_and(EdgeSeal)
+Via3_edgC1_out = Via3.ext_not(EdgeSeal)
+M4_Nsram = Metal4.ext_not(SRAM)
+Metal4_edgA1_in = Metal4.ext_and(EdgeSeal)
+Metal4_outside_EdgeSeal = Metal4.ext_outside(EdgeSeal)
+V4_Nsram = Via4.ext_not(SRAM)
+Via4_edgC1_in = Via4.ext_and(EdgeSeal)
+Via4_edgC1_out = Via4.ext_not(EdgeSeal)
+M5_Nsram = Metal5.ext_not(SRAM)
+belowTopMetaln_dfpad = Metal5.ext_and(dfpad)
+Metal5_edgA1_in = Metal5.ext_and(EdgeSeal)
+Metal5_outside_EdgeSeal = Metal5.ext_outside(EdgeSeal)
+Metal5_slit_MIM_Slt_g_M5_sep_tmp1 = Metal5_slit.ext_separation(MIM, 0.6.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+Metal5_slit_MIM_Slt_g_M5_sep_tmp2 = MIM.ext_coincident_edges(Metal5_slit, outside: true, consider_touch_points: true)
+Metal5_slit_MIM_Slt_g_M5_sep_tmp5 = Metal5_slit.ext_and(MIM)
+scr1 = Recog_esd.ext_interacting_with_text(TEXT_0, "scr1")
+nmoscl_2 = Recog_esd.ext_interacting_with_text(TEXT_0, "nmoscl_2")
+nmoscl_4 = Recog_esd.ext_interacting_with_text(TEXT_0, "nmoscl_4")
+Rhigh_recognition_0 = EXTBlock.ext_and(pSD)
+TopVia1_edgC1_in = TopVia1.ext_and(EdgeSeal)
+TopVia1_edgC1_out = TopVia1.ext_not(EdgeSeal)
+TopMetal1_edgA1_in = TopMetal1.ext_and(EdgeSeal)
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp1 = TopMetal1_slit.ext_separation(MIM, 0.6.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp2 = MIM.ext_coincident_edges(TopMetal1_slit, outside: true, consider_touch_points: true)
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp5 = TopMetal1_slit.ext_and(MIM)
+GatPoly_res = GatPoly.ext_or(PolyRes)
+TopVia1_or_Vmim = TopVia1.ext_or(Vmim)
+TopVia2_edgC1_in = TopVia2.ext_and(EdgeSeal)
+TopVia2_edgC1_out = TopVia2.ext_not(EdgeSeal)
+TopMetal2_edgA1_in = TopMetal2.ext_and(EdgeSeal)
+holes_TopMetal2 = TopMetal2.holes.merge
+M1_density = Metal1.ext_or(Metal1_filler).ext_not(Metal1_slit)
+M2_density = Metal2.ext_or(Metal2_filler).ext_not(Metal2_slit)
+DigiBnd_ring = DigiBnd.sized(0.01.um, acute_limit).ext_not(DigiBnd)
+emi2Pin = Metal2_pin.ext_and(TRANS).ext_interacting_with_text(TEXT_0, "E")
+M3_density = Metal3.ext_or(Metal3_filler).ext_not(Metal3_slit)
+nBuLayGen_sized = NWell.sized((-(1+1.0/2)).um, acute_limit).sized((1.0/2).um, acute_limit)
+Act_out_ThickGateOx = Activ.ext_not(Activ.ext_interacting(ThickGateOx))
+PWellBlock_relatedNWell_0 = NWell.not_inside(PWell_block).ext_interacting(PWell_block)
+M4_density = Metal4.ext_or(Metal4_filler).ext_not(Metal4_slit)
+M5_density = Metal5.ext_or(Metal5_filler).ext_not(Metal5_slit)
+SalBlock_not_nSDBlock_not_esd = SalBlock.ext_not(Recog_esd.ext_or(nSD_block))
+TM1_density = TopMetal1.ext_or(TopMetal1_filler).ext_not(TopMetal1_slit)
+TM2_density = TopMetal2.ext_or(TopMetal2_filler).ext_not(TopMetal2_slit)
+GP_mosHV = Gate.not_outside(ThickGateOx)
+GP_out_ThickGateOx = Gate.ext_outside(ThickGateOx)
+size_Cont = Cont.ext_enlarge_inside(Act_connect, 6.um, 0.21.um)
+Cont_GP = Cont_SQ.ext_and(GatPoly)
+Cont_Act = Cont_SQ.ext_and(Activ)
+Cont_not_M1 = Cont_SQ.ext_not(Metal1)
+Cont_Act_GP = Cont_SQ.ext_and(Gate)
+CntB_a1_error = ContBar.ext_with_area([["<", (0.16*0.34).um2]])
+ContBar_GP = ContBar.ext_and(GatPoly)
+ContBar_Act = ContBar.ext_and(Activ)
+ContBar_not_M1 = ContBar.ext_not(Metal1)
+ContBar_Act_GP = ContBar.ext_and(Gate)
+ContBar_outside_TRANS = ContBar.ext_outside(TRANS)
+dschottky_1 = Activ_and_nSD_block.ext_and(nBuLay)
+dpin_0 = BasPoly.ext_and(Activ).ext_and(BiWind).ext_and(nSD_block)
+nSD_not_pSD = pSD_not_nSD.dup
+subst_tie_hole_w_npn = subst_tie_hole.ext_interacting_with_text(TEXT_0, "npn*")
+pSDL_enc_area = subst_tie_hole.ext_not(pSD)
+Act_Nsram_or_Activ_mask = Act_Nsram.ext_or(Activ_mask)
+pSDHV_Nsram = pSD_Nsram.inside(ThickGateOx)
+GP_Nsram_Gat_a = GP_Nsram.ext_width(0.13.um, consider_intersecting_edges: false, polygon_output: true)
+GP_Nsram_Gat_b = GP_Nsram.ext_space(0.18.um, consider_intersecting_edges: false, polygon_output: true)
+V1_Nsram_outside_EdgeSeal = V1_Nsram.ext_outside(EdgeSeal)
+npnMPA_0 = nBuLay.ext_and(Activ.ext_and(SalBlock.ext_and(nSD_block)))
+V2_Nsram_outside_EdgeSeal = V2_Nsram.ext_outside(EdgeSeal)
+nBuLay_nBuLay_block_enc_tmp3 = nBuLay_nBuLay_block_enc_tmp + nBuLay_nBuLay_block_enc_tmp2
+ring_passiv = selring_pass.ext_outside(sealring)
+Act_EdgeSeal_not_HRACT = Act_EdgeSeal.ext_not(Recog)
+Activ_edgA1_in = Act_EdgeSeal.dup
+Act_EdgeSeal_Cont_edgC1_in_enc_tmp = Cont_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_Cont_edgC1_in_enc_tmp2 = Cont_edgC1_in.ext_overlapping(Act_EdgeSeal)
+Act_EdgeSeal_Via1_edgC1_in_enc_tmp = Via1_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_Via1_edgC1_in_enc_tmp2 = Via1_edgC1_in.ext_overlapping(Act_EdgeSeal)
+Act_EdgeSeal_Via2_edgC1_in_enc_tmp = Via2_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_Via2_edgC1_in_enc_tmp2 = Via2_edgC1_in.ext_overlapping(Act_EdgeSeal)
+Metal1_slit_not_pad = Metal1_slit.ext_not(pad)
+Metal2_slit_not_pad = Metal2_slit.ext_not(pad)
+Metal3_slit_not_pad = Metal3_slit.ext_not(pad)
+Metal4_slit_not_pad = Metal4_slit.ext_not(pad)
+Metal5_slit_not_pad = Metal5_slit.ext_not(pad)
+TopMetal1_slit_not_pad = TopMetal1_slit.ext_not(pad)
+TopMetal2_slit_not_pad = TopMetal2_slit.ext_not(pad)
+Recog_or_dfpad_all = Recog.ext_or(dfpad_all)
+Recog_or_MIM_or_dfpad_all = MIM.ext_or(Recog, dfpad_all)
+Iso_PWell_Act = Activ.ext_and(nBuLay).ext_not(X1)
+V3_Nsram_outside_EdgeSeal = V3_Nsram.ext_outside(EdgeSeal)
+Act_EdgeSeal_Via3_edgC1_in_enc_tmp = Via3_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_Via3_edgC1_in_enc_tmp2 = Via3_edgC1_in.ext_overlapping(Act_EdgeSeal)
+V4_Nsram_outside_EdgeSeal = V4_Nsram.ext_outside(EdgeSeal)
+Act_EdgeSeal_Via4_edgC1_in_enc_tmp = Via4_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_Via4_edgC1_in_enc_tmp2 = Via4_edgC1_in.ext_overlapping(Act_EdgeSeal)
+cmim_a = MIM.not_outside(Metal5).not_outside(TopMetal1).not_outside(Vmim)
+Metal5_slit_MIM_Slt_g_M5_sep_tmp3 = Metal5_slit.ext_with_coincident_edges(Metal5_slit_MIM_Slt_g_M5_sep_tmp2)
+nmoscl = nmoscl_2.ext_or(nmoscl_4)
+Rhigh_recognition_1 = Rhigh_recognition_0.ext_and(nSD)
+Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp = TopVia1_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp2 = TopVia1_edgC1_in.ext_overlapping(Act_EdgeSeal)
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp3 = TopMetal1_slit.ext_with_coincident_edges(TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp2)
+temp_layer_1 = MIM.ext_covering(TopVia1_or_Vmim)
+Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp = TopVia2_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
+Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp2 = TopVia2_edgC1_in.ext_overlapping(Act_EdgeSeal)
+temp_layer_6 = TopMetal2.ext_or(holes_TopMetal2)
+Cont_not_Act_GP = Cont_SQ.ext_not(GP_or_Act).ext_outside(TRANS)
+ContBar_not_Act_GP = ContBar.ext_not(GP_or_Act).ext_outside(TRANS)
+nSD_drv = nSD.ext_or(Activ.ext_not(X2))
+X2_Extent = X2.ext_extents.sized(0.001.um, acute_limit)
+transG2 = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2").ext_covering(emi2Pin)
+transG2C = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2C").ext_covering(emi2Pin)
+transG2L = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2L").ext_covering(emi2Pin)
+transG2V = TRANS.ext_interacting_with_text(TEXT_0, "npn13G2V").ext_covering(emi2Pin)
+nBuLayGen = nBuLayGen_sized.ext_not(nBuLay_block)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp1 = ThickGateOx.ext_separation(Act_out_ThickGateOx, 0.27.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2 = Act_out_ThickGateOx.ext_coincident_edges(ThickGateOx, outside: true, consider_touch_points: true)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp5 = ThickGateOx.ext_and(Act_out_ThickGateOx)
+PWellBlock_relatedNWell = PWellBlock_relatedNWell_0.ext_or(NWell.inside(PWell_block))
+Rppd_0 = GatPoly_res.ext_and(pSD).ext_and(SalBlock_not_nSDBlock_not_esd)
+GP_mosHV_Gat_b1 = GP_mosHV.ext_space(0.25.um, consider_intersecting_edges: false, polygon_output: true)
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp1 = ThickGateOx.ext_separation(GP_out_ThickGateOx, 0.34.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp2 = GP_out_ThickGateOx.ext_coincident_edges(ThickGateOx, outside: true, consider_touch_points: true)
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp5 = ThickGateOx.ext_and(GP_out_ThickGateOx)
+dschottky_2 = dschottky_1.sized(1.12.um, acute_limit)
+dpin_1 = dpin_0.sized(1.12.um, acute_limit)
+pSD_not_nSD_or_nSD_not_pSD = nSD_not_pSD.ext_or(pSD_not_nSD)
+subst_tie_trans = TRANS.inside(subst_tie_hole_w_npn)
+pSDL_enc_area_pSD_l = pSDL_enc_area.ext_with_area([["<", 0.25.um2]])
+DigiBnd_hole = DigiBnd.ext_or(DigiBnd_ring.holes.merge)
+npnMPA = npnMPA_0.ext_interacting_with_text(TEXT_0, "npnMPA")
+nBuLay_nBuLay_block_enc_tmp6 = nBuLay_nBuLay_block_enc_tmp3.dup
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp1 = ring_passiv.ext_separation(pSD_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp2 = pSD_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp5 = ring_passiv.ext_and(pSD_edgA1_in)
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp1 = ring_passiv.ext_separation(Metal1_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp2 = Metal1_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp5 = ring_passiv.ext_and(Metal1_edgA1_in)
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp1 = ring_passiv.ext_separation(Metal2_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp2 = Metal2_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp5 = ring_passiv.ext_and(Metal2_edgA1_in)
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp1 = ring_passiv.ext_separation(Metal3_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp2 = Metal3_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp5 = ring_passiv.ext_and(Metal3_edgA1_in)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 = ring_passiv.ext_separation(Metal4_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2 = Metal4_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp5 = ring_passiv.ext_and(Metal4_edgA1_in)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 = ring_passiv.ext_separation(Metal5_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2 = Metal5_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp5 = ring_passiv.ext_and(Metal5_edgA1_in)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 = ring_passiv.ext_separation(TopMetal1_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2 = TopMetal1_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5 = ring_passiv.ext_and(TopMetal1_edgA1_in)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 = ring_passiv.ext_separation(TopMetal2_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2 = TopMetal2_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5 = ring_passiv.ext_and(TopMetal2_edgA1_in)
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp1 = ring_passiv.ext_separation(Activ_edgA1_in, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp2 = Activ_edgA1_in.ext_coincident_edges(ring_passiv, outside: true, consider_touch_points: true)
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp5 = ring_passiv.ext_and(Activ_edgA1_in)
+Act_EdgeSeal_Cont_edgC1_in_enc_tmp3 = Act_EdgeSeal_Cont_edgC1_in_enc_tmp + Act_EdgeSeal_Cont_edgC1_in_enc_tmp2
+Act_EdgeSeal_Via1_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via1_edgC1_in_enc_tmp + Act_EdgeSeal_Via1_edgC1_in_enc_tmp2
+Act_EdgeSeal_Via2_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via2_edgC1_in_enc_tmp + Act_EdgeSeal_Via2_edgC1_in_enc_tmp2
+sltc_M1 = Metal1.ext_not(Recog_or_dfpad_all)
+sltc_M2 = Metal2.ext_not(Recog_or_dfpad_all)
+sltc_M3 = Metal3.ext_not(Recog_or_dfpad_all)
+sltc_M4 = Metal4.ext_not(Recog_or_dfpad_all)
+sltc_TM2 = TopMetal2.ext_not(Recog_or_dfpad_all)
+sltc_M5 = Metal5.ext_not(Recog_or_MIM_or_dfpad_all)
+sltc_TM1 = TopMetal1.ext_not(Recog_or_MIM_or_dfpad_all)
+nSDBlock_Iso_PWell_Act = nSD_block.not_outside(Iso_PWell_Act)
+SalBlock_Iso_PWell_Act = SalBlock.not_outside(Iso_PWell_Act)
+Act_EdgeSeal_Via3_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via3_edgC1_in_enc_tmp + Act_EdgeSeal_Via3_edgC1_in_enc_tmp2
+Act_EdgeSeal_Via4_edgC1_in_enc_tmp3 = Act_EdgeSeal_Via4_edgC1_in_enc_tmp + Act_EdgeSeal_Via4_edgC1_in_enc_tmp2
+rfcmim_a = cmim_a.not_outside(PWell_block.ext_interacting_with_text(TEXT_0, "rfcmim"))
+Metal5_slit_MIM_Slt_g_M5_sep_tmp4 = Metal5_slit_MIM_Slt_g_M5_sep_tmp1 + Metal5_slit_MIM_Slt_g_M5_sep_tmp3
+Rhigh_recognition = Rhigh_recognition_1.ext_covering(GatPoly)
+Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp3 = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp + Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp2
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp4 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp1 + TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp3
+Rsil_all = GatPoly_res.ext_and(RES).ext_and(EXTBlock).ext_interacting(SalBlock, inverted: true)
+Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp3 = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp + Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp2
+NAct = Activ.ext_and(nSD_drv)
+pSD_nSD = pSD.ext_and(nSD_drv)
+Y2 = X2_Extent.ext_not(X2)
+subst_tie_npn = pSD.ext_touching(subst_tie_hole_w_npn).ext_touching(TRANS)
+emit_npn13G2 = EmWind.inside(transG2)
+emit_npn13G2L = EmWind.inside(transG2L)
+trans_bip = transG2.ext_or(transG2C, transG2L, transG2V)
+emit_npn13G2V = EmWind.inside(transG2V)
+nBuLayGen_nBuLay = nBuLay.ext_or(nBuLayGen)
+schottky_nbl_rec = isoPWell.not_outside(SalBlock).not_outside(nSD_block).not_outside(Recog_diode).not_outside(ThickGateOx)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp3 = ThickGateOx.ext_with_coincident_edges(ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2)
+PWellBlock_unrelatedNWell = NWell.ext_not(PWellBlock_relatedNWell)
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp3 = ThickGateOx.ext_with_coincident_edges(ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp2)
+dschottky_3 = dschottky_2.ext_and(PWell_block)
+dpin = dpin_1.ext_and(PWell_block)
+Rppd_all = Rppd_0.ext_interacting(Activ.ext_or(nSD_drv), inverted: true)
+nBuLay_nBuLay_block_enc = nBuLay_nBuLay_block_enc_tmp6.dup
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp2)
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp2)
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp2)
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp2)
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp2)
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp2)
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp2)
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp2)
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp3 = ring_passiv.ext_with_coincident_edges(ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp2)
+Act_EdgeSeal_Cont_edgC1_in_enc_tmp6 = Act_EdgeSeal_Cont_edgC1_in_enc_tmp3.dup
+Act_EdgeSeal_Via1_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via1_edgC1_in_enc_tmp3.dup
+Act_EdgeSeal_Via2_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via2_edgC1_in_enc_tmp3.dup
+Act_EdgeSeal_Via3_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via3_edgC1_in_enc_tmp3.dup
+Act_EdgeSeal_Via4_edgC1_in_enc_tmp6 = Act_EdgeSeal_Via4_edgC1_in_enc_tmp3.dup
+Metal5_slit_MIM_Slt_g_M5_sep_tmp6 = Metal5_slit_MIM_Slt_g_M5_sep_tmp4 + Metal5_slit_MIM_Slt_g_M5_sep_tmp5
+Rhigh_identical_nsd_psd_edge = pSD_not_nSD_or_nSD_not_pSD.ext_coincident_part(Rhigh_recognition, outside: true)
+Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp6 = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp3.dup
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp6 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp4 + TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp5
+rsil_gatpoly = GatPoly_res.not_outside(Rsil_all)
+Rsil_all_not_interact_NWell = Rsil_all.ext_interacting(NWell, inverted: true)
+Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp6 = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp3.dup
+NGate = Gate.not_outside(NAct)
+PAct = Activ.ext_not(NAct)
+PAct_connect = Act_connect.ext_not(NAct)
+NActLV = NAct.ext_not(ThickGateOx)
+NAct_NWell = NAct.ext_and(X1)
+sal_nActiv = NAct.ext_not(SalBlock)
+Cont_NAct = Cont_SQ.ext_and(NAct)
+ContBar_NAct = ContBar.ext_and(NAct)
+Cont_not_outside_NAct = Cont.not_outside(NAct)
+nBuLayGen_nBuLay_NBL_a = nBuLayGen_nBuLay.ext_width(1.0.um)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp4 = ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp1 + ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp3
+rfcmim = PWell_block.not_outside(rfcmim_a).sized(0.65.um, acute_limit)
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp4 = ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp1 + ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp3
+dschottky = dschottky_3.ext_not(dpin)
+GP_Rppd_extended = GatPoly_res.ext_covering(Rppd_all)
+SalBlock_Rppd = SalBlock.ext_and(Rppd_all)
+Rppd_all_enclosure_pSD = Rppd_all.ext_enclosed(pSD, 0.18.um)
+Rhigh_a = GatPoly_res.ext_and(pSD_nSD).ext_and(SalBlock_not_nSDBlock_not_esd)
+schottky_nbl1_nw = NWell.ext_interacting(NWell.holes.merge.ext_covering(schottky_nbl_rec))
+schottky_nw1_rect = NWell.not_outside(nSD_block).ext_interacting(schottky_nbl_rec, inverted: true).ext_and(Recog_diode)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp4 = ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp1 + ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp3
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp4 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp1 + ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp3
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp4 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp1 + ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp3
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp4 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp1 + ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp3
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp4 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp1 + ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp3
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp4 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp1 + ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp3
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp1 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp3
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp1 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp3
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp4 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp1 + ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp3
+Act_EdgeSeal_Cont_edgC1_in_enc = Act_EdgeSeal_Cont_edgC1_in_enc_tmp6.dup
+Act_EdgeSeal_Via1_edgC1_in_enc = Act_EdgeSeal_Via1_edgC1_in_enc_tmp6.dup
+Act_EdgeSeal_Via2_edgC1_in_enc = Act_EdgeSeal_Via2_edgC1_in_enc_tmp6.dup
+Act_EdgeSeal_Via3_edgC1_in_enc = Act_EdgeSeal_Via3_edgC1_in_enc_tmp6.dup
+Act_EdgeSeal_Via4_edgC1_in_enc = Act_EdgeSeal_Via4_edgC1_in_enc_tmp6.dup
+Metal5_slit_MIM_Slt_g_M5_sep_tmp9 = Metal5_slit_MIM_Slt_g_M5_sep_tmp6.dup
+Rhigh_identical_nsd_psd = pSD_not_nSD_or_nSD_not_pSD.ext_with_coincident_edges(Rhigh_identical_nsd_psd_edge)
+Act_EdgeSeal_TopVia1_edgC1_in_enc = Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp6.dup
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp9 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp6.dup
+Rsil = Rsil_all_not_interact_NWell.ext_interacting(nBuLay, inverted: true)
+Act_EdgeSeal_TopVia2_edgC1_in_enc = Act_EdgeSeal_TopVia2_edgC1_in_enc_tmp6.dup
+PGate = Gate.ext_outside(NGate)
+PActLV = PAct.ext_not(ThickGateOx)
+PAct_NWell = PAct.ext_and(X1)
+Cont_PAct = Cont_SQ.ext_and(PAct)
+ContBar_PAct = ContBar.ext_and(PAct)
+npnPActRing = PAct.ext_interacting(TRANS.ext_interacting_with_text(TEXT_0, "npn13*").sized(0.2.um, acute_limit))
+Cont_not_outside_PAct = Cont.not_outside(PAct)
+NActHV = NAct.ext_not(NActLV)
+NAct_NWellLV = NAct_NWell.ext_not(ThickGateOx)
+NAct_PWell = NAct.ext_not(NAct_NWell)
+WellContDev = NAct_NWell.ext_interacting_with_text(TEXT_0, "well")
+NAct_NWell_not_Gate = NAct_NWell.ext_not(Gate)
+sal_nactive = sal_nActiv.dup
+Rppd_Cont = EXTBlock.ext_covering(Rppd_all).ext_and(Cont)
+n_tie = NWell.ext_and(Activ.ext_and(Y2)).ext_not(SalBlock)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp6 = ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp4 + ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp5
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp6 = ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp4 + ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp5
+SVaricap_gate_0 = NGate.not_outside(NWell).not_outside(nBuLay)
+GP_Rhigh_extended = GatPoly_res.ext_covering(Rhigh_a)
+SalBlock_Rhigh = SalBlock.ext_and(Rhigh_a)
+schottky_nbl1 = schottky_nbl1_nw.sized(1.36.um, acute_limit)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp6 = ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp4 + ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp5
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp6 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp4 + ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp5
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp6 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp4 + ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp5
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp6 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp4 + ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp5
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp6 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp4 + ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp5
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp6 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp4 + ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp5
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp4 + ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp5
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp4 + ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp5
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp4 + ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp5
+Metal5_slit_MIM_Slt_g_M5_sep_tmp11 = Metal5_slit_MIM_Slt_g_M5_sep_tmp9.dup
+TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp11 = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp9.dup
+GP_Rsil_extended = GatPoly_res.ext_covering(Rsil)
+PActHV = PAct.ext_not(PActLV)
+PAct_PWell = PAct.ext_not(PAct_NWell)
+Abut_NWell_Tie_Edge = NAct_NWell.ext_coincident_part(PAct_NWell, outside: true)
+MVaricap = PWell_block.ext_and(NWell.sized(1.0.um, acute_limit)).not_outside(GatPoly).not_outside(nBuLay).not_outside(PAct).not_outside(NAct).ext_interacting_with_text(TEXT_0, "MVaricap")
+NActHV_digi = NActHV.not_outside(DigiBnd_hole)
+NAct_NWellHV = NAct_NWell.ext_not(NAct_NWellLV)
+ntaparea = sal_nactive.ext_and(NWell)
+Rhigh_Cont = EXTBlock.ext_covering(Rhigh_a).ext_and(Cont)
+hard_n_tie = n_tie.ext_covering(Cont)
+schottky_nw1_sized = schottky_nw1_rect.sized(1.36.um, acute_limit).ext_and(ThickGateOx)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp9 = ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp6.dup
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp9 = ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp6.dup
+SVaricap_poly = GatPoly.not_outside(SVaricap_gate_0)
+NWell_Tie = NAct_NWell.ext_not(WellContDev.ext_or(SalBlock.ext_or(TRANS)))
+schottky_pwb = schottky_nbl1.ext_and(PWell_block)
+schottky_nSDBlock = schottky_nbl1.ext_and(nSD_block)
+schottky_salblock = schottky_nbl1.ext_and(SalBlock)
+schottky_contbar = schottky_nbl1.ext_and(ContBar)
+scr1_or_schottky_nbl1 = schottky_nbl1.ext_or(scr1)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp9 = ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp6.dup
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp9 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp6.dup
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp9 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp6.dup
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp9 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp6.dup
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp9 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp6.dup
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp9 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp6.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp9 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp6.dup
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp9 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp6.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp6.dup
+Metal5_slit_MIM_Slt_g_M5_sep = Metal5_slit_MIM_Slt_g_M5_sep_tmp11.dup
+TopMetal1_slit_MIM_Slt_g_TM1_sep = TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp11.dup
+GP_Rsil_extended_external_pSD = GP_Rsil_extended.ext_separation(pSD, 0.18.um)
+SVaricap_text = Activ.not_outside(SVaricap_gate_0).ext_interacting_with_text(TEXT_0, "SVaricap")
+PActHV_digi = PActHV.not_outside(DigiBnd_hole)
+PAct_PWellLV = PAct_PWell.ext_not(ThickGateOx)
+cmim_tie = PAct_PWell.not_outside(rfcmim)
+Abut_PWell_Tie_Edge = PAct_PWell.ext_coincident_part(NAct_PWell, outside: true)
+BJT_ring_a = PAct_PWell.with_holes
+PAct_PWell_not_Gate = PAct_PWell.ext_not(Gate)
+Abut_NWell_Tie = NAct_NWell.ext_with_coincident_edges(Abut_NWell_Tie_Edge)
+NActHV_ana = NActHV.ext_not(NActHV_digi)
+NAct_NWellHV_digi = NAct_NWellHV.not_outside(DigiBnd_hole)
+soft_n_tie = n_tie.ext_not(hard_n_tie)
+schottky_nbl1_b = PAct_connect.not_outside(schottky_nbl1).ext_not(schottky_nbl1)
+schottky_nw1 = schottky_nw1_sized.ext_interacting_with_text(TEXT_0, "schottky_nw1")
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp11 = ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp9.dup
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp11 = ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp9.dup
+MOSvaricap = MVaricap.ext_or(SVaricap_poly)
+SubContDev_basic = PAct_PWell.ext_interacting_with_text(TEXT_0, "sub!").ext_not(Recog_esd)
+NwellRing_innermost = NWell_Tie.holes.merge.outside(NWell_Tie)
+ntap = ntaparea.ext_covering(Cont.ext_and(ntaparea))
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp11 = ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp9.dup
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp11 = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp9.dup
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp11 = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp9.dup
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp11 = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp9.dup
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp11 = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp9.dup
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp11 = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp9.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp11 = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp9.dup
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp11 = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp9.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11 = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp9.dup
+SVaricap = NWell.not_outside(SVaricap_text)
+PActHV_ana = PActHV.ext_not(PActHV_digi)
+PAct_PWellHV = PAct_PWell.ext_not(PAct_PWellLV)
+Abut_PWell_Tie = PAct_PWell.ext_with_coincident_edges(Abut_PWell_Tie_Edge)
+Abut_NWell_Tie_PAct = PAct.ext_interacting(Abut_NWell_Tie)
+NAct_NWellHV_ana = NAct_NWellHV.ext_not(NAct_NWellHV_digi)
+nsdb_exlcDev = dschottky.ext_or(schottky_nbl1, schottky_nw1, trans_bip)
+schottky_nbl1_or_schottky_nw1 = schottky_nbl1.ext_or(schottky_nw1)
+ThickGateOx_Act_out_ThickGateOx_TGO_b_sep = ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp11.dup
+ThickGateOx_GP_out_ThickGateOx_TGO_d_sep = ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp11.dup
+SubContDev = SubContDev_basic.ext_interacting(nBuLay, inverted: true)
+SubContDev_iso = SubContDev_basic.not_outside(nBuLay)
+PGate_inside_NwellRing = PGate.not_outside(NwellRing_innermost)
+NwellRing_edge = NWell_Tie.ext_coincident_part(NwellRing_innermost, outside: true)
+all_ntie = ntap.ext_or(soft_n_tie)
+schottky_nw1_b = PAct_connect.not_outside(schottky_nw1).ext_not(schottky_nw1)
+ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep = ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep_tmp11.dup
+ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep = ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep_tmp11.dup
+ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep = ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep_tmp11.dup
+ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep = ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep_tmp11.dup
+ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep = ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep_tmp11.dup
+ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep = ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep_tmp11.dup
+ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep = ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep_tmp11.dup
+ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep = ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep_tmp11.dup
+ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep = ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep_tmp11.dup
+pSD_c_tmp1 = pSD.ext_outside(SVaricap)
+devExclud = Recog_diode.ext_or(SVaricap, nmoscl_2, nmoscl_4, npnMPA, schottky_nbl1, scr1, subst_tie_hole_w_npn, trans_bip)
+SVaricap_or_schottky_nbl1 = SVaricap.ext_or(schottky_nbl1)
+NGate_outside_SVaricap = NGate.ext_outside(SVaricap)
+SVaricap_or_trans_bip = SVaricap.ext_or(trans_bip)
+Cont_PAct_not_SVaricap = Cont_PAct.ext_not(SVaricap)
+PAct_PWellHV_digi = PAct_PWellHV.not_outside(DigiBnd_hole)
+Abut_PWell_Tie_NAct = NAct.ext_interacting(Abut_PWell_Tie)
+Abut_NWell_Tie_Cont = Cont.inside(Abut_NWell_Tie_PAct)
+SVaricap_Tie = PAct_PWell.not_outside(Activ.not_outside(SVaricap))
+lNw_c = PActLV.ext_not(PActLV.ext_interacting(SVaricap))
+NwellRing = NWell_Tie.ext_with_coincident_edges(NwellRing_edge)
+nw_outDev = NAct_NWellHV_ana.ext_outside(SVaricap.ext_or(schottky_nbl1_or_schottky_nw1))
+temp_layer_4 = Cont_SQ.ext_not(SVaricap_or_trans_bip)
+PAct_PWellHV_ana = PAct_PWellHV.ext_not(PAct_PWellHV_digi)
+Abut_PWell_Tie_Cont = Cont.inside(Abut_PWell_Tie_NAct)
+PWell_Tie_w_rf = PAct_PWell.ext_not(Recog_esd.ext_or(SalBlock, SubContDev, SubContDev_iso, cmim_tie, schottky_nbl1, schottky_nbl1_b, schottky_nw1, schottky_nw1_b))
+Holes_NwellRing = NwellRing.holes.merge
+PwellRing_innermost = PWell_Tie_w_rf.holes.merge.outside(PWell_Tie_w_rf)
+NoHoles_NwellRing = Holes_NwellRing.ext_or(NwellRing)
+NGate_inside_PwellRing = NGate.not_outside(PwellRing_innermost)
+PwellRing_edge = PWell_Tie_w_rf.ext_coincident_part(PwellRing_innermost, outside: true)
+rfNwellRing = NoHoles_NwellRing.ext_interacting_with_text(TEXT_0, "rfpmos*")
+PwellRing = PWell_Tie_w_rf.ext_with_coincident_edges(PwellRing_edge)
+rfpmos_all = PGate_inside_NwellRing.not_outside(rfNwellRing)
+Holes_PwellRing = PwellRing.holes.merge
+NoHoles_PwellRing = Holes_PwellRing.ext_or(PwellRing)
+pmosHV = PGate.ext_or(rfpmos_all).ext_not(MOSvaricap).not_outside(ThickGateOx)
+rfPwellRing = NoHoles_PwellRing.ext_interacting_with_text(TEXT_0, "rfnmos*")
+pnpMPARing = NoHoles_PwellRing.ext_interacting_with_text(TEXT_0, "pnpMPA")
+rfnmos_all = NGate_inside_PwellRing.not_outside(rfPwellRing)
+pnpMPA = PAct_NWell.not_outside(nBuLay).not_outside(pnpMPARing)
+BJT_hole = (BJT_ring_a.holes - BJT_ring_a.with_holes).without_holes.ext_covering(TRANS.ext_or(pnpMPA))
+nmosHV = NGate.ext_or(rfnmos_all).ext_not(MOSvaricap).not_outside(ThickGateOx)
+BJT_ring = BJT_ring_a.ext_interacting(BJT_hole)
+PWell_Tie_wo_varicap_abut = PAct_PWell.ext_interacting(Abut_PWell_Tie.ext_or(BJT_ring, SVaricap_Tie), inverted: true)
+-> do
+    NWell_NW_a.dup
+end.().output("NW.a", "Min. NWell width = 0.62")
+-> do
+    lNw_c.ext_enclosed(NWell_Nsram, 0.31.um, consider_overlaps_as_errors: true)
+end.().output("NW.c", "Min. NWell enclosure of P+Activ not inside ThickGateOx = 0.31")
+-> do
+    PActHV_ana.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.62.um, consider_overlaps_as_errors: true)
+end.().output("NW.c1", "Min. NWell enclosure of P+Activ inside ThickGateOx = 0.62")
+-> do
+    NWell_Nsram.ext_separation(NActLV, 0.31.um, consider_overlaps_as_errors: true)
+end.().output("NW.d", "Min. NWell space to external N+Activ not inside ThickGateOx = 0.31")
+-> do
+    NWell.ext_separation(NActHV_ana, 0.62.um)
+end.().output("NW.d1", "Min. NWell space to external N+Activ inside ThickGateOx = 0.62")
+-> do
+    NAct_NWellLV.ext_not(nw_outDev).ext_enclosed(NWell, 0.24.um, consider_overlaps_as_errors: true)
+end.().output("NW.e", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ not inside ThickGateOx = 0.24")
+-> do
+    NAct_NWellHV_ana.ext_outside(SVaricap.ext_or(schottky_nbl1, schottky_nw1, scr1)).ext_enclosed(NWell, 0.62.um, consider_overlaps_as_errors: true)
+end.().output("NW.e1", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx = 0.62")
+-> (;x, y) do
+    x = PAct_PWellLV.ext_coincident_edges(SVaricap, outside: true)
+    y = PAct_PWellLV.ext_with_coincident_edges(x)
+    NWell.ext_separation(PAct_PWellLV.ext_not(y), 0.24.um)
+end.().output("NW.f", "Min. NWell space to substrate tie in P+Activ not inside ThickGateOx = 0.24")
+-> do
+    NWell.ext_separation(PAct_PWellHV_ana.ext_interacting(SVaricap, inverted: true), 0.62.um)
+end.().output("NW.f1", "Min. NWell space to substrate tie in P+Activ inside ThickGateOx = 0.62")
+-> do
+    PWell_block_PWB_a.dup
+end.().output("PWB.a", "Min. PWell:block width = 0.62")
+-> do
+    PWell_block_PWB_b.dup
+end.().output("PWB.b", "Min. PWell:block space or notch = 0.62")
+-> do
+    PWellBlock_unrelatedNWell.ext_separation(PWell_block, 0.62.um, consider_touch_points: false, include_min_angle: false)
+end.().output("PWB.c", "Min. PWell:block space to NWell = 0.62")
+-> do
+    nBuLayGen_nBuLay_NBL_a.dup
+end.().output("NBL.a", "Min. nBuLay width = 1.00")
+-> do
+    nBuLay_block_NBLB_a.dup
+end.().output("NBLB.a", "Min. nBuLay:block width = 1.50")
+-> do
+    nBuLay_block.ext_space(1.0.um)
+end.().output("NBLB.b", "Min. nBuLay:block space or notch = 1.00")
+-> do
+    nBuLay_nBuLay_block_enc.dup
+end.().output("NBLB.c", "Min. nBuLay enclosure of nBuLay:block = 1.00")
+-> do
+    nBuLay_block.ext_separation(nBuLay, 1.5.um, consider_touch_points: false)
+end.().output("NBLB.d", "Min. nBuLay:block space to unrelated nBuLay = 1.50")
+-> do
+    GatPoly.ext_enclosed(Act_Nsram, 0.23.um, metric: projection)
+end.().output("Act.c", "Min. Activ drain/source extension = 0.23")
+-> do
+    Activ_Act_d.dup
+end.().output("Act.d", "Min. Activ area (µm²) = 0.122")
+-> do
+    (Activ.holes - Activ.with_holes).without_holes.ext_not(Activ).ext_with_area([["<", 0.15.um2]])
+end.().output("Act.e", "Min. Activ enclosed area (µm²) = 0.15")
+
+if $fillerRules
+	-> do
+	    Activ_filler.sized(-5.0.um/2.0, acute_limit).sized(5.0.um/2.0, acute_limit)
+	end.().output("AFil.a", "Max. Activ:filler width = 5.00")
+	-> do
+	    Activ_filler.ext_width(1.0.um)
+	end.().output("AFil.a1", "Min. Activ:filler width = 1.00")
+	-> do
+	    Activ_filler.ext_space(0.42.um)
+	end.().output("AFil.b", "Min. Activ:filler space = 0.42")
+	-> do
+	    Activ_filler.ext_outside(PWell_block).ext_separation(PWell_block, 1.5.um, min_angle: 90, max_angle: 180, include_min_angle: false)
+	end.().output("AFil.i", "Min. Activ:filler space to edges of PWell:block = 1.50")
+end
+
+-> do
+    Activ.ext_enclosed(ThickGateOx, 0.27.um)
+end.().output("TGO.a", "Min. ThickGateOx extension over Activ = 0.27")
+-> do
+    ThickGateOx_Act_out_ThickGateOx_TGO_b_sep.dup
+end.().output("TGO.b", "Min. space between ThickGateOx and Activ outside thick gate oxide region = 0.27")
+-> (;a) do
+    a = Gate.ext_enclosed(ThickGateOx, 0.34.um, include_min_angle: false, polygon_output: true)
+    a.ext_and(Activ)
+end.().output("TGO.c", "Min. ThickGateOx extension over GatPoly over Activ = 0.34")
+-> do
+    ThickGateOx_GP_out_ThickGateOx_TGO_d_sep.dup
+end.().output("TGO.d", "Min. space between ThickGateOx and GatPoly over Activ outside thick gate oxide region = 0.34")
+-> do
+    ThickGateOx_TGO_e.dup
+end.().output("TGO.e", "Min. ThickGateOx space (merge if less than this value) = 0.86")
+-> (;a) do
+    a = Activ.ext_not(nmosHV).ext_interacting(nmosHV).ext_space(0.45.um, metric: projection, consider_touch_points: false, polygon_output: true)
+    a.ext_and(Activ).ext_outside(nmoscl.ext_or(scr1))
+end.().output("Gat.a3", "Min. GatPoly width for channel length of 3.3 V NFET = 0.45")
+-> (;b) do
+    b = Activ.ext_not(pmosHV).ext_interacting(pmosHV).ext_space(0.4.um, metric: projection, consider_touch_points: false, polygon_output: true)
+    b.ext_and(Activ)
+end.().output("Gat.a4", "Min. GatPoly width for channel length of 3.3 V PFET = 0.4")
+-> do
+    GP_mosHV_Gat_b1.dup
+end.().output("Gat.b1", "Min. space between unrelated 3.3 V GatPoly over Activ regions = 0.25")
+-> do
+    [ Activ.ext_enclosed(GP_Nsram, 0.18.um),
+      GatPoly.inside(Activ)
+    ].each { |result| result.output("Gat.c", "Min. GatPoly extension over Activ (end cap) = 0.18") }
+end.()
+-> do
+    GatPoly_Gat_e.dup
+end.().output("Gat.e", "Min. GatPoly area (µm²) = 0.09")
+-> do
+    Gate.ext_not(SVaricap).ext_rectangles(true, false, nil, nil, nil, inverted: true)
+end.().output("Gat.f", "45-degree and 90-degree angles for GatPoly on Activ area are not allowed")
+
+if $fillerRules
+	-> do
+	    GatPoly_filler.sized(-5.0.um/2.0, acute_limit).sized(5.0.um/2.0, acute_limit)
+	end.().output("GFil.a", "Max. GatPoly:filler width = 5.00")
+	-> do
+	    GatPoly_filler.ext_width(0.7.um, consider_touch_points: false)
+	end.().output("GFil.b", "Min. GatPoly:filler width = 0.70")
+	-> do
+	    GatPoly_filler.ext_space(0.8.um)
+	end.().output("GFil.c", "Min. GatPoly:filler space = 0.80")
+	-> do
+	    GatPoly_filler.ext_separation(TRANS, 1.1.um)
+	end.().output("GFil.f", "Min. GatPoly:filler space to TRANS = 1.10")
+	-> do
+	    Activ_filler.ext_enclosed(GatPoly_filler, 0.18.um)
+	end.().output("GFil.j", "Min. GatPoly:filler extension over Activ:filler (end cap) = 0.18")
+end
+
+-> do
+    pSD_pSD_a.dup
+end.().output("pSD.a", "Min. pSD width = 0.31")
+-> do
+    pSD.ext_space(0.31.um)
+end.().output("pSD.b", "Min. pSD space or notch (pSD regions separated by less than this value will be merged.) = 0.31")
+-> do
+    Act_NWell.ext_enclosed(pSD_c_tmp1, 0.18.um)
+end.().output("pSD.c", "Min. pSD enclosure of P+Activ in NWell = 0.18")
+-> do
+    pSD.ext_separation(NAct_PWell, 0.18.um, consider_intersecting_edges: false)
+end.().output("pSD.d", "Min. pSD space to unrelated N+Activ in PWell = 0.18")
+-> do
+    pSD.ext_separation(NAct_NWell, 0.03.um, consider_intersecting_edges: false)
+end.().output("pSD.d1", "Min. pSD space to N+Activ in NWell = 0.03")
+-> (;layA, layB, layC, layD) do
+    layA = Act_Nsram.not_inside(pSD).ext_interacting(pSD)
+    layB = layA.ext_and(pSD).ext_outside(SVaricap)
+    layC = layB.ext_width(0.3.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    layD = layC.ext_covering(layB)
+    layD.dup
+end.().output("pSD.e", "Min. pSD overlap of Activ at one position when forming abutted substrate tie (These rules are for abutted ties: An electrical connection from P+Activ to NWell tie (or N+ Activ to P-sub tie) is made through the source/drain silicide. For a good electrical connection rule pSD.g is important together with rule pSD.e or pSD.f (see Fig. 5.10).) = 0.30")
+-> (;abuttedNTAP, bad_region, good_region) do
+    abuttedNTAP = NAct_NWell.ext_interacting(PAct_NWell)
+    bad_region = abuttedNTAP.ext_coincident_part(PAct_NWell, outside: true).ext_overlap(NAct_NWell, 0.3.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    good_region = abuttedNTAP.ext_not(bad_region)
+    abuttedNTAP.ext_outside(good_region)
+end.().output("pSD.f", "Min. Activ extension over pSD at one position when forming abutted NWell tie (These rules are for abutted ties: An electrical connection from P+Activ to NWell tie (or N+ Activ to P-sub tie) is made through the source/drain silicide. For a good electrical connection rule pSD.g is important together with rule pSD.e or pSD.f (see Fig. 5.10).) = 0.30")
+-> (;x, y) do
+    x = NAct_NWell_not_Gate.ext_interacting(SVaricap_or_schottky_nbl1, inverted: true).ext_outside(SRAM)
+    y = PAct_PWell_not_Gate.ext_interacting(SVaricap_or_schottky_nbl1, inverted: true).ext_outside(SRAM)
+    [ x.ext_interacting(Gate, inverted: true).ext_with_area([["<", 0.09.um2]]),
+      y.ext_interacting(Gate, inverted: true).ext_with_area([["<", 0.09.um2]])
+    ].each { |result| result.output("pSD.g", "Min. N+Activ or P+Activ area (µm²) when forming abutted tie (These rules are for abutted ties: An electrical connection from P+Activ to NWell tie (or N+ Activ to P-sub tie) is made through the source/drain silicide. For a good electrical connection rule pSD.g is important together with rule pSD.e or pSD.f (see Fig. 5.10).) = 0.09") }
+end.()
+-> do
+    PGate.ext_enclosed(pSD_Nsram, 0.3.um)
+end.().output("pSD.i", "Min. pSD enclosure of PFET gate not inside ThickGateOx = 0.30")
+-> do
+    PGate.ext_enclosed(pSDHV_Nsram, 0.4.um)
+end.().output("pSD.i1", "Min. pSD enclosure of PFET gate inside ThickGateOx = 0.40")
+-> do
+    pSD_Nsram.ext_separation(NGate_outside_SVaricap, 0.3.um)
+end.().output("pSD.j", "Min. pSD space to NFET gate not inside ThickGateOx = 0.30")
+-> do
+    pSD_Nsram.ext_separation(NGate_outside_SVaricap.inside(ThickGateOx), 0.4.um)
+end.().output("pSD.j1", "Min. pSD space to NFET gate inside ThickGateOx = 0.40")
+-> do
+    pSD_pSD_k.dup
+end.().output("pSD.k", "Min. pSD area (µm²) = 0.25")
+-> do
+    pSDL_enc_area_pSD_l.dup
+end.().output("pSD.l", "Min. pSD enclosed area (µm²) = 0.25")
+-> do
+    GP_Rsil_extended_external_pSD.dup
+end.().output("pSD.m", "Min. pSD space to n-type poly resistors = 0.18")
+-> do
+    Rppd_all_enclosure_pSD.dup
+end.().output("pSD.n", "Min. pSD enclosure of p-type poly resistors = 0.18")
+-> do
+    nSD_block.ext_width(0.31.um)
+end.().output("nSDB.a", "Min. nSD:block width = 0.31")
+-> do
+    nSD_block.ext_space(0.31.um)
+end.().output("nSDB.b", "Min. nSD:block space or notch = 0.31")
+-> do
+    nSD_block.ext_separation(pSD.ext_interacting(nSD_block, inverted: true), 0.31.um, consider_touch_points: false)
+end.().output("nSDB.c", "Min. nSD:block space to pSD = 0.31")
+-> do
+    Cont.ext_outside(nsdb_exlcDev).ext_and(nSD_block)
+end.().output("nSDB.e", "Min. nSD:block space to Cont (nSD:block and Cont do not overlap.) = 0.00")
+-> do
+    EXTBlock.ext_width(0.31.um)
+end.().output("EXTB.a", "Min. EXTBlock width = 0.31")
+-> do
+    EXTBlock.ext_space(0.31.um)
+end.().output("EXTB.b", "Min. EXTBlock space or notch = 0.31")
+-> do
+    EXTBlock.ext_separation(pSD, 0.31.um)
+end.().output("EXTB.c", "Min. EXTBlock space to pSD = 0.31")
+-> do
+    SalBlock.ext_width(0.42.um)
+end.().output("Sal.a", "Min. SalBlock width = 0.42")
+-> do
+    SalBlock.ext_space(0.42.um)
+end.().output("Sal.b", "Min. SalBlock space or notch = 0.42")
+-> do
+    [ GatPoly_res.ext_enclosed(SalBlock, 0.2.um),
+      Activ.ext_enclosed(SalBlock, 0.2.um)
+    ].each { |result| result.output("Sal.c", "Min. SalBlock extension over Activ or GatPoly = 0.20") }
+end.()
+-> do
+    [ SalBlock.ext_separation(GatPoly_res, 0.2.um, consider_touch_points: false),
+      SalBlock.ext_separation(nmosi_relevant_activ, 0.2.um, consider_touch_points: false)
+    ].each { |result| result.output("Sal.d", "Min. SalBlock space to unrelated Activ or GatPoly = 0.20") }
+end.()
+-> do
+    SalBlock.ext_separation(Cont, 0.2.um)
+end.().output("Sal.e", "Min. SalBlock space to Cont = 0.20")
+-> (;x1, viaLargeArray, viaInLargeArray, viaInLargeArray_error, badViaLine) do
+    x1 = Cont.sized((0.20*0.5).um, acute_limit).sized(-(0.20*0.5).um, acute_limit)
+    viaLargeArray = x1.sized(-(((5*0.16)+(3*0.18))/2-0.001).um, acute_limit).sized((((5*0.16)+(3*0.18))/2-0.001).um, acute_limit)
+    viaInLargeArray = Cont.inside(viaLargeArray)
+    viaInLargeArray_error = viaInLargeArray.sized((0.20/2-0.001).um, acute_limit).sized(-(0.20/2-0.001).um, acute_limit)
+    badViaLine = viaInLargeArray_error.ext_not(viaInLargeArray)
+    badViaLine.ext_rectangles(inverted: true)
+end.().output("Cnt.b1", "Min. Cont space in a contact array of more than 4 rows and more then 4 columns (Cnt.b1 is only required in one direction. The distance of the other direction must be at least Cnt.b.) = 0.20")
+-> do
+    temp_layer_4.ext_enclosed(Act_Nsram_or_Activ_mask.ext_not(DigiBnd), 0.07.um, consider_overlaps_as_errors: true)
+end.().output("Cnt.c", "Min. Activ enclosure of Cont = 0.07")
+-> do
+    Cont_SQ.ext_enclosed(GP_Nsram, 0.07.um, consider_overlaps_as_errors: true)
+end.().output("Cnt.d", "Min. GatPoly enclosure of Cont = 0.07")
+-> do
+    Cont_GP.ext_not(SVaricap).ext_separation(Activ, 0.14.um, consider_intersecting_edges: false, consider_touch_points: false)
+end.().output("Cnt.e", "Min. Cont on GatPoly space to Activ = 0.14")
+-> do
+    Cont_Act.ext_not(SVaricap).ext_separation(GP_Nsram, 0.11.um)
+end.().output("Cnt.f", "Min. Cont on Activ space to GatPoly = 0.11")
+-> do
+    Cont_not_Act_GP.dup
+end.().output("Cnt.g", "Cont must be within Activ or GatPoly")
+-> do
+    pSD.ext_separation(Cont_NAct.ext_not(SVaricap), 0.09.um, consider_intersecting_edges: false, consider_touch_points: false)
+end.().output("Cnt.g1", "Min. pSD space to Cont on nSD-Activ = 0.09")
+-> do
+    Cont_PAct_not_SVaricap.ext_enclosed(pSD_Nsram, 0.09.um, consider_intersecting_edges: false, consider_touch_points: false)
+end.().output("Cnt.g2", "Min. pSD overlap of Cont on pSD-Activ = 0.09")
+-> do
+    Cont_not_M1.dup
+end.().output("Cnt.h", "Cont must be covered with Metal1")
+-> do
+    Cont_Act_GP.ext_not(SVaricap)
+end.().output("Cnt.j", "Cont on GatPoly over Activ is not allowed")
+-> do
+    [ ContBar.ext_outside(EdgeSeal).ext_not(schottky_nbl1_or_schottky_nw1).ext_width(0.16.um),
+      Cont_outside_EdgeSeal.ext_not(schottky_nbl1_or_schottky_nw1).sized(-0.16.um/2.0, acute_limit).sized(0.16.um/2.0, acute_limit)
+    ].each { |result| result.output("CntB.a", "Min. and max. ContBar width = 0.16") }
+end.()
+-> do
+    CntB_a1_error.dup
+end.().output("CntB.a1", "Min. ContBar length = 0.34")
+-> do
+    ContBar_outside_TRANS.ext_space(0.28.um)
+end.().output("CntB.b", "Min. ContBar space = 0.28")
+-> do
+    ContBar.ext_separation(Cont_SQ, 0.22.um)
+end.().output("CntB.b2", "Min. ContBar space to Cont = 0.22")
+-> do
+    ContBar.ext_outside(trans_bip).ext_enclosed(nmosi_relevant_activ, 0.07.um, consider_overlaps_as_errors: true)
+end.().output("CntB.c", "Min. Activ enclosure of ContBar = 0.07")
+-> do
+    ContBar.ext_enclosed(GatPoly, 0.07.um, consider_overlaps_as_errors: true)
+end.().output("CntB.d", "Min. GatPoly enclosure of ContBar = 0.07")
+-> do
+    ContBar_GP.ext_separation(Activ, 0.14.um)
+end.().output("CntB.e", "Min. ContBar on GatPoly space to Activ = 0.14")
+-> do
+    ContBar_Act.ext_separation(GatPoly, 0.11.um)
+end.().output("CntB.f", "Min. ContBar on Activ space to GatPoly = 0.11")
+-> do
+    ContBar_not_Act_GP.dup
+end.().output("CntB.g", "ContBar must be within Activ or GatPoly")
+-> do
+    pSD.ext_separation(ContBar_NAct, 0.09.um, max_angle: 0, include_max_angle: true, polygon_output: true)
+end.().output("CntB.g1", "Min. pSD space to ContBar on nSD-Activ = 0.09")
+-> do
+    ContBar_PAct.ext_enclosed(pSD, 0.09.um)
+end.().output("CntB.g2", "Min. pSD overlap of ContBar on pSD-Activ = 0.09")
+-> do
+    ContBar_not_M1.dup
+end.().output("CntB.h", "ContBar must be covered with Metal1")
+-> do
+    ContBar_Act_GP.dup
+end.().output("CntB.j", "ContBar on GatPoly over Activ is not allowed")
+-> do
+    Cont_Nsram.ext_not(M1_Nsram)
+end.().output("M1.c", "Min. Metal1 enclosure of Cont = 0.00")
+-> do
+    Cont_Nsram.ext_outside(EdgeSeal).drc(if_any(
+        !rectangles,
+        primary-secondary(Metal1_outside_EdgeSeal),
+        ((enclosed(Metal1_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("M1.c1", "Min. Metal1 endcap enclosure of Cont (For contacts at Metal1 corners at least one side must be treated as an endcap and for the other sides rule M1.c can be applied.) = 0.05")
+-> do
+    Metal1_outside_EdgeSeal.ext_with_area([["<", 0.09.um2]])
+end.().output("M1.d", "Min. Metal1 area (µm²) = 0.09")
+
+-> do
+    Via1.ext_outside(EdgeSeal).ext_enclosed(Metal2_outside_EdgeSeal, 0.005.um, max_angle: 180)
+end.().output("M2.c", "Min. Metal2 enclosure of Via1 = 0.005")
+-> do
+    V1_Nsram_outside_EdgeSeal.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal2_outside_EdgeSeal),
+        ((enclosed(Metal2_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("M2.c1", "Min. Metal2 endcap enclosure of Via1 (For vias at Metal2 corners at least one side must be treated as an endcap and for the other sides rule M2.c can be applied.) = 0.05")
+-> do
+    Metal2_outside_EdgeSeal.ext_with_area([["<", 0.144.um2]])
+end.().output("M2.d", "Min. Metal2 area (µm²) = 0.144")
+
+-> do
+    Via2.ext_outside(EdgeSeal).ext_enclosed(Metal3_outside_EdgeSeal, 0.005.um, max_angle: 180)
+end.().output("M3.c", "Min. Metal3 enclosure of Via2 = 0.005")
+-> do
+    V2_Nsram_outside_EdgeSeal.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal3_outside_EdgeSeal),
+        ((enclosed(Metal3_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("M3.c1", "Min. Metal3 endcap enclosure of Via2 (For vias at Metal3 corners at least one side must be treated as an endcap and for the other sides rule M3.c can be applied.) = 0.05")
+-> do
+    Metal3_outside_EdgeSeal.ext_with_area([["<", 0.144.um2]])
+end.().output("M3.d", "Min. Metal3 area (µm²) = 0.144")
+
+-> do
+    Via3.ext_outside(EdgeSeal).ext_enclosed(Metal4_outside_EdgeSeal, 0.005.um, max_angle: 180)
+end.().output("M4.c", "Min. Metal4 enclosure of Via3 = 0.005")
+-> do
+    V3_Nsram_outside_EdgeSeal.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal4_outside_EdgeSeal),
+        ((enclosed(Metal4_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("M4.c1", "Min. Metal4 endcap enclosure of Via3 (For vias at Metal4 corners at least one side must be treated as an endcap and for the other sides rule M4.c can be applied.) = 0.05")
+-> do
+    Metal4_outside_EdgeSeal.ext_with_area([["<", 0.144.um2]])
+end.().output("M4.d", "Min. Metal4 area (µm²) = 0.144")
+
+-> do
+    Via4.ext_outside(EdgeSeal).ext_enclosed(Metal5_outside_EdgeSeal, 0.005.um, max_angle: 180)
+end.().output("M5.c", "Min. Metal5 enclosure of Via4 = 0.005")
+-> do
+    V4_Nsram_outside_EdgeSeal.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal5_outside_EdgeSeal),
+        ((enclosed(Metal5_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("M5.c1", "Min. Metal5 endcap enclosure of Via4 (For vias at Metal5 corners at least one side must be treated as an endcap and for the other sides rule M5.c can be applied.) = 0.05")
+-> do
+    Metal5_outside_EdgeSeal.ext_with_area([["<", 0.144.um2]])
+end.().output("M5.d", "Min. Metal5 area (µm²) = 0.144")
+
+
+if $fillerRules
+	-> do
+	    Metal1_filler.ext_width(1.0.um)
+	end.().output("M1Fil.a1", "Min. Metal1:filler width = 1.00")
+	-> do
+	    Metal1_filler.ext_space(0.42.um)
+	end.().output("M1Fil.b", "Min. Metal1:filler space = 0.42")
+	-> do
+	    Metal1_filler.ext_separation(TRANS, 1.0.um)
+	end.().output("M1Fil.d", "Min. Metal1:filler space to TRANS = 1.00")
+end
+
+
+if $fillerRules
+	-> do
+	    Metal2_filler.ext_width(1.0.um)
+	end.().output("M2Fil.a1", "Min. Metal2:filler width = 1.00")
+	-> do
+	    Metal2_filler.ext_space(0.42.um)
+	end.().output("M2Fil.b", "Min. Metal2:filler space = 0.42")
+	-> do
+	    Metal2_filler.ext_separation(TRANS, 1.0.um)
+	end.().output("M2Fil.d", "Min. Metal2:filler space to TRANS = 1.00")
+end
+
+if $fillerRules
+	-> do
+	    Metal3_filler.ext_width(1.0.um)
+	end.().output("M3Fil.a1", "Min. Metal3:filler width = 1.00")
+	-> do
+	    Metal3_filler.ext_space(0.42.um)
+	end.().output("M3Fil.b", "Min. Metal3:filler space = 0.42")
+	-> do
+	    Metal3_filler.ext_separation(TRANS, 1.0.um)
+	end.().output("M3Fil.d", "Min. Metal3:filler space to TRANS = 1.00")
+end
+
+if $fillerRules
+	-> do
+	    Metal4_filler.ext_width(1.0.um)
+	end.().output("M4Fil.a1", "Min. Metal4:filler width = 1.00")
+	-> do
+	    Metal4_filler.ext_space(0.42.um)
+	end.().output("M4Fil.b", "Min. Metal4:filler space = 0.42")
+	-> do
+	    Metal4_filler.ext_separation(TRANS, 1.0.um)
+	end.().output("M4Fil.d", "Min. Metal4:filler space to TRANS = 1.00")
+end
+
+if $fillerRules
+	-> do
+	    Metal5_filler.ext_width(1.0.um)
+	end.().output("M5Fil.a1", "Min. Metal5:filler width = 1.00")
+	-> do
+	    Metal5_filler.ext_space(0.42.um)
+	end.().output("M5Fil.b", "Min. Metal5:filler space = 0.42")
+	-> do
+	    Metal5_filler.ext_separation(TRANS, 1.0.um)
+	end.().output("M5Fil.d", "Min. Metal5:filler space to TRANS = 1.00")
+end
+
+-> (;via1NoES, x1, via1Array, via1In, via1BigArray, via1SepErr_1, via1SepErr_2) do
+    via1NoES = Via1_edgC1_out.dup
+    x1 = via1NoES.sized((0.29*0.5).um, acute_limit).sized(-(0.29*0.5).um, acute_limit)
+    via1Array = x1.sized(-(((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit).sized((((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit)
+    via1In = via1NoES.inside(via1Array)
+    via1BigArray = via1In.sized(0.143.um, acute_limit).sized(-0.143.um, acute_limit)
+    via1SepErr_1 = via1BigArray.ext_not(via1In)
+    via1SepErr_2 = via1SepErr_1.ext_not(via1SepErr_1.ext_rectangles)
+    via1SepErr_2.ext_or(via1In.ext_touching(via1SepErr_2))
+end.().output("V1.b1", "Min. Via1 space in an array of more than 3 rows and more then 3 columns (V1.b1 is only required in one direction. The distance of the other direction must be at least V1.b.) = 0.29")
+-> (;x) do
+    x = V1_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
+    x.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal1_outside_EdgeSeal),
+        (if_any(enclosed(Metal1_outside_EdgeSeal) < 0.01.um, enclosed(Metal1_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("V1.c1", "Min. Metal1 endcap enclosure of Via1 (For Via1 at Metal1 corners at least one side must be treated as an endcap and for the other sides rule V1.c can be applied.) = 0.05")
+
+-> (;via2NoES, x1, via2Array, via2In, via2BigArray, via2SepErr_1, via2SepErr_2) do
+    via2NoES = Via2_edgC1_out.dup
+    x1 = via2NoES.sized((0.29*0.5).um, acute_limit).sized(-(0.29*0.5).um, acute_limit)
+    via2Array = x1.sized(-(((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit).sized((((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit)
+    via2In = via2NoES.inside(via2Array)
+    via2BigArray = via2In.sized(0.143.um, acute_limit).sized(-0.143.um, acute_limit)
+    via2SepErr_1 = via2BigArray.ext_not(via2In)
+    via2SepErr_2 = via2SepErr_1.ext_not(via2SepErr_1.ext_rectangles)
+    via2SepErr_2.ext_or(via2In.ext_touching(via2SepErr_2))
+end.().output("V2.b1", "Min. Via2 space in an array of more than 3 rows and more then 3 columns (V2.b1 is only required in one direction. The distance of the other direction must be at least V2.b.) = 0.29")
+-> (;x) do
+    x = V2_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
+    x.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal2_outside_EdgeSeal),
+        (if_any(enclosed(Metal2_outside_EdgeSeal) < 0.005.um, enclosed(Metal2_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("V2.c1", "Min. Metal2 endcap enclosure of Via2 (For Via2 at Metal2 corners at least one side must be treated as an endcap and for the other sides rule V2.c can be applied.) = 0.05")
+
+-> (;via3NoES, x1, via3Array, via3In, via3BigArray, via3SepErr_1, via3SepErr_2) do
+    via3NoES = Via3_edgC1_out.dup
+    x1 = via3NoES.sized((0.29*0.5).um, acute_limit).sized(-(0.29*0.5).um, acute_limit)
+    via3Array = x1.sized(-(((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit).sized((((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit)
+    via3In = via3NoES.inside(via3Array)
+    via3BigArray = via3In.sized(0.143.um, acute_limit).sized(-0.143.um, acute_limit)
+    via3SepErr_1 = via3BigArray.ext_not(via3In)
+    via3SepErr_2 = via3SepErr_1.ext_not(via3SepErr_1.ext_rectangles)
+    via3SepErr_2.ext_or(via3In.ext_touching(via3SepErr_2))
+end.().output("V3.b1", "Min. Via3 space in an array of more than 3 rows and more then 3 columns (V3.b1 is only required in one direction. The distance of the other direction must be at least V3.b.) = 0.29")
+-> (;x) do
+    x = V3_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
+    x.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal3_outside_EdgeSeal),
+        (if_any(enclosed(Metal3_outside_EdgeSeal) < 0.005.um, enclosed(Metal3_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("V3.c1", "Min. Metal3 endcap enclosure of Via3 (For Via3 at Metal3 corners at least one side must be treated as an endcap and for the other sides rule V3.c can be applied.) = 0.05")
+
+-> (;via4NoES, x1, via4Array, via4In, via4BigArray, via4SepErr_1, via4SepErr_2) do
+    via4NoES = Via4_edgC1_out.dup
+    x1 = via4NoES.sized((0.29*0.5).um, acute_limit).sized(-(0.29*0.5).um, acute_limit)
+    via4Array = x1.sized(-(((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit).sized((((4*0.19+3*0.22)-0.05)*0.5).um, acute_limit)
+    via4In = via4NoES.inside(via4Array)
+    via4BigArray = via4In.sized(0.143.um, acute_limit).sized(-0.143.um, acute_limit)
+    via4SepErr_1 = via4BigArray.ext_not(via4In)
+    via4SepErr_2 = via4SepErr_1.ext_not(via4SepErr_1.ext_rectangles)
+    via4SepErr_2.ext_or(via4In.ext_touching(via4SepErr_2))
+end.().output("V4.b1", "Min. Via4 space in an array of more than 3 rows and more then 3 columns (V4.b1 is only required in one direction. The distance of the other direction must be at least V4.b.) = 0.29")
+-> (;x) do
+    x = V4_Nsram_outside_EdgeSeal.ext_rectangles(false, false, [["==", 0.19.um]], [["==", 0.19.um]], nil)
+    x.drc(if_any(
+        !rectangles,
+        primary-secondary(Metal4_outside_EdgeSeal),
+        (if_any(enclosed(Metal4_outside_EdgeSeal) < 0.005.um, enclosed(Metal4_outside_EdgeSeal, projection, whole_edges, one_side_allowed, two_opposite_sides_allowed) < 0.05.um))))
+end.().output("V4.c1", "Min. Metal4 endcap enclosure of Via4 (For Via4 at Metal4 corners at least one side must be treated as an endcap and for the other sides rule V4.c can be applied.) = 0.05")
+
+
+if $fillerRules
+	-> do
+	    TopMetal1_filler.ext_width(5.0.um)
+	end.().output("TM1Fil.a", "Min. TopMetal1:filler width = 5.00")
+	-> do
+	    TopMetal1_filler.ext_space(3.0.um)
+	end.().output("TM1Fil.b", "Min. TopMetal1:filler space = 3.00")
+	-> do
+	    TopMetal1_filler.ext_separation(TRANS, 4.9.um)
+	end.().output("TM1Fil.d", "Min. TopMetal1:filler space to TRANS = 4.90")
+end
+
+if $fillerRules
+	-> do
+	    TopMetal2_filler.ext_width(5.0.um)
+	end.().output("TM2Fil.a", "Min. TopMetal2:filler width = 5.00")
+	-> do
+	    TopMetal2_filler.ext_space(3.0.um)
+	end.().output("TM2Fil.b", "Min. TopMetal2:filler space = 3.00")
+	-> do
+	    TopMetal2_filler.ext_separation(TRANS, 4.9.um)
+	end.().output("TM2Fil.d", "Min. TopMetal2:filler space to TRANS = 4.90")
+end
+
+-> do
+    subst_tie_hole_w_npn.ext_interacting(TRANS, inverted: true)
+end.().output("npnG2.b", "NPN Substrate-Tie must enclose TRANS")
+-> do
+    npnPActRing.ext_enclosed(subst_tie_npn, 0.2.um, consider_intersecting_edges: false)
+end.().output("npnG2.c", "pSD enclosure of Activ inside NPN Substrate-Tie = 0.20")
+-> do
+    NAct.ext_separation(subst_tie_trans, 1.21.um)
+end.().output("npnG2.d.N_Activ", "Min. unrelated N+Activ space to TRANS = 1.21")
+-> do
+    NWell.ext_separation(subst_tie_trans, 1.21.um)
+end.().output("npnG2.d.NWell", "Min. unrelated NWell space to TRANS = 1.21")
+-> do
+    PWell_block.ext_separation(subst_tie_trans, 1.21.um)
+end.().output("npnG2.d.PWell_block", "Min. unrelated PWell:block space to TRANS = 1.21")
+-> do
+    nBuLayGen_nBuLay.ext_separation(subst_tie_trans, 1.21.um)
+end.().output("npnG2.d.nBuLay", "Min. unrelated nBuLay space to TRANS = 1.21")
+-> do
+    nSD_block.ext_outside(subst_tie_hole_w_npn).ext_separation(subst_tie_trans, 1.21.um)
+end.().output("npnG2.d.nSD_block", "Min. unrelated nSD:block space to TRANS = 1.21")
+-> do
+    GP_Nsram.ext_separation(subst_tie_trans, 0.9.um)
+end.().output("npnG2.d1", "Min. unrelated GatPoly space to TRANS = 0.90")
+-> do
+    SalBlock.ext_separation(subst_tie_trans, 0.9.um)
+end.().output("npnG2.d2", "Min. unrelated SalBlock space to TRANS = 0.90")
+-> do
+    Cont.ext_separation(subst_tie_trans, 0.27.um)
+end.().output("npnG2.e", "Min. unrelated Cont space to TRANS = 0.27")
+-> do
+    emit_npn13G2.ext_with_length([[">", 0.07.um], ["<", 0.9.um]])
+end.().output("npn13G2.a", "Min. and max. npn13G2 emitter length = 0.90")
+-> do
+    emit_npn13G2L.ext_with_length([[">", 0.07.um], ["<", 1.0.um]])
+end.().output("npn13G2L.a", "Min. npn13G2L emitter length = 1.00")
+-> do
+    emit_npn13G2L.ext_with_length([[">", 2.5.um]])
+end.().output("npn13G2L.b", "Max. npn13G2L emitter length = 2.50")
+-> do
+    emit_npn13G2V.ext_with_length([[">", 0.12.um], ["<", 1.0.um]])
+end.().output("npn13G2V.a", "Min. npn13G2V emitter length = 1.00")
+-> do
+    emit_npn13G2V.ext_with_length([[">", 5.0.um]])
+end.().output("npn13G2V.b", "Max. npn13G2V emitter length = 5.00")
+-> do
+    Rsil_all.ext_width(0.5.um)
+end.().output("Rsil.a", "Min. GatPoly width = 0.50")
+-> do
+    RES.ext_separation(Cont, 0.12.um)
+end.().output("Rsil.b", "Min. RES space to Cont = 0.12")
+-> (;x) do
+    x = rsil_gatpoly.ext_enclosed(RES, 1.0.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    x.ext_outside(Cont)
+end.().output("Rsil.c", "Min. RES extension over GatPoly = 0.00")
+-> do
+    GP_Rsil_extended_external_pSD.dup
+end.().output("Rsil.d", "Min. pSD space to GatPoly = 0.18")
+-> do
+    GP_Rsil_extended.ext_enclosed(EXTBlock, 0.18.um)
+end.().output("Rsil.e", "Min. EXTBlock enclosure of GatPoly = 0.18")
+-> do
+    RES.ext_width(0.5.um)
+end.().output("Rsil.f", "Min. RES length = 0.50")
+-> do
+    Rppd_all.ext_width(0.5.um)
+end.().output("Rppd.a", "Min. GatPoly width = 0.50")
+-> do
+    Rppd_all_enclosure_pSD.dup
+end.().output("Rppd.b", "Min. pSD enclosure of GatPoly = 0.18")
+-> (;x) do
+    x = SalBlock_Rppd.ext_extended(0.2.um, 0.2.um)
+    [ Rppd_Cont.ext_separation(SalBlock_Rppd, 0.2.um),
+      Rppd_Cont.ext_interacting(x, inverted: true)
+    ].each { |result| result.output("Rppd.c", "Min. and max. SalBlock space to Cont = 0.20") }
+end.()
+-> do
+    GP_Rppd_extended.ext_enclosed(EXTBlock, 0.18.um, consider_intersecting_edges: false, consider_touch_points: false)
+end.().output("Rppd.d", "Min. EXTBlock enclosure of GatPoly = 0.18")
+-> do
+    SalBlock_Rppd.ext_width(0.5.um)
+end.().output("Rppd.e", "Min. SalBlock length = 0.50")
+-> do
+    Rhigh_a.ext_width(0.5.um)
+end.().output("Rhi.a", "Min. GatPoly width = 0.50")
+-> do
+    Rhigh_identical_nsd_psd.dup
+end.().output("Rhi.b", "pSD and nSD are identical (nSD:drawing is only permitted within Rhigh resistors. Apart from that, nSD is generated automatically (see section 4.2).)")
+-> do
+    GP_Rhigh_extended.ext_enclosed(pSD_nSD, 0.18.um)
+end.().output("Rhi.c", "Min. pSD and nSD enclosure of GatPoly = 0.18")
+-> (;x) do
+    x = SalBlock_Rhigh.ext_extended(0.2.um, 0.2.um)
+    [ Rhigh_Cont.ext_separation(SalBlock_Rhigh, 0.2.um),
+      Rhigh_Cont.ext_interacting(x, inverted: true)
+    ].each { |result| result.output("Rhi.d", "Min. and max. SalBlock space to Cont = 0.20") }
+end.()
+-> do
+    GP_Rhigh_extended.ext_enclosed(EXTBlock, 0.18.um, consider_intersecting_edges: false, consider_touch_points: false)
+end.().output("Rhi.e", "Min. EXTBlock enclosure of GatPoly = 0.18")
+-> do
+    SalBlock_Rhigh.ext_width(0.5.um)
+end.().output("Rhi.f", "Min. SalBlock length = 0.50")
+-> do
+    Iso_PWell_Act.ext_outside(schottky_nbl1).ext_enclosed(nBuLay, 1.24.um)
+end.().output("nmosi.b", "Min. nBuLay enclosure of Iso-PWell-Activ (Iso-PWell-Activ = Activ AND nBuLay AND PWell) = 1.24")
+-> do
+    Iso_PWell_Act.ext_not(scr1_or_schottky_nbl1).ext_separation(NWell.with_holes, 0.39.um, max_angle: 180)
+end.().output("nmosi.c", "Min. NWell space to Iso-PWell-Activ = 0.39")
+-> do
+    NWell_nBuLay.ext_width(0.62.um)
+end.().output("nmosi.d", "Min. NWell-nBuLay width forming an unbroken ring around any Iso-PWell-Activ (NWell-nBuLay = NWell AND nBuLay) = 0.62")
+-> do
+    nSDBlock_Iso_PWell_Act.ext_width(0.62.um)
+end.().output("nmosi.f", "Min. nSD:block width to separate ptap in nmosi = 0.62")
+-> (;tmp, x1) do
+    tmp = SalBlock_Iso_PWell_Act.ext_not(scr1_or_schottky_nbl1)
+    x1 = nSDBlock_Iso_PWell_Act.ext_enclosed(tmp.ext_not(tmp.ext_covering(npnMPA)), 0.15.um, polygon_output: true)
+    x1.ext_and(Activ)
+end.().output("nmosi.g", "Min. SalBlock overlap of nSD:block over Activ = 0.15")
+-> do
+    schottky_contbar.ext_enclosed(schottky_pwb, 0.25.um)
+end.().output("Sdiod.a", "Min. and max. PWell:block enclosure of ContBar = 0.25")
+-> do
+    schottky_contbar.ext_enclosed(schottky_nSDBlock, 0.4.um)
+end.().output("Sdiod.b", "Min. and max. nSD:block enclosure of ContBar = 0.40")
+-> do
+    schottky_contbar.ext_enclosed(schottky_salblock, 0.45.um)
+end.().output("Sdiod.c", "Min. and max. SalBlock enclosure of ContBar = 0.45")
+
+if $recommendedRules
+	-> do
+	    Passiv_dfpad.ext_width(30.0.um)
+	end.().output("Pad.aR", "Min. recommended Pad width = 30.00")
+end
+
+-> do
+    Passiv_Pad_a1.dup
+end.().output("Pad.a1", "Max. Pad width = 150.00")
+
+if $recommendedRules
+	-> do
+	    Passiv_dfpad.ext_space(8.4.um)
+	end.().output("Pad.bR", "Min. recommended Pad space = 8.40")
+end
+
+-> do
+    Passiv_dfpad.ext_separation(Act_EdgeSeal_not_HRACT, 7.5.um)
+end.().output("Pad.d", "Min. Pad space to EdgeSeal = 7.50")
+
+if $recommendedRules
+	-> do
+	    Passiv_dfpad.ext_separation(Act_EdgeSeal_not_HRACT, 25.0.um)
+	end.().output("Pad.dR", "Min. recommended Pad to EdgeSeal space (Distance of Pad opening to EdgeSeal strongly depends on bonding procedure. For flip chip bonding via solder bumps (see section 6.9.1) or copper pillars (see section 6.9.2) or manual bonding a bigger distance may be required. We strongly recommend 25 µm distance for wedge-wedge wire bonding.) = 25.00")
+	-> do
+	    Passiv_dfpad.ext_separation(Act_Not_EdgeSeal, 11.2.um)
+	end.().output("Pad.d1R", "Min. recommended Pad to Activ (inside chip area) space = 11.20")
+	-> do
+	    TopVia2.ext_enclosed(belowTopMetaln_dfpad, 1.4.um)
+	end.().output("Pad.gR", "Min. recommended TopMetal1 (within dfpad) enclosure of TopVia2 = 1.40")
+	-> do
+	    [ MIM.ext_and(Passiv_dfpad),
+	      Gate.ext_and(Passiv_dfpad)
+	    ].each { |result| result.output("Pad.jR", "No devices under Pad allowed (Components under pads can be damaged by mechanical stress.)") }
+	end.()
+	-> do
+	    TopVia2.inside(Passiv_dfpad)
+	end.().output("Pad.kR", "TopVia2 under Pad not allowed (TopVia2 may be damaged during packaging process, we recommend not to use them below Passiv.)")
+end
+
+-> do
+    cupPad_candidat.ext_space(50.0.um, polygon_output: true)
+end.().output("Padc.b", "Min. CuPillarPad space = Table 6.1")
+-> do
+    cupPad_candidat.ext_separation(Act_EdgeSeal_not_HRACT, 30.0.um, consider_touch_points: false, polygon_output: true)
+end.().output("Padc.d", "Min. CuPillarPad space to EdgeSeal = 30.00")
+-> do
+    Activ_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Activ", "Min. EdgeSeal-Activ width = 3.50")
+-> do
+    pSD_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_pSD", "Min. EdgeSeal-pSD width = 3.50")
+-> do
+    Metal1_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Metal1", "Min. EdgeSeal-Metal1 width = 3.50")
+-> do
+    Metal2_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Metal2", "Min. EdgeSeal-Metal2 width = 3.50")
+-> do
+    Metal3_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Metal3", "Min. EdgeSeal-Metal3 width = 3.50")
+-> do
+    Metal4_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Metal4", "Min. EdgeSeal-Metal4 width = 3.50")
+-> do
+    Metal5_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_Metal5", "Min. EdgeSeal-Metal5 width = 3.50")
+-> do
+    TopMetal1_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_TopMetal1", "Min. EdgeSeal-TopMetal1 width = 3.50")
+-> do
+    TopMetal2_edgA1_in.ext_width(3.5.um, metric: projection)
+end.().output("Seal.a_TopMetal2", "Min. EdgeSeal-TopMetal2 width = 3.50")
+-> do
+    [ Cont_edgC1_in.ext_width(0.16.um),
+      Cont_edgC1_in.sized(-0.16.um/2.0, acute_limit).sized(0.16.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c", "EdgeSeal-Cont ring width = 0.16") }
+end.()
+-> do
+    [ Via1_edgC1_in.ext_width(0.19.um),
+      Via1_edgC1_in.sized(-0.19.um/2.0, acute_limit).sized(0.19.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c1.Via1", "EdgeSeal-Via1 ring width = 0.19") }
+end.()
+-> do
+    [ Via2_edgC1_in.ext_width(0.19.um),
+      Via2_edgC1_in.sized(-0.19.um/2.0, acute_limit).sized(0.19.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c1.Via2", "EdgeSeal-Via2 ring width = 0.19") }
+end.()
+-> do
+    [ Via3_edgC1_in.ext_width(0.19.um),
+      Via3_edgC1_in.sized(-0.19.um/2.0, acute_limit).sized(0.19.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c1.Via3", "EdgeSeal-Via3 ring width = 0.19") }
+end.()
+-> do
+    [ Via4_edgC1_in.ext_width(0.19.um),
+      Via4_edgC1_in.sized(-0.19.um/2.0, acute_limit).sized(0.19.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c1.Via4", "EdgeSeal-Via4 ring width = 0.19") }
+end.()
+-> do
+    [ TopVia1_edgC1_in.ext_width(0.42.um),
+      TopVia1_edgC1_in.sized(-0.42.um/2.0, acute_limit).sized(0.42.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c2", "EdgeSeal-TopVia1 ring width = 0.42") }
+end.()
+-> do
+    [ TopVia2_edgC1_in.ext_width(0.9.um),
+      TopVia2_edgC1_in.sized(-0.9.um/2.0, acute_limit).sized(0.9.um/2.0, acute_limit)
+    ].each { |result| result.output("Seal.c3", "EdgeSeal-TopVia2 ring width = 0.90") }
+end.()
+-> do
+    Act_EdgeSeal_Cont_edgC1_in_enc.dup
+end.().output("Seal.d.Cont", "Min. EdgeSeal-Activ enclosure of EdgeSeal-Cont ring = 1.30")
+-> do
+    Act_EdgeSeal_Via1_edgC1_in_enc.dup
+end.().output("Seal.d.Via1", "Min. EdgeSeal-Activ enclosure of EdgeSeal-Via1 ring = 1.30")
+-> do
+    Act_EdgeSeal_Via2_edgC1_in_enc.dup
+end.().output("Seal.d.Via2", "Min. EdgeSeal-Activ enclosure of EdgeSeal-Via2 ring = 1.30")
+-> do
+    Act_EdgeSeal_Via3_edgC1_in_enc.dup
+end.().output("Seal.d.Via3", "Min. EdgeSeal-Activ enclosure of EdgeSeal-Via3 ring = 1.30")
+-> do
+    Act_EdgeSeal_Via4_edgC1_in_enc.dup
+end.().output("Seal.d.Via4", "Min. EdgeSeal-Activ enclosure of EdgeSeal-Via4 ring = 1.30")
+-> do
+    Act_EdgeSeal_TopVia1_edgC1_in_enc.dup
+end.().output("Seal.d.TopVia1", "Min. EdgeSeal-Activ enclosure of EdgeSeal-TopVia1 ring = 1.30")
+-> do
+    Act_EdgeSeal_TopVia2_edgC1_in_enc.dup
+end.().output("Seal.d.TopVia2", "Min. EdgeSeal-Activ enclosure of EdgeSeal-TopVia2 ring = 1.30")
+-> do
+    ring_passiv.ext_not(ring_passiv.sized(-4.2.um/2.0+1.dbu, acute_limit).sized(4.2.um/2.0-1.dbu, acute_limit))
+end.().output("Seal.e", "Min. Passiv ring width outside of sealring = 4.20")
+-> do
+    ring_passiv_Activ_edgA1_in_Seal_f_Activ_sep.dup
+end.().output("Seal.f.Activ", "Min. Passiv ring outside of sealring space to EdgeSeal-Activ = 1.00")
+-> do
+    ring_passiv_pSD_edgA1_in_Seal_f_pSD_sep.dup
+end.().output("Seal.f.pSD", "Min. Passiv ring outside of sealring space to EdgeSeal-pSD = 1.00")
+-> do
+    ring_passiv_Metal1_edgA1_in_Seal_f_Metal1_sep.dup
+end.().output("Seal.f.Metal1", "Min. Passiv ring outside of sealring space to EdgeSeal-Metal1 = 1.00")
+-> do
+    ring_passiv_Metal2_edgA1_in_Seal_f_Metal2_sep.dup
+end.().output("Seal.f.Metal2", "Min. Passiv ring outside of sealring space to EdgeSeal-Metal2 = 1.00")
+-> do
+    ring_passiv_Metal3_edgA1_in_Seal_f_Metal3_sep.dup
+end.().output("Seal.f.Metal3", "Min. Passiv ring outside of sealring space to EdgeSeal-Metal3 = 1.00")
+-> do
+    ring_passiv_Metal4_edgA1_in_Seal_f_Metal4_sep.dup
+end.().output("Seal.f.Metal4", "Min. Passiv ring outside of sealring space to EdgeSeal-Metal4 = 1.00")
+-> do
+    ring_passiv_Metal5_edgA1_in_Seal_f_Metal5_sep.dup
+end.().output("Seal.f.Metal5", "Min. Passiv ring outside of sealring space to EdgeSeal-Metal5 = 1.00")
+-> do
+    ring_passiv_TopMetal1_edgA1_in_Seal_f_TopMetal1_sep.dup
+end.().output("Seal.f.TopMetal1", "Min. Passiv ring outside of sealring space to EdgeSeal-TopMetal1 = 1.00")
+-> do
+    ring_passiv_TopMetal2_edgA1_in_Seal_f_TopMetal2_sep.dup
+end.().output("Seal.f.TopMetal2", "Min. Passiv ring outside of sealring space to EdgeSeal-TopMetal2 = 1.00")
+-> do
+    MIM_Mim_a.dup
+end.().output("MIM.a", "Min. MIM width = 1.14")
+-> do
+    MIM.ext_space(0.6.um)
+end.().output("MIM.b", "Min. MIM space = 0.60")
+-> do
+    TopMetal1.ext_separation(MIM, 0.6.um)
+end.().output("MIM.e", "Min. TopMetal1 space to MIM = 0.60")
+-> do
+    MIM_Mim_f.dup
+end.().output("MIM.f", "Min. MIM area per MIM device (µm²) = 1.30")
+-> do
+    MIM.ext_with_area([[">", 5625.0.um2]])
+end.().output("MIM.g", "Max. MIM area per MIM device (µm²) = 5625.00")
+-> do
+    MIM.ext_not(temp_layer_1)
+end.().output("MIM.h", "TopVia1 must be over MIM")
+
+if $latchUpRules
+	-> (;x) do
+	    x = all_ntie.ext_enlarge_inside(NWell, 20.0.um, 0.1.um)
+	    PAct_NWell.ext_not(x).ext_outside(devExclud)
+	end.().output("LU.a", "Max. space from any portion of P+Activ inside NWell to an nSD-NWell tie = 20.00")
+	-> (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
+	    sizedA = Abut_NWell_Tie_Cont.ext_enlarge_inside(Act_connect.ext_interacting(Gate), 6.um, 0.21.um).ext_interacting(Cont_not_outside_NAct, inverted: true)
+	    drcErrA = Abut_NWell_Tie.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	    drcErrA_Poly.ext_interacting(Cont_not_outside_NAct, inverted: true)
+	end.().output("LU.c", "Max. extension of an abutted NWell tie beyond Cont = 6.00")
+	-> (;sizedA, drcErrA, drcErrA_Edge, drcErrA_Poly) do
+	    sizedA = Abut_PWell_Tie_Cont.ext_enlarge_inside(Act_connect, 6.um, 0.21.um).ext_interacting(Cont_not_outside_PAct, inverted: true)
+	    drcErrA = Abut_PWell_Tie.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA_Poly = drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	    drcErrA_Poly.ext_interacting(Cont_not_outside_PAct, inverted: true)
+	end.().output("LU.c1", "Max. extension of an abutted substrate tie beyond Cont = 6.00")
+	-> (;sizedA, tmp, drcErrA, drcErrA_Edge) do
+	    sizedA = size_Cont.dup
+	    tmp = NAct_NWell.ext_outside(scr1).ext_interacting(Activ.ext_interacting(GatPoly), inverted: true)
+	    drcErrA = tmp.ext_not(sizedA)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	end.().output("LU.d", "Max. extension of NWell tie Activ tie beyond Cont = 6.00")
+	-> (;sizedA, drcErrA, drcErrA_Edge) do
+	    sizedA = Cont.ext_enlarge_inside(Act_connect, 6.um, 0.21.um)
+	    drcErrA = PWell_Tie_wo_varicap_abut.ext_not(sizedA).ext_not(GatPoly)
+	    drcErrA_Edge = drcErrA.ext_coincident_part(sizedA, outside: true)
+	    drcErrA.ext_with_coincident_edges(drcErrA_Edge)
+	end.().output("LU.d1", "Max. extension of an substrate tie Activ beyond Cont = 6.00")
+end
+
+-> do
+    Metal1_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.M1", "Min. Metal1:slit width = 2.80")
+-> (;tmp) do
+    tmp = Metal1_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    Metal1_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.M1", "Max. Metal1:slit width = 20.00")
+-> (;m1mitSlots, m1_L1, m1_L2) do
+    m1mitSlots = sltc_M1.ext_not(Metal1_slit)
+    m1_L1 = m1mitSlots.sized(-3.um, acute_limit)
+    m1_L2 = m1_L1.sized(-12.um, acute_limit)
+    m1_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.M1", "Max. Metal1 width without requiring a slit = 30.00")
+-> do
+    Metal1_slit.ext_and(pad)
+end.().output("Slt.e.M1", "No slits required on pads")
+-> do
+    Metal1_slit_not_pad.ext_enclosed(Metal1, 1.0.um)
+end.().output("Slt.f.M1", "Min. Metal1 enclosure of Metal1:slit = 1.00")
+-> do
+    [ Metal1_slit_not_pad.ext_separation(Cont, 0.3.um),
+      Metal1_slit_not_pad.ext_separation(Via1, 0.3.um)
+    ].each { |result| result.output("Slt.h1", "Min. Metal1:slit space to Cont and Via1 = 0.30") }
+end.()
+-> do
+    Metal2_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.M2", "Min. Metal2:slit width = 2.80")
+-> (;tmp) do
+    tmp = Metal2_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    Metal2_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.M2", "Max. Metal2:slit width = 20.00")
+-> (;m2mitSlots, m2_L1, m2_L2) do
+    m2mitSlots = sltc_M2.ext_not(Metal2_slit)
+    m2_L1 = m2mitSlots.sized(-3.um, acute_limit)
+    m2_L2 = m2_L1.sized(-12.um, acute_limit)
+    m2_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.M2", "Max. Metal2 width without requiring a slit = 30.00")
+-> do
+    Metal2_slit.ext_and(pad)
+end.().output("Slt.e.M2", "No slits required on pads")
+-> do
+    Metal2_slit_not_pad.ext_enclosed(Metal2, 1.0.um)
+end.().output("Slt.f.M2", "Min. Metal2 enclosure of Metal2:slit = 1.00")
+-> do
+    [ Metal2_slit_not_pad.ext_separation(Via1, 0.3.um),
+      Metal2_slit_not_pad.ext_separation(Via2, 0.3.um)
+    ].each { |result| result.output("Slt.h2.M2", "Min. Metal2:slit space to Via1 and Via2 = 0.30") }
+end.()
+-> do
+    Metal3_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.M3", "Min. Metal3:slit width = 2.80")
+-> (;tmp) do
+    tmp = Metal3_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    Metal3_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.M3", "Max. Metal3:slit width = 20.00")
+-> (;m3mitSlots, m3_L1, m3_L2) do
+    m3mitSlots = sltc_M3.ext_not(Metal3_slit)
+    m3_L1 = m3mitSlots.sized(-3.um, acute_limit)
+    m3_L2 = m3_L1.sized(-12.um, acute_limit)
+    m3_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.M3", "Max. Metal3 width without requiring a slit = 30.00")
+-> do
+    Metal3_slit.ext_and(pad)
+end.().output("Slt.e.M3", "No slits required on pads")
+-> do
+    Metal3_slit_not_pad.ext_enclosed(Metal3, 1.0.um)
+end.().output("Slt.f.M3", "Min. Metal3 enclosure of Metal2:slit = 1.00")
+-> do
+    [ Metal3_slit_not_pad.ext_separation(Via2, 0.3.um),
+      Metal3_slit_not_pad.ext_separation(Via3, 0.3.um)
+    ].each { |result| result.output("Slt.h2.M3", "Min. Metal3:slit space to Via2 and Via3 = 0.30") }
+end.()
+-> do
+    Metal4_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.M4", "Min. Metal4:slit width = 2.80")
+-> (;tmp) do
+    tmp = Metal4_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    Metal4_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.M4", "Max. Metal4:slit width = 20.00")
+-> (;m4mitSlots, m4_L1, m4_L2) do
+    m4mitSlots = sltc_M4.ext_not(Metal4_slit)
+    m4_L1 = m4mitSlots.sized(-3.um, acute_limit)
+    m4_L2 = m4_L1.sized(-12.um, acute_limit)
+    m4_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.M4", "Max. Metal4 width without requiring a slit = 30.00")
+-> do
+    Metal4_slit.ext_and(pad)
+end.().output("Slt.e.M4", "No slits required on pads")
+-> do
+    Metal4_slit_not_pad.ext_enclosed(Metal4, 1.0.um)
+end.().output("Slt.f.M4", "Min. Metal4 enclosure of Metal4:slit = 1.00")
+-> do
+    [ Metal4_slit_not_pad.ext_separation(Via3, 0.3.um),
+      Metal4_slit_not_pad.ext_separation(Via4, 0.3.um)
+    ].each { |result| result.output("Slt.h2.M4", "Min. Metal4:slit space to Via3 and Via4 = 0.30") }
+end.()
+-> do
+    Metal5_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.M5", "Min. Metal5:slit width = 2.80")
+-> (;tmp) do
+    tmp = Metal5_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    Metal5_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.M5", "Max. Metal5:slit width = 20.00")
+-> (;m5mitSlots, m5_L1, m5_L2) do
+    m5mitSlots = sltc_M5.ext_not(Metal5_slit)
+    m5_L1 = m5mitSlots.sized(-3.um, acute_limit)
+    m5_L2 = m5_L1.sized(-12.um, acute_limit)
+    m5_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.M5", "Max. Metal5 width without requiring a slit = 30.00")
+-> do
+    Metal5_slit.ext_and(pad)
+end.().output("Slt.e.M5", "No slits required on pads")
+-> do
+    Metal5_slit_not_pad.ext_enclosed(Metal5, 1.0.um)
+end.().output("Slt.f.M5", "Min. Metal5 enclosure of Metal5:slit = 1.00")
+-> do
+    Metal5_slit_MIM_Slt_g_M5_sep.dup
+end.().output("Slt.g.M5", "Min. Metal5:slit and TopMetal1:slit space to MIM = 0.60")
+-> do
+    [ Metal5_slit_not_pad.ext_separation(Via4, 0.3.um),
+      Metal5_slit_not_pad.ext_separation(TopVia1, 0.3.um)
+    ].each { |result| result.output("Slt.h2.M5", "Min. Metal5:slit space to Via4 and Via5 = 0.30") }
+end.()
+-> do
+    TopMetal1_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.TM1", "Min. TopMetal1:slit width = 2.80")
+-> (;tmp) do
+    tmp = TopMetal1_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    TopMetal1_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.TM1", "Max. TopMetal1:slit width = 20.00")
+-> (;tM1mitSlots, tM1_L1, tM1_L2) do
+    tM1mitSlots = sltc_TM1.ext_not(TopMetal1_slit)
+    tM1_L1 = tM1mitSlots.sized(-3.um, acute_limit)
+    tM1_L2 = tM1_L1.sized(-12.um, acute_limit)
+    tM1_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.TM1", "Max. TopMetal1 width without requiring a slit = 30.00")
+-> do
+    TopMetal1_slit.ext_and(pad)
+end.().output("Slt.e.TM1", "No slits required on pads")
+-> do
+    TopMetal1_slit_not_pad.ext_enclosed(TopMetal1, 1.0.um)
+end.().output("Slt.f.TM1", "Min. TopMetal1 enclosure of TopMetal1:slit = 1.00")
+-> do
+    TopMetal1_slit_MIM_Slt_g_TM1_sep.dup
+end.().output("Slt.g.TM1", "Min. Metal5:slit and TopMetal1:slit space to MIM = 0.60")
+-> do
+    TopMetal1_slit_not_pad.ext_separation(TopVia1, 1.0.um)
+end.().output("Slt.h3", "Min. TopMetal1:slit space to TopVia1 and TopVia2 = 1.00")
+-> do
+    TopMetal2_slit_not_pad.ext_width(2.8.um)
+end.().output("Slt.a.TM2", "Min. TopMetal2:slit width = 2.80")
+-> (;tmp) do
+    tmp = TopMetal2_slit_not_pad.ext_with_length([[">", 20.0.um]])
+    TopMetal2_slit.ext_with_coincident_edges(tmp)
+end.().output("Slt.b.TM2", "Max. TopMetal2:slit width = 20.00")
+-> (;tM2mitSlots, tM2_L1, tM2_L2) do
+    tM2mitSlots = sltc_TM2.ext_not(TopMetal2_slit)
+    tM2_L1 = tM2mitSlots.sized(-3.um, acute_limit)
+    tM2_L2 = tM2_L1.sized(-12.um, acute_limit)
+    tM2_L2.sized(15.um, acute_limit)
+end.().output("Slt.c.TM2", "Max. TopMetal2 width without requiring a slit = 30.00")
+-> do
+    TopMetal2_slit.ext_and(pad)
+end.().output("Slt.e.TM2", "No slits required on pads")
+-> do
+    TopMetal2_slit_not_pad.ext_enclosed(TopMetal2, 1.0.um)
+end.().output("Slt.f.TM2", "Min. TopMetal2 enclosure of TopMetal2:slit = 1.00")
+-> do
+    TopMetal2_slit_not_pad.ext_separation(TopVia2, 1.0.um)
+end.().output("Slt.h4", "Min. TopMetal2:slit space to TopVia2 = 1.00")
+-> do
+    PActHV_digi.ext_outside(SVaricap_or_schottky_nbl1).ext_enclosed(NWell, 0.31.um, consider_overlaps_as_errors: true)
+end.().output("NW.c1.dig", "Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd = 0.31")
+-> do
+    NWell.ext_separation(NActHV_digi, 0.31.um)
+end.().output("NW.d1.dig", "Min. NWell space to external N+Activ inside ThickGateOx inside DigiBnd = 0.31")
+-> do
+    NAct_NWellHV_digi.ext_enclosed(NWell, 0.24.um, consider_overlaps_as_errors: true)
+end.().output("NW.e1.dig", "Min. NWell enclosure of NWell tie surrounded entirely by NWell in N+Activ inside ThickGateOx inside DigiBnd = 0.24")
+-> do
+    NWell.ext_separation(PAct_PWellHV_digi, 0.24.um)
+end.().output("NW.f1.dig", "Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd = 0.24")
+-> do
+    Cont_SQ.ext_not(SVaricap_or_trans_bip).ext_enclosed(Act_Nsram_or_Activ_mask.ext_and(DigiBnd), 0.05.um, consider_overlaps_as_errors: true)
+end.().output("Cnt.c.Digi", "Min. Activ enclosure of Cont inside DigiBnd = 0.05")
+-> do
+    LBE.ext_with_area([["<", 250000.0.um2]])
+end.().output("LBE.b2", "Min. LBE area (µm²) = 30000.00")
+-> do
+    LBE.ext_separation(dfpad, 50.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.e.dfPad", "Min. LBE space to dfpad and Passiv = 50.00")
+-> do
+    LBE.ext_separation(Passiv, 50.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.e.Passiv", "Min. LBE space to dfpad and Passiv = 50.00")
+-> do
+    LBE.ext_separation(Activ, 30.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.f", "Min. LBE space to Activ = 30.00")
+
+if $offGridRules
+	-> do
+	    NWell.ongrid(5.nm)
+	end.().output("OffGrid.NWell", "NWell is off-grid")
+	-> do
+	    PWell.ongrid(5.nm)
+	end.().output("OffGrid.PWell", "PWell is off-grid")
+	-> do
+	    PWell_block.ongrid(5.nm)
+	end.().output("OffGrid.PWell_block", "PWell_block is off-grid")
+	-> do
+	    nBuLay.ongrid(5.nm)
+	end.().output("OffGrid.nBuLay", "nBuLay is off-grid")
+	-> do
+	    nBuLay_block.ongrid(5.nm)
+	end.().output("OffGrid.nBuLay_block", "nBuLay_block is off-grid")
+	-> do
+	    Activ.ongrid(5.nm)
+	end.().output("OffGrid.Activ", "Activ is off-grid")
+	-> do
+	    ThickGateOx.ongrid(5.nm)
+	end.().output("OffGrid.ThickGateOx", "ThickGateOx is off-grid")
+	-> do
+	    Activ_filler.ongrid(5.nm)
+	end.().output("OffGrid.Activ_filler", "Activ_filler is off-grid")
+	-> do
+	    GatPoly_filler.ongrid(5.nm)
+	end.().output("OffGrid.GatPoly_filler", "GatPoly_filler is off-grid")
+	-> do
+	    GatPoly.ongrid(5.nm)
+	end.().output("OffGrid.GatPoly", "GatPoly is off-grid")
+	-> do
+	    pSD.ongrid(5.nm)
+	end.().output("OffGrid.pSD", "pSD is off-grid")
+	-> do
+	    nSD.ongrid(5.nm)
+	end.().output("OffGrid.nSD", "nSD is off-grid")
+	-> do
+	    nSD_block.ongrid(5.nm)
+	end.().output("OffGrid.nSD_block", "nSD_block is off-grid")
+	-> do
+	    EXTBlock.ongrid(5.nm)
+	end.().output("OffGrid.EXTBlock", "EXTBlock is off-grid")
+	-> do
+	    SalBlock.ongrid(5.nm)
+	end.().output("OffGrid.SalBlock", "SalBlock is off-grid")
+	-> do
+	    Cont.ongrid(5.nm)
+	end.().output("OffGrid.Cont", "Cont is off-grid")
+	-> do
+	    Activ_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Activ_nofill", "Activ_nofill is off-grid")
+	-> do
+	    GatPoly_nofill.ongrid(5.nm)
+	end.().output("OffGrid.GatPoly_nofill", "GatPoly_nofill is off-grid")
+	-> do
+	    Metal1.ongrid(5.nm)
+	end.().output("OffGrid.Metal1", "Metal1 is off-grid")
+	-> do
+	    Via1.ongrid(5.nm)
+	end.().output("OffGrid.Via1", "Via1 is off-grid")
+	-> do
+	    Metal2.ongrid(5.nm)
+	end.().output("OffGrid.Metal2", "Metal2 is off-grid")
+	-> do
+	    Via2.ongrid(5.nm)
+	end.().output("OffGrid.Via2", "Via2 is off-grid")
+	-> do
+	    Metal3.ongrid(5.nm)
+	end.().output("OffGrid.Metal3", "Metal3 is off-grid")
+	-> do
+	    Via3.ongrid(5.nm)
+	end.().output("OffGrid.Via3", "Via3 is off-grid")
+	-> do
+	    Metal4.ongrid(5.nm)
+	end.().output("OffGrid.Metal4", "Metal4 is off-grid")
+	-> do
+	    Via4.ongrid(5.nm)
+	end.().output("OffGrid.Via4", "Via4 is off-grid")
+	-> do
+	    Metal5.ongrid(5.nm)
+	end.().output("OffGrid.Metal5", "Metal5 is off-grid")
+	-> do
+	    MIM.ongrid(5.nm)
+	end.().output("OffGrid.MIM", "MIM is off-grid")
+	-> do
+	    Vmim.ongrid(5.nm)
+	end.().output("OffGrid.Vmim", "Vmim is off-grid")
+	-> do
+	    TopVia1.ongrid(5.nm)
+	end.().output("OffGrid.TopVia1", "TopVia1 is off-grid")
+	-> do
+	    TopMetal1.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal1", "TopMetal1 is off-grid")
+	-> do
+	    TopVia2.ongrid(5.nm)
+	end.().output("OffGrid.TopVia2", "TopVia2 is off-grid")
+	-> do
+	    TopMetal2.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal2", "TopMetal2 is off-grid")
+	-> do
+	    Passiv.ongrid(5.nm)
+	end.().output("OffGrid.Passiv", "Passiv is off-grid")
+	-> do
+	    Metal1_filler.ongrid(5.nm)
+	end.().output("OffGrid.Metal1_filler", "Metal1_filler is off-grid")
+	-> do
+	    Metal2_filler.ongrid(5.nm)
+	end.().output("OffGrid.Metal2_filler", "Metal2_filler is off-grid")
+	-> do
+	    Metal3_filler.ongrid(5.nm)
+	end.().output("OffGrid.Metal3_filler", "Metal3_filler is off-grid")
+	-> do
+	    Metal4_filler.ongrid(5.nm)
+	end.().output("OffGrid.Metal4_filler", "Metal4_filler is off-grid")
+	-> do
+	    Metal5_filler.ongrid(5.nm)
+	end.().output("OffGrid.Metal5_filler", "Metal5_filler is off-grid")
+	-> do
+	    TopMetal1_filler.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal1_filler", "TopMetal1_filler is off-grid")
+	-> do
+	    TopMetal2_filler.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal2_filler", "TopMetal2_filler is off-grid")
+	-> do
+	    Metal1_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Metal1_nofill", "Metal1_nofill is off-grid")
+	-> do
+	    Metal2_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Metal2_nofill", "Metal2_nofill is off-grid")
+	-> do
+	    Metal3_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Metal3_nofill", "Metal3_nofill is off-grid")
+	-> do
+	    Metal4_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Metal4_nofill", "Metal4_nofill is off-grid")
+	-> do
+	    Metal5_nofill.ongrid(5.nm)
+	end.().output("OffGrid.Metal5_nofill", "Metal5_nofill is off-grid")
+	-> do
+	    TopMetal1_nofill.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal1_nofill", "TopMetal1_nofill is off-grid")
+	-> do
+	    TopMetal2_nofill.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal2_nofill", "TopMetal2_nofill is off-grid")
+	-> do
+	    NoMetFiller.ongrid(5.nm)
+	end.().output("OffGrid.NoMetFiller", "NoMetFiller is off-grid")
+	-> do
+	    Metal1_slit.ongrid(5.nm)
+	end.().output("OffGrid.Metal1_slit", "Metal1_slit is off-grid")
+	-> do
+	    Metal2_slit.ongrid(5.nm)
+	end.().output("OffGrid.Metal2_slit", "Metal2_slit is off-grid")
+	-> do
+	    Metal3_slit.ongrid(5.nm)
+	end.().output("OffGrid.Metal3_slit", "Metal3_slit is off-grid")
+	-> do
+	    Metal4_slit.ongrid(5.nm)
+	end.().output("OffGrid.Metal4_slit", "Metal4_slit is off-grid")
+	-> do
+	    Metal5_slit.ongrid(5.nm)
+	end.().output("OffGrid.Metal5_slit", "Metal5_slit is off-grid")
+	-> do
+	    TopMetal1_slit.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal1_slit", "TopMetal1_slit is off-grid")
+	-> do
+	    TopMetal2_slit.ongrid(5.nm)
+	end.().output("OffGrid.TopMetal2_slit", "TopMetal2_slit is off-grid")
+	-> do
+	    EdgeSeal.ongrid(5.nm)
+	end.().output("OffGrid.EdgeSeal", "EdgeSeal is off-grid")
+	-> do
+	    EmWind.ongrid(5.nm)
+	end.().output("OffGrid.EmWind", "EmWind is off-grid")
+	-> do
+	    dfpad.ongrid(5.nm)
+	end.().output("OffGrid.dfpad", "dfpad is off-grid")
+	-> do
+	    Polimide.ongrid(5.nm)
+	end.().output("OffGrid.Polimide", "Polimide is off-grid")
+	-> do
+	    TRANS.ongrid(5.nm)
+	end.().output("OffGrid.TRANS", "TRANS is off-grid")
+	-> do
+	    IND.ongrid(5.nm)
+	end.().output("OffGrid.IND", "IND is off-grid")
+	-> do
+	    RES.ongrid(5.nm)
+	end.().output("OffGrid.RES", "RES is off-grid")
+	-> do
+	    RFMEM.ongrid(5.nm)
+	end.().output("OffGrid.RFMEM", "RFMEM is off-grid")
+	-> do
+	    Recog_diode.ongrid(5.nm)
+	end.().output("OffGrid.Recog_diode", "Recog_diode is off-grid")
+	-> do
+	    Recog_esd.ongrid(5.nm)
+	end.().output("OffGrid.Recog_esd", "Recog_esd is off-grid")
+	-> do
+	    DigiBnd.ongrid(5.nm)
+	end.().output("OffGrid.DigiBnd", "DigiBnd is off-grid")
+	-> do
+	    DigiSub.ongrid(5.nm)
+	end.().output("OffGrid.DigiSub", "DigiSub is off-grid")
+	-> do
+	    SRAM.ongrid(5.nm)
+	end.().output("OffGrid.SRAM", "SRAM is off-grid")
+	-> do
+	    dfpad_pillar.ongrid(5.nm)
+	end.().output("OffGrid.dfpad_pillar", "dfpad_pillar is off-grid")
+	-> do
+	    dfpad_sbump.ongrid(5.nm)
+	end.().output("OffGrid.dfpad_sbump", "dfpad_sbump is off-grid")
+	-> do
+	    DeepVia.ongrid(5.nm)
+	end.().output("OffGrid.DeepVia", "DeepVia is off-grid")
+	-> do
+	    LBE.ongrid(5.nm)
+	end.().output("OffGrid.LBE", "LBE is off-grid")
+	-> do
+	    PolyRes.ongrid(5.nm)
+	end.().output("OffGrid.PolyRes", "PolyRes is off-grid")
+end
+
+puts("Number of DRC errors for maximum rule set: #{$drc_error_count}")
+
+# ===================================
+exec_end_time = Time.now
+run_time = exec_end_time - exec_start_time
+logger.info("KLayout DRC run for maximum ruleSet completed in #{run_time.round(2)} seconds")
+
+#===================================
+#--------------- END ---------------
+#===================================

@@ -1,0 +1,75 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #================================================
+  #------------------ 5.2 PWell:block -------------
+  #================================================
+
+  logger.info('Starting 5.2 PWell:block')
+
+  # Pwell:block derivations
+
+  unless PRECHECK_DRC
+    # Rule PWB.e: Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell is 0.31 um
+    logger.info('Executing rule PWB.e')
+    pwb_e_value = drc_rules['PWB_e'].to_f
+    pwb_e_l1 = nact_fet.not(thickgateox_drw)
+    pwb_l = pwell_block.sep(pwb_e_l1, pwb_e_value.um, euclidian)
+    pwb_l.output('PWB.e',
+                 "5.2. PWB.e Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell is #{pwb_e_value} um")
+    pwb_e_l1.forget
+    pwb_l.forget
+
+    # Rule PWB.e1: Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell is 0.62 um
+    logger.info('Executing rule PWB.e1')
+    pwb_e1_value = drc_rules['PWB_e1'].to_f
+    pwb_e1_l1 = nact_fet.and(thickgateox_drw)
+    pwb_e1_l = pwell_block.sep(pwb_e1_l1, pwb_e1_value.um, euclidian)
+    pwb_e1_l.output('PWB.e1',
+                    "5.2. PWB.e1 Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell is #{pwb_e1_value} um")
+    pwb_e1_l1.forget
+    pwb_e1_l.forget
+
+    # Rule PWB.f: Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell is 0.24 um
+    logger.info('Executing rule PWB.f')
+    pwb_f_value = drc_rules['PWB_f'].to_f
+    pwb_f_l1 = ptap.not(thickgateox_drw)
+    pwb_f_l = pwell_block.sep(pwb_f_l1, pwb_f_value.um, euclidian)
+    pwb_f_l.output('PWB.f',
+                   "5.2. PWB.f Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell is #{pwb_f_value} um")
+    pwb_f_l1.forget
+    pwb_f_l.forget
+
+    # Rule PWB.f1: Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell 0.62 um
+    logger.info('Executing rule PWB.f1')
+    pwb_f1_value = drc_rules['PWB_f1'].to_f
+    schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+    schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
+    schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
+
+    pwb_f1_l1 = ptap.and(thickgateox_drw)
+    pwb_f1_l2 = pwell_block.outside(schottky_nbl1)
+    pwb_f1_l = pwb_f1_l2.sep(pwb_f1_l1, pwb_f1_value.um, euclidian)
+    pwb_f1_l.output('PWB.f1',
+                    "5.2. PWB.f1 Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell #{pwb_f1_value} um")
+    pwb_f1_l1.forget
+    pwb_f1_l2.forget
+    pwb_f1_l.forget
+  end
+end

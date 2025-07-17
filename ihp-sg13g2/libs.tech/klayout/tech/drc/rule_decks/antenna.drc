@@ -1,0 +1,104 @@
+# frozen_string_literal: true
+
+#====================================================================================================================
+#--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
+#====================================================================================================================
+require 'time'
+require 'logger'
+
+exec_start_time = Time.now
+
+# Custom formatter including timestamp and memory usage
+formatter = proc do |_severity, datetime, _progname, msg|
+  memory_usage = "#{RBA::Timer.memory_size / 1024}K"
+  "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
+end
+
+# Create file logger
+file_logger = Logger.new($log)
+file_logger.formatter = formatter
+
+# Create stdout logger
+stdout_logger = Logger.new($stdout)
+stdout_logger.formatter = formatter
+
+# MultiLogger class to broadcast to multiple loggers
+class MultiLogger
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def info(msg)
+    @targets.each { |t| t.info(msg) }
+  end
+
+  def warn(msg)
+    @targets.each { |t| t.warn(msg) }
+  end
+
+  def error(msg)
+    @targets.each { |t| t.error(msg) }
+  end
+end
+
+# Use the multi-logger for your application
+logger = MultiLogger.new(stdout_logger, file_logger)
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running IHP-SG13G2 Klayout DRC Antenna runset on #{$input}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $input
+  if $topcell
+    source($input, $topcell)
+  else
+    source($input)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report
+  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at: #{$report}")
+  report('Antenna DRC Run Report at', $report)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join('sg13g2_drc_antenna.lyrdb').to_s
+  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at default location: #{report_path}")
+  report('Antenna DRC Run Report at', report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+  obj.to_s.downcase == 'true'
+end
+
+# Run mode setup
+def setup_run_mode(run_mode)
+  case run_mode
+  when 'flat'
+    flat
+  else
+    deep
+  end
+end
+
+# Run mode
+setup_run_mode($run_mode)
+logger.info("#{$run_mode} mode is enabled for #{TABLE_NAME} table.")
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+#================================================
+#-------------- COMMON DERIVATIONS --------------
+#================================================

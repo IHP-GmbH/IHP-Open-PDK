@@ -19,7 +19,8 @@
 TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 VENV_RUN_COMMAND = $(TOP_DIR)/actions_venv/bin/activate
 
-# Path to regression
+# Path to regressions
+KLAYOUT_DRC_TESTS := ihp-sg13g2/libs.tech/klayout/tech/drc/testing/
 KLAYOUT_LVS_TESTS := ihp-sg13g2/libs.tech/klayout/tech/lvs/testing
 
 # A pip `requirements.txt` file.
@@ -43,8 +44,18 @@ env: $(TOP_DIR)/actions_venv
 
 # Lint python code
 lint_python: env
-	@echo "Running python linting for Klayout-LVS scripts"
+	@echo "Running python linting for Klayout-DRC/LVS scripts"
+	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/drc
 	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/lvs
+
+#=================================
+# ----- test-DRC_regression ------
+#=================================
+
+.ONESHELL:
+test-DRC-main: env
+	@. $(VENV_RUN_COMMAND); echo "Running Klayout-DRC regression for all unit tests"
+	@. $(VENV_RUN_COMMAND); python3 $(KLAYOUT_DRC_TESTS)/run_regression.py
 
 #=================================
 # ----- test-LVS_regression ------

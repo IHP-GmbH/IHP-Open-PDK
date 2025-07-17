@@ -1,0 +1,38 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if FEOL
+  #================================================
+  #----------------- 5.10 pSD ---------------------
+  #================================================
+
+  logger.info('Starting 5.10 pSD table')
+
+  # pSD derivations
+
+  unless PRECHECK_DRC
+    # Rule pSD.c1: Min. pSD enclosure of P+Activ in PWell is 0.03 um
+    logger.info('Executing rule pSD.c1')
+    psd_c1_value = drc_rules['pSD_c1'].to_f
+    psd_c1_l1 = activ_drw.not_outside(psd_drw).and(pwell).outside(edgeseal_drw)
+    psd_c1_l = psd_c1_l1.enclosed(psd_drw, psd_c1_value.um, euclidian)
+    psd_c1_l.output('pSD.c1', "5.10. pSD.c1 Min. pSD enclosure of P+Activ in PWell is #{psd_c1_value} um")
+    psd_c1_l1.forget
+    psd_c1_l.forget
+  end
+end
