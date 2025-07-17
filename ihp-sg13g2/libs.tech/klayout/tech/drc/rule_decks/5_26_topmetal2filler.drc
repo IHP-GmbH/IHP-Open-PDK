@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #================================================
+  #----------------- 5.26 TopMetal2:filler --------
+  #================================================
+
+  logger.info('Starting 5.26 TopMetal2:filler table')
+
+  # TopMetal2:filler derivations
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for TopMetal2:filler table.')
+  end
+
+  # Rule TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is 3 um
+  logger.info('Executing rule TM2Fil.c')
+  tm2fil_c_value = drc_rules["TM2Fil_c"].to_f
+  tm2fil_c = topmetal2_drw.sep(topmetal2_filler , tm2fil_c_value.um ,euclidian)
+  tm2fil_c.output('TM2Fil.c', "5.26. TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is #{tm2fil_c_value} um")
+  tm2fil_c.forget
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after TopMetal2:filler table.")
+  end
+end

@@ -1,0 +1,383 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#====================================================================================================================
+#--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
+#====================================================================================================================
+require 'time'
+require 'logger'
+require 'json'
+require 'pathname'
+
+exec_start_time = Time.now
+
+# Custom formatter including timestamp and memory usage
+formatter = proc do |_severity, datetime, _progname, msg|
+  memory_usage = "#{RBA::Timer.memory_size / 1024}K"
+  "#{datetime}: Memory Usage (#{memory_usage}) : #{msg}\n"
+end
+
+# Create file logger
+file_logger = Logger.new($log)
+file_logger.formatter = formatter
+
+# Create stdout logger
+stdout_logger = Logger.new($stdout)
+stdout_logger.formatter = formatter
+
+# MultiLogger class to broadcast to multiple loggers
+class MultiLogger
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def info(msg)
+    @targets.each { |t| t.info(msg) }
+  end
+
+  def warn(msg)
+    @targets.each { |t| t.warn(msg) }
+  end
+
+  def error(msg)
+    @targets.each { |t| t.error(msg) }
+  end
+end
+
+# Use the multi-logger for your application
+logger = MultiLogger.new(stdout_logger, file_logger)
+
+#================================================
+#----------------- FILE SETUP -------------------
+#================================================
+
+logger.info("Starting running IHP-SG13G2 Klayout DRC runset on #{$input}")
+logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
+
+if $input
+  if $topcell
+    source($input, $topcell)
+  else
+    source($input)
+  end
+end
+
+logger.info('Loading database to memory is complete.')
+
+if $report
+  logger.info("IHP-SG13G2 Klayout DRC runset output at: #{$report}")
+  report('DRC Run Report at', $report)
+else
+  layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
+  report_path = layout_dir.join('sg13g2_drc_main.lyrdb').to_s
+  logger.info("IHP-SG13G2 Klayout DRC runset output at default location: #{report_path}")
+  report('DRC Run Report at', report_path)
+end
+
+#================================================
+#------------------ SWITCHES --------------------
+#================================================
+
+logger.info('Evaluate switches.')
+
+def bool_check?(obj)
+  obj.to_s.downcase == 'true'
+end
+
+TABLE_NAME = $table_name || 'main'
+
+logger.info("table_name selected  #{TABLE_NAME}")
+
+# connectivity rules
+CONNECTIVITY_EN = !bool_check?($conn_drc)
+
+conn_tables = %w[main nwell nbulay]
+
+CONNECTIVITY_RULES = if conn_tables.include?(TABLE_NAME) && CONNECTIVITY_EN
+                       true
+                     else
+                       false
+                     end
+
+logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}")
+
+# Run mode setup
+def setup_run_mode(run_mode)
+  case run_mode
+  when 'tiling'
+    tiles(500.um)
+    tile_borders(30.um)
+  when 'flat'
+    flat
+  else
+    deep
+  end
+end
+
+# threads
+threads($thr.to_i)
+logger.info("Klayout will use #{$thr} thread(s)")
+
+# Run mode
+setup_run_mode($run_mode)
+logger.info("#{$run_mode} mode is enabled for #{TABLE_NAME} table.")
+
+# FEOL
+FEOL = !bool_check?($no_feol)
+logger.info("FEOL enabled: #{FEOL}")
+
+# BEOL
+BEOL = !bool_check?($no_beol)
+logger.info("BEOL enabled: #{BEOL}")
+
+# OFFGRID
+OFFGRID = !bool_check?($no_offgrid)
+logger.info("OffGrid enabled: #{OFFGRID}")
+
+# MinRuleSet
+MaxRuleSet = bool_check?($MaxRuleSet)
+logger.info("Maximum rule set enabled: #{MaxRuleSet}")
+
+#================================================
+#------------- LAYERS DEFINITIONS ---------------
+#================================================
+
+# %include layers_def.drc
+
+#================================================
+# -------------------- UTILS --------------------
+#================================================
+
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c # Keep wildcard characters as they are
+    else
+      Regexp.escape(c)
+    end
+  end.join
+end
+
+# Method to get DRC values from JSON files
+def get_drc_values(logger)
+  tech_rules = {}
+  if $drc_json && $drc_json != $drc_json_default
+    begin
+      tech_drc_content = File.read($drc_json)
+      tech_drc_data = JSON.parse(tech_drc_content)
+      tech_rules = tech_drc_data['drc_rules'] || {}
+      logger.info("Loaded TECH DRC rules values from #{$drc_json}")
+    rescue StandardError => e
+      logger.error("Error reading TECH DRC rules from #{$drc_json}: #{e.message}")
+    end
+  end
+
+  begin
+    default_drc_content = File.read($drc_json_default)
+    default_drc_data = JSON.parse(default_drc_content)
+    default_rules = default_drc_data['drc_rules'] || {}
+    logger.info("Loaded default DRC rules values from #{$drc_json_default}")
+  rescue StandardError => e
+    logger.error("Error reading default DRC rules from #{$drc_json_default}: #{e.message}")
+    return {}
+  end
+
+  merged_rules = tech_rules.merge(default_rules)
+
+  # Report any fallback rules used
+  missing_keys = default_rules.keys - tech_rules.keys
+  unless missing_keys.empty?
+    logger.warn("The following rules values were missing in tech json and default values were used:")
+    missing_keys.each { |rule| logger.warn("  - #{rule}") }
+  end
+
+  merged_rules
+end
+
+# Extract DRC rules values from the JSON file
+drc_rules = get_drc_values(logger)
+
+#================================================
+#-------------- COMMON DERIVATIONS --------------
+#================================================
+
+# === LAYOUT EXTENT ===
+CHIP = extent.sized(0.0)
+chip_area = CHIP.area
+chip_bbox = CHIP.bbox
+chip_w = chip_bbox.width
+chip_l = chip_bbox.height
+
+logger.info("Total area of the design is #{chip_area} um^2.")
+logger.info("The design dimensions are #{chip_w} µm * #{chip_l} µm.")
+
+# Enable tiling if chip area exceeds 100,000 µm²
+en_tiles = chip_area > 1000_000.um2
+
+# === General Derivations ===
+logger.info('Starting general IHP-SG13G2 derivations.')
+
+# Cont derivations
+cont_tables = %w[main cont contb]
+if cont_tables.include?(TABLE_NAME)
+  logger.info('Starting cont/contbar general derivations')
+  cont_nseal = cont_drw.not(edgeseal_drw)
+  contbar = cont_nseal.non_squares
+  cont_sq = cont_nseal.not(contbar)
+  cont_nseal.forget
+end
+
+# Pad derivations
+pad_tables = %w[main pad solderbump copperpillar]
+if pad_tables.include?(TABLE_NAME)
+  logger.info('Starting pad general derivations')
+  cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(topmetal2_drw)
+  sbumppad = dfpad_sbump.and(passiv_sbump).and(topmetal2_drw)
+  pad = passiv_drw.and(dfpad_drw).and(topmetal2_drw)
+end
+
+# DRC tolerance value
+drc_tole = 0.005.um
+
+#================================================
+#------------- LAYERS CONNECTIONS ---------------
+#================================================
+
+
+#================================================
+#------------ PRE-DEFINED FUNCTIONS -------------
+#================================================
+
+def unconn_errors_check(net1, net2, unconnected_errors)
+  if !net1 || !net2
+    logger.error("Connectivity check encountered 2 nets that doesn't exist. Potential issue in klayout...")
+  elsif net1.circuit != net2.circuit || net1.cluster_id != net2.cluster_id
+    # unconnected
+    unconnected_errors.data.insert(ep)
+  end
+  unconnected_errors
+end
+
+def get_nets(_data, layer1, layer2, edge_pairs)
+  net1 = l2n_data.probe_net(layer1.data, edge_pairs.first.p1)
+  net2 = l2n_data.probe_net(layer2.data, edge_pairs.second.p1)
+  [net1, net2]
+end
+
+def conn_space_viol(layer, conn_val, mode)
+  connected_output = layer.space(conn_val.um, mode).polygons(0.001.um)
+  singularity_errors = layer.space(0.001.um, mode).polygons(0.001.um)
+  [connected_output, singularity_errors]
+end
+
+def conn_space_check(layer, not_conn_val, mode)
+  unconnected_errors_unfiltered = layer.space(not_conn_val.um, mode)
+  connected_output, singularity_errors = conn_space_viol(layer, conn_val, mode)
+  # Filter out the errors arising from the same net
+  unconnected_errors = DRC::DRCLayer.new(self, RBA::EdgePairs.new)
+  unconnected_errors_unfiltered.data.each do |ep|
+    net1, net2 = get_nets(l2n_data, layer, layer, ep)
+    unconnected_errors = unconn_errors_check(net1, net2, unconnected_errors)
+  end
+  unconnected_output = unconnected_errors.polygons.join(singularity_errors)
+  [connected_output, unconnected_output]
+end
+
+def conn_space_nets(layer, conn_val, not_conn_val, mode)
+  nets = layer.nets
+  connected_output = nets.space(conn_val.um, mode, props_eq).polygons(0.001.um)
+  singularity_errors = nets.space(0.001.um, mode).polygons(0.001.um)
+  unconnected_output = nets.space(not_conn_val.um, mode, props_ne).polygons(0.001.um).join(singularity_errors)
+  [connected_output, unconnected_output]
+end
+
+def conn_space(layer, conn_val, not_conn_val, mode)
+  if layer.respond_to?(:nets) # KLayout version (>=0.28.4) which supports "nets"
+    connected_output, unconnected_output = conn_space_nets(layer, conn_val, not_conn_val, mode)
+  else
+    raise 'ERROR : Wrong connectivity implementation' if conn_val > not_conn_val
+
+    connected_output, unconnected_output = conn_space_check(layer, not_conn_val, mode)
+  end
+  [connected_output, unconnected_output]
+end
+
+def sep_viol_nets(layer1, layer2, conn_val, not_conn_val, mode)
+  connected_output   = layer1.nets.separation(layer2.nets, conn_val.um,     mode, props_eq).polygons(0.001.um)
+  unconnected_output = layer1.nets.separation(layer2.nets, not_conn_val.um, mode, props_ne).polygons(0.001.um)
+  [connected_output, unconnected_output]
+end
+
+def unconn_separation_check(layer1, layer2, not_conn_val, mode)
+  unconnected_errors_unfiltered = layer1.separation(layer2, not_conn_val.um, mode)
+  # Filter out the errors arising from the same net
+  unconnected_errors = DRC::DRCLayer.new(self, RBA::EdgePairs.new)
+  unconnected_errors_unfiltered.data.each do |ep|
+    net1, net2 = get_nets(l2n_data, layer1, layer2, ep)
+    unconnected_errors = unconn_errors(net1, net2, unconnected_errors)
+  end
+  unconnected_errors
+end
+
+def conn_separation(layer1, layer2, conn_val, not_conn_val, mode)
+  if layer1.respond_to?(:nets) # KLayout version (>=0.28.4) which supports "nets"
+    connected_output, unconnected_output = sep_viol_nets(layer1, layer2, conn_val, not_conn_val, mode)
+  else
+    raise 'ERROR : Wrong connectivity implementation' if conn_val > not_conn_val
+
+    connected_output = layer1.separation(layer2, conn_val.um, mode).polygons(0.001.um)
+    unconnected_errors = unconn_separation_check(layer1, layer2, not_conn_val, mode)
+    unconnected_output = unconnected_errors.polygons(0.001.um)
+  end
+  [connected_output, unconnected_output]
+end
+
+def get_circle(polygon_check)
+  maybe_circle1 = polygon_check.with_bbox_aspect_ratio(1)
+  maybe_circle2 = maybe_circle1.select { |polygon| polygon.num_points >= 16 }
+  # Circle detection based on area ratio of bounding box to shape area ≈ 4/π ≈ 1.2732
+  # (Derived from: (d^2) / (π * d^2 / 4) = 4/π)
+  maybe_circle2.without_holes.with_area_ratio(1.270, 1.276)
+end
+
+def get_octagon(polygon_check)
+  maybe_oct1 = polygon_check.with_bbox_aspect_ratio(1)
+  maybe_oct2 = maybe_oct1.select { |polygon| polygon.num_points == 8 }
+  h_edges_check = maybe_oct2.edges.with_angle(0, absolute)
+  maybe_oct3 = maybe_oct2.interacting(h_edges_check, 2, 2)
+  v_edges_check = maybe_oct3.edges.with_angle(90, absolute)
+  maybe_oct4 = maybe_oct3.interacting(v_edges_check, 2, 2)
+  diag_edges_check = maybe_oct4.edges.with_angle(44.5, 45.5, absolute)
+  maybe_oct4.interacting(diag_edges_check, 4, 4)
+end
+
+#================================================
+#----------------- MAIN RUNSET ------------------
+#================================================
+
+logger.info('Starting IHP-SG13G2 DRC rules.')
+
+# === FEOL ===
+logger.info('Running all FEOL rules') if FEOL
+# === BEOL ===
+logger.info('Running all BEOL rules') if BEOL

@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+-->
+<klayout-macro>
+  <description>Run Klayout DRC</description>
+  <version>0.1</version>
+  <category>drc</category>
+  <prolog/>
+  <epilog/>
+  <doc/>
+  <autorun>false</autorun>
+  <autorun-early>false</autorun-early>
+  <priority>0</priority>
+  <shortcut/>
+  <show-in-menu>true</show-in-menu>
+  <group-name>Run Klayout DRC</group-name>
+  <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+  <interpreter>ruby</interpreter>
+  <dsl-interpreter-name/>
+  <text>
+require 'yaml'
+require 'open3'
+require 'pathname'
+require 'thread'
+require 'fileutils'
+include RBA
+
+# Global PID for cleanup
+$python_pid = nil
+
+# Load DRC options from a YAML file
+def load_options(yaml_file_path)
+  if File.exist?(yaml_file_path)
+    begin
+      return YAML.safe_load(File.read(yaml_file_path))
+    rescue =&gt; e
+      puts "Error loading options from YAML: #{e.message}"
+    end
+  else
+    puts "YAML file not found at #{yaml_file_path}. Using default options."
+  end
+  set_default_options
+end
+
+# Set default options
+def set_default_options
+  {
+    'top_cell' =&gt; '',
+    'run_mode' =&gt; 'deep',
+    'table' =&gt; 'all',
+    'run_dir' =&gt; '',
+    'parallel_runs' =&gt; 1,
+    'density_thr' =&gt; 1,
+    'no_feol' =&gt; false,
+    'no_beol' =&gt; false,
+    'MaxRuleSet' =&gt; false,
+    'no_connectivity' =&gt; true,
+    'no_density' =&gt; true,
+    'density_only' =&gt; false,
+    'antenna' =&gt; false,
+    'antenna_only' =&gt; false,
+    'no_offgrid' =&gt; false,
+  }
+end
+
+# Check KLayout version
+klayout_v, _ = Open3.capture2('klayout -b -v')
+klayout_v.strip!
+
+raise "KLayout is not found. Please make sure KLayout is installed." if klayout_v.empty?
+
+version_str = klayout_v.split.last
+version_parts = klayout_v.strip.split.last.split(".").map(&amp;:to_i)
+
+if version_parts.size &lt; 2
+  raise StandardError, "Failed to parse KLayout version: '#{klayout_v}'."
+end
+
+major, minor = version_parts[0], version_parts[1]
+
+if major &lt; 0 || (major == 0 &amp;&amp; minor &lt; 29)
+  puts "Using this KLayout version has not been assessed. Limits are unknown."
+  raise StandardError, "KLayout 0.29.0 or later is required. Detected version: #{version_str}"
+end
+
+# Paths and context
+macro_dir = File.dirname(File.expand_path(__FILE__))
+project_root = File.expand_path("..", macro_dir)
+@layout_name = RBA::CellView.active.filename
+layout_path = Pathname.new(@layout_name)
+@layout = RBA::CellView.active.layout
+gds_path = layout_path.to_s
+gds_name = layout_path.basename(".gds").to_s
+
+# Get layout cells
+cell_names = []
+@layout.each_cell do |cell|
+  cell_names &lt;&lt; cell.name
+end
+
+# Get layout active cell
+@act_cell_name = RBA::CellView.active.cell.name
+
+# Load options from global config location
+yaml_file = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13g2_drc_options.yml")
+options = load_options(yaml_file)
+
+# Determine top cell
+top_cell = options['top_cell']
+if top_cell.nil? || top_cell.strip.empty? || !cell_names.include?(top_cell)
+  top_cell = @act_cell_name
+end
+
+run_dir = options['run_dir']
+if run_dir.nil? || run_dir.strip.empty?
+  run_dir = "drc_run_#{top_cell}"
+end
+run_dir = File.expand_path(run_dir)
+if Dir.exist?(run_dir)
+  FileUtils.rm_rf(run_dir)
+end
+
+# Extract and format options
+cmd_opts = [
+  "--path=#{gds_path}",
+  "--run_mode=#{options['run_mode']}",
+  "--topcell=#{top_cell}",
+  "--run_dir=#{run_dir}",
+  "--mp=#{options['parallel_runs']}",
+  "--density_thr=#{options['density_thr']}"
+]
+
+%w[no_feol no_beol MaxRuleSet no_connectivity no_density density_only antenna antenna_only no_offgrid].each do |flag|
+  cmd_opts &lt;&lt; "--#{flag}" if options[flag]
+end
+
+cmd_opts &lt;&lt; "--table=#{options['table']}" if options['table'] &amp;&amp; !options['table'].empty? &amp;&amp; options['table'] != 'all'
+
+# Run DRC with options
+cmd = "nohup python3 #{File.join(project_root, 'drc', 'run_drc.py')} #{cmd_opts.join(' ')}"
+puts "Running klayout DRC using the following command:\n #{cmd}"
+
+# Thread-safe queue
+lines_queue = Queue.new
+
+# Run command thread
+@stdin, @stdout_err, @wait_thr = Open3.popen2e(cmd)
+$python_pid = @wait_thr.pid
+@drc_thread = Thread.new do
+  @stdout_err.each do |line|
+    lines_queue &lt;&lt; line.chomp
+  end
+  @wait_thr.value
+end
+
+# Cleanup function
+def cleanup_drc_process
+  if $python_pid
+    begin
+      Process.kill("TERM", $python_pid)
+      puts "Killed subprocess with PID #{$python_pid}"
+    rescue Errno::ESRCH
+      puts "Subprocess already terminated"
+    rescue => e
+      puts "Warning: Failed to kill subprocess - #{e.message}"
+    ensure
+      $python_pid = nil
+    end
+  end
+  @timer.stop if @timer
+end
+
+# Build logger dialog
+class CustomDialog &lt; RBA::QDialog
+  def closeEvent(event)
+    cleanup_drc_process
+    super(event)
+  end
+end
+@app_window = RBA::Application.instance.main_window
+@dlg = CustomDialog.new(@app_window)
+@dlg.setWindowTitle("DRC Run Logs")
+@main_layout = RBA::QVBoxLayout.new(@dlg)
+
+# Header with logo and title
+@header_layout = RBA::QHBoxLayout.new
+logo_path = File.join(File.dirname(__FILE__), "ihp_logo.png")
+if File.exist?(logo_path)
+  @logo_label = RBA::QLabel.new
+  @logo_pixmap = RBA::QPixmap.new(logo_path)
+  @logo_label.setPixmap(@logo_pixmap.scaled(40, 40))
+  @header_layout.addWidget(@logo_label)
+end
+
+@title_label = RBA::QLabel.new("SG13G2 DRC - Logs")
+@title_font = RBA::QFont.new
+@title_font.setPointSize(14)
+@title_font.setBold(true)
+@title_label.setFont(@title_font)
+@title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
+@header_layout.addWidget(@title_label)
+@header_layout.addStretch
+@main_layout.addLayout(@header_layout)
+
+# Log output area
+@log_output = RBA::QTextEdit.new
+@log_output.setReadOnly(true)
+@log_output.setStyleSheet("background-color: #f4f4f4; font-family: monospace;")
+@main_layout.addWidget(@log_output)
+
+# Close button
+@button_layout = RBA::QHBoxLayout.new
+@button_layout.addStretch
+@close_button = RBA::QPushButton.new("Close")
+@close_button.clicked.connect(proc {
+  @dlg.close
+})
+@button_layout.addWidget(@close_button)
+@main_layout.addLayout(@button_layout)
+
+# Show the dialog
+@dlg.resize(1000, 800)
+@dlg.show
+
+# Timer to periodically fetch lines and update UI in main thread
+@timer = RBA::QTimer.new
+@timer.setInterval(100)  # milliseconds
+
+@timer.timeout.connect(Proc.new {
+  until lines_queue.empty?
+    line = lines_queue.pop
+    @log_output.append(line)
+    puts line
+  end
+
+  unless @drc_thread.alive?
+    @timer.stop
+    pattern = case
+              when options['density_only']
+                File.join(run_dir, "*_density.lyrdb")
+              when options['antenna_only']
+                File.join(run_dir, "*_antenna.lyrdb")
+              else
+                File.join(run_dir, "*.lyrdb")
+              end
+
+    result_db = Dir.glob(pattern).first
+    if result_db &amp;&amp; File.exist?(result_db)
+      begin
+        @rdb = RBA::ReportDatabase.new
+        @rdb.load(result_db)
+        
+        @main_window = RBA::MainWindow.instance
+        if @main_window &amp;&amp; @main_window.current_view
+          lv = @main_window.current_view
+          rdb_index = lv.add_rdb(@rdb)
+          cv_index = lv.active_cellview_index
+          lv.show_rdb(rdb_index, cv_index)
+        else
+          puts "Warning: No active layout view found to show report."
+        end
+      rescue =&gt; e
+        puts "Error while opening report database: #{e.message}"
+      end
+    else
+      puts "Lyrdb file not found with pattern #{pattern}, please check"
+    end
+  end
+})
+
+@timer.start
+
+</text>
+</klayout-macro>

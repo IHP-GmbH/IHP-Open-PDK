@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+-->
+<klayout-macro>
+ <description>SG13G2 DRC Options</description>
+ <version>0.1</version>
+ <category>drc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>SG13G2 DRC Options</group-name>
+ <menu-path>sg13g2_menu&gt;end("SG13G2 PDK").end</menu-path>
+ <interpreter>ruby</interpreter>
+ <dsl-interpreter-name/>
+ <text>
+ module SG13G2DRCOptions
+  require 'yaml'
+  require 'open3'
+  require 'fileutils'
+  include RBA
+
+  # Main function to manage DRC options
+  def self.main
+    # check klayout version
+    klayout_v, _ = Open3.capture2('klayout -b -v')
+    klayout_v = klayout_v.split("\n")[0]
+    klayout_v_list = []
+
+    if klayout_v.empty?
+      raise StandardError, "KLayout is not found. Please make sure KLayout is installed."
+    else
+      klayout_v_arr = klayout_v.split(" ")[-1].scan(/[^.]+/)
+      klayout_v_list = klayout_v_arr.map { |ele| ele.to_i }
+    end
+
+    if klayout_v_list.size &lt; 1 || klayout_v_list.size &gt; 3
+      raise StandardError, "Was not able to get KLayout version properly."
+    elsif klayout_v_list.size &gt;= 2 || klayout_v_list.size &lt;= 3
+      if klayout_v_list[1] &lt; 29
+        puts "Using this KLayout version has not been assessed. Limits are unknown."
+        raise StandardError, "Prerequisites at a minimum: KLayout 0.29.0"
+      end
+    end
+
+    # Construct the absolute path to the YAML file
+    yaml_file_path = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13g2_drc_options.yml")
+
+    # Load options from YAML file
+    options = load_options(yaml_file_path)
+
+    # Create a dialog box for selecting options
+    @dialog_main = create_options_dialog(options, yaml_file_path)
+
+    # Show the dialog box and handle user input
+    if @dialog_main.exec == 1
+      # Get values from the dialog box
+      update_options_from_dialog(options, @dialog_main)
+
+      # Save options to YAML file
+      if save_options(yaml_file_path, options)
+        puts "✅ --- DRC Options saved successfully. --- ✅"
+      else
+        puts "❌ --- Failed to save DRC options. --- ❌"
+      end
+    end
+  end
+
+  # Load DRC options from a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the loaded options
+  def self.load_options(yaml_file_path)
+    return set_default_options(yaml_file_path) unless File.exist?(yaml_file_path)
+    
+    begin
+      YAML.safe_load(File.read(yaml_file_path)) || {}
+    rescue Psych::SyntaxError => e
+      puts "YAML syntax error: #{e.message}"
+      set_default_options(yaml_file_path)
+    rescue => e
+      puts "Error loading options: #{e.message}"
+      {}
+    end
+  end
+
+  # Set default DRC options and save them to a YAML file
+  #
+  # yaml_file_path - The path to the YAML file
+  #
+  # Returns a hash containing the default options
+  def self.set_default_options(yaml_file_path)
+    defaults = {
+      'top_cell' => '',
+      'run_mode' => 'deep',
+      'table' => 'all',
+      'run_dir' => '',
+      'parallel_runs' => 1,
+      'density_thr' => 1,
+      'no_feol' => false,
+      'no_beol' => false,
+      'MaxRuleSet' => false,
+      'no_connectivity' => true,
+      'no_density' => true,
+      'density_only' => false,
+      'antenna' => false,
+      'antenna_only' => false,
+      'no_offgrid' => false
+    }
+    save_options(yaml_file_path, defaults) rescue nil
+    defaults
+  end
+
+  # Save options to a YAML file
+  def self.save_options(yaml_file_path, options)
+    begin
+      dir = File.dirname(yaml_file_path)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+      File.open(yaml_file_path, 'w') { |file| file.write(options.to_yaml) }
+      true
+    rescue => e
+      puts "Error saving options to YAML file: #{e.message}"
+      false
+    end
+  end
+
+  # DRC options dialog
+  def self.create_options_dialog(options, yaml_file_path)
+    @dialog_options = RBA::QDialog.new
+    @dialog_options.windowTitle = "SG13G2 DRC Options"
+    @dlg_size = RBA::QSize.new(700, 500)
+    @dialog_options.minimumSize = @dlg_size
+
+    # Main vertical layout
+    @main_layout = RBA::QVBoxLayout.new(@dialog_options)
+    @main_layout.addSpacing(10)
+    @main_layout.setSpacing(15)
+
+    # Header layout with image and title
+    @header_layout = RBA::QHBoxLayout.new
+    @image_label = RBA::QLabel.new
+    image_path = "#{__dir__}/ihp_logo.png"
+    if File.exist?(image_path)
+      @pixmap = RBA::QPixmap.new(image_path)
+      @scaled_pixmap = @pixmap.scaled(150, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation)
+      @image_label.setPixmap(@scaled_pixmap)
+    else
+      @image_label.setText("[Logo Missing]")
+      @image_label.setStyleSheet("color: red; font-weight: bold;")
+    end
+
+    @title_label = RBA::QLabel.new("SG13G2 DRC Run Configuration")
+    @title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-left: 15px;")
+    @header_layout.addWidget(@image_label)
+    @header_layout.addWidget(@title_label)
+    @header_layout.addStretch
+    @main_layout.addLayout(@header_layout)
+
+    ## --- Basic Settings Tab ---
+    @spacer = RBA::QSpacerItem.new(0, 5)
+    @basic_tab = RBA::QWidget.new
+    @basic_layout_setup = RBA::QFormLayout.new(@basic_tab)
+    @basic_layout_setup.setSpacing(15)
+    @basic_layout_setup.addRow("Top Cell:", create_combo_box(options['top_cell'], get_top_cell_names))
+    @basic_layout_setup.addRow("Run Mode:", create_combo_box(options['run_mode'], ['deep', 'flat']))
+    @basic_layout_setup.addRow("DRC Table:", create_combo_box(options['table'] || "main", get_table_files))
+    @basic_layout_setup.addRow("Parallel Runs:", create_cores_threads_no(options['parallel_runs']))
+    @basic_layout_setup.addItem(@spacer)
+    @basic_layout_setup.setSpacing(10)
+    # Checkboxes - BASIC tab
+    chk_feol = create_check_box("Disable FEOL Checks", options['no_feol'], "Skips Front-End-Of-Line rule checks (e.g., active, poly).")
+    chk_beol = create_check_box("Disable BEOL Checks", options['no_beol'], "Skips Back-End-Of-Line rule checks (e.g., metals and vias).")
+    chk_max = create_check_box("Enable Max Rule Set", options['MaxRuleSet'], "Uses the full maximum rule set available (may be slower).")
+    @basic_layout_setup.addRow("", chk_feol)
+    @basic_layout_setup.addRow("", chk_beol)
+    @basic_layout_setup.addRow("", chk_max)
+
+    ## --- Advanced Settings Tab ---
+    @advanced_tab = RBA::QWidget.new
+    @advanced_layout_setup = RBA::QFormLayout.new(@advanced_tab)
+    @advanced_layout_setup.addRow('Output Run Directory:', create_dir_input(options['run_dir'], @dialog_options))
+    @advanced_layout_setup.setSpacing(30)
+    @advanced_layout_setup.addRow("Density Run Threads:", create_cores_threads_no(options['density_thr']))
+    @advanced_layout_setup.setSpacing(5)
+    # Advanced options - checkboxes with tooltips and styling
+    chk_conn = create_check_box("Disable Connectivity Checks", options['no_connectivity'], "Disables checks that require connectivity.")
+    chk_density = create_check_box("Disable Density Checks", options['no_density'], "Disables density rule checks.")
+    chk_density_only = create_check_box("Run Only Density Checks", options['density_only'], "Runs *only* density checks and skips others.")
+    chk_antenna = create_check_box("Enable Antenna Checks", options['antenna'], "Enables antenna rule checks.")
+    chk_antenna_only = create_check_box("Run Only Antenna Checks", options['antenna_only'], "Runs *only* antenna checks and skips others.")
+    chk_offgrid = create_check_box("Disable Offgrid Checks", options['no_offgrid'], "Skips offgrid and angles checks.")
+    @advanced_layout_setup.addRow("", chk_conn)
+    @advanced_layout_setup.addRow("", chk_density)
+    @advanced_layout_setup.addRow("", chk_density_only)
+    @advanced_layout_setup.addRow("", chk_antenna)
+    @advanced_layout_setup.addRow("", chk_antenna_only)
+    @advanced_layout_setup.addRow("", chk_offgrid)
+
+    # Tabs
+    @tab_widget_setup = RBA::QTabWidget.new(@dialog_options)
+    @tab_widget_setup.addTab(@basic_tab, "Basic Settings")
+    @tab_widget_setup.addTab(@advanced_tab, "Advanced Settings")
+    @main_layout.addWidget(@tab_widget_setup)
+
+    # Footer buttons
+    @button_layout = RBA::QHBoxLayout.new
+    @button_layout.addStretch
+    @button_layout.addWidget(create_buttons(@dialog_options, yaml_file_path))
+    @main_layout.addLayout(@button_layout)
+
+    # style (can be adjusted)
+    @dialog_options.setStyleSheet(
+      "QDialog {\n" \
+      "  background-color: #f8f9fa;\n" \
+      "  border-radius: 12px;\n" \
+      "  padding: 12px;\n" \
+      "}\n" \
+      "QTabWidget::pane {\n" \
+      "  border: 2px solid #ccc;\n" \
+      "  border-radius: 8px;\n" \
+      "  padding: 8px;\n" \
+      "}\n" \
+      "QLabel {\n" \
+      "  font-size: 14px;\n" \
+      "}\n" \
+      "QComboBox, QLineEdit, QSpinBox {\n" \
+      "  padding: 6px;\n" \
+      "  font-size: 14px;\n" \
+      "}\n" \
+      "QCheckBox {\n" \
+      "  font-size: 14px;\n" \
+      "}\n" \
+      "QPushButton {\n" \
+      "  padding: 6px 12px;\n" \
+      "  font-size: 14px;\n" \
+      "  border-radius: 5px;\n" \
+      "}\n"
+    )
+
+    @dialog_options
+  end
+
+  # Returns a list containing all top cell names with the active cell as the first element
+  def self.get_top_cell_names
+    cells = []
+    @active_cellview = RBA::CellView.active
+    active_cell_name = @active_cellview.cell.name
+    layout = @active_cellview.layout
+    layout.each_cell do |cell|
+      cells.push(cell.name)
+    end
+
+    # Remove the active cell name from the list if it exists and add it to the front
+    cells.delete(active_cell_name)
+    cells.unshift(active_cell_name)
+    cells
+  end
+
+  # Create a directory input widget
+  def self.create_dir_input(path, parent)
+    @dir_input = RBA::QLineEdit.new
+    @dir_input.text = path
+    @dir_input.setMinimumHeight(35)
+    @dir_input.setPlaceholderText("Optional - default is ./drc_run_&lt;cell_name&gt;")
+
+    @browse_button = RBA::QPushButton.new('Browse')
+    @browse_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 6px 16px; " \
+      "  font-size: 16px; " \
+      "  border-radius: 4px; " \
+      "  background-color: #2e86de; " \
+      "  color: white; " \
+      "  border: none; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #1e70bf; " \
+      "} " \
+      "QPushButton:pressed { " \
+      "  background-color: #155a9c; " \
+      "}"
+    )
+    @browse_button.setToolTip("Browse to select a directory.")
+
+    @browse_button.clicked.connect(Proc.new {
+      @dir_path = RBA::FileDialog.get_existing_dir('Select Directory', '.')
+      @dir_input.text = @dir_path.to_s
+    })
+
+    @container_dir = RBA::QWidget.new
+    @layout = RBA::QHBoxLayout.new(@container_dir)
+    @layout.addWidget(@dir_input)
+    @layout.addWidget(@browse_button)
+
+    @container_dir
+  end
+
+  # Get list of DRC tables from available decks
+  def self.get_table_files
+    drc_dir = File.expand_path('../drc/rule_decks', __dir__)
+    return [] unless Dir.exist?(drc_dir)
+
+    excluded = ['main.drc', 'tail.drc', 'density.drc', 'antenna.drc', 'sg13g2_maximal.drc', 'layers_def.drc']
+
+    files = Dir.entries(drc_dir).select do |f|
+      f.end_with?('.drc') &amp;&amp; !excluded.include?(f)
+    end.map do |f|
+      File.basename(f, '.drc').sub(/^\d+_\d*_?/, '')
+    end.sort
+
+    ['all'] + files
+  end
+
+  # Create a combo box widget
+  def self.create_combo_box(current_index, items)
+    @combo_box = RBA::QComboBox.new
+    items.each { |item| @combo_box.addItem(item) }
+    @combo_box.currentIndex = items.index(current_index)
+    @combo_box.setToolTip("Select the option from the available list")
+    @combo_box.setMinimumHeight(30)
+    @combo_box
+  end
+
+  # Create a spin box widget for numerical inputs
+  def self.create_cores_threads_no(default_value)
+    @spin_box = RBA::QSpinBox.new
+    @spin_box.setRange(1, 128)  # Set range for the number of cores
+    @spin_box.setValue(default_value)
+    @spin_box.setToolTip("Set the number of cores/threads to use (1-128)")
+    @spin_box
+  end
+
+  # Create a check box widget
+  def self.create_check_box(text, checked, tip)
+    @check_box = RBA::QCheckBox.new(text)
+    @check_box.checked = checked
+    @check_box.setStyleSheet("color: #0054b3; font-weight: bold;")
+    @check_box.setToolTip(tip)
+    @check_box
+  end
+
+  # Create buttons with icons and enhanced styles
+  def self.create_buttons(dialog_button, yaml_file_path)
+    @container_button = RBA::QWidget.new
+    @layout_button = RBA::QHBoxLayout.new(@container_button)
+
+    # Add icon to the OK button
+    @ok_button = RBA::QPushButton.new('OK')
+    @ok_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 8px 16px; " \
+      "  font-size: 14px; " \
+      "  border-radius: 5px; " \
+      "  background-color: #4CAF50; " \
+      "  color: white; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #45a049; " \
+      "}"
+    )
+    @ok_button.setToolTip("Click to confirm the settings.")
+    @ok_button.clicked.connect(Proc.new { dialog_button.accept })
+
+    # Add icon to the Reset button
+    @reset_button = RBA::QPushButton.new('Reset')
+    @reset_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 8px 16px; " \
+      "  font-size: 14px; " \
+      "  border-radius: 5px; " \
+      "  background-color: #FF9800; " \
+      "  color: white; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #FB8C00; " \
+      "}"
+    )
+    @reset_button.setToolTip("Click to reset to default settings.")
+    @reset_button.clicked.connect(Proc.new { 
+      if set_default_options(yaml_file_path)
+        dialog_button.reject
+      else
+        puts "Failed to reset options."
+      end
+    })
+
+    # Add icon to the Cancel button
+    @cancel_button = RBA::QPushButton.new('Cancel')
+    @cancel_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 8px 16px; " \
+      "  font-size: 14px; " \
+      "  border-radius: 5px; " \
+      "  background-color: #e0e0e0; " \
+      "  color: black; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #c6c6c6; " \
+      "}"
+    )
+    @cancel_button.setToolTip("Click to cancel the operation.")
+    @cancel_button.clicked.connect(Proc.new { dialog_button.reject })
+
+    # Add buttons to the layout
+    @layout_button.addStretch
+    @layout_button.addWidget(@ok_button)
+    @layout_button.addWidget(@reset_button)
+    @layout_button.addWidget(@cancel_button)
+
+    @container_button
+  end
+
+  # Update options hash from the dialog
+  def self.update_options_from_dialog(options, dialog_update)
+    layout = dialog_update.layout
+    @tab_widget_update = layout.itemAt(2).widget
+
+    @basic_layout_update = @tab_widget_update.widget(0).layout
+    options['top_cell'] = @basic_layout_update.itemAt(1).widget.currentText if @basic_layout_update.itemAt(1).widget
+    options['run_mode'] = @basic_layout_update.itemAt(3).widget.currentText if @basic_layout_update.itemAt(3).widget
+    options['table'] = @basic_layout_update.itemAt(5).widget.currentText if @basic_layout_update.itemAt(5).widget
+    options['parallel_runs'] = @basic_layout_update.itemAt(7).widget.value if @basic_layout_update.itemAt(7).widget
+    options['no_feol'] = @basic_layout_update.itemAt(9).widget.checked if @basic_layout_update.itemAt(9).widget
+    options['no_beol'] = @basic_layout_update.itemAt(10).widget.checked if @basic_layout_update.itemAt(10).widget
+    options['MaxRuleSet'] = @basic_layout_update.itemAt(11).widget.checked if @basic_layout_update.itemAt(11).widget
+
+    @advanced_layout_update = @tab_widget_update.widget(1).layout
+    options['run_dir'] = @advanced_layout_update.itemAt(1).widget.layout.itemAt(0).widget.text
+    options['density_thr'] = @advanced_layout_update.itemAt(3).widget.value if @advanced_layout_update.itemAt(3).widget
+    options['no_connectivity'] = @advanced_layout_update.itemAt(4).widget.checked if @advanced_layout_update.itemAt(4).widget
+    options['no_density'] = @advanced_layout_update.itemAt(5).widget.checked if @advanced_layout_update.itemAt(5).widget
+    options['density_only'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
+    options['antenna'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
+    options['antenna_only'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
+    options['no_offgrid'] = @advanced_layout_update.itemAt(9).widget.checked if @advanced_layout_update.itemAt(9).widget
+  end
+
+ end
+
+ SG13G2DRCOptions.main
+ </text>
+</klayout-macro>

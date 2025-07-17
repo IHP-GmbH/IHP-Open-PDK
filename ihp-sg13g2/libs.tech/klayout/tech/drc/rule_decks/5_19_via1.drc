@@ -1,0 +1,48 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #==============================================
+  #----------------- 5.19. Via1 -----------------
+  #==============================================
+
+  logger.info('Starting 5.19. Via1 table')
+
+  # Via1 derivations
+  logger.info('Starting 5.19. Via1 table derivations')
+  via1_nseal = via1_drw.not(edgeseal_drw)
+
+  # Rule V1.a: Min. and max. Via1 width is 0.19µm
+  logger.info('Executing rule V1.a')
+  v1_a_value = drc_rules["V1_a"].to_f
+  v1a_l1 = via1_nseal.without_bbox_min(v1_a_value.um)
+  v1a_l2 = via1_nseal.without_bbox_max(v1_a_value.um)
+  v1a_l = v1a_l1.join(v1a_l2)
+  v1a_l.output('V1.a', "5.19. V1.a : Min. and max. Via1 width: #{v1_a_value} µm")
+  v1a_l1.forget
+  v1a_l2.forget
+  v1a_l.forget
+
+  # Rule V1.b: Min. Via1 space is 0.22µm
+  logger.info('Executing rule V1.b')
+  v1_b_value = drc_rules["V1_b"].to_f
+  v1b_l1 = via1_nseal.space(v1_b_value.um, euclidian)
+  v1b_l1.output('V1.b', "5.19. V1.b : Min. Via1 space: #{v1_b_value} µm")
+  v1b_l1.forget
+
+end

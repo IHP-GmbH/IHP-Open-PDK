@@ -1,0 +1,56 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #===============================================
+  #------------------ 5.20. Vian -----------------
+  #===============================================
+
+  logger.info('Starting 5.20. Vian table')
+
+  # Vian and metal lists
+  vias_lay   = [via2_drw, via3_drw, via4_drw]
+  metals_lay = [metal2_drw, metal3_drw, metal4_drw]
+  via_start_index = 2
+
+  vias_lay.zip(metals_lay).each_with_index do |(via_lay, metal_lay), index|
+    via_no = via_start_index + index
+
+    # Vian derivations
+    vian_nseal = via_lay.not(edgeseal_drw)
+
+    # Rule Vn.a: Min. and max. Vian width is 0.19µm
+    logger.info("Executing rule V#{via_no}.a")
+    vn_a_value = drc_rules["Vn_a"].to_f
+    vna_l1 = vian_nseal.without_bbox_min(vn_a_value.um)
+    vna_l2 = vian_nseal.without_bbox_max(vn_a_value.um)
+    vna_l = vna_l1.join(vna_l2)
+    vna_l.output("V#{via_no}.a", "5.20. V#{via_no}.a : Min. and max. Via#{via_no} width: #{vn_a_value} µm")
+    vna_l1.forget
+    vna_l2.forget
+    vna_l.forget
+
+    # Rule Vn.b: Min. Vian space is 0.22µm
+    logger.info("Executing rule V#{via_no}.b")
+    vn_b_value = drc_rules["Vn_b"].to_f
+    vnb_l1 = vian_nseal.space(vn_b_value.um, euclidian)
+    vnb_l1.output("V#{via_no}.b", "5.20. V#{via_no}.b : Min. Via#{via_no} space: #{vn_b_value} µm")
+    vnb_l1.forget
+
+  end
+end

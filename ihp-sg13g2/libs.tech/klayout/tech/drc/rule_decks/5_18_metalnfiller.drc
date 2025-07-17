@@ -1,0 +1,57 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #================================================
+  #----------------- 5.18 Metaln:filler -----------
+  #================================================
+
+  logger.info('Starting 5.18 Metaln:filler table')
+
+  # Metaln:filler derivations
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for Metaln:filler table.')
+  end
+
+  # metalfiller lists
+  metalfillers_lay = [metal1_filler, metal2_filler, metal3_filler, metal4_filler, metal5_filler]
+  metal_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw]
+  metalfiller_start_index = 1
+
+  metalfillers_lay.zip(metal_lay).each_with_index do |(metalfiller_lay, metal_layer), index|
+    metalfiller_no = metalfiller_start_index + index
+
+    # Rule MFil.c: Min. Metal(n):filler space to Metal(n)  is 0.42 um
+    logger.info("Executing rule M#{metalfiller_no}Fil.c")
+    mfil_c_value = drc_rules['MFil_c'].to_f
+    mnfil_c = metalfiller_lay.sep(metal_layer, mfil_c_value.um, euclidian)
+    mnfil_c.output("M#{metalfiller_no}Fil.c",
+                   "5.18. M#{metalfiller_no}Fil.c : Min. Metal#{metalfiller_no}:filler space to Metal#{metalfiller_no} is #{mfil_c_value} um")
+    mnfil_c.forget
+  end
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after Metaln:filler table.")
+  end
+end

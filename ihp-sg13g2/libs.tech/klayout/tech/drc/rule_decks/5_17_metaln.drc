@@ -1,0 +1,52 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if BEOL
+  #===============================================
+  #----------------- 5.17 Metaln -----------------
+  #===============================================
+
+  logger.info('Starting 5.17 Metaln table')
+
+  # Metaln derivations
+
+  # Metals/Vias lists
+  mets_lay = [metal2_drw, metal3_drw, metal4_drw, metal5_drw]
+  vias_lay = [via1_drw, via2_drw, via3_drw, via4_drw]
+  metal_start_index = 2
+
+  mets_lay.each_with_index do |met_lay, index|
+    via_lay = vias_lay[index]
+    met_no = index + metal_start_index
+
+    # Rule Mn.a: Min. Metaln width is 0.20µm
+    logger.info("Executing rule M#{met_no}.a")
+    mn_a_value = drc_rules["Mn_a"].to_f
+    mna_l1 = met_lay.width(mn_a_value.um, euclidian)
+    mna_l1.output("M#{met_no}.a", "5.17. M#{met_no}.a: Min. Metal#{met_no} width: #{mn_a_value} μm.")
+    mna_l1.forget
+
+    # Rule Mn.b: Min. Metaln space or notch is 0.21µm
+    logger.info("Executing rule M#{met_no}.b")
+    mn_b_value = drc_rules["Mn_b"].to_f
+    mnb_l1 = met_lay.space(mn_b_value.um, euclidian)
+    mnb_l1.output("M#{met_no}.b", "5.17. M#{met_no}.b: Min. Metal#{met_no} space or notch: #{mn_b_value} μm.")
+    mnb_l1.forget
+
+  end
+end
