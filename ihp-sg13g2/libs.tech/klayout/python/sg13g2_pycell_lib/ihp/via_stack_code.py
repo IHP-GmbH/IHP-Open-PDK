@@ -124,7 +124,13 @@ class via_stack(DloGen):
         #*
         #************************************************************************
 
-        for layer in metal_layers[metal_layers.index(b_layer):metal_layers.index(t_layer)+1]:
+        idx_b = metal_layers.index(b_layer)
+        idx_t = metal_layers.index(t_layer)
+        if idx_b > idx_t:
+            idx_b, idx_t = idx_t, idx_b
+        stack_layers = metal_layers[idx_b:idx_t+1]
+        
+        for layer in stack_layers:
 
             #pre-procesing
             if layer == 'Metal1':
@@ -144,7 +150,8 @@ class via_stack(DloGen):
                 rows = vt1_rows
                 w_x = (columns * via_size + (columns - 1) * via_sep)
                 w_y = (rows * via_size + (rows - 1) * via_sep)
-                dbCreateRect(self, 'Metal5', Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
+                if "Metal5" in stack_layers:
+                    dbCreateRect(self, 'Metal5', Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
                 via_enc = Topvia1_enc_top1
 
             elif layer == 'TopMetal2':
