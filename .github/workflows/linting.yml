@@ -20,7 +20,9 @@ name: Python Code Linting
 on:
   pull_request:
     paths:
-      - 'ihp-sg13g2/libs.tech/klayout/tech/lvs/**'
+      - '**.py'
+      - '**.yml'
+      - '**.yaml'
   workflow_dispatch:
 
 jobs:
@@ -30,6 +32,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-      - name: Lint with flake8
+      - name: Install dependencies
         run: |
-          make lint_python
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Test with tox
+        run: tox

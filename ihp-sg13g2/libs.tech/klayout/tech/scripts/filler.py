@@ -48,8 +48,9 @@ for disabled, area in scripts:
         print(f"Skip {area} fill because disabled by argument")
     else:
         print(f"Start filling {area}")
-        path = pathlib.Path(os.environ['PDK_ROOT']) / pathlib.Path(os.environ['PDK']) / f"libs.tech/klayout/tech/macros/sg13g2_filler_{area}.lym"
+        path = pathlib.Path(os.environ['PDK_ROOT']) / pathlib.Path(os.environ['PDK']) / \
+            f"libs.tech/klayout/tech/macros/sg13g2_filler_{area}.lym"
         pya.Macro(path).run()
 
-layout=pya.CellView.active().layout()
-layout.write(output_file) # pylint: disable=undefined-variable
+layout = pya.CellView.active().layout()
+layout.write(output_file)  # pylint: disable=undefined-variable  # noqa: F821

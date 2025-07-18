@@ -14,6 +14,7 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'bondpad'
 
+
 def generate_bondpad(diameter: float, shape: str, output: str):
     """Function to create a new layout, add the bondpad PCell to a top cell called
     similar to the filename and save it somewhere on the filesystem.
@@ -35,7 +36,7 @@ def generate_bondpad(diameter: float, shape: str, output: str):
     cell_name = pathlib.Path(output).resolve().name.split('.')[0]
     top_cell = layout.cell(layout.add_cell(cell_name))
     pcell = layout.add_pcell_variant(lib, pcell_decl.id(),
-        {'diameter': f'{diameter}u', 'shape': shape})
+                                     {'diameter': f'{diameter}u', 'shape': shape})
     layout.cell(pcell)
     top_cell.insert(klayout.db.CellInstArray(pcell, klayout.db.Trans()))
 
@@ -43,6 +44,7 @@ def generate_bondpad(diameter: float, shape: str, output: str):
     pathlib.Path(output).parent.mkdir(parents=True, exist_ok=True)
 
     layout.write(output)
+
 
 try:
     diameter
@@ -53,7 +55,7 @@ except NameError:
 try:
     shape
 except NameError:
-    shape = 'octagon' # pylint: disable=invalid-name
+    shape = 'octagon'  # pylint: disable=invalid-name
 
 allowed_shapes = ('octagon', 'square', 'circle')
 if shape not in allowed_shapes:
@@ -66,4 +68,4 @@ except NameError:
     print("Missing output argument. Please define '-rd output=<path-to-bondpad>'")
     sys.exit(1)
 
-generate_bondpad(diameter, shape, output) # pylint: disable=undefined-variable
+generate_bondpad(diameter, shape, output)  # pylint: disable=undefined-variable  # noqa: F821

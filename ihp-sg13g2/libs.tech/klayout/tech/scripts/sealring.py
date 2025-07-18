@@ -15,6 +15,7 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'sealring'
 
+
 def generate_sealring(width: float, heigth: float, output: str):
     """Function to create a new layout, add the sealring PCell to sealring_top
     and save it somewhere on the filesystem.
@@ -41,7 +42,7 @@ def generate_sealring(width: float, heigth: float, output: str):
             "- Running KLayout with a version that supports Python PCells and properly loads them\n"
             "- Verifying that 'SG13_dev' appears in the Library Browser under PCells"
         )
-    
+
     pcell_decl = lib.layout().pcell_declaration(PCELL)
 
     # Remove space around the sealring from width/height arguments.
@@ -59,6 +60,7 @@ def generate_sealring(width: float, heigth: float, output: str):
     pathlib.Path(output).parent.mkdir(parents=True, exist_ok=True)
 
     layout.write(output)
+
 
 try:
     width
@@ -78,4 +80,4 @@ except NameError:
     print("Missing output argument. Please define '-rd output=<path-to-sealring>'")
     sys.exit(1)
 
-generate_sealring(width, height, output) # pylint: disable=undefined-variable
+generate_sealring(width, height, output)  # pylint: disable=undefined-variable  # noqa: F821
