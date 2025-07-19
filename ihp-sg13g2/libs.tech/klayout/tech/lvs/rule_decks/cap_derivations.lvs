@@ -42,7 +42,13 @@ rfmim_area = pwell_block.interacting(mim_drw)
 rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
-rfmim_sub = ptap.extents.interacting(rfmim_area)
+# the extents function returns the bounding box of all shapes for a layer
+# while ptaps.extents may work for cells with individual devices,
+# the result for a large block will be probably not be what is expected.
+# Since the rfcmim cells have defined layout, the subregion can be sized to connect
+# with the ptap ring.
+#rfmim_sub = ptap.extents.interacting(rfmim_area)
+rfmim_sub = rfmim_area.sized(1.um)
 rfmeas_mk = metal5_con.overlapping(rfmim_btm).and(rfmim_area)
 
 # === svaricap ===
