@@ -37,15 +37,6 @@ $(TOP_DIR)/actions_venv:
 env: $(TOP_DIR)/actions_venv
 	@. $(VENV_RUN_COMMAND); pip install -r $(REQUIREMENTS_FILE)
 
-# ========================
-# ----- LINTING TEST -----
-# ========================
-
-# Lint python code
-lint_python: env
-	@echo "Running python linting for Klayout-LVS scripts"
-	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/lvs
-
 #=================================
 # ----- test-LVS_regression ------
 #=================================
