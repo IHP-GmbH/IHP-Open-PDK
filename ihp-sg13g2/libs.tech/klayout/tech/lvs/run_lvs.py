@@ -454,6 +454,7 @@ def generate_klayout_switches(args, layout_path, netlist_path, effective_net_onl
         "schematic": os.path.abspath(netlist_path) if netlist_path else None,
         "ignore_top_ports_mismatch": "true" if args.ignore_top_ports_mismatch else "false",
         "implicit_nets": f'"{args.implicit_nets}"' if args.implicit_nets else '""',
+        "skip_extract": "true" if args.skip_extract else "false",
     }
 
     return switches
@@ -660,7 +661,7 @@ if __name__ == "__main__":
                [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
                [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
-               [--implicit_nets=<nets>]
+               [--implicit_nets=<nets>] [--skip_extract]
     """
 
     parser = argparse.ArgumentParser(
@@ -703,6 +704,11 @@ if __name__ == "__main__":
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
+    parser.add_argument(
+        "--skip_extract",
+        action="store_true",
+        help="Skip extraction and use existing target extracted netlist path if available.",
+    )
     parser.add_argument(
         "--implicit_nets",
         type=str,

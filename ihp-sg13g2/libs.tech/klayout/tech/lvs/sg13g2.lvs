@@ -126,6 +126,9 @@ logger.info("Selected IGNORE_TOP_PORTS_MISMATCH option: #{IGNORE_TOP_PORTS_MISMA
 IMPLICIT_NETS = ($implicit_nets || '').to_s.strip
 
 logger.info("Selected IMPLICIT_NETS option: #{IMPLICIT_NETS.empty? ? '(none)' : IMPLICIT_NETS}")
+SKIP_EXTRACT = bool_check?($skip_extract)
+
+logger.info("Selected SKIP_EXTRACT option: #{SKIP_EXTRACT}")
 
 # TOP_LVL_PINS
 TOP_LVL_PINS = bool_check?($top_lvl_pins)
@@ -231,16 +234,22 @@ custom_spice_writer.with_comments = SPICE_WITH_COMMENTS
 
 if $target_netlist
   logger.info("LVS extracted netlist at: #{$target_netlist}")
-  target_netlist($target_netlist, custom_spice_writer,
-                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  netlist_path = $target_netlist
+  if ! SKIP_EXTRACT
+    target_netlist($target_netlist, custom_spice_writer,
+                   "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  end
 else
   layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
   netlist_path = layout_dir.join("#{source.cell_name}_extracted.cir")
-  target_netlist(netlist_path.to_s, custom_spice_writer,
-                 "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  if ! SKIP_EXTRACT
+    target_netlist(netlist_path.to_s, custom_spice_writer,
+                   "Extracted by KLayout with SG13G2 LVS runset on : #{Time.now.strftime('%d/%m/%Y %H:%M')}")
+  end
   logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
 end
 
+if ! SKIP_EXTRACT
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
 #================================================
@@ -385,6 +394,10 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 
 # %include rule_decks/tap_extraction.lvs
 
+else
+  logger.info('Skipped extraction')
+end
+
 #==================================================
 # ------------ COMPARISON PREPARATIONS ------------
 #==================================================
@@ -394,6 +407,16 @@ logger.info('Starting SG13G2 LVS Options Preparations')
 log_option_action = lambda do |label, option_name, enabled|
   state = enabled ? 'ENABLED' : 'SKIPPED'
   logger.info("[#{label}] #{option_name}: #{state}")
+end
+
+if SKIP_EXTRACT
+  if File.exist?(netlist_path.to_s)
+    logger.info("Using existing extracted file #{netlist_path}")
+  else
+    logger.error("Cannot find extracted file #{netlist_path} => Stop procedure")
+    return 1
+  end
+  netlist.read(netlist_path.to_s, reader)
 end
 
 apply_netlist_options = lambda do |target_netlist, label|
