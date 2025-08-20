@@ -117,9 +117,6 @@ class MdmVerifier:
                     continue
 
                 print(compact_df.shape[0])
-                if compact_df.shape[0] > 250:
-                    continue
-
                 try:
                     sim_df, errors = runner.run(
                         compact_df, workdir=work_dir / f"sim_{setup_type}"
