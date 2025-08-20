@@ -1,0 +1,32 @@
+.lib {{ model_lib_path }} {{ corner }}
+
+.temp {{ TEMP }}
+
+.param VC={{ VC_val }}
+.param VB={{ VB_val }}
+.param VE={{ VE_val }}
+
+Vc c 0 {VC}
+Vb b 0 {VB}
+Ve e 0 {VE}
+
+X1 c b e pnpMPA
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+
+  let ic = -i(Vc)
+  let ib = -i(Vb)
+  let ie = -i(Ve)
+
+  wrdata {{ out_path }} v({{ sweep_node }}) ic ib ie
+  quit
+.endc
+
+.end
+
+Idc
