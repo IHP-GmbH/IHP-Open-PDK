@@ -23,6 +23,7 @@ class MdmVerifier:
     def __init__(self, config_path: Path):
         """Initialize the verifier with configuration."""
         self.config = self._load_config(config_path)
+        self.device_type = self.config["device_type"]
         self.output_dir = Path(
             self.config.get("output_dir", Path.cwd() / "mdm_check_out")
         )
@@ -40,9 +41,8 @@ class MdmVerifier:
         required_keys = [
             "mdm_dir",
             "dc_template_path",
-            "model_lib_path",
             "corner_lib_path",
-            "osdi_path",
+            "device_type",
             "device_name",
             "metrics",
         ]
@@ -61,7 +61,6 @@ class MdmVerifier:
         config.setdefault("tolerance_abs", 0.0)
         config.setdefault("tolerance_rel", 0.0)
         config.setdefault("output_dir", str(Path.cwd() / "mdm_check_out"))
-        config.setdefault("output_vars_column", "output_vars")
 
         return config
 
@@ -78,28 +77,29 @@ class MdmVerifier:
                 recursive=True,
                 output_dir=Path(temp_dir),
                 create_csvs=False,
+                device_type=self.device_type,
             )
             full_by_type, compact_by_type = aggregator.aggregate()
-
         if not compact_by_type:
             print("ERROR: No sweeps discovered in MDM directory.", file=sys.stderr)
             sys.exit(4)
 
         runner = DcSweepRunner(
             template_path=Path(self.config["dc_template_path"]),
-            model_lib_path=Path(self.config["model_lib_path"]),
             corner_lib_path=Path(self.config["corner_lib_path"]),
-            osdi_path=Path(self.config["osdi_path"]),
+            osdi_path=(
+                Path(self.config["osdi_path"]) if self.device_type == "mos" else None
+            ),
             device_name=self.config["device_name"],
             max_workers=int(self.config["max_workers"]),
+            device_type=self.config["device_type"],
         )
 
         merged_parts = []
         with tempfile.TemporaryDirectory(prefix="ngspice_runs_") as work_dir:
             work_dir = Path(work_dir)
-
             for setup_type, compact_df in compact_by_type.items():
-                sim_type = SIM_TYPE_MAP.get(setup_type)
+                sim_type = SIM_TYPE_MAP.get(setup_type, "current")
 
                 if sim_type == "cap":
                     print(
@@ -118,9 +118,7 @@ class MdmVerifier:
 
                 print(compact_df.shape[0])
                 try:
-                    sim_df, errors = runner.run(
-                        compact_df, workdir=work_dir / f"sim_{setup_type}"
-                    )
+                    sim_df, errors = runner.run(compact_df)
                     print(errors)
                     merged = runner.merge_with_clean(sim_df, full_df)
                     if not merged.empty:
@@ -167,13 +165,13 @@ class MdmVerifier:
 
         return RangeChecker(
             metrics=metrics,
-            output_vars_column=self.config.get("output_vars_column", "output_vars"),
             default_threshold=default_threshold,
         )
 
     def _save_individual_csvs(self, dataframes: List[pd.DataFrame]) -> None:
         """Save individual CSV files for each setup type."""
-        output_dir = "csv_outputs"
+        output_dir = self.output_dir.parent / "sim_merged"
+        output_dir.mkdir(parents=True, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
         for df in dataframes:

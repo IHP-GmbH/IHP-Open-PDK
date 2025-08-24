@@ -1,8 +1,14 @@
 import logging
+from pathlib import Path
 import re
 from typing import Dict, List, Optional, Set, Tuple, Generator
 import pandas as pd
-from mdm_parser.mdm_parser_const import DESIGN_PARAMETERS, UNIT_MULTIPLIERS, UNIT_REGEX
+from mdm_parser.mdm_parser_const import (
+    DESIGN_PARAMETERS,
+    DUTS,
+    UNIT_MULTIPLIERS,
+    UNIT_REGEX,
+)
 
 
 def convert_value(value: str) -> float | str:
@@ -114,7 +120,7 @@ def parse_header_inputs(header_lines: List[str]) -> Set[str]:
     return inputs
 
 
-def parse_design_parameters(header_lines: List[str]) -> Dict[str, float | str]:
+def parse_design_parameters(header_lines: List[str],device_type:str) -> Dict[str, float | str]:
     """
     Parse ICCAP_VALUES section for design parameters.
 
@@ -140,6 +146,17 @@ def parse_design_parameters(header_lines: List[str]) -> Dict[str, float | str]:
             if len(parts) == 2:
                 key, value = parts
                 param_name = key.split(".")[-1]
+                if device_type == "hbt":
+                    if param_name == "NUM_OF_TRANS_RF":
+                        design_params["M"] = convert_value(value)
+                    elif param_name == "DEV_GEOM_L":
+                        design_params["L"] = convert_value(value)
+                    elif param_name == "DEV_GEOM_W":
+                        design_params["W"] = convert_value(value)
+                    elif param_name == "REMARKS":
+                        nx_match = re.search(r"Nx=(\d+)", value)
+                        if nx_match:
+                            design_params["Nx"] = int(nx_match.group(1))
                 if param_name in DESIGN_PARAMETERS:
                     design_params[param_name] = convert_value(value)
 
@@ -228,6 +245,7 @@ def setup_global_logging():
     logging.getLogger().addHandler(console_handler)
     logging.info("Global logging setup complete.")
 
+
 def infer_step(vals) -> float:
     """
     Infer step size from a numeric sequence when all steps are equal.
@@ -235,6 +253,7 @@ def infer_step(vals) -> float:
     """
     step = vals[1] - vals[0]
     return round(step, 12)
+
 
 def normalize_master_setup_type(val: Optional[str]) -> Optional[str]:
     """Normalize master setup type values for consistent grouping."""
@@ -250,3 +269,47 @@ def safe_name(s: Optional[str]) -> str:
         return "unknown"
     return re.sub(r"[^A-Za-z0-9._-]+", "_", s)
 
+
+def _split_filename_parts(file_path: Path) -> list[str]:
+    """Extract meaningful parts from filename stem split by underscores."""
+    stem = file_path.stem
+    return [p for p in stem.split("_") if p]
+
+
+def derive_master_setup_type_from_filename(file_path: Path) -> str:
+    parts = _split_filename_parts(file_path)
+
+    if not parts:
+        return "unknown"
+
+    if parts[0].upper() in ("CBE", "CBC"):
+        return parts[0].upper()
+
+    return f"{parts[0]}_{parts[1]}"
+
+
+def get_dut_params(file_path: Path):
+    """
+    Return (a, p) values for the given DUT.
+    Falls back to default values if DUT not found.
+    """
+    parts = _split_filename_parts(file_path)
+    dut_name = parts[-1].upper()
+    params = DUTS.get(dut_name.upper(), {"a": 2e-12, "p": 6e-6})
+    return params["a"], params["p"]
+
+
+def derive_sweep_var(sweep_var: str, volt_name: str) -> str:
+    if volt_name == sweep_var:
+        return sweep_var
+
+    combos = {
+        frozenset(["vb", "vc"]): "vcb",
+        frozenset(["vb", "ve"]): "vbe",
+        frozenset(["vc", "ve"]): "vce",
+    }
+    key = frozenset([volt_name, sweep_var])
+    if key in combos:
+        return combos[key]
+
+    return sweep_var

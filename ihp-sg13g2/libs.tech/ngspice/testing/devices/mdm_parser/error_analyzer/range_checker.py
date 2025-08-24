@@ -372,44 +372,36 @@ class RangeChecker:
 
 if __name__ == "__main__":
     metrics = [
-        # MetricSpec(
-        #     "id",
-        #     meas="id_meas",
-        #     tt="id_sim_mos_tt",
-        #     ss="id_sim_mos_ss",
-        #     ff="id_sim_mos_ff",
-        # ),
-        # MetricSpec(
-        #     "is",
-        #     meas="is_meas",
-        #     tt="is_sim_mos_tt",
-        #     ss="is_sim_mos_ss",
-        #     ff="is_sim_mos_ff",
-        # ),
-        MetricSpec(
-            "ib",
-            meas="ib_meas",
-            tt="ib_sim_mos_tt",
-            ss="ib_sim_mos_ss",
-            ff="ib_sim_mos_ff",
+        MetricSpec(  # IC
+            "ic",
+            meas="ic_meas",
+            tt="ic_sim_hbt_typ",
+            ss="ic_sim_hbt_bcs",
+            ff="ic_sim_hbt_Wcs",
+            # tolerance=Tolerance(abs=0.0, rel=0.0)  # optional
         ),
-        # MetricSpec(
-        #     "ig",
-        #     meas="ig_meas",
-        #     tt="ig_sim_mos_tt",
-        #     ss="ig_sim_mos_ss",
-        #     ff="ig_sim_mos_ff",
-        # ),
+        MetricSpec(  # IE
+            "ie",
+            meas="ie_meas",
+            tt="ie_sim_hbt_typ",
+            ss="ie_sim_hbt_bcs",
+            ff="ie_sim_hbt_Wcs",
+        ),
+        MetricSpec(  # VB
+            "vb",
+            meas="vb_meas",
+            tt="vb_sim_hbt_typ",
+            ss="vb_sim_hbt_bcs",
+            ff="vb_sim_hbt_Wcs",
+        ),
     ]
-
     analyzer = RangeChecker(
         metrics=metrics,
         default_threshold=Threshold(max_out_of_range_count=27),
-        output_vars_column="output_vars",
     )
 
     report, detailed_failures = analyzer.analyze(
-        "/home/marwan/Desktop/IHP-Open-PDK-Private/ihp-sg13g2/libs.tech/ngspice/testing/devices/csv_outputs/di_bd_perim.csv"
+        "/home/marwan/Desktop/IHP-Open-PDK-Private/ihp-sg13g2/libs.tech/ngspice/testing/devices/all_measurements/results.csv"
     )
 
     analyzer.summarize_to_csv(
@@ -418,4 +410,5 @@ if __name__ == "__main__":
     try:
         analyzer.assert_all_pass(report, targets=("meas",))
     except Exception as e:
+        print(e)
         pass

@@ -5,17 +5,28 @@ import subprocess
 
 import pandas as pd
 
-CORNERS = ("mos_tt", "mos_ss", "mos_ff")
-
+CORNERS_MOS = ("mos_tt", "mos_ss", "mos_ff")
+CORNERS_BJT = ("hbt_typ", "hbt_bcs", "hbt_Wcs")
 # sweep_var -> (voltage source name in netlist, node letter)
-SWEEP_MAP: Dict[str, Tuple[str, str]] = {
+MOS_SWEEP_MAP: Dict[str, Tuple[str, str]] = {
     "vd": ("Vd", "d"),
     "vg": ("Vg", "g"),
     "vs": ("Vs", "s"),
     "vb": ("Vb", "b"),
 }
 
+BJT_SWEEP_MAP = {
+    "vb": ("Vb", "b"),
+    "vc": ("Vc", "c"),
+    "ve": ("Ve", "e"),
+    "vcb": ("Vcb", "c"),
+    "vce": ("Vce", "c"),
+    "vbe": ("Vbe", "b"),
+}
+
 SIM_TYPE_MAP: dict[str, str] = {
+    "cbc": "cap",
+    "cbe": "cap",
     "c_bd_perim": "cap",
     "c_g_ds": "cap",
     "di_bs_area": "current",
@@ -30,6 +41,11 @@ SIM_TYPE_MAP: dict[str, str] = {
     "c_bs_area": "cap",
     "c_g_dsb": "cap",
     "dc_idvg": "current",
+}
+DEVICE_SWEEP_MAPS = {
+    "mos": MOS_SWEEP_MAP,
+    "pnpmpa": BJT_SWEEP_MAP,
+    "hbt": BJT_SWEEP_MAP,
 }
 
 
@@ -97,3 +113,26 @@ def expand_env(obj):
     if isinstance(obj, dict):
         return {k: expand_env(v) for k, v in obj.items()}
     return obj
+
+
+def get_topology_params(row: pd.Series, sweep_var: str) -> Dict[str, float]:
+    """Return voltage parameters based on sweep variable and  topology."""
+
+    def get_bias_value(field: str) -> float:
+        return parse_float(row.get(field, 0.0), 0.0)
+
+    sweep_map = {
+        "vcb": ("VCB", "VE", "ve"),
+        "vbe": ("VBE", "VC", "vc"),
+        "vce": ("VCE", "VB", "vb"),
+    }
+
+    if sweep_var in sweep_map:
+        swept_param_key, companion_param_key, source_field = sweep_map[sweep_var]
+        return {swept_param_key: 0.0, companion_param_key: get_bias_value(source_field)}
+
+    return {
+        "VB": get_bias_value("vb"),
+        "VC": get_bias_value("vc"),
+        "VE": get_bias_value("ve"),
+    }

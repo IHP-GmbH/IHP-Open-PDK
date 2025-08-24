@@ -1,6 +1,24 @@
 # MDM DC verification – quick guide
 
 This script runs the MDM aggregation → DC simulation → envelope checks using the YAML configs for each device.
+## Environment setup
+
+Before running, make sure you have:
+
+* **Python 3.8+** installed
+* **ngspice** available on your system (required for simulations)
+
+### Create a Python virtual environment and install dependencies
+
+```bash
+# Create and activate venv
+python3 -m venv .venv
+source .venv/bin/activate   
+
+
+# Install required Python packages
+pip install pandas pyyaml jinja2 pytest
+```
 
 ## Run commands
 
@@ -9,9 +27,11 @@ This script runs the MDM aggregation → DC simulation → envelope checks using
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 ```
-
+```bash 
+export IHP_OPEN_REPO=<repo path> #ex.(/home/marwan/Desktop/IHP-Open-PDK-Private) 
+export IHP_PDK_ROOT=<repo pdk compiled path> #ex.(/home/marwan/open_design_env/foundary/pdks/IHP-Open-PDK)
+```
 ### NMOS (sg13_lv_nmos)
-
 ```bash
 python3 -m mdm_parser.mdm_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
 ```
@@ -28,7 +48,7 @@ When a run finishes you will see:
 
 1. Per-setup merged CSVs (for debugging/inspection)
 
-- Directory: `csv_outputs/`
+- Directory: `<output_dir>/sim_merged/`
 - One CSV per discovered sweep/setup (filename derived from `master_setup_type`)
 
 2. Reports (per the `output_dir` in the YAML)
@@ -84,16 +104,17 @@ STATUS: 2/24 groups FAILED (8.33%); pass rate = 91.67%
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 python3 -m pytest --tb=short -p no:capture \
-  'tests/test_mos.py::test_mos_devices[nmos_lv]'
+  'tests/test_devices.py::test_devices[nmos_lv]'
 ```
 
-Replace `nmos_lv` with any of: `pmos_lv`, `nmos_hv`, `pmos_hv`.
+Replace `nmos_lv` with any of: `pmos_lv`, `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2h`.
 
-### Run all MOS tests
+
+### Run all  tests
 
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
-python3 -m pytest --tb=short -p no:capture tests/test_mos.py
+python3 -m pytest --tb=short -p no:capture tests/test_devices.py
 ```
 
 ---

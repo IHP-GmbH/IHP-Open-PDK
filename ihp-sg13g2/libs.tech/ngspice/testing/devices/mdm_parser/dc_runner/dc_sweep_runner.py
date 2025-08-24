@@ -14,8 +14,10 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from mdm_parser.dc_runner.helper import (
-    CORNERS,
-    SWEEP_MAP,
+    CORNERS_BJT,
+    CORNERS_MOS,
+    DEVICE_SWEEP_MAPS,
+    get_topology_params,
     parse_float,
     parse_int,
     parse_sweep_triple,
@@ -28,22 +30,29 @@ from mdm_parser.dc_runner.helper import (
 class DcSweepRunner:
 
     template_path: Path
-    model_lib_path: Path
-    corner_lib_path: Path
-    osdi_path: Path
     device_name: str
-    corners: Sequence[str] = CORNERS
+    corner_lib_path: Path
+    osdi_path: Optional[Path] = None
+    device_type: str = "mos"
+    corners: Sequence[str] = None
     max_workers: int = max(1, os.cpu_count() or 4)
 
     def __post_init__(self):
-        for p in [
+        paths = [
             self.template_path,
-            self.model_lib_path,
             self.corner_lib_path,
             self.osdi_path,
-        ]:
+        ]
+        for p in paths:
             if isinstance(p, Path) and not p.exists():
                 raise FileNotFoundError(f"Path not found: {p}")
+
+        if self.device_type not in DEVICE_SWEEP_MAPS:
+            raise ValueError(
+                f"Unsupported device_type: {self.device_type}. "
+                f"Supported types: {list(DEVICE_SWEEP_MAPS.keys())}"
+            )
+        self.corners = CORNERS_MOS if self.device_type == "mos" else CORNERS_BJT
 
     @staticmethod
     def _normalize_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -51,9 +60,7 @@ class DcSweepRunner:
         df.columns = [c.strip().lower() for c in df.columns]
         return df
 
-    def run(
-        self, df: pd.DataFrame, workdir: Optional[Path] = None
-    ) -> Tuple[pd.DataFrame, List[Tuple[int, str]]]:
+    def run(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Tuple[int, str]]]:
         """
         Execute all sweeps in df in parallel. Returns (sim_df, errors).
         """
@@ -61,14 +68,7 @@ class DcSweepRunner:
         if df.empty:
             raise ValueError("Input DataFrame is empty.")
 
-        # Working directory
-        owns_workdir = False
-        if workdir is None:
-            workdir = Path(tempfile.mkdtemp(prefix="ngspice_sim_"))
-            owns_workdir = True
-        else:
-            workdir = Path(workdir)
-            workdir.mkdir(parents=True, exist_ok=True)
+        workdir = Path(tempfile.mkdtemp(prefix="ngspice_sim_"))
 
         results: List[pd.DataFrame] = []
         errors: List[Tuple[int, str]] = []
@@ -81,10 +81,10 @@ class DcSweepRunner:
                     row_dict=row.to_dict(),
                     template_path=str(self.template_path),
                     workdir=str(workdir),
-                    model_lib_path=str(self.model_lib_path),
                     corner_lib_path=str(self.corner_lib_path),
                     osdi_path=str(self.osdi_path),
                     device_name=self.device_name,
+                    device_type=self.device_type,
                     corners=tuple(self.corners),
                 )
             )
@@ -102,11 +102,11 @@ class DcSweepRunner:
                     results.append(out_df)
 
                 if completed % 10 == 0 or completed == len(futs):
-                    print(f"Processed {completed}/{len(futs)} jobs...")
+                    print(f"Processed {completed}/{len(futs)} ...")
 
         if not results:
-            if owns_workdir:
-                shutil.rmtree(workdir, ignore_errors=True)
+            shutil.rmtree(workdir, ignore_errors=True)
+            print(errors)
             raise RuntimeError("All simulations failed.")
 
         sim_df = pd.concat(results, ignore_index=True)
@@ -114,14 +114,14 @@ class DcSweepRunner:
             drop=True
         )
 
-        if owns_workdir:
-            shutil.rmtree(workdir, ignore_errors=True)
+        shutil.rmtree(workdir, ignore_errors=True)
 
         return sim_df, errors
 
-    @staticmethod
     def _link_sim_to_clean(
-        sim_results_df: pd.DataFrame, clean_df: pd.DataFrame
+        self,
+        sim_results_df: pd.DataFrame,
+        clean_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """
         Merge sim results with clean data by block_id and sweep values.
@@ -169,18 +169,14 @@ class DcSweepRunner:
             if "sweep_var" not in merged.columns:
                 merged["sweep_var"] = sweep_var
 
-            output_vars_str = (
-                merged["output_vars"].iloc[0]
-                if "output_vars" in merged.columns
-                else "ib,id,ig,is"
-            )
+            output_vars_str = merged["output_vars"].iloc[0]
             measured_vars = [v.strip() for v in output_vars_str.split(",")]
 
             base_cols = [col for col in cblock.columns] + ["sweep_var"]
             sim_cols = []
 
             for var in measured_vars:
-                for corner in CORNERS:
+                for corner in self.corners:
                     sim_col_name = f"{var}_sim_{corner}"
                     if sim_col_name in merged.columns:
                         sim_cols.append(sim_col_name)
@@ -215,14 +211,27 @@ class DcSweepRunner:
             return sim_results
 
         clean_df = self._normalize_cols(clean_df).copy()
-        # rename measured currents (if present) to *_meas
+
+        sim_cols = [
+            col
+            for col in sim_results.columns
+            if col.endswith("_sim_" + self.corners[0])
+        ]
+        actual_output_vars = [
+            col.replace(f"_sim_{self.corners[0]}", "") for col in sim_cols
+        ]
+
         rename_map = {}
-        for col in ("ib", "id", "ig", "is"):
-            if col in clean_df.columns:
-                rename_map[col] = f"{col}_meas"
+        for var in actual_output_vars:
+            if var in clean_df.columns:
+                rename_map[var] = f"{var}_meas"
 
         if rename_map:
             clean_df = clean_df.rename(columns=rename_map)
+
+        if self.device_type != "mos":
+            sim_results["sweep_var"] = sim_results["sweep_var"].str[:2]
+
         return self._link_sim_to_clean(sim_results, clean_df)
 
     def _process_one_worker(
@@ -238,45 +247,83 @@ class DcSweepRunner:
             row_dict,
             template_path,
             workdir,
-            model_lib_path,
             corner_lib_path,
-            osdi_path,
             device_name,
+            device_type,
             corners,
         ) = (
             args["idx"],
             args["row_dict"],
             Path(args["template_path"]),
             Path(args["workdir"]),
-            Path(args["model_lib_path"]),
             Path(args["corner_lib_path"]),
-            Path(args["osdi_path"]),
             args["device_name"],
+            args["device_type"],
             tuple(args["corners"]),
         )
+        if self.device_type == "mos":
+            osdi_path = Path(args["osdi_path"])
+
+        def fixed_or_zero(name: str) -> float:
+            if name == sweep_var:
+                return float(sweep_start)
+            return parse_float(row.get(name, 0.0), 0.0)
 
         row = pd.Series(row_dict)
+        sweep_config = DEVICE_SWEEP_MAPS[device_type]
 
         block_id = row.get("block_id", f"blk_{idx}")
         if pd.isna(block_id):
             block_id = f"blk_{idx}"
 
-        tempC = parse_float(row.get("temp", 27.0), 27.0)
-        W = parse_float(row.get("w", 1e-6), 1e-6)
-        L = parse_float(row.get("l", 1e-6), 1e-6)
-        AD = parse_float(row.get("ad", 0.0), 0.0)
-        AS = parse_float(row.get("as", 0.0), 0.0)
-        PD = parse_float(row.get("pd", 0.0), 0.0)
-        PS = parse_float(row.get("ps", 0.0), 0.0)
-        NF = parse_int(row.get("nf", 1), 1)
-        M = parse_int(row.get("m", 1), 1)
+        temp = parse_float(row.get("temp", 27.0), 27.0)
+        tnom = parse_float(row.get("tnom", 27.0), 27.0)
 
+        output_vars_str = row.get("output_vars", "ib,ic,ie")
+        output_vars = [v.strip().lower() for v in str(output_vars_str).split(",")]
+
+        params = {}
+        if device_type == "mos":
+            params.update(
+                {
+                    "W": parse_float(row.get("w", 1e-6), 1e-6),
+                    "L": parse_float(row.get("l", 1e-6), 1e-6),
+                    "AD": parse_float(row.get("ad", 0.0), 0.0),
+                    "AS": parse_float(row.get("as", 0.0), 0.0),
+                    "PD": parse_float(row.get("pd", 0.0), 0.0),
+                    "PS": parse_float(row.get("ps", 0.0), 0.0),
+                    "NF": parse_int(row.get("nf", 1), 1),
+                    "M": parse_int(row.get("m", 1), 1),
+                }
+            )
+        elif device_type == "pnpmpa":
+            params.update(
+                {
+                    "A": parse_float(row.get("a", 2e-5), 2e-5),
+                    "P": parse_float(row.get("p", 2.4e-5), 2.4e-5),
+                }
+            )
+        elif device_type == "hbt":
+            params.update(
+                {
+                    "M": parse_int(row.get("m", 1), 1),
+                    "W": parse_float(row.get("w", 1e-6), 1e-6),
+                    "L": parse_float(row.get("l", 1e-6), 1e-6),
+                    "Nx": parse_int(row.get("nx", 1), 1),
+                }
+            )
         sweep_var = str(row.get("sweep_var", "")).strip().lower()
-        if sweep_var not in SWEEP_MAP:
-            return idx, None, f"unsupported or missing sweep_var '{sweep_var}'"
+        if sweep_var not in sweep_config:
+            return (
+                idx,
+                None,
+                f"unsupported or missing sweep_var '{sweep_var}' for device type '{device_type}'",
+            )
 
         try:
-            sweep_start, sweep_stop, sweep_step = parse_sweep_triple(row.get(sweep_var))
+            sweep_start, sweep_stop, sweep_step = parse_sweep_triple(
+                row.get(sweep_var[:2])
+            )
         except Exception as e:
             return (
                 idx,
@@ -284,19 +331,25 @@ class DcSweepRunner:
                 f"cannot parse sweep triple from column '{sweep_var}': {e}",
             )
 
-        sweep_src, sweep_node = SWEEP_MAP[sweep_var]
+        sweep_src, sweep_node = sweep_config[sweep_var]
+        bias_conditions = {}
+        if device_type == "mos":
+            for volt_name in ("vd", "vg", "vs", "vb"):
+                bias_conditions[volt_name.upper()] = fixed_or_zero(volt_name)
+        else:
+            bias_conditions = get_topology_params(row, sweep_var)
 
-        def fixed_or_zero(name: str) -> float:
-            if name == sweep_var:
-                return float(sweep_start)
-            return parse_float(row.get(name, 0.0), 0.0)
+            input_vars_str = row.get("input_vars", "")
 
-        vd = fixed_or_zero("vd")
-        vg = fixed_or_zero("vg")
-        vs = fixed_or_zero("vs")
-        vb = fixed_or_zero("vb")
+            if input_vars_str and pd.notna(input_vars_str):
+                inputs = [v.strip().lower() for v in str(input_vars_str).split(",")]
+                for var in inputs:
+                    if len(var) == 2 and var.startswith("i"):
+                        bias_conditions[var] = parse_float(row[var], 0.0)
 
-        sig = f"{idx}-dc-{block_id}"
+            bias_conditions["output_vars"] = output_vars
+
+        sig = f"{idx}-dc-{block_id}-{device_type}"
         hsh = hashlib.sha1(sig.encode()).hexdigest()[:10]
         row_dir = workdir / f"job_{idx:06d}_{hsh}"
         row_dir.mkdir(parents=True, exist_ok=True)
@@ -306,7 +359,6 @@ class DcSweepRunner:
 
         template_dir = template_path.parent
         template_name = template_path.name
-
         jenv = Environment(
             loader=FileSystemLoader(str(template_dir)),
             undefined=StrictUndefined,
@@ -315,7 +367,7 @@ class DcSweepRunner:
         )
 
         merged_df: Optional[pd.DataFrame] = None
-        vcol = f"v({sweep_node})"
+        vcol = f"v({sweep_node[:2]})"
 
         for corner in corners:
             out_path = row_dir / f"wr_outputs_{corner}.txt"
@@ -323,23 +375,10 @@ class DcSweepRunner:
             netlist_path = Path(f"{netlist_base}_{corner}.cir")
 
             ctx = {
-                "model_lib_path": str(model_lib_path),
                 "model_corner_lib": str(corner_lib_path),
                 "corner": corner,
-                "osdi_path": str(osdi_path),
-                "TEMP": f"{tempC}",
-                "W": f"{W:.16g}",
-                "L": f"{L:.16g}",
-                "AD": f"{AD:.16g}",
-                "AS": f"{AS:.16g}",
-                "PD": f"{PD:.16g}",
-                "PS": f"{PS:.16g}",
-                "NF": f"{NF}",
-                "M": f"{M}",
-                "VD": f"{vd:.16g}",
-                "VS": f"{vs:.16g}",
-                "VG": f"{vg:.16g}",
-                "VB": f"{vb:.16g}",
+                "TEMP": f"{temp}",
+                "TNOM": f"{tnom}",
                 "device_subckt": device_name,
                 "out_path": str(out_path),
                 "sweep_src": sweep_src,
@@ -348,10 +387,26 @@ class DcSweepRunner:
                 "sweep_stop": f"{sweep_stop:.16g}",
                 "sweep_step": f"{sweep_step:.16g}",
             }
+            for param, value in params.items():
+                if isinstance(value, float):
+                    ctx[param] = f"{value:.16g}"
+                else:
+                    ctx[param] = str(value)
+
+            ctx.update(bias_conditions)
+            if self.device_type == "mos":
+                ctx["osdi_path"] = str(osdi_path)
 
             try:
                 netlist_text = jenv.get_template(template_name).render(**ctx)
                 netlist_path.write_text(netlist_text)
+
+                # src = str(row.get("source_file", ""))
+                # dump_dir = Path("netlists_" + device_name)
+                # dump_dir.mkdir(parents=True, exist_ok=True)
+                # dump_name = f"{Path(src).stem}_block-{block_id}_{corner}.cir"
+                # (dump_dir / dump_name).write_text(netlist_text)
+
             except Exception as e:
                 shutil.rmtree(row_dir, ignore_errors=True)
                 return idx, None, f"[{corner}] template rendering failed: {e}"
@@ -367,27 +422,23 @@ class DcSweepRunner:
                 return idx, None, f"[{corner}] empty or missing wrdata output"
 
             try:
-                part = pd.DataFrame(
-                    {
-                        "sweep_value": pd.to_numeric(df[vcol], errors="coerce"),
-                        f"ib_sim_{corner}": pd.to_numeric(
-                            df.get("ib", pd.Series([float("nan")] * len(df))),
-                            errors="coerce",
-                        ),
-                        f"id_sim_{corner}": pd.to_numeric(
-                            df.get("id", pd.Series([float("nan")] * len(df))),
-                            errors="coerce",
-                        ),
-                        f"ig_sim_{corner}": pd.to_numeric(
-                            df.get("ig", pd.Series([float("nan")] * len(df))),
-                            errors="coerce",
-                        ),
-                        f"is_sim_{corner}": pd.to_numeric(
-                            df.get("is", pd.Series([float("nan")] * len(df))),
-                            errors="coerce",
-                        ),
-                    }
-                )
+                part_data = {"sweep_value": pd.to_numeric(df[vcol], errors="coerce")}
+
+                for var in output_vars:
+                    if var in df.columns:
+                        part_data[f"{var}_sim_{corner}"] = pd.to_numeric(
+                            df[var], errors="coerce"
+                        )
+                    elif f"v({var[1:]})" in df.columns and var.startswith("v"):
+                        part_data[f"{var}_sim_{corner}"] = pd.to_numeric(
+                            df[f"v({var[1:]})"], errors="coerce"
+                        )
+                    else:
+                        part_data[f"{var}_sim_{corner}"] = pd.Series(
+                            [float("nan")] * len(df)
+                        )
+                part = pd.DataFrame(part_data)
+
             except Exception as e:
                 shutil.rmtree(row_dir, ignore_errors=True)
                 return idx, None, f"[{corner}] error building corner DataFrame: {e}"
@@ -403,13 +454,10 @@ class DcSweepRunner:
         merged_df["block_id"] = block_id
         merged_df["sweep_var"] = sweep_var
 
-        col_order = (
-            ["block_id", "sweep_var", "sweep_value"]
-            + [f"ib_sim_{c}" for c in corners]
-            + [f"id_sim_{c}" for c in corners]
-            + [f"ig_sim_{c}" for c in corners]
-            + [f"is_sim_{c}" for c in corners]
-        )
+        col_order = ["block_id", "sweep_var", "sweep_value"]
+        for var in output_vars:
+            col_order.extend([f"{var}_sim_{c}" for c in corners])
+
         col_order = [c for c in col_order if c in merged_df.columns]
         out = merged_df[col_order].copy()
 
@@ -421,15 +469,14 @@ def _cli():
     ap = argparse.ArgumentParser(
         description=(
             "Run ngspice DC sweeps for each row in a COMPACT CSV "
-            f"across corners {','.join(CORNERS)} and optionally merge with measured data."
+            "across corners and optionally merge with measured data."
         )
     )
     ap.add_argument("-i", "--input", required=True, help="Input COMPACT sweep CSV.")
-    ap.add_argument(
-        "-o", "--output", required=True, help="Output CSV (merged or sims-only)."
-    )
+    ap.add_argument("-o", "--output", required=True, help="Output CSV (merged).")
     ap.add_argument(
         "--clean-csv",
+        required=True,
         help="Optional measured CSV to merge with (must contain block_id).",
     )
 
@@ -439,14 +486,20 @@ def _cli():
         help="Full path to DC sweep Jinja2 template file.",
     )
 
-    ap.add_argument("--model-lib", required=True, help="Path to model lib (.include).")
     ap.add_argument("--corner-lib", required=True, help="Path to corner lib (.lib).")
-    ap.add_argument("--osdi", required=True, help="Path to PSP/OSDI file for pre_osdi.")
+    ap.add_argument(
+        "--osdi", required=False, help="Path to PSP/OSDI file for pre_osdi."
+    )
     ap.add_argument(
         "--max-workers", type=int, default=os.cpu_count() or 4, help="Parallel workers."
     )
-    ap.add_argument("--workdir", help="Working dir (default: temp).")
     ap.add_argument("--device", default="sg13_lv_nmos", help="Device subckt name.")
+    ap.add_argument(
+        "--device-type",
+        choices=list(DEVICE_SWEEP_MAPS.keys()),
+        default="mos",
+        help="Device type: mos, pnpmpa, or hbt",
+    )
 
     args = ap.parse_args()
 
@@ -460,14 +513,16 @@ def _cli():
         print(f"Template file not found: {template_path}", file=sys.stderr)
         sys.exit(2)
 
-    model_lib_path = Path(args.model_lib)
-    corner_lib_path = Path(args.corner_lib)
-    osdi_path = Path(args.osdi)
-
-    for p in (model_lib_path, corner_lib_path, osdi_path):
-        if not p.exists():
-            print(f"Path not found: {p}", file=sys.stderr)
+    osdi_path = None
+    if args.device_type == "mos":
+        if not args.osdi:
+            print("--osdi is required for MOS devices", file=sys.stderr)
             sys.exit(2)
+        osdi_path = Path(args.osdi)
+        if not osdi_path.exists():
+            print(" OSDI path not found", file=sys.stderr)
+            sys.exit(2)
+    corner_lib_path = Path(args.corner_lib)
 
     try:
         df = pd.read_csv(in_csv)
@@ -480,17 +535,17 @@ def _cli():
 
     runner = DcSweepRunner(
         template_path=template_path,
-        model_lib_path=model_lib_path,
-        corner_lib_path=corner_lib_path,
         osdi_path=osdi_path,
+        corner_lib_path=corner_lib_path,
         max_workers=args.max_workers,
         device_name=args.device,
+        device_type=args.device_type,
     )
 
-    print(f"Processing {df.shape} sweep rows with up to {args.max_workers} workers...")
-    sim_df, errors = runner.run(
-        df, workdir=Path(args.workdir) if args.workdir else None
+    print(
+        f"Processing {df.shape} sweep rows for {args.device_type} device with up to {args.max_workers} workers..."
     )
+    sim_df, errors = runner.run(df)
 
     if args.clean_csv:
         final_df = runner.merge_with_clean(sim_df, args.clean_csv)
@@ -501,7 +556,7 @@ def _cli():
     final_df.to_csv(args.output, index=False)
 
     if errors:
-        print(f"\nErrors occurred in {len(errors)} jobs:", file=sys.stderr)
+        print(f"\nErrors occurred in {len(errors)} :", file=sys.stderr)
         for rid, err in sorted(errors):
             sys.stderr.write(f"[row {rid}] {err}\n")
 

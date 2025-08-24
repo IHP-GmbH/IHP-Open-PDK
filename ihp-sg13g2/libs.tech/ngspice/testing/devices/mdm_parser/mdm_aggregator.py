@@ -4,7 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -53,6 +53,7 @@ class MdmDirectoryAggregator:
         *,
         output_dir: Optional[Union[str, Path]] = None,
         create_csvs: bool = False,
+        device_type: Literal["mos", "pnpmpa", "hbt"] = "mos",
     ):
         """
         Initialize the aggregator.
@@ -67,7 +68,7 @@ class MdmDirectoryAggregator:
         self.recursive = recursive
         self.output_dir = Path(output_dir) if output_dir is not None else None
         self.create_csvs = create_csvs
-
+        self.device_type = device_type
         if not self.input_dir.exists() or not self.input_dir.is_dir():
             raise NotADirectoryError(
                 f"Input path must be a directory: {self.input_dir}"
@@ -89,9 +90,13 @@ class MdmDirectoryAggregator:
             s = df[col]
             is_str = s.notna() & s.map(lambda x: isinstance(x, str))
             if is_str.any():
-                trimmed = s.where(~is_str, s[is_str].str.strip())
-                trimmed = trimmed.mask(is_str & (trimmed == ""), pd.NA)
-                df[col] = trimmed
+                try:
+                    trimmed = s.where(~is_str, s[is_str].str.strip())
+                    trimmed = trimmed.mask(is_str & (trimmed == ""), pd.NA)
+                    df[col] = trimmed
+                except (TypeError, AttributeError) as e:
+                    logger.warning(f"Could not process column {col}: {e}")
+                    continue
 
         return df.dropna(axis=1, how="all")
 
@@ -105,7 +110,7 @@ class MdmDirectoryAggregator:
             Tuple of (full DataFrame, compact DataFrame), either may be None
         """
         try:
-            parser = MdmParser(path)
+            parser = MdmParser(path, device_type=self.device_type)
             full_df = parser.parse()
             compact_df = (
                 pd.DataFrame(parser.compact_rows)
@@ -168,7 +173,12 @@ class MdmDirectoryAggregator:
             if self.recursive
             else self.input_dir.glob("*.mdm")
         )
-        return sorted(p for p in iterator if p.is_file())
+
+        return sorted(
+            p
+            for p in iterator
+            if p.is_file() and not p.name.lower().startswith(("dummy", "spar"))
+        )
 
     def aggregate(
         self,
@@ -219,7 +229,6 @@ class MdmDirectoryAggregator:
                 logger.warning("No CSV files were written.")
             else:
                 logger.info(f"Done. Output directory: {self.output_dir}")
-
         return full_by_type, compact_by_type
 
     def get_summary(self) -> Dict[str, int]:
@@ -255,7 +264,13 @@ def main():
         "--no-recursive", action="store_true", help="Do not scan subdirectories"
     )
     parser.add_argument("--show-csvs", action="store_true", help="Write per-type CSVs")
-
+    parser.add_argument(
+        "-d",
+        "--device-type",
+        choices=["mos", "pnpmpa", "hbt"],
+        default="mos",
+        help="Device type: guides which ICCAP_VALUES to prefer and how to order compact columns",
+    )
     args = parser.parse_args()
 
     try:
@@ -264,6 +279,7 @@ def main():
             input_dir=args.input,
             recursive=not args.no_recursive,
             output_dir=output_dir,
+            device_type=args.device_type,
             create_csvs=args.show_csvs,
         )
 
@@ -278,14 +294,14 @@ def main():
         total_full_rows = sum(len(df) for df in full_by_type.values())
         total_compact_rows = sum(len(df) for df in compact_by_type.values())
 
-        print(f"\nSummary:")
+        print("\nSummary:")
         print(f"  Found {total_types} distinct master_setup_types")
         print(f"  Total full rows: {total_full_rows}")
         print(f"  Total compact rows: {total_compact_rows}")
         if args.show_csvs:
             print(f"  Output directory: {output_dir}")
         else:
-            print(f"use --show-csvs to save the output as csv ")
+            print("use --show-csvs to save the output as csv ")
 
         return 0
 

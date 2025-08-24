@@ -143,7 +143,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [nmos_lv, pmos_lv, nmos_hv, pmos_hv]
+        case:
+          [
+            nmos_lv,
+            pmos_lv,
+            nmos_hv,
+            pmos_hv,
+            pnp_mpa,
+            npn13g2,
+            npn13g2l,
+            npn13g2h,
+          ]
     name: device=${{ matrix.case }}
     env:
       NGSPICE_VERSION: "44.2"
@@ -228,4 +238,4 @@ jobs:
         run: |
           # run only the single parametrized case as its own job
           python -m pytest --tb=short -p no:capture \
-            'tests/test_mos.py::test_mos_devices[${{ matrix.case }}]'
+            'tests/test_devices.py::test_devices[${{ matrix.case }}]'

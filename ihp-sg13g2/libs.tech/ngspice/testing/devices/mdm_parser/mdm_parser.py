@@ -2,10 +2,11 @@ import argparse
 import logging
 import uuid
 from pathlib import Path
-from typing import Optional, List, Dict, Set
+from typing import Literal, Optional, List, Dict, Set
 import pandas as pd
 
 from mdm_parser.mdm_parser_utils import (
+    get_dut_params,
     setup_global_logging,
     extract_data_blocks,
     extract_section,
@@ -13,6 +14,8 @@ from mdm_parser.mdm_parser_utils import (
     parse_design_parameters,
     parse_header_inputs,
     infer_step,
+    derive_master_setup_type_from_filename,
+    derive_sweep_var,
 )
 
 setup_global_logging()
@@ -28,14 +31,19 @@ class MdmParser:
     """
     MDM file parser
     """
-    
-    def __init__(self, filepath: Path):
+
+    def __init__(
+        self, filepath: Path, device_type: Literal["mos", "pnpmpa", "hbt"] = "mos"
+    ):
         self.filepath = Path(filepath)
         self.dataframe = pd.DataFrame()
         self.input_columns: List[str] = []
         self.output_columns: List[str] = []
         self.compact_rows: List[Dict[str, object]] = []
         self.block_metadata: Dict[int, Dict] = {}
+        self.device_type = device_type
+        if self.device_type not in ("mos", "pnpmpa", "hbt"):
+            raise ValueError(f"Unsupported device type: {device_type}")
         self._validate_input()
 
     def _validate_input(self) -> None:
@@ -75,11 +83,20 @@ class MdmParser:
 
             # Parse header information
             input_variables = parse_header_inputs(header_lines)
-            design_parameters = parse_design_parameters(header_lines)
+            design_parameters = parse_design_parameters(header_lines, self.device_type)
 
             logging.info(
                 f"Found {len(input_variables)} input variables and {len(design_parameters)} design parameters"
             )
+            if self.device_type != "mos":
+                design_parameters["MASTER_SETUP_TYPE"] = (
+                    derive_master_setup_type_from_filename(self.filepath)
+                )
+            if self.device_type == "pnpmpa":
+                design_parameters["A"], design_parameters["P"] = get_dut_params(
+                    self.filepath
+                )
+
             input_names = list(input_variables)
             self.input_columns = input_names
 
@@ -134,22 +151,30 @@ class MdmParser:
                     for k, v in design_parameters.items():
                         row_compact[k] = v
 
+                    if start is None or stop is None:
+                        sweep_triple = ""
+                    else:
+                        sweep_triple = f"{start:.16g} {stop:.16g} {step:.16g}"
+
                     for in_name in input_names:
                         if in_name == sweep_var:
-                            if start is None or stop is None:
-                                row_compact[in_name] = ""
-                            else:
-                                row_compact[in_name] = (
-                                    f"{start:.16g} {stop:.16g} {step:.16g}"
-                                )
+                            row_compact[in_name] = sweep_triple
+
                         else:
-                            row_compact[in_name] = block_metadata.get(in_name, None)
-
+                            val = block_metadata.get(in_name, None)
+                            if val is None or str(val).lower() == sweep_var.lower():
+                                row_compact[in_name] = sweep_triple
+                                sweep_var = derive_sweep_var(sweep_var, in_name)
+                            else:
+                                row_compact[in_name] = val
                     row_compact["sweep_var"] = sweep_var
-
+                    row_compact["input_vars"] = ",".join(input_names)
+                    row_compact["output_vars"] = ",".join(
+                        sorted(cumulative_output_names)
+                    )
                     self.compact_rows.append(row_compact)
                 except Exception as e:
-                    logging.debug(
+                    logging.error(
                         f"Could not build compact row for block {block_index}: {e}"
                     )
 
@@ -243,6 +268,7 @@ class MdmParser:
         )
         return output_path
 
+
 def main():
     """Main entry point for command-line usage."""
     parser = argparse.ArgumentParser(
@@ -261,15 +287,22 @@ Examples:
     parser.add_argument(
         "-od", "--output-dir", type=Path, help="Directory for all output CSV files"
     )
+    parser.add_argument(
+        "-d",
+        "--device-type",
+        choices=["mos", "pnpmpa", "hbt"],
+        default="mos",
+        help="Device type: guides which ICCAP_VALUES to prefer and how to order compact columns",
+    )
 
     args = parser.parse_args()
 
     try:
-        mdm_parser = MdmParser(args.input)
+        mdm_parser = MdmParser(args.input, device_type=args.device_type)
 
         long_path = mdm_parser.to_csv(args.output_dir)
         compact_path = mdm_parser.to_compact_csv(args.output_dir)
-        print(f"Successfully converted to:")
+        print("Successfully converted to:")
         print(f"  Long format: {long_path}")
         print(f"  Compact format: {compact_path}")
 

@@ -10,11 +10,15 @@ CASES = [
     ("pmos_lv", "mos/pmos_lv/sg13_lv_pmos.yaml"),
     ("nmos_hv", "mos/nmos_hv/sg13_hv_nmos.yaml"),
     ("pmos_hv", "mos/pmos_hv/sg13_hv_pmos.yaml"),
+    ("pnp_mpa", "pnp_mpa/pnpmpa.yaml"),
+    ("npn13g2", "hbt/npn13g2/npn13g2.yaml"),
+    ("npn13g2l", "hbt/npn13g2l/npn13g2l.yaml"),
+    ("npn13g2v", "hbt/npn13g2v/npn13g2v.yaml"),
 ]
 
 
 @pytest.mark.parametrize("label, rel_yaml", CASES, ids=[c[0] for c in CASES])
-def test_mos_devices(label, rel_yaml):
+def test_devices(label, rel_yaml):
     base = Path(os.path.expandvars("${IHP_OPEN_REPO}"))
     cfg_path = (
         base / "ihp-sg13g2" / "libs.tech" / "ngspice" / "testing" / "devices" / rel_yaml
