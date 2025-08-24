@@ -120,7 +120,9 @@ def parse_header_inputs(header_lines: List[str]) -> Set[str]:
     return inputs
 
 
-def parse_design_parameters(header_lines: List[str],device_type:str) -> Dict[str, float | str]:
+def parse_design_parameters(
+    header_lines: List[str], device_type: str
+) -> Dict[str, float | str]:
     """
     Parse ICCAP_VALUES section for design parameters.
 
@@ -218,31 +220,31 @@ def parse_data_block(
     return metadata, dataframe
 
 
-def setup_global_logging():
-    """
-    Set up global logging configuration.
+def setup_global_logging(log_file: str = "./mdm_parser.logs") -> None:
 
-    This function configures the global logging system to write logs to a file and
-    also output logs to the console.
+    root = logging.getLogger()
+    for h in root.handlers[:]:
+        root.removeHandler(h)
 
-    Returns:
-        None
-    """
-    log_file = "./mdm_parser.logs"
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+    root.setLevel(logging.INFO)
+    fh = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    file_fmt = logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s",
+        "%Y-%m-%d %H:%M:%S",
     )
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    )
-    logging.getLogger().addHandler(console_handler)
+    fh.setFormatter(file_fmt)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+    console_fmt = logging.Formatter("%(levelname)s %(message)s")
+    ch.setFormatter(console_fmt)
+
+    root.addHandler(fh)
+    root.addHandler(ch)
+
+    logging.captureWarnings(True)
+
     logging.info("Global logging setup complete.")
 
 
