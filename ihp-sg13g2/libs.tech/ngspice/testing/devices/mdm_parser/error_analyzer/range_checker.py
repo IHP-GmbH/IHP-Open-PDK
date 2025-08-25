@@ -318,10 +318,6 @@ class RangeChecker:
             f"({100.0 * total_failed / max(1, total_cases):.2f}%); "
             f"pass rate = {pass_rate:.2f}%"
         ]
-        if "source_file" in failed.columns:
-            summary_lines.append(
-                f"  Affected files : {failed['source_file'].dropna().nunique()}"
-            )
         if "block_index" in failed.columns:
             summary_lines.append(
                 f"  Affected blocks: {failed['block_index'].dropna().nunique()}"

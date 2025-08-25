@@ -32,7 +32,7 @@ def convert_value(value: str) -> float | str:
             number = float(match.group("num"))
             unit = match.group("unit").lower()
             multiplier = UNIT_MULTIPLIERS.get(unit, 1.0)
-            return number * multiplier
+            return float(f"{(number * multiplier):.12g}")
         except ValueError:
             return cleaned_value
 
