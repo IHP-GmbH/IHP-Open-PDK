@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import logging
 import os
 from pathlib import Path
+import re
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
@@ -167,17 +168,24 @@ class MdmDirectoryAggregator:
         return total_rows
 
     def find_mdm_files(self) -> List[Path]:
-        """Find all .mdm files in the input directory."""
         iterator = (
             self.input_dir.rglob("*.mdm")
             if self.recursive
             else self.input_dir.glob("*.mdm")
         )
 
+        is_pnp = str(self.device_type).lower() == "pnpmpa"
+        skip_duts = {3, 5, 9, 13, 14, 15}
+        dut_re = re.compile(r"(?i)dut(\d+)")
+
         return sorted(
             p
             for p in iterator
-            if p.is_file() and not p.name.lower().startswith(("dummy", "spar"))
+            if p.is_file()
+            and not p.name.lower().startswith(("dummy", "spar"))
+            and not (
+                is_pnp and (m := dut_re.search(p.name)) and int(m.group(1)) in skip_duts
+            )
         )
 
     def aggregate(
@@ -312,3 +320,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
