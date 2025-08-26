@@ -318,10 +318,6 @@ class RangeChecker:
             f"({100.0 * total_failed / max(1, total_cases):.2f}%); "
             f"pass rate = {pass_rate:.2f}%"
         ]
-        if "block_index" in failed.columns:
-            summary_lines.append(
-                f"  Affected blocks: {failed['block_index'].dropna().nunique()}"
-            )
 
         if {"metric", "target"}.issubset(failed.columns):
             counts = (
@@ -364,7 +360,107 @@ class RangeChecker:
         raise AssertionError(
             "check failed:\n" + "\n".join(detail_lines + [""] + summary_lines)
         )
+    def cleanup_passed_netlists(
+            self,
+            netlists_dir: Union[str, Path],
+            report_df: pd.DataFrame,
+            targets: Iterable[str] = ("meas", "tt"),
+            dry_run: bool = False
+        ) -> Dict[str, int]:
+            """
+            Remove netlist files for block IDs that passed all their checks.
+            
+            Args:
+                netlists_dir: Directory containing the saved netlists
+                report_df: Report dataframe from analyze() method
+                targets: Target types to consider (default: ("meas", "tt"))
+                dry_run: If True, only report what would be deleted without actually deleting
+                
+            Returns:
+                Dictionary with statistics: {'removed': count, 'kept': count, 'not_found': count}
+            """
+            netlists_path = Path(netlists_dir)
+            if not netlists_path.exists():
+                print(f"Netlists directory not found: {netlists_path}")
+                return {'removed': 0, 'kept': 0, 'not_found': 0}
+            
+            passed_blocks = self.get_passed_block_ids(report_df, targets)
+            
+            if not passed_blocks:
+                print("No passed blocks found - keeping all netlists")
+                return {'removed': 0, 'kept': 0, 'not_found': 0}
+            
+            netlist_files = list(netlists_path.glob("*.cir"))
+            
+            removed_count = 0
+            kept_count = 0
+            not_found_count = 0
+            
+            for netlist_file in netlist_files:
+                filename = netlist_file.name
+                
+                if "_block-" in filename:
+                    block_id_part = filename.split("_block-")[1]
+                    block_id = block_id_part.replace(".cir", "")
+                    
+                    if block_id in passed_blocks:
+                        if dry_run:
+                            removed_count += 1
+                        else:
+                            try:
+                                netlist_file.unlink()
+                                print(f"Removed netlist: {netlist_file}")
+                                removed_count += 1
+                            except Exception as e:
+                                print(f"Error removing {netlist_file}: {e}")
+                                not_found_count += 1
+                    else:
+                        kept_count += 1
+                else:
+                    print(f"Warning: Could not extract block_id from filename: {filename}")
+                    kept_count += 1
+            
+            stats = {
+                'removed': removed_count,
+                'kept': kept_count, 
+                'not_found': not_found_count
+            }
+            
+            action = "Would remove" if dry_run else "Removed"
+            print(f"\nNetlist cleanup summary:")
+            print(f"  {action}: {removed_count} netlists for passed blocks")
+            print(f"  Kept: {kept_count} netlists for failed blocks")
+            if not_found_count > 0:
+                print(f"  Errors: {not_found_count} files could not be processed")
+            
+            return stats
 
+    def get_passed_block_ids(
+        self,
+        report_df: pd.DataFrame,
+        targets: Iterable[str] = ("meas", "tt")
+    ) -> set:
+        """
+        Get set of block IDs that passed all metrics for the specified targets.
+        
+        Args:
+            report_df: Report dataframe from analyze() method
+            targets: Target types to consider (default: ("meas", "tt"))
+            
+        Returns:
+            Set of block IDs that passed all metrics
+        """
+        if report_df.empty:
+            return set()
+            
+        considered = report_df[report_df["target"].isin(list(targets))]
+        if considered.empty:
+            return set()
+        
+        block_status = considered.groupby("block_id")["passed"].all()
+        passed_blocks = set(block_status[block_status].index)
+        
+        return passed_blocks
 
 if __name__ == "__main__":
     metrics = [

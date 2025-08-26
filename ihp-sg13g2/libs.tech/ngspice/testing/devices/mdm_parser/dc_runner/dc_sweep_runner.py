@@ -36,6 +36,7 @@ class DcSweepRunner:
     device_type: str = "mos"
     corners: Sequence[str] = None
     max_workers: int = max(1, os.cpu_count() or 4)
+    netlists_dir: Optional[Path] = None
 
     def __post_init__(self):
         paths = [
@@ -53,6 +54,30 @@ class DcSweepRunner:
                 f"Supported types: {list(DEVICE_SWEEP_MAPS.keys())}"
             )
         self.corners = CORNERS_MOS if self.device_type == "mos" else CORNERS_BJT
+
+        if self.netlists_dir:
+            shutil.rmtree(self.netlists_dir, ignore_errors=True)
+            self.netlists_dir.mkdir(parents=True, exist_ok=True)
+
+    def _save_netlist(
+        self, netlist_text: str, corner: str, block_id: str, source_file: str
+    ) -> None:
+        """
+        Save the generated netlist to the netlists directory if specified.
+
+        Args:
+            netlist_text: The rendered netlist content
+            corner: The corner name
+            block_id: The block identifier
+            source_file: The source file name for naming
+        """
+        if not self.netlists_dir:
+            return
+
+        src_stem = Path(source_file).stem if source_file else "unknown"
+        dump_name = f"{src_stem}_{corner}_block-{block_id}.cir"
+        dump_path = self.netlists_dir / dump_name
+        dump_path.write_text(netlist_text)
 
     @staticmethod
     def _normalize_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -86,6 +111,7 @@ class DcSweepRunner:
                     device_name=self.device_name,
                     device_type=self.device_type,
                     corners=tuple(self.corners),
+                    netlists_dir=str(self.netlists_dir) if self.netlists_dir else None,
                 )
             )
 
@@ -251,6 +277,7 @@ class DcSweepRunner:
             device_name,
             device_type,
             corners,
+            netlists_dir,
         ) = (
             args["idx"],
             args["row_dict"],
@@ -260,6 +287,7 @@ class DcSweepRunner:
             args["device_name"],
             args["device_type"],
             tuple(args["corners"]),
+            Path(args["netlists_dir"]) if args["netlists_dir"] else None,  # NEW
         )
         if self.device_type == "mos":
             osdi_path = Path(args["osdi_path"])
@@ -401,11 +429,9 @@ class DcSweepRunner:
                 netlist_text = jenv.get_template(template_name).render(**ctx)
                 netlist_path.write_text(netlist_text)
 
-                # src = str(row.get("source_file", ""))
-                # dump_dir = Path("netlists_" + device_name)
-                # dump_dir.mkdir(parents=True, exist_ok=True)
-                # dump_name = f"{Path(src).stem}_block-{block_id}_{corner}.cir"
-                # (dump_dir / dump_name).write_text(netlist_text)
+                if netlists_dir:
+                    src = str(row.get("source_file", ""))
+                    self._save_netlist(netlist_text, corner, block_id, src)
 
             except Exception as e:
                 shutil.rmtree(row_dir, ignore_errors=True)
@@ -500,6 +526,9 @@ def _cli():
         default="mos",
         help="Device type: mos, pnpmpa, or hbt",
     )
+    ap.add_argument(
+        "--netlists-dir", help="Directory to save generated netlists (optional)."
+    )
 
     args = ap.parse_args()
 
@@ -532,6 +561,7 @@ def _cli():
     if df.empty:
         print("Input CSV is empty", file=sys.stderr)
         sys.exit(2)
+    netlists_dir = Path(args.netlists_dir) if args.netlists_dir else None
 
     runner = DcSweepRunner(
         template_path=template_path,
@@ -540,6 +570,7 @@ def _cli():
         max_workers=args.max_workers,
         device_name=args.device,
         device_type=args.device_type,
+        netlists_dir=netlists_dir,
     )
 
     print(

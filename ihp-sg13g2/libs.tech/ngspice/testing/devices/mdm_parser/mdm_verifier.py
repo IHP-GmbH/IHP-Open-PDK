@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -64,26 +65,34 @@ class MdmVerifier:
 
         return config
 
+    def _clean_mkdir(self, path: Path) -> Path:
+        if path.exists():
+            shutil.rmtree(path)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     def _build_merged_dataframes(self) -> List[pd.DataFrame]:
         """Build merged dataframes from MDM data and simulations."""
         mdm_dir = Path(self.config["mdm_dir"])
         if not mdm_dir.exists():
             print(f"ERROR: MDM directory not found: {mdm_dir}", file=sys.stderr)
             sys.exit(3)
-
-        with tempfile.TemporaryDirectory(prefix="mdm_csvs_") as temp_dir:
-            aggregator = MdmDirectoryAggregator(
-                input_dir=mdm_dir,
-                recursive=True,
-                output_dir=Path(temp_dir),
-                create_csvs=False,
-                device_type=self.device_type,
-            )
-            full_by_type, compact_by_type = aggregator.aggregate()
+        csv_stage_dir = self._clean_mkdir(self.output_dir.parent / "mdm_csvs")
+        aggregator = MdmDirectoryAggregator(
+            input_dir=mdm_dir,
+            recursive=True,
+            output_dir=csv_stage_dir,
+            create_csvs=True,
+            device_type=self.device_type,
+        )
+        full_by_type, compact_by_type = aggregator.aggregate()
         if not compact_by_type:
             print("ERROR: No sweeps discovered in MDM directory.", file=sys.stderr)
             sys.exit(4)
 
+        netlists_dir = None
+        if "netlists_dir" in self.config and self.config["netlists_dir"]:
+            netlists_dir = Path(self.config["netlists_dir"])
         runner = DcSweepRunner(
             template_path=Path(self.config["dc_template_path"]),
             corner_lib_path=Path(self.config["corner_lib_path"]),
@@ -93,6 +102,7 @@ class MdmVerifier:
             device_name=self.config["device_name"],
             max_workers=int(self.config["max_workers"]),
             device_type=self.config["device_type"],
+            netlists_dir=netlists_dir,
         )
 
         merged_parts = []
@@ -100,15 +110,13 @@ class MdmVerifier:
             work_dir = Path(work_dir)
             for setup_type, compact_df in compact_by_type.items():
                 sim_type = SIM_TYPE_MAP.get(setup_type, "current")
-
+                print(f"======={setup_type}=======")
                 if sim_type == "cap":
                     print(
                         f"Skipping (master_setup_type: '{setup_type}') as it is a capacitance simulation."
                     )
                     continue
-
-                print(sim_type)
-
+                
                 if compact_df is None or compact_df.empty:
                     continue
 
@@ -116,10 +124,9 @@ class MdmVerifier:
                 if full_df is None or full_df.empty:
                     continue
 
-                print(compact_df.shape[0])
                 try:
                     sim_df, errors = runner.run(compact_df)
-                    print(errors)
+                    print("errors", errors)
                     merged = runner.merge_with_clean(sim_df, full_df)
                     if not merged.empty:
                         merged_parts.append(merged)
@@ -279,6 +286,10 @@ class MdmVerifier:
             float(self.config["threshold_percent_oob"]),
             targets=["meas", "tt"],
         )
+        if self.config.get("netlists_dir"):
+            range_checker.cleanup_passed_netlists(
+                self.config["netlists_dir"], report, dry_run=False
+            )
 
         print("Artifacts:")
         print(f"  - Full report     : {full_report_path}")
