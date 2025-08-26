@@ -76,6 +76,8 @@ class guard_ring(DloGen):
                                               # surrounded entirely by NWell in N+Activ1
         pdiffx_over = self.techparams['pSD_c1']  # pSD enc. of p+Activ in pWell
 
+        nbulay_min_w = self.techparams['NBL_a']  # Min nBulLay width
+
         #*************************************************************************
         #*
         #* Main body of code
@@ -133,8 +135,9 @@ class guard_ring(DloGen):
         if type == 'nwell':
             draw_ring(nwell, xl, yb, xr, yt, wguard, ndiff_over)
         elif type == 'dnwell':
-            draw_ring(nwell, xl, yb, xr, yt, wguard, ndiff_over)
-            draw_ring(nbulay, xl, yb, xr, yt, wguard, ndiff_over)
+            nbulay_over = (nbulay_min_w - wguard) / 2.0
+            draw_ring(nwell, xl, yb, xr, yt, wguard, nbulay_over)
+            draw_ring(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
         elif type == 'psub':
             draw_ring(sub, xl, yb, xr, yt, wguard, pdiffx_over)
             draw_ring(psd, xl, yb, xr, yt, wguard, pdiffx_over)
