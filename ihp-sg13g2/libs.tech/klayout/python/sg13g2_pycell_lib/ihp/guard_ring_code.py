@@ -29,8 +29,8 @@ class guard_ring(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
         specs('type', 'ntap', 'Guard Ring Type', ChoiceConstraint(['nwell', 'dnwell', 'psub']))
-        specs('w', '2.05u', 'Width')
-        specs('h', '2.05u', 'Height')
+        specs('w', '3.05u', 'Width')
+        specs('h', '3.05u', 'Height')
 
     def setupParams(self, params):
         # process parameter values entered by user
