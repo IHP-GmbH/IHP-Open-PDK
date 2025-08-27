@@ -18,13 +18,16 @@
 __version__ = "$Revision: #3 $"
 
 from cni.dlo import *
-from .thermal import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
+from .thermal import *
 from .utility_functions import *
 
 import math
 
-class nmosHV(DloGen):
+
+class nmosHV(DeviceBase):
 
     @classmethod
     def defineParamSpecs(cls, specs):
@@ -52,13 +55,23 @@ class nmosHV(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
-    def setupParams(self, params):
+        super().defineParamSpecs(specs)
 
+    def setupParams(self, params):
         self.w = Numeric(params['w'])*1e6
         self.ng = int(params['ng'])
         self.l = Numeric(params['l'])*1e6
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.DNWELL, GuardRingType.PSUB]
+
+    def genDeviceLayout(self):
         w = self.w
         ng = self.ng
         l = self.l
