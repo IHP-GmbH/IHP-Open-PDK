@@ -67,6 +67,16 @@ class DeviceBase(DloGen):
                     continue
 
                 bbox = s.bbox
+                if isinstance(bbox, bool):
+                    # FIXME: in dpantenna/inductor2/inductor3 cells,
+                    #        strangely Polygon shapes
+                    #        had s.bbox being a boolean!
+                    #        skip those for now
+                    #
+                    # remove this as soon as this PR is merged:
+                    # https://github.com/IHP-GmbH/pycell4klayout-api/pull/3
+                    continue
+
                 min_left = min(min_left, bbox.left)
                 min_bottom = min(min_bottom, bbox.bottom)
                 max_right = max(max_right, bbox.right)
