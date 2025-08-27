@@ -61,7 +61,7 @@ class SVaricap(DloGen):
     def genLayout(self):
         l = Numeric(self.l)*1e6
         w = Numeric(self.w)*1e6
-        NX = self.Nx;
+        NX = self.Nx
 
         activ = Layer('Activ', 'drawing')         # layer 1
         gate = Layer('GatPoly', 'drawing')        # layer 1
