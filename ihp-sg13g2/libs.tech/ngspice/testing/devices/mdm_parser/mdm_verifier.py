@@ -19,14 +19,14 @@ from mdm_parser.mdm_aggregator import MdmDirectoryAggregator
 
 
 class MdmVerifier:
-    """MDM block verification system that aggregates, simulates, and performs envelope checks."""
+    """MDM block verification system that aggregates, simulates, and performs range checks."""
 
     def __init__(self, config_path: Path):
         """Initialize the verifier with configuration."""
         self.config = self._load_config(config_path)
         self.device_type = self.config["device_type"]
         self.output_dir = Path(
-            self.config.get("output_dir", Path.cwd() / "mdm_check_out")
+            self.config.get("output_dir", Path.cwd() / "verification_reports")
         )
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -61,7 +61,7 @@ class MdmVerifier:
         config.setdefault("max_workers", max(1, os.cpu_count() or 4))
         config.setdefault("tolerance_abs", 0.0)
         config.setdefault("tolerance_rel", 0.0)
-        config.setdefault("output_dir", str(Path.cwd() / "mdm_check_out"))
+        config.setdefault("output_dir", str(Path.cwd() / "verification_reports"))
 
         return config
 
@@ -77,7 +77,7 @@ class MdmVerifier:
         if not mdm_dir.exists():
             print(f"ERROR: MDM directory not found: {mdm_dir}", file=sys.stderr)
             sys.exit(3)
-        csv_stage_dir = self._clean_mkdir(self.output_dir.parent / "mdm_csvs")
+        csv_stage_dir = self._clean_mkdir(self.output_dir.parent / "per_setup_mdm_csvs")
         aggregator = MdmDirectoryAggregator(
             input_dir=mdm_dir,
             recursive=True,
@@ -177,7 +177,7 @@ class MdmVerifier:
 
     def _save_individual_csvs(self, dataframes: List[pd.DataFrame]) -> None:
         """Save individual CSV files for each setup type."""
-        output_dir = self.output_dir.parent / "sim_merged"
+        output_dir = self.output_dir.parent / "per_setup_sim_vs_meas"
         output_dir.mkdir(parents=True, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -195,7 +195,7 @@ class MdmVerifier:
         threshold_percent: float,
         targets: List[str] = None,
     ) -> Dict:
-        """Print summary statistics for envelope check results."""
+        """Print summary statistics for range check results."""
         if targets is None:
             targets = ["meas", "tt"]
 
@@ -303,7 +303,7 @@ class MdmVerifier:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run MDM block verification (aggregate → simulate → envelope-check)."
+        description="Run MDM block verification (aggregate → simulate → range-check)."
     )
     parser.add_argument("--config", "-c", help="Path to YAML config", required=True)
     args = parser.parse_args()
