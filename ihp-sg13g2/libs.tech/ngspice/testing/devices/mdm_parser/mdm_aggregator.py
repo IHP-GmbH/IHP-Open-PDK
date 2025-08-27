@@ -182,7 +182,7 @@ class MdmDirectoryAggregator:
             p
             for p in iterator
             if p.is_file()
-            and not p.name.lower().startswith(("dummy", "spar","contact","ftfmax","h21GU"))
+            and not p.name.lower().startswith(("dummy", "spar","contact","ftfmax","h21gu"))
             and not (
                 is_pnp and (m := dut_re.search(p.name)) and int(m.group(1)) in skip_duts
             )
