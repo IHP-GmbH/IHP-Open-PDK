@@ -1,14 +1,15 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 import math
 
 
-class dpantenna(DloGen):
-
+class dpantenna(DeviceBase):
     @classmethod
     def defineParamSpecs(self, specs):
         techparams = specs.tech.getTechParams()
@@ -38,13 +39,24 @@ class dpantenna(DloGen):
         specs('dtemp', '', 'Temperature difference')
         specs('mode', 'No', 'Linearized Region', ChoiceConstraint(['Yes', 'No']))
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.w = Numeric(params['w']) * 1e6
         self.l = Numeric(params['l']) * 1e6
         self.addRecLayer = params['addRecLayer']
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.NWELL]
+
+    def genDeviceLayout(self):
         w = self.w
         l = self.l
         addRecLayer = self.addRecLayer
