@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import pandas as pd
 import pytest
@@ -19,10 +18,8 @@ CASES = [
 
 @pytest.mark.parametrize("label, rel_yaml", CASES, ids=[c[0] for c in CASES])
 def test_devices(label, rel_yaml):
-    base = Path(os.path.expandvars("${IHP_OPEN_REPO}"))
-    cfg_path = (
-        base / "ihp-sg13g2" / "libs.tech" / "ngspice" / "testing" / "devices" / rel_yaml
-    )
+    test_dir = Path(__file__).parent    
+    cfg_path = test_dir.parent / rel_yaml
     assert cfg_path.exists(), f"Config YAML not found: {cfg_path}"
 
     verifier = MdmVerifier(cfg_path)

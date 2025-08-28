@@ -39,7 +39,7 @@ pip install pandas pyyaml jinja2 pytest
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 ```
 ```bash 
-export IHP_OPEN_REPO=<repo path> #ex.(/home/marwan/Desktop/IHP-Open-PDK) 
+export IHP_OPEN_REPO=<repo path>
 ```
 ### NMOS (sg13_lv_nmos)
 ```bash
