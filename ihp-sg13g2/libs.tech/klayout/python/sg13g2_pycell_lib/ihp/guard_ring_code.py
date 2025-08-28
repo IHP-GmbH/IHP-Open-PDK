@@ -130,6 +130,10 @@ def generate_guard_ring(dlo_gen: DloGen,
         ]
         dbLayerOrList(lyr, mlist)
 
+    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float, width: float, over: float):
+        box = Box(xl - width - over, yb - width - over, xr + width + over, yt + width + over)
+        dbCreateRect(dlo_gen, lyr, box)
+
     # draw pin
     pin_box = Box(xl, yb + cont_size/2.0, xr, yb + cont_size*1.5)
     id = dbCreateRect(dlo_gen, met1_pin, pin_box)
@@ -142,14 +146,14 @@ def generate_guard_ring(dlo_gen: DloGen,
     draw_ring(activ, xl, yb, xr, yt, wguard, 0.0)
 
     if guard_ring_type == 'nwell':
-        draw_ring(nwell, xl, yb, xr, yt, wguard, ndiff_over)
+        draw_well_box(nwell, xl, yb, xr, yt, wguard, ndiff_over)
     elif guard_ring_type == 'dnwell':
         nbulay_over = (nbulay_min_w - wguard) / 2.0
-        draw_ring(nwell, xl, yb, xr, yt, wguard, nbulay_over)
-        draw_ring(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
+        draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
+        draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
     elif guard_ring_type == 'psub':
-        draw_ring(sub, xl, yb, xr, yt, wguard, pdiffx_over)
-        draw_ring(psd, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_well_box(sub, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_well_box(psd, xl, yb, xr, yt, wguard, pdiffx_over)
 
 
 class guard_ring(DloGen):
