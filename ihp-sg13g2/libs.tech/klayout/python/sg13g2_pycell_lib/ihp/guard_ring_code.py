@@ -17,6 +17,7 @@
 ########################################################################
 
 from __future__ import annotations
+import sys
 from typing import List
 
 __version__ = '$Revision: #3 $'
