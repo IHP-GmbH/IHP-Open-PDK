@@ -43,13 +43,13 @@ export IHP_OPEN_REPO=<repo path>
 ```
 ### NMOS (sg13_lv_nmos)
 ```bash
-python3 -m models_verifier.mdm_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
+python3 -m models_verifier.models_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
 ```
 
 ### PMOS (sg13_lv_pmos)
 
 ```bash
-python3 -m models_verifier.mdm_verifier-c mos/pmos_lv/sg13_lv_pmos.yaml
+python3 -m models_verifier.models_verifier -c mos/pmos_lv/sg13_lv_pmos.yaml
 ```
 
 ## Outputs
