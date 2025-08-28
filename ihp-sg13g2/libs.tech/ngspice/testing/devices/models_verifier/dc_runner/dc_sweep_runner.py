@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from mdm_parser.dc_runner.helper import (
+from models_verifier.dc_runner.helper import (
     CORNERS_BJT,
     CORNERS_MOS,
     DEVICE_SWEEP_MAPS,

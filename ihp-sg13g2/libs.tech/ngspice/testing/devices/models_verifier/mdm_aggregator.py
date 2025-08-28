@@ -9,8 +9,8 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 
-from mdm_parser.mdm_parser import MdmParser, MdmParseError
-from mdm_parser.mdm_parser_utils import (
+from models_verifier.mdm_parser import MdmParser, MdmParseError
+from models_verifier.mdm_parser_utils import (
     setup_global_logging,
     normalize_master_setup_type,
     safe_name,

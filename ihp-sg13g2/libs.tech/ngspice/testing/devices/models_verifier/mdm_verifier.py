@@ -11,11 +11,11 @@ from typing import Dict, List
 import pandas as pd
 import yaml
 
-from mdm_parser.dc_runner.dc_sweep_runner import DcSweepRunner
-from mdm_parser.dc_runner.helper import SIM_TYPE_MAP, expand_env
-from mdm_parser.error_analyzer.config import MetricSpec, Threshold, Tolerance
-from mdm_parser.error_analyzer.range_checker import RangeChecker
-from mdm_parser.mdm_aggregator import MdmDirectoryAggregator
+from models_verifier.dc_runner.dc_sweep_runner import DcSweepRunner
+from models_verifier.dc_runner.helper import SIM_TYPE_MAP, expand_env
+from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
+from models_verifier.error_analyzer.range_checker import RangeChecker
+from models_verifier.mdm_aggregator import MdmDirectoryAggregator
 
 
 class MdmVerifier:

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import os
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
-from mdm_parser.error_analyzer.config import MetricSpec, Threshold, Tolerance
+from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
 import numpy as np
 import pandas as pd
 

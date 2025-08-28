@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal, Optional, List, Dict, Set
 import pandas as pd
 
-from mdm_parser.mdm_parser_utils import (
+from models_verifier.mdm_parser_utils import (
     get_dut_params,
     setup_global_logging,
     extract_data_blocks,
@@ -273,12 +273,7 @@ def main():
     """Main entry point for command-line usage."""
     parser = argparse.ArgumentParser(
         description="Parse IC-CAP MDM files to CSV format",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    # Long CSV (point-by-point):
-    python mdm_parser.py -i data.mdm -o data.csv
-        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(

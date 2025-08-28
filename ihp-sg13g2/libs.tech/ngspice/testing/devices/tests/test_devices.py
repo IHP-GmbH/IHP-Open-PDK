@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from mdm_parser.mdm_verifier import MdmVerifier
+from models_verifier.mdm_verifier import MdmVerifier
 
 CASES = [
     ("nmos_lv", "mos/nmos_lv/sg13_lv_nmos.yaml"),
