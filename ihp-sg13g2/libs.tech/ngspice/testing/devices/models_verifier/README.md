@@ -1,113 +1,133 @@
-# MDM DC verification – quick guide
 
-This script runs the MDM aggregation → DC simulation → envelope checks using the YAML configs for each device.
-## Environment setup
+# MDM DC Verification – Quick Guide
 
-Before running, make sure you have:
+This script runs the flow:
 
-* **Python 3.8+** installed
-* **ngspice** available on your system (required for simulations)
-* **openvaf** installed and in your PATH (needed to compile Verilog-A models)
+**MDM aggregation → DC simulation → Envelope checks**  
+using the YAML configs for each device.
 
-### Build OSDI files (once per repo checkout)
+
+
+## 1. Environment Setup
+
+### Requirements
+- **Python 3.8+**
+- **ngspice** (required for simulations)
+- **openvaf** in your `PATH` (needed to compile Verilog-A models)
+
+### Build OSDI Files (once per repo checkout)
 
 ```bash
 cd <repo path>/ihp-sg13g2/libs.tech/verilog-a
 chmod +x openvaf-compile-va.sh
 ./openvaf-compile-va.sh
+````
 
-# Verify OSDI files were built
-ls -la <repo path>/ihp-sg13g2/libs.tech/ngspice/osdi
-```
-### Create a Python virtual environment and install dependencies
+### Create Virtual Environment & Install Dependencies
 
 ```bash
 # Create and activate venv
 python3 -m venv .venv
 source .venv/bin/activate   
 
-
-# Install required Python packages
+# Install required packages
 pip install pandas pyyaml jinja2 pytest
 ```
 
-## Run commands
+---
 
-> Run from the **devices** folder so the relative paths in the configs resolve correctly.
+## 2. Running Tests
+
+> Always run from the **devices** folder so relative paths in configs resolve correctly.
 
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 ```
-```bash 
-export IHP_OPEN_REPO=<repo path>
-```
-### NMOS (sg13_lv_nmos)
-```bash
-python3 -m models_verifier.models_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
-```
 
-### PMOS (sg13_lv_pmos)
+### Run a Single Device
 
-```bash
-python3 -m models_verifier.models_verifier -c mos/pmos_lv/sg13_lv_pmos.yaml
-```
+* **NMOS (sg13\_lv\_nmos)**
 
-## Outputs
+  ```bash
+  python3 -m models_verifier.models_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
+  ```
 
-When a run finishes you will see:
+* **PMOS (sg13\_lv\_pmos)**
 
-1. Per-setup merged CSVs (for debugging/inspection)
+  ```bash
+  python3 -m models_verifier.models_verifier -c mos/pmos_lv/sg13_lv_pmos.yaml
+  ```
 
-- Directory: `<output_dir>/sim_merged/`
-- One CSV per discovered sweep/setup (filename derived from `master_setup_type`)
+(Other devices: `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2v`)
 
-2. Reports (per the `output_dir` in the YAML)
 
-- **Full summary:** `<output_dir>/full_report.csv`
+## 3. Outputs
+
+When a run finishes, you will see:
+
+### 3.1 Per-setup merged CSVs (for debugging/inspection)
+
+* Location: `<output_dir>/sim_merged/`
+* One CSV per discovered sweep/setup
+  (filename derived from `master_setup_type`)
+
+### 3.2 Reports (per `output_dir` in YAML)
+
+* **Full summary:** `<output_dir>/full_report.csv`
   One row per `(block_id, metric, target)` with counts and pass/fail.
-- **Roll-up summary:** `<output_dir>/summary.csv`
+
+* **Roll-up summary:** `<output_dir>/summary.csv`
   Aggregated by `(metric, target)` with overall out-of-bounds percentages.
-- **Detailed failures:** `<output_dir>/detailed_failures.csv` _(only if there are any)_
-  Row per failing point with value, bounds, and basic context.
 
-The script also prints a short summary block to the terminal, including total cases, per-target pass/fail counts, and the number of failing points.
+* **Detailed failures:** `<output_dir>/detailed_failures.csv`
+  Only written if failures exist.
+  Row per failing point with value, bounds, and context.
 
-## Exit status
+Additionally, the script prints a **summary block to the terminal**, including:
 
-- `0` → all selected targets in the run passed their thresholds
-- `1` → one or more groups failed (reports still written)
+* Total cases
+* Per-target pass/fail counts
+* Number of failing points
 
-(Other non-zero exit codes indicate early termination before reporting.)
 
-## Interpreting pytest assertion failures
+## 4. Exit Status Codes
 
-When you run the tests , a device test fails if any checked group exceeds the configured out-of-range threshold. In that case, pytest raises an **AssertionError** and prints lines like:
+* **0** → All selected targets passed thresholds
+* **1** → One or more groups failed (reports still written)
+* **Other non-zero** → Early termination before reporting
+
+---
+
+## 5. Interpreting Pytest Failures
+
+When using pytest, a device test fails if any checked group exceeds the configured out-of-range threshold. Example output:
 
 ```
 check failed:
 [id/meas] (FAIL file=/path/to/meas.mdm, block_index=42) n=120 out_of_bounds=7 (5.83%)
 [ib/tt]   (FAIL file=/path/to/meas.mdm, block_index=7)  n=95  out_of_bounds=6 (6.32%)
-...
 
 STATUS: 2/24 groups FAILED (8.33%); pass rate = 91.67%
   - id/meas: 1 fails
-  - ib/tt:  1 fails
+  - ib/tt:   1 fails
 ```
 
-### What each part means
+### Meaning of Each Part
 
-- `[metric/target]` — which metric and target failed (`meas` = measured, `tt` = typical corner).
-- `file=...` — the source mdm that produced the failing group (if available).
-- `block_index=...` — the block index within that file (if available).
-- `n=` — total points evaluated in that group.
-- `out_of_bounds=` — number of points outside the allowed envelope.
-- `(%)` — percent of points outside the envelope for that group.
-- `STATUS:` — summary across all groups: how many failed vs. total, plus pass rate.
-- Per-metric lines (`- <metric>/<target>: <count> fails`) — quick breakdown by metric/target.
+* `[metric/target]` — Metric and target (`meas` = measured, `tt` = typical).
+* `file=...` — Source MDM file.
+* `block_index=...` — Block index inside that file.
+* `n=` — Total points in that group.
+* `out_of_bounds=` — Number outside allowed envelope.
+* `(%)` — Percent of failing points.
+* `STATUS:` — Summary across groups.
+* Bullet list — Per-metric breakdown of failures.
 
-## Run locally
+---
 
-### Run a single device case (same as CI)
+## 6. Running Locally (CI-style)
+
+### Run a Single Device with Pytest
 
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
@@ -115,15 +135,13 @@ python3 -m pytest --tb=short -p no:capture \
   'tests/test_devices.py::test_devices[nmos_lv]'
 ```
 
-Replace `nmos_lv` with any of: `pmos_lv`, `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2h`.
+Replace `nmos_lv` with any of:
+`pmos_lv`, `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2v`
 
-
-### Run all  tests
+### Run All Devices
 
 ```bash
 cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 python3 -m pytest --tb=short -p no:capture tests/test_devices.py
 ```
 
----
-  
