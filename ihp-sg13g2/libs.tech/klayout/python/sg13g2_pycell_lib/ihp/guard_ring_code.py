@@ -18,13 +18,16 @@
 
 from __future__ import annotations
 import sys
-from typing import List
+from typing import List, Tuple
 
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+
 from .geometry import *
 from .utility_functions import *
+
+import math
 
 
 if sys.version_info >= (3, 11):
@@ -89,6 +92,8 @@ def generate_guard_ring(dlo_gen: DloGen,
                                         # surrounded entirely by NWell in N+Activ1
     pdiffx_over = techparams['pSD_c1']  # pSD enc. of p+Activ in pWell
     nbulay_min_w = techparams['NBL_a']  # Min nBulLay width
+    min_metal1_width = techparams['M1_a']  # Min Metal1 Width
+    min_metal1_cont_encl = techparams['M1_c1']  # Min. Metal1 endcap enclosure of Cont
 
     #*************************************************************************
     #*
@@ -98,11 +103,8 @@ def generate_guard_ring(dlo_gen: DloGen,
 
     wguard_active = cont_size + 2 * cont_min_act_encl
 
-    wguard = cont_size * 2  # metal1 guardring width
-    met1_w1 = wguard
-
-    h_cont_offset = cont_size / 2.0
-    v_cont_offset = cont_space - h_cont_offset
+    wguard_met1 = wguard_active
+    # wguard_met1 = max(cont_size, min_metal1_width) + 2 * min_metal1_cont_encl  # metal1 guardring width
 
     # guardring
     xl = -w / 2.0 + x_center
@@ -110,14 +112,65 @@ def generate_guard_ring(dlo_gen: DloGen,
     xr =  w / 2.0 + x_center
     yt =  h / 2.0 + y_center
 
-    def add_metal_cont(xl: float, yb: float, xr: float, yt: float, offset: float):
-        MetalCont(dlo_gen, xl, yb, xr, yt, met1, cont, met1_w1, cont_size, cont_size, offset, cont_space)
-
     def draw_contacted_ring(xl: float, yb: float, xr: float, yt: float, width: float):
-        add_metal_cont(xl,             yb + width/2.0, xr,             yb + width/2.0, h_cont_offset)  # bottom
-        add_metal_cont(xl,             yt - width/2.0, xr,             yt - width/2.0, h_cont_offset)  # top
-        add_metal_cont(xl + width/2.0, yb + width,     xl + width/2.0, yt - width,     v_cont_offset)  # right
-        add_metal_cont(xr - width/2.0, yb + width,     xr - width/2.0, yt - width,     v_cont_offset)  # left
+        # NOTE: xl / yb / xr / yt defines the outer bounds of the guard ring
+
+        bottom_box = Box(xl,         yb,          xr,          yb + width)
+        top_box    = Box(xl,         yt - width,  xr,          yt)
+        left_box   = Box(xl,         yb + width,  xl + width,  yt - width)
+        right_box  = Box(xr - width, yb + width,  xr,          yt - width)
+        dbCreateRect(dlo_gen, met1, bottom_box)
+        dbCreateRect(dlo_gen, met1, top_box)
+        dbCreateRect(dlo_gen, met1, left_box)
+        dbCreateRect(dlo_gen, met1, right_box)
+
+        # NOTE: in case of leftover space, we adjust the offset to ensure the spacing
+        #       we want to create the gap in the middle
+
+        def num_contacts_and_remainder(available_span: float) -> Tuple[int, float]:
+            min_contacts = math.floor(available_span / (cont_size + cont_space))
+            min_span = min_contacts * cont_size + (min_contacts - 2) * cont_space
+            max_span = min_span + cont_size + cont_space
+            num_contacts: int
+            remainder: float
+            if available_span - max_span >= cont_space:
+                remainder = available_span - max_span
+                num_contacts = min_contacts + 1
+            else:
+                remainder = available_span - min_span
+                num_contacts = min_contacts
+            return num_contacts, remainder
+
+        h_available_span = bottom_box.right - bottom_box.left - 2 * cont_min_act_encl
+        v_available_span =  left_box.top - left_box.bottom + 2 * cont_min_act_encl - 2 * cont_space
+        h_num_contacts, h_remainder = num_contacts_and_remainder(h_available_span)
+        v_num_contacts, v_remainder = num_contacts_and_remainder(v_available_span)
+
+        for box in (bottom_box, top_box):
+            x1 = box.left + cont_min_act_encl
+            y_bot = box.bottom + cont_min_act_encl
+            y_top = y_bot + cont_size
+            for i in range(0, h_num_contacts):
+                x2 = x1 + cont_size
+                contact_box = Box(x1, y_bot, x2, y_top)
+                dbCreateRect(dlo_gen, cont, contact_box)
+                if i + 1 == floor(h_num_contacts / 2.0):
+                    x1 = x2 + h_remainder
+                else:
+                    x1 = x2 + cont_space
+
+        for box in (left_box, right_box):
+            y1 = box.bottom - cont_min_act_encl + cont_space
+            x_left = box.left + cont_min_act_encl
+            x_right = x_left + cont_size
+            for i in range(0, v_num_contacts):
+                y2 = y1 + cont_size
+                contact_box = Box(x_left, y1, x_right, y2)
+                dbCreateRect(dlo_gen, cont, contact_box)
+                if i + 1 == floor(v_num_contacts / 2.0):
+                    y1 = y2 + v_remainder
+                else:
+                    y1 = y2 + cont_space
 
     def draw_ring(lyr: Layer,
                   xl: float, yb: float, xr: float, yt: float,
@@ -146,22 +199,22 @@ def generate_guard_ring(dlo_gen: DloGen,
         ]
         dbLayerOrList(lyr, mlist)
 
-    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float, width: float, over: float):
-        box = Box(xl - width - over, yb - width - over, xr + width + over, yt + width + over)
+    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float,over: float):
+        box = Box(xl - over, yb - over, xr + over, yt + over)
         dbCreateRect(dlo_gen, lyr, box)
 
-    draw_contacted_ring(xl, yb, xr, yt, wguard)
+    draw_contacted_ring(xl, yb, xr, yt, wguard_met1)
 
     if guard_ring_type == 'nwell':
-        draw_well_box(nwell, xl, yb, xr, yt, wguard, ndiff_over)
+        draw_well_box(nwell, xl, yb, xr, yt, ndiff_over)
         draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
     # elif guard_ring_type == 'dnwell':
     #     nbulay_over = (nbulay_min_w - wguard) / 2.0
     #     draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
     #     draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
     elif guard_ring_type == 'psub':
-        draw_ring(sub, xl, yb, xr, yt, wguard, pdiffx_over)
-        draw_ring(psd, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_ring(sub, xl, yb, xr, yt, wguard_active, pdiffx_over)
+        draw_ring(psd, xl, yb, xr, yt, wguard_active, pdiffx_over)
         draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'sub!'))
 
 
