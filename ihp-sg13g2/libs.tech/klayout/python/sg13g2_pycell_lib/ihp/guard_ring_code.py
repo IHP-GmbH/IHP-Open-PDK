@@ -152,17 +152,18 @@ def generate_guard_ring(dlo_gen: DloGen,
 
     draw_contacted_ring(xl, yb, xr, yt, wguard)
 
-    draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'sub!'))
-
     if guard_ring_type == 'nwell':
         draw_well_box(nwell, xl, yb, xr, yt, wguard, ndiff_over)
-    elif guard_ring_type == 'dnwell':
-        nbulay_over = (nbulay_min_w - wguard) / 2.0
-        draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
-        draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
+        draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
+    # elif guard_ring_type == 'dnwell':
+    #     nbulay_over = (nbulay_min_w - wguard) / 2.0
+    #     draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
+    #     draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
     elif guard_ring_type == 'psub':
-        draw_well_box(sub, xl, yb, xr, yt, wguard, pdiffx_over)
-        draw_well_box(psd, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_ring(sub, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_ring(psd, xl, yb, xr, yt, wguard, pdiffx_over)
+        draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'sub!'))
+
 
 
 class guard_ring(DloGen):
