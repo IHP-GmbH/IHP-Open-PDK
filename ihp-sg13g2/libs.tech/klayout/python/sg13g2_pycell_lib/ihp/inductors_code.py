@@ -99,7 +99,8 @@ class inductors(DeviceBase):
         """
         Template method for subclasses to restrict the guard ring types
         """
-        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.DNWELL, GuardRingType.PSUB]
+        # return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.PSUB]
 
     def genDeviceLayout(self):
         w = self.w
