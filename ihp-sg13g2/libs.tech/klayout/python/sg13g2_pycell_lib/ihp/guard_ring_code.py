@@ -42,7 +42,7 @@ else:
 class GuardRingType(StrEnum):
     NONE = 'none'
     NWELL = 'nwell'
-    DNWELL = 'dnwell'
+    # DNWELL = 'dnwell'
     PSUB = 'psub'
 
     @classmethod
@@ -221,7 +221,7 @@ def generate_guard_ring(dlo_gen: DloGen,
 class guard_ring(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
-        specs('type', 'ntap', 'Guard Ring Type', ChoiceConstraint(['nwell', 'dnwell', 'psub']))
+        specs('type', 'ntap', 'Guard Ring Type', ChoiceConstraint(['nwell', 'psub']))  # 'dnwell'
         specs('w', '3.05u', 'Width')
         specs('h', '3.05u', 'Height')
 

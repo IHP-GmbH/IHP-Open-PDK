@@ -68,7 +68,8 @@ class nmos(DeviceBase):
         """
         Template method for subclasses to restrict the guard ring types
         """
-        return [GuardRingType.NONE, GuardRingType.DNWELL, GuardRingType.PSUB]
+        # return [GuardRingType.NONE, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.PSUB]
 
     def genDeviceLayout(self):
         w  = self.w
