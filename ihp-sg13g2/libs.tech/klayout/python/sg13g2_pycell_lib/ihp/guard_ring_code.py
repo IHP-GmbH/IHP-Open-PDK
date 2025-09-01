@@ -82,10 +82,11 @@ def generate_guard_ring(dlo_gen: DloGen,
     #*
     #*************************************************************************
 
-    cont_size = techparams['Cnt_a']
-    cont_space = techparams['Cnt_b']
-    ndiff_over = techparams['NW_e']  # Minimum NWell enclosure of NWell tie
-                                          # surrounded entirely by NWell in N+Activ1
+    cont_size = techparams['Cnt_a']          # Cont width
+    cont_space = techparams['Cnt_b']         # Min. Cont space
+    cont_min_act_encl = techparams['Cnt_c']  # Min. Activ enclosure of Cont
+    ndiff_over = techparams['NW_e']     # Minimum NWell enclosure of NWell tie
+                                        # surrounded entirely by NWell in N+Activ1
     pdiffx_over = techparams['pSD_c1']  # pSD enc. of p+Activ in pWell
     nbulay_min_w = techparams['NBL_a']  # Min nBulLay width
 
@@ -94,6 +95,8 @@ def generate_guard_ring(dlo_gen: DloGen,
     #* Main body of code
     #*
     #*************************************************************************
+
+    wguard_active = cont_size + 2 * cont_min_act_encl
 
     wguard = cont_size * 2  # metal1 guardring width
     met1_w1 = wguard
@@ -143,7 +146,7 @@ def generate_guard_ring(dlo_gen: DloGen,
 
     draw_contacted_ring(xl, yb, xr, yt, wguard)
 
-    draw_ring(activ, xl, yb, xr, yt, wguard, 0.0)
+    draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0)
 
     if guard_ring_type == 'nwell':
         draw_well_box(nwell, xl, yb, xr, yt, wguard, ndiff_over)
