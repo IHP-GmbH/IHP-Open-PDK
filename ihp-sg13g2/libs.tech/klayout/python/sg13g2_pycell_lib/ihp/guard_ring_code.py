@@ -119,11 +119,24 @@ def generate_guard_ring(dlo_gen: DloGen,
         add_metal_cont(xl + width/2.0, yb + width,     xl + width/2.0, yt - width,     v_cont_offset)  # right
         add_metal_cont(xr - width/2.0, yb + width,     xr - width/2.0, yt - width,     v_cont_offset)  # left
 
-    def draw_ring(lyr: Layer, xl: float, yb: float, xr: float, yt: float, width: float, over: float):
+    def draw_ring(lyr: Layer,
+                  xl: float, yb: float, xr: float, yt: float,
+                  width: float,
+                  over: float,
+                  label: Optional[Tuple[Layer, str]] = None):
         box_bottom = Box(xl - over,         yb - over,         xr + over,         yb + width + over)
         box_top    = Box(xl - over,         yt + over,         xr + over,         yt - width - over)
         box_left   = Box(xl - over,         yb + width - over, xl + width + over, yt - width - over)
         box_right  = Box(xr - width - over, yb + width - over, xr + over,         yt - width - over)
+
+        if label is not None:
+            label_lyr, label_txt = label
+            label_rotations = ['R90', 'R180', 'R270', 'R0']
+            for i, box in enumerate((box_left, box_bottom, box_right, box_top)):
+                label_point = box.getCenter()
+                dbCreateLabel(dlo_gen, label_lyr, label_point, label_txt, 'centerCenter',
+                              label_rotations[i], Font.EURO_STYLE, cont_size)
+
         mlist = ulist[Rect]()
         mlist += [
             dbCreateRect(dlo_gen, lyr, box_bottom),
@@ -137,16 +150,9 @@ def generate_guard_ring(dlo_gen: DloGen,
         box = Box(xl - width - over, yb - width - over, xr + width + over, yt + width + over)
         dbCreateRect(dlo_gen, lyr, box)
 
-    # draw pin
-    pin_box = Box(xl, yb + cont_size/2.0, xr, yb + cont_size*1.5)
-    id = dbCreateRect(dlo_gen, met1_pin, pin_box)
-    MkPin(dlo_gen, 'TIE', 0, id.bbox, id.layer)
-    tie_label_point = pin_box.getCenter()
-    dbCreateLabel(dlo_gen, text, tie_label_point, 'TIE', 'centerCenter', 'R0', Font.EURO_STYLE, cont_size)
-
     draw_contacted_ring(xl, yb, xr, yt, wguard)
 
-    draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0)
+    draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'sub!'))
 
     if guard_ring_type == 'nwell':
         draw_well_box(nwell, xl, yb, xr, yt, wguard, ndiff_over)
