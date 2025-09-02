@@ -184,11 +184,9 @@ def generate_guard_ring(dlo_gen: DloGen,
 
         if label is not None:
             label_lyr, label_txt = label
-            label_rotations = ['R90', 'R180', 'R270', 'R0']
-            for i, box in enumerate((box_left, box_bottom, box_right, box_top)):
-                label_point = box.getCenter()
-                dbCreateLabel(dlo_gen, label_lyr, label_point, label_txt, 'centerCenter',
-                              label_rotations[i], Font.EURO_STYLE, cont_size)
+            label_point = box_bottom.getCenter()
+            dbCreateLabel(dlo_gen, label_lyr, label_point, label_txt, 'centerCenter',
+                          'R0', Font.EURO_STYLE, cont_size)
 
         mlist = ulist[Rect]()
         mlist += [
