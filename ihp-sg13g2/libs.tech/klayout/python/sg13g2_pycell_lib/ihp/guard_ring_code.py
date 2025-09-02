@@ -106,6 +106,8 @@ def generate_guard_ring(dlo_gen: DloGen,
     wguard_met1 = wguard_active
     # wguard_met1 = max(cont_size, min_metal1_width) + 2 * min_metal1_cont_encl  # metal1 guardring width
 
+    nbulay_over = (nbulay_min_w - wguard_active) / 2.0
+
     # guardring
     xl = -w / 2.0 + x_center
     yb = -h / 2.0 + y_center
@@ -206,15 +208,14 @@ def generate_guard_ring(dlo_gen: DloGen,
     if guard_ring_type == 'nwell':
         draw_well_box(nwell, xl, yb, xr, yt, ndiff_over)
         draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
+        draw_ring(nbulay, xl, yb, xr, yt, wguard_active, nbulay_over)
     # elif guard_ring_type == 'dnwell':
-    #     nbulay_over = (nbulay_min_w - wguard) / 2.0
     #     draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
     #     draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
     elif guard_ring_type == 'psub':
         draw_ring(sub, xl, yb, xr, yt, wguard_active, pdiffx_over)
         draw_ring(psd, xl, yb, xr, yt, wguard_active, pdiffx_over)
         draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'sub!'))
-
 
 
 class guard_ring(DloGen):
