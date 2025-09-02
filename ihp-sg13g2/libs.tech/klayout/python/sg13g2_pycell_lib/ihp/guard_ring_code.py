@@ -179,8 +179,8 @@ def generate_guard_ring(dlo_gen: DloGen,
                   label: Optional[Tuple[Layer, str]] = None):
         box_bottom = Box(xl - over,         yb - over,         xr + over,         yb + width + over)
         box_top    = Box(xl - over,         yt + over,         xr + over,         yt - width - over)
-        box_left   = Box(xl - over,         yb + width - over, xl + width + over, yt - width - over)
-        box_right  = Box(xr - width - over, yb + width - over, xr + over,         yt - width - over)
+        box_left   = Box(xl - over,         yb + width + over, xl + width + over, yt - width - over)
+        box_right  = Box(xr - width - over, yb + width + over, xr + over,         yt - width - over)
 
         if label is not None:
             label_lyr, label_txt = label
