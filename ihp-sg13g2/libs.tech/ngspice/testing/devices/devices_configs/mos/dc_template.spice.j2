@@ -1,0 +1,48 @@
+* --- DC-sweep MOS testbench  ---
+.lib     {{ model_corner_lib }} {{ corner }}  
+
+.control
+  pre_osdi {{ osdi_path }}                
+.endc
+
+.temp {{ TEMP }}                           
+
+.param W={{ W }}
+.param L={{ L }}
+.param AD={{ AD }}
+.param AS={{ AS }}
+.param PD={{ PD }}
+.param PS={{ PS }}
+.param NF={{ NF }}
+.param M={{ M }}
+
+.param VD={{ VD }}
+.param VS={{ VS }}
+.param VG={{ VG }}
+.param VB={{ VB }}
+
+Vd d 0 {VD}
+Vs s 0 {VS}
+Vg g 0 {VG}
+Vb b 0 {VB}
+
+XU1 d g s b {{ device_subckt }}
++ w={W} l={L} m={M} ng={NF} ad={AD} as={AS} pd={PD} ps={PS}
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+
+  let ib = -i(Vb)
+  let id = -i(Vd)
+  let ig = -i(Vg)
+  let is = -i(Vs)
+
+  wrdata {{ out_path }} v({{ sweep_node }}) ib id ig is 
+  quit
+.endc
+
+.end

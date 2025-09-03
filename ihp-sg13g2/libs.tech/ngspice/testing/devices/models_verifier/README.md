@@ -6,8 +6,6 @@ This script runs the flow:
 **MDM aggregation → DC simulation → Envelope checks**  
 using the YAML configs for each device.
 
-
-
 ## 1. Environment Setup
 
 ### Requirements
@@ -15,7 +13,7 @@ using the YAML configs for each device.
 - **ngspice** (required for simulations)
 - **openvaf** in your `PATH` (needed to compile Verilog-A models)
 
-### Build OSDI Files (once per repo checkout)
+### Build OSDI Files
 
 ```bash
 cd <repo path>/ihp-sg13g2/libs.tech/verilog-a
@@ -46,13 +44,13 @@ cd ihp-sg13g2/libs.tech/ngspice/testing/devices
 
 ### Run a Single Device
 
-* **NMOS (sg13\_lv\_nmos)**
+* **sg13_lv_nmos**
 
   ```bash
   python3 -m models_verifier.models_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
   ```
 
-* **PMOS (sg13\_lv\_pmos)**
+* **sg13_lv_pmos**
 
   ```bash
   python3 -m models_verifier.models_verifier -c mos/pmos_lv/sg13_lv_pmos.yaml
