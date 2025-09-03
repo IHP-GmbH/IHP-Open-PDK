@@ -87,10 +87,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pyyaml pandas numpy jinja2
 
-      - name: Setup environment variables
+      - name: Setup PYTHONPATH
         run: |
-          echo "IHP_OPEN_REPO=${{ github.workspace }}" >> $GITHUB_ENV
-          echo "IHP_PDK_ROOT=${{ github.workspace }}" >> $GITHUB_ENV
           echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> $GITHUB_ENV
 
       - name: Restore OpenVAF cache
@@ -221,13 +219,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pyyaml pandas numpy jinja2
 
-      - name: Setup environment variables
+      - name: Setup PYTHONPATH
         run: |
-          echo "IHP_OPEN_REPO=${{ github.workspace }}" >> $GITHUB_ENV
-          echo "IHP_PDK_ROOT=${{ github.workspace }}" >> $GITHUB_ENV
           echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> $GITHUB_ENV
 
-      - name: Smoke check toolchain
+      - name: check toolchain
         run: |
           which ngspice
           ngspice -v
@@ -238,4 +234,4 @@ jobs:
         run: |
           # run only the single parametrized case as its own job
           python -m pytest --tb=short -p no:capture \
-            'tests/test_devices.py::test_devices[${{ matrix.case }}]'
+            'verification/test_devices.py::test_devices[${{ matrix.case }}]'
