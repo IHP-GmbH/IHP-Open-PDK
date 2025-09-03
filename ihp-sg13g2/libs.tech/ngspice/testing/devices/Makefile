@@ -49,9 +49,6 @@ define run_test
 	fi
 endef
 
-# test-models-%:
-# 	@$(call run_test,$*,$($*_CONFIG))
-
 nmos_lv:
 	@$(call run_test,nmos_lv,$(NMOS_LV_CONFIG))
 pmos_lv:

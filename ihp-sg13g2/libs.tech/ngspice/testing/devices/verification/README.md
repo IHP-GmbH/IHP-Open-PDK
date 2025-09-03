@@ -15,6 +15,8 @@ It complements the `models_verifier` package and integrates with the top-level `
     - [Run with pytest](#run-with-pytest)
     - [Run with Jupyter Notebook](#run-with-jupyter-notebook)
 
+  - [Interpreting Pytest Failures](#interpreting-pytest-failures)
+
 
 ## Folder Structure
 
@@ -41,7 +43,7 @@ Before running the verification tests, ensure that you have completed the setup 
 To execute all device tests directly with pytest:
 
 ```bash
-cd .. #ihp-sg13g2/libs.tech/ngspice/testing/devices
+cd .. # ihp-sg13g2/libs.tech/ngspice/testing/devices
 export PYTHONPATH=$PWD
 pytest -v verification/test_devices.py
 ```
@@ -64,4 +66,30 @@ The notebook `devices_testing.ipynb` demonstrates the verification flow interact
 - Run simulations
 - Inspect merged DataFrames
 - Analyze tolerance checks and reports
-- Plot the test results for each device across different design configurations.
+- Plot the test results for each device across different design configurations
+
+
+## Interpreting Pytest Failures
+
+When using pytest, a device test fails if any checked group exceeds the configured out-of-range threshold. Example output:
+
+```
+check failed:
+[id/meas] (FAIL file=/path/to/meas.mdm, block_index=42) n=120 out_of_bounds=7 (5.83%)
+[ib/tt]   (FAIL file=/path/to/meas.mdm, block_index=7)  n=95  out_of_bounds=6 (6.32%)
+
+STATUS: 2/24 groups FAILED (8.33%); pass rate = 91.67%
+  - id/meas: 1 fails
+  - ib/tt:   1 fails
+```
+
+### Meaning of Each Part
+
+- `[metric/target]` — Metric and target (`meas` = measured, `tt` = typical).
+- `file=...` — Source MDM file.
+- `block_index=...` — Block index inside that file.
+- `n=` — Total points in that group.
+- `out_of_bounds=` — Number outside allowed envelope.
+- `(%)` — Percent of failing points.
+- `STATUS:` — Summary across groups.
+- Bullet list — Per-metric breakdown of failures.

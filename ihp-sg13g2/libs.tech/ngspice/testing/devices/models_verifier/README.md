@@ -1,145 +1,50 @@
+# Models Verifier
 
-# MDM DC Verification – Quick Guide
+models_verifier is the **verification engine** for SG13G2 device testing.
+It runs **measurement-vs-simulation comparisons** using ngspice, aggregates results, and checks them against tolerance thresholds.
 
-This script runs the flow:
+# Table of contents
 
-**MDM aggregation → DC simulation → Envelope checks**  
-using the YAML configs for each device.
+* [Models Verifier](#models-verifier)
+* [Table of contents](#table-of-contents)
 
-## 1. Environment Setup
+  * [Folder Structure](#folder-structure)
+  * [Modules Overview](#modules-overview)
 
-### Requirements
-- **Python 3.8+**
-- **ngspice** (required for simulations)
-- **openvaf** in your `PATH` (needed to compile Verilog-A models)
 
-### Build OSDI Files
+## Folder Structure
 
-```bash
-cd <repo path>/ihp-sg13g2/libs.tech/verilog-a
-chmod +x openvaf-compile-va.sh
-./openvaf-compile-va.sh
-````
-
-### Create Virtual Environment & Install Dependencies
-
-```bash
-# Create and activate venv
-python3 -m venv .venv
-source .venv/bin/activate   
-
-# Install required packages
-pip install pandas pyyaml jinja2 pytest
+```text
+📁 models_verifier
+ ┣ 📜 models_verifier.py     CLI entrypoint (main script).
+ ┣ 📜 constants.py           Shared constants for device configs and tests.
+ ┣ 📁 dc_runner              Orchestrates ngspice DC simulations.
+ ┃ ┣ 📜 dc_sweep_runner.py   Runs DC sweeps for each device.
+ ┃ ┗ 📜 helper.py            Helper functions for building runs.
+ ┣ 📁 error_analyzer         Handles tolerance and range checks.
+ ┃ ┣ 📜 config.py            Defines thresholds and metric specs.
+ ┃ ┗ 📜 range_checker.py     Core pass/fail logic for metrics.
+ ┣ 📁 mdm_processing         Parses and aggregates measurement data (MDM format).
+ ┃ ┣ 📜 parser.py            Reads MDM files into DataFrames.
+ ┃ ┣ 📜 aggregator.py        Combines MDM blocks into compact/merged views.
+ ┃ ┗ 📜 utils.py             Utility helpers for parsing and cleaning data.
+ ┗ 📜 README.md              Documentation (this file).
 ```
 
----
 
-## 2. Running Tests
+## Modules Overview
 
-> Always run from the **devices** folder so relative paths in configs resolve correctly.
+* **`models_verifier.py`**
+  CLI entrypoint. Loads YAML config, runs the full flow (parse → simulate → analyze → report).
 
-```bash
-cd ihp-sg13g2/libs.tech/ngspice/testing/devices
-```
+* **`dc_runner/`**
+  Interfaces with **ngspice**: builds `.cir` netlists from Jinja2 templates, runs sweeps, collects outputs.
 
-### Run a Single Device
+* **`mdm_processing/`**
+  Handles measurement data (MDM format). Provides parsers, aggregators, and utilities to align simulation with measurement.
 
-* **sg13_lv_nmos**
+* **`error_analyzer/`**
+  Applies tolerance thresholds (percentage or count of out-of-range points). Generates pass/fail reports.
 
-  ```bash
-  python3 -m models_verifier.models_verifier -c mos/nmos_lv/sg13_lv_nmos.yaml
-  ```
-
-* **sg13_lv_pmos**
-
-  ```bash
-  python3 -m models_verifier.models_verifier -c mos/pmos_lv/sg13_lv_pmos.yaml
-  ```
-
-(Other devices: `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2v`)
-
-
-## 3. Outputs
-
-When a run finishes, you will see:
-
-### 3.1 Per-setup merged CSVs (for debugging/inspection)
-
-* Location: `<output_dir>/sim_merged/`
-* One CSV per discovered sweep/setup
-  (filename derived from `master_setup_type`)
-
-### 3.2 Reports (per `output_dir` in YAML)
-
-* **Full summary:** `<output_dir>/full_report.csv`
-  One row per `(block_id, metric, target)` with counts and pass/fail.
-
-* **Roll-up summary:** `<output_dir>/summary.csv`
-  Aggregated by `(metric, target)` with overall out-of-bounds percentages.
-
-* **Detailed failures:** `<output_dir>/detailed_failures.csv`
-  Only written if failures exist.
-  Row per failing point with value, bounds, and context.
-
-Additionally, the script prints a **summary block to the terminal**, including:
-
-* Total cases
-* Per-target pass/fail counts
-* Number of failing points
-
-
-## 4. Exit Status Codes
-
-* **0** → All selected targets passed thresholds
-* **1** → One or more groups failed (reports still written)
-* **Other non-zero** → Early termination before reporting
-
----
-
-## 5. Interpreting Pytest Failures
-
-When using pytest, a device test fails if any checked group exceeds the configured out-of-range threshold. Example output:
-
-```
-check failed:
-[id/meas] (FAIL file=/path/to/meas.mdm, block_index=42) n=120 out_of_bounds=7 (5.83%)
-[ib/tt]   (FAIL file=/path/to/meas.mdm, block_index=7)  n=95  out_of_bounds=6 (6.32%)
-
-STATUS: 2/24 groups FAILED (8.33%); pass rate = 91.67%
-  - id/meas: 1 fails
-  - ib/tt:   1 fails
-```
-
-### Meaning of Each Part
-
-* `[metric/target]` — Metric and target (`meas` = measured, `tt` = typical).
-* `file=...` — Source MDM file.
-* `block_index=...` — Block index inside that file.
-* `n=` — Total points in that group.
-* `out_of_bounds=` — Number outside allowed envelope.
-* `(%)` — Percent of failing points.
-* `STATUS:` — Summary across groups.
-* Bullet list — Per-metric breakdown of failures.
-
----
-
-## 6. Running Locally (CI-style)
-
-### Run a Single Device with Pytest
-
-```bash
-cd ihp-sg13g2/libs.tech/ngspice/testing/devices
-python3 -m pytest --tb=short -p no:capture \
-  'tests/test_devices.py::test_devices[nmos_lv]'
-```
-
-Replace `nmos_lv` with any of:
-`pmos_lv`, `nmos_hv`, `pmos_hv`, `pnp_mpa`, `npn13g2`, `npn13g2l`, `npn13g2v`
-
-### Run All Devices
-
-```bash
-cd ihp-sg13g2/libs.tech/ngspice/testing/devices
-python3 -m pytest --tb=short -p no:capture tests/test_devices.py
-```
-
+* **`constants.py`**
+  Stores mappings and CASES used in pytest parametrization.
