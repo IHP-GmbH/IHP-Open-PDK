@@ -14,7 +14,7 @@
 # limitations under the License.
 # =========================================================================================
 
-# Makefile for Device Testing (never fails on test errors)
+# Makefile for Device Testing
 
 RUNNER ?= verifier
 PYTEST_ARGS := --tb=short -p no:capture

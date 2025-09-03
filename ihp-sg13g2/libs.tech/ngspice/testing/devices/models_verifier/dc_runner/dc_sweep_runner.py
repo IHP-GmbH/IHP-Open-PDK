@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from tqdm import tqdm
 from models_verifier.dc_runner.helper import (
     CORNERS_BJT,
     CORNERS_MOS,
@@ -118,17 +119,12 @@ class DcSweepRunner:
         with ProcessPoolExecutor(max_workers=max(1, self.max_workers)) as ex:
             futs = [ex.submit(self._process_one_worker, t) for t in tasks]
 
-            completed = 0
-            for f in as_completed(futs):
-                completed += 1
+            for f in tqdm(as_completed(futs), total=len(futs), desc="Processing tasks"):
                 rid, out_df, err = f.result()
                 if err is not None or out_df is None:
                     errors.append((rid, err or "unknown error"))
                 else:
                     results.append(out_df)
-
-                if completed % 10 == 0 or completed == len(futs):
-                    print(f"Processed {completed}/{len(futs)} ...")
 
         if not results:
             shutil.rmtree(workdir, ignore_errors=True)

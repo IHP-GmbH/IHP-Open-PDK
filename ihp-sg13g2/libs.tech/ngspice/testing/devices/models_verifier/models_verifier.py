@@ -110,12 +110,13 @@ class MdmVerifier:
             work_dir = Path(work_dir)
             for setup_type, compact_df in compact_by_type.items():
                 sim_type = SIM_TYPE_MAP.get(setup_type, "current")
-                print(f"======={setup_type}=======")
                 if sim_type == "cap":
-                    print(
-                        f"Skipping (master_setup_type: '{setup_type}') as it is a capacitance simulation."
-                    )
+                    # print(f"======={setup_type}=======")
+                    # print(
+                    #     f"Skipping (master_setup_type: '{setup_type}') as it is a capacitance simulation."
+                    # )
                     continue
+                print(f"======={setup_type}=======")
                 
                 if compact_df is None or compact_df.empty:
                     continue
