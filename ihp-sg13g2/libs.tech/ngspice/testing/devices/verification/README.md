@@ -15,7 +15,6 @@ It complements the `models_verifier` package and integrates with the top-level `
     - [Run with pytest](#run-with-pytest)
     - [Run with Jupyter Notebook](#run-with-jupyter-notebook)
 
----
 
 ## Folder Structure
 
@@ -26,8 +25,6 @@ It complements the `models_verifier` package and integrates with the top-level `
  ┗ 📜 README.md              Documentation (this file).
 ```
 
----
-
 ## Prerequisites
 
 Before running the verification tests, ensure that you have completed the setup described in the [devices README](../README.md):
@@ -36,7 +33,6 @@ Before running the verification tests, ensure that you have completed the setup 
 - Dependencies installed via `requirements.txt`
 - OSDI models compiled (see [verilog-a/README.md](../../../verilog-a/README.md))
 
----
 
 ## Usage
 

@@ -86,18 +86,20 @@ class MdmVerifier:
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    def _build_merged_dataframes(self) -> List[pd.DataFrame]:
+    def _build_merged_dataframes(self, create_csvs: bool = True) -> List[pd.DataFrame]:
         """Build merged dataframes from MDM data and simulations."""
         mdm_dir = Path(self.config["mdm_dir"])
         if not mdm_dir.exists():
             print(f"ERROR: MDM directory not found: {mdm_dir}", file=sys.stderr)
             sys.exit(3)
-        csv_stage_dir = self._clean_mkdir(self.output_dir / "per_setup_mdm_csvs")
+        csv_stage_dir = None
+        if create_csvs:
+            csv_stage_dir = self._clean_mkdir(self.output_dir / "per_setup_mdm_csvs")
         aggregator = MdmDirectoryAggregator(
             input_dir=mdm_dir,
             recursive=True,
             output_dir=csv_stage_dir,
-            create_csvs=True,
+            create_csvs=create_csvs,
             device_type=self.device_type,
         )
         full_by_type, compact_by_type = aggregator.aggregate()
@@ -115,7 +117,11 @@ class MdmVerifier:
             device_name=self.config["device_name"],
             max_workers=int(self.config["max_workers"]),
             device_type=self.config["device_type"],
-            netlists_dir=netlists_dir if self.config.get("generate_netlists") else None,
+            netlists_dir=(
+                netlists_dir
+                if (self.config.get("generate_netlists") and create_csvs)
+                else None
+            ),
         )
 
         merged_parts = []
@@ -206,17 +212,30 @@ class MdmVerifier:
         self,
         report_df: pd.DataFrame,
         detailed_failures_df: pd.DataFrame,
-        threshold_percent: float,
+        threshold_percent: float | None = None,
+        threshold_count: int | None = None,
         targets: List[str] = None,
     ) -> Dict:
         """Print summary statistics for range check results."""
         if targets is None:
             targets = ["meas", "tt"]
 
+        use_percent = threshold_percent is not None
+        if not use_percent and threshold_count is None:
+            raise ValueError(
+                "Either threshold_percent or threshold_count must be provided."
+            )
+
         target_report = report_df[report_df["target"].isin(targets)].copy()
-        failing = target_report[
-            target_report["percentage_oob"] > threshold_percent
-        ].copy()
+
+        if use_percent:
+            failing = target_report[
+                target_report["percentage_oob"] > float(threshold_percent)
+            ].copy()
+        else:
+            failing = target_report[
+                target_report["n_out_of_bounds"] > int(threshold_count)
+            ].copy()
 
         total_cases = int(len(target_report))
         total_fail = int(len(failing))
@@ -234,9 +253,14 @@ class MdmVerifier:
         target_stats = {}
         for target in targets:
             target_data = report_df[report_df["target"] == target].copy()
-            target_failing = target_data[
-                target_data["percentage_oob"] > threshold_percent
-            ].copy()
+            if use_percent:
+                target_failing = target_data[
+                    target_data["percentage_oob"] > float(threshold_percent)
+                ].copy()
+            else:
+                target_failing = target_data[
+                    target_data["n_out_of_bounds"] > int(threshold_count)
+                ].copy()
 
             target_stats[target] = {
                 "total": int(len(target_data)),
@@ -246,22 +270,26 @@ class MdmVerifier:
 
         print("\n================= SUMMARY =================")
         print(f"Total cases (block_id x metric x target): {total_cases}")
-
         for target in targets:
             stats = target_stats[target]
             target_name = (
                 "Measured"
                 if target == "meas"
-                else "Typical" if target == "tt" else target.upper()
+                else ("Typical" if target == "tt" else target.upper())
             )
             print(
                 f"  {target_name} cases: {stats['total']} (PASS: {stats['pass']}, FAIL: {stats['fail']})"
             )
 
         print(f"  Overall PASS: {total_pass}")
-        print(
-            f"  Overall FAIL: {total_fail} (threshold: {threshold_percent:.2f}% out-of-range)"
-        )
+        if use_percent:
+            print(
+                f"  Overall FAIL: {total_fail} (threshold: {threshold_percent:.2f}% out-of-range)"
+            )
+        else:
+            print(
+                f"  Overall FAIL: {total_fail} (threshold: > {int(threshold_count)} points out-of-range)"
+            )
         print(f"Total failed points: {total_failed_points}")
         print("==========================================================\n")
 
@@ -271,7 +299,8 @@ class MdmVerifier:
             "total_fail": total_fail,
             "total_failed_points": total_failed_points,
             "target_stats": target_stats,
-            "threshold_percent": threshold_percent,
+            "threshold_type": "percent" if use_percent else "count",
+            "threshold_value": threshold_percent if use_percent else threshold_count,
         }
 
     def run_verification(self) -> int:
@@ -302,9 +331,19 @@ class MdmVerifier:
         stats = self.print_summary_statistics(
             report,
             detailed_failures,
-            float(self.config["threshold_percent_oob"]),
+            threshold_percent=(
+                float(self.config["threshold_percent_oob"])
+                if self.config.get("threshold_percent_oob") is not None
+                else None
+            ),
+            threshold_count=(
+                int(self.config["threshold_count_oob"])
+                if self.config.get("threshold_count_oob") is not None
+                else None
+            ),
             targets=["meas", "tt"],
         )
+
         if self.config.get("generate_netlists"):
             range_checker.cleanup_passed_netlists(
                 self.output_dir / "netlists", report, dry_run=False

@@ -414,7 +414,6 @@ class RangeChecker:
                     else:
                         try:
                             netlist_file.unlink()
-                            print(f"Removed netlist: {netlist_file}")
                             removed_count += 1
                         except Exception as e:
                             print(f"Error removing {netlist_file}: {e}")

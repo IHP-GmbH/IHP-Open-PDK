@@ -31,7 +31,7 @@ def test_devices(label, rel_yaml):
 
     verifier = MdmVerifier(cfg_path)
 
-    dfs = verifier._build_merged_dataframes()
+    dfs = verifier._build_merged_dataframes(create_csvs=False)
     assert dfs, f"No merged {label.upper()} DataFrames returned"
     merged_df = pd.concat(dfs, ignore_index=True)
     assert not merged_df.empty, f"Merged {label.upper()} DataFrame is empty"

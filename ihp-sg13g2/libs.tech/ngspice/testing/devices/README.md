@@ -32,11 +32,12 @@ Tests can be executed with either **pytest** or the custom **`models_verifier`**
 You need the following tools to run the SG13G2 device tests:
 
 - **Python 3.9+**
+- **python3-venv** (for creating a virtual environment)
 - **ngspice** (for running simulations)
 - **openvaf** (for compiling Verilog-A models)
 
 To build the required OSDI models, please follow the instructions in:
-[`ihp-sg13g2/libs.tech/verilog-a/README.md`](../../../verilog-a/README.md)
+[`README`](../../../verilog-a/README.md)
 
 ### Setup Python Virtual Environment
 
@@ -102,7 +103,6 @@ Run PNP MPA with pytest:
 make pnp_mpa RUNNER=pytest
 ```
 
----
 
 For more details on available targets and options, run:
 

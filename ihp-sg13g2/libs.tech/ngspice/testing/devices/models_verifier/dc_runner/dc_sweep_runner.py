@@ -210,16 +210,24 @@ class DcSweepRunner:
             output_vars_str = merged["output_vars"].iloc[0]
             measured_vars = [v.strip() for v in output_vars_str.split(",")]
 
-            base_cols = [col for col in cblock.columns] + ["sweep_var"]
-            sim_cols = []
+            base_cols = [
+                col
+                for col in cblock.columns
+                if not any(col.endswith(f"{var}_meas") for var in measured_vars)
+            ] + ["sweep_var"]
 
+            paired_cols = []
             for var in measured_vars:
+                meas_col = f"{var}_meas"
+                if meas_col in merged.columns:
+                    paired_cols.append(meas_col)
+
                 for corner in self.corners:
                     sim_col_name = f"{var}_sim_{corner}"
                     if sim_col_name in merged.columns:
-                        sim_cols.append(sim_col_name)
+                        paired_cols.append(sim_col_name)
 
-            cols_to_keep = base_cols + sim_cols
+            cols_to_keep = base_cols + paired_cols
             cols_to_keep = [c for c in cols_to_keep if c in merged.columns]
 
             merged = merged.sort_values(sweep_var).reset_index(drop=True)
@@ -410,7 +418,7 @@ class DcSweepRunner:
         vcol = f"v({sweep_node[:2]})"
 
         for corner in corners:
-            out_path = row_dir / f"wr_outputs_{corner}.txt"
+            out_path = row_dir / f"wr_outputs_{corner}.csv"
             log_path = Path(f"{log_base}_{corner}.log")
             netlist_path = Path(f"{netlist_base}_{corner}.cir")
 

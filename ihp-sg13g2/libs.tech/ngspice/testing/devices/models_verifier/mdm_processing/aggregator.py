@@ -17,6 +17,7 @@
 from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from functools import partial
 import logging
 import os
 from pathlib import Path
@@ -38,10 +39,13 @@ logger = logging.getLogger(__name__)
 
 def clean_group_item(
     item: Tuple[Optional[str], pd.DataFrame],
+    device_type: Literal["mos", "pnpmpa", "hbt"] = "mos",
 ) -> Tuple[Optional[str], pd.DataFrame]:
 
     mtype, df = item
     out = MdmDirectoryAggregator._drop_all_empty_columns(df)
+    out = MdmDirectoryAggregator.reorder_columns(out, device_type)
+
     return mtype, out
 
 
@@ -96,6 +100,81 @@ class MdmDirectoryAggregator:
 
         if self.output_dir is not None and self.create_csvs:
             self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def reorder_columns(df: pd.DataFrame, device_type: str) -> pd.DataFrame:
+        """
+        Reorder columns in a DataFrame into the following structure:
+
+        1. Primary identifiers: block_id, block_index, source_file, input_vars, output_vars, master_setup_type, TNOM, TEMP  
+        2. Device-specific design parameters (depends on device_type: mos, pnpmpa, hbt)  
+        3. Input variable columns (in the order found in input_vars)  
+        4. Output variable columns (in the order found in output_vars)  
+        5. All other non-debug columns  
+        6. Debug columns last (implicitly placed at the end if present)  
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame to reorder.
+        device_type : str
+            Type of device (e.g., 'mos', 'pnpmpa', 'hbt') used to determine design parameters.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns reordered according to the specified rules.
+        """
+        if df is None or df.empty:
+            return df
+
+        primary = [
+            "block_id",
+            "block_index",
+            "source_file",
+            "input_vars",
+            "output_vars",
+            "master_setup_type",
+            "TNOM",
+            "TEMP",
+        ]
+
+        design_params_map = {
+            "mos": ["W", "L", "AD", "AS", "PD", "PS", "NF", "M"],
+            "pnpmpa": ["A", "P"],
+            "hbt": ["W", "L", "M", "Nx"],
+        }
+        design_params = design_params_map.get(str(device_type).lower(), [])
+
+        input_vars_list, output_vars_list = [], []
+
+        for _, row in df.iterrows():
+            if pd.notna(row.get("input_vars")):
+                input_vars_list = [var.strip() for var in str(row["input_vars"]).split(",")]
+                break
+
+        for _, row in df.iterrows():
+            if pd.notna(row.get("output_vars")):
+                output_vars_list = [var.strip() for var in str(row["output_vars"]).split(",")]
+                break
+
+        known_vars = input_vars_list + output_vars_list
+        cols = list(df.columns)
+
+        planned, seen = [], set()
+
+        def add_block(seq):
+            for c in seq:
+                if c in df.columns and c not in seen:
+                    planned.append(c)
+                    seen.add(c)
+
+        add_block(primary)
+        add_block(design_params)
+        add_block(known_vars)
+        add_block([c for c in cols if c not in seen])
+
+        return df.reindex(columns=planned)
 
     @staticmethod
     def _drop_all_empty_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -243,10 +322,14 @@ class MdmDirectoryAggregator:
         full_by_type = build_by_type(frames_full)
         compact_by_type = build_by_type(frames_compact)
         max_workers = min(8, os.cpu_count() or 4)
+        clean_with_device_type = partial(clean_group_item, device_type=self.device_type)
+
         with ProcessPoolExecutor(max_workers=max_workers) as ex:
-            full_by_type = dict(ex.map(clean_group_item, full_by_type.items()))
+            full_by_type = dict(ex.map(clean_with_device_type, full_by_type.items()))
         with ProcessPoolExecutor(max_workers=max_workers) as ex:
-            compact_by_type = dict(ex.map(clean_group_item, compact_by_type.items()))
+            compact_by_type = dict(
+                ex.map(clean_with_device_type, compact_by_type.items())
+            )
 
         if self.create_csvs:
             n_full = self._write_by_type(full_by_type, "clean", "full")
