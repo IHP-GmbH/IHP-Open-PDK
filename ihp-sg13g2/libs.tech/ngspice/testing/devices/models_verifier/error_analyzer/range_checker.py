@@ -265,19 +265,7 @@ class RangeChecker:
         Save both summary and detailed failure reports to CSV files.
         """
         if report_df.empty:
-            empty_df = pd.DataFrame(
-                columns=[
-                    "metric",
-                    "target",
-                    "n_points",
-                    "n_out_of_bounds",
-                    "percentage_oob",
-                ]
-            )
-            empty_df.to_csv(csv_path, index=False)
             return
-
-        report_df.to_csv("report_df.csv", index=False)
 
         summary = report_df.groupby(["metric", "target"], as_index=False).agg(
             n_points=("n_points", "sum"),
