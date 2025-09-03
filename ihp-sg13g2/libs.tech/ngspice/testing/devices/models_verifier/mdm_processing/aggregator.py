@@ -25,8 +25,8 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 
-from models_verifier.mdm_parser import MdmParser, MdmParseError
-from models_verifier.mdm_parser_utils import (
+from models_verifier.mdm_processing.parser import MdmParser, MdmParseError
+from models_verifier.mdm_processing.utils import (
     setup_global_logging,
     normalize_master_setup_type,
     safe_name,
@@ -198,7 +198,9 @@ class MdmDirectoryAggregator:
             p
             for p in iterator
             if p.is_file()
-            and not p.name.lower().startswith(("dummy", "spar","contact","ftfmax","h21gu"))
+            and not p.name.lower().startswith(
+                ("dummy", "spar", "contact", "ftfmax", "h21gu")
+            )
             and not (
                 is_pnp and (m := dut_re.search(p.name)) and int(m.group(1)) in skip_duts
             )

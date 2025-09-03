@@ -19,7 +19,7 @@ from pathlib import Path
 import re
 from typing import Dict, List, Optional, Set, Tuple, Generator
 import pandas as pd
-from models_verifier.mdm_parser_const import (
+from models_verifier.constants import (
     DESIGN_PARAMETERS,
     DUTS,
     UNIT_MULTIPLIERS,

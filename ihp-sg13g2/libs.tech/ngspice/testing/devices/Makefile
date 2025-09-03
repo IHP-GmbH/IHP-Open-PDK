@@ -43,7 +43,7 @@ pnp: test-pnp
 define run_test
 	@echo "Running $(1) test with $(RUNNER)..."
 	@if [ "$(RUNNER)" = "pytest" ]; then \
-		python3 -m pytest tests/test_devices.py::test_devices[$(1)] $(PYTEST_ARGS) || true; \
+		python3 -m pytest verification/test_devices.py::test_devices[$(1)] $(PYTEST_ARGS) || true; \
 	else \
 		python3 -m models_verifier.models_verifier --config $(2) || true; \
 	fi
@@ -80,16 +80,16 @@ test-all:
 
 pytest-mos:
 	@echo "Running MOS device tests with pytest..."
-	@python3 -m pytest tests/test_devices.py -k "nmos_lv or pmos_lv or nmos_hv or pmos_hv" $(PYTEST_ARGS) || true
+	@python3 -m pytest verification/test_devices.py -k "nmos_lv or pmos_lv or nmos_hv or pmos_hv" $(PYTEST_ARGS) || true
 pytest-hbt:
 	@echo "Running HBT device tests with pytest..."
-	@python3 -m pytest tests/test_devices.py -k "npn13g2 or npn13g2l or npn13g2v" $(PYTEST_ARGS) || true
+	@python3 -m pytest verification/test_devices.py -k "npn13g2 or npn13g2l or npn13g2v" $(PYTEST_ARGS) || true
 pytest-pnp:
 	@echo "Running PNP device tests with pytest..."
-	@python3 -m pytest tests/test_devices.py -k "pnp_mpa" $(PYTEST_ARGS) || true
+	@python3 -m pytest verification/test_devices.py -k "pnp_mpa" $(PYTEST_ARGS) || true
 pytest-all:
 	@echo "Running all device tests with pytest..."
-	@python3 -m pytest tests/test_devices.py $(PYTEST_ARGS) || true
+	@python3 -m pytest verification/test_devices.py $(PYTEST_ARGS) || true
 
 verifier-mos:
 	@echo "Running MOS device tests with models_verifier..."

@@ -19,24 +19,15 @@ import pandas as pd
 import pytest
 
 from models_verifier.models_verifier import MdmVerifier
-
-CASES = [
-    ("nmos_lv", "mos/nmos_lv/sg13_lv_nmos.yaml"),
-    ("pmos_lv", "mos/pmos_lv/sg13_lv_pmos.yaml"),
-    ("nmos_hv", "mos/nmos_hv/sg13_hv_nmos.yaml"),
-    ("pmos_hv", "mos/pmos_hv/sg13_hv_pmos.yaml"),
-    ("pnp_mpa", "pnp_mpa/pnpmpa.yaml"),
-    ("npn13g2", "hbt/npn13g2/npn13g2.yaml"),
-    ("npn13g2l", "hbt/npn13g2l/npn13g2l.yaml"),
-    ("npn13g2v", "hbt/npn13g2v/npn13g2v.yaml"),
-]
+from models_verifier.constants import CASES
 
 
 @pytest.mark.parametrize("label, rel_yaml", CASES, ids=[c[0] for c in CASES])
 def test_devices(label, rel_yaml):
-    test_dir = Path(__file__).parent    
+    test_dir = Path(__file__).parent
     cfg_path = test_dir.parent / rel_yaml
-    assert cfg_path.exists(), f"Config YAML not found: {cfg_path}"
+
+    assert cfg_path.exists(), f"Config YAML not found: {cfg_path,Path.cwd()}"
 
     verifier = MdmVerifier(cfg_path)
 

@@ -31,7 +31,7 @@ from models_verifier.dc_runner.dc_sweep_runner import DcSweepRunner
 from models_verifier.dc_runner.helper import SIM_TYPE_MAP, expand_env
 from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
 from models_verifier.error_analyzer.range_checker import RangeChecker
-from models_verifier.mdm_aggregator import MdmDirectoryAggregator
+from models_verifier.mdm_processing.aggregator import MdmDirectoryAggregator
 
 
 class MdmVerifier:
@@ -41,9 +41,7 @@ class MdmVerifier:
         """Initialize the verifier with configuration."""
         self.config = self._load_config(config_path)
         self.device_type = self.config["device_type"]
-        self.output_dir = Path(
-            self.config.get("output_dir", Path.cwd() / "verification_reports")
-        )
+        self.output_dir = Path(self.config.get("output_dir"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def _load_config(self, config_path: Path) -> Dict:
@@ -62,6 +60,7 @@ class MdmVerifier:
             "device_type",
             "device_name",
             "metrics",
+            "output_dir",
         ]
 
         missing = [
@@ -93,7 +92,7 @@ class MdmVerifier:
         if not mdm_dir.exists():
             print(f"ERROR: MDM directory not found: {mdm_dir}", file=sys.stderr)
             sys.exit(3)
-        csv_stage_dir = self._clean_mkdir(self.output_dir.parent / "per_setup_mdm_csvs")
+        csv_stage_dir = self._clean_mkdir(self.output_dir / "per_setup_mdm_csvs")
         aggregator = MdmDirectoryAggregator(
             input_dir=mdm_dir,
             recursive=True,
@@ -106,9 +105,7 @@ class MdmVerifier:
             print("ERROR: No sweeps discovered in MDM directory.", file=sys.stderr)
             sys.exit(4)
 
-        netlists_dir = None
-        if "netlists_dir" in self.config and self.config["netlists_dir"]:
-            netlists_dir = Path(self.config["netlists_dir"])
+        netlists_dir = self.output_dir / "netlists"
         runner = DcSweepRunner(
             template_path=Path(self.config["dc_template_path"]),
             corner_lib_path=Path(self.config["corner_lib_path"]),
@@ -118,7 +115,7 @@ class MdmVerifier:
             device_name=self.config["device_name"],
             max_workers=int(self.config["max_workers"]),
             device_type=self.config["device_type"],
-            netlists_dir=netlists_dir,
+            netlists_dir=netlists_dir if self.config.get("generate_netlists") else None,
         )
 
         merged_parts = []
@@ -133,7 +130,7 @@ class MdmVerifier:
                     # )
                     continue
                 print(f"======={setup_type}=======")
-                
+
                 if compact_df is None or compact_df.empty:
                     continue
 
@@ -194,7 +191,7 @@ class MdmVerifier:
 
     def _save_individual_csvs(self, dataframes: List[pd.DataFrame]) -> None:
         """Save individual CSV files for each setup type."""
-        output_dir = self.output_dir.parent / "per_setup_sim_vs_meas"
+        output_dir = self.output_dir / "per_setup_sim_vs_meas"
         output_dir.mkdir(parents=True, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -262,7 +259,9 @@ class MdmVerifier:
             )
 
         print(f"  Overall PASS: {total_pass}")
-        print(f"  Overall FAIL: {total_fail}  (limit = {threshold_percent:.2f}% OOB)")
+        print(
+            f"  Overall FAIL: {total_fail} (threshold: {threshold_percent:.2f}% out-of-range)"
+        )
         print(f"Total failed points: {total_failed_points}")
         print("==========================================================\n")
 
@@ -288,9 +287,12 @@ class MdmVerifier:
         range_checker = self._build_range_checker()
         report, detailed_failures = range_checker.analyze(merged_df)
 
-        full_report_path = self.output_dir / "full_report.csv"
-        summary_path = self.output_dir / "summary.csv"
-        detailed_failures_path = self.output_dir / "detailed_failures.csv"
+        reports_dir = self.output_dir / "verification_reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
+        full_report_path = reports_dir / "full_report.csv"
+        summary_path = reports_dir / "summary.csv"
+        detailed_failures_path = reports_dir / "detailed_failures.csv"
 
         report.to_csv(full_report_path, index=False)
         range_checker.summarize_to_csv(
@@ -303,9 +305,9 @@ class MdmVerifier:
             float(self.config["threshold_percent_oob"]),
             targets=["meas", "tt"],
         )
-        if self.config.get("netlists_dir"):
+        if self.config.get("generate_netlists"):
             range_checker.cleanup_passed_netlists(
-                self.config["netlists_dir"], report, dry_run=False
+                self.output_dir / "netlists", report, dry_run=False
             )
 
         print("Artifacts:")
