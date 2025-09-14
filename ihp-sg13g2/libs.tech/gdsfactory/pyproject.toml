@@ -1,16 +1,14 @@
 # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
 
 [build-system]
-build-backend = "flit_core.buildapi"
-requires = ["flit_core >=3.2,<4"]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "wheel", "ruff"]
 
 [project]
 authors = [{name = "gdsfactory", email = "contact@gdsfactory.com"}]
 classifiers = [
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Operating System :: OS Independent"
+  "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
   "gdsfactory~=9.15.0",
@@ -20,10 +18,10 @@ dependencies = [
 description = "IHP pdk"
 keywords = ["python"]
 license = {file = "LICENSE"}
-name = "ihp"
+name = "ihp-gdsfactory"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
-version = "0.0.5"
+version = "0.0.6"
 
 [project.optional-dependencies]
 dev = [
@@ -87,13 +85,15 @@ select = [
 "ihp/cells/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
 "ihp/models/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
 
-[tool.setuptools.package-data]
-mypkg = ["*.csv", "*.yaml"]
+[tool.setuptools]
+include-package-data = true
 
-[tool.setuptools.packages]
+[tool.setuptools.package-data]
+"*" = ["*.csv", "*.yaml", "*.yml", "*.gds", "*.lyp", "*.oas", "*.lyt", "*.dat", "*.nc", "*.svg", '*.GDS', "*.json", "*.txt"]
+
+[tool.setuptools.packages.find]
 include = ["ihp"]
-namespaces = true
-where = ['.']
+where = ["."]
 
 [tool.tbump]
 
@@ -123,7 +123,7 @@ message_template = "Bump to {new_version}"
 tag_template = "v{new_version}"
 
 [tool.tbump.version]
-current = "0.0.5"
+current = "0.0.6"
 regex = '''
   (?P<major>\d+)
   \.

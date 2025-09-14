@@ -1,4 +1,4 @@
-# IHP GDSFactory PDK 0.0.5
+# IHP GDSFactory PDK 0.0.6
 
 This repository contains a PDK (Process Design Kit) for the IHP CMOS technology, built using GDSFactory. It includes standard cell libraries, design rules, and example designs to facilitate the development of integrated circuits using this technology.
 
