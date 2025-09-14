@@ -1,11 +1,9 @@
 """Inductor components for IHP PDK."""
 
 import math
-from typing import Optional
 
 import gdsfactory as gf
 from gdsfactory import Component
-from gdsfactory.typings import Layer
 
 
 def inductor_min_diameter(width: float, space: float, turns: int, grid: float) -> float:
@@ -20,7 +18,6 @@ def inductor_min_diameter(width: float, space: float, turns: int, grid: float) -
     Returns:
         Minimum diameter in micrometers.
     """
-    var = 1 + math.sqrt(2)
     min_d = 2 * turns * (width + space) + 4 * width
     return round(min_d / grid) * grid
 
@@ -55,11 +52,9 @@ def inductor2(
 
     # Define layers
     TM2 = (134, 5)  # TopMetal2
-    TM1 = (126, 5)  # TopMetal1
-    TV2 = (125, 5)  # TopVia2
-    IND = (8, 5)    # IND layer
-    NoRCX = (15, 5) # NoRCX layer
-    LBE = (24, 0)   # Substrate etch layer
+    IND = (8, 5)  # IND layer
+    NoRCX = (15, 5)  # NoRCX layer
+    LBE = (24, 0)  # Substrate etch layer
 
     # Grid fixing for manufacturing constraints
     grid = 0.01
@@ -73,11 +68,6 @@ def inductor2(
         d = min_d
 
     # Calculate geometry parameters
-    var = 1 + math.sqrt(2)
-    lat_sm = round(d / (2 * var * grid)) * 2 * grid
-    lat_big = round((d + 2 * w) / (var * grid)) * grid
-    cateta_sm = (d - lat_sm) / 2
-    cateta_big = round((d + 2 * w) / (var * math.sqrt(2) * grid)) * grid
 
     # Create octagonal spiral inductor
     # Center opening
@@ -102,9 +92,9 @@ def inductor2(
         for i in range(8):
             angle = (i * 45 + 22.5) * math.pi / 180  # Offset by 22.5 degrees
             if i % 2 == 0:
-                r = d/2 + turn_offset + w/2
+                r = d / 2 + turn_offset + w / 2
             else:
-                r = (d/2 + turn_offset + w/2) / math.cos(math.pi/8)
+                r = (d / 2 + turn_offset + w / 2) / math.cos(math.pi / 8)
 
             x = r * math.cos(angle)
             y = r * math.sin(angle)
@@ -117,59 +107,45 @@ def inductor2(
 
         # Create the path
         path = gf.Path(path_points)
-        inductor_path = c << gf.path.extrude(path, layer=TM2, width=w)
+        c << gf.path.extrude(path, layer=TM2, width=w)
 
     # Add connection traces and ports
     # Port 1 - Inner connection
-    port1_trace = c << gf.components.rectangle(
-        size=(w, d/2 + w),
-        layer=TM2
-    )
-    port1_trace.move((-(d/2 + w), -w/2))
+    port1_trace = c << gf.components.rectangle(size=(w, d / 2 + w), layer=TM2)
+    port1_trace.move((-(d / 2 + w), -w / 2))
     c.add_port(
-        name="P1",
-        center=(-(d/2 + w), .0),
-        width=w,
-        orientation=180,
-        layer=TM2
+        name="P1", center=(-(d / 2 + w), 0.0), width=w, orientation=180, layer=TM2
     )
 
     # Port 2 - Outer connection
-    outer_radius = d/2 + turns * (w + s)
-    port2_trace = c << gf.components.rectangle(
-        size=(w, outer_radius + w),
-        layer=TM2
-    )
-    port2_trace.move((outer_radius, -w/2))
+    outer_radius = d / 2 + turns * (w + s)
+    port2_trace = c << gf.components.rectangle(size=(w, outer_radius + w), layer=TM2)
+    port2_trace.move((outer_radius, -w / 2))
     c.add_port(
-        name="P2",
-        center=(outer_radius + w, 0),
-        width=w,
-        orientation=0,
-        layer=TM2
+        name="P2", center=(outer_radius + w, 0), width=w, orientation=0, layer=TM2
     )
 
     # Add IND marker layer
-    ind_box = c << gf.components.rectangle(
+    c << gf.components.rectangle(
         size=(2 * outer_radius + 2 * w, 2 * outer_radius + 2 * w),
         layer=IND,
-        centered=True
+        centered=True,
     )
 
     # Add blocking layers if requested
     if block_qrc:
-        qrc_box = c << gf.components.rectangle(
+        c << gf.components.rectangle(
             size=(2 * outer_radius + 3 * w, 2 * outer_radius + 3 * w),
             layer=NoRCX,
-            centered=True
+            centered=True,
         )
 
     # Add substrate etch if requested
     if substrate_etch:
-        etch_box = c << gf.components.rectangle(
+        c << gf.components.rectangle(
             size=(2 * outer_radius + 4 * w, 2 * outer_radius + 4 * w),
             layer=LBE,
-            centered=True
+            centered=True,
         )
 
     # Add metadata

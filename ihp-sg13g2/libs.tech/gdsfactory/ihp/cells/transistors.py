@@ -1,10 +1,7 @@
 """Transistor components for IHP PDK."""
 
-from typing import Optional
-
 import gdsfactory as gf
 from gdsfactory import Component
-
 
 # Define layers for transistors
 LAYERS = {
@@ -58,7 +55,6 @@ def nmos(
     cont_enc_metal = 0.06
     poly_extension = 0.18
     active_extension = 0.23
-    nwell_enclosure = 0.31
     psd_enclosure = 0.12
 
     # Calculate dimensions
@@ -115,10 +111,12 @@ def nmos(
                 layer=LAYERS["Metal1"],
             )
             m1_ref = c.add_ref(m1)
-            m1_ref.move((
-                x_offset - active_extension + cont_enc_active - cont_enc_metal,
-                y_pos - cont_enc_metal
-            ))
+            m1_ref.move(
+                (
+                    x_offset - active_extension + cont_enc_active - cont_enc_metal,
+                    y_pos - cont_enc_metal,
+                )
+            )
 
         # Drain contacts (right)
         for j in range(n_cont_y):
@@ -129,10 +127,7 @@ def nmos(
                 layer=LAYERS["Cont"],
             )
             cont_ref = c.add_ref(cont)
-            cont_ref.move((
-                x_offset + gate_length + cont_gate_spacing,
-                y_pos
-            ))
+            cont_ref.move((x_offset + gate_length + cont_gate_spacing, y_pos))
 
             # Metal1 for drain
             m1 = gf.components.rectangle(
@@ -140,17 +135,16 @@ def nmos(
                 layer=LAYERS["Metal1"],
             )
             m1_ref = c.add_ref(m1)
-            m1_ref.move((
-                x_offset + gate_length + cont_gate_spacing - cont_enc_metal,
-                y_pos - cont_enc_metal
-            ))
+            m1_ref.move(
+                (
+                    x_offset + gate_length + cont_gate_spacing - cont_enc_metal,
+                    y_pos - cont_enc_metal,
+                )
+            )
 
     # N+ implant
     nsd = gf.components.rectangle(
-        size=(
-            nf * finger_pitch + active_extension,
-            gate_width + 2 * psd_enclosure
-        ),
+        size=(nf * finger_pitch + active_extension, gate_width + 2 * psd_enclosure),
         layer=LAYERS["nSD"],
     )
     nsd_ref = c.add_ref(nsd)
@@ -247,7 +241,9 @@ def pmos(
         layer=LAYERS["NWell"],
     )
     nwell_ref = c.add_ref(nwell)
-    nwell_ref.move((-active_extension - nwell_enclosure, poly_extension - nwell_enclosure))
+    nwell_ref.move(
+        (-active_extension - nwell_enclosure, poly_extension - nwell_enclosure)
+    )
 
     # Create transistor fingers
     finger_pitch = gate_width + 2 * cont_gate_spacing + cont_size
@@ -293,10 +289,12 @@ def pmos(
                 layer=LAYERS["Metal1"],
             )
             m1_ref = c.add_ref(m1)
-            m1_ref.move((
-                x_offset - active_extension + cont_enc_active - cont_enc_metal,
-                y_pos - cont_enc_metal
-            ))
+            m1_ref.move(
+                (
+                    x_offset - active_extension + cont_enc_active - cont_enc_metal,
+                    y_pos - cont_enc_metal,
+                )
+            )
 
         # Drain contacts (right)
         for j in range(n_cont_y):
@@ -307,10 +305,7 @@ def pmos(
                 layer=LAYERS["Cont"],
             )
             cont_ref = c.add_ref(cont)
-            cont_ref.move((
-                x_offset + gate_length + cont_gate_spacing,
-                y_pos
-            ))
+            cont_ref.move((x_offset + gate_length + cont_gate_spacing, y_pos))
 
             # Metal1 for drain
             m1 = gf.components.rectangle(
@@ -318,17 +313,16 @@ def pmos(
                 layer=LAYERS["Metal1"],
             )
             m1_ref = c.add_ref(m1)
-            m1_ref.move((
-                x_offset + gate_length + cont_gate_spacing - cont_enc_metal,
-                y_pos - cont_enc_metal
-            ))
+            m1_ref.move(
+                (
+                    x_offset + gate_length + cont_gate_spacing - cont_enc_metal,
+                    y_pos - cont_enc_metal,
+                )
+            )
 
     # P+ implant
     psd = gf.components.rectangle(
-        size=(
-            nf * finger_pitch + active_extension,
-            gate_width + 2 * psd_enclosure
-        ),
+        size=(nf * finger_pitch + active_extension, gate_width + 2 * psd_enclosure),
         layer=LAYERS["pSD"],
     )
     psd_ref = c.add_ref(psd)

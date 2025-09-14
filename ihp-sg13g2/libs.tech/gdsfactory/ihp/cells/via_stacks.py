@@ -1,10 +1,7 @@
 """Via stack components for IHP PDK."""
 
-from typing import Optional, Tuple
-
 import gdsfactory as gf
 from gdsfactory import Component
-
 
 # Define metal and via layers for IHP PDK
 METAL_LAYERS = {
@@ -61,7 +58,7 @@ VIA_RULES = {
 }
 
 
-def get_via_name(bottom_metal: str, top_metal: str) -> Optional[str]:
+def get_via_name(bottom_metal: str, top_metal: str) -> str | None:
     """Get the via layer name between two metal layers.
 
     Args:
@@ -71,7 +68,6 @@ def get_via_name(bottom_metal: str, top_metal: str) -> Optional[str]:
     Returns:
         Via layer name or None if not adjacent.
     """
-    metal_order = ["Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"]
     via_mapping = {
         ("Metal1", "Metal2"): "Via1",
         ("Metal2", "Metal3"): "Via2",
@@ -91,9 +87,9 @@ def via_array(
     via_type: str = "Via1",
     columns: int = 2,
     rows: int = 2,
-    via_size: Optional[float] = None,
-    via_spacing: Optional[float] = None,
-    via_enclosure: Optional[float] = None,
+    via_size: float | None = None,
+    via_spacing: float | None = None,
+    via_enclosure: float | None = None,
 ) -> Component:
     """Create an array of vias.
 
@@ -155,7 +151,7 @@ def via_array(
 def via_stack(
     bottom_layer: str = "Metal1",
     top_layer: str = "Metal2",
-    size: Tuple[float, float] = (10.0, 10.0),
+    size: tuple[float, float] = (10.0, 10.0),
     vn_columns: int = 2,
     vn_rows: int = 2,
     vt1_columns: int = 1,
@@ -182,7 +178,15 @@ def via_stack(
     c = Component()
 
     # Validate layers
-    metal_order = ["Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"]
+    metal_order = [
+        "Metal1",
+        "Metal2",
+        "Metal3",
+        "Metal4",
+        "Metal5",
+        "TopMetal1",
+        "TopMetal2",
+    ]
 
     if bottom_layer not in metal_order or top_layer not in metal_order:
         raise ValueError(f"Invalid metal layers: {bottom_layer}, {top_layer}")
@@ -191,7 +195,9 @@ def via_stack(
     top_idx = metal_order.index(top_layer)
 
     if bottom_idx >= top_idx:
-        raise ValueError(f"Bottom layer must be below top layer: {bottom_layer} -> {top_layer}")
+        raise ValueError(
+            f"Bottom layer must be below top layer: {bottom_layer} -> {top_layer}"
+        )
 
     width, height = size
 
@@ -290,8 +296,8 @@ def via_stack(
 def via_stack_with_pads(
     bottom_layer: str = "Metal1",
     top_layer: str = "TopMetal2",
-    size: Tuple[float, float] = (10.0, 10.0),
-    pad_size: Tuple[float, float] = (20.0, 20.0),
+    size: tuple[float, float] = (10.0, 10.0),
+    pad_size: tuple[float, float] = (20.0, 20.0),
     pad_spacing: float = 50.0,
 ) -> Component:
     """Create a via stack with test pads.
@@ -314,7 +320,7 @@ def via_stack_with_pads(
         top_layer=top_layer,
         size=size,
     )
-    stack_ref = c.add_ref(stack)
+    c.add_ref(stack)
 
     # Add bottom pad
     bottom_pad = gf.components.rectangle(

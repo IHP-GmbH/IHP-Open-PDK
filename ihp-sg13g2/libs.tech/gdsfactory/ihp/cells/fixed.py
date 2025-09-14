@@ -1,29 +1,20 @@
 """Bipolar transistor components for IHP PDK."""
 
-from typing import Literal, Optional
-from toolz import compose
-
-import gdsfactory as gf
-from gdsfactory import Component
-
-
-from pathlib import Path
 from functools import partial
+
 import gdsfactory as gf
+
 from ihp.config import PATH
 
-add_ports_metal1 = partial(
+_add_ports_metal1 = partial(
     gf.add_ports.add_ports_from_markers_inside, pin_layer=(8, 2), port_layer=(8, 0)
 )
-add_ports_metal2 = partial(
+_add_ports_metal2 = partial(
     gf.add_ports.add_ports_from_markers_inside, pin_layer=(10, 2), port_layer=(10, 0)
 )
-add_ports = (add_ports_metal1, add_ports_metal2)
-
-
+_add_ports = (_add_ports_metal1, _add_ports_metal2)
 gdsdir = PATH.gds
-
-import_gds = partial(gf.import_gds, post_process=add_ports)
+import_gds = partial(gf.import_gds, post_process=_add_ports)
 
 
 @gf.cell
@@ -38,7 +29,17 @@ def CuPillarPad() -> gf.Component:
       c = ihp.cells.CuPillarPad()
       c.plot()
     """
-    return import_gds(gdsdir / "CuPillarPad.gds")
+    c = import_gds(gdsdir / "CuPillarPad.gds")
+    width = 45
+    c.add_port(
+        name="e1", center=(0, 0), width=width, orientation=180, layer="TOPMETAL2"
+    )
+    c.add_port(name="e2", center=(0, 0), width=width, orientation=0, layer="TOPMETAL2")
+    c.add_port(name="e3", center=(0, 0), width=width, orientation=90, layer="TOPMETAL2")
+    c.add_port(
+        name="e4", center=(0, 0), width=width, orientation=270, layer="TOPMETAL2"
+    )
+    return c
 
 
 @gf.cell
@@ -897,6 +898,10 @@ def sealring_corner_CDNS_675179387641() -> gf.Component:
 
 
 if __name__ == "__main__":
+    from ihp import PDK
+
+    PDK.activate()
     # c = sealring_corner_CDNS_675179387641()
-    c=  schottky_nbl1()
+    c = CuPillarPad()
+    c.pprint_ports()
     c.show()

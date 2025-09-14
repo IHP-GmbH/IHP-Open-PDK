@@ -5,7 +5,6 @@ Can overwrite config with an optional `config.yml` file in the current working d
 
 import pathlib
 
-
 cwd = pathlib.Path.cwd()
 cwd_config = cwd / "config.yml"
 module = pathlib.Path(__file__).parent.absolute()

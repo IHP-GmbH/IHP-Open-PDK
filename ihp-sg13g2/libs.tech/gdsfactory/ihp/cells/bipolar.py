@@ -1,10 +1,7 @@
 """Bipolar transistor components for IHP PDK."""
 
-from typing import Literal, Optional
-
 import gdsfactory as gf
 from gdsfactory import Component
-
 
 # Define layers for bipolar transistors
 LAYERS = {
@@ -79,7 +76,10 @@ def npn13G2(
 
     # Collector N-Well (outermost)
     nwell = gf.components.rectangle(
-        size=(collector_length + 2 * nwell_enclosure, collector_width + 2 * nwell_enclosure),
+        size=(
+            collector_length + 2 * nwell_enclosure,
+            collector_width + 2 * nwell_enclosure,
+        ),
         layer=LAYERS["NWell"],
         centered=True,
     )
@@ -104,13 +104,14 @@ def npn13G2(
         layer=LAYERS["Activ"],
         centered=True,
     )
-    collector = gf.boolean(collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["Activ"])
+    collector = gf.boolean(
+        collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["Activ"]
+    )
     c.add_ref(collector)
 
     # N+ implant for collector
     nsd_collector = gf.boolean(
-        collector_ring_outer, collector_ring_inner, "A-B",
-        layer=LAYERS["nSD"]
+        collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["nSD"]
     )
     c.add_ref(nsd_collector)
 
@@ -137,10 +138,7 @@ def npn13G2(
     c.add_ref(base)
 
     # P+ implant for base
-    psd_base = gf.boolean(
-        base_ring_outer, base_ring_inner, "A-B",
-        layer=LAYERS["pSD"]
-    )
+    psd_base = gf.boolean(base_ring_outer, base_ring_inner, "A-B", layer=LAYERS["pSD"])
     c.add_ref(psd_base)
 
     # Emitter active region (N+)
@@ -165,8 +163,8 @@ def npn13G2(
 
     for i in range(n_cont_x):
         for j in range(n_cont_y):
-            x = -em_length/2 + cont_enc_active + i * cont_spacing
-            y = -em_width/2 + cont_enc_active + j * cont_spacing
+            x = -em_length / 2 + cont_enc_active + i * cont_spacing
+            y = -em_width / 2 + cont_enc_active + j * cont_spacing
 
             cont = gf.components.rectangle(
                 size=(cont_size, cont_size),
@@ -177,8 +175,10 @@ def npn13G2(
 
     # Emitter metal
     emitter_metal = gf.components.rectangle(
-        size=(em_length - 2 * cont_enc_active + 2 * cont_enc_metal,
-               em_width - 2 * cont_enc_active + 2 * cont_enc_metal),
+        size=(
+            em_length - 2 * cont_enc_active + 2 * cont_enc_metal,
+            em_width - 2 * cont_enc_active + 2 * cont_enc_metal,
+        ),
         layer=LAYERS["Metal1"],
         centered=True,
     )
@@ -187,7 +187,6 @@ def npn13G2(
     # Add base contacts (ring around emitter)
     base_cont_y = base_width / 2 - base_enclosure / 2
     for i in range(4):  # Simplified: 4 contacts on each side
-        angle = i * 90
         if i % 2 == 0:  # Top and bottom
             x = 0
             y = base_cont_y if i == 0 else -base_cont_y
@@ -215,7 +214,6 @@ def npn13G2(
     # Add collector contacts (outer ring)
     coll_cont_y = collector_width / 2 - collector_enclosure / 2
     for i in range(4):  # Simplified: 4 contacts on each side
-        angle = i * 90
         if i % 2 == 0:  # Top and bottom
             x = 0
             y = coll_cont_y if i == 0 else -coll_cont_y
@@ -260,7 +258,7 @@ def npn13G2(
 
     c.add_port(
         name="B",
-        center=(0, base_width/2),
+        center=(0, base_width / 2),
         width=cont_size,
         orientation=90,
         layer=LAYERS["Metal1"],
@@ -269,7 +267,7 @@ def npn13G2(
 
     c.add_port(
         name="C",
-        center=(collector_length/2, 0),
+        center=(collector_length / 2, 0),
         width=cont_size,
         orientation=0,
         layer=LAYERS["Metal1"],
@@ -385,7 +383,10 @@ def pnpMPA(
 
     # Collector P-Well (outermost)
     pwell = gf.components.rectangle(
-        size=(collector_length + 2 * pwell_enclosure, collector_width + 2 * pwell_enclosure),
+        size=(
+            collector_length + 2 * pwell_enclosure,
+            collector_width + 2 * pwell_enclosure,
+        ),
         layer=LAYERS["PWell"],
         centered=True,
     )
@@ -410,13 +411,14 @@ def pnpMPA(
         layer=LAYERS["Activ"],
         centered=True,
     )
-    collector = gf.boolean(collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["Activ"])
+    collector = gf.boolean(
+        collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["Activ"]
+    )
     c.add_ref(collector)
 
     # P+ implant for collector
     psd_collector = gf.boolean(
-        collector_ring_outer, collector_ring_inner, "A-B",
-        layer=LAYERS["pSD"]
+        collector_ring_outer, collector_ring_inner, "A-B", layer=LAYERS["pSD"]
     )
     c.add_ref(psd_collector)
 
@@ -443,10 +445,7 @@ def pnpMPA(
     c.add_ref(base)
 
     # N+ implant for base
-    nsd_base = gf.boolean(
-        base_ring_outer, base_ring_inner, "A-B",
-        layer=LAYERS["nSD"]
-    )
+    nsd_base = gf.boolean(base_ring_outer, base_ring_inner, "A-B", layer=LAYERS["nSD"])
     c.add_ref(nsd_base)
 
     # Emitter active region (P+)
@@ -471,8 +470,8 @@ def pnpMPA(
 
     for i in range(n_cont_x):
         for j in range(n_cont_y):
-            x = -em_length/2 + cont_enc_active + i * cont_spacing
-            y = -em_width/2 + cont_enc_active + j * cont_spacing
+            x = -em_length / 2 + cont_enc_active + i * cont_spacing
+            y = -em_width / 2 + cont_enc_active + j * cont_spacing
 
             cont = gf.components.rectangle(
                 size=(cont_size, cont_size),
@@ -483,8 +482,10 @@ def pnpMPA(
 
     # Emitter metal
     emitter_metal = gf.components.rectangle(
-        size=(em_length - 2 * cont_enc_active + 2 * cont_enc_metal,
-               em_width - 2 * cont_enc_active + 2 * cont_enc_metal),
+        size=(
+            em_length - 2 * cont_enc_active + 2 * cont_enc_metal,
+            em_width - 2 * cont_enc_active + 2 * cont_enc_metal,
+        ),
         layer=LAYERS["Metal1"],
         centered=True,
     )
@@ -510,7 +511,7 @@ def pnpMPA(
 
     c.add_port(
         name="B",
-        center=(0, base_width/2),
+        center=(0, base_width / 2),
         width=cont_size,
         orientation=90,
         layer=LAYERS["Metal1"],
@@ -519,7 +520,7 @@ def pnpMPA(
 
     c.add_port(
         name="C",
-        center=(collector_length/2, 0),
+        center=(collector_length / 2, 0),
         width=cont_size,
         orientation=0,
         layer=LAYERS["Metal1"],

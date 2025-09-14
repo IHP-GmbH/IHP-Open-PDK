@@ -11,11 +11,10 @@ from functools import partial
 
 import gdsfactory as gf
 from doroutes.bundles import add_bundle_astar
-from gdsfactory.add_pins import add_pin_path
 from gdsfactory.component import Component
 from gdsfactory.cross_section import get_cross_sections
 from gdsfactory.technology import LayerLevel, LayerMap, LayerStack
-from gdsfactory.typings import Callable, Layer, LayerSpec
+from gdsfactory.typings import Layer, LayerSpec
 from pydantic import BaseModel
 
 from ihp.config import PATH
@@ -129,7 +128,6 @@ class LayerMapIHP(LayerMap):
     METAL2_TEXT: Layer = (10, 25)
     METAL3_TEXT: Layer = (30, 25)
     METAL4_TEXT: Layer = (50, 25)
-
 
     # Device recognition and boundary
     DEVREC: Layer = (68, 0)
@@ -406,7 +404,6 @@ LAYER_STACK = get_layer_stack()
 LAYER_VIEWS = gf.technology.LayerViews(PATH.lyp)
 
 
-
 ############################
 # Cross-sections functions
 ############################
@@ -492,7 +489,7 @@ route_bundle_metal_corner = partial(
 
 route_astar = partial(
     add_bundle_astar,
-    layers=["WG"],
+    layers=["TOPMETAL2"],
     bend="bend_euler",
     straight="straight",
     grid_unit=500,
@@ -501,7 +498,7 @@ route_astar = partial(
 
 route_astar_metal = partial(
     add_bundle_astar,
-    layers=["M2_ROUTER"],
+    layers=["TOPMETAL2"],
     bend="wire_corner",
     straight="straight_metal",
     grid_unit=500,

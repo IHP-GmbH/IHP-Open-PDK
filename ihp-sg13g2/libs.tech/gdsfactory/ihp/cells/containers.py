@@ -19,7 +19,7 @@ def add_pads_top(
     component_name: str | None = None,
     cross_section: CrossSectionSpec = "metal_routing",
     pad_port_name: str = "e1",
-    pad: ComponentSpec = "pad",
+    pad: ComponentSpec = "CuPillarPad",
     bend: ComponentSpec = "wire_corner",
     straight_separation: float = 15.0,
     pad_pitch: float = 100.0,
@@ -170,3 +170,11 @@ def pack_doe_grid(
         with_text=with_text,
         **kwargs,
     )
+
+
+if __name__ == "__main__":
+    from ihp import PDK
+
+    PDK.activate()
+    c = add_pads_top()
+    c.show()

@@ -1,10 +1,7 @@
 """Passive components (varicaps, ESD, taps, seal rings) for IHP PDK."""
 
-from typing import Literal, Optional, Tuple
-
 import gdsfactory as gf
 from gdsfactory import Component
-
 
 # Define layers
 LAYERS = {
@@ -64,7 +61,6 @@ def svaricap(
     active_ext = 0.23
     cont_size = 0.16
     cont_enc = 0.07
-    metal_enc = 0.06
     nwell_enc = 0.31
 
     # Validate dimensions
@@ -84,7 +80,7 @@ def svaricap(
     nwell = gf.components.rectangle(
         size=(
             length + 2 * active_ext + 2 * nwell_enc,
-            nf * finger_pitch + 2 * nwell_enc
+            nf * finger_pitch + 2 * nwell_enc,
         ),
         layer=LAYERS["NWell"],
         centered=True,
@@ -93,7 +89,7 @@ def svaricap(
 
     # Create varicap fingers
     for i in range(nf):
-        y_offset = (i - nf/2 + 0.5) * finger_pitch
+        y_offset = (i - nf / 2 + 0.5) * finger_pitch
 
         # Gate poly (acts as one terminal)
         gate = gf.components.rectangle(
@@ -101,7 +97,7 @@ def svaricap(
             layer=LAYERS["GatPoly"],
         )
         gate_ref = c.add_ref(gate)
-        gate_ref.move((-length/2, y_offset - finger_width/2 - gate_ext))
+        gate_ref.move((-length / 2, y_offset - finger_width / 2 - gate_ext))
 
         # Active region (acts as other terminal)
         active = gf.components.rectangle(
@@ -109,7 +105,7 @@ def svaricap(
             layer=LAYERS["Activ"],
         )
         active_ref = c.add_ref(active)
-        active_ref.move((-length/2 - active_ext, y_offset - finger_width/2))
+        active_ref.move((-length / 2 - active_ext, y_offset - finger_width / 2))
 
         # N+ implant for active region
         nsd = gf.components.rectangle(
@@ -117,7 +113,7 @@ def svaricap(
             layer=LAYERS["nSD"],
         )
         nsd_ref = c.add_ref(nsd)
-        nsd_ref.move((-length/2 - active_ext, y_offset - finger_width/2))
+        nsd_ref.move((-length / 2 - active_ext, y_offset - finger_width / 2))
 
         # Contacts on active regions (source/drain)
         # Left side contacts
@@ -126,10 +122,9 @@ def svaricap(
             layer=LAYERS["Cont"],
         )
         cont_left_ref = c.add_ref(cont_left)
-        cont_left_ref.move((
-            -length/2 - active_ext + cont_enc,
-            y_offset - cont_size/2
-        ))
+        cont_left_ref.move(
+            (-length / 2 - active_ext + cont_enc, y_offset - cont_size / 2)
+        )
 
         # Right side contacts
         cont_right = gf.components.rectangle(
@@ -137,10 +132,9 @@ def svaricap(
             layer=LAYERS["Cont"],
         )
         cont_right_ref = c.add_ref(cont_right)
-        cont_right_ref.move((
-            length/2 + active_ext - cont_enc - cont_size,
-            y_offset - cont_size/2
-        ))
+        cont_right_ref.move(
+            (length / 2 + active_ext - cont_enc - cont_size, y_offset - cont_size / 2)
+        )
 
     # Metal connections
     # Gate connection (Metal1)
@@ -149,7 +143,7 @@ def svaricap(
         layer=LAYERS["Metal1"],
     )
     gate_metal_ref = c.add_ref(gate_metal)
-    gate_metal_ref.move((-length/2 - 1.5, -nf * finger_pitch / 2))
+    gate_metal_ref.move((-length / 2 - 1.5, -nf * finger_pitch / 2))
 
     # Active connection (Metal1)
     active_metal = gf.components.rectangle(
@@ -157,14 +151,11 @@ def svaricap(
         layer=LAYERS["Metal1"],
     )
     active_metal_ref = c.add_ref(active_metal)
-    active_metal_ref.move((length/2 + 0.5, -nf * finger_pitch / 2))
+    active_metal_ref.move((length / 2 + 0.5, -nf * finger_pitch / 2))
 
     # Varicap marker
     var_mark = gf.components.rectangle(
-        size=(
-            length + 2 * active_ext + 0.5,
-            nf * finger_pitch + 0.5
-        ),
+        size=(length + 2 * active_ext + 0.5, nf * finger_pitch + 0.5),
         layer=LAYERS["Varicap"],
         centered=True,
     )
@@ -173,7 +164,7 @@ def svaricap(
     # Add ports
     c.add_port(
         name="G",
-        center=(-length/2 - 1.0, 0),
+        center=(-length / 2 - 1.0, 0),
         width=nf * finger_pitch,
         orientation=180,
         layer=LAYERS["Metal1"],
@@ -182,7 +173,7 @@ def svaricap(
 
     c.add_port(
         name="B",
-        center=(length/2 + 1.0, 0),
+        center=(length / 2 + 1.0, 0),
         width=nf * finger_pitch,
         orientation=0,
         layer=LAYERS["Metal1"],
@@ -239,7 +230,7 @@ def esd_nmos(
     pwell = gf.components.rectangle(
         size=(
             (gate_length + 2 * active_ext) * nf + pwell_enc * 2,
-            gate_width + 2 * gate_ext + pwell_enc * 2
+            gate_width + 2 * gate_ext + pwell_enc * 2,
         ),
         layer=LAYERS["PWell"],
         centered=True,
@@ -250,7 +241,7 @@ def esd_nmos(
     finger_pitch = gate_length + 2 * active_ext + 0.5
 
     for i in range(nf):
-        x_offset = (i - nf/2 + 0.5) * finger_pitch
+        x_offset = (i - nf / 2 + 0.5) * finger_pitch
 
         # Gate poly
         gate = gf.components.rectangle(
@@ -258,7 +249,7 @@ def esd_nmos(
             layer=LAYERS["GatPoly"],
         )
         gate_ref = c.add_ref(gate)
-        gate_ref.move((x_offset - gate_length/2, -gate_width/2 - gate_ext))
+        gate_ref.move((x_offset - gate_length / 2, -gate_width / 2 - gate_ext))
 
         # Active region
         active = gf.components.rectangle(
@@ -266,7 +257,7 @@ def esd_nmos(
             layer=LAYERS["Activ"],
         )
         active_ref = c.add_ref(active)
-        active_ref.move((x_offset - gate_length/2 - active_ext, -gate_width/2))
+        active_ref.move((x_offset - gate_length / 2 - active_ext, -gate_width / 2))
 
         # N+ implant
         nsd = gf.components.rectangle(
@@ -274,13 +265,13 @@ def esd_nmos(
             layer=LAYERS["nSD"],
         )
         nsd_ref = c.add_ref(nsd)
-        nsd_ref.move((x_offset - gate_length/2 - active_ext, -gate_width/2))
+        nsd_ref.move((x_offset - gate_length / 2 - active_ext, -gate_width / 2))
 
         # Source/Drain contacts
         n_cont_y = int((gate_width - cont_size) / cont_spacing) + 1
 
         for j in range(n_cont_y):
-            y_pos = -gate_width/2 + cont_enc + j * cont_spacing
+            y_pos = -gate_width / 2 + cont_enc + j * cont_spacing
 
             # Source contact
             cont_s = gf.components.rectangle(
@@ -288,7 +279,7 @@ def esd_nmos(
                 layer=LAYERS["Cont"],
             )
             cont_s_ref = c.add_ref(cont_s)
-            cont_s_ref.move((x_offset - gate_length/2 - active_ext + cont_enc, y_pos))
+            cont_s_ref.move((x_offset - gate_length / 2 - active_ext + cont_enc, y_pos))
 
             # Drain contact
             cont_d = gf.components.rectangle(
@@ -296,7 +287,7 @@ def esd_nmos(
                 layer=LAYERS["Cont"],
             )
             cont_d_ref = c.add_ref(cont_d)
-            cont_d_ref.move((x_offset + gate_length/2 + cont_enc, y_pos))
+            cont_d_ref.move((x_offset + gate_length / 2 + cont_enc, y_pos))
 
     # Metal bus connections
     # Source bus (connected to ground)
@@ -305,7 +296,7 @@ def esd_nmos(
         layer=LAYERS["Metal1"],
     )
     source_bus_ref = c.add_ref(source_bus)
-    source_bus_ref.move((-nf * finger_pitch / 2, -gate_width/2 - metal_enc))
+    source_bus_ref.move((-nf * finger_pitch / 2, -gate_width / 2 - metal_enc))
 
     # Drain bus (connected to I/O pad)
     drain_bus = gf.components.rectangle(
@@ -313,7 +304,7 @@ def esd_nmos(
         layer=LAYERS["Metal2"],
     )
     drain_bus_ref = c.add_ref(drain_bus)
-    drain_bus_ref.move((-nf * finger_pitch / 2, gate_width/2 + 1.0))
+    drain_bus_ref.move((-nf * finger_pitch / 2, gate_width / 2 + 1.0))
 
     # Gate bus (can be tied to source or left floating)
     gate_bus = gf.components.rectangle(
@@ -321,7 +312,7 @@ def esd_nmos(
         layer=LAYERS["GatPoly"],
     )
     gate_bus_ref = c.add_ref(gate_bus)
-    gate_bus_ref.move((-nf * finger_pitch / 2, -gate_width/2 - gate_ext - 0.5))
+    gate_bus_ref.move((-nf * finger_pitch / 2, -gate_width / 2 - gate_ext - 0.5))
 
     # ESD marker
     esd_mark = gf.components.rectangle(
@@ -334,7 +325,7 @@ def esd_nmos(
     # Add ports
     c.add_port(
         name="PAD",
-        center=(0, gate_width/2 + 1.5),
+        center=(0, gate_width / 2 + 1.5),
         width=nf * finger_pitch,
         orientation=90,
         layer=LAYERS["Metal2"],
@@ -343,7 +334,7 @@ def esd_nmos(
 
     c.add_port(
         name="GND",
-        center=(0, -gate_width/2),
+        center=(0, -gate_width / 2),
         width=nf * finger_pitch,
         orientation=270,
         layer=LAYERS["Metal1"],
@@ -383,7 +374,6 @@ def ptap1(
     # Design rules
     cont_size = 0.16
     cont_spacing = 0.18
-    cont_enc = 0.07
     metal_enc = 0.06
     tap_enc = 0.1
 
@@ -422,8 +412,8 @@ def ptap1(
 
     for i in range(cols):
         for j in range(rows):
-            x = -cont_array_width/2 + cont_size/2 + i * (cont_size + cont_spacing)
-            y = -cont_array_height/2 + cont_size/2 + j * (cont_size + cont_spacing)
+            x = -cont_array_width / 2 + cont_size / 2 + i * (cont_size + cont_spacing)
+            y = -cont_array_height / 2 + cont_size / 2 + j * (cont_size + cont_spacing)
 
             cont = gf.components.rectangle(
                 size=(cont_size, cont_size),
@@ -435,10 +425,7 @@ def ptap1(
 
     # Metal1 connection
     metal = gf.components.rectangle(
-        size=(
-            cont_array_width + 2 * metal_enc,
-            cont_array_height + 2 * metal_enc
-        ),
+        size=(cont_array_width + 2 * metal_enc, cont_array_height + 2 * metal_enc),
         layer=LAYERS["Metal1"],
         centered=True,
     )
@@ -487,7 +474,6 @@ def ntap1(
     # Design rules
     cont_size = 0.16
     cont_spacing = 0.18
-    cont_enc = 0.07
     metal_enc = 0.06
     tap_enc = 0.1
     nwell_enc = 0.31
@@ -535,8 +521,8 @@ def ntap1(
 
     for i in range(cols):
         for j in range(rows):
-            x = -cont_array_width/2 + cont_size/2 + i * (cont_size + cont_spacing)
-            y = -cont_array_height/2 + cont_size/2 + j * (cont_size + cont_spacing)
+            x = -cont_array_width / 2 + cont_size / 2 + i * (cont_size + cont_spacing)
+            y = -cont_array_height / 2 + cont_size / 2 + j * (cont_size + cont_spacing)
 
             cont = gf.components.rectangle(
                 size=(cont_size, cont_size),
@@ -548,10 +534,7 @@ def ntap1(
 
     # Metal1 connection
     metal = gf.components.rectangle(
-        size=(
-            cont_array_width + 2 * metal_enc,
-            cont_array_height + 2 * metal_enc
-        ),
+        size=(cont_array_width + 2 * metal_enc, cont_array_height + 2 * metal_enc),
         layer=LAYERS["Metal1"],
         centered=True,
     )
@@ -647,8 +630,8 @@ def sealring(
 
         # Top edge vias
         for i in range(n_vias_x):
-            x = -width/2 - ring_width/2 + via_size/2 + i * via_spacing
-            y = height/2 + ring_width/2
+            x = -width / 2 - ring_width / 2 + via_size / 2 + i * via_spacing
+            y = height / 2 + ring_width / 2
 
             via = gf.components.rectangle(
                 size=(via_size, via_size),
@@ -660,8 +643,8 @@ def sealring(
 
         # Bottom edge vias
         for i in range(n_vias_x):
-            x = -width/2 - ring_width/2 + via_size/2 + i * via_spacing
-            y = -height/2 - ring_width/2
+            x = -width / 2 - ring_width / 2 + via_size / 2 + i * via_spacing
+            y = -height / 2 - ring_width / 2
 
             via = gf.components.rectangle(
                 size=(via_size, via_size),
@@ -673,8 +656,8 @@ def sealring(
 
         # Left edge vias
         for i in range(n_vias_y):
-            x = -width/2 - ring_width/2
-            y = -height/2 - ring_width/2 + via_size/2 + i * via_spacing
+            x = -width / 2 - ring_width / 2
+            y = -height / 2 - ring_width / 2 + via_size / 2 + i * via_spacing
 
             via = gf.components.rectangle(
                 size=(via_size, via_size),
@@ -686,8 +669,8 @@ def sealring(
 
         # Right edge vias
         for i in range(n_vias_y):
-            x = width/2 + ring_width/2
-            y = -height/2 - ring_width/2 + via_size/2 + i * via_spacing
+            x = width / 2 + ring_width / 2
+            y = -height / 2 - ring_width / 2 + via_size / 2 + i * via_spacing
 
             via = gf.components.rectangle(
                 size=(via_size, via_size),

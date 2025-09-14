@@ -1,10 +1,7 @@
 """Resistor components for IHP PDK."""
 
-from typing import Literal, Optional
-
 import gdsfactory as gf
 from gdsfactory import Component
-
 
 # Define layers for resistors
 LAYERS = {
@@ -31,7 +28,7 @@ LAYERS = {
 def rsil(
     width: float = 0.8,
     length: float = 10.0,
-    resistance: Optional[float] = None,
+    resistance: float | None = None,
     model: str = "rsil",
 ) -> Component:
     """Create a silicided polysilicon resistor.
@@ -93,7 +90,7 @@ def rsil(
         layer=LAYERS["GatPoly"],
     )
     left_ref = c.add_ref(left_contact)
-    left_ref.move((-(length/2 + end_extension), -width/2))
+    left_ref.move((-(length / 2 + end_extension), -width / 2))
 
     # Right contact region
     right_contact = gf.components.rectangle(
@@ -101,13 +98,13 @@ def rsil(
         layer=LAYERS["GatPoly"],
     )
     right_ref = c.add_ref(right_contact)
-    right_ref.move((length/2, -width/2))
+    right_ref.move((length / 2, -width / 2))
 
     # Contacts at ends
     n_cont_y = int((width - cont_size) / (cont_size + 0.18)) + 1
 
     for i in range(n_cont_y):
-        y_pos = -width/2 + cont_enc + i * (cont_size + 0.18)
+        y_pos = -width / 2 + cont_enc + i * (cont_size + 0.18)
 
         # Left contact
         cont_left = gf.components.rectangle(
@@ -115,7 +112,7 @@ def rsil(
             layer=LAYERS["Cont"],
         )
         cont_left_ref = c.add_ref(cont_left)
-        cont_left_ref.move((-(length/2 + end_extension/2) - cont_size/2, y_pos))
+        cont_left_ref.move((-(length / 2 + end_extension / 2) - cont_size / 2, y_pos))
 
         # Right contact
         cont_right = gf.components.rectangle(
@@ -123,7 +120,7 @@ def rsil(
             layer=LAYERS["Cont"],
         )
         cont_right_ref = c.add_ref(cont_right)
-        cont_right_ref.move(((length/2 + end_extension/2) - cont_size/2, y_pos))
+        cont_right_ref.move(((length / 2 + end_extension / 2) - cont_size / 2, y_pos))
 
     # Metal1 connections
     # Left metal
@@ -132,7 +129,9 @@ def rsil(
         layer=LAYERS["Metal1"],
     )
     m1_left_ref = c.add_ref(m1_left)
-    m1_left_ref.move((-(length/2 + end_extension + metal_enc), -width/2 - metal_enc))
+    m1_left_ref.move(
+        (-(length / 2 + end_extension + metal_enc), -width / 2 - metal_enc)
+    )
 
     # Right metal
     m1_right = gf.components.rectangle(
@@ -140,7 +139,7 @@ def rsil(
         layer=LAYERS["Metal1"],
     )
     m1_right_ref = c.add_ref(m1_right)
-    m1_right_ref.move((length/2 - metal_enc, -width/2 - metal_enc))
+    m1_right_ref.move((length / 2 - metal_enc, -width / 2 - metal_enc))
 
     # Resistor marker
     res_mark = gf.components.rectangle(
@@ -153,7 +152,7 @@ def rsil(
     # Add ports
     c.add_port(
         name="P1",
-        center=(-(length/2 + end_extension), 0),
+        center=(-(length / 2 + end_extension), 0),
         width=width,
         orientation=180,
         layer=LAYERS["Metal1"],
@@ -162,7 +161,7 @@ def rsil(
 
     c.add_port(
         name="P2",
-        center=(length/2 + end_extension, 0),
+        center=(length / 2 + end_extension, 0),
         width=width,
         orientation=0,
         layer=LAYERS["Metal1"],
@@ -184,7 +183,7 @@ def rsil(
 def rppd(
     width: float = 0.8,
     length: float = 10.0,
-    resistance: Optional[float] = None,
+    resistance: float | None = None,
     model: str = "rppd",
 ) -> Component:
     """Create a P+ polysilicon resistor.
@@ -254,7 +253,7 @@ def rppd(
         layer=LAYERS["GatPoly"],
     )
     left_ref = c.add_ref(left_contact)
-    left_ref.move((-(length/2 + end_extension), -width/2))
+    left_ref.move((-(length / 2 + end_extension), -width / 2))
 
     # Right contact region
     right_contact = gf.components.rectangle(
@@ -262,13 +261,13 @@ def rppd(
         layer=LAYERS["GatPoly"],
     )
     right_ref = c.add_ref(right_contact)
-    right_ref.move((length/2, -width/2))
+    right_ref.move((length / 2, -width / 2))
 
     # Contacts at ends
     n_cont_y = int((width - cont_size) / (cont_size + 0.18)) + 1
 
     for i in range(n_cont_y):
-        y_pos = -width/2 + cont_enc + i * (cont_size + 0.18)
+        y_pos = -width / 2 + cont_enc + i * (cont_size + 0.18)
 
         # Left contact
         cont_left = gf.components.rectangle(
@@ -276,7 +275,7 @@ def rppd(
             layer=LAYERS["Cont"],
         )
         cont_left_ref = c.add_ref(cont_left)
-        cont_left_ref.move((-(length/2 + end_extension/2) - cont_size/2, y_pos))
+        cont_left_ref.move((-(length / 2 + end_extension / 2) - cont_size / 2, y_pos))
 
         # Right contact
         cont_right = gf.components.rectangle(
@@ -284,7 +283,7 @@ def rppd(
             layer=LAYERS["Cont"],
         )
         cont_right_ref = c.add_ref(cont_right)
-        cont_right_ref.move(((length/2 + end_extension/2) - cont_size/2, y_pos))
+        cont_right_ref.move(((length / 2 + end_extension / 2) - cont_size / 2, y_pos))
 
     # Metal1 connections
     # Left metal
@@ -293,7 +292,9 @@ def rppd(
         layer=LAYERS["Metal1"],
     )
     m1_left_ref = c.add_ref(m1_left)
-    m1_left_ref.move((-(length/2 + end_extension + metal_enc), -width/2 - metal_enc))
+    m1_left_ref.move(
+        (-(length / 2 + end_extension + metal_enc), -width / 2 - metal_enc)
+    )
 
     # Right metal
     m1_right = gf.components.rectangle(
@@ -301,7 +302,7 @@ def rppd(
         layer=LAYERS["Metal1"],
     )
     m1_right_ref = c.add_ref(m1_right)
-    m1_right_ref.move((length/2 - metal_enc, -width/2 - metal_enc))
+    m1_right_ref.move((length / 2 - metal_enc, -width / 2 - metal_enc))
 
     # Resistor marker
     res_mark = gf.components.rectangle(
@@ -314,7 +315,7 @@ def rppd(
     # Add ports
     c.add_port(
         name="P1",
-        center=(-(length/2 + end_extension), 0),
+        center=(-(length / 2 + end_extension), 0),
         width=width,
         orientation=180,
         layer=LAYERS["Metal1"],
@@ -323,7 +324,7 @@ def rppd(
 
     c.add_port(
         name="P2",
-        center=(length/2 + end_extension, 0),
+        center=(length / 2 + end_extension, 0),
         width=width,
         orientation=0,
         layer=LAYERS["Metal1"],
@@ -345,7 +346,7 @@ def rppd(
 def rhigh(
     width: float = 1.4,
     length: float = 20.0,
-    resistance: Optional[float] = None,
+    resistance: float | None = None,
     model: str = "rhigh",
 ) -> Component:
     """Create a high-resistance polysilicon resistor.
@@ -387,8 +388,10 @@ def rhigh(
 
     # N-Well for isolation
     nwell = gf.components.rectangle(
-        size=(length + 2 * end_extension + 2 * isolation_enc,
-               width + 2 * isolation_enc),
+        size=(
+            length + 2 * end_extension + 2 * isolation_enc,
+            width + 2 * isolation_enc,
+        ),
         layer=LAYERS["NWell"],
         centered=True,
     )
@@ -417,7 +420,7 @@ def rhigh(
         layer=LAYERS["GatPoly"],
     )
     left_ref = c.add_ref(left_contact)
-    left_ref.move((-(length/2 + end_extension), -width/2))
+    left_ref.move((-(length / 2 + end_extension), -width / 2))
 
     # Right contact region
     right_contact = gf.components.rectangle(
@@ -425,7 +428,7 @@ def rhigh(
         layer=LAYERS["GatPoly"],
     )
     right_ref = c.add_ref(right_contact)
-    right_ref.move((length/2, -width/2))
+    right_ref.move((length / 2, -width / 2))
 
     # Contacts at ends (larger contacts for high resistance)
     n_cont_x = 2  # Multiple contacts in X for better connection
@@ -434,7 +437,7 @@ def rhigh(
     for i in range(n_cont_x):
         for j in range(n_cont_y):
             x_offset = i * (cont_size + 0.18)
-            y_pos = -width/2 + cont_enc + j * (cont_size + 0.18)
+            y_pos = -width / 2 + cont_enc + j * (cont_size + 0.18)
 
             # Left contacts
             cont_left = gf.components.rectangle(
@@ -442,10 +445,9 @@ def rhigh(
                 layer=LAYERS["Cont"],
             )
             cont_left_ref = c.add_ref(cont_left)
-            cont_left_ref.move((
-                -(length/2 + end_extension - cont_enc - x_offset),
-                y_pos
-            ))
+            cont_left_ref.move(
+                (-(length / 2 + end_extension - cont_enc - x_offset), y_pos)
+            )
 
             # Right contacts
             cont_right = gf.components.rectangle(
@@ -453,10 +455,9 @@ def rhigh(
                 layer=LAYERS["Cont"],
             )
             cont_right_ref = c.add_ref(cont_right)
-            cont_right_ref.move((
-                length/2 + end_extension - cont_enc - cont_size - x_offset,
-                y_pos
-            ))
+            cont_right_ref.move(
+                (length / 2 + end_extension - cont_enc - cont_size - x_offset, y_pos)
+            )
 
     # Metal1 connections (wider for lower contact resistance)
     # Left metal
@@ -465,7 +466,9 @@ def rhigh(
         layer=LAYERS["Metal1"],
     )
     m1_left_ref = c.add_ref(m1_left)
-    m1_left_ref.move((-(length/2 + end_extension + metal_enc), -width/2 - metal_enc))
+    m1_left_ref.move(
+        (-(length / 2 + end_extension + metal_enc), -width / 2 - metal_enc)
+    )
 
     # Right metal
     m1_right = gf.components.rectangle(
@@ -473,7 +476,7 @@ def rhigh(
         layer=LAYERS["Metal1"],
     )
     m1_right_ref = c.add_ref(m1_right)
-    m1_right_ref.move((length/2 - metal_enc, -width/2 - metal_enc))
+    m1_right_ref.move((length / 2 - metal_enc, -width / 2 - metal_enc))
 
     # Resistor marker
     res_mark = gf.components.rectangle(
@@ -486,7 +489,7 @@ def rhigh(
     # Add ports
     c.add_port(
         name="P1",
-        center=(-(length/2 + end_extension), 0),
+        center=(-(length / 2 + end_extension), 0),
         width=width,
         orientation=180,
         layer=LAYERS["Metal1"],
@@ -495,7 +498,7 @@ def rhigh(
 
     c.add_port(
         name="P2",
-        center=(length/2 + end_extension, 0),
+        center=(length / 2 + end_extension, 0),
         width=width,
         orientation=0,
         layer=LAYERS["Metal1"],

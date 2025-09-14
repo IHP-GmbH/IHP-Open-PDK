@@ -1,7 +1,7 @@
 """Bondpad components for IHP PDK."""
 
 import math
-from typing import Literal, Optional
+from typing import Literal
 
 import gdsfactory as gf
 from gdsfactory import Component
@@ -54,7 +54,6 @@ def bondpad(
     }
 
     # Passivation and other layers
-    passivation = (6, 0)
     passivation_open = (33, 0)
 
     # Grid alignment
@@ -73,20 +72,19 @@ def bondpad(
 
     elif shape == "octagon":
         # Octagonal bondpad
-        octagon_points = []
         # Calculate octagon vertices
         side_length = d / (1 + math.sqrt(2))
         half_side = side_length / 2
 
         vertices = [
-            (half_side, d/2),
-            (d/2 - half_side, d/2),
-            (d/2, d/2 - half_side),
-            (d/2, -d/2 + half_side),
-            (d/2 - half_side, -d/2),
-            (-d/2 + half_side, -d/2),
-            (-d/2, -d/2 + half_side),
-            (-d/2, d/2 - half_side),
+            (half_side, d / 2),
+            (d / 2 - half_side, d / 2),
+            (d / 2, d / 2 - half_side),
+            (d / 2, -d / 2 + half_side),
+            (d / 2 - half_side, -d / 2),
+            (-d / 2 + half_side, -d / 2),
+            (-d / 2, -d / 2 + half_side),
+            (-d / 2, d / 2 - half_side),
         ]
 
         pad = gf.Component()
@@ -96,7 +94,7 @@ def bondpad(
     elif shape == "circle":
         # Circular bondpad (approximated with polygon)
         pad = gf.components.circle(
-            radius=d/2,
+            radius=d / 2,
             layer=layers[top_metal],
         )
         c.add_ref(pad)
@@ -107,7 +105,15 @@ def bondpad(
     # Stack metal layers if requested
     if stack_metals:
         # Create stack from bottom_metal to top_metal
-        metal_stack = ["Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"]
+        metal_stack = [
+            "Metal1",
+            "Metal2",
+            "Metal3",
+            "Metal4",
+            "Metal5",
+            "TopMetal1",
+            "TopMetal2",
+        ]
 
         # Find indices for start and end
         start_idx = metal_stack.index(bottom_metal)
@@ -136,7 +142,7 @@ def bondpad(
 
             elif shape == "circle":
                 metal = gf.components.circle(
-                    radius=d/2 * 0.95,
+                    radius=d / 2 * 0.95,
                     layer=metal_layer,
                 )
                 c.add_ref(metal)
@@ -179,12 +185,12 @@ def bondpad(
                     # Create via array
                     for ix in range(n_vias_x):
                         for iy in range(n_vias_y):
-                            x = -d/2 + via_enclosure + via_size/2 + ix * via_spacing
-                            y = -d/2 + via_enclosure + via_size/2 + iy * via_spacing
+                            x = -d / 2 + via_enclosure + via_size / 2 + ix * via_spacing
+                            y = -d / 2 + via_enclosure + via_size / 2 + iy * via_spacing
 
                             # Check if via is within the pad shape
                             if shape == "circle":
-                                if math.sqrt(x**2 + y**2) > d/2 * 0.9:
+                                if math.sqrt(x**2 + y**2) > d / 2 * 0.9:
                                     continue
 
                             via = gf.components.rectangle(
@@ -211,7 +217,7 @@ def bondpad(
         c.add_ref(opening)
     elif shape == "circle":
         opening = gf.components.circle(
-            radius=d/2 * 0.85,
+            radius=d / 2 * 0.85,
             layer=passivation_open,
         )
         c.add_ref(opening)
@@ -222,7 +228,7 @@ def bondpad(
         ubm_layer = (155, 0)  # Example UBM layer
         if shape == "circle":
             ubm = gf.components.circle(
-                radius=d/2 * 0.7,
+                radius=d / 2 * 0.7,
                 layer=ubm_layer,
             )
             c.add_ref(ubm)
@@ -288,7 +294,7 @@ def bondpad_array(
 
         # Add port for each pad
         c.add_port(
-            name=f"pad_{i+1}",
+            name=f"pad_{i + 1}",
             center=(i * pad_pitch, 0),
             width=pad_diameter,
             orientation=0,

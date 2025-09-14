@@ -22,7 +22,7 @@ from ihp.tech import (
 
 components = cells
 
-__version__ = "3.2.0"
+__version__ = "0.0.4"
 __all__ = [
     "PATH",
     "components",
@@ -34,14 +34,17 @@ __all__ = [
     "__version__",
 ]
 
-connectivity = cast(list[ConnectivitySpec], [
-    ("METAL1", "VIA1", "METAL2"),
-    ("METAL2", "VIA2", "METAL3"),
-    ("METAL3", "VIA3", "METAL4"),
-    ("METAL4", "VIA4", "METAL5"),
-    ("METAL5", "TOPVIA1", "TOPMETAL1"),
-    ("TOPMETAL1", "TOPVIA2", "TOPMETAL2"),
-    ])
+connectivity = cast(
+    list[ConnectivitySpec],
+    [
+        ("METAL1", "VIA1", "METAL2"),
+        ("METAL2", "VIA2", "METAL3"),
+        ("METAL3", "VIA3", "METAL4"),
+        ("METAL4", "VIA4", "METAL5"),
+        ("METAL5", "TOPVIA1", "TOPMETAL1"),
+        ("TOPMETAL1", "TOPVIA2", "TOPMETAL2"),
+    ],
+)
 
 _cells = get_cells(cells)
 PDK = Pdk(
