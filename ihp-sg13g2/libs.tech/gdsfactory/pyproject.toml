@@ -1,0 +1,171 @@
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
+
+[project]
+authors = [{name = "gdsfactory", email = "contact@gdsfactory.com"}]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent"
+]
+dependencies = [
+  "gdsfactory~=9.14.2",
+  "gplugins[sax]~=1.4.2",
+  "doroutes>=0.2.0"
+]
+description = "IHP pdk"
+keywords = ["python"]
+license = {file = "LICENSE"}
+name = "IHP"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+version = "3.2.0"
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest_regressions",
+  "pytest-github-actions-annotate-failures",
+  "pre-commit"
+]
+docs = ["autodoc_pydantic", "jupytext", "jupyter-book==1.0.3"]
+
+[tool.codespell]
+ignore-words-list = "te, te/tm, te, ba, fpr, fpr_spacing, ro, nd, donot, schem"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pydocstyle]
+add-ignore = ["D100", "D101", "D102", "D103", "D104", "D203", "D405", "D417"]
+convention = "google"
+inherit = false
+match = "(?!test).*\\.py"
+
+[tool.pylsp-mypy]
+enabled = true
+live_mode = true
+strict = true
+
+[tool.pytest.ini_options]
+# testpaths = ["IHP/samples", "tests"]
+# addopts = --tb=no
+# addopts = '--tb=short'
+# python_files = ["IHP/samples*.py", "tests/*.py"]
+python_files = ["tests/*.py"]
+testpaths = ["tests"]
+
+[tool.ruff]
+fix = true
+ignore = [
+  "E501",  # line too long, handled by black
+  "B008",  # do not perform function calls in argument defaults
+  "C901",  # too complex
+  "B905",  # `zip()` without an explicit `strict=` parameter
+  "C408"  # C408 Unnecessary `dict` call (rewrite as a literal)
+]
+select = [
+  "E",  # pycodestyle errors
+  "W",  # pycodestyle warnings
+  "F",  # pyflakes
+  "I",  # isort
+  "C",  # flake8-comprehensions
+  "B",  # flake8-bugbear
+  "UP"
+]
+
+[tool.ruff.per-file-ignores]
+"ihp/cells/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
+"ihp/models/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
+
+[tool.setuptools.package-data]
+mypkg = ["*.csv", "*.yaml"]
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.tbump]
+
+[[tool.tbump.before_commit]]
+cmd = "towncrier build --yes --version {new_version}"
+name = "create & check changelog"
+
+[[tool.tbump.before_commit]]
+cmd = "git add CHANGELOG.md"
+name = "create & check changelog"
+
+[[tool.tbump.before_commit]]
+cmd = "grep -q -F {new_version} CHANGELOG.md"
+name = "create & check changelog"
+
+[[tool.tbump.file]]
+src = "README.md"
+
+[[tool.tbump.file]]
+src = "pyproject.toml"
+
+[[tool.tbump.file]]
+src = "ihp/__init__.py"
+
+[[tool.tbump.file]]
+src = "ihp/klayout/tech/pymacros/set_menus.lym"
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+[tool.tbump.version]
+current = "3.2.0"
+regex = '''
+  (?P<major>\d+)
+  \.
+  (?P<minor>\d+)
+  \.
+  (?P<patch>\d+)
+  '''
+
+[tool.towncrier]
+directory = ".changelog.d"
+filename = "CHANGELOG.md"
+issue_format = "[#{issue}](https://github.com/gdsfactory/ihp/issues/{issue})"
+package = "gdsfactory"
+start_string = "<!-- towncrier release notes start -->\n"
+template = ".changelog.d/changelog_template.jinja"
+title_format = "## [{version}](https://github.com/gdsfactory/ihp/releases/tag/v{version}) - {project_date}"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removed"
+name = "Removed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecated"
+name = "Deprecated"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "added"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "changed"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "fixed"
+name = "Fixed"
+showcontent = true
