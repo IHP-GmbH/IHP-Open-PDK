@@ -34,4 +34,4 @@ docs:
 mask:
 	python ubcpdk/samples/test_masks.py
 
-.PHONY: drc doc docs install
+.PHONY: drc doc docs install build
