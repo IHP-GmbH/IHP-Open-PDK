@@ -47,12 +47,12 @@ DUTS = {
 }
 
 CASES = [
-    ("nmos_lv", "devices_configs/mos/nmos_lv/sg13_lv_nmos.yaml"),
-    ("pmos_lv", "devices_configs/mos/pmos_lv/sg13_lv_pmos.yaml"),
-    ("nmos_hv", "devices_configs/mos/nmos_hv/sg13_hv_nmos.yaml"),
-    ("pmos_hv", "devices_configs/mos/pmos_hv/sg13_hv_pmos.yaml"),
-    ("pnp_mpa", "devices_configs/pnp_mpa/pnpmpa.yaml"),
-    ("npn13g2", "devices_configs/hbt/npn13g2/npn13g2.yaml"),
-    ("npn13g2l", "devices_configs/hbt/npn13g2l/npn13g2l.yaml"),
-    ("npn13g2v", "devices_configs/hbt/npn13g2v/npn13g2v.yaml"),
+    ("nmos_lv", "configs/mos/nmos_lv/sg13_lv_nmos.yaml"),
+    ("pmos_lv", "configs/mos/pmos_lv/sg13_lv_pmos.yaml"),
+    ("nmos_hv", "configs/mos/nmos_hv/sg13_hv_nmos.yaml"),
+    ("pmos_hv", "configs/mos/pmos_hv/sg13_hv_pmos.yaml"),
+    ("pnp_mpa", "configs/pnp_mpa/pnpmpa.yaml"),
+    ("npn13g2", "configs/hbt/npn13g2/npn13g2.yaml"),
+    ("npn13g2l", "configs/hbt/npn13g2l/npn13g2l.yaml"),
+    ("npn13g2v", "configs/hbt/npn13g2v/npn13g2v.yaml"),
 ]

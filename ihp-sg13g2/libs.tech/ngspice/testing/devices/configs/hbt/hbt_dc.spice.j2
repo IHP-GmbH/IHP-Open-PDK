@@ -1,0 +1,127 @@
+* =========================================================================================
+* Copyright 2025 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* =========================================================================================
+
+*********
+*Sources*
+*********
+
+{% if ib is defined %}
+Ib 0 b {{ ib }}
+{% endif %}
+
+{% if ic is defined %}
+Ic 0 c {{ ic }}
+{% endif %}
+
+{% if ie is defined %}
+Ie 0 e {{ ie }}
+{% endif %}
+
+{% if sweep_src == "Vcb" %}
+.param VCB={{ VCB|default(0) }}
+.param VE={{ VE|default(0) }}
+
+Vcb cb 0 {VCB}
+Vc  cb c 0
+Vb  cb b 0
+{% if not ie is defined %}
+Ve  e  0 {VE}
+{% endif %}
+
+{% elif sweep_src == "Vbe" %}
+.param VBE={{ VBE|default(0) }}
+.param VC={{ VC|default(0) }}
+
+Vbe be 0 {VBE}
+Vb  be b 0
+Ve  be e 0
+{% if not ic is defined %}
+Vc  c  0 {VC}
+{% endif %}
+
+{% elif sweep_src == "Vce" %}
+.param VCE={{ VCE|default(0) }}
+.param VB={{ VB|default(0) }}
+
+Vce ce 0 {VCE}
+Vc  ce c 0
+Ve  ce e 0
+{% if not ib is defined %}
+Vb  b  0 {VB}
+{% endif %}
+
+{% else %}
+.param VB={{ VB|default(0) }}
+.param VC={{ VC|default(0) }}
+.param VE={{ VE|default(0) }}
+
+{% if not ie is defined %}
+Ve  e  0 {VE}
+{% endif %}
+{% if not ic is defined %}
+Vc  c  0 {VC}
+{% endif %}
+{% if not ib is defined %}
+Vb  b  0 {VB}
+{% endif %}
+{% endif %}
+
+*********
+*Circuit*
+*********
+
+.param Nx={{ Nx|default(1) }}
+.param le={{ L|default(0.96e-6) }}
+.param we={{ W|default (0.12e-6) }}
+
+X1 c b e 0 {{ device_subckt }} Nx={Nx} le={le} we={we}
+
+* ============================================================================================
+* ----------------------------------------- ANALYSIS -----------------------------------------
+* ============================================================================================
+
+.temp {{ TEMP|default(27) }}
+.options tnom={{ TNOM|default(27) }}
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+
+  let ic = -i(Vc)
+  let ib = -i(Vb)  
+  let ie = -i(Ve)
+
+  wrdata {{ out_path }} v({{ sweep_node }}) {% for var in output_vars %}{% if var.startswith('v') %}v({{ var[1:] }}){% else %}{{ var }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+.endc
+
+* ============================================================================================
+* ------------------------------------- CIR/MODELS-SETUP -------------------------------------
+* ============================================================================================
+
+**************************
+*including files & models*
+**************************
+
+.lib {{ model_corner_lib }} {{ corner }}  
+
+.control
+  pre_osdi {{ osdi_path }}                
+.endc
+
+.end

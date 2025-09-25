@@ -1,0 +1,133 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+
+# ==============================================================
+# PDK Models Setup
+# ==============================================================
+# Define the paths to measurement data and PDK model libraries
+# ==============================================================
+
+# Path to measured device model directory (raw measurement data)
+mdm_dir: "../../../../libs.doc/meas/MOS/SG13_nmosHVXm1Y3"
+
+# Path to the PDK-provided model library (corner definitions)
+corner_lib_path: "../../../../libs.tech/ngspice/models/cornerMOShv.lib"
+
+# Path to the compiled OSDI model file for MOSFETs
+osdi_path: "../../../../libs.tech/ngspice/osdi/psp103_nqs.osdi"
+
+# ==============================================================
+# Device Configuration
+# ==============================================================
+# Specify device type and name to clearly identify which
+# transistor or component this configuration applies to
+# ==============================================================
+
+# Device category (e.g. hbt, mos, resistor, capacitor, etc.)
+device_type: "mos"
+
+# Specific device name inside the PDK
+device_name: "sg13_hv_nmos"
+
+# ==============================================================
+# Run Configuration
+# ==============================================================
+# Control how simulations are run and how many resources are used
+# ==============================================================
+
+# Path to the DC analysis template (Jinja2 format)
+dc_template_path: "configs/mos/dc_template.spice.j2"
+
+# If true, automatically generate netlists from the template
+generate_netlists: true  
+
+# Maximum number of workers (parallel jobs).
+# Set based on your system CPU cores.
+max_workers: 4
+
+# ==============================================================
+# Output and Validation Settings
+# ==============================================================
+
+# ----------------------------------------------------
+# Validation Threshold Configuration
+# ----------------------------------------------------
+# threshold_percent_oob sets the maximum allowed percentage deviation (%) 
+# between measured (silicon) and simulated (model) values.
+#
+# - If the deviation is <= threshold → the result is considered "within tolerance".
+# - If the deviation is > threshold → the result is flagged as "out-of-bound" (OOB).
+#
+# Example:
+#   Measured value = 1.00 mA
+#   Simulated value = 1.04 mA
+#   Deviation = (|1.04 - 1.00| / 1.00) × 100 = 4%
+#   Since 4% < 5% → Pass (within tolerance)
+#
+# Another case:
+#   Measured value = 1.00 mA
+#   Simulated value = 1.07 mA
+#   Deviation = 7%
+#   Since 7% > 5% → Fail (out-of-bound)
+#
+# Practical Notes:
+# - Use a tighter threshold (e.g., 2%) for critical devices or high-accuracy checks.
+# - Use a looser threshold (e.g., 10%) when measurement data has higher noise or
+#   when validating across extreme corners.
+
+threshold_percent_oob: 5.0
+
+# ==============================================================
+# Metrics Definitions
+# ==============================================================
+# Naming convention:
+#   *_meas = measured value
+#   *_sim_* = simulated values (typ/bcs/Wcs = corners)
+# ==============================================================
+
+metrics:
+  - name: "id"   # Drain current
+    meas: "id_meas"
+    tt: "id_sim_mos_tt"
+    ss: "id_sim_mos_ss"
+    ff: "id_sim_mos_ff"
+
+  - name: "is"   # Source current
+    meas: "is_meas"
+    tt: "is_sim_mos_tt"
+    ss: "is_sim_mos_ss"
+    ff: "is_sim_mos_ff"
+
+  - name: "ib"   # Bulk (body) current
+    meas: "ib_meas"
+    tt: "ib_sim_mos_tt"
+    ss: "ib_sim_mos_ss"
+    ff: "ib_sim_mos_ff"
+
+  - name: "ig"   # Gate current
+    meas: "ig_meas"
+    tt: "ig_sim_mos_tt"
+    ss: "ig_sim_mos_ss"
+    ff: "ig_sim_mos_ff"
+
+# ==============================================================
+# Output Paths
+# ==============================================================
+# Directory where processed results will be stored
+# ==============================================================
+
+output_dir: "models_results/nmos_hv"
