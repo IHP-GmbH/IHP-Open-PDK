@@ -108,6 +108,7 @@ X1 c b e 0 {{ device_subckt }} Nx={Nx} le={le} we={we}
   let ie = -i(Ve)
 
   wrdata {{ out_path }} v({{ sweep_node }}) {% for var in output_vars %}{% if var.startswith('v') %}v({{ var[1:] }}){% else %}{{ var }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+
 .endc
 
 * ============================================================================================
@@ -119,9 +120,5 @@ X1 c b e 0 {{ device_subckt }} Nx={Nx} le={le} we={we}
 **************************
 
 .lib {{ model_corner_lib }} {{ corner }}  
-
-.control
-  pre_osdi {{ osdi_path }}                
-.endc
 
 .end

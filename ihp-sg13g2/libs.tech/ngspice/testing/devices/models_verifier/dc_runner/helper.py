@@ -14,8 +14,10 @@
 # limitations under the License.
 # =========================================================================================
 
+from  datetime import datetime
 import os
 from pathlib import Path
+import shutil
 from typing import Any, Dict, Optional, Tuple
 import subprocess
 
@@ -75,7 +77,30 @@ def run_ngspice(netlist_path: Path, log_path: Path) -> int:
         text=True,
         env=env,
     )
-    return proc.returncode
+    rc = proc.returncode
+
+    if rc != 0:
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+        except OSError as e:
+            print(f"[ngspice] Failed (return code {rc}). Could not read log: {e}")
+        else:
+            tail = "".join(lines[-200:])
+            err_like = [ln for ln in lines if any(k in ln.lower() for k in ("error", "fatal", "abort"))]
+            err_block = "".join(err_like[-50:]) 
+            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+            failed_name = f"{netlist_path.stem}.failed-{ts}{netlist_path.suffix}"
+            shutil.copy2(netlist_path, failed_name)
+            print(failed_name)
+            print(f"[ngspice] Failed (return code {rc}). Showing log tail:\n{'-'*60}\n{tail}")
+            if err_block and err_block not in tail:
+                print(f"{'-'*60}\n[ngspice] Error highlights:\n{'-'*60}\n{err_block}")
+
+    return rc
+
+
+
 
 
 def read_wrdata_df(out_path: Path) -> Optional[pd.DataFrame]:
