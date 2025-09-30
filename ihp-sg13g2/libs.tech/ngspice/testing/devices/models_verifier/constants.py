@@ -17,7 +17,7 @@
 import re
 
 DESIGN_PARAMETERS = frozenset(
-    {"W", "L", "NF", "M", "AD", "AS", "PD", "PS", "TEMP", "TNOM", "MASTER_SETUP_TYPE"}
+    {"W", "L", "NF", "M", "AD", "AS", "PD", "PS", "TEMP", "MASTER_SETUP_TYPE"}
 )
 
 UNIT_REGEX = re.compile(

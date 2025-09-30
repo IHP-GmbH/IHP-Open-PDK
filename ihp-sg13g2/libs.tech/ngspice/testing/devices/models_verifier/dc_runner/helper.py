@@ -20,7 +20,7 @@ from pathlib import Path
 import shutil
 from typing import Any, Dict, Optional, Tuple
 import subprocess
-
+import logging
 import pandas as pd
 
 CORNERS_MOS = ("mos_tt", "mos_ss", "mos_ff")
@@ -67,40 +67,14 @@ DEVICE_SWEEP_MAPS = {
 }
 
 
-def run_ngspice(netlist_path: Path, log_path: Path) -> int:
-    env = os.environ.copy()
-    env.setdefault("OMP_NUM_THREADS", "1")  # avoid oversubscription
+def sim_netlist_ngspice(netlist_path: Path, log_path: Path) -> int:
     proc = subprocess.run(
         ["ngspice", "-b", "-o", str(log_path), str(netlist_path)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
         text=True,
-        env=env,
     )
-    rc = proc.returncode
-
-    if rc != 0:
-        try:
-            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                lines = f.readlines()
-        except OSError as e:
-            print(f"[ngspice] Failed (return code {rc}). Could not read log: {e}")
-        else:
-            tail = "".join(lines[-200:])
-            err_like = [ln for ln in lines if any(k in ln.lower() for k in ("error", "fatal", "abort"))]
-            err_block = "".join(err_like[-50:]) 
-            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-            failed_name = f"{netlist_path.stem}.failed-{ts}{netlist_path.suffix}"
-            shutil.copy2(netlist_path, failed_name)
-            print(failed_name)
-            print(f"[ngspice] Failed (return code {rc}). Showing log tail:\n{'-'*60}\n{tail}")
-            if err_block and err_block not in tail:
-                print(f"{'-'*60}\n[ngspice] Error highlights:\n{'-'*60}\n{err_block}")
-
-    return rc
-
-
-
+    return proc.returncode
 
 
 def read_wrdata_df(out_path: Path) -> Optional[pd.DataFrame]:

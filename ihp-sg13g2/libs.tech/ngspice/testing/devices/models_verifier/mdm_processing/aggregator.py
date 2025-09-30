@@ -133,7 +133,7 @@ class MdmDirectoryAggregator:
         primary = [
             "block_id", "block_index", "source_file",
             "input_vars", "output_vars",
-            "master_setup_type", "TNOM", "TEMP",
+            "master_setup_type", "TEMP",
         ]
         design_params_map = {
             "mos": ["W", "L", "AD", "AS", "PD", "PS", "NF", "M"],
@@ -232,7 +232,6 @@ class MdmDirectoryAggregator:
         """Write grouped DataFrames to CSV."""
         if not by_type:
             return 0
-
         total_rows = 0
 
         def _write_one(item):
@@ -242,14 +241,14 @@ class MdmDirectoryAggregator:
                 return 0
             fpath = self.output_dir / f"{safe_name(mtype)}_{suffix}.csv"
             out.to_csv(fpath, index=False)
-            logger.info(f"Wrote {len(out):6d} {label} rows → {fpath.name}")
+            logger.debug(f"{len(out):5d} {label} rows written → {fpath.name}")
             return len(out)
 
         with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 4)) as ex:
             for n in ex.map(_write_one, by_type.items()):
                 total_rows += n
 
-        logger.info(f"Wrote {total_rows} {label} rows to {self.output_dir}")
+        logger.debug(f"{total_rows} {label} rows written → {self.output_dir}")
         return total_rows
 
     # -------------------------------------------------------------------------------------

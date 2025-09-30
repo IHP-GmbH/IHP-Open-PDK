@@ -181,10 +181,10 @@ Each device gets its own dedicated subdirectory containing simulation inputs, in
 ```
 📁 models_results
  ┣ 📁 <device_name>/  
- ┃ ┣ 📁 netlists/              Generated ngspice netlists (optional).  
- ┃ ┣ 📁 per_setup_mdm_csvs/    Merged CSVs for each measurement/setup.  
- ┃ ┣ 📁 per_setup_sim_vs_meas/ CSV comparisons of simulation vs. measurement.  
- ┃ ┗ 📁 verification_reports/  Final aggregated reports.  
+ ┃ ┣ 📁 netlists              Generated ngspice netlists (optional).  
+ ┃ ┣ 📁 clean_measured_data   Extracted measured data from input MDM files.  
+ ┃ ┣ 📁 combined_results      Contains the fully merged results of simulation and measurement data.
+ ┃ ┗ 📁 final_reports         Final aggregated reports summarizing the verification outcomes.
 ```
 
 ### Folder Contents Explained
@@ -194,15 +194,15 @@ Each device gets its own dedicated subdirectory containing simulation inputs, in
   This folder is only produced if **generate_netlists: true** is enabled in the device YAML configuration.  
   Useful for debugging the exact simulation inputs used.  
 
-- **per_setup_mdm_csvs**  
-  Holds merged CSV files for each test setup.  
-  These files combine the raw measurement data (MDM) with the corresponding simulation results, providing a single source for analysis.  
+- **clean_measured_data**  
+  Contains CSV files with measured data extracted and cleaned from the input MDM sources.
+  Provides a standardized format for consistent comparison against simulations.
 
-- **per_setup_sim_vs_meas**  
-  Contains CSV files that directly compare simulated vs. measured values on a per-setup basis.  
-  Ideal for spotting mismatches, trends, or systematic offsets in the model behavior.  
+- **combined_results**  
+  Stores CSV files with side-by-side simulation and measurement data for each run.
+  Useful for identifying mismatches, analyzing trends, and detecting systematic offsets in device behavior.
 
-- **verification_reports**  
+- **final_reports**  
   Aggregated reports summarizing the verification outcomes:  
   - **summary.csv** → High-level roll-up by device and metric (pass/fail).  
   - **full_report.csv** → Detailed results for every test block and metric.  

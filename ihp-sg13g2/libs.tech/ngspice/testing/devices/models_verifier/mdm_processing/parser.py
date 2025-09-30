@@ -99,7 +99,7 @@ class MdmParser:
             pd.DataFrame: Long-format data (point-by-point).
         """
         try:
-            logging.info("Parsing MDM file: %s", self.filepath)
+            logging.debug("Parsing MDM file: %s", self.filepath)
 
             # Load file
             content = self.filepath.read_text(encoding="utf-8", errors="ignore")
@@ -162,7 +162,6 @@ class MdmParser:
             full_df["output_vars"] = ",".join(self.output_columns)
 
             self.dataframe = full_df
-            logging.info("Parsed %d blocks successfully", len(block_dfs))
             return self.dataframe
 
         except Exception as e:
