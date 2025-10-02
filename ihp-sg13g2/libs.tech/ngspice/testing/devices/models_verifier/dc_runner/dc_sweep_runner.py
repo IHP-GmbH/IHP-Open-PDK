@@ -102,7 +102,7 @@ class DcSweepRunner:
         return df
 
     def _save_netlist(
-        self, netlist_text: str, corner: str, block_id: str, source_file: str
+        self, netlist_text: str, corner: str, block_id: str, input_data: str
     ) -> None:
         """
         Optionally dump rendered netlist into netlists_dir.
@@ -111,11 +111,11 @@ class DcSweepRunner:
             netlist_text: The rendered netlist content
             corner: The corner name
             block_id: The block identifier
-            source_file: The source file name for naming
+            input_data: The source file name for naming
         """
         if not self.netlists_dir:
             return
-        src_stem = Path(source_file).stem if source_file else "unknown"
+        src_stem = Path(input_data).stem if input_data else "unknown"
         dump_name = f"{src_stem}_{corner}_block-{block_id}.cir"
         (self.netlists_dir / dump_name).write_text(netlist_text)
 
@@ -480,7 +480,7 @@ class DcSweepRunner:
                 netlist_text = jenv.get_template(template_path.name).render(**ctx)
                 netlist_path.write_text(netlist_text)
                 if netlists_dir:
-                    self._save_netlist(netlist_text, corner, block_id, str(row.get("source_file", "")))
+                    self._save_netlist(netlist_text, corner, block_id, str(row.get("input_data", "")))
             except Exception as e:
                 shutil.rmtree(row_dir, ignore_errors=True)
                 return idx, None, f"[{corner}] Template rendering failed: {e}"

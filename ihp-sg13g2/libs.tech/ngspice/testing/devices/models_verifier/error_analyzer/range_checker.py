@@ -23,7 +23,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
 import numpy as np
 import pandas as pd
-
+import logging
 
 @dataclass
 class RangeChecker:
@@ -36,12 +36,6 @@ class RangeChecker:
         default_factory=lambda: Threshold(max_out_of_range_count=5)
     )
     output_vars_column: str = "output_vars"
-
-    def _ensure_dataframe(self, data: Union[str, Path, pd.DataFrame]) -> pd.DataFrame:
-        if isinstance(data, (str, Path)):
-            df = pd.read_csv(data)
-            return df
-        return data
 
     @staticmethod
     def _apply_tolerance_to_bounds(
@@ -73,7 +67,9 @@ class RangeChecker:
         return None
 
     def _get_applicable_metrics(self, group_dataframe: pd.DataFrame) -> set:
-        """Determine which metrics are applicable for this group based on output_vars column"""
+        """
+        Determine which metrics are applicable for this group based on output_vars column
+        """
         default_metrics = {spec.name for spec in self.metrics}
 
         if (
@@ -88,6 +84,104 @@ class RangeChecker:
 
         return default_metrics
 
+    def _process_target(
+        self,
+        group_df: pd.DataFrame,
+        group_tuple: tuple,
+        spec,
+        target_type: str,
+        target_col: str,
+        bounds: Tuple[pd.Series, pd.Series],
+        threshold,
+        extras: dict,
+    ):
+        """
+        Process a single target (tt or meas) and return summary + failure details.
+
+        Parameters
+        ----------
+        group_df : pd.DataFrame
+            DataFrame for the current block_id group.
+        group_tuple : tuple
+            Group identifier tuple.
+        spec : MetricSpec
+            Metric specification object with name, tolerance, etc.
+        target_type : str
+            Target type ("tt" or "meas").
+        target_col : str
+            Column in DataFrame containing target values.
+        bounds : Tuple[pd.Series, pd.Series]
+            (lower_bound, upper_bound) series.
+        threshold : Threshold
+            Threshold object used to check pass/fail.
+        extras : dict
+            Extra identifying information (e.g., input_data, block_index).
+
+        Returns
+        -------
+        Tuple[dict, List[dict]]
+            - report_row: Summary info for the metric/target.
+            - failure_records: Detailed failure records for failing entries.
+        """
+        if not target_col or target_col not in group_df.columns:
+            if target_col:
+                raise KeyError(
+                    f"{target_type.upper()} column '{target_col}' missing for '{spec.name}'"
+                )
+            return None, []
+
+        lower_bound, upper_bound = bounds
+        target_values = pd.to_numeric(group_df[target_col], errors="coerce")
+        valid_mask = lower_bound.notna() & upper_bound.notna() & target_values.notna()
+        total_count = int(valid_mask.sum())
+
+        if total_count == 0:
+            return {
+                **extras,
+                "block_id": group_tuple[0],
+                "metric": spec.name,
+                "target": target_type,
+                "n_points": 0,
+                "n_out_of_bounds": 0,
+                "percentage_oob": 0.0,
+                "passed": True,
+            }, []
+
+        # Identify out-of-bounds points
+        oob_mask = ~target_values[valid_mask].between(
+            lower_bound[valid_mask], upper_bound[valid_mask]
+        )
+        oob_count = int(oob_mask.sum())
+        percent_oob = 100.0 * oob_count / total_count
+        passed = threshold.check(oob_count, total_count)
+
+        # Generate detailed failure records
+        failure_records = self._create_detailed_failure_report(
+            group_df,
+            group_tuple,
+            spec,
+            target_type,
+            target_values,
+            lower_bound,
+            upper_bound,
+            valid_mask,
+            oob_mask,
+        )
+
+        report_row = {
+            **extras,
+            "block_id": group_tuple[0],
+            "metric": spec.name,
+            "target": target_type,
+            "n_points": total_count,
+            "n_out_of_bounds": oob_count,
+            "percentage_oob": percent_oob,
+            "passed": bool(passed),
+        }
+
+        return report_row, failure_records
+
+
     def _create_detailed_failure_report(
         self,
         group_dataframe: pd.DataFrame,
@@ -100,139 +194,137 @@ class RangeChecker:
         valid_mask: pd.Series,
         out_of_bounds_mask: pd.Series,
     ) -> List[Dict]:
+        """
+        Build a detailed failure report for metrics that fall outside their allowed bounds.
+
+        Parameters
+        ----------
+        group_dataframe : pd.DataFrame
+            DataFrame containing grouped evaluation data (one block/metric group).
+            May contain optional columns such as 'input_data' and 'block_index'.
+        group_tuple : tuple
+            Identifier tuple for the current group (typically includes block_id, etc.).
+        spec : MetricSpec
+            Specification object describing the metric being evaluated.
+        target_type : str
+            Type of the evaluated target (e.g., "meas", "tt", etc.).
+        target_values : pd.Series
+            Series of evaluated metric values.
+        lower_bound : pd.Series
+            Series of lower bounds for the metric values.
+        upper_bound : pd.Series
+            Series of upper bounds for the metric values.
+        valid_mask : pd.Series (bool)
+            Boolean mask marking valid entries among the target values.
+        out_of_bounds_mask : pd.Series (bool)
+            Boolean mask marking which entries are outside the allowed bounds.
+
+        Returns
+        -------
+        List[Dict]
+            A list of dictionaries, each describing a failing entry.
+            Returns an empty list if no values are out of bounds.
+        """
+
+        # Fast exit if nothing is out of bounds
         if not out_of_bounds_mask.any():
             return []
 
-        mask = valid_mask.copy()
-        mask.loc[mask] = out_of_bounds_mask
+        # Restrict mask to valid entries only
+        mask = valid_mask & out_of_bounds_mask
 
+        # Select only failing entries
         vals = target_values[mask]
-        lo = lower_bound[mask]
-        hi = upper_bound[mask]
+        lb = lower_bound[mask]
+        ub = upper_bound[mask]
 
-        dev = np.where(vals > hi, vals - hi, lo - vals)
+        # Compute deviation: positive distance beyond the nearest violated bound
+        deviation = np.where(vals > ub, vals - ub, lb - vals)
 
-        data = {
-            "block_id": group_tuple[0],
+        # Base failure data
+        failure_data = {}
+
+        # Attach optional column first
+        if "input_data" in group_dataframe.columns:
+            failure_data["input_data"] = np.full(
+                vals.shape[0], group_dataframe["input_data"].iloc[0]
+            )
+        failure_data["block_id"] = group_tuple[0]
+        if "block_index" in group_dataframe.columns:
+            failure_data["block_index"] = group_dataframe.loc[mask, "block_index"].to_numpy()
+
+        # Adding failure details
+        failure_data.update({
             "metric": spec.name,
             "target": target_type,
             "value": vals.astype(float).to_numpy(),
-            "lower_bound": lo.astype(float).to_numpy(),
-            "upper_bound": hi.astype(float).to_numpy(),
-            "deviation": dev.astype(float),
-        }
+            "lower_bound": lb.astype(float).to_numpy(),
+            "upper_bound": ub.astype(float).to_numpy(),
+            "deviation": deviation.astype(float),
+        })
 
-        if "source_file" in group_dataframe.columns:
-            data["source_file"] = np.full(
-                vals.shape[0], group_dataframe["source_file"].iloc[0]
-            )
-        if "block_index" in group_dataframe.columns:
-            data["block_index"] = group_dataframe.loc[mask, "block_index"].to_numpy()
+        # Return as list of dicts (records format)
+        return pd.DataFrame(failure_data).to_dict("records")
 
-        return pd.DataFrame(data).to_dict("records")
-
-    def analyze(
-        self, data: Union[str, Path, pd.DataFrame]
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def analyze(self, data: Union[str, Path, pd.DataFrame]) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Returns:
-            - report_df: Summary report with one row per (group, metric, target)
-            - detailed_failures_df: Detailed failure report with one row per failed point
+        Analyze design metrics and generate reports.
+
+        Parameters
+        ----------
+        data : Union[str, Path, pd.DataFrame]
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, pd.DataFrame]
+            - report_df: Summary report with one row per (block_id, metric, target)
+            - detailed_failures_df: Detailed failure report with one row per failed data point
         """
-        df = self._ensure_dataframe(data)
+        # Load data if a path is provided
+        if isinstance(data, (str, Path)):
+            df = pd.read_csv(data)
+        else:
+            df = data
+
+        # Validate input DataFrame
         if df.empty:
             raise ValueError("Input DataFrame is empty.")
 
         report_rows = []
         detailed_failures = []
 
-        def _process_target(
-            group_df, group_tuple, spec, target_type, target_col, bounds, threshold
-        ):
-            """Process a single target (tt or meas) and return report data."""
-            if not target_col or target_col not in group_df.columns:
-                if target_col:
-                    raise KeyError(
-                        f"{target_type.upper()} column '{target_col}' missing for '{spec.name}'"
-                    )
-                return None
-
-            lower_bound, upper_bound = bounds
-            target_values = pd.to_numeric(group_df[target_col], errors="coerce")
-            valid_mask = (
-                lower_bound.notna() & upper_bound.notna() & target_values.notna()
-            )
-            total_count = int(valid_mask.sum())
-
-            if total_count == 0:
-                return {
-                    **extras,
-                    "block_id": group_tuple[0],
-                    "metric": spec.name,
-                    "target": target_type,
-                    "n_points": 0,
-                    "n_out_of_bounds": 0,
-                    "percentage_oob": 0.0,
-                    "passed": True,
-                }
-
-            oob_mask = ~target_values[valid_mask].between(
-                lower_bound[valid_mask], upper_bound[valid_mask]
-            )
-            oob_count = int(oob_mask.sum())
-            percent_oob = 100.0 * oob_count / total_count
-            passed = threshold.check(oob_count, total_count)
-
-            failure_records = self._create_detailed_failure_report(
-                group_df,
-                group_tuple,
-                spec,
-                target_type,
-                target_values,
-                lower_bound,
-                upper_bound,
-                valid_mask,
-                oob_mask,
-            )
-            detailed_failures.extend(failure_records)
-
-            return {
-                **extras,
-                "block_id": group_tuple[0],
-                "metric": spec.name,
-                "target": target_type,
-                "n_points": total_count,
-                "n_out_of_bounds": oob_count,
-                "percentage_oob": percent_oob,
-                "passed": bool(passed),
-            }
-
+        # Process each block_id group
         for group_key, group_df in df.groupby("block_id", dropna=False, sort=False):
             group_tuple = group_key if isinstance(group_key, tuple) else (group_key,)
+
+            # Extract extra identifying fields if available
             extras = {
                 k: (
                     group_df[k].dropna().iloc[0]
                     if k in group_df.columns and not group_df[k].dropna().empty
                     else None
                 )
-                for k in ("source_file", "block_index")
+                for k in ("input_data", "block_index")
             }
+
             applicable_metrics = self._get_applicable_metrics(group_df)
 
             for spec in self.metrics:
                 if spec.name not in applicable_metrics:
                     continue
 
+                # Retrieve and adjust metric bounds
                 bounds = self._get_metric_bounds(group_df, spec)
                 if bounds is None:
-                    raise KeyError(f"bounds missing for metric '{spec.name}'")
+                    raise KeyError(f"Bounds missing for metric '{spec.name}'")
 
                 lower_bound, upper_bound = self._apply_tolerance_to_bounds(
                     *bounds, spec.tolerance
                 )
 
+                # Process both targets (tt, meas)
                 for target_type, target_col in [("tt", spec.tt), ("meas", spec.meas)]:
-                    result = _process_target(
+                    result, failures = self._process_target(
                         group_df,
                         group_tuple,
                         spec,
@@ -240,9 +332,12 @@ class RangeChecker:
                         target_col,
                         (lower_bound, upper_bound),
                         self.default_threshold,
+                        extras,
                     )
                     if result:
                         report_rows.append(result)
+                    if failures:
+                        detailed_failures.extend(failures)
 
         if not report_rows:
             raise ValueError("No valid metrics/columns to analyze.")
@@ -292,7 +387,7 @@ class RangeChecker:
                 "block_id", ascending=True
             )
             detailed_failures_df_sorted.to_csv(detailed_csv_path, index=False)
-            print(f"Detailed failure report saved to: {detailed_csv_path}")
+            logging.info(f"Detailed failure report saved to: {detailed_csv_path}")
 
     def assert_all_pass(
         self,
@@ -300,7 +395,7 @@ class RangeChecker:
         targets: Iterable[str] = ("meas", "tt"),
     ) -> None:
         """Raise AssertionError if any (metric, target) group fails.
-        Summary includes totals + per-metric breakdown; details show only source_file & block_index.
+        Summary includes totals + per-metric breakdown; details show only input_data & block_index.
         """
         if report_df.empty:
             return
@@ -337,11 +432,11 @@ class RangeChecker:
                     f"  - {r['metric']}/{r['target']}: {int(r['fail_count'])} fails"
                 )
 
-        has_source = "source_file" in failed.columns
+        has_source = "input_data" in failed.columns
         has_block = "block_index" in failed.columns
 
         def _fmt(row):
-            src_val = getattr(row, "source_file", None) if has_source else None
+            src_val = getattr(row, "input_data", None) if has_source else None
             blk_val = getattr(row, "block_index", None) if has_block else None
             src = (
                 str(src_val) if src_val is not None and pd.notna(src_val) else "unknown"
@@ -386,13 +481,13 @@ class RangeChecker:
         """
         netlists_path = Path(netlists_dir)
         if not netlists_path.exists():
-            print(f"Netlists directory not found: {netlists_path}")
+            logging.info(f"Netlists directory not found: {netlists_path}")
             return {"removed": 0, "kept": 0, "not_found": 0}
 
         passed_blocks = self.get_passed_block_ids(report_df, targets)
 
         if not passed_blocks:
-            print("No passed blocks found - keeping all netlists")
+            logging.info("No passed blocks found - keeping all netlists")
             return {"removed": 0, "kept": 0, "not_found": 0}
 
         netlist_files = list(netlists_path.glob("*.cir"))
@@ -416,12 +511,12 @@ class RangeChecker:
                             netlist_file.unlink()
                             removed_count += 1
                         except Exception as e:
-                            print(f"Error removing {netlist_file}: {e}")
+                            logging.error(f"Error removing {netlist_file}: {e}")
                             not_found_count += 1
                 else:
                     kept_count += 1
             else:
-                print(f"Warning: Could not extract block_id from filename: {filename}")
+                logging.warning(f"Could not extract block_id from filename: {filename}")
                 kept_count += 1
 
         stats = {
@@ -431,11 +526,11 @@ class RangeChecker:
         }
 
         action = "Would remove" if dry_run else "Removed"
-        print("\nNetlist cleanup summary:")
-        print(f"  {action}: {removed_count} netlists for passed blocks")
-        print(f"  Kept: {kept_count} netlists for failed blocks")
+        logging.info("\nNetlist cleanup summary:")
+        logging.info(f"  {action}: {removed_count} netlists for passed blocks")
+        logging.info(f"  Kept: {kept_count} netlists for failed blocks")
         if not_found_count > 0:
-            print(f"  Errors: {not_found_count} files could not be processed")
+            logging.error(f"{not_found_count} files could not be processed")
 
         return stats
 

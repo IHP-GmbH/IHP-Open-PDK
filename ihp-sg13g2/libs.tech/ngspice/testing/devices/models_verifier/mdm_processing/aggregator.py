@@ -131,7 +131,7 @@ class MdmDirectoryAggregator:
             return df
 
         primary = [
-            "block_id", "block_index", "source_file",
+            "block_id", "block_index", "input_data",
             "input_vars", "output_vars",
             "master_setup_type", "TEMP",
         ]
@@ -209,7 +209,7 @@ class MdmDirectoryAggregator:
                     results.append(None)
                     continue
 
-                df["source_file"] = path.name
+                df["input_data"] = path.name
                 if "MASTER_SETUP_TYPE" in df.columns:
                     df["master_setup_type"] = df.pop("MASTER_SETUP_TYPE").map(normalize_master_setup_type)
                 else:
@@ -365,14 +365,14 @@ def main() -> int:
         total_full = sum(len(df) for df in full_by_type.values())
         total_compact = sum(len(df) for df in compact_by_type.values())
 
-        print("\nSummary:")
-        print(f"  Distinct master_setup_types: {total_types}")
-        print(f"  Total full rows: {total_full}")
-        print(f"  Total compact rows: {total_compact}")
+        logging.info("\nSummary:")
+        logging.info(f"  Distinct master_setup_types: {total_types}")
+        logging.info(f"  Total full rows: {total_full}")
+        logging.info(f"  Total compact rows: {total_compact}")
         if args.show_csvs:
-            print(f"  Output directory: {args.output}")
+            logging.info(f"  Output directory: {args.output}")
         else:
-            print("  (use --show-csvs to save grouped CSVs)")
+            logging.info("  (use --show-csvs to save grouped CSVs)")
         return 0
 
     except Exception as e:

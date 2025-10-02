@@ -270,9 +270,9 @@ def main() -> int:
         parser = MdmParser(args.input, args.device_type)
         long_csv = parser.to_csv(output_dir)
         compact_csv = parser.to_compact_csv(output_dir)
-        print("Successfully converted:")
-        print(f"  Long CSV    → {long_csv}")
-        print(f"  Compact CSV → {compact_csv}")
+        logging.info("Successfully converted:")
+        logging.info(f"  Long CSV    → {long_csv}")
+        logging.info(f"  Compact CSV → {compact_csv}")
         return 0
     except (FileNotFoundError, ValueError, MdmParseError) as e:
         logging.error("%s", e)

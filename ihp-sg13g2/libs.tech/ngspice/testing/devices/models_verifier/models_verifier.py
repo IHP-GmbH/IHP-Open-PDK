@@ -36,6 +36,10 @@ from models_verifier.error_analyzer.range_checker import RangeChecker
 from models_verifier.mdm_processing.aggregator import MdmDirectoryAggregator
 
 
+# lowest curr to clip on
+CLIP_CURR = 10e-12  
+
+
 class ConfigError(Exception):
     """Raised when configuration loading or validation fails."""
 
@@ -204,15 +208,12 @@ class MdmVerifier:
         return merged_parts
 
     def _build_range_checker(self) -> RangeChecker:
-        """Construct and configure the range checker."""
-        threshold_percent = self.config.get("threshold_percent_oob")
-        threshold_count = self.config.get("threshold_count_oob")
-
-        default_threshold = (
-            Threshold(max_out_of_range_percent=float(threshold_percent))
-            if threshold_percent is not None
-            else Threshold(max_out_of_range_count=int(threshold_count or 5))
-        )
+        """
+        Construct and configure the range checker.
+        Uses only threshold_percent_oob from the config.
+        """
+        threshold_percent = float(self.config.get("threshold_percent_oob", 5.0))
+        default_threshold = Threshold(max_out_of_range_percent=threshold_percent)
 
         metrics = [
             MetricSpec(
@@ -229,15 +230,18 @@ class MdmVerifier:
             for m in self.config["metrics"]
         ]
 
+        print(metrics)
         return RangeChecker(metrics=metrics, default_threshold=default_threshold)
 
     # -------------------------------------------------------------------------
     # Outputs
     # -------------------------------------------------------------------------
 
-    def _save_results(self, dataframes: List[pd.DataFrame]) -> None:
+    def clean_results(self, dataframes: List[pd.DataFrame]) -> None:
         """
-        Save one CSV file per run setup type.
+        Save one CSV file per run setup type, dropping the master_setup_type column,
+        and clip current values for columns starting with 'i' and containing '_sim' or '_meas'.
+        Mutates the original DataFrames in place.
         """
         output_dir = self.output_dir / "combined_results"
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -251,9 +255,24 @@ class MdmVerifier:
             safe_name = setup_type.replace(" ", "_").replace("/", "-")
             fpath = output_dir / f"{safe_name}.csv"
 
+            # Drop metadata column in-place
+            if "master_setup_type" in df.columns:
+                df.drop(columns=["master_setup_type"], inplace=True)
+
+            # Clip currents for all matching columns (in-place)
+            current_cols = [
+                col for col in df.columns
+                if col.startswith("i") and ("_sim" in col or "_meas" in col)
+            ]
+            for col in current_cols:
+                df[col] = df[col].clip(lower=CLIP_CURR)
+
             try:
                 df.to_csv(fpath, index=False)
-                logging.debug("Saved %d rows for setup '%s' → %s", len(df), setup_type, fpath)
+                logging.debug(
+                    "Saved %d rows for setup '%s' → %s (clipped cols: %s)",
+                    len(df), setup_type, fpath, current_cols
+                )
             except Exception as e:
                 logging.error("Failed to save results for setup '%s': %s", setup_type, e)
 
@@ -333,7 +352,7 @@ class MdmVerifier:
                 f"PASS: {stats['pass']:4d}, FAIL: {stats['fail']:4d}"
             )
 
-        logging.info(f"\nOverall PASS: {total_pass}")
+        logging.info(f"Overall PASS: {total_pass}")
         if use_percent:
             logging.info(f"Overall FAIL: {total_fail} "
                         f"(threshold: > {threshold_percent:.2f}% out-of-range)")
@@ -359,9 +378,6 @@ class MdmVerifier:
     # Main runner
     # -------------------------------------------------------------------------
 
-    def _filter_results(self, dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
-        return dataframes
-
     def run_verification(self) -> int:
         """
         Run the full verification pipeline.
@@ -373,13 +389,10 @@ class MdmVerifier:
         logging.debug(f"Configuration: {self.config}")
 
         merged_dfs = self._aggregate_and_simulate()
-        self._save_results(merged_dfs)
+        self.clean_results(merged_dfs)
 
         # PreProcessing for merged results
         merged_df = pd.concat(merged_dfs, ignore_index=True)
-        print(merged_df.columns.tolist())
-        # merged_df = self._filter_results(merged_df)
-
         range_checker = self._build_range_checker()
 
         logging.info("Running range analysis ...")
