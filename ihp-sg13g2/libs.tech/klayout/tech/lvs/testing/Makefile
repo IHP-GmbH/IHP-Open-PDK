@@ -51,6 +51,13 @@ test-LVS-cells:
 	@ python3 create_cell_testcases.py
 	@ python3 run_regression_cells.py
 
+.ONESHELL:
+test-SVS-cell:
+	@echo "========== SG13G2-Cell LVS/SVS Flow Testing =========="
+	@python3 run_regression_cells.py --cell=sg13g2_inv2_and2_deep --run_dir=svs_test
+	@python3 ../run_lvs.py --topcell=sg13g2_inv2_and2_deep --layout=svs_test/sg13g2_inv2_and2_deep/sg13g2_inv2_and2_deep.gds --netlist=svs_test/sg13g2_inv2_and2_deep/sg13g2_inv2_and2_deep.cdl --run_mode=deep --run_dir=svs_test/sg13g2_inv2_and2_deep --skip_extract > svs_test/sg13g2_inv2_and2_deep/sg13g2_inv2_and2_deep_svs.log 2>&1
+	@grep -q "INFO : Congratulations" svs_test/sg13g2_inv2_and2_deep/sg13g2_inv2_and2_deep_svs.log
+
 #=================================
 # -------- test-LVS-switch -------
 #=================================
