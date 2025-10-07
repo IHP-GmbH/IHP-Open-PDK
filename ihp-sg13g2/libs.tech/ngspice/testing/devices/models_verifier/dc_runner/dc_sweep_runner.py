@@ -17,19 +17,15 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import os
 import shutil
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 import logging
-
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from contextlib import suppress
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from tqdm import tqdm
 from models_verifier.dc_runner.helper import (
@@ -37,11 +33,10 @@ from models_verifier.dc_runner.helper import (
     CORNERS_MOS,
     DEVICE_SWEEP_MAPS,
     get_topology_params,
-    parse_float,
-    parse_int,
     parse_sweep_triple,
     read_wrdata_df,
     sim_netlist_ngspice,
+    safe_float,
 )
 
 
@@ -57,8 +52,9 @@ class DcSweepRunner:
     osdi_path: Optional[Path] = None
     device_type: str = "mos"
     corners: Sequence[str] = field(default_factory=list)
-    max_workers: int = max(1, os.cpu_count() or 4)
-    netlists_dir: Optional[Path] = None
+    max_workers: int = max(1, os.cpu_count())
+    output_dir: Path = None
+    netlists_dir: Path = None
 
     def __post_init__(self) -> None:
         """Validate paths, set corners, and prepare netlists directory."""
@@ -86,10 +82,11 @@ class DcSweepRunner:
         self.corners = CORNERS_MOS if self.device_type == "mos" else CORNERS_BJT
 
     def _prepare_netlists_dir(self) -> None:
-        """Recreate netlists_dir if provided."""
-        if self.netlists_dir:
-            shutil.rmtree(self.netlists_dir, ignore_errors=True)
-            self.netlists_dir.mkdir(parents=True, exist_ok=True)
+        """
+        Prepare netlists directory if specified.
+        """
+        shutil.rmtree(self.netlists_dir, ignore_errors=True)
+        self.netlists_dir.mkdir(parents=True, exist_ok=True)
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -113,8 +110,6 @@ class DcSweepRunner:
             block_id: The block identifier
             input_data: The source file name for naming
         """
-        if not self.netlists_dir:
-            return
         src_stem = Path(input_data).stem if input_data else "unknown"
         dump_name = f"{src_stem}_{corner}_block-{block_id}.cir"
         (self.netlists_dir / dump_name).write_text(netlist_text)
@@ -134,7 +129,6 @@ class DcSweepRunner:
         if df.empty:
             raise ValueError("Input DataFrame is empty.")
 
-        workdir = Path(tempfile.mkdtemp(prefix="ngspice_sim_"))
         results: List[pd.DataFrame] = []
         errors: List[Tuple[int, str]] = []
 
@@ -144,13 +138,12 @@ class DcSweepRunner:
                 idx=int(idx),
                 row_dict=row.to_dict(),
                 template_path=str(self.template_path),
-                workdir=str(workdir),
                 corner_lib_path=str(self.corner_lib_path),
                 osdi_path=str(self.osdi_path),
                 device_name=self.device_name,
                 device_type=self.device_type,
                 corners=tuple(self.corners),
-                netlists_dir=str(self.netlists_dir) if self.netlists_dir else None,
+                netlists_dir=str(self.netlists_dir),
             )
             for idx, row in df.iterrows()
         ]
@@ -165,10 +158,6 @@ class DcSweepRunner:
                     errors.append((rid, err or "unknown error"))
                 else:
                     results.append(out_df)
-
-        # Aggregate results
-        with suppress(Exception):
-            shutil.rmtree(workdir, ignore_errors=True)
 
         if not results:
             logging.error(f"All tasks failed. Errors: {errors}")
@@ -327,7 +316,6 @@ class DcSweepRunner:
                 - idx (int): Row index.
                 - row_dict (dict): Row data with sweep and device parameters.
                 - template_path (str | Path): Jinja2 template path.
-                - workdir (str | Path): Temporary working directory.
                 - corner_lib_path (str | Path): SPICE corner library path.
                 - device_name (str): Subcircuit name.
                 - device_type (str): Device family (mos, pnpmpa, hbt).
@@ -345,31 +333,23 @@ class DcSweepRunner:
         idx = args["idx"]
         row = pd.Series(args["row_dict"])
         template_path = Path(args["template_path"])
-        workdir = Path(args["workdir"])
         corner_lib_path = Path(args["corner_lib_path"])
         device_name = args["device_name"]
         device_type = args["device_type"]
         corners = tuple(args["corners"])
-        netlists_dir = Path(args["netlists_dir"]) if args.get("netlists_dir") else None
         osdi_path = Path(args["osdi_path"]) if device_type == "mos" else None
-
-        # -----------------
-        # Helpers
-        # -----------------
-        def fixed_or_zero(name: str) -> float:
-            """Return sweep_start if this is sweep_var, otherwise parse numeric value."""
-            return float(sweep_start) if name == sweep_var else parse_float(row.get(name, 0.0), 0.0)
 
         # -----------------
         # Sweep + block setup
         # -----------------
         sweep_config = DEVICE_SWEEP_MAPS[device_type]
-
         block_id = row.get("block_id", f"blk_{idx}")
+        master_setup_type = str(row.get("master_setup_type", "")).strip().lower()
+
         if pd.isna(block_id):
             block_id = f"blk_{idx}"
 
-        temp = parse_float(row.get("temp", 27.0), 27.0)
+        temp = row.get("temp", 27.0)
         output_vars_str = row.get("output_vars")
         output_vars = [v.strip().lower() for v in str(output_vars_str).split(",")]
 
@@ -379,26 +359,26 @@ class DcSweepRunner:
         params: Dict[str, Any] = {}
         if device_type == "mos":
             params.update({
-                "W": parse_float(row.get("w", 1e-6), 1e-6),
-                "L": parse_float(row.get("l", 1e-6), 1e-6),
-                "AD": parse_float(row.get("ad", 0.0), 0.0),
-                "AS": parse_float(row.get("as", 0.0), 0.0),
-                "PD": parse_float(row.get("pd", 0.0), 0.0),
-                "PS": parse_float(row.get("ps", 0.0), 0.0),
-                "NF": parse_int(row.get("nf", 1), 1),
-                "M": parse_int(row.get("m", 1), 1),
+                "W": safe_float(row.get("w"), 1e-6),
+                "L": safe_float(row.get("l"), 1e-6),
+                "AD": safe_float(row.get("ad"), 0.0),
+                "AS": safe_float(row.get("as"), 0.0),
+                "PD": safe_float(row.get("pd"), 0.0),
+                "PS": safe_float(row.get("ps"), 0.0),
+                "NF": safe_float(row.get("nf"), 1),
+                "M": safe_float(row.get("m"), 1),
             })
         elif device_type == "pnpmpa":
             params.update({
-                "A": parse_float(row.get("a", 2e-5), 2e-5),
-                "P": parse_float(row.get("p", 2.4e-5), 2.4e-5),
+                "A": safe_float(row.get("a"), 2e-5),
+                "P": safe_float(row.get("p"), 2.4e-5),
             })
         elif device_type == "hbt":
             params.update({
-                "M": parse_int(row.get("m", 1), 1),
-                "W": parse_float(row.get("w", 1e-6), 1e-6),
-                "L": parse_float(row.get("l", 1e-6), 1e-6),
-                "Nx": parse_int(row.get("nx", 1), 1),
+                "M": safe_float(row.get("m"), 1),
+                "W": safe_float(row.get("w"), 1e-6),
+                "L": safe_float(row.get("l"), 1e-6),
+                "Nx": safe_float(row.get("nx"), 1),
             })
 
         # -----------------
@@ -406,7 +386,7 @@ class DcSweepRunner:
         # -----------------
         sweep_var = str(row.get("sweep_var", "")).strip().lower()
         if sweep_var not in sweep_config:
-            return idx, None, f"Unsupported or missing sweep_var '{sweep_var}' for device '{device_type}'"
+            return idx, None, f"Unsupported or missing sweep variable '{sweep_var}' for device '{device_type}'"
 
         try:
             sweep_start, sweep_stop, sweep_step = parse_sweep_triple(row.get(sweep_var[:2]))
@@ -414,6 +394,15 @@ class DcSweepRunner:
             return idx, None, f"Invalid sweep triple in '{sweep_var}': {e}"
 
         sweep_src, sweep_node = sweep_config[sweep_var]
+
+        # -----------------
+        # Helpers
+        # -----------------
+        def fixed_or_zero(name: str) -> float:
+            """
+            Return sweep_start if this is sweep_var, otherwise parse numeric value.
+            """
+            return float(sweep_start) if name == sweep_var else row.get(name, 0.0)
 
         # -----------------
         # Bias conditions
@@ -426,19 +415,15 @@ class DcSweepRunner:
             if input_vars_str and pd.notna(input_vars_str):
                 for var in [v.strip().lower() for v in str(input_vars_str).split(",")]:
                     if len(var) == 2 and var.startswith("i"):
-                        bias_conditions[var] = parse_float(row[var], 0.0)
+                        bias_conditions[var] = float(row.get(var) or 0.0)
             bias_conditions["output_vars"] = output_vars
 
         # -----------------
         # Paths and template setup
         # -----------------
-        sig = f"{idx}-dc-{block_id}-{device_type}"
-        hsh = hashlib.sha1(sig.encode()).hexdigest()[:10]
-        row_dir = workdir / f"job_{idx:06d}_{hsh}"
+        row_dir = self.output_dir / "run_data"
         row_dir.mkdir(parents=True, exist_ok=True)
-
-        log_base = row_dir / "ngspice"
-        netlist_base = row_dir / "test_dc"
+        run_base = row_dir / f"{master_setup_type}_{block_id}"
 
         jenv = Environment(
             loader=FileSystemLoader(str(template_path.parent)),
@@ -454,9 +439,9 @@ class DcSweepRunner:
         # Corner loop
         # -----------------
         for corner in corners:
-            out_path = row_dir / f"wr_outputs_{corner}.csv"
-            log_path = Path(f"{log_base}_{corner}.log")
-            netlist_path = Path(f"{netlist_base}_{corner}.cir")
+            netlist_path = Path(f"{run_base}_{corner}.cir")
+            out_path = Path(f"{run_base}_{corner}.csv")
+            log_path = Path(f"{run_base}_{corner}.log")
 
             ctx = {
                 "model_corner_lib": str(corner_lib_path),
@@ -464,6 +449,7 @@ class DcSweepRunner:
                 "TEMP": f"{temp}",
                 "device_subckt": device_name,
                 "out_path": str(out_path),
+                "sweep_var": sweep_var,
                 "sweep_src": sweep_src,
                 "sweep_node": sweep_node,
                 "sweep_start": f"{sweep_start:.16g}",
@@ -479,21 +465,20 @@ class DcSweepRunner:
             try:
                 netlist_text = jenv.get_template(template_path.name).render(**ctx)
                 netlist_path.write_text(netlist_text)
-                if netlists_dir:
-                    self._save_netlist(netlist_text, corner, block_id, str(row.get("input_data", "")))
+                self._save_netlist(netlist_text, corner, block_id, str(row.get("input_data", "")))
             except Exception as e:
-                shutil.rmtree(row_dir, ignore_errors=True)
+                logging.debug(f"Template rendering failed for row {idx}, corner {corner}: {e}")
                 return idx, None, f"[{corner}] Template rendering failed: {e}"
 
             # Run simulation
             rc = sim_netlist_ngspice(netlist_path, log_path)
             if rc != 0:
-                shutil.rmtree(row_dir, ignore_errors=True)
-                return idx, None, f"[{corner}] ngspice failed (rc={rc})"
+                logging.debug(f"ngspice failed for row {idx}, corner {corner} (rc={rc}). See log: {log_path}")
+                return idx, None, f"[{log_path}] ngspice failed"
 
             df = read_wrdata_df(out_path)
             if df is None or df.empty:
-                shutil.rmtree(row_dir, ignore_errors=True)
+                logging.debug(f"Empty or missing wrdata output for row {idx}, corner {corner}. See log: {log_path}")
                 return idx, None, f"[{corner}] Empty or missing wrdata output"
 
             # Extract outputs
@@ -508,7 +493,7 @@ class DcSweepRunner:
                         part_data[f"{var}_sim_{corner}"] = pd.Series([float("nan")] * len(df))
                 part = pd.DataFrame(part_data)
             except Exception as e:
-                shutil.rmtree(row_dir, ignore_errors=True)
+                logging.debug(f"Error building DataFrame for row {idx}, corner {corner}: {e}")
                 return idx, None, f"[{corner}] Error building DataFrame: {e}"
 
             merged_df = part if merged_df is None else pd.merge(merged_df, part, on="sweep_value", how="outer")
@@ -526,7 +511,6 @@ class DcSweepRunner:
             col_order.extend([f"{var}_sim_{c}" for c in corners])
 
         out = merged_df[[c for c in col_order if c in merged_df.columns]].copy()
-        shutil.rmtree(row_dir, ignore_errors=True)
         return idx, out, None
 
 
@@ -566,7 +550,7 @@ def _cli() -> None:
     ap.add_argument(
         "--max-workers",
         type=int,
-        default=os.cpu_count() or 4,
+        default=os.cpu_count(),
         help="Maximum number of parallel workers (default: CPU count).",
     )
     ap.add_argument(
@@ -623,7 +607,7 @@ def _cli() -> None:
         logging.error("Input CSV is empty")
         sys.exit(2)
 
-    netlists_dir = Path(args.netlists_dir) if args.netlists_dir else None
+    netlists_dir = Path(args.netlists_dir)
 
     # -------------------------------------------------------------------------
     # Run simulations

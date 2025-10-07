@@ -18,76 +18,51 @@
 *Sources*
 *********
 
-{% if ib is defined %}
-Ib 0 b {{ ib }}
-{% endif %}
+{# Current sources if defined #}
+{% if ib is defined %}Ib 0 b {{ ib }}{% endif %}
+{% if ic is defined %}Ic 0 c {{ ic }}{% endif %}
+{% if ie is defined %}Ie 0 e {{ ie }}{% endif %}
 
-{% if ic is defined %}
-Ic 0 c {{ ic }}
-{% endif %}
+{# Voltage sources based on sweep source #}
+{% if sweep_var == "Vcb" %}
+Vc  c 0 0
+Vb  b c 0
+    {% set ve_val = VE|default(0) %}
+    {% if ie is not defined %}Ve e 0 {{ ve_val }}{% endif %}
 
-{% if ie is defined %}
-Ie 0 e {{ ie }}
-{% endif %}
+{% elif sweep_var == "Vbe" %}
+Vb  b 0 0
+Ve  e b 0
+    {% set vc_val = VC|default(0) %}
+    {% if ic is not defined %}Vc c 0 {{ vc_val }}{% endif %}
 
-{% if sweep_src == "Vcb" %}
-.param VCB={{ VCB|default(0) }}
-.param VE={{ VE|default(0) }}
-
-Vcb cb 0 {VCB}
-Vc  cb c 0
-Vb  cb b 0
-{% if not ie is defined %}
-Ve  e  0 {VE}
-{% endif %}
-
-{% elif sweep_src == "Vbe" %}
-.param VBE={{ VBE|default(0) }}
-.param VC={{ VC|default(0) }}
-
-Vbe be 0 {VBE}
-Vb  be b 0
-Ve  be e 0
-{% if not ic is defined %}
-Vc  c  0 {VC}
-{% endif %}
-
-{% elif sweep_src == "Vce" %}
-.param VCE={{ VCE|default(0) }}
-.param VB={{ VB|default(0) }}
-
-Vce ce 0 {VCE}
-Vc  ce c 0
-Ve  ce e 0
-{% if not ib is defined %}
-Vb  b  0 {VB}
-{% endif %}
+{% elif sweep_var == "Vce" %}
+Vc  c 0 0
+Ve  e c 0
+    {% set vb_val = VB|default(0) %}
+    {% if ib is not defined %}Vb b 0 {{ vb_val }}{% endif %}
 
 {% else %}
-.param VB={{ VB|default(0) }}
-.param VC={{ VC|default(0) }}
-.param VE={{ VE|default(0) }}
-
-{% if not ie is defined %}
-Ve  e  0 {VE}
-{% endif %}
-{% if not ic is defined %}
-Vc  c  0 {VC}
-{% endif %}
-{% if not ib is defined %}
-Vb  b  0 {VB}
-{% endif %}
+    {% set vb_val = VB|default(0) %}
+    {% set vc_val = VC|default(0) %}
+    {% set ve_val = VE|default(0) %}
+    {% if ib is not defined %}Vb b 0 {{ vb_val }}
+    {% endif %}
+    {% if ic is not defined %}Vc c 0 {{ vc_val }}
+    {% endif %}
+    {% if ie is not defined %}Ve e 0 {{ ve_val }}
+    {% endif %}
 {% endif %}
 
 *********
 *Circuit*
 *********
 
-.param Nx={{ Nx|default(1) }}
-.param le={{ L|default(0.96e-6) }}
-.param we={{ W|default (0.12e-6) }}
-
-X1 c b e 0 {{ device_subckt }} Nx={Nx} le={le} we={we}
+X1 c b e 0 {{ device_subckt }}
++ we={{ "%.4f"|format((W|default(0.12))|float) }}u
++ le={{ "%.4f"|format((L|default(0.96))|float) }}u
++ Nx={{ (Nx|default(1))|int }}
++ m={{ (M|default(1))|int }}
 
 * ============================================================================================
 * ----------------------------------------- ANALYSIS -----------------------------------------

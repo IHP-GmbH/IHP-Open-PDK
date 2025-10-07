@@ -55,6 +55,7 @@ import pytest
 from models_verifier.models_verifier import MdmVerifier
 from models_verifier.constants import CASES
 
+
 @pytest.mark.parametrize("label, rel_yaml", CASES, ids=[c[0] for c in CASES])
 def test_devices(label: str, rel_yaml: str) -> None:
     """

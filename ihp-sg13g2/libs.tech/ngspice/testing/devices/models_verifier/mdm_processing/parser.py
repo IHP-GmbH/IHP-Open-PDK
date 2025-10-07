@@ -99,8 +99,6 @@ class MdmParser:
             pd.DataFrame: Long-format data (point-by-point).
         """
         try:
-            logging.debug("Parsing MDM file: %s", self.filepath)
-
             # Load file
             content = self.filepath.read_text(encoding="utf-8", errors="ignore")
             lines = content.splitlines()
@@ -207,8 +205,10 @@ class MdmParser:
     # Export
     # -------------------------------------------------------------------------
 
-    def to_csv(self, output_dir: Optional[Path]) -> Path:
-        """Export parsed data (long format) to CSV."""
+    def export_csv(self, output_dir: Optional[Path]) -> Path:
+        """
+        Export parsed data (long format) to CSV.
+        """
         if self.dataframe.empty:
             self.parse()
 
@@ -217,11 +217,12 @@ class MdmParser:
         output_path = output_dir / f"{self.filepath.stem}.csv"
 
         self.dataframe.to_csv(output_path, index=False, float_format="%.16g")
-        logging.info("Exported %d rows → %s", len(self.dataframe), output_path)
         return output_path
 
-    def to_compact_csv(self, output_dir: Optional[Path]) -> Path:
-        """Export block-wise compact summary to CSV."""
+    def export_compact_csv(self, output_dir: Optional[Path]) -> Path:
+        """
+        Export block-wise compact summary to CSV.
+        """
         if not self.compact_rows:
             self.parse()
 
@@ -249,10 +250,15 @@ class MdmParser:
 # CLI
 # =========================================================================================
 
+# This main function is intended to be used as a CLI entry point for testing and direct usage.
+# This is not the primary interface for the module in production environments.
+
 def main() -> int:
-    """CLI entry point."""
+    """
+    CLI entry point.
+    """
     parser = argparse.ArgumentParser(
-        description="Parse IC-CAP MDM files into CSV (long and compact formats)."
+        description="Parse MDM files into CSV (long and compact formats)."
     )
     parser.add_argument("-i", "--input", type=Path, required=True, help="Input MDM file path")
     parser.add_argument("-od", "--output-dir", type=Path, help="Directory for CSV/log outputs")
@@ -268,8 +274,8 @@ def main() -> int:
 
     try:
         parser = MdmParser(args.input, args.device_type)
-        long_csv = parser.to_csv(output_dir)
-        compact_csv = parser.to_compact_csv(output_dir)
+        long_csv = parser.export_csv(output_dir)
+        compact_csv = parser.export_compact_csv(output_dir)
         logging.info("Successfully converted:")
         logging.info(f"  Long CSV    → {long_csv}")
         logging.info(f"  Compact CSV → {compact_csv}")

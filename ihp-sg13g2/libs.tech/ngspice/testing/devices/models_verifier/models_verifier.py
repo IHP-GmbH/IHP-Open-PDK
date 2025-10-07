@@ -25,7 +25,6 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
-
 import pandas as pd
 import yaml
 
@@ -34,10 +33,6 @@ from models_verifier.dc_runner.helper import SIM_TYPE_MAP, expand_env
 from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
 from models_verifier.error_analyzer.range_checker import RangeChecker
 from models_verifier.mdm_processing.aggregator import MdmDirectoryAggregator
-
-
-# lowest curr to clip on
-CLIP_CURR = 10e-12  
 
 
 class ConfigError(Exception):
@@ -63,7 +58,9 @@ class MdmVerifier:
     def __init__(self, config_path: Path):
         """Initialize the verifier with configuration and logging."""
         self.config = self._load_config(config_path)
+        self.device_name: str = self.config["device_name"]
         self.device_type: str = self.config["device_type"]
+        self.clip_curr: float = float(self.config.get("clip_curr", 1e-12))
 
         self.output_dir = Path(self.config["output_dir"])
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -111,7 +108,7 @@ class MdmVerifier:
             raise ConfigError(f"Missing required config keys: {missing}")
 
         # Defaults
-        config.setdefault("max_workers", max(1, os.cpu_count() or 4))
+        config.setdefault("max_workers", max(1, os.cpu_count()))
         config.setdefault("tolerance_abs", 0.0)
         config.setdefault("tolerance_rel", 0.0)
         config.setdefault("output_dir", str(Path.cwd() / "final_reports"))
@@ -169,11 +166,8 @@ class MdmVerifier:
             device_name=self.config["device_name"],
             max_workers=int(self.config["max_workers"]),
             device_type=self.config["device_type"],
-            netlists_dir=(
-                self.output_dir / "netlists"
-                if (self.config.get("generate_netlists") and create_csvs)
-                else None
-            ),
+            output_dir=Path(self.output_dir),
+            netlists_dir=self.output_dir / "netlists",
         )
 
         merged_parts: List[pd.DataFrame] = []
@@ -212,8 +206,9 @@ class MdmVerifier:
         Construct and configure the range checker.
         Uses only threshold_percent_oob from the config.
         """
-        threshold_percent = float(self.config.get("threshold_percent_oob", 5.0))
+        threshold_percent = float(self.config.get("threshold_percent_oob", 0))
         default_threshold = Threshold(max_out_of_range_percent=threshold_percent)
+        tolerance_rel = float(self.config.get("corner_tolerance_percent", 0.0))
 
         metrics = [
             MetricSpec(
@@ -224,13 +219,11 @@ class MdmVerifier:
                 ff=m["ff"],
                 tolerance=Tolerance(
                     abs=float(self.config["tolerance_abs"]),
-                    rel=float(self.config["tolerance_rel"]),
+                    rel=tolerance_rel,
                 ),
             )
             for m in self.config["metrics"]
         ]
-
-        print(metrics)
         return RangeChecker(metrics=metrics, default_threshold=default_threshold)
 
     # -------------------------------------------------------------------------
@@ -265,113 +258,152 @@ class MdmVerifier:
                 if col.startswith("i") and ("_sim" in col or "_meas" in col)
             ]
             for col in current_cols:
-                df[col] = df[col].clip(lower=CLIP_CURR)
-
+                df[col] = df[col].clip(lower=self.clip_curr)
+            logging.debug(f"Clipped currents are: {current_cols}")
             try:
                 df.to_csv(fpath, index=False)
-                logging.debug(
-                    "Saved %d rows for setup '%s' → %s (clipped cols: %s)",
-                    len(df), setup_type, fpath, current_cols
-                )
             except Exception as e:
                 logging.error("Failed to save results for setup '%s': %s", setup_type, e)
 
-    def print_summary_statistics(
+    def gen_summary_stats(
         self,
         report_df: pd.DataFrame,
         detailed_failures_df: pd.DataFrame,
-        threshold_percent: float | None = None,
-        threshold_count: int | None = None,
-        targets: List[str] | None = None,
-    ) -> Dict:
+        threshold: float = 0.0,
+        tolerance_rel: float = 0.0,
+        targets: Optional[List[str]] = None,
+        final_summary_path: str = None,
+    ) -> Dict[str, float]:
         """
-        Print summary statistics for range check results.
+        Generate overall failure statistics from range-check results and optionally
+        write a Markdown summary file.
 
         Args:
-            report_df: Summary DataFrame with columns ['target', 'percentage_oob', 'n_out_of_bounds'].
-            detailed_failures_df: DataFrame with detailed failure points (subset of report_df).
-            threshold_percent: Threshold for percentage-based out-of-bound detection.
-            threshold_count: Threshold for count-based out-of-bound detection.
+            report_df: DataFrame with columns
+                ['target', 'percentage_oob', 'n_out_of_bounds', 'passed', 'n_points'].
+            detailed_failures_df: DataFrame with detailed failure points.
+            threshold: Threshold for percentage-based out-of-bound detection.
             targets: List of targets to include (defaults to ["meas", "tt"]).
+            final_summary_path:Path to write summary file.
 
         Returns:
-            Dictionary containing overall statistics and per-target breakdown.
+            Dictionary with:
+                - total_fail_rate_cases_pct: overall % of failed sweeps
+                - total_fail_rate_points_pct: overall % of failed simulation points
         """
+        if report_df.empty:
+            raise ValueError("`report_df` is empty — cannot generate summary statistics.")
+
         if targets is None:
             targets = ["meas", "tt"]
 
-        # Validation
-        use_percent = threshold_percent is not None
-        if not use_percent and threshold_count is None:
-            raise ValueError("Either threshold_percent or threshold_count must be provided.")
-
-        # Filter only requested targets
-        target_report = report_df[report_df["target"].isin(targets)].copy()
-
-        # Identify failing rows
-        if use_percent:
-            failing = target_report[target_report["percentage_oob"] > float(threshold_percent)]
-        else:
-            failing = target_report[target_report["n_out_of_bounds"] > int(threshold_count)]
-
-        # Overall stats
-        total_cases = len(target_report)
-        total_fail = len(failing)
-        total_pass = total_cases - total_fail
-
-        total_failed_points = (
-            len(detailed_failures_df[detailed_failures_df["target"].isin(targets)])
-            if not detailed_failures_df.empty
-            else 0
+        logging.info("\n========== RANGE-CHECK SUMMARY ANALYSIS STARTED ==========")
+        logging.info(f"Targets included: {targets}")
+        logging.info(f"OOB detection threshold: {threshold:.2f}%")
+        # Log the relative corner tolerance used to expand FF/SS bounds
+        logging.info(
+            f"Applying corner tolerance margin: ±{tolerance_rel:.2f}% "
+            f"(expands FF/SS simulation envelopes)"
         )
+        logging.info(f"Clipped current threshold: {self.clip_curr:.2e} A\n")
 
-        # Per-target stats
-        target_stats = {}
-        for target in targets:
-            subset = target_report[target_report["target"] == target]
-            if use_percent:
-                failing_subset = subset[subset["percentage_oob"] > float(threshold_percent)]
-            else:
-                failing_subset = subset[subset["n_out_of_bounds"] > int(threshold_count)]
-
-            target_stats[target] = {
-                "total": len(subset),
-                "pass": len(subset) - len(failing_subset),
-                "fail": len(failing_subset),
+        # Filter for selected targets
+        target_report = report_df[report_df["target"].isin(targets)].copy()
+        if target_report.empty:
+            logging.warning(f"No matching entries found for targets {targets}")
+            return {
+                "total_fail_rate_cases_pct": 0.0,
+                "total_fail_rate_points_pct": 0.0,
             }
 
-        # ---------- Logging ----------
-        logging.info("\n================= SUMMARY =================")
-        logging.info(f"Total cases (block_id × metric × target): {total_cases}")
-
+        # Initialize accumulators
+        total_sweeps_all = 0
+        total_failed_sweeps_all = 0
+        total_points_all = 0
+        total_failed_points_all = 0
         name_map = {"meas": "Measured", "tt": "Typical"}
-        for target, stats in target_stats.items():
-            target_name = name_map.get(target, target.upper())
+
+        # Prepare Markdown output
+        md_lines = []
+        md_lines.append("# 📊 Summary Report\n")
+        md_lines.append(f"- **Targets analyzed:** {', '.join(targets)}")
+        md_lines.append(f"- **Out-of-bound threshold:** {threshold:.2f}%")
+        md_lines.append(f"- **Corner tolerance margin:** ±{tolerance_rel:.2f}% (expands FF/SS simulation envelopes)")
+        md_lines.append(f"- **Clipped current threshold:** {self.clip_curr:.2e} A\n")
+        md_lines.append(
+            "| Target | Sweeps | Pass | Fail | Total Points | Failed Points "
+            "| Fail % (Cases) | Fail % (Points) |"
+        )
+        md_lines.append(
+            "|:--------|--------:|------:|------:|--------------:|---------------:"
+            "|----------------:|----------------:|"
+        )
+
+        # Console header
+        header = (
+            f"{'Target':<10} {'Sweeps':>8} {'Pass':>8} {'Fail':>8} "
+            f"{'TotPts':>10} {'FailPts':>10} {'Fail%Cases':>12} {'Fail%Pts':>10}"
+        )
+        logging.info(header)
+        logging.info("-" * len(header))
+
+        for target in targets:
+            subset = target_report[target_report["target"] == target]
+            if subset.empty:
+                logging.warning(f"No data for target '{target}' — skipping.")
+                continue
+
+            total_sweeps = len(subset)
+            passed_sweeps = int(subset["passed"].sum())
+            failed_sweeps = total_sweeps - passed_sweeps
+            total_points_t = int(subset["n_points"].sum())
+            failed_points_t = int(subset["n_out_of_bounds"].sum())
+
+            if not detailed_failures_df.empty:
+                failed_points_t += len(detailed_failures_df[detailed_failures_df["target"] == target])
+
+            fail_rate_cases = (failed_sweeps / total_sweeps) * 100 if total_sweeps else 0
+            fail_rate_points = (failed_points_t / total_points_t) * 100 if total_points_t else 0
+
+            # Log to console
+            tname = name_map.get(target, target.upper())
             logging.info(
-                f"  {target_name:8s} → TOTAL: {stats['total']:4d}, "
-                f"PASS: {stats['pass']:4d}, FAIL: {stats['fail']:4d}"
+                f"{tname:<10} "
+                f"{total_sweeps:>8d} "
+                f"{passed_sweeps:>8d} "
+                f"{failed_sweeps:>8d} "
+                f"{total_points_t:>10d} "
+                f"{failed_points_t:>10d} "
+                f"{fail_rate_cases:>12.2f} "
+                f"{fail_rate_points:>10.2f}"
             )
 
-        logging.info(f"Overall PASS: {total_pass}")
-        if use_percent:
-            logging.info(f"Overall FAIL: {total_fail} "
-                        f"(threshold: > {threshold_percent:.2f}% out-of-range)")
-        else:
-            logging.info(f"Overall FAIL: {total_fail} "
-                        f"(threshold: > {int(threshold_count)} points out-of-range)")
+            # Add to Markdown table
+            md_lines.append(
+                f"| {tname} | {total_sweeps} | {passed_sweeps} | {failed_sweeps} | "
+                f"{total_points_t} | {failed_points_t} | {fail_rate_cases:.2f}% | {fail_rate_points:.2f}% |"
+            )
 
-        logging.info(f"Total failed points: {total_failed_points}")
-        logging.info("==========================================================\n")
+            # Totals
+            total_sweeps_all += total_sweeps
+            total_failed_sweeps_all += failed_sweeps
+            total_points_all += total_points_t
+            total_failed_points_all += failed_points_t
 
-        # ---------- Return structured stats ----------
+        # Compute overall rates
+        total_fail_rate_cases_pct = (
+            (total_failed_sweeps_all / total_sweeps_all) * 100 if total_sweeps_all else 0
+        )
+        total_fail_rate_points_pct = (
+            (total_failed_points_all / total_points_all) * 100 if total_points_all else 0
+        )
+        final_summary_path.write_text("\n".join(md_lines))
+        logging.info(f"Summary written to: {final_summary_path}")
+
+        # Return minimal metrics
         return {
-            "total_cases": total_cases,
-            "total_pass": total_pass,
-            "total_fail": total_fail,
-            "total_failed_points": total_failed_points,
-            "target_stats": target_stats,
-            "threshold_type": "percent" if use_percent else "count",
-            "threshold_value": threshold_percent if use_percent else threshold_count,
+            "total_fail_rate_cases_pct": total_fail_rate_cases_pct,
+            "total_fail_rate_points_pct": total_fail_rate_points_pct,
         }
 
     # -------------------------------------------------------------------------
@@ -385,9 +417,10 @@ class MdmVerifier:
         Returns:
             Exit code (0 = success, 1 = failures detected).
         """
-        logging.info("Starting MDM block verification ...")
-        logging.debug(f"Configuration: {self.config}")
+        logging.info("Starting verification of device: %s", self.device_name)
 
+        # Aggregate and simulate
+        logging.info("Aggregating MDM data and running DC simulations ...")
         merged_dfs = self._aggregate_and_simulate()
         self.clean_results(merged_dfs)
 
@@ -395,49 +428,45 @@ class MdmVerifier:
         merged_df = pd.concat(merged_dfs, ignore_index=True)
         range_checker = self._build_range_checker()
 
-        logging.info("Running range analysis ...")
-        report, detailed_failures = range_checker.analyze(merged_df)
+        logging.info("Running range checking on merged results ...")
+        full_res, detailed_failures = range_checker.analyze(merged_df)
 
         reports_dir = self.output_dir / "final_reports"
         reports_dir.mkdir(parents=True, exist_ok=True)
 
-        full_report = reports_dir / "full_report.csv"
-        summary_csv = reports_dir / "summary.csv"
-        failures_csv = reports_dir / "detailed_failures.csv"
+        full_results = reports_dir / "full_results.csv"
+        results_summary = reports_dir / "results_summary.csv"
+        final_summary = reports_dir / "final_summary.md"
+        failed_results = reports_dir / "failed_results.csv"
 
-        report.to_csv(full_report, index=False)
+        logging.info(f"- Full report: {full_results}")
+        full_res.to_csv(full_results, index=False)
+
+        # Summary and failures
         range_checker.summarize_to_csv(
-            report, detailed_failures, summary_csv, failures_csv
+            full_res, detailed_failures, results_summary, failed_results
         )
 
-        stats = self.print_summary_statistics(
-            report,
+        stats = self.gen_summary_stats(
+            full_res,
             detailed_failures,
-            threshold_percent=(
-                float(self.config["threshold_percent_oob"])
-                if self.config.get("threshold_percent_oob") is not None
-                else None
-            ),
-            threshold_count=(
-                int(self.config["threshold_count_oob"])
-                if self.config.get("threshold_count_oob") is not None
-                else None
-            ),
+            threshold=self.config.get("threshold_percent_oob", 0),
+            tolerance_rel=self.config.get("corner_tolerance_percent", 0.0),
             targets=["meas", "tt"],
+            final_summary_path=final_summary,
         )
-
-        if self.config.get("generate_netlists"):
-            range_checker.cleanup_passed_netlists(
-                self.output_dir / "netlists", report, dry_run=False
-            )
-
-        logging.info(f"- Full report: {full_report}")
-        logging.info(f"- Summary    : {summary_csv}")
-        if not detailed_failures.empty:
-            logging.info(f"- Detailed failures: {failures_csv}")
+        # Cleanup netlists
+        range_checker.cleanup_passed_netlists(
+            self.output_dir / "netlists", full_res, dry_run=False
+        )
 
         # Return non-zero if there are failing cases
-        return 1 if stats["total_fail"] > 0 else 0
+        if stats["total_fail_rate_cases_pct"] > 0:
+            logging.warning("Verification completed with FAILURES detected.")
+            return 1
+        else:
+            logging.info("Verification completed successfully with NO FAILURES.")
+            return 0
 
 
 # -------------------------------------------------------------------------
@@ -445,20 +474,57 @@ class MdmVerifier:
 # -------------------------------------------------------------------------
 
 def main() -> int:
+    """
+    Entry point for the MDM block verification flow.
+    """
     parser = argparse.ArgumentParser(
+        prog="mdm_verifier",
         description="Run MDM block verification (aggregate → simulate → range-check)."
     )
-    parser.add_argument("--config", "-c", type=Path, required=True, help="Path to YAML config")
+    parser.add_argument(
+        "--config", "-c",
+        type=Path,
+        required=True,
+        help="Path to the YAML configuration file for the verification flow."
+    )
+
     args = parser.parse_args()
 
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    logging.info("Starting MDM verification process...")
+    logging.debug(f"Using configuration file: {args.config}")
+
     try:
+        if not args.config.exists():
+            logging.error(f"Configuration file not found: {args.config}")
+            return 2
+
         verifier = MdmVerifier(args.config)
-        return verifier.run_verification()
+        result_code = verifier.run_verification()
+
+        if result_code == 0:
+            logging.info("MDM verification completed successfully.")
+        else:
+            logging.warning(f"MDM verification completed with non-zero exit code: {result_code}")
+
+        return result_code
+
     except (ConfigError, VerificationError) as e:
-        logging.error(str(e))
+        logging.error(f"Verification failed: {e}")
         return 2
+
+    except KeyboardInterrupt:
+        logging.warning("Verification interrupted by user.")
+        return 130  # Conventional exit code for SIGINT
+
     except Exception as e:
-        logging.exception("Unexpected error during verification")
+        logging.exception(f"Unexpected error during verification: {e}")
         return 3
 
 

@@ -14,7 +14,6 @@
 # limitations under the License.
 # =========================================================================================
 
-
 # ==============================================================
 # PDK Models Setup
 # ==============================================================
@@ -49,12 +48,9 @@ device_name: "npn13g2v"
 # Path to the DC analysis template (Jinja2 format)
 dc_template_path: "configs/hbt/hbt_dc.spice.j2"
 
-# If true, automatically generate netlists from the template
-generate_netlists: true  
-
 # Maximum number of workers (parallel jobs).
 # Set based on your system CPU cores.
-max_workers: 4
+max_workers: 8
 
 # ==============================================================
 # Output and Validation Settings
@@ -63,30 +59,50 @@ max_workers: 4
 # ----------------------------------------------------
 # Validation Threshold Configuration
 # ----------------------------------------------------
-# threshold_percent_oob sets the maximum allowed percentage deviation (%) 
-# between measured (silicon) and simulated (model) values.
+# threshold_percent_oob defines the **maximum allowed percentage (%) of points**
+# that can fall **outside the valid model envelope** (out-of-bound, OOB)
+# for each sweep or test condition.
 #
-# - If the deviation is <= threshold → the result is considered "within tolerance".
-# - If the deviation is > threshold → the result is flagged as "out-of-bound" (OOB).
+# This parameter controls the overall pass/fail criteria for each dataset:
+# - If the fraction of OOB points ≤ threshold → the sweep passes.
+# - If the fraction of OOB points > threshold → the sweep fails.
 #
 # Example:
-#   Measured value = 1.00 mA
-#   Simulated value = 1.04 mA
-#   Deviation = (|1.04 - 1.00| / 1.00) × 100 = 4%
-#   Since 4% < 5% → Pass (within tolerance)
+#   Total sweep points = 200
+#   Out-of-bound points = 1
+#   threshold_percent_oob = 0.5
 #
-# Another case:
-#   Measured value = 1.00 mA
-#   Simulated value = 1.07 mA
-#   Deviation = 7%
-#   Since 7% > 5% → Fail (out-of-bound)
+#   (1 / 200) × 100 = 0.5% <= 5% → PASS
 #
-# Practical Notes:
-# - Use a tighter threshold (e.g., 2%) for critical devices or high-accuracy checks.
-# - Use a looser threshold (e.g., 10%) when measurement data has higher noise or
-#   when validating across extreme corners.
+#   If 2 points were out of bounds → (1%) > 0.5% → FAIL
 
-threshold_percent_oob: 5.0
+threshold_percent_oob: 0.5
+
+# ----------------------------------------------------
+# Corner Envelope Tolerance Configuration
+# ----------------------------------------------------
+# corner_tolerance_percent defines the **relative tolerance percentage**
+# added to the FF/SS simulation envelopes to account for expected
+# statistical process variation (based on σ-level confidence).
+#
+# The value represents the percentage of samples expected to fall
+# *outside* the FF/SS limits for a given σ coverage:
+#
+#   - 1σ → 100 - 68.27 = 31.73%
+#   - 2σ → 100 - 95.45 = 4.55%
+#   - 3σ → 100 - 99.73 = 0.27%
+#   - 4σ → 100 - 99.9937 = 0.0063%
+#   - 5σ → 100 - 99.99994 = 0.00006%
+#   - 6σ → 100 - 99.9999998 = 0.0000002%
+#
+# Example:
+#   If corner_tolerance_percent = 0.27
+#   - Effective FF bound = FF_sim_value × (1 + 0.0027)
+#   - Effective SS bound = SS_sim_value × (1 - 0.0027)
+#
+# This means the FF and SS bounds are extended by ±0.27% of their values.
+#
+corner_tolerance_percent: 0.27
 
 # ==============================================================
 # Metrics Definitions

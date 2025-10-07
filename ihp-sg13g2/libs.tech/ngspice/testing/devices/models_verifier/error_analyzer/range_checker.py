@@ -24,6 +24,8 @@ from models_verifier.error_analyzer.config import MetricSpec, Threshold, Toleran
 import numpy as np
 import pandas as pd
 import logging
+from tqdm import tqdm
+
 
 @dataclass
 class RangeChecker:
@@ -41,10 +43,15 @@ class RangeChecker:
     def _apply_tolerance_to_bounds(
         lower_bound: pd.Series, upper_bound: pd.Series, tolerance: Tolerance
     ) -> Tuple[pd.Series, pd.Series]:
+        """
+        Apply absolute and relative tolerance adjustments to the given bounds.
+        """
         if tolerance.abs == 0.0 and tolerance.rel == 0.0:
             return lower_bound, upper_bound
-        adjusted_lower = lower_bound - tolerance.abs - tolerance.rel * lower_bound.abs()
-        adjusted_upper = upper_bound + tolerance.abs + tolerance.rel * upper_bound.abs()
+
+        rel = tolerance.rel / 100.0  # interpret as percentage
+        adjusted_lower = lower_bound - tolerance.abs - rel * lower_bound.abs()
+        adjusted_upper = upper_bound + tolerance.abs + rel * upper_bound.abs()
         return adjusted_lower, adjusted_upper
 
     def _get_metric_bounds(
@@ -156,7 +163,7 @@ class RangeChecker:
         passed = threshold.check(oob_count, total_count)
 
         # Generate detailed failure records
-        failure_records = self._create_detailed_failure_report(
+        failure_records = self._get_failure_rep(
             group_df,
             group_tuple,
             spec,
@@ -181,8 +188,7 @@ class RangeChecker:
 
         return report_row, failure_records
 
-
-    def _create_detailed_failure_report(
+    def _get_failure_rep(
         self,
         group_dataframe: pd.DataFrame,
         group_tuple: tuple,
@@ -353,8 +359,8 @@ class RangeChecker:
         self,
         report_df: pd.DataFrame,
         detailed_failures_df: pd.DataFrame,
-        csv_path: Union[str, Path] = "report.csv",
-        detailed_csv_path: Union[str, Path] = "detailed_failures.csv",
+        results_summary_path: Union[str, Path],
+        failed_results_path: Union[str, Path],
     ) -> None:
         """
         Save both summary and detailed failure reports to CSV files.
@@ -379,15 +385,16 @@ class RangeChecker:
             kind="mergesort",
         )
 
-        summary["percentage_oob"] = summary["percentage_oob"].round(2)
-        summary.to_csv(csv_path, index=False)
+        summary["percentage_oob"] = summary["percentage_oob"].round(3)
+        logging.info(f"Summary report saved to: {results_summary_path}")
+        summary.to_csv(results_summary_path, index=False)
 
         if not detailed_failures_df.empty:
             detailed_failures_df_sorted = detailed_failures_df.sort_values(
                 "block_id", ascending=True
             )
-            detailed_failures_df_sorted.to_csv(detailed_csv_path, index=False)
-            logging.info(f"Detailed failure report saved to: {detailed_csv_path}")
+            detailed_failures_df_sorted.to_csv(failed_results_path, index=False)
+            logging.info(f"Detailed failure report saved to: {failed_results_path}")
 
     def assert_all_pass(
         self,
@@ -453,7 +460,7 @@ class RangeChecker:
             )
 
         rows_iter = failed.itertuples(index=False, name="Row")
-        with ThreadPoolExecutor(max_workers=max(1, os.cpu_count() or 4)) as ex:
+        with ThreadPoolExecutor(max_workers=max(1, os.cpu_count())) as ex:
             detail_lines = list(ex.map(_fmt, rows_iter))
 
         raise AssertionError(
@@ -481,56 +488,77 @@ class RangeChecker:
         """
         netlists_path = Path(netlists_dir)
         if not netlists_path.exists():
-            logging.info(f"Netlists directory not found: {netlists_path}")
+            logging.warning(f"Netlists directory not found: {netlists_path}")
             return {"removed": 0, "kept": 0, "not_found": 0}
 
+        # Identify passed blocks
         passed_blocks = self.get_passed_block_ids(report_df, targets)
-
         if not passed_blocks:
-            logging.info("No passed blocks found - keeping all netlists")
+            logging.info("No passed blocks detected — keeping all netlists.")
             return {"removed": 0, "kept": 0, "not_found": 0}
 
-        netlist_files = list(netlists_path.glob("*.cir"))
+        # Gather all .cir files
+        netlist_files = sorted(netlists_path.glob("*.cir"))
+        if not netlist_files:
+            logging.warning(f"No .cir files found in directory: {netlists_path}")
+            return {"removed": 0, "kept": 0, "not_found": 0}
 
+        # Initialize statistics
         removed_count = 0
         kept_count = 0
         not_found_count = 0
 
-        for netlist_file in netlist_files:
+        # Iterate with progress bar
+        action_label = "Simulating removal" if dry_run else "Removing"
+        logging.info(f"{action_label} of passed netlists in {netlists_path} ...")
+
+        for netlist_file in tqdm(
+            netlist_files,
+            desc="Netlist Cleanup Progress",
+            unit="file",
+        ):
             filename = netlist_file.name
 
-            if "_block-" in filename:
-                block_id_part = filename.split("_block-")[1]
-                block_id = block_id_part.replace(".cir", "")
-
-                if block_id in passed_blocks:
-                    if dry_run:
-                        removed_count += 1
-                    else:
-                        try:
-                            netlist_file.unlink()
-                            removed_count += 1
-                        except Exception as e:
-                            logging.error(f"Error removing {netlist_file}: {e}")
-                            not_found_count += 1
-                else:
-                    kept_count += 1
-            else:
+            # Extract block_id from filename convention: *_block-<id>.cir
+            if "_block-" not in filename:
                 logging.warning(f"Could not extract block_id from filename: {filename}")
                 kept_count += 1
+                continue
 
+            block_id = filename.split("_block-")[1].replace(".cir", "")
+            if block_id not in passed_blocks:
+                kept_count += 1
+                continue
+
+            # Passed block → remove or simulate
+            if dry_run:
+                removed_count += 1
+                continue
+
+            try:
+                netlist_file.unlink()
+                removed_count += 1
+            except FileNotFoundError:
+                logging.error(f"File not found (already removed?): {netlist_file}")
+                not_found_count += 1
+            except Exception as e:
+                logging.error(f"Error removing {netlist_file}: {e}")
+                not_found_count += 1
+
+        # Final statistics and summary
         stats = {
             "removed": removed_count,
             "kept": kept_count,
             "not_found": not_found_count,
         }
 
-        action = "Would remove" if dry_run else "Removed"
-        logging.info("\nNetlist cleanup summary:")
-        logging.info(f"  {action}: {removed_count} netlists for passed blocks")
-        logging.info(f"  Kept: {kept_count} netlists for failed blocks")
+        logging.info("================ NETLIST CLEANUP SUMMARY ================")
+        logging.info(f"  Directory      : {netlists_path}")
+        logging.info(f"  Removed        : {removed_count} netlists for passed blocks")
+        logging.info(f"  Kept           : {kept_count} netlists (failed/unrelated)")
         if not_found_count > 0:
-            logging.error(f"{not_found_count} files could not be processed")
+            logging.error(f"  Not processed  : {not_found_count} files (errors or missing)")
+        logging.info("=========================================================\n")
 
         return stats
 

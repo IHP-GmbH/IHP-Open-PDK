@@ -18,6 +18,11 @@
 *Sources*
 *********
 
+.param VD={{ VD }}
+.param VS={{ VS }}
+.param VG={{ VG }}
+.param VB={{ VB }}
+
 Vd d 0 {VD}
 Vs s 0 {VS}
 Vg g 0 {VG}
@@ -36,11 +41,6 @@ Vb b 0 {VB}
 .param NF={{ NF }}
 .param M={{ M }}
 
-.param VD={{ VD }}
-.param VS={{ VS }}
-.param VG={{ VG }}
-.param VB={{ VB }}
-
 XU1 d g s b {{ device_subckt }}
 + w={W} l={L} m={M} ng={NF} ad={AD} as={AS} pd={PD} ps={PS}
 
@@ -55,7 +55,7 @@ XU1 d g s b {{ device_subckt }}
   set wr_singlescale
   set wr_vecnames
 
-  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+  dc {{ sweep_var }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
 
   let ib = -i(Vb)
   let id = -i(Vd)

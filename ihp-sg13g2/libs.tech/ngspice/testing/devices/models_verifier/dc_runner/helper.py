@@ -14,17 +14,16 @@
 # limitations under the License.
 # =========================================================================================
 
-from  datetime import datetime
 import os
 from pathlib import Path
-import shutil
 from typing import Any, Dict, Optional, Tuple
 import subprocess
-import logging
 import pandas as pd
+
 
 CORNERS_MOS = ("mos_tt", "mos_ss", "mos_ff")
 CORNERS_BJT = ("hbt_typ", "hbt_bcs", "hbt_Wcs")
+
 # sweep_var -> (voltage source name in netlist, node letter)
 MOS_SWEEP_MAP: Dict[str, Tuple[str, str]] = {
     "vd": ("Vd", "d"),
@@ -37,9 +36,9 @@ BJT_SWEEP_MAP = {
     "vb": ("Vb", "b"),
     "vc": ("Vc", "c"),
     "ve": ("Ve", "e"),
-    "vcb": ("Vcb", "c"),
-    "vce": ("Vce", "c"),
-    "vbe": ("Vbe", "b"),
+    "vcb": ("Vc", "c"),
+    "vce": ("Vc", "c"),
+    "vbe": ("Vb", "b"),
 }
 
 SIM_TYPE_MAP: dict[str, str] = {
@@ -87,30 +86,12 @@ def read_wrdata_df(out_path: Path) -> Optional[pd.DataFrame]:
     return df
 
 
-def parse_float(val, default: float = 0.0) -> float:
-    try:
-        if pd.isna(val):
-            return float(default)
-        return float(val)
-    except Exception:
-        return float(default)
-
-
-def parse_int(val, default: int = 0) -> int:
-    try:
-        if pd.isna(val):
-            return int(default)
-        return int(val)
-    except Exception:
-        return int(default)
-
-
 def parse_sweep_triple(triple_str: Any) -> Tuple[float, float, float]:
     """
     Expect a string like "start stop step". Tolerant to multiple spaces/commas.
     """
     if pd.isna(triple_str):
-        raise ValueError("missing sweep triple")
+        raise ValueError("missing sweep variable")
     s = str(triple_str).strip().replace(",", " ")
     parts = [p for p in s.split() if p]
     if len(parts) != 3:
@@ -131,10 +112,25 @@ def expand_env(obj):
 
 
 def get_topology_params(row: pd.Series, sweep_var: str) -> Dict[str, float]:
-    """Return voltage parameters based on sweep variable and  topology."""
+    """
+    Return voltage parameters based on sweep variable and topology.
+    """
 
     def get_bias_value(field: str) -> float:
-        return parse_float(row.get(field, 0.0), 0.0)
+        val = row.get(field, 0.0)
+
+        # Handle space-separated string values like "0 -2 -0.025"
+        if isinstance(val, str):
+            try:
+                val = float(val.strip().split()[0])
+            except (ValueError, IndexError):
+                val = 0.0
+
+        # Ensure float
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return 0.0
 
     sweep_map = {
         "vcb": ("VCB", "VE", "ve"),
@@ -144,10 +140,22 @@ def get_topology_params(row: pd.Series, sweep_var: str) -> Dict[str, float]:
 
     if sweep_var in sweep_map:
         swept_param_key, companion_param_key, source_field = sweep_map[sweep_var]
-        return {swept_param_key: 0.0, companion_param_key: get_bias_value(source_field)}
+        return {
+            swept_param_key: 0.0,
+            companion_param_key: get_bias_value(source_field),
+        }
 
     return {
         "VB": get_bias_value("vb"),
         "VC": get_bias_value("vc"),
         "VE": get_bias_value("ve"),
     }
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if isinstance(value, str):
+            value = value.strip().split()[0]
+        return float(value)
+    except (ValueError, TypeError):
+        return float(default)

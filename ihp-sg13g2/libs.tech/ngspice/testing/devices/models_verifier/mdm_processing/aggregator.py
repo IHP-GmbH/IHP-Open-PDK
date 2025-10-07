@@ -20,11 +20,11 @@ import argparse
 import logging
 import os
 import re
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple, Union
-
+from tqdm import tqdm
 import pandas as pd
 
 from models_verifier.mdm_processing.parser import MdmParser, MdmParseError
@@ -229,9 +229,10 @@ class MdmDirectoryAggregator:
     # File I/O
     # -------------------------------------------------------------------------------------
     def _write_by_type(self, by_type, suffix: str, label: str) -> int:
-        """Write grouped DataFrames to CSV."""
+        """Write grouped DataFrames to CSV, with tqdm progress bar."""
         if not by_type:
             return 0
+
         total_rows = 0
 
         def _write_one(item):
@@ -241,14 +242,19 @@ class MdmDirectoryAggregator:
                 return 0
             fpath = self.output_dir / f"{safe_name(mtype)}_{suffix}.csv"
             out.to_csv(fpath, index=False)
-            logger.debug(f"{len(out):5d} {label} rows written → {fpath.name}")
             return len(out)
 
-        with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 4)) as ex:
-            for n in ex.map(_write_one, by_type.items()):
-                total_rows += n
+        items = list(by_type.items())
 
-        logger.debug(f"{total_rows} {label} rows written → {self.output_dir}")
+        with ThreadPoolExecutor(max_workers=max(1, os.cpu_count())) as ex:
+            futures = {ex.submit(_write_one, item): item[0] for item in items}
+            for future in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc=f"Writing {label} CSVs",
+            ):
+                total_rows += future.result()
+
         return total_rows
 
     # -------------------------------------------------------------------------------------
@@ -274,51 +280,76 @@ class MdmDirectoryAggregator:
     # Main aggregation
     # -------------------------------------------------------------------------------------
     def aggregate(self) -> Tuple[Dict[Optional[str], pd.DataFrame], Dict[Optional[str], pd.DataFrame]]:
-        """Aggregate all found `.mdm` files into grouped DataFrames."""
-        files = self.find_mdm_files()
-        if not files:
-            raise FileNotFoundError("No .mdm files found.")
+        """
+        Aggregate all found `.mdm` files into grouped DataFrames.
+        """
+        mdm_files = self.find_mdm_files()
+        if not mdm_files:
+            logging.error("No mdm mdm_files found in the specified directory.")
+            logging.error("Please check your configuration")
+            raise FileNotFoundError("No .mdm mdm_files found in the specified directory.")
 
-        logger.info(f"Found {len(files)} MDM files...")
+        logger.info(f"Found {len(mdm_files)} MDM files...")
 
         frames_full, frames_compact = [], []
-        with ProcessPoolExecutor(max_workers=max(1, os.cpu_count() or 4)) as ex:
-            for full_df, compact_df in ex.map(self._process_one, files):
+
+        # Process all .mdm files in parallel with progress bar
+        with ProcessPoolExecutor(max_workers=max(1, os.cpu_count())) as ex:
+            futures = {ex.submit(self._process_one, f): f for f in mdm_files}
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing MDM files"):
+                full_df, compact_df = future.result()
                 if full_df is not None and not full_df.empty:
                     frames_full.append(full_df)
                 if compact_df is not None and not compact_df.empty:
                     frames_compact.append(compact_df)
 
-        def build_by_type(frames):
-            if not frames:
-                return {}
-            df = pd.concat(frames, ignore_index=True, sort=False)
-            if "master_setup_type" not in df.columns:
-                df["master_setup_type"] = None
-            df["master_setup_type"] = pd.Categorical(df["master_setup_type"])
-            return {mtype: g.copy() for mtype, g in df.groupby("master_setup_type", dropna=False, observed=False)}
+        # Build grouped DataFrames
+        full_by_type = self.build_by_type(frames_full)
+        compact_by_type = self.build_by_type(frames_compact)
 
-        full_by_type = build_by_type(frames_full)
-        compact_by_type = build_by_type(frames_compact)
-
-        # Clean
+        #  Clean data in parallel with progress bar
         cleaner = partial(clean_group_item, device_type=self.device_type)
-        with ProcessPoolExecutor(max_workers=min(8, os.cpu_count() or 4)) as ex:
-            full_by_type = dict(ex.map(cleaner, full_by_type.items()))
-            compact_by_type = dict(ex.map(cleaner, compact_by_type.items()))
+        with ProcessPoolExecutor(max_workers=min(8, os.cpu_count())) as ex:
+            # Wrap dict items in list for predictable length in tqdm
+            full_items = list(full_by_type.items())
+            compact_items = list(compact_by_type.items())
+
+            logger.info("Cleaning full data groups...")
+            cleaned_full = {}
+            futures = {ex.submit(cleaner, item): item[0] for item in full_items}
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Cleaning full groups"):
+                key, val = future.result()
+                cleaned_full[key] = val
+
+            logger.info("Cleaning compact data groups...")
+            cleaned_compact = {}
+            futures = {ex.submit(cleaner, item): item[0] for item in compact_items}
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Cleaning compact groups"):
+                key, val = future.result()
+                cleaned_compact[key] = val
 
         # Write CSVs if requested
         if self.create_csvs:
-            n_full = self._write_by_type(full_by_type, "clean", "full")
-            n_compact = self._write_by_type(compact_by_type, "sweep", "compact")
+            n_full = self._write_by_type(cleaned_full, "clean", "full")
+            n_compact = self._write_by_type(cleaned_compact, "sweep", "compact")
             if not (n_full or n_compact):
                 logger.warning("No CSV files were written.")
             else:
                 logger.info(f"Done. Output directory: {self.output_dir}")
 
-        return full_by_type, compact_by_type
+        return cleaned_full, cleaned_compact
 
     # -------------------------------------------------------------------------------------
+
+    def build_by_type(self, frames):
+        if not frames:
+            return {}
+        df = pd.concat(frames, ignore_index=True, sort=False)
+        if "master_setup_type" not in df.columns:
+            df["master_setup_type"] = None
+        df["master_setup_type"] = pd.Categorical(df["master_setup_type"])
+        return {mtype: g.copy() for mtype, g in df.groupby("master_setup_type", dropna=False, observed=False)}
+
     def get_summary(self) -> Dict[str, Union[int, str, bool]]:
         """Quick summary of input files without full parsing."""
         return {
