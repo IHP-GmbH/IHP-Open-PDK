@@ -1,0 +1,109 @@
+`include "disciplines.vams"
+
+`include "capacitor.va"
+paramset model_cmim_core sp_capacitor;
+  parameter real capacitance = 0;
+  parameter real temp = 0;
+  parameter real dtemp = 0.0;
+  parameter real w = 0;
+  parameter real l = 0;
+  parameter real tc1 = 3.6E-6;
+  parameter real tc2 = 2E-9;
+  parameter real bv_max = 0;
+  parameter real scale = 1.0;
+  parameter real model_cap = 0.0;
+  parameter real cj = `cap_carea;
+  parameter real cjsw = 40E-18;
+  parameter real defw = 1e-05;
+  parameter real defl = 0.0;
+  parameter real narrow = 0.0;
+  parameter real short = 0.0;
+  parameter real del = 0.0;
+  parameter real model_tc1 = 0.0;
+  parameter real model_tc2 = 0.0;
+  parameter real tnom = 27;
+  parameter real di = 0.0;
+  parameter real thick = 0.0;
+  parameter real model_bv_max = 1e+99;
+  .capacitance = capacitance;
+  .temp = temp;
+  .dtemp = dtemp;
+  .w = w;
+  .l = l;
+  .tc1 = tc1;
+  .tc2 = tc2;
+  .bv_max = bv_max;
+  .scale = scale;
+  .model_cap = model_cap;
+  .cj = cj;
+  .cjsw = cjsw;
+  .defw = defw;
+  .defl = defl;
+  .narrow = narrow;
+  .short = short;
+  .del = del;
+  .model_tc1 = model_tc1;
+  .model_tc2 = model_tc2;
+  .tnom = tnom;
+  .di = di;
+  .thick = thick;
+  .model_bv_max = model_bv_max;
+endparamset
+
+module cparasitic(node_PLUS, node_MINUS);
+  inout node_PLUS, node_MINUS;
+  electrical node_PLUS, node_MINUS;
+
+  parameter real c = 0;
+  parameter real w = 0;
+  parameter real l = 0;
+  parameter real ic = 1E10;
+  parameter real tc1 = 0;
+  parameter real tc2 = 0;
+  sp_capacitor #(.c(c * `cap_cpara), .tc1(tc1), .tc2(tc2)) C1 (node_PLUS, node_MINUS);
+endmodule
+
+module cap_cmim(node_PLUS, node_MINUS);
+  inout node_PLUS, node_MINUS;
+  electrical node_PLUS, node_MINUS;
+
+  parameter real l = 7e-6;
+  parameter real w = 7e-6;
+  parameter real sf = 1E-6;
+  parameter real ic = 1E10;
+  sp_resistor #(.r(55e-3)) R1 (node_PLUS, node_1);
+  model_cmim_core #(.l(l / sf), .w(w / sf)) C1 (node_1, node_MINUS);
+endmodule
+
+module cap_rfcmim(node_PLUS, node_MINUS, node_bn);
+  inout node_PLUS, node_MINUS, node_bn;
+  electrical node_PLUS, node_MINUS, node_bn;
+
+  parameter real l = 7e-6;
+  parameter real w = 7e-6;
+  parameter real wfeed = 2E-6;
+  parameter real ic = 1E10;
+  parameter real sf = 1E-6;
+  parameter real cic0 = 1E-18;
+  parameter real lplate_val = ((0.353158 * (l / sf) + 0.485684 * l / w) * 1e-12);
+  parameter real lfeed_val = ((6.03468 + 0.0814268 * (w / sf) - 0.821243 * log(wfeed / sf) / log(1.55)) * 1e-12);
+  parameter real lskin_val = (1.18545e-012 + 6.95462e-014 * (l / sf));
+  parameter real cox_val = ((0.48922 + 0.0965145 * (w + l) / sf + 0.00610947 * (w * l) / (sf * sf) + 0.017 * (wfeed / sf) * 5) * 1e-15);
+  parameter real csub_val = ((50.1021 + 0.277881 * (w + l) / sf + 1.25023e-005 * (w * l) / (sf * sf)) * 1e-15);
+  parameter real rsub_val = (610.132 - 1.11685 * (w + l) / sf + 0.00434371 * (w * l) / (sf * sf));
+  parameter real rmim_val = (0.0463973 + 0.00219577 * l / w + 0.961292 / (wfeed / sf) + 0.00307712 * (l / sf) + 0.000217076 * (l / sf) * l / w);
+  parameter real rskin_val = (0.154618 + 0.00702016 * (l / sf));
+  sp_capacitor #(.c(cic0)) Cic1 (node_PLUS, node_bn);
+  sp_capacitor #(.c(cic0)) Cic2 (node_MINUS, node_bn);
+  sp_inductor #(.l(lskin_val)) Lskin (node_PLUS, node_2);
+  sp_resistor #(.r(rskin_val)) Rskin (node_PLUS, node_2);
+  sp_inductor #(.l((lplate_val + lfeed_val - lskin_val))) Lmim (node_2, node_3);
+  sp_resistor #(.r(rmim_val)) Rmim (node_3, node_4);
+  model_cmim_core #(.l(l / sf), .w(w / sf)) Cmim (node_4, node_5);
+  sp_capacitor #(.c(cox_val)) Cox (node_5, node_51);
+  sp_capacitor #(.c(csub_val)) Csub (node_51, node_bn);
+  sp_resistor #(.r(rsub_val)) Rsub (node_51, node_bn);
+  sp_inductor #(.l(lfeed_val)) Lfeed (node_5, node_MINUS);
+  sp_resistor #(.r(1e9)) Rdummy (node_5, node_bn);
+endmodule
+

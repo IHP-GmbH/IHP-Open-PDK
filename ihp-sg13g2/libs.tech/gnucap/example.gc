@@ -1,0 +1,28 @@
+verilog
+load mgsim
+load vams/vpulse.so
+load ./plugins/psp103_nqs.so
+load ./plugins/r3_cmc.so
+load ./plugins/vbic_4T_et_cf.so
+load ./plugins/cornerMOSlv_tt.so
+load ./plugins/cornerHBT_typ.so
+load ./plugins/cornerRES_typ.so
+load ./plugins/cornerCAP_typ.so
+load ./plugins/resistor.so
+options log
+
+ground gnd;
+sg13_lv_nmos #(.w(1.0e-6), .l(0.13e-6), .ng(1)) XM1(nd, ng, gnd, gnd);
+//rhigh R1(vcc, nd, gnd);
+sp_resistor #(.resistance(10e3)) R1(vcc, nd);
+cap_cmim C1(nd, gnd);
+
+npn13G2 Q1(vcc, nd, ve, vb);
+sp_resistor #(.resistance(100e3)) R1(ve, gnd);
+
+spice
+Vin ng gnd 0.4
+Vcc vcc gnd 1.2
+
+.print dc ids(XM1.M1) v(nodes)
+.dc Vin 0.0 1.2 0.1

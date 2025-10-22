@@ -1,0 +1,251 @@
+`include "disciplines.vams"
+
+module ptap1(node_1, node_2);
+  inout node_1, node_2;
+  electrical node_1, node_2;
+
+  parameter real r = 262.8;
+  parameter real w = 0.78e-6;
+  parameter real l = 0.78e-6;
+  sp_resistor #(.r(r)) R1 (node_1, node_2);
+endmodule
+
+module ntap1(node_1, node_2);
+  inout node_1, node_2;
+  electrical node_1, node_2;
+
+  parameter real r = 262.8;
+  parameter real w = 0.78e-6;
+  parameter real l = 0.78e-6;
+  sp_resistor #(.r(r)) R1 (node_1, node_2);
+endmodule
+
+module Rparasitic(node_1, node_2);
+  inout node_1, node_2;
+  electrical node_1, node_2;
+
+  parameter real r = 0;
+  parameter real w = 0;
+  parameter real l = 0;
+  parameter real tc1 = 0.00353;
+  parameter real tc2 = 0;
+  sp_resistor #(.r(r * `res_rpara), .tc1(tc1), .tc2(tc2)) R1 (node_1, node_2);
+endmodule
+
+module rsil(node_1, node_2, node_bn);
+  inout node_1, node_2, node_bn;
+  electrical node_1, node_2, node_bn;
+
+  parameter real w = 0.5e-6;
+  parameter real l = 0.5e-6;
+  parameter real mm_ok = 1;
+  parameter real b = 0;
+  parameter real m = 1;
+  parameter real trise = 0;
+  parameter real sw_et = 0;
+  parameter real postsim = 0;
+  parameter real kappa = 1.85;
+  parameter real ps = 0.18e-6;
+  parameter real weff = w + 0.01e-6;
+  parameter real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+  parameter real rzspec = 4.5e-6;
+  parameter real lhead = 0.86e-6;
+  parameter real cax = 90e-18;
+  parameter real cpx = 25e-18;
+  parameter real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+  parameter real px = 115e-18 / cpx;
+  parameter real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+  parameter real a = (a0 > 0) * a0;
+  parameter real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+  parameter real p = (p0 > 0) * p0;
+  parameter real rshspec = 7;
+  parameter real rqrc = 4.5e-6;
+  parameter real rz = rzspec / w - (postsim > 0) * rqrc / w;
+  R3_CMC #(
+    .c1(1),
+    .a2(a),
+    .tc2(0.3e-6),
+    .a1(a),
+    .trise(trise),
+    .dfinf(1e-4),
+    .gthp(2e-6),
+    .cp(cpx),
+    .gth0(1e-12),
+    .cth0(0),
+    .nsmm_rsh(1),
+    .bfn(1.267),
+    .gtha(6e-6),
+    .sw_mman(1),
+    .ca(cax),
+    .gthc(1e-12),
+    .nsmm_w(1),
+    .ctha(594e-15),
+    .sw_et(sw_et),
+    .rc(rz),
+    .xw(0.01),
+    .ecrit(1000),
+    .afn(1.607),
+    .tc1(3100e-6),
+    .w(weff),
+    .c2(1),
+    .rsh(`rsh_rsil),
+    .l(leff),
+    .kfn(2.812e-12),
+    .cthp(0),
+    .smm_rsh(1.2),
+    .cthc(0),
+    .nsmm_l(1),
+    .smm_w(0.01),
+    .tc2rc(0.3e-6),
+    .dp(1000),
+    .tc1rc(3100e-6),
+    .p2(p),
+    .p1(p),
+    .smm_l(0.01)
+  ) R1 (node_1, node_bn, node_2, node_dt);
+endmodule
+
+module rhigh(node_1, node_2, node_bn);
+  inout node_1, node_2, node_bn;
+  electrical node_1, node_2, node_bn;
+
+  parameter real w = 0.5e-6;
+  parameter real l = 0.96e-6;
+  parameter real mm_ok = 1;
+  parameter real b = 0;
+  parameter real trise = 0;
+  parameter real m = 1;
+  parameter real sw_et = 0;
+  parameter real postsim = 0;
+  parameter real kappa = 1.85;
+  parameter real ps = 0.18e-6;
+  parameter real weff = w - 0.04e-6;
+  parameter real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+  parameter real lhead = 0.86e-6;
+  parameter real rzspec = 80e-6;
+  parameter real cax = 90e-18;
+  parameter real cpx = 25e-18;
+  parameter real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+  parameter real px = 115e-18 / cpx;
+  parameter real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+  parameter real a = (a0 > 0) * a0;
+  parameter real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+  parameter real p = (p0 > 0) * p0;
+  parameter real rshspec = 1360;
+  parameter real rqrc = 4.5e-6;
+  parameter real rz = rzspec / w - (postsim > 0) * rqrc / w;
+  R3_CMC #(
+    .c1(1),
+    .a2(a),
+    .tc2(2.1e-6),
+    .a1(a),
+    .trise(trise),
+    .dfinf(1e-4),
+    .gthp(2e-6),
+    .cp(cpx),
+    .gth0(1e-12),
+    .cth0(0),
+    .nsmm_rsh(1),
+    .bfn(0.9086),
+    .gtha(6e-6),
+    .sw_mman(1),
+    .ca(cax),
+    .gthc(1e-12),
+    .nsmm_w(1),
+    .ctha(594e-15),
+    .sw_et(sw_et),
+    .rc(rz),
+    .xw(-0.04),
+    .ecrit(1000),
+    .afn(1.935),
+    .tc1(-2300e-6),
+    .w(weff),
+    .c2(1),
+    .rsh(`rsh_rhigh),
+    .l(leff),
+    .kfn(5.205e-10),
+    .cthp(0),
+    .smm_rsh(5),
+    .cthc(0),
+    .nsmm_l(1),
+    .smm_w(0.01),
+    .tc2rc(2.1e-6),
+    .dp(1000),
+    .tc1rc(-2300e-6),
+    .p2(p),
+    .p1(p),
+    .smm_l(0.01)
+  ) R1 (node_1, node_bn, node_2, node_dt);
+endmodule
+
+module rppd(node_1, node_2, node_bn);
+  inout node_1, node_2, node_bn;
+  electrical node_1, node_2, node_bn;
+
+  parameter real w = 0.5e-6;
+  parameter real l = 0.5e-6;
+  parameter real mm_ok = 1;
+  parameter real b = 0;
+  parameter real ps = 0.18e-6;
+  parameter real trise = 0;
+  parameter real m = 1;
+  parameter real sw_et = 0;
+  parameter real postsim = 0;
+  parameter real kappa = 1.85;
+  parameter real weff = w + 0.006e-6;
+  parameter real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+  parameter real lhead = 0.86e-6;
+  parameter real rzspec = 35e-6;
+  parameter real cax = 90e-18;
+  parameter real cpx = 25e-18;
+  parameter real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+  parameter real px = 115e-18 / cpx;
+  parameter real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+  parameter real a = (a0 > 0) * a0;
+  parameter real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+  parameter real p = (p0 > 0) * p0;
+  parameter real rqrc = 4.5e-6;
+  parameter real rz = rzspec / w - (postsim > 0) * rqrc / w;
+  R3_CMC #(
+    .c1(1),
+    .a2(a),
+    .tc2(0.4e-6),
+    .a1(a),
+    .trise(trise),
+    .dfinf(1e-4),
+    .gthp(2e-6),
+    .cp(cpx),
+    .gth0(1e-12),
+    .cth0(0),
+    .nsmm_rsh((1)),
+    .bfn(0.9963),
+    .gtha(6e-6),
+    .sw_mman(1),
+    .ca(cax),
+    .gthc(1e-12),
+    .nsmm_w((1)),
+    .ctha(594e-15),
+    .sw_et(sw_et),
+    .rc(rz),
+    .xw(0.006),
+    .ecrit(1000),
+    .afn(1.886),
+    .tc1(170e-6),
+    .w(weff),
+    .c2(1),
+    .rsh(`rsh_rppd),
+    .l(leff),
+    .kfn(4.601e-11),
+    .cthp(0),
+    .smm_rsh(1.5),
+    .cthc(0),
+    .nsmm_l((1)),
+    .smm_w(0.01),
+    .dp(1000),
+    .tc1rc(-950e-6),
+    .p2(p),
+    .p1(p),
+    .smm_l(0.01)
+  ) R1 (node_1, node_bn, node_2, node_dt);
+endmodule
+
