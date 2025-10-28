@@ -273,6 +273,24 @@ else
   logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
 end
 
+#================================================
+#------ FlowSpace SRAM custom connection --------
+#================================================
+
+# logger.info('FlowSpace custom setup')
+
+# The compiler allows to configure a prefix for the sub-cell names
+# but the prefix will start with SP6T for the single port RAM and
+# DP8T for the dual port RAM
+
+# Some nets in the SRAM design may be disjointed in a sub-cell layout
+connect_implicit('SP6T*Cell', 'vss')
+connect_implicit('DP8T*Cell', 'vss')
+connect_implicit('DP8T*Array*', 'vss')
+connect_implicit('SP6T*', 'vdd')
+connect_implicit('DP8T*', 'vdd')
+connect_implicit('SP6T*Array*', 'nwell')
+connect_implicit('DP8T*Array*', 'nwell')
 #================================================================
 #------------------------- MAIN RUNSET --------------------------
 #================================================================
