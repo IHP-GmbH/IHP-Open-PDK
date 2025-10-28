@@ -71,9 +71,11 @@ ngate_hv_base = ngate.and(thickgateox_drw)
 pgate_hv_base = pgate.and(thickgateox_drw)
 
 # S/D FETs
-nsd_fet = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
-psd_fet = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
+nsd_fet_propagated = nactiv.not(nwell_drw).interacting(ngate).not(ngate).not_interacting(res_mk)
+nsd_fet = nactiv.and(nsd_fet_propagated)
 
+psd_fet_propagated = pactiv.and(nwell_drw).interacting(pgate).not(pgate).not_interacting(res_mk)
+psd_fet = pactiv.and(psd_fet_propagated)
 
 # tap1 labels
 well_patt = glob_to_case_insensitive_glob("well")

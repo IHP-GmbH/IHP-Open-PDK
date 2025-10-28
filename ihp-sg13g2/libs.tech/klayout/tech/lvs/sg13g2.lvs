@@ -291,6 +291,13 @@ connect_implicit('SP6T*', 'vdd')
 connect_implicit('DP8T*', 'vdd')
 connect_implicit('SP6T*Array*', 'nwell')
 connect_implicit('DP8T*Array*', 'nwell')
+
+# Some hacking is needed to handle shared source/drain regions
+# between different cells
+sharedsd_cells = [
+  "SP6T*Cell", "SP6T*Precharge*", "SP6T*RowDecoderNand3*", "SP6T*WLDrive*",
+  "DP8T*Cell", "DP8T*Precharge*", "DP8T*RowDecoderNand3*", "DP8T*WLDrive*",
+]
 #================================================================
 #------------------------- MAIN RUNSET --------------------------
 #================================================================
@@ -398,7 +405,11 @@ else
   # ----- MOSFET EXTRACTION -------
   #================================
 
+  cheat(sharedsd_cells) {
+
   # %include rule_decks/mos_extraction.lvs
+
+  }
 
   #================================
   # ---- RF-MOSFET EXTRACTION -----
