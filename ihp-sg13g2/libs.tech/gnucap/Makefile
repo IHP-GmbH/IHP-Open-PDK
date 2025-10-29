@@ -67,9 +67,11 @@ plugins/cornerRES_%.cc: models/cornerRES.va
 plugins/%.cc: models/%.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
 
-# va generation
+# va generation (only when REGENERATE_VA=1 is set)
+ifdef REGENERATE_VA
 models/%.va: ../xyce/models/%.lib
 	$(SPAKCONVERT) $< $@ --input-simulator xyce --output-simulator gnucap $(SPAKFLAGS)
+endif
 
 .PHONY: clean distclean
 
