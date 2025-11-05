@@ -36,61 +36,39 @@ all: plugins/psp103_nqs.so \
 	 plugins/capacitor.so \
 	 plugins/resistor.so
 
+stat: plugins/cornerMOSlv_tt_stat.so \
+	  plugins/cornerMOShv_tt_stat.so \
+	  plugins/cornerCAP_typ_stat.so \
+	  plugins/cornerHBT_typ_stat.so \
+	  plugins/cornerRES_typ_stat.so
+
 # Shared library targets
 plugins/%.so: plugins/%.cc
 	$(CXX) $(GNUCAP_CPPFLAGS) $(GNUCAP_CXXFLAGS) $< -o $@
 
 # C++ file generation
-plugins/psp103_nqs.cc: ../verilog-a/psp103/psp103_nqs.va \
-	../verilog-a/psp103/Common103_macrodefs.include \
-	../verilog-a/psp103/JUNCAP200_macrodefs.include \
-	../verilog-a/psp103/PSP103_macrodefs.include \
-	../verilog-a/psp103/PSP103_nqs_macrodefs.include \
-	../verilog-a/psp103/PSP103_module.include \
-	../verilog-a/psp103/PSP103_binpars.include \
-	../verilog-a/psp103/JUNCAP200_parlist.include \
-	../verilog-a/psp103/JUNCAP200_varlist1.include \
-	../verilog-a/psp103/JUNCAP200_varlist2.include
+plugins/psp103_nqs.cc: ../verilog-a/psp103/psp103_nqs.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
 
-plugins/r3_cmc.cc: ../verilog-a/r3_cmc/r3_cmc.va \
-	../verilog-a/r3_cmc/r3_cmc_macros.include
+plugins/r3_cmc.cc: ../verilog-a/r3_cmc/r3_cmc.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
 
-plugins/mosvar.cc: ../verilog-a/mosvar/mosvar.va \
-	../verilog-a/mosvar/mosvarpspMacros.va \
-	../verilog-a/mosvar/macrosAndDefines_cmc.va \
-	../verilog-a/mosvar/discipline.h
+plugins/mosvar.cc: ../verilog-a/mosvar/mosvar.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
 
-plugins/cornerMOSlv_%.cc: models/cornerMOSlv.va \
-	models/sg13g2_moslv_mod.va \
-	models/sg13g2_moslv_stat.va \
-	models/sg13g2_moslv_parm.va
+plugins/cornerMOSlv_%.cc: models/cornerMOSlv.va
 	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D mc_ok=1 -o $@ --cc $<
 
-plugins/cornerMOShv_%.cc: models/cornerMOShv.va \
-	models/sg13g2_moshv_mod.va \
-	models/sg13g2_moshv_stat.va \
-	models/sg13g2_moshv_parm.va
+plugins/cornerMOShv_%.cc: models/cornerMOShv.va
 	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D mc_ok=1 -o $@ --cc $<
 
-plugins/cornerCAP_%.cc: models/cornerCAP.va \
-	models/capacitors_mod.va \
-	models/capacitors_stat.va \
-	models/capacitor.va
+plugins/cornerCAP_%.cc: models/cornerCAP.va
 	gnucap-mg-vams $(GCMG_FLAGS) -D cap_$* -o $@ --cc $<
 
-plugins/cornerHBT_%.cc: models/cornerHBT.va \
-	models/sg13g2_hbt_mod.va \
-	models/sg13g2_hbt_stat.va \
-	models/bjt.va
+plugins/cornerHBT_%.cc: models/cornerHBT.va
 	gnucap-mg-vams $(GCMG_FLAGS) -D hbt_$* -o $@ --cc $<
 
-plugins/cornerRES_%.cc: models/cornerRES.va \
-	models/resistors_mod.va \
-	models/resistors_stat.va \
-	models/resistor.va
+plugins/cornerRES_%.cc: models/cornerRES.va
 	gnucap-mg-vams $(GCMG_FLAGS) -D res_$* -o $@ --cc $<
 
 plugins/%.cc: models/%.va
@@ -102,7 +80,7 @@ models/%.va: ../xyce/models/%.lib
 	$(SPAKCONVERT) $< $@ --input-simulator xyce --output-simulator gnucap $(SPAKFLAGS)
 endif
 
-.PHONY: clean distclean
+.PHONY: clean distclean stat
 
 # Remove build artifacts only
 clean:
