@@ -34,13 +34,12 @@ all: plugins/psp103_nqs.so \
 	 plugins/cornerRES_bcs.so \
 	 plugins/cornerRES_wcs.so \
 	 plugins/capacitor.so \
-	 plugins/resistor.so
-
-stat: plugins/cornerMOSlv_tt_stat.so \
-	  plugins/cornerMOShv_tt_stat.so \
-	  plugins/cornerCAP_typ_stat.so \
-	  plugins/cornerHBT_typ_stat.so \
-	  plugins/cornerRES_typ_stat.so
+	 plugins/resistor.so \
+	 plugins/cornerMOSlv_tt_stat.so \
+	 plugins/cornerMOShv_tt_stat.so \
+	 plugins/cornerCAP_typ_stat.so \
+	 plugins/cornerHBT_typ_stat.so \
+	 plugins/cornerRES_typ_stat.so
 
 # Shared library targets
 plugins/%.so: plugins/%.cc
