@@ -4,6 +4,8 @@ module ptap1(node_1, node_2);
   inout node_1, node_2;
   electrical node_1, node_2;
 
+  parameter integer _rdist_seed = 0;
+
   parameter real r = 262.8;
   parameter real w = 0.78e-6;
   parameter real l = 0.78e-6;
@@ -14,6 +16,8 @@ module ntap1(node_1, node_2);
   inout node_1, node_2;
   electrical node_1, node_2;
 
+  parameter integer _rdist_seed = 0;
+
   parameter real r = 262.8;
   parameter real w = 0.78e-6;
   parameter real l = 0.78e-6;
@@ -23,6 +27,8 @@ endmodule
 module Rparasitic(node_1, node_2);
   inout node_1, node_2;
   electrical node_1, node_2;
+
+  parameter integer _rdist_seed = 0;
 
   parameter real r = 0;
   parameter real w = 0;
@@ -35,6 +41,8 @@ endmodule
 module rsil(node_1, node_2, node_bn);
   inout node_1, node_2, node_bn;
   electrical node_1, node_2, node_bn;
+
+  parameter integer _rdist_seed = 0;
 
   parameter real w = 0.5e-6;
   parameter real l = 0.5e-6;
@@ -109,6 +117,8 @@ module rhigh(node_1, node_2, node_bn);
   inout node_1, node_2, node_bn;
   electrical node_1, node_2, node_bn;
 
+  parameter integer _rdist_seed = 0;
+
   parameter real w = 0.5e-6;
   parameter real l = 0.96e-6;
   parameter real mm_ok = 1;
@@ -140,7 +150,7 @@ module rhigh(node_1, node_2, node_bn);
     .tc2(2.1e-6),
     .a1(a),
     .trise(trise),
-    .dfinf(1e-4+1e-15),
+    .dfinf(1e-4),
     .gthp(2e-6),
     .cp(cpx),
     .gth0(1e-12),
@@ -182,6 +192,8 @@ module rppd(node_1, node_2, node_bn);
   inout node_1, node_2, node_bn;
   electrical node_1, node_2, node_bn;
 
+  parameter integer _rdist_seed = 0;
+
   parameter real w = 0.5e-6;
   parameter real l = 0.5e-6;
   parameter real mm_ok = 1;
@@ -217,13 +229,13 @@ module rppd(node_1, node_2, node_bn);
     .cp(cpx),
     .gth0(1e-12),
     .cth0(0),
-    .nsmm_rsh((1)),
+    .nsmm_rsh((((1 <= 0) || ((mm_ok != 1 ? 0 : 1) <= 0) ? 1 : $rdist_normal(_rdist_seed, 1, (1 * 1) / (mm_ok != 1 ? 0 : 1))))),
     .bfn(0.9963),
     .gtha(6e-6),
     .sw_mman(1),
     .ca(cax),
     .gthc(1e-12),
-    .nsmm_w((1)),
+    .nsmm_w((((1 <= 0) || ((mm_ok != 1 ? 0 : 1) <= 0) ? 1 : $rdist_normal(_rdist_seed, 1, (1 * 1) / (mm_ok != 1 ? 0 : 1))))),
     .ctha(594e-15),
     .sw_et(sw_et),
     .rc(rz),
@@ -239,7 +251,7 @@ module rppd(node_1, node_2, node_bn);
     .cthp(0),
     .smm_rsh(1.5),
     .cthc(0),
-    .nsmm_l((1)),
+    .nsmm_l((((1 <= 0) || ((mm_ok != 1 ? 0 : 1) <= 0) ? 1 : $rdist_normal(_rdist_seed, 1, (1 * 1) / (mm_ok != 1 ? 0 : 1))))),
     .smm_w(0.01),
     .dp(1000),
     .tc1rc(-950e-6),
