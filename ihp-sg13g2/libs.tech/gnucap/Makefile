@@ -57,19 +57,19 @@ plugins/mosvar.cc: ../verilog-a/mosvar/mosvar.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
 
 plugins/cornerMOSlv_%.cc: models/cornerMOSlv.va
-	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D mc_ok=1 -o $@ --cc $<
+	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D "mc_ok 1" -o $@ --cc $<
 
 plugins/cornerMOShv_%.cc: models/cornerMOShv.va
-	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D mc_ok=1 -o $@ --cc $<
+	gnucap-mg-vams $(GCMG_FLAGS) -D mos_$* -D "mc_ok 1" -o $@ --cc $<
 
 plugins/cornerCAP_%.cc: models/cornerCAP.va
-	gnucap-mg-vams $(GCMG_FLAGS) -D cap_$* -o $@ --cc $<
+	gnucap-mg-vams $(GCMG_FLAGS) -D cap_$* -D "mc_ok 1" -o $@ --cc $<
 
 plugins/cornerHBT_%.cc: models/cornerHBT.va
-	gnucap-mg-vams $(GCMG_FLAGS) -D hbt_$* -o $@ --cc $<
+	gnucap-mg-vams $(GCMG_FLAGS) -D hbt_$* -D "mc_ok 1" -o $@ --cc $<
 
 plugins/cornerRES_%.cc: models/cornerRES.va
-	gnucap-mg-vams $(GCMG_FLAGS) -D res_$* -o $@ --cc $<
+	gnucap-mg-vams $(GCMG_FLAGS) -D res_$* -D "mc_ok 1" -o $@ --cc $<
 
 plugins/%.cc: models/%.va
 	gnucap-mg-vams $(GCMG_FLAGS) -o $@ --cc $<
