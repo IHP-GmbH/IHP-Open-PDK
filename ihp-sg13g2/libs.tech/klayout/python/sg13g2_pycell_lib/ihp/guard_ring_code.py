@@ -206,7 +206,7 @@ def generate_guard_ring(dlo_gen: DloGen,
     draw_contacted_ring(xl, yb, xr, yt, wguard_met1)
 
     if guard_ring_type == 'nwell':
-        draw_well_box(nwell, xl, yb, xr, yt, ndiff_over)
+        draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over))
         draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
         draw_ring(nbulay, xl, yb, xr, yt, wguard_active, nbulay_over)
     # elif guard_ring_type == 'dnwell':
