@@ -69,7 +69,7 @@ This document summarizes all pull requests related to `spiceprefix` and `lvsform
 
 2. **3-Terminal Devices Problem** (@d-m-bailey, @RTimothyEdwards):
    - Magic extraction with `lvs` variant doesn't support 3-terminal capacitors/resistors and 4-terminal bipolar devices
-   - CDL format for 3-terminal resistors/capacitors: `C0 TOP BOTTOM rfcmin $SUB=VSS`
+   - CDL format for 3-terminal resistors/capacitors: `C0 TOP BOTTOM rfcmim $SUB=VSS`
    - This syntax violates standard SPICE and creates unsimulatable netlists
    - KLayout has special processing for these devices, but other tools may break
 
