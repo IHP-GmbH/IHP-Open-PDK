@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IHP SG13CMOS5L Layer Editor</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --accent: #e94560;
+            --accent-hover: #ff6b6b;
+            --success: #4ecca3;
+            --warning: #ffc107;
+            --border: #2a2a4a;
+            --excluded-bg: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--bg-primary);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #3db892;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-panel {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: var(--accent);
+        }
+
+        .status-dot.loading {
+            background: var(--warning);
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .file-status {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .file-status .loaded {
+            color: var(--success);
+        }
+
+        .file-status .error {
+            color: var(--accent);
+        }
+
+        .actions-panel {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .actions-panel .btn {
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .actions-panel .btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-value {
+            font-weight: 600;
+        }
+
+        .stat-value.included {
+            color: var(--success);
+        }
+
+        .stat-value.excluded {
+            color: var(--accent);
+        }
+
+        .filters {
+            margin-bottom: 1rem;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .layer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .layer-table th,
+        .layer-table td {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .layer-table th {
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.85rem;
+        }
+
+        .layer-table th:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .layer-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .layer-row:hover {
+            background: var(--bg-secondary);
+        }
+
+        .layer-row.excluded {
+            background: var(--excluded-bg);
+            opacity: 0.6;
+        }
+
+        .layer-row.excluded:hover {
+            opacity: 0.8;
+        }
+
+        .layer-row.expanded {
+            background: var(--bg-tertiary);
+        }
+
+        .expand-icon {
+            display: inline-block;
+            width: 16px;
+            transition: transform 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .layer-row.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .datatype-row {
+            background: var(--bg-secondary);
+            font-size: 0.85rem;
+        }
+
+        .datatype-row td {
+            padding: 0.4rem 0.75rem;
+            padding-left: 2.5rem;
+            color: var(--text-secondary);
+        }
+
+        .datatype-row.hidden {
+            display: none;
+        }
+
+        .color-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            display: inline-block;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .status-badge.included {
+            background: rgba(78, 204, 163, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.excluded {
+            background: rgba(233, 69, 96, 0.2);
+            color: var(--accent);
+        }
+
+        .status-badge:hover {
+            opacity: 0.8;
+        }
+
+        .loading-state, .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .error-state {
+            color: var(--accent);
+        }
+
+        .loading-state h2, .error-state h2 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .layer-name {
+            font-weight: 500;
+        }
+
+        .datatype-count {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .output-panel {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .output-panel pre {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .output-panel .success {
+            color: var(--success);
+        }
+
+        .output-panel .error {
+            color: var(--accent);
+        }
+
+        .modified-indicator {
+            color: var(--warning);
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>IHP SG13CMOS5L Layer Editor<span id="modifiedIndicator" class="modified-indicator" style="display: none;">*</span></h1>
+        <div class="header-actions">
+            <span id="connectionStatus" class="status-indicator">
+                <span class="status-dot loading"></span>
+                <span>Connecting...</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="status-panel">
+                <h3>File Status</h3>
+                <div class="file-status" id="fileStatus">
+                    <div>Full PDK: <span id="fullPdkStatus">Loading...</span></div>
+                    <div>Slim PDK: <span id="slimPdkStatus">Loading...</span></div>
+                </div>
+            </div>
+
+            <div class="actions-panel">
+                <h3>Actions</h3>
+                <button class="btn btn-primary" id="saveBtn" onclick="saveSlimPdk()" disabled>
+                    <span>Save Changes</span>
+                </button>
+                <button class="btn btn-success" id="generateBtn" onclick="generateFiles()" disabled>
+                    <span>Generate KLayout Files</span>
+                </button>
+                <button class="btn btn-secondary" onclick="reloadData()">
+                    <span>Reload Data</span>
+                </button>
+            </div>
+
+            <div id="outputPanel" class="output-panel" style="display: none;">
+                <h3>Output</h3>
+                <pre id="outputText"></pre>
+            </div>
+
+            <div class="stats" id="stats">
+                <h3 style="margin-bottom: 0.75rem;">Statistics</h3>
+                <div class="stat-row">
+                    <span>Full PDK Layers:</span>
+                    <span class="stat-value" id="statFullLayers">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Total Datatypes:</span>
+                    <span class="stat-value" id="statTotalDatatypes">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Included in Slim:</span>
+                    <span class="stat-value included" id="statIncluded">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Excluded:</span>
+                    <span class="stat-value excluded" id="statExcluded">-</span>
+                </div>
+            </div>
+
+            <div class="filters">
+                <h3>Filters</h3>
+                <input type="text" class="filter-input" id="searchInput" placeholder="Search by name or Layer#..." oninput="renderTable()">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+                    <button class="filter-btn" data-filter="included" onclick="setFilter('included')">Included</button>
+                    <button class="filter-btn" data-filter="excluded" onclick="setFilter('excluded')">Excluded</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="loading-state" id="loadingState">
+                <h2>Loading...</h2>
+                <p>Connecting to server and loading layer data...</p>
+            </div>
+
+            <div class="error-state" id="errorState" style="display: none;">
+                <h2>Connection Error</h2>
+                <p id="errorMessage">Could not connect to the layer editor server.</p>
+                <p style="margin-top: 1rem;">
+                    Make sure the server is running:<br>
+                    <code>python layer_editor_server.py</code>
+                </p>
+            </div>
+
+            <table class="layer-table" id="layerTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th onclick="sortTable('layer')" style="width: 80px;">Layer#</th>
+                        <th onclick="sortTable('name')">Name</th>
+                        <th style="width: 100px;">Datatypes</th>
+                        <th onclick="sortTable('status')" style="width: 100px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="layerTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let fullPdkData = null;
+        let slimPdkLayers = new Set();
+        let originalSlimPdkLayers = new Set();
+        let currentFilter = 'all';
+        let currentSort = { column: 'layer', ascending: true };
+        let expandedLayers = new Set();
+        let isModified = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+
+        async function loadData() {
+            setConnectionStatus('loading', 'Connecting...');
+            showState('loading');
+
+            try {
+                // Load both files in parallel
+                const [fullPdkResponse, slimPdkResponse] = await Promise.all([
+                    fetch('/api/full-pdk'),
+                    fetch('/api/slim-pdk')
+                ]);
+
+                if (!fullPdkResponse.ok) {
+                    throw new Error('Failed to load Full PDK JSON');
+                }
+
+                fullPdkData = await fullPdkResponse.json();
+                document.getElementById('fullPdkStatus').innerHTML =
+                    `<span class="loaded">${Object.keys(fullPdkData.layers).length} layers</span>`;
+
+                if (slimPdkResponse.ok) {
+                    const slimData = await slimPdkResponse.json();
+                    slimPdkLayers = new Set(Object.keys(slimData.layers).map(k => parseInt(k)));
+                    originalSlimPdkLayers = new Set(slimPdkLayers);
+                    document.getElementById('slimPdkStatus').innerHTML =
+                        `<span class="loaded">${slimPdkLayers.size} layers selected</span>`;
+                } else {
+                    document.getElementById('slimPdkStatus').innerHTML =
+                        `<span class="error">Not found (will create new)</span>`;
+                }
+
+                setConnectionStatus('connected', 'Connected');
+                enableButtons();
+                updateStats();
+                renderTable();
+                showState('table');
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                setConnectionStatus('disconnected', 'Disconnected');
+                document.getElementById('errorMessage').textContent = error.message;
+                showState('error');
+            }
+        }
+
+        async function reloadData() {
+            if (isModified) {
+                if (!confirm('You have unsaved changes. Reload anyway?')) {
+                    return;
+                }
+            }
+            isModified = false;
+            updateModifiedIndicator();
+            await loadData();
+        }
+
+        async function saveSlimPdk() {
+            const saveBtn = document.getElementById('saveBtn');
+            const originalContent = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                const slimPdk = buildSlimPdkJson();
+
+                const response = await fetch('/api/slim-pdk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(slimPdk)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showOutput(`Saved successfully!\n${result.message}`, 'success');
+                    originalSlimPdkLayers = new Set(slimPdkLayers);
+                    isModified = false;
+                    updateModifiedIndicator();
+                } else {
+                    showOutput(`Error: ${result.message}`, 'error');
+                }
+
+            } catch (error) {
+                showOutput(`Error saving: ${error.message}`, 'error');
+            } finally {
+                saveBtn.innerHTML = originalContent;
+                saveBtn.disabled = false;
+            }
+        }
+
+        async function generateFiles() {
+            if (isModified) {
+                if (!confirm('You have unsaved changes. Save before generating?')) {
+                    return;
+                }
+                await saveSlimPdk();
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const originalContent = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<span class="spinner"></span> Generating...';
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                let output = '';
+                if (result.success) {
+                    output = 'Generation successful!\n\n';
+                    output += 'Generated files:\n';
+                    for (const file of result.generated_files) {
+                        output += `  - ${file.name} (${formatBytes(file.size)})\n`;
+                    }
+                    output += `\nOutput directory: ${result.output_dir}\n`;
+                    if (result.stdout) {
+                        output += '\nScript output:\n' + result.stdout;
+                    }
+                    showOutput(output, 'success');
+                } else {
+                    output = 'Generation failed!\n\n';
+                    if (result.stderr) {
+                        output += 'Error:\n' + result.stderr;
+                    }
+                    if (result.stdout) {
+                        output += '\nOutput:\n' + result.stdout;
+                    }
+                    showOutput(output, 'error');
+                }
+
+            } catch (error) {
+                showOutput(`Error: ${error.message}`, 'error');
+            } finally {
+                generateBtn.innerHTML = originalContent;
+                generateBtn.disabled = false;
+            }
+        }
+
+        function buildSlimPdkJson() {
+            return {
+                pdk_name: "ihp-sg13cmos5l",
+                description: "IHP SG13G2 CMOS-only PDK - Slim version with M1-M5 metal stack",
+                base_pdk: "ihp-sg13g2",
+                layer_count: slimPdkLayers.size,
+                notes: [
+                    "This is an editable file - modify layer selection using layer_editor.html",
+                    "Run generate_layer_files.py after modifications to regenerate KLayout files"
+                ],
+                layers: Object.fromEntries(
+                    Array.from(slimPdkLayers).map(layerNum => {
+                        const layerKey = layerNum.toString();
+                        return [layerKey, {
+                            ...fullPdkData.layers[layerKey],
+                            included: true
+                        }];
+                    })
+                ),
+                custom_dither_patterns: fullPdkData.custom_dither_patterns || [],
+                custom_line_styles: fullPdkData.custom_line_styles || []
+            };
+        }
+
+        function setConnectionStatus(status, text) {
+            const indicator = document.getElementById('connectionStatus');
+            indicator.innerHTML = `
+                <span class="status-dot ${status}"></span>
+                <span>${text}</span>
+            `;
+        }
+
+        function showState(state) {
+            document.getElementById('loadingState').style.display = state === 'loading' ? 'block' : 'none';
+            document.getElementById('errorState').style.display = state === 'error' ? 'block' : 'none';
+            document.getElementById('layerTable').style.display = state === 'table' ? 'table' : 'none';
+        }
+
+        function enableButtons() {
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+        }
+
+        function showOutput(text, type) {
+            const panel = document.getElementById('outputPanel');
+            const pre = document.getElementById('outputText');
+            panel.style.display = 'block';
+            pre.className = type;
+            pre.textContent = text;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function updateStats() {
+            if (!fullPdkData) return;
+
+            const totalLayers = Object.keys(fullPdkData.layers).length;
+            let totalDatatypes = 0;
+            for (const layer of Object.values(fullPdkData.layers)) {
+                totalDatatypes += Object.keys(layer.datatypes).length;
+            }
+
+            const includedCount = slimPdkLayers.size;
+            const excludedCount = totalLayers - includedCount;
+
+            document.getElementById('statFullLayers').textContent = totalLayers;
+            document.getElementById('statTotalDatatypes').textContent = totalDatatypes;
+            document.getElementById('statIncluded').textContent = includedCount;
+            document.getElementById('statExcluded').textContent = excludedCount;
+        }
+
+        function updateModifiedIndicator() {
+            document.getElementById('modifiedIndicator').style.display = isModified ? 'inline' : 'none';
+        }
+
+        function checkModified() {
+            // Check if current selection differs from original
+            if (slimPdkLayers.size !== originalSlimPdkLayers.size) {
+                isModified = true;
+            } else {
+                isModified = false;
+                for (const layer of slimPdkLayers) {
+                    if (!originalSlimPdkLayers.has(layer)) {
+                        isModified = true;
+                        break;
+                    }
+                }
+            }
+            updateModifiedIndicator();
+        }
+
+        function renderTable() {
+            if (!fullPdkData) return;
+
+            const tbody = document.getElementById('layerTableBody');
+            tbody.innerHTML = '';
+
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let layers = Object.entries(fullPdkData.layers).map(([layerNum, data]) => ({
+                layerNum: parseInt(layerNum),
+                name: data.name,
+                datatypes: data.datatypes,
+                included: slimPdkLayers.has(parseInt(layerNum))
+            }));
+
+            // Apply filter
+            layers = layers.filter(layer => {
+                const matchesSearch = !searchTerm ||
+                    layer.name.toLowerCase().includes(searchTerm) ||
+                    layer.layerNum.toString().includes(searchTerm);
+
+                const matchesFilter = currentFilter === 'all' ||
+                    (currentFilter === 'included' && layer.included) ||
+                    (currentFilter === 'excluded' && !layer.included);
+
+                return matchesSearch && matchesFilter;
+            });
+
+            // Sort
+            layers.sort((a, b) => {
+                let comparison = 0;
+                switch (currentSort.column) {
+                    case 'layer':
+                        comparison = a.layerNum - b.layerNum;
+                        break;
+                    case 'name':
+                        comparison = a.name.localeCompare(b.name);
+                        break;
+                    case 'status':
+                        comparison = (a.included ? 0 : 1) - (b.included ? 0 : 1);
+                        break;
+                }
+                return currentSort.ascending ? comparison : -comparison;
+            });
+
+            for (const layer of layers) {
+                const isExpanded = expandedLayers.has(layer.layerNum);
+                const datatypeCount = Object.keys(layer.datatypes).length;
+
+                const row = document.createElement('tr');
+                row.className = `layer-row ${layer.included ? '' : 'excluded'} ${isExpanded ? 'expanded' : ''}`;
+                row.onclick = () => toggleExpand(layer.layerNum);
+
+                row.innerHTML = `
+                    <td><span class="expand-icon">&#9654;</span></td>
+                    <td><strong>${layer.layerNum}</strong></td>
+                    <td>
+                        <span class="layer-name">${layer.name}</span>
+                        <span class="datatype-count">(${datatypeCount} datatypes)</span>
+                    </td>
+                    <td>${datatypeCount}</td>
+                    <td>
+                        <span class="status-badge ${layer.included ? 'included' : 'excluded'}"
+                              onclick="event.stopPropagation(); toggleIncluded(${layer.layerNum})">
+                            ${layer.included ? 'INCLUDED' : 'EXCLUDED'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                // Datatype sub-rows
+                for (const [dtNum, dtData] of Object.entries(layer.datatypes)) {
+                    const dtRow = document.createElement('tr');
+                    dtRow.className = `datatype-row ${isExpanded ? '' : 'hidden'}`;
+                    dtRow.dataset.layer = layer.layerNum;
+
+                    const fillColor = dtData.fill_color || '#888888';
+                    const frameColor = dtData.frame_color || '#888888';
+
+                    dtRow.innerHTML = `
+                        <td></td>
+                        <td>${dtNum}</td>
+                        <td>${dtData.purpose || 'unknown'}</td>
+                        <td>
+                            <div class="color-cell">
+                                <span class="color-preview" style="background-color: ${fillColor}" title="Fill: ${fillColor}"></span>
+                                <span class="color-preview" style="background-color: ${frameColor}" title="Frame: ${frameColor}"></span>
+                            </div>
+                        </td>
+                        <td></td>
+                    `;
+                    tbody.appendChild(dtRow);
+                }
+            }
+        }
+
+        function toggleExpand(layerNum) {
+            if (expandedLayers.has(layerNum)) {
+                expandedLayers.delete(layerNum);
+            } else {
+                expandedLayers.add(layerNum);
+            }
+            renderTable();
+        }
+
+        function toggleIncluded(layerNum) {
+            if (slimPdkLayers.has(layerNum)) {
+                slimPdkLayers.delete(layerNum);
+            } else {
+                slimPdkLayers.add(layerNum);
+            }
+            checkModified();
+            updateStats();
+            renderTable();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            renderTable();
+        }
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort.column = column;
+                currentSort.ascending = true;
+            }
+            renderTable();
+        }
+
+        // Warn before leaving with unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (isModified) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
