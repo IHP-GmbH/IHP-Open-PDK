@@ -43,7 +43,15 @@ import traceback
 
 moduleNames = [
         'nmos_code',
-        'pmos_code'
+        'pmos_code',
+        # Additional devices for slim PDK
+        'SVaricap_code',   # Symlink - no modification needed
+        'rsil_code',       # Symlink - silicided resistor
+        'rppd_code',       # Symlink - p+ poly resistor
+        'rhigh_code',      # Symlink - high-R poly resistor
+        'sealring_code',   # Modified - M1-M5 only
+        'via_stack_code',  # Modified - M1-M5 only
+        'bondpad_code',    # Modified - Metal5 top
 ]
 
 def getProcessNames():
