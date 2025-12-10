@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 Parse KLayout .lyp files and generate JSON layer databases.
-Creates three outputs:
+Creates two outputs:
   - ihp-sg13g2_layers.json: Full PDK layer database
   - ihp-sg13cmos5l_layers.json: Slim PDK (CMOS only, M1-M5)
-  - removed_layers.json: Tracking of removed layers with reasons
 """
 
 import json
@@ -45,44 +44,6 @@ KEEP_LAYERS = {
     160, # NoMetFiller - No metal filler
     189, # prBoundary - PR boundary
 }
-
-# Removal categories for tracking
-REMOVAL_CATEGORIES = {
-    # HBT/Bipolar device layers
-    "hbt": {3, 13, 33, 35, 55, 90, 91, 101, 139, 152, 156},
-    # Top metals (M6+, TopMetal1/2, TopVia1/2)
-    "top_metal": {125, 126, 133, 134},
-    # Photonics/waveguides
-    "photonics": {78, 79, 85, 86, 87, 88, 89, 109, 110, 118, 119},
-    # Advanced passives (inductors, MIM caps)
-    "advanced_passives": {27, 36, 69, 70, 129},
-    # Graphene
-    "graphene": {97},
-    # 3D/Bonding
-    "bonding_3d": {72, 73, 74, 75, 76, 77},
-    # Back metals
-    "back_metal": {20, 23},
-    # Back-side processing
-    "backside": {39, 41, 51, 52, 54},
-    # Extended implants
-    "extended_implants": {15, 45, 92, 112, 113, 114, 115, 116, 117, 124, 127, 131},
-    # Design markers/config
-    "design_markers": {16, 26, 48, 60, 62, 63, 68, 93, 98, 99, 111,
-                       135, 136, 137, 138, 142, 143, 145, 147, 148, 149,
-                       150, 151, 153, 154, 155, 157, 159, 190,
-                       191, 192, 193, 194, 257},
-    # Memory layers
-    "memory": {25},
-}
-
-
-def get_removal_category(gds_layer: int) -> str:
-    """Get the removal category for a GDS layer number."""
-    for category, layers in REMOVAL_CATEGORIES.items():
-        if gds_layer in layers:
-            return category
-    return "other"
-
 
 def parse_source(source: str) -> tuple:
     """Parse source string like '1/0' into (layer, datatype)."""
@@ -218,56 +179,6 @@ def create_slim_pdk_json(parsed_data: dict) -> dict:
     }
 
 
-def create_removed_layers_json(parsed_data: dict) -> dict:
-    """Create tracking file for removed layers."""
-    removed = {}
-
-    for gds_key, layer_data in parsed_data["layers"].items():
-        gds_layer = int(gds_key)
-        if gds_layer not in KEEP_LAYERS:
-            category = get_removal_category(gds_layer)
-            removed[gds_key] = {
-                "name": layer_data["name"],
-                "gds_layer": gds_layer,
-                "category": category,
-                "datatype_count": len(layer_data["datatypes"]),
-                "datatypes": list(layer_data["datatypes"].keys())
-            }
-
-    # Group by category for summary
-    by_category = {}
-    for gds_key, data in removed.items():
-        cat = data["category"]
-        if cat not in by_category:
-            by_category[cat] = []
-        by_category[cat].append({
-            "gds_layer": data["gds_layer"],
-            "name": data["name"]
-        })
-
-    return {
-        "description": "Tracking of layers removed from slim PDK",
-        "generated_at": datetime.now().isoformat(),
-        "total_removed": len(removed),
-        "by_category": by_category,
-        "category_descriptions": {
-            "hbt": "HBT/Bipolar device layers",
-            "top_metal": "Top metal layers (M6+, TopMetal1/2, TopVia1/2)",
-            "photonics": "Photonics and silicon waveguide layers",
-            "advanced_passives": "Advanced passives (inductors, MIM capacitors)",
-            "graphene": "Graphene device layers",
-            "bonding_3d": "3D integration and bonding layers",
-            "back_metal": "Back metal layers",
-            "backside": "Back-side processing layers",
-            "extended_implants": "Extended implant layers",
-            "design_markers": "Design markers and configuration layers",
-            "memory": "Memory-specific layers",
-            "other": "Other removed layers"
-        },
-        "removed_layers": removed
-    }
-
-
 def main():
     # Paths
     script_dir = Path(__file__).parent
@@ -300,13 +211,6 @@ def main():
         json.dump(slim_json, f, indent=2)
     print(f"Created {slim_json_path} with {slim_json['layer_count']} layers")
 
-    # Create removed layers JSON
-    removed_json = create_removed_layers_json(parsed_data)
-    removed_json_path = output_dir / "removed_layers.json"
-    with open(removed_json_path, 'w') as f:
-        json.dump(removed_json, f, indent=2)
-    print(f"Created {removed_json_path} with {removed_json['total_removed']} removed layers")
-
     # Summary
     kept_datatypes = sum(
         len(l["datatypes"]) for l in slim_json["layers"].values()
@@ -314,7 +218,6 @@ def main():
     print(f"\nSummary:")
     print(f"  Full PDK: {total_layers} layers, {total_datatypes} variants")
     print(f"  Slim PDK: {slim_json['layer_count']} layers, {kept_datatypes} variants")
-    print(f"  Removed:  {removed_json['total_removed']} layers")
 
 
 if __name__ == "__main__":

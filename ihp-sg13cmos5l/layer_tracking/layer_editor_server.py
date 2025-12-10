@@ -33,7 +33,6 @@ KLAYOUT_TECH_DIR = SCRIPT_DIR.parent / "libs.tech" / "klayout" / "tech"
 # JSON files in this directory
 FULL_PDK_JSON = SCRIPT_DIR / "ihp-sg13g2_layers.json"
 SLIM_PDK_JSON = SCRIPT_DIR / "ihp-sg13cmos5l_layers.json"
-REMOVED_JSON = SCRIPT_DIR / "removed_layers.json"
 
 # Generation script
 GENERATE_SCRIPT = SCRIPTS_DIR / "generate_layer_files.py"
@@ -56,8 +55,6 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json_file(FULL_PDK_JSON)
         elif path == "/api/slim-pdk":
             self._send_json_file(SLIM_PDK_JSON)
-        elif path == "/api/removed":
-            self._send_json_file(REMOVED_JSON)
         elif path == "/api/status":
             self._send_status()
         elif path == "/" or path == "/index.html":
@@ -107,10 +104,6 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
                 "slim_pdk": {
                     "path": str(SLIM_PDK_JSON.relative_to(SCRIPT_DIR)),
                     "exists": SLIM_PDK_JSON.exists()
-                },
-                "removed": {
-                    "path": str(REMOVED_JSON.relative_to(SCRIPT_DIR)),
-                    "exists": REMOVED_JSON.exists()
                 }
             },
             "scripts": {

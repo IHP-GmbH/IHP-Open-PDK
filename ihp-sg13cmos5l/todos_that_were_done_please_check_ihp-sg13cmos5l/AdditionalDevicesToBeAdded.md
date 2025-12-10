@@ -1,6 +1,5 @@
 # Additional Devices Added to Slim PDK
 
-## Phase 6: Initial Devices
 
 - [x] **rsil** - Silicided resistor (CMOS-compatible, M1-only)
   - File: `ihp/rsil_code.py` (symlink to full PDK)
@@ -11,9 +10,6 @@
 - [x] **rhigh** - High-R poly resistor (CMOS-compatible, M1-only)
   - File: `ihp/rhigh_code.py` (symlink to full PDK)
 
-## Phase 8: Additional CMOS-Compatible Devices
-
-### Substrate Taps (Symlinks)
 - [x] **ntap1** - N-tap (NWell contact)
   - Layers: M1, Activ, Cont, NWell, nBuLay
   - File: `ihp/ntap1_code.py` (symlink)
@@ -22,7 +18,6 @@
   - Layers: M1, Activ, pSD, Cont, Substrate
   - File: `ihp/ptap1_code.py` (symlink)
 
-### HV MOSFETs (Symlinks)
 - [x] **nmosHV** - High voltage NMOS
   - Layers: M1, Activ, GatPoly, Cont, ThickGateOx
   - File: `ihp/nmosHV_code.py` (symlink)
@@ -31,7 +26,6 @@
   - Layers: M1, Activ, GatPoly, pSD, NWell, ThickGateOx
   - File: `ihp/pmosHV_code.py` (symlink)
 
-### Antenna Diodes (Symlinks)
 - [x] **dantenna** - N-type antenna diode
   - Layers: M1, Activ, Cont, pSD, Recog
   - File: `ihp/dantenna_code.py` (symlink)
@@ -40,12 +34,10 @@
   - Layers: M1, Activ, pSD, Cont, NWell, Recog
   - File: `ihp/dpantenna_code.py` (symlink)
 
-### ESD Protection (Symlink)
 - [x] **esd** - ESD protection structures
   - Layers: M1-M3, Via1-2, Activ, GatPoly, Cont
   - File: `ihp/esd_code.py` (symlink)
 
-### RF MOSFETs (Symlinks)
 - [x] **rfnmos** - RF NMOS
   - Layers: M1-M2, Via1, Activ, GatPoly, Cont
   - File: `ihp/rfnmos_code.py` (symlink)
@@ -62,7 +54,6 @@
   - Layers: M1-M2, Via1, pSD, NWell, ThickGateOx
   - File: `ihp/rfpmosHV_code.py` (symlink)
 
-### Utility (Modified Copy)
 - [x] **NoFillerStack** - No filler utility (M1-M5 only)
   - Modified: Removed TM1/TM2 options
   - File: `ihp/NoFillerStack_code.py` (modified copy)
