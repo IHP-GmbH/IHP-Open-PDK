@@ -52,6 +52,19 @@ moduleNames = [
         'sealring_code',   # Modified - M1-M5 only
         'via_stack_code',  # Modified - M1-M5 only
         'bondpad_code',    # Modified - Metal5 top
+        # Phase 8 additions:
+        'ntap1_code',          # Symlink - N-tap (NWell contact)
+        'ptap1_code',          # Symlink - P-tap (substrate contact)
+        'nmosHV_code',         # Symlink - HV NMOS
+        'pmosHV_code',         # Symlink - HV PMOS
+        'dantenna_code',       # Symlink - N-type antenna diode
+        'dpantenna_code',      # Symlink - P-type antenna diode
+        'esd_code',            # Symlink - ESD protection
+        'rfnmos_code',         # Symlink - RF NMOS
+        'rfnmosHV_code',       # Symlink - RF NMOS HV
+        'rfpmos_code',         # Symlink - RF PMOS
+        'rfpmosHV_code',       # Symlink - RF PMOS HV
+        'NoFillerStack_code',  # Modified - No filler utility (M1-M5)
 ]
 
 def getProcessNames():

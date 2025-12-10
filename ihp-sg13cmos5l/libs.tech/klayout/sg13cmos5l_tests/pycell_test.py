@@ -51,6 +51,27 @@ pcellNtap1 = layout.create_cell("ntap1", "SG13_dev", {})
 # Bondpad (Metal5 top)
 pcellBondpad = layout.create_cell("bondpad", "SG13_dev", {})
 
+# Phase 8: Additional CMOS-compatible devices
+# HV MOSFETs
+pcellNmosHV = layout.create_cell("nmosHV", "SG13_dev", {})
+pcellPmosHV = layout.create_cell("pmosHV", "SG13_dev", {})
+
+# Antenna diodes
+pcellDantenna = layout.create_cell("dantenna", "SG13_dev", {})
+pcellDpantenna = layout.create_cell("dpantenna", "SG13_dev", {})
+
+# ESD protection
+pcellEsd = layout.create_cell("esd", "SG13_dev", {})
+
+# RF MOSFETs
+pcellRfnmos = layout.create_cell("rfnmos", "SG13_dev", {})
+pcellRfnmosHV = layout.create_cell("rfnmosHV", "SG13_dev", {})
+pcellRfpmos = layout.create_cell("rfpmos", "SG13_dev", {})
+pcellRfpmosHV = layout.create_cell("rfpmosHV", "SG13_dev", {})
+
+# No Filler Stack utility
+pcellNoFillerStack = layout.create_cell("NoFillerStack", "SG13_dev", {})
+
 # Sealring (M1-M5 only)
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 
@@ -73,6 +94,24 @@ top.insert(pya.DCellInstArray(pcellNtap1, pya.DTrans(pya.DVector(8, 20))))
 
 # Row 4: Varicap
 top.insert(pya.DCellInstArray(pcellSVaricap, pya.DTrans(pya.DVector(0, 30))))
+
+# Row 5: HV MOSFETs
+top.insert(pya.DCellInstArray(pcellNmosHV, pya.DTrans(pya.DVector(0, 40))))
+top.insert(pya.DCellInstArray(pcellPmosHV, pya.DTrans(pya.DVector(4, 40))))
+
+# Row 6: Antenna diodes
+top.insert(pya.DCellInstArray(pcellDantenna, pya.DTrans(pya.DVector(0, 50))))
+top.insert(pya.DCellInstArray(pcellDpantenna, pya.DTrans(pya.DVector(4, 50))))
+
+# Row 7: RF MOSFETs
+top.insert(pya.DCellInstArray(pcellRfnmos, pya.DTrans(pya.DVector(0, 60))))
+top.insert(pya.DCellInstArray(pcellRfnmosHV, pya.DTrans(pya.DVector(10, 60))))
+top.insert(pya.DCellInstArray(pcellRfpmos, pya.DTrans(pya.DVector(20, 60))))
+top.insert(pya.DCellInstArray(pcellRfpmosHV, pya.DTrans(pya.DVector(30, 60))))
+
+# Row 8: ESD and NoFillerStack
+top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(0, 80))))
+top.insert(pya.DCellInstArray(pcellNoFillerStack, pya.DTrans(pya.DVector(20, 80))))
 
 # Large structures
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 0))))
