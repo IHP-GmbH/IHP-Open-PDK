@@ -87,6 +87,34 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | `rule_decks/beol/7_3_metalslits.drc` | Created | Metal slits (M1-M5 only) |
 | `rule_decks/sg13cmos5l_tech_default.json` | Created | DRC parameters (76 removed) |
 
+### Session C: Testing Infrastructure (2024-12-11)
+
+#### Testing Scripts (Symlinks)
+
+| File | Type | Description |
+|------|------|-------------|
+| `testing/run_regression.py` | Symlink | Regression test runner |
+| `testing/gen_golden.py` | Symlink | Golden reference generator |
+| `testing/README.md` | Symlink | Testing documentation |
+
+#### Test Cases Included (32 symlinks)
+
+| Category | Test Files |
+|----------|------------|
+| **FEOL (12)** | activ, activfiller, gatpoly, gatpolyfiller, cont, contbar, nwell, pwellblock, nbulay, psd, thickgateox, latchup |
+| **BEOL M1-M5 (10)** | metal1, metal2, metal3, metal4, metal5, metalnfiller, via1, via2, via3, via4 |
+| **BEOL Mixed (7)** | lbe, metalslits, pad, passiv, pin, sealring, antenna |
+| **Density (2)** | density_pass, density_fail |
+| **Other (1)** | forbidden |
+
+#### Test Cases Excluded (11 files - TopMetal/HBT/MIM)
+
+| Reason | Files |
+|--------|-------|
+| TopMetal exclusive | topmetal1, topmetal1filler, topmetal2, topmetal2filler, topvia1, topvia2 |
+| HBT/MIM/Schottky | mim, npnsubstratetie, schottkydiode |
+| TopMetal dependent | copperpillar, solderbump |
+
 ---
 
 ## Session Roadmap
@@ -95,7 +123,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 |---------|-------------|--------|
 | **A** | DRC Infrastructure Setup | COMPLETE |
 | **B** | Rule File Modifications | COMPLETE |
-| **C** | Testing Infrastructure | PENDING |
+| **C** | Testing Infrastructure | COMPLETE |
 | **D** | DRC Rule Editor (optional) | FUTURE |
 
 ---

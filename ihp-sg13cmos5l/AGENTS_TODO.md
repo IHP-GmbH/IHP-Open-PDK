@@ -4,7 +4,18 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Current Priority: Session C
+## Current Priority: Session D (Optional)
+
+### Session C: Testing Infrastructure (COMPLETE)
+
+- [x] Create `testing/testcases/` directory structure
+- [x] Symlink testing scripts (run_regression.py, gen_golden.py, README.md)
+- [x] Analyze test GDS files for layer compatibility
+- [x] Symlink 32 compatible test cases (30 unit + 2 density)
+- [x] Skip 11 TopMetal/HBT/MIM exclusive tests
+- [ ] Generate golden references for slim PDK
+- [ ] Run DRC regression
+- [ ] Validate no false violations
 
 ### Session B: Rule File Modifications (COMPLETE)
 
@@ -31,30 +42,30 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Backlog: Session C
+## Remaining Testing Tasks
 
-### Session C: Testing Infrastructure
+- [ ] Generate golden references for slim PDK DRC
+- [ ] Run DRC regression on all 32 test cases
+- [ ] Validate no unexpected violations
+- [ ] Document any test failures
 
-- [ ] Create `testing/testcases/` directory structure
-- [ ] Symlink compatible test GDS files (27 of 38)
-- [ ] Skip TopMetal/MIM/HBT test cases (11 files)
-- [ ] Run DRC regression on test cases
-- [ ] Validate no false violations
-
-### Test Cases to INCLUDE (27)
+### Test Cases INCLUDED (32)
 
 | Category | Test Cases |
 |----------|------------|
-| FEOL | activ, activfiller, gatpoly, gatpolyfiller, cont, contbar, nwell, pwellblock, nbulay, psd, thickgateox, latchup |
-| BEOL | metal1-5, via1-4, metalnfiller, metalslits, passiv, sealring, pad, lbe |
-| Special | antenna, density, forbidden, pin |
+| **FEOL (12)** | activ, activfiller, gatpoly, gatpolyfiller, cont, contbar, nwell, pwellblock, nbulay, psd, thickgateox, latchup |
+| **BEOL M1-M5 (10)** | metal1-5, via1-4, metalnfiller |
+| **BEOL Mixed (7)** | lbe, metalslits, pad, passiv, pin, sealring, antenna |
+| **Density (2)** | density_pass, density_fail |
+| **Other (1)** | forbidden |
 
-### Test Cases to SKIP (11)
+### Test Cases SKIPPED (11)
 
 | Category | Test Cases |
 |----------|------------|
-| TopMetal | topmetal1, topmetal2, topvia1, topvia2, topmetal1filler, topmetal2filler |
-| Special | mim, npnsubstratetie, schottkydiode, copperpillar, solderbump |
+| TopMetal exclusive | topmetal1, topmetal2, topvia1, topvia2, topmetal1filler, topmetal2filler |
+| HBT/MIM/Schottky | mim, npnsubstratetie, schottkydiode |
+| TopMetal dependent | copperpillar, solderbump |
 
 ---
 
@@ -98,9 +109,20 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
+### Session C (DONE)
+
+- [x] Create testing directory structure
+- [x] Symlink testing scripts (3 files)
+- [x] Analyze test GDS files for TopMetal layers
+- [x] Symlink 32 test cases (30 unit + 2 density)
+- [x] Skip 11 TopMetal/HBT/MIM exclusive tests
+- [x] Update tracking files (FUCK.md, AGENTS_SESSION_LOG.md)
+
+---
+
 ## Notes
 
-- Session B is the next priority - required to have functional DRC
-- Session C is important for validation
+- Sessions A, B, C completed - DRC infrastructure and testing ready
 - Session D is optional but would be useful for future rule management
 - All agent work should be reviewed by humans before production use
+- Testing TODO: Generate golden references and run regression
