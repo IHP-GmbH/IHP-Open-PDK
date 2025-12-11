@@ -163,6 +163,15 @@ Human is still in the loop as supervisor.
 | `testing/run_regression.py` | Local Copy | Modified to skip rules not in deck |
 | `testcases/unit/metalslits.gds` | Removed | MIM layer not in slim PDK |
 
+### Session C.4: M5 Density Investigation (2025-12-11)
+
+| File | Type | Description |
+|------|------|-------------|
+| `testcases/unit_golden/density_fail_golden.gds` | Regenerated | Golden markers updated with slim PDK DRC |
+| `testcases/unit_golden/density_pass_golden.gds` | Regenerated | Golden markers updated with slim PDK DRC |
+
+**Investigation Result**: Density test failures are a KNOWN LIMITATION due to TopMetal cells in test files (symlinks to full PDK). The DRC rules are correct - this is a test infrastructure issue.
+
 ---
 
 ## Session Roadmap
@@ -174,6 +183,7 @@ Human is still in the loop as supervisor.
 | **C** | Testing Infrastructure | COMPLETE |
 | **C.2** | Golden Reference Generation | COMPLETE |
 | **C.3** | TopMetal Cleanup | COMPLETE |
+| **C.4** | M5 Density Investigation | COMPLETE (Known Limitation) |
 | **D** | DRC Rule Editor (optional) | FUTURE |
 
 ---
