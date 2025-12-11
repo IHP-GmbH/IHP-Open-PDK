@@ -172,6 +172,22 @@ Human is still in the loop as supervisor.
 
 **Investigation Result**: Density test failures are a KNOWN LIMITATION due to TopMetal cells in test files (symlinks to full PDK). The DRC rules are correct - this is a test infrastructure issue.
 
+### Session C.5: Slim PDK Density Test Files (2025-12-11)
+
+| File | Type | Description |
+|------|------|-------------|
+| `testcases/unit/density/pass/density_pass.gds` | Local Copy | Full PDK copy with 6 TopMetal cells removed |
+| `testcases/unit/density/fail/density_fail.gds` | Local Copy | Full PDK copy with 6 TopMetal cells removed |
+| `testcases/unit_golden/density_fail_golden.gds` | Regenerated | Golden markers for edited test file |
+| `testcases/unit_golden/density_pass_golden.gds` | Regenerated | Golden markers for edited test file |
+
+**Cells Removed (6)**: TM1.c, TM1.d, TM2.c, TM2.d, Slt.i_TM1, Slt.i_TM2
+
+**Bug Found**: Density regression failures persist due to upstream bug in testing infrastructure:
+- `gen_golden.py` uses encounter-order datatypes
+- `run_regression.py` uses sorted-order datatypes for comparison
+- This mismatch affects all density rules (not specific to slim PDK)
+
 ---
 
 ## Session Roadmap
@@ -184,6 +200,7 @@ Human is still in the loop as supervisor.
 | **C.2** | Golden Reference Generation | COMPLETE |
 | **C.3** | TopMetal Cleanup | COMPLETE |
 | **C.4** | M5 Density Investigation | COMPLETE (Known Limitation) |
+| **C.5** | Slim PDK Density Test Files | COMPLETE (Upstream Bug Found) |
 | **D** | DRC Rule Editor (optional) | FUTURE |
 
 ---
@@ -194,9 +211,11 @@ Human is still in the loop as supervisor.
 
 2. **Modified Files**: Files marked as "Modified" or "Local Copy" have been changed to remove TopMetal/HBT references or use slim PDK paths.
 
-3. **Testing**: DRC regression passes for core CMOS rules (FEOL + BEOL M1-M5). TopMetal rules are now properly skipped. Some M5 density rule issues remain for investigation.
+3. **Testing**: DRC regression passes for core CMOS rules (FEOL + BEOL M1-M5). TopMetal rules are properly skipped. Density rules have regression failures due to upstream testing infrastructure bug (not DRC rule issues).
 
-4. **Review**: All code should be reviewed by humans familiar with DRC development and the IHP PDK.
+4. **Density Test Files**: Session C.5 created local copies of density test files with TopMetal cells removed. Discovered upstream bug in datatype ordering between gen_golden.py and run_regression.py.
+
+5. **Review**: All code should be reviewed by humans familiar with DRC development and the IHP PDK.
 
 ---
 
