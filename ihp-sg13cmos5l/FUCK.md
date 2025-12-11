@@ -1,0 +1,116 @@
+# FUCK.md
+## Files Under Code-agent's Kingdom
+
+> **DISCLAIMER**: This file tracks code and documentation generated or modified by AI code agents (Claude Code). This is a **work in progress** branch.
+
+**Human Orchestrator**: Mauricio Montanares
+
+---
+
+## What is this?
+
+This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Check) system for the IHP-SG13CMOS5L slim PDK. Most of this code was generated through agentic coding sessions using Claude Code.
+
+## Status
+
+| Status | Description |
+|--------|-------------|
+| **WIP** | Work in Progress - Not production ready |
+| **REVIEW NEEDED** | All agent-generated code should be reviewed by humans |
+| **TESTING REQUIRED** | DRC rules need validation against real designs |
+
+---
+
+## Files Generated/Modified by Code Agents
+
+### Session A: DRC Infrastructure Setup (2024-12-10)
+
+#### Created Files
+
+| File | Type | Description |
+|------|------|-------------|
+| `libs.tech/klayout/tech/drc/ihp-sg13cmos5l.drc` | Modified | Main DRC entry point (TopMetal removed) |
+| `libs.tech/klayout/tech/drc/run_drc.py` | Symlink | Python CLI runner |
+| `libs.tech/klayout/tech/drc/rule_decks/layers_def.drc` | Symlink | Layer definitions |
+| `libs.tech/klayout/tech/drc/rule_decks/antenna.drc` | Symlink | Antenna rules |
+| `libs.tech/klayout/tech/drc/rule_decks/density.drc` | Symlink | Density rules |
+| `libs.tech/klayout/tech/drc/rule_decks/forbidden/` | Symlink | Forbidden patterns |
+| `libs.tech/klayout/tech/drc/rule_decks/pin/` | Symlink | Pin rules |
+
+#### FEOL Rule Symlinks (12 files)
+| File | Status |
+|------|--------|
+| `rule_decks/feol/5_1_nwell.drc` | Symlink |
+| `rule_decks/feol/5_2_pwellblock.drc` | Symlink |
+| `rule_decks/feol/5_3_nbulay.drc` | Symlink |
+| `rule_decks/feol/5_5_activ.drc` | Symlink |
+| `rule_decks/feol/5_6_activfiller.drc` | Symlink |
+| `rule_decks/feol/5_7_thickgateox.drc` | Symlink |
+| `rule_decks/feol/5_8_gatpoly.drc` | Symlink |
+| `rule_decks/feol/5_9_gatpolyfiller.drc` | Symlink |
+| `rule_decks/feol/5_10_psd.drc` | Symlink |
+| `rule_decks/feol/5_14_cont.drc` | Symlink |
+| `rule_decks/feol/5_15_contbar.drc` | Symlink |
+| `rule_decks/feol/7_2_latchup.drc` | Symlink |
+
+#### BEOL Rule Symlinks (7 files)
+| File | Status |
+|------|--------|
+| `rule_decks/beol/5_16_metal1.drc` | Symlink |
+| `rule_decks/beol/5_17_metaln.drc` | Symlink |
+| `rule_decks/beol/5_18_metalnfiller.drc` | Symlink |
+| `rule_decks/beol/5_19_via1.drc` | Symlink |
+| `rule_decks/beol/5_20_vian.drc` | Symlink |
+| `rule_decks/beol/5_27_passiv.drc` | Symlink |
+| `rule_decks/beol/9_1_lbe.drc` | Symlink |
+
+### Documentation (2024-12-10)
+
+| File | Description |
+|------|-------------|
+| `drc_documentation/README.md` | Documentation index |
+| `drc_documentation/01_ARCHITECTURE_OVERVIEW.md` | DRC system architecture |
+| `drc_documentation/02_RULE_FILE_SYNTAX.md` | Rule writing syntax guide |
+| `drc_documentation/03_LAYER_DEFINITIONS.md` | Layer system documentation |
+| `drc_documentation/04_CREATING_NEW_RULES.md` | Guide for adding new rules |
+| `drc_documentation/05_QUICK_REFERENCE.md` | Quick reference card |
+
+---
+
+## Session Roadmap
+
+| Session | Description | Status |
+|---------|-------------|--------|
+| **A** | DRC Infrastructure Setup | COMPLETE |
+| **B** | Rule File Modifications | PENDING |
+| **C** | Testing Infrastructure | PENDING |
+| **D** | DRC Rule Editor (optional) | FUTURE |
+
+---
+
+## Important Notes
+
+1. **Symlinks**: Many rule files are symlinks to the full PDK (`ihp-sg13g2`). This keeps them in sync with upstream changes.
+
+2. **Modified Files**: Files marked as "Modified" have been changed to remove TopMetal/HBT references.
+
+3. **Testing**: The DRC rules have NOT been tested on actual designs yet. Testing is required before production use.
+
+4. **Review**: All code should be reviewed by humans familiar with DRC development and the IHP PDK.
+
+---
+
+## How to Contribute
+
+1. Review agent-generated code carefully
+2. Test DRC rules on real layouts
+3. Report issues in the appropriate tracking files
+4. Mark completed reviews in this file
+
+---
+
+## Contact
+
+For questions about this branch, refer to:
+- `AGENTS_SESSION_LOG.md` - Detailed session logs
+- `AGENTS_TODO.md` - Remaining tasks
