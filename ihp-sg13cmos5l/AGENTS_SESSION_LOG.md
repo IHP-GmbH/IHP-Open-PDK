@@ -89,25 +89,92 @@ None. All operations completed successfully.
 
 ## Session B: Rule File Modifications
 
-**Date**: TBD
-**Status**: PENDING
+**Date**: 2024-12-11
+**Agent**: Claude Code (Claude Opus 4.5)
+**Duration**: ~45 minutes
+**Status**: COMPLETE
 
-### Planned Work
+### Objective
 
-1. **`6_10_sealring.drc`**
-   - Line 85-87: Remove `topmetal1_drw`, `topmetal2_drw` from arrays
-   - Adjust metal stack to end at Metal5
+Modify BEOL rule files that reference TopMetal layers to work with Metal5 as the top layer, and create the slim PDK tech_default.json parameter file.
 
-2. **`6_9_pad.drc`**
-   - Lines 44-45, 64-67: Remove TM1/TM2 pad configurations
-   - Modify `Pad.i` rule for Metal5 top
+### Analysis Performed
 
-3. **`7_3_metalslits.drc`**
-   - Line 29: Remove `topmetal1_slit`, `topmetal2_slit` from array
+Before making changes, analyzed:
+1. **Slim PDK layer files** (`.lyp`, `.lyt`, `.map`) - confirmed M1-M5, Via1-4 only
+2. **Full PDK `layers_def.drc`** - identified all layer definitions including slit layers
+3. **Full PDK main entry** - found pad derivations using topmetal2_drw
+4. **Three target rule files** - identified all TopMetal references
 
-4. **`sg13cmos5l_tech_default.json`**
-   - Copy from full PDK
-   - Remove TopMetal/MIM/HBT parameters (optional cleanup)
+### Work Completed
+
+1. **Updated `ihp-sg13cmos5l.drc` (main entry)**
+   - Added `cu_pillarpad` derivation using `metal5_drw` instead of `topmetal2_drw`
+   - Added `sbumppad` derivation using `metal5_drw` instead of `topmetal2_drw`
+   - Comment updated to clarify slim PDK uses Metal5 as top
+
+2. **Created `6_10_sealring.drc`** (modified copy, not symlink)
+   - Removed `topmetal1_drw`, `topmetal2_drw` from `seal_b_lays` array
+   - Removed `topmetal1`, `topmetal2` from `seal_b_names` array
+   - Updated rule Seal.b comment (Metal5 is top layer)
+   - Added header comment documenting slim PDK modification
+
+3. **Created `6_9_pad.drc`** (modified copy, not symlink)
+   - Removed `[topmetal1_drw, 'TM1']` and `[topmetal2_drw, 'TM2']` from metals array
+   - Changed rule Pad.i from "dfpad without TopMetal2" to "dfpad without Metal5"
+   - Added header comment documenting slim PDK modification
+
+4. **Created `7_3_metalslits.drc`** (modified copy, not symlink)
+   - Removed `topmetal1_slit`, `topmetal2_slit` from `metals_slit_lays` array
+   - Removed `TM1`, `TM2` from `metals_abbrev` array
+   - Added comment noting mim_drw will be empty (no MIM in slim PDK)
+   - Added header comment documenting slim PDK modification
+
+5. **Created `sg13cmos5l_tech_default.json`**
+   - Based on full PDK `sg13g2_tech_default.json`
+   - Removed parameters:
+     - `TV1_*` (TopVia1) - 4 parameters
+     - `TM1_*` (TopMetal1) - 4 parameters
+     - `TV2_*` (TopVia2) - 4 parameters
+     - `TM2_*` (TopMetal2) - 7 parameters
+     - `BM1_*` (BackMetal1) - 4 parameters
+     - `BPas_*` (BackPassiv) - 3 parameters
+     - `TM1Fil_*` (TopMetal1 Filler) - 12 parameters
+     - `TM2Fil_*` (TopMetal2 Filler) - 12 parameters
+     - `BM1Fil_*` (BackMetal1 Filler) - 12 parameters
+     - `npn_ring`, `npn13G2_*`, `npn13G2L_*`, `npn13G2V_*` (HBT) - 4 parameters
+     - `Sdiod_*` (Schottky) - 2 parameters
+     - `Mim_*` (MIM capacitor) - 8 parameters
+   - Added comment headers documenting slim PDK scope
+   - Total: 76 parameters removed, ~300 parameters retained
+
+### Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Create copies instead of symlinks for modified files | Allows independent modification without affecting full PDK |
+| Change pad derivations to use Metal5 | Slim PDK uses M5 as bonding pad layer |
+| Keep mim_drw reference in metalslits | Empty polygon set causes no violations |
+| Full cleanup of tech_default.json | Clear documentation of slim PDK scope |
+
+### Files Changed
+
+| Action | File | Description |
+|--------|------|-------------|
+| Modified | `ihp-sg13cmos5l.drc` | Added cu_pillarpad, sbumppad derivations |
+| Created | `rule_decks/beol/6_10_sealring.drc` | Modified copy (M5 top) |
+| Created | `rule_decks/beol/6_9_pad.drc` | Modified copy (M5 top) |
+| Created | `rule_decks/beol/7_3_metalslits.drc` | Modified copy (M1-M5 only) |
+| Created | `rule_decks/sg13cmos5l_tech_default.json` | Slim PDK parameters |
+
+### Issues Encountered
+
+None. All modifications completed successfully.
+
+### Verification Needed (Session C)
+
+- Run DRC on test layouts to verify rules work correctly
+- Validate no false positives/negatives from removed layers
 
 ---
 
@@ -143,8 +210,9 @@ None. All operations completed successfully.
 
 | Metric | Value |
 |--------|-------|
-| Total Sessions | 1 completed, 3 planned |
-| Files Created | ~30 |
+| Total Sessions | 2 completed, 2 planned |
+| Files Created | ~35 |
 | Documentation Pages | 6 |
-| Rule Files Included | 22 |
+| Rule Files Included | 25 (22 symlinks + 3 modified) |
 | Rule Files Excluded | 11 |
+| Parameters in tech_default.json | ~300 (76 removed from full PDK) |

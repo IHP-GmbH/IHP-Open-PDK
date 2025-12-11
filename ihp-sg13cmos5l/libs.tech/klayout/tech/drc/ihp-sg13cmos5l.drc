@@ -310,10 +310,12 @@ if TABLES.any?{|x| cont_tables.include?(x)}
   cont_nseal.forget
 end
 
-# Pad derivations (slim PDK: Metal5 as top layer)
+# Pad derivations (slim PDK: Metal5 as top layer instead of TopMetal2)
 pad_tables = %w[main pad]
 if TABLES.any?{|x| pad_tables.include?(x)}
   logger.info('Starting pad general derivations (M5 top)')
+  cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(metal5_drw)
+  sbumppad = dfpad_sbump.and(passiv_sbump).and(metal5_drw)
   pad = passiv_drw.and(dfpad_drw).and(metal5_drw)
 end
 

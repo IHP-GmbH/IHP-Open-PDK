@@ -4,27 +4,30 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Current Priority: Session B
+## Current Priority: Session C
 
-### Session B: Rule File Modifications
+### Session B: Rule File Modifications (COMPLETE)
 
-- [ ] **Modify `6_10_sealring.drc`**
-  - Remove `topmetal1_drw`, `topmetal2_drw` from metal layer arrays
-  - Remove `topvia1_drw`, `topvia2_drw` from via layer arrays
-  - Adjust sealring to end at Metal5
+- [x] **Modified `ihp-sg13cmos5l.drc`** (main entry)
+  - Added `cu_pillarpad` derivation using `metal5_drw`
+  - Added `sbumppad` derivation using `metal5_drw`
 
-- [ ] **Modify `6_9_pad.drc`**
-  - Remove TM1/TM2 pad configurations
-  - Update `Pad.i` rule for Metal5 as top layer
-  - Verify passivation rules work with M5
+- [x] **Created `6_10_sealring.drc`** (modified copy)
+  - Removed `topmetal1_drw`, `topmetal2_drw` from metal layer arrays
+  - Removed `topmetal1`, `topmetal2` from name arrays
+  - Updated rule comments for Metal5 as top layer
 
-- [ ] **Modify `7_3_metalslits.drc`**
-  - Remove `topmetal1_slit`, `topmetal2_slit` from slit layer array
-  - Keep M1-M5 slit handling only
+- [x] **Created `6_9_pad.drc`** (modified copy)
+  - Removed TM1/TM2 from metals array
+  - Changed `Pad.i` rule from TopMetal2 to Metal5
 
-- [ ] **Create `sg13cmos5l_tech_default.json`**
-  - Copy from full PDK `sg13g2_tech_default.json`
-  - Optionally remove unused TopMetal/MIM/HBT parameters
+- [x] **Created `7_3_metalslits.drc`** (modified copy)
+  - Removed `topmetal1_slit`, `topmetal2_slit` from slit layer array
+  - Removed `TM1`, `TM2` from abbreviation array
+
+- [x] **Created `sg13cmos5l_tech_default.json`**
+  - Based on full PDK, removed 76 parameters (TopMetal, HBT, MIM, BackMetal)
+  - ~300 CMOS parameters retained
 
 ---
 
