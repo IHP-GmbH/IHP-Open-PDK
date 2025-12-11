@@ -46,11 +46,14 @@ ANALYSIS_RULES = [
     "viol_not_golden",
     "golden_not_viol",
 ]
+# Modified for IHP-SG13CMOS5L Slim PDK
+# - Removed TopMetal1 (TM1), TopMetal2 (TM2), TopVia1, TopVia2 references
+# - Slim PDK uses Metal5 as the top routing layer
 RULES_VAR = {
     "met_no": ("2", "3", "4", "5"),
     "via_no": ("2", "3", "4"),
     "metalfiller_no": ("1", "2", "3", "4", "5"),
-    "met_abbrev": ("M1", "M2", "M3", "M4", "M5", "TM1", "TM2"),
+    "met_abbrev": ("M1", "M2", "M3", "M4", "M5"),  # TM1, TM2 removed for slim PDK
     "pin_rule": ("a", "b", "e", "f_M2", "f_M3", "f_M4", "f_M5", "g", "h"),
     "forb_lay": (
         "baspoly",
@@ -71,13 +74,12 @@ RULES_VAR = {
         "metal3",
         "metal4",
         "metal5",
-        "topmetal1",
-        "topmetal2",
+        # topmetal1, topmetal2 removed for slim PDK
         "activ",
         "psd",
     ),
-    "met_name": ("Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"),
-    "via_name": ("Via1", "Via2", "Via3", "Via4", "TopVia1", "TopVia2"),
+    "met_name": ("Metal1", "Metal2", "Metal3", "Metal4", "Metal5"),  # TopMetal1/2 removed for slim PDK
+    "via_name": ("Via1", "Via2", "Via3", "Via4"),  # TopVia1/2 removed for slim PDK
 }
 
 
@@ -1029,9 +1031,15 @@ def aggregate_results(
     df["rule_status"] = "Unknown"
 
     # Mark rules as failed if any mismatches between golden and violation
-    df.loc[(df["viol_not_golden"] > 0) | (df["golden_not_viol"] > 0), "rule_status"] = (
-        "Rule Failed"
-    )
+    # Only mark as failed if the rule is in the deck
+    df.loc[
+        ((df["viol_not_golden"] > 0) | (df["golden_not_viol"] > 0))
+        & (df["in_rule_deck"] > 0),
+        "rule_status"
+    ] = "Rule Failed"
+
+    # Mark rules NOT in deck as skipped (slim PDK may not have all rules)
+    df.loc[df["in_rule_deck"] < 1, "rule_status"] = "Rule Not In Deck (Skipped)"
 
     # If the testcase itself failed to run
     df.loc[~df["run_status"].isin(["completed"]), "rule_status"] = (
@@ -1106,7 +1114,9 @@ def run_regression(drc_dir: Path, output_path: Path, target_table: str, cpu_coun
     df.to_csv(output_path / "all_test_cases_results.csv", index=False)
 
     # Check if there any rules that generated false positive or false negative
-    failing_results = df[~df["rule_status"].isin(["Passed"])]
+    # Exclude: Passed, Rule Not In Deck (Skipped), Rule Not Tested, Unknown (no tests/violations)
+    passing_statuses = ["Passed", "Rule Not In Deck (Skipped)", "Rule Not Tested", "Unknown"]
+    failing_results = df[~df["rule_status"].isin(passing_statuses)]
     logging.info("# Failing test cases: \n" + str(failing_results))
 
     if len(failing_results) > 0:

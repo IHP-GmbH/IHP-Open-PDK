@@ -9,7 +9,8 @@
 
 ## What is this?
 
-This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Check) system for the IHP-SG13CMOS5L slim PDK. Most of this code was generated through agentic coding sessions using Claude Code.
+This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Check) system for the IHP-SG13CMOS5L slim PDK. Most of this code was generated through agentic coding sessions using Code agents.
+Human is still in the loop as supervisor. 
 
 ## Status
 
@@ -75,7 +76,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | `drc_documentation/04_CREATING_NEW_RULES.md` | Guide for adding new rules |
 | `drc_documentation/05_QUICK_REFERENCE.md` | Quick reference card |
 
-### Session B: Rule File Modifications (2024-12-11)
+### Session B: Rule File Modifications
 
 #### Modified Files
 
@@ -87,7 +88,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | `rule_decks/beol/7_3_metalslits.drc` | Created | Metal slits (M1-M5 only) |
 | `rule_decks/sg13cmos5l_tech_default.json` | Created | DRC parameters (76 removed) |
 
-### Session C: Testing Infrastructure (2024-12-11)
+### Session C: Testing Infrastructure
 
 #### Testing Scripts (Local Copies)
 
@@ -115,7 +116,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | HBT/MIM/Schottky | mim, npnsubstratetie, schottkydiode |
 | TopMetal dependent | copperpillar, solderbump |
 
-### Session C.2: Golden Reference Generation (2024-12-11)
+### Session C.2: Golden Reference Generation
 
 #### Created/Modified Files
 
@@ -153,6 +154,17 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 
 ---
 
+### Session C.3: TopMetal Cleanup (2025-12-11)
+
+| File | Type | Description |
+|------|------|-------------|
+| `rule_decks/density.drc` | Local Copy | Density rules (TM1/TM2 removed) |
+| `rule_decks/antenna.drc` | Local Copy | Antenna rules (TopMetal/TopVia removed) |
+| `testing/run_regression.py` | Local Copy | Modified to skip rules not in deck |
+| `testcases/unit/metalslits.gds` | Removed | MIM layer not in slim PDK |
+
+---
+
 ## Session Roadmap
 
 | Session | Description | Status |
@@ -161,7 +173,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | **B** | Rule File Modifications | COMPLETE |
 | **C** | Testing Infrastructure | COMPLETE |
 | **C.2** | Golden Reference Generation | COMPLETE |
-| **C.3** | TopMetal Cleanup (optional) | FUTURE |
+| **C.3** | TopMetal Cleanup | COMPLETE |
 | **D** | DRC Rule Editor (optional) | FUTURE |
 
 ---
@@ -172,7 +184,7 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 
 2. **Modified Files**: Files marked as "Modified" or "Local Copy" have been changed to remove TopMetal/HBT references or use slim PDK paths.
 
-3. **Testing**: DRC regression has been run. Core CMOS rules (FEOL + BEOL M1-M5) PASS. TopMetal rules in density.drc/antenna.drc still need cleanup.
+3. **Testing**: DRC regression passes for core CMOS rules (FEOL + BEOL M1-M5). TopMetal rules are now properly skipped. Some M5 density rule issues remain for investigation.
 
 4. **Review**: All code should be reviewed by humans familiar with DRC development and the IHP PDK.
 
