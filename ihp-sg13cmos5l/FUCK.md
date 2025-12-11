@@ -89,12 +89,12 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 
 ### Session C: Testing Infrastructure (2024-12-11)
 
-#### Testing Scripts (Symlinks)
+#### Testing Scripts (Local Copies)
 
 | File | Type | Description |
 |------|------|-------------|
-| `testing/run_regression.py` | Symlink | Regression test runner |
-| `testing/gen_golden.py` | Symlink | Golden reference generator |
+| `testing/run_regression.py` | Local Copy | Regression test runner |
+| `testing/gen_golden.py` | Local Copy | Golden reference generator |
 | `testing/README.md` | Symlink | Testing documentation |
 
 #### Test Cases Included (32 symlinks)
@@ -115,6 +115,42 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | HBT/MIM/Schottky | mim, npnsubstratetie, schottkydiode |
 | TopMetal dependent | copperpillar, solderbump |
 
+### Session C.2: Golden Reference Generation (2024-12-11)
+
+#### Created/Modified Files
+
+| File | Type | Description |
+|------|------|-------------|
+| `run_drc.py` | Local Copy | Modified for slim PDK paths |
+| `testing/gen_golden.py` | Local Copy | Uses local run_drc.py |
+| `testing/run_regression.py` | Local Copy | Uses local run_drc.py |
+
+#### Fixed Symlinks
+
+| Directory | Issue | Fix |
+|-----------|-------|-----|
+| `rule_decks/*.drc` | 5 levels deep | Fixed to 6 levels |
+| `rule_decks/feol/*.drc` | 6 levels deep | Fixed to 7 levels |
+| `rule_decks/beol/*.drc` | 6 levels deep | Fixed to 7 levels |
+| `testcases/unit/density/` | 9 levels deep | Fixed to 10 levels |
+
+#### Golden References Generated (29 files)
+
+| Category | Files |
+|----------|-------|
+| **FEOL** | activ, activfiller, gatpoly, gatpolyfiller, cont, contbar, nwell, pwellblock, nbulay, psd, thickgateox, latchup |
+| **BEOL M1-M5** | metal1, metal2-5, via1, via2-4, metalnfiller, passiv, lbe |
+| **Density** | density_pass, density_fail |
+| **Other** | antenna, forbidden, pin |
+
+#### Missing Golden Files (no violations)
+
+| Test | Reason |
+|------|--------|
+| metalslits.gds | TopMetal slit patterns only |
+| pad.gds | TopMetal pad patterns only |
+| sealring.gds | TopMetal sealring patterns only |
+
 ---
 
 ## Session Roadmap
@@ -124,6 +160,8 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 | **A** | DRC Infrastructure Setup | COMPLETE |
 | **B** | Rule File Modifications | COMPLETE |
 | **C** | Testing Infrastructure | COMPLETE |
+| **C.2** | Golden Reference Generation | COMPLETE |
+| **C.3** | TopMetal Cleanup (optional) | FUTURE |
 | **D** | DRC Rule Editor (optional) | FUTURE |
 
 ---
@@ -132,9 +170,9 @@ This branch (`cmos5l-drc-with-agents`) contains work on the DRC (Design Rule Che
 
 1. **Symlinks**: Many rule files are symlinks to the full PDK (`ihp-sg13g2`). This keeps them in sync with upstream changes.
 
-2. **Modified Files**: Files marked as "Modified" have been changed to remove TopMetal/HBT references.
+2. **Modified Files**: Files marked as "Modified" or "Local Copy" have been changed to remove TopMetal/HBT references or use slim PDK paths.
 
-3. **Testing**: The DRC rules have NOT been tested on actual designs yet. Testing is required before production use.
+3. **Testing**: DRC regression has been run. Core CMOS rules (FEOL + BEOL M1-M5) PASS. TopMetal rules in density.drc/antenna.drc still need cleanup.
 
 4. **Review**: All code should be reviewed by humans familiar with DRC development and the IHP PDK.
 

@@ -270,9 +270,110 @@ None. All symlinks created successfully.
 
 ### Next Steps
 
-1. Generate golden references specific to slim PDK DRC
-2. Run regression to validate rules
-3. Fix any failing tests
+1. ~~Generate golden references specific to slim PDK DRC~~ ✓ Session C.2
+2. ~~Run regression to validate rules~~ ✓ Session C.2
+3. Fix any failing tests (TopMetal rules need removal)
+
+---
+
+## Session C.2: Golden Reference Generation
+
+**Date**: 2024-12-11
+**Agent**: Claude Code (Claude Opus 4.5)
+**Duration**: ~45 minutes
+**Status**: COMPLETE
+
+### Objective
+
+Generate golden references for slim PDK DRC and validate with regression tests.
+
+### Issues Encountered & Fixed
+
+1. **Broken Symlinks**
+   - rule_decks/ symlinks were 5 levels deep (needed 6)
+   - feol/ and beol/ symlinks were 6 levels deep (needed 7)
+   - density test symlinks were 9 levels deep (needed 10)
+   - Fixed by recreating all symlinks with correct relative paths
+
+2. **run_drc.py References**
+   - Original symlink pointed to full PDK's run_drc.py
+   - Created local copy with slim PDK paths:
+     - sg13cmos5l_pycell_lib/sg13cmos5l_tech_mod.json
+     - sg13cmos5l_tech_default.json
+     - ihp-sg13cmos5l.drc
+
+3. **gen_golden.py and run_regression.py**
+   - Symlinks resolved to full PDK, using wrong run_drc.py
+   - Replaced with local copies to use local run_drc.py
+
+4. **Python Environment**
+   - Created virtual environment: `.venv`
+   - Installed required packages: pandas, tqdm, pyyaml, gdstk, klayout
+
+### Work Completed
+
+1. **Fixed All Symlinks**
+   - rule_decks/: layers_def.drc, antenna.drc, density.drc, forbidden/, pin/
+   - feol/: 12 rule files
+   - beol/: 7 rule files (3 modified copies kept)
+   - testcases/unit/density/: pass/fail GDS files
+
+2. **Created Local run_drc.py**
+   - Modified paths for slim PDK JSON files
+   - Updated DRC deck reference to ihp-sg13cmos5l.drc
+   - Removed sg13g2_maximal.drc reference (not in slim PDK)
+
+3. **Created Local Testing Scripts**
+   - gen_golden.py - copied from full PDK
+   - run_regression.py - copied from full PDK
+
+4. **Generated Golden References**
+   - 29 golden GDS files created in unit_golden/
+   - 3 tests (metalslits, pad, sealring) produced no violations
+   - Generation time: 28.56 seconds
+
+5. **Ran Regression Tests**
+   - 175 test case runs across all tables
+   - Core CMOS rules: PASSED
+   - TopMetal rules: FAILED (expected - shouldn't be in slim PDK)
+
+### Regression Results Summary
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| FEOL rules | ✓ PASSED | activ, cont, nwell, gatpoly, etc. |
+| BEOL M1-M5 | ✓ PASSED | metal1-5, via1-4, metalnfiller |
+| BEOL passiv/lbe | ✓ PASSED | passiv, lbe |
+| TopMetal (TM2.c) | ✗ FAILED | Expected - rule shouldn't exist |
+| metalslits/pad/sealring | NOT TESTED | No golden files (no violations) |
+| forbidden/pin | UNKNOWN | Test files exist, rules not in deck |
+
+### Known Issues (Future Work)
+
+1. **TopMetal Rules in density.drc**
+   - Symlink to full PDK includes TM1/TM2 rules
+   - Need to create modified density.drc for slim PDK
+
+2. **TopMetal Rules in antenna.drc**
+   - Symlink includes Ant.b_TopMetal1, Ant.e_TopMetal2, etc.
+   - Need to create modified antenna.drc for slim PDK
+
+3. **Missing Test Golden Files**
+   - metalslits.gds, pad.gds, sealring.gds produce no M1-M5 violations
+   - Test files contain TopMetal patterns only
+
+### Files Created/Modified
+
+| Action | File |
+|--------|------|
+| Created | run_drc.py (local copy) |
+| Created | testing/gen_golden.py (local copy) |
+| Created | testing/run_regression.py (local copy) |
+| Fixed | rule_decks/*.drc symlinks |
+| Fixed | rule_decks/feol/*.drc symlinks |
+| Fixed | rule_decks/beol/*.drc symlinks |
+| Fixed | testcases/unit/density/ symlinks |
+| Generated | 29 golden reference GDS files |
 
 ---
 

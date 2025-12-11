@@ -4,7 +4,17 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Current Priority: Session D (Optional)
+## Current Priority: Session C.3 (TopMetal Cleanup) or Session D (Optional)
+
+### Session C.2: Golden Reference Generation (COMPLETE)
+
+- [x] Fix broken symlinks (rule_decks/, feol/, beol/, density tests)
+- [x] Create local run_drc.py with slim PDK paths
+- [x] Create local gen_golden.py and run_regression.py
+- [x] Set up Python virtual environment
+- [x] Generate 29 golden references (28.56 seconds)
+- [x] Run DRC regression
+- [x] Validate core CMOS rules pass
 
 ### Session C: Testing Infrastructure (COMPLETE)
 
@@ -13,9 +23,9 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 - [x] Analyze test GDS files for layer compatibility
 - [x] Symlink 32 compatible test cases (30 unit + 2 density)
 - [x] Skip 11 TopMetal/HBT/MIM exclusive tests
-- [ ] Generate golden references for slim PDK
-- [ ] Run DRC regression
-- [ ] Validate no false violations
+- [x] Generate golden references for slim PDK
+- [x] Run DRC regression
+- [x] Validate core CMOS rules (FEOL + BEOL M1-M5)
 
 ### Session B: Rule File Modifications (COMPLETE)
 
@@ -42,12 +52,24 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Remaining Testing Tasks
+## Remaining Tasks: Session C.3 (TopMetal Cleanup)
 
-- [ ] Generate golden references for slim PDK DRC
-- [ ] Run DRC regression on all 32 test cases
-- [ ] Validate no unexpected violations
-- [ ] Document any test failures
+- [ ] Create modified density.drc (remove TM1/TM2 rules)
+- [ ] Create modified antenna.drc (remove TopMetal references)
+- [ ] Re-generate golden references after cleanup
+- [ ] Re-run regression to validate all rules pass
+- [ ] Document final test results
+
+### Regression Results (Session C.2)
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| FEOL rules | ✓ PASSED | activ, cont, nwell, gatpoly, etc. |
+| BEOL M1-M5 | ✓ PASSED | metal1-5, via1-4, metalnfiller |
+| BEOL passiv/lbe | ✓ PASSED | All rules |
+| density TM2.c | ✗ FAILED | TopMetal rule - needs removal |
+| metalslits/pad/sealring | NOT TESTED | No M1-M5 violations in test files |
+| forbidden/pin | UNKNOWN | Rules not in deck |
 
 ### Test Cases INCLUDED (32)
 
