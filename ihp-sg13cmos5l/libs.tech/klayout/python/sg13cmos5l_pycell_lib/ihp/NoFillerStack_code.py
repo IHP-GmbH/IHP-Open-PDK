@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 ########################################################################
-# Modified for SG13CMOS5L Slim PDK - TopMetal layers removed
+# Modified for SG13CMOS5L Slim PDK - M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
 
 __version__ = "$Revision: #3 $"
 
@@ -45,7 +45,7 @@ class NoFillerStack(DloGen):
         specs('noM2',  'Yes', 'no M2 filler', ChoiceConstraint(['Yes', 'No']))
         specs('noM3',  'Yes', 'no M3 filler', ChoiceConstraint(['Yes', 'No']))
         specs('noM4',  'Yes', 'no M4 filler', ChoiceConstraint(['Yes', 'No']))
-        specs('noM5',  'Yes', 'no M5 filler', ChoiceConstraint(['Yes', 'No']))
+        specs('noTM1', 'Yes', 'no TM1 filler', ChoiceConstraint(['Yes', 'No']))
 #else
         CDFVersion = techparams['CDFVersion']
         specs('cdf_version', CDFVersion, 'CDF Version')
@@ -61,7 +61,7 @@ class NoFillerStack(DloGen):
         specs('noM2',  'Yes', 'no M2 filler', ChoiceConstraint(['Yes', 'No']))
         specs('noM3',  'Yes', 'no M3 filler', ChoiceConstraint(['Yes', 'No']))
         specs('noM4',  'Yes', 'no M4 filler', ChoiceConstraint(['Yes', 'No']))
-        specs('noM5',  'Yes', 'no M5 filler', ChoiceConstraint(['Yes', 'No']))
+        specs('noTM1', 'Yes', 'no TM1 filler', ChoiceConstraint(['Yes', 'No']))
 #endif
 
     def setupParams(self, params):
@@ -75,7 +75,7 @@ class NoFillerStack(DloGen):
         self.noM2 = params['noM2']
         self.noM3 = params['noM3']
         self.noM4 = params['noM4']
-        self.noM5 = params['noM5']
+        self.noTM1 = params['noTM1']
 
     def genLayout(self):
         w = self.w
@@ -86,7 +86,7 @@ class NoFillerStack(DloGen):
         noM2  = self.noM2
         noM3  = self.noM3
         noM4  = self.noM4
-        noM5  = self.noM5
+        noTM1 = self.noTM1
 
         L = Numeric(l)*1e6;
         W = Numeric(w)*1e6;
@@ -109,5 +109,5 @@ class NoFillerStack(DloGen):
         if noM4 == 'Yes' :
             dbCreateRect(self, Layer('Metal4', 'nofill'), Box(0, 0, W, L))
 
-        if noM5 == 'Yes' :
-            dbCreateRect(self, Layer('Metal5', 'nofill'), Box(0, 0, W, L))
+        if noTM1 == 'Yes' :
+            dbCreateRect(self, Layer('TopMetal1', 'nofill'), Box(0, 0, W, L))

@@ -38,9 +38,9 @@ class via_stack(DloGen):
         specs('cdf_version', CDFVersion, 'CDF Version')
 #endif
 
-        # Slim PDK: M1-M5 only (TopMetal removed)
-        specs('b_layer', 'Metal1', 'Bottom layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']))
-        specs('t_layer', 'Metal2', 'Top layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']))
+        # Slim PDK: M1-M4-TM1 stack (Metal5 removed, TopMetal1 as top layer)
+        specs('b_layer', 'Metal1', 'Bottom layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']))
+        specs('t_layer', 'Metal2', 'Top layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']))
         specs('vn_columns', 2, 'Via_n Columns')
         specs('vn_rows', 2, 'Via_n Rows')
 
@@ -82,7 +82,13 @@ class via_stack(DloGen):
         vn_sep1 = techparams['Vn_b']
         vn_sep2 = techparams['Vn_b1']
         vn_enc = techparams['Vn_c1']
-        # TopMetal parameters removed for slim PDK (M1-M5 only)
+
+        # TopVia1 parameters for M4-TM1 connection (slim PDK)
+        # TopVia1 is larger than regular vias (0.42µm vs 0.19µm)
+        tv1_size = techparams.get('TV1_a', 0.42)  # TopVia1 size
+        tv1_sep = techparams.get('TV1_b', 0.42)   # TopVia1 spacing
+        tv1_enc = techparams.get('TV1_c', 0.10)   # Metal4 enclosure of TopVia1
+        tm1_enc = techparams.get('TV1_d', 0.42)   # TopMetal1 enclosure of TopVia1
         #*************************************************************************
         #*
         #* Device Specific Design Rule Definitions
@@ -92,9 +98,9 @@ class via_stack(DloGen):
         vn_columns = self.vn_columns
         vn_rows = self.vn_rows
 
-        # Slim PDK: M1-M5 metal stack only
-        metal_layers = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']
-        via_layers = ['Via1', 'Via2', 'Via3', 'Via4']
+        # Slim PDK: M1-M4-TM1 metal stack (TopVia1 connects M4 to TopMetal1)
+        metal_layers = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
+        via_layers = ['Via1', 'Via2', 'Via3', 'TopVia1']
         
         #*************************************************************************
         #*
@@ -120,7 +126,16 @@ class via_stack(DloGen):
                 w_x = (columns * via_size + (columns - 1) * via_sep)
                 w_y = (rows * via_size + (rows - 1) * via_sep)
 
-            else:  # Metal2-Metal5
+            elif layer == 'TopMetal1':  # TopMetal1 uses TopVia1 (larger vias)
+                columns = vn_columns
+                rows = vn_rows
+                via_size = tv1_size
+                via_sep = tv1_sep
+                via_enc = tm1_enc  # TopMetal1 enclosure of TopVia1
+                w_x = (columns * via_size + (columns - 1) * via_sep)
+                w_y = (rows * via_size + (rows - 1) * via_sep)
+
+            else:  # Metal2-Metal4
                 columns = vn_columns
                 rows = vn_rows
                 via_size = vn_size

@@ -49,9 +49,9 @@ moduleNames = [
         'rsil_code',       # Symlink - silicided resistor
         'rppd_code',       # Symlink - p+ poly resistor
         'rhigh_code',      # Symlink - high-R poly resistor
-        'sealring_code',   # Modified - M1-M5 only
-        'via_stack_code',  # Modified - M1-M5 only
-        'bondpad_code',    # Modified - Metal5 top
+        'sealring_code',   # Modified - M1-M4-TM1 stack
+        'via_stack_code',  # Modified - M1-M4-TM1 stack
+        'bondpad_code',    # Modified - TopMetal1 top
         # Phase 8 additions:
         'ntap1_code',          # Symlink - N-tap (NWell contact)
         'ptap1_code',          # Symlink - P-tap (substrate contact)
@@ -64,7 +64,7 @@ moduleNames = [
         'rfnmosHV_code',       # Symlink - RF NMOS HV
         'rfpmos_code',         # Symlink - RF PMOS
         'rfpmosHV_code',       # Symlink - RF PMOS HV
-        'NoFillerStack_code',  # Modified - No filler utility (M1-M5)
+        'NoFillerStack_code',  # Modified - No filler utility (M1-M4-TM1)
 ]
 
 def getProcessNames():

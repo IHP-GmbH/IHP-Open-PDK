@@ -49,11 +49,11 @@ class bondpad(DloGen):
         specs('FlipChip', 'no', 'Flip Chip', ChoiceConstraint(['no', 'yes']))
         specs('diameter', techparams['bondpad_diameter'], 'Diameter')
         specs('hwquota', '1', 'Height-width quota')
-        # Slim PDK: M1-M5 only (TopMetal removed)
-        specs('topMetal', topMetal, 'TopMetal', ChoiceConstraint(['5']))
+        # Slim PDK: M1-M4-TM1 stack (TopMetal1 is top layer)
+        specs('topMetal', topMetal, 'TopMetal', ChoiceConstraint(['TM1']))
         specs('bottomMetal', bottomMetal, 'BottomMetal', ChoiceConstraint(['1', '2', '3', '4']))
         specs('addFillerEx', addFillerEx, 'Metal Filler Exclusion', ChoiceConstraint(['nil', 't']))
-        specs('passEncl', '2.1u', 'Passiv enclosure in Metal5')
+        specs('passEncl', '2.1u', 'Passiv enclosure in TopMetal1')
 
         specs('padType', techparams['bondpad_padType'], 'Pad type', ChoiceConstraint(['bondpad', 'probepad']))
         specs('padPin', 'PAD', 'padPin name:')
@@ -108,8 +108,10 @@ class bondpad(DloGen):
         Vn_dist = techparams['Vn_b']
         V1_size = techparams['V1_a']
         V1_dist = techparams['V1_b']
-        # TopMetal parameters removed for slim PDK (M1-M5 only)
-        met_over = techparams['Pad_gR']  # Use Pad_gR instead of TV1_d
+        # Slim PDK: M1-M4-TM1 stack - TopVia1 parameters for M4-TM1 connection
+        TV1_d = techparams.get('TV1_d', 0.42)  # TopMetal1 enclosure of TopVia1
+        TV1_a = techparams.get('TV1_a', 0.42)  # TopVia1 size
+        met_over = techparams['Pad_gR']
         met_over2 = techparams['Pad_gR']
         met_over_pass = techparams['Pas_c']
         metallization = techparams['metalName']
@@ -164,8 +166,8 @@ class bondpad(DloGen):
             radx = rad
             rady = tog(rad*hwq)
             
-        # Slim PDK: topMetal is always Metal5 (index 5)
-        topMetal = 5
+        # Slim PDK: topMetal is always TopMetal1 (index 5 in the metal stack)
+        topMetal = 5  # Index in drawMetalList (0-indexed: M1=0, M2=1, M3=2, M4=3, TM1=4 -> 5 for 1-indexed)
         bottomMetal = int(bottomMetal)
 
         if bottomMetal < 1 :
@@ -177,12 +179,12 @@ class bondpad(DloGen):
             print('error: bottomMetal too high\n')
 
         # define stack of layers for filler exclusion
-        # define Lists for Via and Metallayers - Slim PDK: M1-M5 only
-        noFillerStack = ['Activ', 'GatPoly', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']
-        drawMetalList = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']
-        drawViaList   = ['Via1', 'Via2', 'Via3', 'Via4']
-        # tm1ind not used in slim PDK (no TopMetal)
-        tm1ind = 99  # Set high to disable TopVia logic
+        # define Lists for Via and Metallayers - Slim PDK: M1-M4-TM1 stack
+        noFillerStack = ['Activ', 'GatPoly', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
+        drawMetalList = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
+        drawViaList   = ['Via1', 'Via2', 'Via3', 'TopVia1']
+        # TopVia1 is at index 3 (4th via in list, connecting M4 to TM1)
+        tm1ind = 4  # Index where TopVia1 is used (between Metal4 and TopMetal1)
         tm2ind = 0
 
         stripeWidth = tog(met_over+sqrt(2)*Vn_size*0.5)
@@ -238,10 +240,13 @@ class bondpad(DloGen):
                         dbCreatePolygon(self, pcLayer, poly)
                     else :
                         dbCreatePolygon(self, pcLayer, poly2)
-                    # determine via size - Slim PDK: Via1-Via4 only
+                    # determine via size - Slim PDK: Via1-Via3 + TopVia1
                     if metal == 1 :
                         vs = V1_size
                         vd = V1_dist
+                    elif metal == 4 :  # TopVia1 (M4 to TM1)
+                        vs = TV1_a
+                        vd = TV1_d
                     else :
                         vs = Vn_size
                         vd = Vn_dist
@@ -320,10 +325,13 @@ class bondpad(DloGen):
                         else :
                             dbCreatePolygon(self, pcLayer, poly)
                             
-                        # determine via size - Slim PDK: Via1-Via4 only
+                        # determine via size - Slim PDK: Via1-Via3 + TopVia1
                         if metal == 1 :
                             vs = V1_size
                             vd = V1_dist
+                        elif metal == 4 :  # TopVia1 (M4 to TM1)
+                            vs = TV1_a
+                            vd = TV1_d
                         else :
                             vs = Vn_size
                             vd = Vn_dist
@@ -395,10 +403,13 @@ class bondpad(DloGen):
                             dbDeleteObject(id1)
                             dbDeleteObject(id2)
                             
-                        # determine via size - Slim PDK: Via1-Via4 only
+                        # determine via size - Slim PDK: Via1-Via3 + TopVia1
                         if metal == 1 :
                             vs = V1_size
                             vd = V1_dist
+                        elif metal == 4 :  # TopVia1 (M4 to TM1)
+                            vs = TV1_a
+                            vd = TV1_d
                         else :
                             vs = Vn_size
                             vd = Vn_dist
