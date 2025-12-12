@@ -1,1 +1,60 @@
-../../../../../../../ihp-sg13g2/libs.tech/klayout/tech/drc/rule_decks/beol/5_27_passiv.drc
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+# SG13CMOS5L: Slim PDK version - TopMetal1 as top metal
+# Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
+#=========================================================================================
+
+if TABLES.include?('passiv') || BEOL
+  #================================================
+  #----------------- 5.27. Passiv -----------------
+  #================================================
+
+  logger.info('Starting 5.27. Passiv table')
+
+  # Passiv derivations
+
+  # Rule Pas.a:Min. Passiv width is 2.10um
+  logger.info('Executing rule Pas.a')
+  pas_a_value = drc_rules['Pas_a'].to_f
+  pas_a_l = passiv_drw.width(pas_a_value.um, euclidian)
+  pas_a_l.output('Pas.a', "5.27. Pas.a:Min. Passiv width: #{pas_a_value} um")
+  pas_a_l.forget
+
+  # Rule Pas.b: Min. Passiv space or notch is 3.50um
+  logger.info('Executing rule Pas.b')
+  pas_b_value = drc_rules['Pas_b'].to_f
+  pas_b_l = passiv_drw.space(pas_b_value.um, euclidian)
+  pas_b_l.output('Pas.b', "5.27. Pas.b: Min. Passiv space or notch: #{pas_b_value} um")
+  pas_b_l.forget
+
+  unless PRECHECK_DRC
+    # Rule Pas.c: Min. TopMetal1 enclosure of Passiv is 2.10 um (SG13CMOS5L: TM1 is top metal)
+    logger.info('Executing rule Pas.c')
+    pas_c_value = drc_rules['Pas_c'].to_f
+    pas_c_l1 = passiv_drw.and(edgeseal_drw.holes)
+    pas_c_l2 = pas_c_l1.enclosed(topmetal1_drw, pas_c_value.um, euclidian).polygons
+    pas_c_l3 = pas_c_l1.not(topmetal1_drw)
+    pas_c_l = pas_c_l2.join(pas_c_l3)
+    pas_c_l.output('Pas.c',
+                 "5.27. Pas.c : Min. TopMetal1 enclosure of Passiv [Not checked outside of sealring (edge-seal-passive)] is #{pas_c_value} um ")
+    pas_c_l1.forget
+    pas_c_l2.forget
+    pas_c_l3.forget
+    pas_c_l.forget
+  end
+end

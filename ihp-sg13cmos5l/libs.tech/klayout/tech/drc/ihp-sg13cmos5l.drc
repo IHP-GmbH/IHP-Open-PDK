@@ -19,8 +19,9 @@
 #====================================================================================================================
 #----------------------------------------- IHP-SG13CMOS5L DRC RULE DECK --------------------------------------------
 #====================================================================================================================
-# Slim PDK version: CMOS-only with M1-M5 metal stack
-# Excludes: TopMetal1/2, TopVia1/2, MIM, HBT, Schottky
+# Slim PDK version: CMOS-only with M1-M4-TM1 metal stack
+# Metal stack: M1 → Via1 → M2 → Via2 → M3 → Via3 → M4 → TopVia1 → TopMetal1
+# Excludes: Metal5, Via4, TopVia2, TopMetal2, MIM, HBT, Schottky
 #====================================================================================================================
 require 'time'
 require 'logger'
@@ -310,13 +311,13 @@ if TABLES.any?{|x| cont_tables.include?(x)}
   cont_nseal.forget
 end
 
-# Pad derivations (slim PDK: Metal5 as top layer instead of TopMetal2)
+# Pad derivations (slim PDK: TopMetal1 as top layer)
 pad_tables = %w[main pad]
 if TABLES.any?{|x| pad_tables.include?(x)}
-  logger.info('Starting pad general derivations (M5 top)')
-  cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(metal5_drw)
-  sbumppad = dfpad_sbump.and(passiv_sbump).and(metal5_drw)
-  pad = passiv_drw.and(dfpad_drw).and(metal5_drw)
+  logger.info('Starting pad general derivations (TM1 top)')
+  cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(topmetal1_drw)
+  sbumppad = dfpad_sbump.and(passiv_sbump).and(topmetal1_drw)
+  pad = passiv_drw.and(dfpad_drw).and(topmetal1_drw)
 end
 
 # DRC tolerance value
@@ -335,13 +336,13 @@ if CONNECTIVITY_RULES
   isoPWell  = nbulay_drw.and(nwell_holes)
   pwell_sub = pwell.not(isoPWell).join(nwell_ring_niso)
 
-  # conn layers (M1-M5 only, no TopMetal)
+  # conn layers (M1-M4-TM1 stack)
   poly_con      = gatpoly_drw.not(res_mk)
   metal1_con    = metal1_drw.not(metal1_res)
   metal2_con    = metal2_drw.not(metal2_res)
   metal3_con    = metal3_drw.not(metal3_res)
   metal4_con    = metal4_drw.not(metal4_res)
-  metal5_con    = metal5_drw.not(metal5_res)
+  topmetal1_con = topmetal1_drw.not(topmetal1_res)
 
   logger.info('Starting IHP-SG13CMOS5L DRC connectivity setup')
   # Inter-layer
@@ -364,13 +365,9 @@ if CONNECTIVITY_RULES
   connect(via2_drw, metal3_con)
   connect(metal3_con, via3_drw)
   connect(via3_drw, metal4_con)
-  connect(metal4_con, via4_drw)
-  connect(via4_drw, metal5_con)
-  # Slim PDK: No TopMetal connectivity
-  # connect(metal5_con, topvia1_n_cap)  # REMOVED
-  # connect(topvia1_n_cap, topmetal1_con)  # REMOVED
-  # connect(topmetal1_con, topvia2_drw)  # REMOVED
-  # connect(topvia2_drw, topmetal2_con)  # REMOVED
+  # M4 → TopVia1 → TopMetal1 (slim PDK top layer)
+  connect(metal4_con, topvia1_drw)
+  connect(topvia1_drw, topmetal1_con)
 
   # nwell nets
   nwell_nets = nwell_drw.nets
@@ -434,28 +431,28 @@ logger.info('Running all FORBIDDEN rules') if FORBIDDEN
 # REMOVED: rule_decks/feol/6_1_npnsubstratetie.drc (HBT)
 # REMOVED: rule_decks/feol/6_7_schottkydiode.drc (Schottky)
 
-# BEOL Rules (M1-M5, Via1-4 only)
+# BEOL Rules (M1-M4-TM1 stack)
 # %include rule_decks/beol/5_16_metal1.drc
 # %include rule_decks/beol/5_17_metaln.drc
 # %include rule_decks/beol/5_18_metalnfiller.drc
 # %include rule_decks/beol/5_19_via1.drc
 # %include rule_decks/beol/5_20_vian.drc
+# %include rule_decks/beol/5_21_topvia1.drc
+# %include rule_decks/beol/5_22_topmetal1.drc
+# %include rule_decks/beol/5_23_topmetal1filler.drc
 # %include rule_decks/beol/5_27_passiv.drc
 # %include rule_decks/beol/9_1_lbe.drc
-# REMOVED: rule_decks/beol/5_21_topvia1.drc (TopVia1)
-# REMOVED: rule_decks/beol/5_22_topmetal1.drc (TopMetal1)
-# REMOVED: rule_decks/beol/5_23_topmetal1filler.drc (TopMetal1 filler)
-# REMOVED: rule_decks/beol/5_24_topvia2.drc (TopVia2)
-# REMOVED: rule_decks/beol/5_25_topmetal2.drc (TopMetal2)
-# REMOVED: rule_decks/beol/5_26_topmetal2filler.drc (TopMetal2 filler)
+# REMOVED: rule_decks/beol/5_24_topvia2.drc (TopVia2 - not in slim stack)
+# REMOVED: rule_decks/beol/5_25_topmetal2.drc (TopMetal2 - not in slim stack)
+# REMOVED: rule_decks/beol/5_26_topmetal2filler.drc (TopMetal2 filler - not in slim stack)
 # REMOVED: rule_decks/beol/6_9_copperpillar.drc (requires TopMetal2)
 # REMOVED: rule_decks/beol/6_9_solderbump.drc (requires TopMetal2)
 # REMOVED: rule_decks/beol/6_11_mim.drc (MIM capacitor)
 
-# Note: The following BEOL files need modification (Session B):
-# - rule_decks/beol/6_9_pad.drc (remove TM1/TM2)
-# - rule_decks/beol/6_10_sealring.drc (remove TopMetal)
-# - rule_decks/beol/7_3_metalslits.drc (remove TopMetal)
+# Note: The following BEOL files need modification (Session 3):
+# - rule_decks/beol/5_17_metaln.drc (remove M5 from array)
+# - rule_decks/beol/5_20_vian.drc (remove V4 from array)
+# - rule_decks/density.drc (update M5 density rules to TM1)
 
 # PIN Rules
 # %include rule_decks/pin/7_4_pin.drc
