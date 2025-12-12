@@ -34,8 +34,8 @@ KEEP_LAYERS = {
     46,  # PWell - P-well
     49,  # Via3 - M3-M4 via
     50,  # Metal4 - Routing metal 4
-    66,  # Via4 - M4-M5 via
-    67,  # Metal5 - Routing metal 5
+    125, # TopVia1 - M4-TM1 via
+    126, # TopMetal1 - Top metal 1
     83,  # AntVia1 - Antenna via 1
     84,  # AntMetal2 - Antenna metal 2
     128, # PolyRes - Poly resistor

@@ -16,7 +16,7 @@
  <interpreter>dsl</interpreter>
  <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
  <text>
-	# Automatic filler generation script for Metal layers (M1-M5)
+	# Automatic filler generation script for Metal layers (M1-M4-TM1)
 	# SG13CMOS5L PDK: CMOS-only, M1-M4-TM1 metal stack
 
 	# Metal layers
@@ -36,10 +36,10 @@
 	Metal4_filler = source.input("50/22")
 	Metal4_nofill = source.input("50/23")
 	Metal4_slit = source.input("50/24")
-	Metal5 = source.input("67/0")
-	Metal5_filler = source.input("67/22")
-	Metal5_nofill = source.input("67/23")
-	Metal5_slit = source.input("67/24")
+	TopMetal1 = source.input("126/0")
+	TopMetal1_filler = source.input("126/22")
+	TopMetal1_nofill = source.input("126/23")
+	TopMetal1_slit = source.input("126/24")
 
 	# Exclusion layers
 	EdgeSeal = source.input("39/0")
@@ -90,7 +90,7 @@
 		layout.addRow('M2 Distance', create_input_field(defaults['distance_m2']))
 		layout.addRow('M3 Distance', create_input_field(defaults['distance_m3']))
 		layout.addRow('M4 Distance', create_input_field(defaults['distance_m4']))
-		layout.addRow('M5 Distance', create_input_field(defaults['distance_m5']))
+		layout.addRow('TM1 Distance', create_input_field(defaults['distance_tm1']))
 
 		layout.addRow('', create_buttons(dialog))
 
@@ -122,10 +122,10 @@
 			print("M4fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal4:Filler\n")
 			distances['distance_m4'] = 0.42
 		end
-		distances['distance_m5'] = dialog.layout.itemAt(9).widget.text.to_f
-		if 0.42 > distances['distance_m5']
-			print("M5fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal5:Filler\n")
-			distances['distance_m5'] = 0.42
+		distances['distance_tm1'] = dialog.layout.itemAt(9).widget.text.to_f
+		if 3.0 > distances['distance_tm1']
+			print("TM1fil.b is defined with min. 3.0. Setting 3.05 as distance for TopMetal1:Filler\n")
+			distances['distance_tm1'] = 3.05
 		end
 	end
 
@@ -134,7 +134,7 @@
 		'distance_m2' => 1.5,
 		'distance_m3' => 2.0,
 		'distance_m4' => 2.0,
-		'distance_m5' => 2.0
+		'distance_tm1' => 3.05
 	}
 
 	batch_mode = !RBA::Application::instance.main_window
@@ -175,12 +175,10 @@
 	height_m4_m = height_m4_s + distance_m4_s + height_m4_s
 	distance_m4_m = distance_m4_s
 
-	width_m5_s = 1.0
-	height_m5_s = 1.0
-	distance_m5_s = distances['distance_m5']
-	width_m5_m = width_m5_s + distance_m5_s + width_m5_s
-	height_m5_m = height_m5_s + distance_m5_s + height_m5_s
-	distance_m5_m = distance_m5_s
+	# TopMetal1 uses larger filler cells (from full PDK sg13g2_filler_TopMetal.lym)
+	width_tm1 = 5.0
+	height_tm1 = 10.0
+	distance_tm1 = distances['distance_tm1']
 
 	# Create filler cell
 	pattern_m1_s = fill_pattern("Met1_S_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1_s, height_m1_s))
@@ -191,8 +189,7 @@
 	pattern_m3_m = fill_pattern("Met3_M_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3_m, height_m3_m))
 	pattern_m4_s = fill_pattern("Met4_S_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_s, height_m4_s))
 	pattern_m4_m = fill_pattern("Met4_M_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_m, height_m4_m))
-	pattern_m5_s = fill_pattern("Met5_S_FILL_CELL").shape(67, 22, box(0.0, 0.0, width_m5_s, height_m5_s))
-	pattern_m5_m = fill_pattern("Met5_M_FILL_CELL").shape(67, 22, box(0.0, 0.0, width_m5_m, height_m5_m))
+	pattern_tm1 = fill_pattern("TM1_FILL_CELL").shape(126, 22, box(0.0, 0.0, width_tm1, height_tm1))
 
 	print("Filling M1\n")
 	M1Fil_b = Metal1_filler.dup
@@ -238,15 +235,13 @@
 	M4Fil_left = M4Fil.fill_with_left(pattern_m4_m, hstep(width_m4_m + distance_m4_m), vstep(height_m4_m + distance_m4_m))
 	M4Fil_left.fill(pattern_m4_s, hstep(width_m4_s + distance_m4_s), vstep(height_m4_s + distance_m4_s))
 
-	print("Filling M5\n")
-	M5Fil_b = Metal5_filler.dup
-	M5Fil_b.size(0.42, 0.42, "square_limit")
-	M5Fil_c = Metal5.dup
-	M5Fil_c.size(0.42, 0.42, "square_limit")
-	M5Fil_d = TRANS.dup
-	M5Fil_d.size(1.0, 1.0, "square_limit")
-	M5Fil = EdgeSeal.holes - (M5Fil_b | M5Fil_c | M5Fil_d | Metal5_nofill | Metal5_slit | TRANS | NoMetFiller)
-	M5Fil_left = M5Fil.fill_with_left(pattern_m5_m, hstep(width_m5_m + distance_m5_m), vstep(height_m5_m + distance_m5_m))
-	M5Fil_left.fill(pattern_m5_s, hstep(width_m5_s + distance_m5_s), vstep(height_m5_s + distance_m5_s))
+	print("Filling TM1\n")
+	# TopMetal1 exclusion using values from full PDK (sg13g2_filler_TopMetal.lym)
+	TM1Fil_c = TopMetal1.dup
+	TM1Fil_c.size(3.0, 3.0, "square_limit")
+	TM1Fil_d = TRANS.dup
+	TM1Fil_d.size(4.9, 4.9, "square_limit")
+	exclLayTM1 = TM1Fil_c | TM1Fil_d | TopMetal1_filler | TopMetal1_nofill | TopMetal1_slit | TRANS | NoMetFiller
+	(EdgeSeal.holes - exclLayTM1).fill(pattern_tm1, hstep(width_tm1 + distance_tm1), vstep(height_tm1 + distance_tm1))
 	</text>
 </klayout-macro>

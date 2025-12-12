@@ -48,7 +48,7 @@ pcellViaStack = layout.create_cell("via_stack", "SG13_dev", {})
 pcellPtap1 = layout.create_cell("ptap1", "SG13_dev", {})
 pcellNtap1 = layout.create_cell("ntap1", "SG13_dev", {})
 
-# Bondpad (Metal5 top)
+# Bondpad (TopMetal1 top)
 pcellBondpad = layout.create_cell("bondpad", "SG13_dev", {})
 
 # Phase 8: Additional CMOS-compatible devices

@@ -102,17 +102,18 @@ def generate_lyp(db: dict, output_path: Path):
 
 def generate_lyt(db: dict, output_path: Path):
     """Generate .lyt file from layer database."""
-    # Connectivity definitions - TopMetal lines will be commented
+    # Connectivity definitions for SG13CMOS5L PDK (M1-M4-TM1 stack)
     connectivity_connections = [
         ("GatPoly,Cont,Metal1", False),
         ("Diff,Cont,Metal1", False),
         ("Metal1,Via1,Metal2", False),
         ("Metal2,Via2,Metal3", False),
         ("Metal3,Via3,Metal4", False),
-        ("Metal4,Via4,Metal5", False),
-        # TopMetal - commented out for SG13CMOS5L PDK
-        ("Metal5,TopVia1,TopMetal1", True),
-        ("TopMetal1,TopVia2,TopMetal2", True),
+        ("Metal4,TopVia1,TopMetal1", False),
+        # Metal5/Via4 and TopMetal2 not available in SG13CMOS5L PDK
+        # ("Metal4,Via4,Metal5", True),
+        # ("Metal5,TopVia1,TopMetal1", True),
+        # ("TopMetal1,TopVia2,TopMetal2", True),
     ]
 
     connectivity_symbols = [
@@ -128,13 +129,13 @@ def generate_lyt(db: dict, output_path: Path):
         ("Metal3='30/0-30/29'", False),
         ("Via3='49/0'", False),
         ("Metal4='50/0-50/29'", False),
-        ("Via4='66/0'", False),
-        ("Metal5='67/0-67/29'", False),
-        # TopMetal - commented out for SG13CMOS5L PDK
-        ("TopVia1='125/0'", True),
-        ("TopMetal1='126/0-126/29'", True),
-        ("TopVia2='133/0'", True),
-        ("TopMetal2='134/0-134/29'", True),
+        ("TopVia1='125/0'", False),
+        ("TopMetal1='126/0-126/29'", False),
+        # Metal5/Via4 and TopMetal2 not available in SG13CMOS5L PDK
+        # ("Via4='66/0'", True),
+        # ("Metal5='67/0-67/29'", True),
+        # ("TopVia2='133/0'", True),
+        # ("TopMetal2='134/0-134/29'", True),
     ]
 
     lyt_content = f'''<?xml version="1.0" encoding="utf-8"?>
@@ -336,7 +337,7 @@ def generate_lyt(db: dict, output_path: Path):
 
 
 def generate_map(db: dict, output_path: Path):
-    """Generate .map file from layer database (Metal1-5, Via1-4 only)."""
+    """Generate .map file from layer database (M1-M4-TM1 stack)."""
     map_content = f'''#************************************************************************
 #************************************************************************
 # File: sg13cmos5l.map
@@ -408,19 +409,18 @@ Metal4           LEFOBS                       50                 4
 
 NAME             Metal4/PIN                   50                 25
 
-Via4             PIN                          66                 0
-Via4             LEFPIN                       66                 0
-Via4             VIA                          66                 0
+TopVia1          PIN                          125                0
+TopVia1          LEFPIN                       125                0
+TopVia1          VIA                          125                0
 
-Metal5           NET,SPNET,PIN,LEFPIN,VIA     67                 0
-Metal5           PIN,LEFPIN                   67                 2
-Metal5           FILL                         67                 22
-Metal5           LEFOBS                       67                 4
+TopMetal1        NET,SPNET,PIN,LEFPIN,VIA     126                0
+TopMetal1        PIN,LEFPIN                   126                2
+TopMetal1        FILL                         126                22
+TopMetal1        LEFOBS                       126                4
 
-NAME             Metal5/PIN                   67                 25
+NAME             TopMetal1/PIN                126                25
 
-# TopMetal2 layers not available in SG13CMOS5L PDK
-# TopVia1, TopMetal1, TopVia2, TopMetal2 not available
+# Via4, Metal5, TopVia2, TopMetal2 not available in SG13CMOS5L PDK (M1-M4-TM1 stack)
 
 COMP             ALL                          189                0
 

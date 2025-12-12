@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Cross section file for KLayout xsection tool
-# Version 7-August-2024: updated to support MIM
+# SG13CMOS5L PDK: M1-M4-TM1 metal stack (CMOS-only, no MIM, no TM2)
 #
 # Limitations:
 # - No support for active devices (layers below ACTIV)
@@ -25,22 +25,16 @@ mask_METAL1    = layer("8/0")
 mask_METAL2    = layer("10/0")
 mask_METAL3    = layer("30/0")
 mask_METAL4    = layer("50/0")
-mask_METAL5    = layer("67/0")
-mask_MIM   = layer("36/0")
 mask_TM1   = layer("126/0")
-mask_TM2   = layer("134/0")
 
 mask_CONT  = layer("6/0")
 mask_VIA1  = layer("19/0")
 mask_VIA2  = layer("29/0")
 mask_VIA3  = layer("49/0")
-mask_VIA4  = layer("66/0")
-mask_VMIM  = layer("129/0")
 mask_TOPVIA1  = layer("125/0")
-mask_TOPVIA2  = layer("133/0")
 
 # height of processing windows above substrate
-height(20)
+height(15)
 
 # Process steps:
 # Now we move to cross section view: from the layout geometry we create
@@ -97,46 +91,21 @@ imd3 = deposit(t_metal3+t_via3)
 z = z + t_metal3 + t_via3
 planarize(:to => z, :into => imd3)
 
-# METAL4 and VIA4
+# METAL4 and TopVia1
 t_metal4 = 0.49
-t_via4   = 0.54
+t_topvia1 = 0.85
 metal4   = mask(mask_METAL4).grow(t_metal4)
-via4     = mask(mask_VIA4).grow(t_via4)
-imd4 = deposit(t_metal4+t_via4)
-z = z + t_metal4 + t_via4
+topvia1  = mask(mask_TOPVIA1).grow(t_topvia1)
+imd4 = deposit(t_metal4+t_topvia1)
+z = z + t_metal4 + t_topvia1
 planarize(:to => z, :into => imd4)
 
-# Metal5 and TopVia1
-t_metal5  = 0.49
-t_topvia1 = 0.85
-metal5    = mask(mask_METAL5).grow(t_metal5)
-topvia1   = mask(mask_TOPVIA1).grow(t_topvia1)
-
-t_mimdiel = 0.04
-mimdiel   = mask(mask_MIM).grow(t_mimdiel)
-t_mim     = 0.15
-mim       = mask(mask_MIM).grow(t_mim)
-
-t_vmim    = t_topvia1-t_mim-t_mimdiel
-vmim 	  = mask(mask_VMIM).grow(t_vmim)
-
-imd5     = deposit(t_metal5+t_topvia1)
-z = z + t_metal5 + t_topvia1
+# TopMetal1 (thick top metal - from full PDK sg13g2_for_EM.xs)
+t_tm1 = 2.0
+tm1   = mask(mask_TM1).grow(t_tm1)
+imd5 = deposit(t_tm1)
+z = z + t_tm1
 planarize(:to => z, :into => imd5)
-
-# TopMetal1 and TopVia2
-t_tm1     = 2.0
-t_topvia2 = 2.8
-tm1       = mask(mask_TM1).grow(t_tm1)
-topvia2   = mask(mask_TOPVIA2).grow(t_topvia2)
-imd6 = deposit(t_tm1+t_topvia2)
-z = z + t_tm1 + t_topvia2
-planarize(:to => z, :into => imd6)
-
-
-# TopMetal2
-t_tm2 = 3
-tm2   = mask(mask_TM2).grow(t_tm2)
 
 # Passivation
 t_passi1 = 1.5
@@ -154,10 +123,8 @@ output("304/0", imd2)
 output("305/0", imd3)
 output("306/0", imd4)
 output("307/0", imd5)
-output("308/0", imd6)
-output("309/0", passi1)
-output("310/0", passi2)
-output("311/0", mimdiel)
+output("308/0", passi1)
+output("309/0", passi2)
 
 
 output("400/0", activ)
@@ -165,19 +132,10 @@ output("401/0", metal1)
 output("402/0", metal2)
 output("403/0", metal3)
 output("404/0", metal4)
-output("405/0", metal5)
-output("406/0", tm1)
-output("407/0", tm2)
-output("408/0", mim)
+output("405/0", tm1)
 
 output("500/0", cont)
 output("501/0", via1)
 output("502/0", via2)
 output("503/0", via3)
-output("504/0", via4)
-output("505/0", topvia1)
-output("506/0", topvia2)
-output("507/0", vmim)
-
-
-
+output("504/0", topvia1)
