@@ -69,7 +69,7 @@ class sealring(DloGen):
         corneroffset = self.techparams['Seal_k']
         cont_size = self.techparams['Cnt_a']
         vian_size = self.techparams['Vn_a']
-        # Slim PDK: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
+        # SG13CMOS5L: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
         tv1_size = self.techparams.get('TV1_a', 0.42)  # TopVia1 size (larger than regular vias)
 
         # PCell Code
@@ -92,7 +92,7 @@ class sealring(DloGen):
         edgeBox_startx = 0
         edgeBox_starty = 0
 
-        # Sealring Corner - Slim PDK: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
+        # Sealring Corner - SG13CMOS5L: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
         layers = ['Activ', 'pSD', 'EdgeSeal', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
         vias = ['Cont', 'Via1', 'Via2', 'Via3', 'TopVia1']
 
@@ -113,7 +113,7 @@ class sealring(DloGen):
             layerobj = generateCorner(self, metal_startx, corner_starty, maxMetalWidth, maxMetalLength, corner_steps, corner_end, metalOffset, layer)
             groupId = combineLayerAndDelete(self, layerobj, groupId, layer)
 
-        # Vias - Slim PDK: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
+        # Vias - SG13CMOS5L: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
         for layer in vias :
             if layer == 'Cont' :
                 viaWidth = cont_size

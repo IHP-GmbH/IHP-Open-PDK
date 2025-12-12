@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Layer Editor Server for IHP SG13CMOS5L Slim PDK
+Layer Editor Server for IHP SG13CMOS5L PDK
 
 A lightweight local server that provides:
 - Static file serving for layer_editor.html
@@ -32,7 +32,7 @@ KLAYOUT_TECH_DIR = SCRIPT_DIR.parent / "libs.tech" / "klayout" / "tech"
 
 # JSON files in this directory
 FULL_PDK_JSON = SCRIPT_DIR / "ihp-sg13g2_layers.json"
-SLIM_PDK_JSON = SCRIPT_DIR / "ihp-sg13cmos5l_layers.json"
+SG13CMOS5L_PDK_JSON = SCRIPT_DIR / "ihp-sg13cmos5l_layers.json"
 
 # Generation script
 GENERATE_SCRIPT = SCRIPTS_DIR / "generate_layer_files.py"
@@ -53,8 +53,8 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
         # API endpoints
         if path == "/api/full-pdk":
             self._send_json_file(FULL_PDK_JSON)
-        elif path == "/api/slim-pdk":
-            self._send_json_file(SLIM_PDK_JSON)
+        elif path == "/api/sg13cmos5l-pdk":
+            self._send_json_file(SG13CMOS5L_PDK_JSON)
         elif path == "/api/status":
             self._send_status()
         elif path == "/" or path == "/index.html":
@@ -69,8 +69,8 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path == "/api/slim-pdk":
-            self._save_slim_pdk()
+        if path == "/api/sg13cmos5l-pdk":
+            self._save_sg13cmos5l_pdk()
         elif path == "/api/generate":
             self._run_generation()
         else:
@@ -101,9 +101,9 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
                     "path": str(FULL_PDK_JSON.relative_to(SCRIPT_DIR)),
                     "exists": FULL_PDK_JSON.exists()
                 },
-                "slim_pdk": {
-                    "path": str(SLIM_PDK_JSON.relative_to(SCRIPT_DIR)),
-                    "exists": SLIM_PDK_JSON.exists()
+                "sg13cmos5l_pdk": {
+                    "path": str(SG13CMOS5L_PDK_JSON.relative_to(SCRIPT_DIR)),
+                    "exists": SG13CMOS5L_PDK_JSON.exists()
                 }
             },
             "scripts": {
@@ -123,8 +123,8 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(status, indent=2).encode('utf-8'))
 
-    def _save_slim_pdk(self):
-        """Save the slim PDK JSON file."""
+    def _save_sg13cmos5l_pdk(self):
+        """Save the SG13CMOS5L PDK JSON file."""
         try:
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -135,13 +135,13 @@ class LayerEditorHandler(http.server.SimpleHTTPRequestHandler):
             data['generated_at'] = datetime.now().isoformat()
 
             # Write to file
-            with open(SLIM_PDK_JSON, 'w', encoding='utf-8') as f:
+            with open(SG13CMOS5L_PDK_JSON, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
 
             response = {
                 "success": True,
-                "message": f"Saved {len(data.get('layers', {}))} layers to {SLIM_PDK_JSON.name}",
-                "file": str(SLIM_PDK_JSON.name)
+                "message": f"Saved {len(data.get('layers', {}))} layers to {SG13CMOS5L_PDK_JSON.name}",
+                "file": str(SG13CMOS5L_PDK_JSON.name)
             }
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -217,8 +217,8 @@ def run_server(port=5000):
         print(f"Warning: Full PDK JSON not found: {FULL_PDK_JSON}")
         print("Run parse_lyp_to_json.py first to generate it.")
 
-    if not SLIM_PDK_JSON.exists():
-        print(f"Warning: Slim PDK JSON not found: {SLIM_PDK_JSON}")
+    if not SG13CMOS5L_PDK_JSON.exists():
+        print(f"Warning: SG13CMOS5L PDK JSON not found: {SG13CMOS5L_PDK_JSON}")
 
     # Start server
     server_address = ('', port)

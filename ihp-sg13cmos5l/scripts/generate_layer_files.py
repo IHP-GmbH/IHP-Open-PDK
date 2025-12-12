@@ -27,7 +27,7 @@ def generate_lyp(db: dict, output_path: Path):
 
     # Add XML declaration comment
     comment = ET.Comment(f'''
- IHP SG13CMOS5L - Slim PDK Layer Properties
+ IHP SG13CMOS5L PDK Layer Properties
  Generated: {datetime.now().isoformat()}
 
  Copyright 2024 IHP PDK Authors
@@ -110,7 +110,7 @@ def generate_lyt(db: dict, output_path: Path):
         ("Metal2,Via2,Metal3", False),
         ("Metal3,Via3,Metal4", False),
         ("Metal4,Via4,Metal5", False),
-        # TopMetal - commented out for slim PDK
+        # TopMetal - commented out for SG13CMOS5L PDK
         ("Metal5,TopVia1,TopMetal1", True),
         ("TopMetal1,TopVia2,TopMetal2", True),
     ]
@@ -130,7 +130,7 @@ def generate_lyt(db: dict, output_path: Path):
         ("Metal4='50/0-50/29'", False),
         ("Via4='66/0'", False),
         ("Metal5='67/0-67/29'", False),
-        # TopMetal - commented out for slim PDK
+        # TopMetal - commented out for SG13CMOS5L PDK
         ("TopVia1='125/0'", True),
         ("TopMetal1='126/0-126/29'", True),
         ("TopVia2='133/0'", True),
@@ -139,7 +139,7 @@ def generate_lyt(db: dict, output_path: Path):
 
     lyt_content = f'''<?xml version="1.0" encoding="utf-8"?>
 <!--
- IHP SG13CMOS5L - Slim PDK Technology Definition
+ IHP SG13CMOS5L PDK Technology Definition
  Generated: {datetime.now().isoformat()}
 
  Copyright 2024 IHP PDK Authors
@@ -155,7 +155,7 @@ def generate_lyt(db: dict, output_path: Path):
 -->
 <technology>
  <name>sg13cmos5l</name>
- <description>IHP SG13G2 CMOS 5-Layer Slim PDK</description>
+ <description>IHP SG13CMOS5L PDK (M1-M4-TM1 stack)</description>
  <group/>
  <dbu>0.001</dbu>
  <base-path></base-path>
@@ -344,7 +344,7 @@ def generate_map(db: dict, output_path: Path):
 #************************************************************************
 #************************************************************************
 #
-# IHP SG13CMOS5L - Slim PDK Layer Mapping
+# IHP SG13CMOS5L PDK Layer Mapping
 # Copyright 2024 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -361,7 +361,7 @@ def generate_map(db: dict, output_path: Path):
 #
 #*************************************************************************
 #-------------------------------------------------------------------------
-# EDI Stream layer mapping table for SG13CMOS5L (Slim PDK - M1-M5 only)
+# EDI Stream layer mapping table for SG13CMOS5L PDK (M1-M4-TM1 stack)
 # Version: 1.0
 # Use only in combination with valid GDSII data of all used blocks!
 #-------------------------------------------------------------------------
@@ -419,7 +419,7 @@ Metal5           LEFOBS                       67                 4
 
 NAME             Metal5/PIN                   67                 25
 
-# TopMetal layers removed in slim PDK
+# TopMetal2 layers not available in SG13CMOS5L PDK
 # TopVia1, TopMetal1, TopVia2, TopMetal2 not available
 
 COMP             ALL                          189                0

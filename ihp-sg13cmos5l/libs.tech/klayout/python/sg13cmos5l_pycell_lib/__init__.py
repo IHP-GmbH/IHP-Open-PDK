@@ -44,7 +44,7 @@ import traceback
 moduleNames = [
         'nmos_code',
         'pmos_code',
-        # Additional devices for slim PDK
+        # Additional devices for SG13CMOS5L PDK
         'SVaricap_code',   # Symlink - no modification needed
         'rsil_code',       # Symlink - silicided resistor
         'rppd_code',       # Symlink - p+ poly resistor

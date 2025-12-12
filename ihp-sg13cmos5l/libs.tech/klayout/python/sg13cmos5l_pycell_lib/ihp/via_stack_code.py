@@ -38,7 +38,7 @@ class via_stack(DloGen):
         specs('cdf_version', CDFVersion, 'CDF Version')
 #endif
 
-        # Slim PDK: M1-M4-TM1 stack (Metal5 removed, TopMetal1 as top layer)
+        # SG13CMOS5L: M1-M4-TM1 stack (Metal5 removed, TopMetal1 as top layer)
         specs('b_layer', 'Metal1', 'Bottom layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']))
         specs('t_layer', 'Metal2', 'Top layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']))
         specs('vn_columns', 2, 'Via_n Columns')
@@ -83,7 +83,7 @@ class via_stack(DloGen):
         vn_sep2 = techparams['Vn_b1']
         vn_enc = techparams['Vn_c1']
 
-        # TopVia1 parameters for M4-TM1 connection (slim PDK)
+        # TopVia1 parameters for M4-TM1 connection
         # TopVia1 is larger than regular vias (0.42µm vs 0.19µm)
         tv1_size = techparams.get('TV1_a', 0.42)  # TopVia1 size
         tv1_sep = techparams.get('TV1_b', 0.42)   # TopVia1 spacing
@@ -98,7 +98,7 @@ class via_stack(DloGen):
         vn_columns = self.vn_columns
         vn_rows = self.vn_rows
 
-        # Slim PDK: M1-M4-TM1 metal stack (TopVia1 connects M4 to TopMetal1)
+        # SG13CMOS5L: M1-M4-TM1 metal stack (TopVia1 connects M4 to TopMetal1)
         metal_layers = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
         via_layers = ['Via1', 'Via2', 'Via3', 'TopVia1']
         

@@ -49,7 +49,7 @@ class bondpad(DloGen):
         specs('FlipChip', 'no', 'Flip Chip', ChoiceConstraint(['no', 'yes']))
         specs('diameter', techparams['bondpad_diameter'], 'Diameter')
         specs('hwquota', '1', 'Height-width quota')
-        # Slim PDK: M1-M4-TM1 stack (TopMetal1 is top layer)
+        # SG13CMOS5L: M1-M4-TM1 stack (TopMetal1 is top layer)
         specs('topMetal', topMetal, 'TopMetal', ChoiceConstraint(['TM1']))
         specs('bottomMetal', bottomMetal, 'BottomMetal', ChoiceConstraint(['1', '2', '3', '4']))
         specs('addFillerEx', addFillerEx, 'Metal Filler Exclusion', ChoiceConstraint(['nil', 't']))
@@ -108,7 +108,7 @@ class bondpad(DloGen):
         Vn_dist = techparams['Vn_b']
         V1_size = techparams['V1_a']
         V1_dist = techparams['V1_b']
-        # Slim PDK: M1-M4-TM1 stack - TopVia1 parameters for M4-TM1 connection
+        # SG13CMOS5L: M1-M4-TM1 stack - TopVia1 parameters for M4-TM1 connection
         TV1_d = techparams.get('TV1_d', 0.42)  # TopMetal1 enclosure of TopVia1
         TV1_a = techparams.get('TV1_a', 0.42)  # TopVia1 size
         met_over = techparams['Pad_gR']
@@ -166,7 +166,7 @@ class bondpad(DloGen):
             radx = rad
             rady = tog(rad*hwq)
             
-        # Slim PDK: topMetal is always TopMetal1 (index 5 in the metal stack)
+        # SG13CMOS5L: topMetal is always TopMetal1 (index 5 in the metal stack)
         topMetal = 5  # Index in drawMetalList (0-indexed: M1=0, M2=1, M3=2, M4=3, TM1=4 -> 5 for 1-indexed)
         bottomMetal = int(bottomMetal)
 
@@ -179,7 +179,7 @@ class bondpad(DloGen):
             print('error: bottomMetal too high\n')
 
         # define stack of layers for filler exclusion
-        # define Lists for Via and Metallayers - Slim PDK: M1-M4-TM1 stack
+        # define Lists for Via and Metallayers - SG13CMOS5L: M1-M4-TM1 stack
         noFillerStack = ['Activ', 'GatPoly', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
         drawMetalList = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'TopMetal1']
         drawViaList   = ['Via1', 'Via2', 'Via3', 'TopVia1']
@@ -240,7 +240,7 @@ class bondpad(DloGen):
                         dbCreatePolygon(self, pcLayer, poly)
                     else :
                         dbCreatePolygon(self, pcLayer, poly2)
-                    # determine via size - Slim PDK: Via1-Via3 + TopVia1
+                    # determine via size - SG13CMOS5L: Via1-Via3 + TopVia1
                     if metal == 1 :
                         vs = V1_size
                         vd = V1_dist
@@ -325,7 +325,7 @@ class bondpad(DloGen):
                         else :
                             dbCreatePolygon(self, pcLayer, poly)
                             
-                        # determine via size - Slim PDK: Via1-Via3 + TopVia1
+                        # determine via size - SG13CMOS5L: Via1-Via3 + TopVia1
                         if metal == 1 :
                             vs = V1_size
                             vd = V1_dist
@@ -403,7 +403,7 @@ class bondpad(DloGen):
                             dbDeleteObject(id1)
                             dbDeleteObject(id2)
                             
-                        # determine via size - Slim PDK: Via1-Via3 + TopVia1
+                        # determine via size - SG13CMOS5L: Via1-Via3 + TopVia1
                         if metal == 1 :
                             vs = V1_size
                             vd = V1_dist

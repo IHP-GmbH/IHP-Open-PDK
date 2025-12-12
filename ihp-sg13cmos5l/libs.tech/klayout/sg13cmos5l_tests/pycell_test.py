@@ -16,7 +16,7 @@
 #
 ########################################################################
 
-# PCell test script for IHP SG13CMOS5L Slim PDK
+# PCell test script for IHP SG13CMOS5L PDK
 #
 # To run this code, use (Sh/Bash syntax):
 #

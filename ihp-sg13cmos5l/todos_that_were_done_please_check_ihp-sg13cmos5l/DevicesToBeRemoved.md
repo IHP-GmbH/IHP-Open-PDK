@@ -1,6 +1,6 @@
 # Devices to be removed
 
-These devices are NOT included in the slim PDK because they require:
+These devices are NOT included in the SG13CMOS5L PDK because they require:
 - HBT/bipolar device layers (EmWind, EmWiHV, nBuLay special config)
 - TopMetal layers (TopMetal1/2, TopVia1/2)
 - MIM capacitor layers (MIM, Vmim)
@@ -26,11 +26,11 @@ These devices are NOT included in the slim PDK because they require:
 
 - [x] **inductor2** - 2-terminal inductor
   - Requires: TopMetal1 (126), TopMetal2 (134), IND (27)
-  - Not available in M1-M5 stack
+  - Not available in M1-M4-TM1 stack (no TopMetal2)
 
 - [x] **inductor3** - 3-terminal inductor
   - Requires: TopMetal1 (126), TopMetal2 (134), IND (27)
-  - Not available in M1-M5 stack
+  - Not available in M1-M4-TM1 stack (no TopMetal2)
 
 - [x] **CMiM** - MIM capacitor
   - Requires: MIM (36), Vmim (129), TopMetal1 (126)

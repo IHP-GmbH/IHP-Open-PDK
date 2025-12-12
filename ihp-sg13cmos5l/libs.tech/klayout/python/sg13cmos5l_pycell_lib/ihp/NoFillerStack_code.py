@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 ########################################################################
-# Modified for SG13CMOS5L Slim PDK - M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
+# Modified for SG13CMOS5L PDK - M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
 
 __version__ = "$Revision: #3 $"
 

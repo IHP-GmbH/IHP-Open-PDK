@@ -3,7 +3,7 @@
 Parse KLayout .lyp files and generate JSON layer databases.
 Creates two outputs:
   - ihp-sg13g2_layers.json: Full PDK layer database
-  - ihp-sg13cmos5l_layers.json: Slim PDK (CMOS only, M1-M5)
+  - ihp-sg13cmos5l_layers.json: SG13CMOS5L PDK (CMOS only, M1-M4-TM1)
 """
 
 import json
@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from datetime import datetime
 
-# Layers to KEEP in slim PDK (GDS layer numbers)
+# Layers to KEEP in SG13CMOS5L PDK (GDS layer numbers)
 KEEP_LAYERS = {
     1,   # Activ - Active area
     5,   # GatPoly - Gate polysilicon
@@ -150,30 +150,30 @@ def create_full_pdk_json(parsed_data: dict, source_file: str) -> dict:
     }
 
 
-def create_slim_pdk_json(parsed_data: dict) -> dict:
-    """Create the slim PDK JSON database with only kept layers."""
-    slim_layers = {}
+def create_sg13cmos5l_pdk_json(parsed_data: dict) -> dict:
+    """Create the SG13CMOS5L PDK JSON database with only kept layers."""
+    sg13cmos5l_layers = {}
 
     for gds_key, layer_data in parsed_data["layers"].items():
         gds_layer = int(gds_key)
         if gds_layer in KEEP_LAYERS:
             # Copy layer data and add included flag
-            slim_layers[gds_key] = {
+            sg13cmos5l_layers[gds_key] = {
                 **layer_data,
                 "included": True
             }
 
     return {
         "pdk_name": "ihp-sg13cmos5l",
-        "description": "IHP SG13G2 CMOS-only PDK - Slim version with M1-M5 metal stack",
+        "description": "IHP SG13CMOS5L PDK - CMOS-only with M1-M4-TM1 metal stack",
         "base_pdk": "ihp-sg13g2",
         "generated_at": datetime.now().isoformat(),
-        "layer_count": len(slim_layers),
+        "layer_count": len(sg13cmos5l_layers),
         "notes": [
             "This is an editable file - modify 'included' flags to add/remove layers",
             "Run generate_layer_files.py after modifications to regenerate KLayout files"
         ],
-        "layers": slim_layers,
+        "layers": sg13cmos5l_layers,
         "custom_dither_patterns": parsed_data["custom_dither_patterns"],
         "custom_line_styles": parsed_data["custom_line_styles"]
     }
@@ -204,20 +204,20 @@ def main():
         json.dump(full_json, f, indent=2)
     print(f"Created {full_json_path}")
 
-    # Create slim PDK JSON
-    slim_json = create_slim_pdk_json(parsed_data)
-    slim_json_path = output_dir / "ihp-sg13cmos5l_layers.json"
-    with open(slim_json_path, 'w') as f:
-        json.dump(slim_json, f, indent=2)
-    print(f"Created {slim_json_path} with {slim_json['layer_count']} layers")
+    # Create SG13CMOS5L PDK JSON
+    sg13cmos5l_json = create_sg13cmos5l_pdk_json(parsed_data)
+    sg13cmos5l_json_path = output_dir / "ihp-sg13cmos5l_layers.json"
+    with open(sg13cmos5l_json_path, 'w') as f:
+        json.dump(sg13cmos5l_json, f, indent=2)
+    print(f"Created {sg13cmos5l_json_path} with {sg13cmos5l_json['layer_count']} layers")
 
     # Summary
     kept_datatypes = sum(
-        len(l["datatypes"]) for l in slim_json["layers"].values()
+        len(l["datatypes"]) for l in sg13cmos5l_json["layers"].values()
     )
     print(f"\nSummary:")
     print(f"  Full PDK: {total_layers} layers, {total_datatypes} variants")
-    print(f"  Slim PDK: {slim_json['layer_count']} layers, {kept_datatypes} variants")
+    print(f"  SG13CMOS5L PDK: {sg13cmos5l_json['layer_count']} layers, {kept_datatypes} variants")
 
 
 if __name__ == "__main__":

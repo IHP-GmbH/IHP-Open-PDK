@@ -1,4 +1,4 @@
-# Additional Devices Added to Slim PDK
+# Additional Devices Added to SG13CMOS5L PDK
 
 
 - [x] **rsil** - Silicided resistor (CMOS-compatible, M1-only)
@@ -54,8 +54,8 @@
   - Layers: M1-M2, Via1, pSD, NWell, ThickGateOx
   - File: `ihp/rfpmosHV_code.py` (symlink)
 
-- [x] **NoFillerStack** - No filler utility (M1-M5 only)
-  - Modified: Removed TM1/TM2 options
+- [x] **NoFillerStack** - No filler utility (M1-M4-TM1 stack)
+  - Modified: Uses M1-M4-TM1 metal stack
   - File: `ihp/NoFillerStack_code.py` (modified copy)
 
 ## NOT Compatible (Not Added)

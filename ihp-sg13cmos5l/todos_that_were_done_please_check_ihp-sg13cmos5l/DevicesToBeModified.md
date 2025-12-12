@@ -2,30 +2,29 @@
 
 ## Completed
 
-- [x] **sealring** - Modified to limit to Metal5
-  - Removed TopMetal1, TopMetal2 from layers list
-  - Removed TopVia1, TopVia2 from vias list
-  - Removed TV1_size, TV2_size parameters
+- [x] **sealring** - Modified for M1-M4-TM1 stack
+  - Updated to use M1-M4-TM1 metal stack (no Metal5)
+  - Uses TopVia1 to connect M4 to TopMetal1
+  - Removed TopMetal2, TopVia2 references
   - File: `ihp-sg13cmos5l/.../ihp/sealring_code.py` (modified copy)
 
-- [x] **ViaStack (via_stack)** - Modified to limit to M1-M5 vias
-  - Removed TopMetal1, TopMetal2 from layer choices
-  - Removed TopVia1, TopVia2 from via list
-  - Removed vt1_columns/rows, vt2_columns/rows parameters
-  - Removed TopVia tech params (TV1_*, TV2_*, TM1_*, TM2_*)
+- [x] **ViaStack (via_stack)** - Modified for M1-M4-TM1 stack
+  - Updated layer choices to Metal1-Metal4-TopMetal1
+  - Uses TopVia1 to connect M4 to TopMetal1
+  - Removed TopMetal2, TopVia2 references
+  - Added TopVia1 tech params (TV1_a, TV1_b, TV1_c, TV1_d)
   - File: `ihp-sg13cmos5l/.../ihp/via_stack_code.py` (modified copy)
 
-- [x] **bondpad** - Modified to limit to Metal5
-  - Changed topMetal parameter from ['TM1', 'TM2'] to ['5']
-  - Changed bottomMetal parameter from ['1'-'5', 'TM1'] to ['1'-'4']
-  - Removed TV1/TV2 tech params
-  - Simplified layer lists to M1-M5 only
-  - Removed all TopVia via size handling
+- [x] **bondpad** - Modified for M1-M4-TM1 stack
+  - Changed topMetal to TopMetal1 (no TopMetal2)
+  - Uses TopVia1 to connect M4 to TopMetal1
+  - Updated layer lists to M1-M4-TM1 stack
+  - Added TopVia1 via size handling
   - File: `ihp-sg13cmos5l/.../ihp/bondpad_code.py` (modified copy)
 
 - [x] **SVaricap** - No modification needed
   - Uses only M1 + base device layers (Activ, GatPoly, nSD, pSD, NWell, etc.)
-  - All layers already in slim PDK
+  - All layers already in SG13CMOS5L PDK
   - File: `ihp-sg13cmos5l/.../ihp/SVaricap_code.py` (symlink to full PDK)
 
 ## Not Applicable
