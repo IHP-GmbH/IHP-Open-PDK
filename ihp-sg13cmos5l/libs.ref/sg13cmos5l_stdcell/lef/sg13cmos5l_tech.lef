@@ -1,0 +1,1197 @@
+########################################################################
+#
+# Copyright 2023 IHP PDK Authors
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#    https://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
+VERSION 5.7 ;
+#NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+PROPERTYDEFINITIONS
+  LAYER contactLimit INTEGER ;
+  LAYER routingPitch REAL ;
+  LAYER routingGrid REAL ;
+END PROPERTYDEFINITIONS
+
+LAYER OVERLAP
+   TYPE  OVERLAP ;
+END OVERLAP
+
+LAYER LOCKED
+    TYPE MASTERSLICE ;
+END LOCKED
+
+LAYER LOCKED1
+    TYPE MASTERSLICE ;
+END LOCKED1
+
+LAYER LOCKED2
+    TYPE MASTERSLICE ;
+END LOCKED2
+
+LAYER GatPoly
+  TYPE MASTERSLICE ;
+END GatPoly
+
+LAYER Cont
+  TYPE CUT ;
+  SPACING 0.18 ;
+  WIDTH 0.16 ;
+  ENCLOSURE 0 0.05 ;
+  PREFERENCLOSURE 0.05 0.05 ;
+  RESISTANCE 22.0 ;
+  ANTENNAMODEL OXIDE1 ;
+    ANTENNACUMAREARATIO 30 ;
+    ANTENNACUMDIFFAREARATIO 10000 ;
+  #PROPERTY contactLimit 10000 ;
+  
+END Cont
+
+LAYER Metal1
+  TYPE		ROUTING ;
+  DIRECTION	HORIZONTAL ;
+  PITCH		0.42 ;
+  OFFSET	0.0 ;
+  WIDTH		0.16 ;
+  MAXWIDTH	30 ;
+  AREA		0.09 ;
+  MINIMUMDENSITY        35.0 ;
+  MAXIMUMDENSITY        60.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH 0.00    1.00    10.00
+  WIDTH 0.00        0.18    0.18    0.18
+  WIDTH 0.30        0.18    0.22    0.22
+  WIDTH 10.0        0.18    0.22    0.60 ;
+  MINIMUMCUT 2 WIDTH 1.4 ;
+  HEIGHT 0.930 ;
+  #CURRENTDEN 0 ;
+  THICKNESS 0.40 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.135 ;
+  CAPACITANCE  CPERSQDIST 3.49E-05 ;
+  EDGECAPACITANCE  3.16E-05 ;
+  DCCURRENTDENSITY AVERAGE 1 ;
+
+END Metal1
+
+LAYER Via1
+  TYPE	CUT ;
+  RESISTANCE 20 ;
+  DCCURRENTDENSITY AVERAGE 0.4 ;
+  SPACING	0.22 ;
+  SPACING 0.29 ADJACENTCUTS 3 WITHIN 0.311 ;
+  ENCLOSURE BELOW 0.010 0.05 ;
+  ENCLOSURE ABOVE 0.005 0.05 ;
+  PREFERENCLOSURE 0.05 0.05 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+END Via1
+
+LAYER Metal2
+  TYPE		ROUTING ;
+  DIRECTION	VERTICAL ;
+  PITCH		0.48 ;
+  OFFSET	0.0 ;
+  WIDTH		0.20 ;
+  MAXWIDTH	30 ;
+  MINIMUMDENSITY        35.0 ;
+  MAXIMUMDENSITY        60.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH 0.00    1.00    10.00
+  WIDTH 0.00        0.21    0.21    0.21
+  WIDTH 0.39        0.21    0.24    0.24
+  WIDTH 10.0        0.21    0.24    0.60 ;
+  MINIMUMCUT 2 WIDTH 1.4 ;
+  AREA      0.144 ;
+  HEIGHT 1.880 ;
+  #CURRENTDEN 0 ;
+  THICKNESS 0.450 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  WIREEXTENSION 0.10 ;
+  RESISTANCE RPERSQ 0.103 ;
+  CAPACITANCE  CPERSQDIST 1.81E-05 ;
+  EDGECAPACITANCE  4.47E-05 ;
+  DCCURRENTDENSITY AVERAGE 2 ;
+END Metal2
+
+LAYER Via2
+  TYPE	CUT ;
+  SPACING	0.22 ;
+  WIDTH 	0.19 ;
+  ENCLOSURE 0.005 0.05 ;
+  PREFERENCLOSURE 0.05 0.05 ;
+  RESISTANCE 20 ;
+  DCCURRENTDENSITY AVERAGE 0.4 ;
+  SPACING 0.29 ADJACENTCUTS 3 WITHIN 0.311 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+END Via2
+
+LAYER Metal3
+  TYPE		ROUTING ;
+  DIRECTION	HORIZONTAL ;
+  PITCH		0.42 ;
+  OFFSET	0.0 ;
+  WIDTH		0.20 ;
+  MINIMUMDENSITY        35.0 ;
+  MAXIMUMDENSITY        60.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH 0.00    1.00    10.00
+  WIDTH 0.00        0.21    0.21    0.21
+  WIDTH 0.39        0.21    0.24    0.24
+  WIDTH 10.0        0.21    0.24    0.60 ;
+  MINIMUMCUT 2 WIDTH 1.4 ;
+  AREA      0.144 ;
+  HEIGHT 2.880 ;
+  #CURRENTDEN 0 ;
+  THICKNESS 0.450 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.103 ;
+  CAPACITANCE  CPERSQDIST 1.20E-05 ;
+  EDGECAPACITANCE  4.48E-05 ;
+  DCCURRENTDENSITY AVERAGE 2 ;
+END Metal3
+
+LAYER Via3
+  TYPE	CUT ;
+  SPACING	0.22 ;
+  WIDTH 	0.19 ;
+  ENCLOSURE 0.005 0.05 ;
+  PREFERENCLOSURE 0.05 0.05 ;
+  #RESISTANCE 0.68 ;
+  RESISTANCE 20 ;
+  DCCURRENTDENSITY AVERAGE 0.4 ;
+  SPACING 0.29 ADJACENTCUTS 3 WITHIN 0.311 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+END Via3
+
+LAYER Metal4
+  TYPE		ROUTING ;
+  DIRECTION	VERTICAL ;
+  PITCH		0.48 ;
+  OFFSET	0.0 ;
+  WIDTH		0.20 ;
+  MINIMUMDENSITY        35.0 ;
+  MAXIMUMDENSITY        60.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH 0.00    1.00    10.00
+  WIDTH 0.00        0.21    0.21    0.21
+  WIDTH 0.39        0.21    0.24    0.24
+  WIDTH 10.0        0.21    0.24    0.60 ;
+  MINIMUMCUT 2 WIDTH 1.4 ;
+  AREA      0.144 ;
+  HEIGHT 3.88 ;
+  #CURRENTDEN 0 ;
+  THICKNESS 0.450 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.103 ;
+  CAPACITANCE  CPERSQDIST 8.94E-06 ;
+  EDGECAPACITANCE  4.50E-05 ;
+  DCCURRENTDENSITY AVERAGE 2 ; #mA/um
+END Metal4
+
+LAYER Via4
+  TYPE	CUT ;
+  SPACING	0.22 ;
+  WIDTH 0.19 ;
+  ENCLOSURE 0.005 0.05 ;
+  PREFERENCLOSURE 0.05 0.05 ;
+  RESISTANCE 20 ;
+  DCCURRENTDENSITY AVERAGE 0.4 ;
+  SPACING 0.29 ADJACENTCUTS 3 WITHIN 0.311 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+END Via4
+
+LAYER Metal5
+  TYPE		ROUTING ;
+  DIRECTION	HORIZONTAL ;
+  PITCH		0.42 ;
+  OFFSET	0.0 ;
+  WIDTH		0.20 ;
+  MINIMUMDENSITY        35.0 ;
+  MAXIMUMDENSITY        60.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH 0.00    1.00    10.00
+  WIDTH 0.00        0.21    0.21    0.21
+  WIDTH 0.39        0.21    0.24    0.24
+  WIDTH 10.0        0.21    0.24    0.60 ;
+  MINIMUMCUT 2 WIDTH 1.4 ;
+  AREA      0.144 ;
+  HEIGHT 4.88 ;
+ # CURRENTDEN 0 ;
+  THICKNESS 0.450 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.103 ;
+  CAPACITANCE  CPERSQDIST 7.13E-06 ;
+  EDGECAPACITANCE  4.37E-05 ;
+  DCCURRENTDENSITY AVERAGE 2 ;
+END Metal5
+
+LAYER TopVia1
+  TYPE	CUT ;
+  SPACING	0.42 ;
+  WIDTH 	0.42 ;
+  ENCLOSURE BELOW 0.1 0.1 ;
+  ENCLOSURE ABOVE 0.42 0.42 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+  RESISTANCE 4.0 ;
+  DCCURRENTDENSITY AVERAGE 1.4 ;
+END TopVia1
+
+LAYER TopMetal1
+  TYPE		ROUTING ;
+  DIRECTION	VERTICAL ;
+  PITCH		2.28 ;
+  OFFSET	1.64 ;
+  WIDTH		1.64 ;
+  MINIMUMDENSITY        25.0 ;
+  MAXIMUMDENSITY        70.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACING 1.64 ;
+  HEIGHT 6.160 ;
+#  CURRENTDEN 0 ;
+  THICKNESS 2.0 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.021 ;
+  CAPACITANCE  CPERSQDIST 5.64E-06 ;
+  EDGECAPACITANCE  5.08E-05 ;
+  DCCURRENTDENSITY AVERAGE 15 ;
+END TopMetal1
+
+LAYER TopVia2
+  TYPE	CUT ;
+  SPACING	1.06 ;
+  WIDTH 	0.9 ;
+  ENCLOSURE BELOW 0.5 0.5 ;
+  ENCLOSURE ABOVE 0.5 0.5 ;
+  RESISTANCE 2.2 ;
+  DCCURRENTDENSITY AVERAGE 10 ;
+  ANTENNAAREARATIO 20 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 20 ) ( 0.159 20 ) ( 0.16 80 ) ( 100 50000 ) ) ;
+END TopVia2
+
+LAYER TopMetal2
+  TYPE		ROUTING ;
+  DIRECTION	HORIZONTAL ;
+  PITCH		4 ;
+  OFFSET	2 ;
+  WIDTH		2 ;
+  MINIMUMDENSITY        25.0 ;
+  MAXIMUMDENSITY        70.0 ;
+  DENSITYCHECKSTEP 100 ;
+  DENSITYCHECKWINDOW 200 200 ;
+  SPACING 2 ;
+  HEIGHT 11.160 ;
+#  CURRENTDEN 0 ;
+  THICKNESS 3.0 ;
+  ANTENNACUMAREARATIO 200 ;
+  ANTENNACUMDIFFAREARATIO PWL ( ( 0 200 ) ( 0.159 200 ) ( 0.16  3200 ) ( 100 2000000 ) ) ;
+  RESISTANCE RPERSQ 0.0145 ;
+  CAPACITANCE  CPERSQDIST 3.23E-06 ;
+  EDGECAPACITANCE  4.18E-05 ;
+  DCCURRENTDENSITY AVERAGE 16 ;
+END TopMetal2
+
+#######  Definitions of Via1 single cut ##############
+
+Via  Via1_XX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via1_XX
+
+
+Via  Via1_XX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via1_XX_s
+
+Via  Via1_XY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via1_XY
+
+Via  Via1_XY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via1_XY_s
+
+Via  Via1_YX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via1_YX
+
+Via  Via1_YX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via1_YX_s
+
+Via  Via1_YY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via1_YY
+
+Via  Via1_YY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via1_YY_s
+
+Via  Via1_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal1 ;
+      RECT -0.145 -0.145 0.145 0.145 ;
+    LAYER Via1 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal2 ;
+      RECT -0.19 -0.19 0.19 0.19 ;
+  END Via1_s
+
+####### Definitions of Via1 double cut ########
+
+Via Via1_DC1B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal2 ;
+        RECT -0.1 -0.155 0.1 0.565 ;
+END Via1_DC1B
+
+Via Via1_DC1T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal2 ;
+        RECT -0.1 -0.565 0.1 0.155 ;
+END Via1_DC1T
+
+Via Via1_DC1L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.145 -0.105 0.555 0.105 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT 0.315 -0.095 0.505 0.095 ;
+    LAYER Metal2 ;
+        RECT -0.155 -0.1 0.565 0.1 ;
+END Via1_DC1L
+
+Via Via1_DC1R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal2 ;
+        RECT -0.565 -0.1 0.155 0.1 ;
+END Via1_DC1R
+
+Via Via1_DC2B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal2 ;
+        RECT -0.145 -0.105 0.145 0.515 ;
+END Via1_DC2B
+
+Via Via1_DC2T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal2 ;
+        RECT -0.145 -0.515 0.145 0.105 ;
+END Via1_DC2T
+
+Via Via1_DC2L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT 0.32 -0.095 0.51 0.095 ;
+    LAYER Metal2 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+END Via1_DC2L
+
+Via Via1_DC2R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal1 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via1 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal2 ;
+        RECT -0.515 -0.145 0.105 0.145 ;
+END Via1_DC2R
+
+#######  Definitions of Via2 single cut ##############
+
+Via  Via2_XX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via2_XX
+
+
+Via  Via2_XX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via2_XX_s
+
+Via  Via2_XY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via2_XY
+
+Via  Via2_XY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via2_XY_s
+
+Via  Via2_YX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via2_YX
+
+Via  Via2_YX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via2_YX_s
+
+Via  Via2_YY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via2_YY
+
+Via  Via2_YY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via2_YY_s
+
+Via  Via2_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal2 ;
+      RECT -0.145 -0.145 0.145 0.145 ;
+    LAYER Via2 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal3 ;
+      RECT -0.19 -0.19 0.19 0.19 ;
+  END Via2_s
+
+#######  Definitions of Via2 double cut ##############
+
+Via Via2_DC1B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal3 ;
+        RECT -0.1 -0.155 0.1 0.565 ;
+END Via2_DC1B
+
+Via Via2_DC1T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal3 ;
+        RECT -0.1 -0.565 0.1 0.155 ;
+END Via2_DC1T
+
+Via Via2_DC1L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.145 -0.105 0.555 0.105 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT 0.315 -0.095 0.505 0.095 ;
+    LAYER Metal3 ;
+        RECT -0.155 -0.1 0.565 0.1 ;
+END Via2_DC1L
+
+Via Via2_DC1R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal3 ;
+        RECT -0.565 -0.1 0.155 0.1 ;
+END Via2_DC1R
+
+Via Via2_DC2B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal3 ;
+        RECT -0.145 -0.105 0.145 0.515 ;
+END Via2_DC2B
+
+Via Via2_DC2T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal3 ;
+        RECT -0.145 -0.515 0.145 0.105 ;
+END Via2_DC2T
+
+Via Via2_DC2L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT 0.32 -0.095 0.51 0.095 ;
+    LAYER Metal3 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+END Via2_DC2L
+
+Via Via2_DC2R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal2 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via2 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal3 ;
+        RECT -0.515 -0.145 0.105 0.145 ;
+END Via2_DC2R
+
+#######  Definitions of Via3 single cut ##############
+
+Via  Via3_XX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via3_XX
+
+
+Via  Via3_XX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via3_XX_s
+
+Via  Via3_XY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via3_XY
+
+Via  Via3_XY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via3_XY_s
+
+Via  Via3_YX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via3_YX
+
+Via  Via3_YX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via3_YX_s
+
+Via  Via3_YY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via3_YY
+
+Via  Via3_YY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via3_YY_s
+
+Via  Via3_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal3 ;
+      RECT -0.145 -0.145 0.145 0.145 ;
+    LAYER Via3 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal4 ;
+      RECT -0.19 -0.19 0.19 0.19 ;
+  END Via3_s
+
+#######  Definitions of Via3 double cut ##############
+
+Via Via3_DC1B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal4 ;
+        RECT -0.1 -0.155 0.1 0.565 ;
+END Via3_DC1B
+
+Via Via3_DC1T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal4 ;
+        RECT -0.1 -0.565 0.1 0.155 ;
+END Via3_DC1T
+
+Via Via3_DC1L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.145 -0.105 0.555 0.105 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT 0.315 -0.095 0.505 0.095 ;
+    LAYER Metal4 ;
+        RECT -0.155 -0.1 0.565 0.1 ;
+END Via3_DC1L
+
+Via Via3_DC1R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal4 ;
+        RECT -0.565 -0.1 0.155 0.1 ;
+END Via3_DC1R
+
+Via Via3_DC2B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal4 ;
+        RECT -0.145 -0.105 0.145 0.515 ;
+END Via3_DC2B
+
+Via Via3_DC2T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal4 ;
+        RECT -0.145 -0.515 0.145 0.105 ;
+END Via3_DC2T
+
+Via Via3_DC2L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT 0.32 -0.095 0.51 0.095 ;
+    LAYER Metal4 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+END Via3_DC2L
+
+Via Via3_DC2R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal3 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via3 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal4 ;
+        RECT -0.515 -0.145 0.105 0.145 ;
+END Via3_DC2R
+
+#######  Definitions of Via4 single cut ##############
+
+Via  Via4_XX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via4_XX
+
+
+Via  Via4_XX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via4_XX_s
+
+Via  Via4_XY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via4_XY
+
+Via  Via4_XY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.145 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via4_XY_s
+
+Via  Via4_YX DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.145 -0.1 0.145 0.1 ;
+  END Via4_YX
+
+Via  Via4_YX_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.36 -0.1 0.36 0.1 ;
+  END Via4_YX_s
+
+Via  Via4_YY DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.1 -0.145 0.1 0.145 ;
+  END Via4_YY
+
+Via  Via4_YY_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.105 -0.145 0.105 0.145 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.1 -0.36 0.1 0.36 ;
+  END Via4_YY_s
+
+Via  Via4_s DEFAULT
+  RESISTANCE  20.00 ;
+  LAYER Metal4 ;
+      RECT -0.145 -0.145 0.145 0.145 ;
+    LAYER Via4 ;
+      RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Metal5 ;
+      RECT -0.19 -0.19 0.19 0.19 ;
+  END Via4_s
+
+#######  Definitions of Via4 double cut ##############
+
+Via Via4_DC1B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal5 ;
+        RECT -0.1 -0.155 0.1 0.565 ;
+END Via4_DC1B
+
+Via Via4_DC1T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal5 ;
+        RECT -0.1 -0.565 0.1 0.155 ;
+END Via4_DC1T
+
+Via Via4_DC1L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.145 -0.105 0.555 0.105 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT 0.315 -0.095 0.505 0.095 ;
+    LAYER Metal5 ;
+        RECT -0.155 -0.1 0.565 0.1 ;
+END Via4_DC1L
+
+Via Via4_DC1R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal5 ;
+        RECT -0.565 -0.1 0.155 0.1 ;
+END Via4_DC1R
+
+Via Via4_DC2B DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.105 -0.145 0.105 0.555 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.095 0.315 0.095 0.505 ;
+    LAYER Metal5 ;
+        RECT -0.145 -0.105 0.145 0.515 ;
+END Via4_DC2B
+
+Via Via4_DC2T DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.105 -0.555 0.105 0.145 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.505 0.095 -0.315 ;
+    LAYER Metal5 ;
+        RECT -0.145 -0.515 0.145 0.105 ;
+END Via4_DC2T
+
+Via Via4_DC2L DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT 0.32 -0.095 0.51 0.095 ;
+    LAYER Metal5 ;
+        RECT -0.1 -0.145 0.52 0.145 ;
+END Via4_DC2L
+
+Via Via4_DC2R DEFAULT
+    RESISTANCE 20.0 ;
+    LAYER Metal4 ;
+        RECT -0.555 -0.105 0.145 0.105 ;
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+    LAYER Via4 ;
+        RECT -0.505 -0.095 -0.315 0.095 ;
+    LAYER Metal5 ;
+        RECT -0.515 -0.145 0.105 0.145 ;
+END Via4_DC2R
+
+#######   TopVia1   ##############################
+
+Via TopVia1EWNS DEFAULT
+  RESISTANCE 4.0 ;
+  LAYER Metal5 ;
+    RECT -0.31 -0.31 0.31 0.31 ;
+  LAYER TopVia1 ;
+    RECT -0.21 -0.21 0.21 0.21 ;
+  LAYER TopMetal1 ;
+    RECT -0.75 -0.75 0.75 0.75 ;
+END TopVia1EWNS
+
+########   TopVia2   #############################
+
+Via TopVia2EWNS DEFAULT
+  RESISTANCE 2.2 ;
+  LAYER TopMetal1 ;
+    RECT -0.95 -0.95 0.95 0.95 ;
+  LAYER TopVia2 ;
+    RECT -0.45 -0.45 0.45 0.45 ;
+  LAYER TopMetal2 ;
+    RECT -0.95 -0.95 0.95 0.95 ;
+END TopVia2EWNS
+#############################################
+ViaRULE via1Array GENERATE
+    LAYER Metal1 ;
+        ENCLOSURE 0.050 0.010 ;
+
+    LAYER Metal2 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Via1 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+        SPACING 0.480 BY 0.480 ;
+        RESISTANCE 20.0 ;
+END via1Array
+
+ViaRULE via2Array GENERATE
+    LAYER Metal2 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Metal3 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Via2 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+        SPACING 0.480 BY 0.480 ;
+        RESISTANCE 20.0 ;
+END via2Array
+
+ViaRULE via3Array GENERATE
+    LAYER Metal3 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Metal4 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Via3 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+        SPACING 0.480 BY 0.480 ;
+        RESISTANCE 20.0 ;
+END via3Array
+
+ViaRULE via4Array GENERATE
+    LAYER Metal4 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Metal5 ;
+        ENCLOSURE 0.050 0.005 ;
+
+    LAYER Via4 ;
+        RECT -0.095 -0.095 0.095 0.095 ;
+        SPACING 0.480 BY 0.480 ;
+        RESISTANCE 20.0 ;
+END via4Array
+###########################################
+ViaRULE viagen56 GENERATE
+  LAYER Metal5 ;
+    ENCLOSURE 0 0 ;
+  LAYER TopMetal1 ;
+    ENCLOSURE 0.61 0.61 ;
+  LAYER TopVia1 ;
+    RECT -0.21 -0.21 0.21 0.21 ;
+    SPACING 0.84 BY 0.84 ;
+    RESISTANCE 4.0 ;
+END viagen56
+
+ViaRULE viagen67 GENERATE
+  LAYER TopMetal1 ;
+    ENCLOSURE 0.5 0.5 ;
+  LAYER TopMetal2 ;
+    ENCLOSURE 0.55 0.55 ;
+  LAYER TopVia2 ;
+    RECT -0.45 -0.45 0.45 0.45 ;
+    SPACING 1.96 BY 1.96 ;
+    RESISTANCE 2.2 ;
+END viagen67
+
+END LIBRARY
