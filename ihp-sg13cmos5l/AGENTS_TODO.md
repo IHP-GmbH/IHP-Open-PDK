@@ -4,7 +4,12 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
-## Current Priority: Session D (Optional) - DRC Rule Editor
+## Current Priority: Session 5 Complete - Ready for Regression Testing
+
+**Next Steps:**
+1. Run DRC regression to verify new parameters work correctly
+2. Commit Session 5 changes
+3. (Optional) Session D - DRC Rule Editor
 
 ---
 
@@ -47,6 +52,66 @@ The density test failure (TM1.c) is due to test infrastructure, not DRC rules:
 - `testing/run_regression.py` - Updated RULES_VAR for M1-M4-TM1
 - `testcases/unit/metal5.gds` - Removed (symlink deleted)
 - `testcases/unit/via4.gds` - Removed (symlink deleted)
+
+---
+
+## Session 5: DRC Parameter Verification (COMPLETE)
+
+**Date**: 2025-12-15
+
+### Objective
+Verify all DRC parameter values in `sg13cmos5l_tech_default.json` against reference PDF documentation (SG13CMOS5L_os_layout_rules.pdf Rev 0.1).
+
+### Work Completed
+- [x] Verified Lotes 1-8 from verification report
+- [x] Added 6 missing TopVia1/TopMetal1 parameters
+- [x] Added 12 missing TM1Fil (TopMetal1 filler) parameters
+- [x] Verified Slt.b/Slt.c semantics (values correct)
+- [x] Investigated LBE rules (used in DRC, PDF incomplete)
+- [x] Investigated Rpnd.a rule (not used in DRC, PCell only)
+
+### Parameters Added to `sg13cmos5l_tech_default.json`
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| TV1_a | 0.42 µm | TopVia1 Size |
+| TV1_b | 0.42 µm | TopVia1 Space |
+| TV1_c | 0.10 µm | M4 Enclosure of TopVia1 |
+| TV1_d | 0.42 µm | TM1 Enclosure of TopVia1 |
+| TM1_a | 1.64 µm | TopMetal1 Min Width |
+| TM1_b | 1.64 µm | TopMetal1 Min Space |
+| TM1Fil_a | 5.0 µm | TM1 Filler Min Width |
+| TM1Fil_a1 | 10.0 µm | TM1 Filler Max Width |
+| TM1Fil_b | 3.0 µm | TM1 Filler Min Space (internal) |
+| TM1Fil_c | 3.0 µm | TM1 Filler Space to TM1 |
+| TM1Fil_d | 4.9 µm | TM1 Filler parameter d |
+| TM1Fil_e | 0.0 | TM1 Filler parameter e |
+| TM1Fil_f | 20.0 µm | TM1 Filler parameter f |
+| TM1Fil_g | 0.0 | TM1 Filler parameter g |
+| TM1Fil_size_x | 5.0 µm | TM1 Filler cell size X |
+| TM1Fil_size_y | 10.0 µm | TM1 Filler cell size Y |
+| TM1Fil_space | 3.0 µm | TM1 Filler spacing |
+| TM1Fil_offset | 7.5 µm | TM1 Filler offset |
+
+### Verification Summary
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| Metal M1-M4 | ✅ CORRECT | All width/space values match PDF |
+| Via V1-V3 | ✅ CORRECT | All size values match PDF |
+| TopVia1 | ✅ ADDED | 4 params added from full PDK |
+| TopMetal1 | ✅ ADDED | 2 params + 12 filler params |
+| Wells/Activ | ✅ CORRECT | NW, PWB, Act values match |
+| Passiv/Antenna | ✅ CORRECT | Pas, Ant values match |
+| TGO/pSD | ✅ CORRECT | Device rules match |
+| Block Layers | ✅ CORRECT | nSDB, EXTB, Sal values match |
+| Resistors | ✅ CORRECT | Rsil, Rppd, Rhi values match |
+| Slit Rules | ✅ CORRECT | Slt_b=20 (max slit), Slt_c=30 (max metal) |
+| LBE | ⚠️ UNDOCUMENTED | Rules used in DRC, not in PDF Rev 0.1 |
+| Rpnd | ⚠️ UNUSED | Params exist but not used in DRC rules |
+
+### Files Modified
+- `libs.tech/klayout/tech/drc/rule_decks/sg13cmos5l_tech_default.json` - Added 18 parameters
 
 ---
 
