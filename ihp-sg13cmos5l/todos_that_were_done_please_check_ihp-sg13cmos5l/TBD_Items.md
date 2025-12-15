@@ -7,8 +7,8 @@
 - `rhigh_code` - High-R poly resistor (symlink to G2 PDK)
 
 **Layers Required**:
-- PolyRes (GDS 128) - included in SG13CMOS5L
-- ThinFilmRes (GDS 146) - included in SG13CMOS5L (if needed)
+- PolyRes - included in SG13CMOS5L
+- ThinFilmRes - included in SG13CMOS5L (if needed)
 
 **Decision Needed**: Should hi-res poly resistors (rppd, rhigh) remain in the SG13CMOS5L PDK?
 
