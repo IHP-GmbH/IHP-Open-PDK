@@ -17,9 +17,10 @@
 #=========================================================================================
 #
 # Modified for IHP-SG13CMOS5L Slim PDK
-# - Removed TopMetal1 (layer 126) and TopMetal2 (layer 134) references
-# - Slim PDK uses Metal5 as the top routing layer
-# - Removed rules: TM1.c, TM1.d, TM2.c, TM2.d, Slt.i_TM1, Slt.i_TM2
+# Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
+# - TopMetal1 (layer 126) is the top routing layer
+# - Removed Metal5 (layer 67), Via4 (layer 66), TopMetal2 (layer 134), TopVia2 (layer 133)
+# - Includes TM1.c, TM1.d density rules for TopMetal1
 #
 #=========================================================================================
 
@@ -198,19 +199,19 @@ metal4_slit = get_polygons(50, 24)
 count = metal4_slit.count
 logger.info("metal4_slit has #{count} polygons")
 
-metal5_drw = get_polygons(67, 0)
-count = metal5_drw.count
-logger.info("metal5_drw has #{count} polygons")
+topmetal1_drw = get_polygons(126, 0)
+count = topmetal1_drw.count
+logger.info("topmetal1_drw has #{count} polygons")
 
-metal5_filler = get_polygons(67, 22)
-count = metal5_filler.count
-logger.info("metal5_filler has #{count} polygons")
+topmetal1_filler = get_polygons(126, 22)
+count = topmetal1_filler.count
+logger.info("topmetal1_filler has #{count} polygons")
 
-metal5_slit = get_polygons(67, 24)
-count = metal5_slit.count
-logger.info("metal5_slit has #{count} polygons")
+topmetal1_slit = get_polygons(126, 24)
+count = topmetal1_slit.count
+logger.info("topmetal1_slit has #{count} polygons")
 
-# TopMetal layers removed for slim PDK (layers 126, 134)
+# Metal5 and TopMetal2 layers removed for slim PDK (layers 67, 134)
 
 lbe_drw = get_polygons(157, 0)
 count = lbe_drw.count
@@ -279,8 +280,8 @@ metal1 = metal1_drw.join(metal1_filler).not(metal1_slit)
 metal2 = metal2_drw.join(metal2_filler).not(metal2_slit)
 metal3 = metal3_drw.join(metal3_filler).not(metal3_slit)
 metal4 = metal4_drw.join(metal4_filler).not(metal4_slit)
-metal5 = metal5_drw.join(metal5_filler).not(metal5_slit)
-# TopMetal derivations removed for slim PDK
+topmetal1 = topmetal1_drw.join(topmetal1_filler).not(topmetal1_slit)
+# Metal5 and TopMetal2 derivations removed for slim PDK
 
 # Forget unused layers to free memory
 activ_drw.forget
@@ -292,8 +293,8 @@ metal1_filler.forget
 metal2_filler.forget
 metal3_filler.forget
 metal4_filler.forget
-metal5_filler.forget
-# TopMetal filler forget calls removed for slim PDK
+topmetal1_filler.forget
+# Metal5 and TopMetal2 filler forget calls removed for slim PDK
 
 if PRECHECK_DRC
   # Forget unused layers to free memory
@@ -305,9 +306,9 @@ if PRECHECK_DRC
   metal3_slit.forget
   metal4_drw.forget
   metal4_slit.forget
-  metal5_drw.forget
-  metal5_slit.forget
-  # TopMetal drw/slit forget calls removed for slim PDK
+  topmetal1_drw.forget
+  topmetal1_slit.forget
+  # Metal5 and TopMetal2 drw/slit forget calls removed for slim PDK
 end
 
 #===================================================================================
@@ -438,11 +439,9 @@ m3_dens_ratio = m3_area / chip_area
 logger.info('Computing metal4 area and density...')
 m4_area = metal4.area
 m4_dens_ratio = m4_area / chip_area
-logger.info('Computing metal5 area and density...')
-m5_area = metal5.area
-m5_dens_ratio = m5_area / chip_area
+# Metal5 removed for slim PDK - TopMetal1 density handled separately with TM1.c/TM1.d rules
 
-dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio, m5_dens_ratio]
+dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio]
 metal_start_index = 2
 mn_j_val = drc_rules['Mn_j'].to_f
 mn_k_val = drc_rules['Mn_k'].to_f
@@ -479,8 +478,9 @@ met_tile_size = tile_size(met_size)
 met_tile_step = tile_step(met_step)
 met_tile_origin = tile_origin(met_org_x, met_org_y)
 
-mets_lay = [metal1, metal2, metal3, metal4, metal5]
+mets_lay = [metal1, metal2, metal3, metal4]
 metal_start_index = 1
+# Metal5 removed - MFil rules only apply to thin metals M1-M4
 mfil_h_val = drc_rules['MFil_h'].to_f
 mfil_k_val = drc_rules['MFil_k'].to_f
 
@@ -516,10 +516,30 @@ metal1.forget
 metal2.forget
 metal3.forget
 metal4.forget
-metal5.forget
 
-# TopMetal1 and TopMetal2 density rules removed for slim PDK
-# Rules removed: TM1.c, TM1.d, TM2.c, TM2.d
+#================================================
+# ------------------ TopMetal1 ------------------
+#================================================
+
+logger.info('Computing TopMetal1 area and density...')
+
+tm1_area = topmetal1.area
+tm1_dens_ratio = tm1_area / chip_area
+
+# Rule TM1.c: Min. global TopMetal1 density [%]= 25.0.
+logger.info('Executing rule TM1.c')
+tm1_c_val = drc_rules['TM1_c'].to_f
+if tm1_dens_ratio < tm1_c_val
+  CHIP.output('TM1.c', "5.22. TM1.c: Min. global TopMetal1 density [%]: #{tm1_c_val * 100}.")
+end
+
+# Rule TM1.d: Max. global TopMetal1 density [%]= 70.0.
+logger.info('Executing rule TM1.d')
+tm1_d_val = drc_rules['TM1_d'].to_f
+CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}") if tm1_dens_ratio > tm1_d_val
+topmetal1.forget
+
+# TopMetal2 density rules removed for slim PDK (TM2.c, TM2.d)
 
 #================================================
 # --------------------- LBE ---------------------
@@ -544,11 +564,11 @@ lbe_drw.forget
 #================================================
 
 unless PRECHECK_DRC
-  # layer lists - TopMetal removed for slim PDK
-  metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit]
-  metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw]
-  metals_names = %w[metal1 metal2 metal3 metal4 metal5]
-  metals_abbrev = %w[M1 M2 M3 M4 M5]
+  # layer lists - Metal5 removed, TopMetal1 added for slim PDK
+  metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, topmetal1_slit]
+  metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, topmetal1_drw]
+  metals_names = %w[metal1 metal2 metal3 metal4 topmetal1]
+  metals_abbrev = %w[M1 M2 M3 M4 TM1]
 
   slt_i_val = drc_rules['Slt_i'].to_f
   slt_i_inverse = 1.0 / slt_i_val
@@ -577,9 +597,9 @@ unless PRECHECK_DRC
   metal3_slit.forget
   metal4_drw.forget
   metal4_slit.forget
-  metal5_drw.forget
-  metal5_slit.forget
-  # TopMetal drw/slit forget calls removed for slim PDK
+  topmetal1_drw.forget
+  topmetal1_slit.forget
+  # Metal5 and TopMetal2 drw/slit forget calls removed for slim PDK
 end
 
 #================================================
@@ -623,9 +643,9 @@ log_layer_density(logger, 'Metal1',    m1_area,   m1_dens_ratio,   m1_j_val, m1_
 log_layer_density(logger, 'Metal2',    m2_area,   m2_dens_ratio,   mn_j_val, mn_k_val)
 log_layer_density(logger, 'Metal3',    m3_area,   m3_dens_ratio,   mn_j_val, mn_k_val)
 log_layer_density(logger, 'Metal4',    m4_area,   m4_dens_ratio,   mn_j_val, mn_k_val)
-log_layer_density(logger, 'Metal5',    m5_area,   m5_dens_ratio,   mn_j_val, mn_k_val)
-# TopMetal density reports removed for slim PDK
-log_layer_density(logger, 'LBE',       lbe_area,  lbe_dens_ratio, nil, lbe_i_val)
+log_layer_density(logger, 'TopMetal1', tm1_area,  tm1_dens_ratio,  tm1_c_val, tm1_d_val)
+# Metal5 and TopMetal2 density reports removed for slim PDK
+log_layer_density(logger, 'LBE',       lbe_area,  lbe_dens_ratio,  nil, lbe_i_val)
 
 # ===================================
 exec_end_time = Time.now
