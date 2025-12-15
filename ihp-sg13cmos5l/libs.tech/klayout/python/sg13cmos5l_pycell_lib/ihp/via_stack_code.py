@@ -112,6 +112,7 @@ class via_stack(DloGen):
         idx_t = metal_layers.index(t_layer)
         if idx_b > idx_t:
             idx_b, idx_t = idx_t, idx_b
+            b_layer, t_layer = t_layer, b_layer  # Also swap layer names
         stack_layers = metal_layers[idx_b:idx_t+1]
         
         for layer in stack_layers:
@@ -125,6 +126,8 @@ class via_stack(DloGen):
                 via_enc = v1_enc
                 w_x = (columns * via_size + (columns - 1) * via_sep)
                 w_y = (rows * via_size + (rows - 1) * via_sep)
+                via_array_w_x = w_x
+                via_array_w_y = w_y
 
             elif layer == 'TopMetal1':  # TopMetal1 uses TopVia1 (larger vias)
                 columns = vn_columns
@@ -134,8 +137,25 @@ class via_stack(DloGen):
                 via_enc = tm1_enc  # TopMetal1 enclosure of TopVia1
                 w_x = (columns * via_size + (columns - 1) * via_sep)
                 w_y = (rows * via_size + (rows - 1) * via_sep)
+                via_array_w_x = w_x
+                via_array_w_y = w_y
 
-            else:  # Metal2-Metal4
+            elif layer == 'Metal4' and 'TopMetal1' in stack_layers:
+                # Metal4 connected to TopMetal1: M4 area must match TM1 area
+                columns = vn_columns
+                rows = vn_rows
+                # Via3 parameters (for drawing Via3 - keep original size)
+                via_size = vn_size
+                via_sep = vn_sep1 if (columns<4 and rows<4) else vn_sep2
+                via_enc = tm1_enc  # Use TM1 enclosure so M4 rect = TM1 rect
+                # Via3 array size (for positioning Via3)
+                via_array_w_x = (columns * via_size + (columns - 1) * via_sep)
+                via_array_w_y = (rows * via_size + (rows - 1) * via_sep)
+                # Metal4 rectangle uses TopVia1 params (matches TM1 area)
+                w_x = (columns * tv1_size + (columns - 1) * tv1_sep)
+                w_y = (rows * tv1_size + (rows - 1) * tv1_sep)
+
+            else:  # Metal2, Metal3, or Metal4 without TopMetal1
                 columns = vn_columns
                 rows = vn_rows
                 via_size = vn_size
@@ -143,6 +163,8 @@ class via_stack(DloGen):
                 via_enc = vn_enc
                 w_x = (columns * via_size + (columns - 1) * via_sep)
                 w_y = (rows * via_size + (rows - 1) * via_sep)
+                via_array_w_x = w_x
+                via_array_w_y = w_y
 
             #metal draw
             dbCreateRect(self, layer, Box(-via_enc-w_x/2, -via_enc-w_y/2, w_x/2 + via_enc, w_y/2 + via_enc))
@@ -151,7 +173,7 @@ class via_stack(DloGen):
             if layer != b_layer:
                 via_layer = via_layers[metal_layers.index(layer)-1]
                 for i in range(columns):
-                    x0 = i * via_sep + i * via_size - w_x/2
+                    x0 = i * via_sep + i * via_size - via_array_w_x/2
                     for j in range(rows):
-                        y0 = j * via_sep + j * via_size - w_y/2
+                        y0 = j * via_sep + j * via_size - via_array_w_y/2
                         dbCreateRect(self, via_layer, Box(x0, y0, x0 + via_size, y0 + via_size))
