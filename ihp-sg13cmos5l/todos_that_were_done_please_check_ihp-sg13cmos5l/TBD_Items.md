@@ -23,10 +23,10 @@
 
 **Design Notes**:
 - MOM capacitors can be manually constructed using interdigitated M1-M4 routing
-- No PCell automation currently available. POssible to implement.
+- No PCell automation currently available. Possible to implement.
 - SG13G2 PDK also lacks dedicated MOM PCell (only MIM caps exist, which are removed in SG13CMOS5L)
 
-**Decision Needed**: Is a MOM capacitor PCell required for the SG13CMOS5L PDK? If yes, this would need custom development.
+**Decision Needed**: Is a MOM capacitor PCell required for the SG13CMOS5L PDK? If yes, this will need custom development.
 
 ---
 
