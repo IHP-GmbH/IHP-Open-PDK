@@ -72,6 +72,9 @@ pcellRfpmosHV = layout.create_cell("rfpmosHV", "SG13_dev", {})
 # No Filler Stack utility
 pcellNoFillerStack = layout.create_cell("NoFillerStack", "SG13_dev", {})
 
+# Parasitic PNP (tbd.3)
+pcellPnpMPA = layout.create_cell("pnpMPA", "SG13_dev", {})
+
 # Sealring (M1-M5 only)
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 
@@ -109,9 +112,10 @@ top.insert(pya.DCellInstArray(pcellRfnmosHV, pya.DTrans(pya.DVector(10, 60))))
 top.insert(pya.DCellInstArray(pcellRfpmos, pya.DTrans(pya.DVector(20, 60))))
 top.insert(pya.DCellInstArray(pcellRfpmosHV, pya.DTrans(pya.DVector(30, 60))))
 
-# Row 8: ESD and NoFillerStack
+# Row 8: ESD, NoFillerStack, pnpMPA
 top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(0, 80))))
 top.insert(pya.DCellInstArray(pcellNoFillerStack, pya.DTrans(pya.DVector(20, 80))))
+top.insert(pya.DCellInstArray(pcellPnpMPA, pya.DTrans(pya.DVector(40, 80))))
 
 # Large structures
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 0))))
