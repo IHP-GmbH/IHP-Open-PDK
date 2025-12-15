@@ -47,14 +47,15 @@ ANALYSIS_RULES = [
     "golden_not_viol",
 ]
 # Modified for IHP-SG13CMOS5L Slim PDK
-# - Removed TopMetal1 (TM1), TopMetal2 (TM2), TopVia1, TopVia2 references
-# - Slim PDK uses Metal5 as the top routing layer
+# Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
+# - Removed Metal5, Via4, TopMetal2, TopVia2
+# - TopMetal1 (TM1) is the top routing layer
 RULES_VAR = {
-    "met_no": ("2", "3", "4", "5"),
-    "via_no": ("2", "3", "4"),
-    "metalfiller_no": ("1", "2", "3", "4", "5"),
-    "met_abbrev": ("M1", "M2", "M3", "M4", "M5"),  # TM1, TM2 removed for slim PDK
-    "pin_rule": ("a", "b", "e", "f_M2", "f_M3", "f_M4", "f_M5", "g", "h"),
+    "met_no": ("2", "3", "4"),              # M2-M4 only (metaln.drc)
+    "via_no": ("2", "3"),                   # Via2-Via3 only (vian.drc)
+    "metalfiller_no": ("1", "2", "3", "4"), # M1-M4 only (metalnfiller.drc)
+    "met_abbrev": ("M1", "M2", "M3", "M4", "TM1"),  # M1-M4 + TopMetal1
+    "pin_rule": ("a", "b", "e", "f_M2", "f_M3", "f_M4", "f_TM1", "g", "h"),
     "forb_lay": (
         "baspoly",
         "biwind",
@@ -73,13 +74,12 @@ RULES_VAR = {
         "metal2",
         "metal3",
         "metal4",
-        "metal5",
-        # topmetal1, topmetal2 removed for slim PDK
+        "topmetal1",  # TM1 is top layer
         "activ",
         "psd",
     ),
-    "met_name": ("Metal1", "Metal2", "Metal3", "Metal4", "Metal5"),  # TopMetal1/2 removed for slim PDK
-    "via_name": ("Via1", "Via2", "Via3", "Via4"),  # TopVia1/2 removed for slim PDK
+    "met_name": ("Metal1", "Metal2", "Metal3", "Metal4", "TopMetal1"),  # M1-M4-TM1
+    "via_name": ("Via1", "Via2", "Via3", "TopVia1"),  # V1-V3-TV1
 }
 
 

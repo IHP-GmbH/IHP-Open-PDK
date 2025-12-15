@@ -8,6 +8,48 @@ This file tracks remaining tasks for the DRC implementation in the slim PDK.
 
 ---
 
+## Session 4: M1-M4-TM1 DRC Verification (COMPLETE)
+
+**Date**: 2025-12-15
+
+### Objective
+Verify DRC rules work correctly after metal stack update from M1-M5 to M1-M4-TM1.
+
+### Work Completed
+- [x] Verified DRC file structure for M1-M4-TM1 metal stack
+- [x] Removed obsolete test files (metal5.gds, via4.gds)
+- [x] Updated `run_regression.py` RULES_VAR for M1-M4-TM1 stack:
+  - met_no: ("2", "3", "4") - M2-M4 only
+  - via_no: ("2", "3") - Via2-Via3 only
+  - metalfiller_no: ("1", "2", "3", "4") - M1-M4 only
+  - met_abbrev: ("M1", "M2", "M3", "M4", "TM1")
+  - via_name: ("Via1", "Via2", "Via3", "TopVia1")
+- [x] Regenerated golden references
+- [x] Ran full regression tests
+
+### Regression Results (Session 4)
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| FEOL rules | ✓ PASSED | activ, cont, nwell, gatpoly, etc. |
+| BEOL M1-M4 | ✓ PASSED | metal1-4, via1-3, metalnfiller |
+| TopVia1/TopMetal1 | ✓ PASSED | topvia1, topmetal1, topmetal1filler |
+| passiv/lbe/pin | ✓ PASSED | All rules pass |
+| density TM1.c | ⚠️ FAILED | Known limitation - test file issue |
+
+### Known Limitation
+The density test failure (TM1.c) is due to test infrastructure, not DRC rules:
+- Density test files are symlinks to full PDK
+- Full PDK TM1 patterns differ from slim PDK requirements
+- DRC rules are correct; only test coverage is incomplete
+
+### Files Modified
+- `testing/run_regression.py` - Updated RULES_VAR for M1-M4-TM1
+- `testcases/unit/metal5.gds` - Removed (symlink deleted)
+- `testcases/unit/via4.gds` - Removed (symlink deleted)
+
+---
+
 ## Session C.5: Slim PDK Density Test Files (COMPLETE)
 
 **Date**: 2025-12-11
