@@ -1,0 +1,152 @@
+############################################################### DRC checks #######################################
+# IHP SG13CMOS5L mosfets dimension checks
+proc fet_drc {instance symbol model w l ng } {
+  set res {}
+  # strip off the "u" suffix
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l] && [string is integer $ng]} {
+
+  # calculate finger width
+    set w [expr { double($w) / double($ng)}]
+
+    switch -regexp $model {
+      {sg13_lv_nmos$} {
+        if { $w < 0.13 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.13 } {
+          append res "${instance} ($model): length is too small, l = $l, min l > 0.13u" \n
+        } 
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_lv_pmos$} {
+        if { $w < 0.13 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.13u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.13 } {
+          append res "${instance} ($model): length is too small, l = $l, min. l > 0.13u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_hv_nmos$} {
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min w/ng > 0.3u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.45 } {
+         append res "${instance} ($model): length is too small, l = $l, min. l > 0.45u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+      {sg13_hv_pmos$} {
+        if { $w < 0.3 } {
+          append res "${instance} ($model): finger width is too small, w/ng = $w, min. w/ng > 0.3u" \n
+        }
+        if { $w > 10.0 } {
+          append res "${instance} ($model): finger width is too big, w/ng = $w, max. w/ng < 10.0u" \n
+        }
+        if { $l < 0.4 } {
+          append res "${instance} ($model): length is too small, l = $l, min. l > 0.4u" \n
+        }
+        if { $l > 10.0 } {
+          append res "${instance} ($model): length is too big, l = $l, max l < 10.0u" \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
+# IHP SG13CMOS5L resistors dimension checks
+proc res_drc {instance symbol model w l } {
+  set res {}
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l] } {
+
+    if { $w < 0.5e-6 } {
+      append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
+    }
+
+    if { $l < 0.5e-6 } {
+       append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.5u" \n
+    }
+  }
+  return $res
+}
+# IHP SG13CMOS5L HBT diodes checks
+proc diode_drc {instance symbol model w l } {
+  set res {}
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { [string is double $w] && [string is double $l]} {
+
+    switch -regexp $model {
+      {dantenna} {
+        if { $w < 0.78 } {
+          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
+        }
+        if { $l < 0.78 } {
+          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
+        }
+      }
+      {dpantenna} {
+        if { $w < 0.78 } {
+          append res "${instance} ($model): Diode width w = $w too small, min w > 0.78 um" \n
+        }
+        if { $l < 0.78 } {
+          append res "${instance} ($model): Diode length l = $l too small, min l > 0.78 um" \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
+
+# IHP SG13CMOS5L S-Varicap checks
+proc svaricap_drc {instance symbol model w l Nx} {
+  set res {}
+
+  # Validate Nx
+  if {![string is integer -strict $Nx] || $Nx < 1 || $Nx > 10} {
+    append res "${instance} ($model): Nx = $Nx is invalid, must be an integer between 1 and 10" \n
+    return $res
+  }
+
+  # Remove 'u' suffix if present
+  regsub {u$} $w {} w_clean
+  regsub {u$} $l {} l_clean
+
+  # Convert to double
+  if {![string is double $w_clean] || ![string is double $l_clean]} {
+    append res "${instance} ($model): Invalid width or length format" \n
+    return $res
+  }
+
+
+  # Accept only the two valid (w, l) combinations
+  set valid_comb1 [expr abs($w_clean - 3.74) < 1e-6 && abs($l_clean - 0.3) < 1e-6]
+  set valid_comb2 [expr abs($w_clean - 9.74) < 1e-6 && abs($l_clean - 0.8) < 1e-6]
+
+  if {!($valid_comb1 || $valid_comb2)} {
+    append res "${instance} ($model): Invalid (w,l) combination. Allowed: (3.74u, 0.3u) or (9.74u, 0.8u)" \n
+    return $res
+  }
+
+  return $res
+}
