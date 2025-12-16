@@ -42,7 +42,23 @@
 - Parasitic vertical PNP substrate device
 - Uses existing CMOS layers (no additional layers required)
 
-
 **Decision Needed**: Should the parasitic PNP (pnpMPA) remain in the SG13CMOS5L PDK release?
 
 ---
+
+## tbd.4: QA cells
+
+### To be modified
+
+layers:
+- [ ] activFiller
+- [ ] gatFiller
+- [ ] metalFiller
+- [ ] metaln
+- [ ] passiv
+- [ ] topMet1Filler
+- [ ] topVia1
+- [ ] vian
+
+devices:
+- [ ] sealring_complete
