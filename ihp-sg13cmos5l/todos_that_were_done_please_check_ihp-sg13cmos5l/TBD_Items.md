@@ -10,7 +10,7 @@
 - PolyRes - included in SG13CMOS5L
 - ThinFilmRes - included in SG13CMOS5L (if needed)
 
-**Decision Needed**: Should hi-res poly resistors (rppd, rhigh) remain in the SG13CMOS5L PDK?
+**Decision Needed**: Should hi-res poly resistors (rppd, rhigh) remain in the SG13CMOS5L PDK? 🟢 **YES**
 
 ---
 
@@ -26,7 +26,7 @@
 - No PCell automation currently available. Possible to implement.
 - SG13G2 PDK also lacks dedicated MOM PCell (only MIM caps exist, which are removed in SG13CMOS5L)
 
-**Decision Needed**: Is a MOM capacitor PCell required for the SG13CMOS5L PDK? If yes, this will need custom development.
+**Decision Needed**: Is a MOM capacitor PCell required for the SG13CMOS5L PDK? If yes, this will need custom development. 🟢 **YES, Pcell is not available - we should plan development**
 
 ---
 
@@ -42,7 +42,7 @@
 - Parasitic vertical PNP substrate device
 - Uses existing CMOS layers (no additional layers required)
 
-**Decision Needed**: Should the parasitic PNP (pnpMPA) remain in the SG13CMOS5L PDK release?
+**Decision Needed**: Should the parasitic PNP (pnpMPA) remain in the SG13CMOS5L PDK release? 🟢 **YES**
 
 ---
 
