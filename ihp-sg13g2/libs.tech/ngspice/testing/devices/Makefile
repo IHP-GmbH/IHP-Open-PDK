@@ -68,9 +68,9 @@ all: test-all
 define run_test
 	@echo ">>> Running $(1) with $(RUNNER) ..."
 	@if [ "$(RUNNER)" = "pytest" ]; then \
-		$(PYTEST_BIN) -k "$(1)" || true; \
+		$(PYTEST_BIN) -k "$(1)"; \
 	else \
-		$(VERIFIER_BIN) --config $(2) || echo "FAILED: $(1)"; \
+		$(VERIFIER_BIN) --config $(2); \
 	fi
 endef
 
