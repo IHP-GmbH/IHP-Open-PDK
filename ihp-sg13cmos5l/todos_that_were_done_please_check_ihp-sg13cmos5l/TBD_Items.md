@@ -70,8 +70,8 @@ devices:
 
 **topVia1**: PASS (density violations expected for small test cell)
 
-**sealring_complete**: TV1.a violation
-- Original sealring designed for TopVia2 which allows large vias
+**sealring_complete**: PASS (after PCell fix)
+- Issue: Original sealring designed for TopVia2 which allows large vias
 - TopVia1 requires exactly 0.42um x 0.42um via size
-- Large TopVia fills (19.7um, 108um) from G2 design violate this rule
-- Requires proper redesign with TopVia1 arrays, not just layer swap
+- Fix: Modified sealring_code.py to generate TopVia1 arrays instead of solid fills
+- QA cell updated with regenerated sealring from fixed PCell

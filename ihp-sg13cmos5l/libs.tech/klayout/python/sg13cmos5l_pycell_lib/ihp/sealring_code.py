@@ -70,7 +70,9 @@ class sealring(DloGen):
         cont_size = self.techparams['Cnt_a']
         vian_size = self.techparams['Vn_a']
         # SG13CMOS5L: M1-M4-TM1 stack (TopVia1 connects M4 to TopMetal1)
-        tv1_size = self.techparams.get('TV1_a', 0.42)  # TopVia1 size (larger than regular vias)
+        tv1_size = self.techparams.get('TV1_a', 0.42)  # TopVia1 size
+        tv1_space = self.techparams.get('TV1_b', 0.42)  # TopVia1 spacing
+        tv1_pitch = tv1_size + tv1_space  # 0.84um pitch
 
         # PCell Code
 
@@ -119,28 +121,61 @@ class sealring(DloGen):
                 viaWidth = cont_size
                 viaLength = 4.2
             elif layer == 'TopVia1' :
-                viaWidth = tv1_size  # TopVia1 is larger (0.42µm)
+                viaWidth = tv1_size
                 viaLength = 4.2
             else :
                 viaWidth = vian_size
                 viaLength = 4.2
 
             via_startx = corner_end - (corner_end - maxMetalWidth * (corner_steps + 1)) + metalOffset - maxMetalWidth/2-0.1
-            layerobj = dbCreateRect(self, layer, Box(via_startx, viaOffset, via_startx+viaWidth, viaOffset+viaLength))
-            cons(item_list, layerobj)
 
-            viaGroupId = layerobj
+            if layer == 'TopVia1':
+                # TopVia1 requires individual 0.42x0.42 vias (TV1.a rule)
+                # Generate via array for corner region
+                def create_tv1_array(x0, y0, w_ext, h_ext):
+                    """Create array of TopVia1 vias filling the given area"""
+                    x = x0
+                    while x + tv1_size <= x0 + w_ext:
+                        y = y0
+                        while y + tv1_size <= y0 + h_ext:
+                            layerobj = dbCreateRect(self, layer, Box(x, y, x + tv1_size, y + tv1_size))
+                            cons(item_list, layerobj)
+                            y += tv1_pitch
+                        x += tv1_pitch
 
-            for cnt in range(1, corner_steps+1) :
-                layerobj = dbCopyShape(viaGroupId, Point(2 * viaOffset + viaLength * cnt + viaWidth-0.1, -viaLength*(cnt-1)), 'R90')
+                # Main corner via area
+                create_tv1_array(via_startx, viaOffset, viaWidth, viaLength)
+
+                for cnt in range(1, corner_steps+1):
+                    # Rotated copies along diagonal
+                    rx = via_startx + 2 * viaOffset + viaLength * cnt + viaWidth - 0.1
+                    ry = viaOffset - viaLength * (cnt - 1)
+                    create_tv1_array(rx, ry, viaLength, viaWidth)
+                    # Horizontal copies
+                    hx = via_startx - maxMetalWidth * (cnt - 1)
+                    hy = viaOffset + maxMetalWidth * (cnt - 1) - 0.1
+                    create_tv1_array(hx, hy, viaWidth, viaLength)
+
+                # Corner connection strips as arrays
+                create_tv1_array(via_startx, viaOffset - 0.1, corner_end - via_startx, viaWidth)
+                create_tv1_array(viaOffset - 0.1, corner_end - maxMetalWidth/2 - 0.1, viaWidth, maxMetalWidth/2 + 0.1)
+            else:
+                layerobj = dbCreateRect(self, layer, Box(via_startx, viaOffset, via_startx+viaWidth, viaOffset+viaLength))
                 cons(item_list, layerobj)
-                layerobj = dbCopyShape(viaGroupId, Point(-maxMetalWidth*(cnt-1), maxMetalWidth*(cnt-1)-0.1), 'R0')
+
+                viaGroupId = layerobj
+
+                for cnt in range(1, corner_steps+1) :
+                    layerobj = dbCopyShape(viaGroupId, Point(2 * viaOffset + viaLength * cnt + viaWidth-0.1, -viaLength*(cnt-1)), 'R90')
+                    cons(item_list, layerobj)
+                    layerobj = dbCopyShape(viaGroupId, Point(-maxMetalWidth*(cnt-1), maxMetalWidth*(cnt-1)-0.1), 'R0')
+                    cons(item_list, layerobj)
+
+                layerobj = dbCreateRect(self, layer, Box(via_startx, viaOffset-0.1, corner_end, viaOffset-0.1+viaWidth))
+                cons(item_list, layerobj)
+                layerobj = dbCreateRect(self, layer, Box(viaOffset-0.1, corner_end -  maxMetalWidth/2-0.1, viaOffset-0.1+viaWidth, corner_end))
                 cons(item_list, layerobj)
 
-            layerobj = dbCreateRect(self, layer, Box(via_startx, viaOffset-0.1, corner_end, viaOffset-0.1+viaWidth))
-            cons(item_list, layerobj)
-            layerobj = dbCreateRect(self, layer, Box(viaOffset-0.1, corner_end -  maxMetalWidth/2-0.1, viaOffset-0.1+viaWidth, corner_end))
-            cons(item_list, layerobj)
             groupId = combineLayerAndDelete(self, item_list, groupId, layer)
 
             item_list = []
@@ -169,16 +204,48 @@ class sealring(DloGen):
                 viaWidth = cont_size
                 viaLength = 4.2
             elif layer == 'TopVia1' :
-                viaWidth = tv1_size  # TopVia1 is larger (0.42µm)
+                viaWidth = tv1_size
                 viaLength = 4.2
             else :
                 viaWidth = vian_size
                 viaLength = 4.2
 
-            dbCreateRect(self, Layer(layer, 'drawing'), Box(viaOffset-0.1, corner_end, viaOffset + viaWidth - 0.1, w - corner_end))
-            dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, viaOffset-0.1, l - corner_end, viaOffset + viaWidth - 0.1))
-            dbCreateRect(self, Layer(layer, 'drawing'), Box(l - viaOffset+0.1, corner_end, l - viaWidth - viaOffset + 0.1, w - corner_end))
-            dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - viaOffset+0.1, l - corner_end, w - viaWidth - viaOffset + 0.1))
+            if layer == 'TopVia1':
+                # TopVia1 requires individual 0.42x0.42 vias (TV1.a rule)
+                # Generate via arrays along straight lines
+                # Left vertical line
+                y_start = corner_end
+                y_end = w - corner_end
+                x_pos = viaOffset - 0.1
+                y = y_start
+                while y + tv1_size <= y_end:
+                    dbCreateRect(self, Layer(layer, 'drawing'), Box(x_pos, y, x_pos + tv1_size, y + tv1_size))
+                    y += tv1_pitch
+                # Bottom horizontal line
+                x_start = corner_end
+                x_end = l - corner_end
+                y_pos = viaOffset - 0.1
+                x = x_start
+                while x + tv1_size <= x_end:
+                    dbCreateRect(self, Layer(layer, 'drawing'), Box(x, y_pos, x + tv1_size, y_pos + tv1_size))
+                    x += tv1_pitch
+                # Right vertical line
+                x_pos = l - viaOffset - tv1_size + 0.1
+                y = y_start
+                while y + tv1_size <= y_end:
+                    dbCreateRect(self, Layer(layer, 'drawing'), Box(x_pos, y, x_pos + tv1_size, y + tv1_size))
+                    y += tv1_pitch
+                # Top horizontal line
+                y_pos = w - viaOffset - tv1_size + 0.1
+                x = x_start
+                while x + tv1_size <= x_end:
+                    dbCreateRect(self, Layer(layer, 'drawing'), Box(x, y_pos, x + tv1_size, y_pos + tv1_size))
+                    x += tv1_pitch
+            else:
+                dbCreateRect(self, Layer(layer, 'drawing'), Box(viaOffset-0.1, corner_end, viaOffset + viaWidth - 0.1, w - corner_end))
+                dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, viaOffset-0.1, l - corner_end, viaOffset + viaWidth - 0.1))
+                dbCreateRect(self, Layer(layer, 'drawing'), Box(l - viaOffset+0.1, corner_end, l - viaWidth - viaOffset + 0.1, w - corner_end))
+                dbCreateRect(self, Layer(layer, 'drawing'), Box(corner_end, w - viaOffset+0.1, l - corner_end, w - viaWidth - viaOffset + 0.1))
 
         # EdgeSeal box around sealring
         dbCreateRect(self, Layer('EdgeSeal', 'boundary'),
