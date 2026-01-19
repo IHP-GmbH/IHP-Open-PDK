@@ -48,17 +48,20 @@
 
 ## tbd.4: QA cells
 
-### To be modified
+### Completed (2025-01-19)
+
+Forbidden layers removed: nBuLay(32), Via4(66), Metal5(67), TopVia2(133), TopMetal2(134)
+Note: TopVia1(125) is required for M4-TM1 connection.
 
 layers:
-- [ ] activFiller
-- [ ] gatFiller
-- [ ] metalFiller
-- [ ] metaln
-- [ ] passiv
-- [ ] topMet1Filler
-- [ ] topVia1
-- [ ] vian
+- [x] activFiller - removed nBuLay
+- [x] gatFiller - removed nBuLay
+- [x] metalFiller - removed Metal5
+- [x] metaln - removed Via4, Metal5
+- [x] passiv - removed Via4, Metal5, TopVia2, TopMetal2
+- [x] topMet1Filler - no changes needed
+- [x] topVia1 - regenerated using via_stack PCell (M4-TopVia1-TM1)
+- [x] vian - removed Via4, Metal5
 
 devices:
-- [ ] sealring_complete
+- [x] sealring_complete - removed forbidden layers, added TopVia1(125) for M4-TM1 connection
