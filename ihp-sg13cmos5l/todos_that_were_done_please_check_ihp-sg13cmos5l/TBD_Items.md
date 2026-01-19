@@ -16,6 +16,7 @@
 
 ## tbd.2: MOM Capacitors (M1-M4)
 
+**Status**: BACKLOG - New development required
 
 **Current State**: RECOGNITION LAYER ONLY
 - Layer 99 includes `mom` marker (datatype for recognition)
@@ -23,10 +24,11 @@
 
 **Design Notes**:
 - MOM capacitors can be manually constructed using interdigitated M1-M4 routing
-- No PCell automation currently available. Possible to implement.
+- No PCell automation currently available
 - SG13G2 PDK also lacks dedicated MOM PCell (only MIM caps exist, which are removed in SG13CMOS5L)
+- Requires new PCell development from scratch
 
-**Decision Needed**: Is a MOM capacitor PCell required for the SG13CMOS5L PDK? If yes, this will need custom development. 🟢 **YES, Pcell is not available - we should plan development**
+**Decision**: PCell development planned for future release
 
 ---
 
@@ -75,3 +77,24 @@ devices:
 - TopVia1 requires exactly 0.42um x 0.42um via size
 - Fix: Modified sealring_code.py to generate TopVia1 arrays instead of solid fills
 - QA cell updated with regenerated sealring from fixed PCell
+
+---
+
+## tbd.5: Tech LEF
+
+### Completed (2026-01-19)
+
+**Issue**: Tech LEF was deleted (commit dabd71e) because it contained forbidden layers.
+
+**Solution**: Recreated `sg13cmos5l_tech.lef` with correct M1-M4-TM1 metal stack.
+
+**Removed**:
+- Layer definitions: Via4, Metal5, TopVia2, TopMetal2
+- Via definitions: All Via4_* (single/double cut), TopVia2EWNS
+- ViaRules: via4Array, viagen67
+
+**Modified**:
+- TopVia1EWNS: Metal5 → Metal4 (connects M4 to TM1)
+- viagen56 → viagen45: Metal5 → Metal4
+
+**Verification**: OpenROAD loaded successfully (15 layers, 52 vias, 84 stdcells)
