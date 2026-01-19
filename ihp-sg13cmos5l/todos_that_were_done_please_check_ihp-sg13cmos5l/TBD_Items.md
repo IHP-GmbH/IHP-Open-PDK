@@ -65,3 +65,13 @@ layers:
 
 devices:
 - [x] sealring_complete - removed forbidden layers, added TopVia1(125) for M4-TM1 connection
+
+### DRC Verification (2026-01-19)
+
+**topVia1**: PASS (density violations expected for small test cell)
+
+**sealring_complete**: TV1.a violation
+- Original sealring designed for TopVia2 which allows large vias
+- TopVia1 requires exactly 0.42um x 0.42um via size
+- Large TopVia fills (19.7um, 108um) from G2 design violate this rule
+- Requires proper redesign with TopVia1 arrays, not just layer swap
