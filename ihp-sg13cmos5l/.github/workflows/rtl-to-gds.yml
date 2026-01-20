@@ -51,10 +51,15 @@ jobs:
             accept-flake-config = true
 
       # 6. Setup Cachix (pre-built binaries)
-      - name: Setup Cachix
+      - name: Setup Cachix OpenLane
         uses: cachix/cachix-action@v15
         with:
           name: openlane
+
+      - name: Setup FOSSI cache
+        run: |
+          nix-env -iA cachix -f https://cachix.org/api/v1/install
+          cachix use fossi-foundation || true
 
       # 7. Cache PDK (large ~1GB)
       - name: Cache PDK
@@ -66,7 +71,7 @@ jobs:
       # 8. Run LibreLane
       - name: Run LibreLane
         run: |
-          nix develop github:efabless/openlane2 --command bash -c "
+          nix develop github:librelane/librelane/3.0.0.dev43 --command bash -c "
             export PDK_ROOT=\$PWD/pdk
             export PDK=ihp-sg13cmos5l
             export STD_CELL_LIBRARY=sg13cmos5l_stdcell
