@@ -1,0 +1,127 @@
+name: RTL-to-GDS Flow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  TESTCASES_REPO: Mauricio-xx/testcases-cmos5l-ihp
+
+jobs:
+  rtl-to-gds:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testcase: [counter]  # Expandir con mas testcases
+
+    steps:
+      # 1. Checkout CMOS5L PDK (este repo)
+      - name: Checkout CMOS5L PDK
+        uses: actions/checkout@v4
+        with:
+          path: cmos5l
+
+      # 2. Clone full G2 PDK
+      - name: Clone IHP-Open-PDK (full G2)
+        run: |
+          git clone --branch dev --recurse-submodules --depth 1 \
+            https://github.com/IHP-GmbH/IHP-Open-PDK.git pdk
+
+      # 3. Overlay CMOS5L sobre G2 (CMOS5L aun no es submodule de G2)
+      - name: Overlay CMOS5L on full PDK
+        run: |
+          mkdir -p pdk/ihp-sg13cmos5l
+          cp -r cmos5l/* pdk/ihp-sg13cmos5l/
+
+      # 4. Clone testcases repo
+      - name: Clone testcases
+        run: |
+          git clone https://github.com/${{ env.TESTCASES_REPO }}.git testcases
+
+      # 5. Install Nix
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      # 6. Setup Cachix (pre-built binaries)
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: openlane
+
+      # 7. Cache PDK (large ~1GB)
+      - name: Cache PDK
+        uses: actions/cache@v4
+        with:
+          path: pdk
+          key: ihp-pdk-${{ hashFiles('pdk/.git/HEAD') }}
+
+      # 8. Run LibreLane
+      - name: Run LibreLane
+        run: |
+          nix develop github:efabless/openlane2 --command bash -c "
+            export PDK_ROOT=\$PWD/pdk
+            export PDK=ihp-sg13cmos5l
+            export STD_CELL_LIBRARY=sg13cmos5l_stdcell
+            cd testcases/testcases/${{ matrix.testcase }}
+            openlane --dockerized config.json
+          "
+
+      # 9. Find GDS output
+      - name: Locate GDS output
+        id: find_gds
+        run: |
+          GDS_FILE=$(find testcases/testcases/${{ matrix.testcase }}/runs -name "*.gds" -path "*/final/*" 2>/dev/null | head -1)
+          if [ -z "$GDS_FILE" ]; then
+            echo "No GDS file found in final output"
+            exit 1
+          fi
+          echo "gds_file=$GDS_FILE" >> $GITHUB_OUTPUT
+          echo "Found GDS: $GDS_FILE"
+
+      # 10. Run DRC
+      - name: Run DRC
+        run: |
+          nix develop github:efabless/nix-eda#klayout --command bash -c "
+            python pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/drc/run_drc.py \
+              --path ${{ steps.find_gds.outputs.gds_file }} \
+              --run_dir drc_results \
+              --no_density
+          "
+
+      # 11. Check DRC result
+      - name: Verify DRC passed
+        run: |
+          if [ -f drc_results/*.lyrdb ]; then
+            # Check for violations in the database
+            VIOLATIONS=$(grep -c "<item>" drc_results/*.lyrdb 2>/dev/null || echo "0")
+            if [ "$VIOLATIONS" -gt "0" ]; then
+              echo "DRC FAILED: $VIOLATIONS violations found"
+              exit 1
+            fi
+          fi
+          echo "DRC PASSED"
+
+      # 12. Upload artifacts
+      - name: Upload LibreLane results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.testcase }}-librelane-results
+          path: testcases/testcases/${{ matrix.testcase }}/runs/
+          retention-days: 14
+
+      - name: Upload DRC results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.testcase }}-drc-results
+          path: drc_results/
+          retention-days: 14
