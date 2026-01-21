@@ -83,18 +83,18 @@ jobs:
       - name: Locate GDS output
         id: find_gds
         run: |
-          GDS_FILE=$(find testcases/testcases/${{ matrix.testcase }}/runs -name "*.gds" -path "*/final/*" 2>/dev/null | head -1)
+          GDS_FILE=$(find testcases/testcases/${{ matrix.testcase }}/runs -name "*.gds" -path "*streamout*" 2>/dev/null | head -1)
           if [ -z "$GDS_FILE" ]; then
-            echo "No GDS file found in final output"
+            echo "No GDS file found in streamout output"
             exit 1
           fi
           echo "gds_file=$GDS_FILE" >> $GITHUB_OUTPUT
           echo "Found GDS: $GDS_FILE"
 
-      # 10. Run DRC
+      # 10. Run DRC (using librelane nix environment which includes klayout)
       - name: Run DRC
         run: |
-          nix develop github:efabless/nix-eda#klayout --command bash -c "
+          nix develop github:librelane/librelane/3.0.0.dev43 --command bash -c "
             python pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/drc/run_drc.py \
               --path ${{ steps.find_gds.outputs.gds_file }} \
               --run_dir drc_results \
@@ -104,15 +104,22 @@ jobs:
       # 11. Check DRC result
       - name: Verify DRC passed
         run: |
-          if [ -f drc_results/*.lyrdb ]; then
-            # Check for violations in the database
+          # Check the DRC log for pass/fail
+          if grep -q "DRC Check Passed" drc_results/*.log 2>/dev/null; then
+            echo "DRC PASSED"
+          elif grep -q "DRC Check Failed" drc_results/*.log 2>/dev/null; then
+            echo "DRC FAILED"
+            cat drc_results/*.log
+            exit 1
+          else
+            echo "DRC status unknown - checking lyrdb for violations"
             VIOLATIONS=$(grep -c "<item>" drc_results/*.lyrdb 2>/dev/null || echo "0")
             if [ "$VIOLATIONS" -gt "0" ]; then
               echo "DRC FAILED: $VIOLATIONS violations found"
               exit 1
             fi
+            echo "DRC PASSED (no violations in lyrdb)"
           fi
-          echo "DRC PASSED"
 
       # 12. Upload artifacts
       - name: Upload LibreLane results
