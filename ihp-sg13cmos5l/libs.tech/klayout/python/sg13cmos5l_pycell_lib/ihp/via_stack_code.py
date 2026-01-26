@@ -84,7 +84,7 @@ class via_stack(DloGen):
         vn_enc = techparams['Vn_c1']
 
         # TopVia1 parameters for M4-TM1 connection
-        # TopVia1 is larger than regular vias (0.42µm vs 0.19µm)
+        # TopVia1 is larger than regular vias (0.42um vs 0.19um)
         tv1_size = techparams.get('TV1_a', 0.42)  # TopVia1 size
         tv1_sep = techparams.get('TV1_b', 0.42)   # TopVia1 spacing
         tv1_enc = techparams.get('TV1_c', 0.10)   # Metal4 enclosure of TopVia1
