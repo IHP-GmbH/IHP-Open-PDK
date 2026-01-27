@@ -18,7 +18,8 @@
 """Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS Regression.
 
 SG13CMOS5L supports CMOS-only devices with M1-M4-TM1 metal stack.
-Excluded devices: RFMOS, BJT, CAP (MIM), IND
+Supported: MOS, RES, DIODE, ESD, TAP, CAP (S-Varicap only)
+Excluded: RFMOS, BJT, IND, MIM capacitors (cap_cmim, rfcmim)
 
 Usage:
     run_regression.py (--help| -h)
@@ -390,14 +391,17 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     """
 
     # CMOS5L-compatible device groups only
-    # Excluded from G2: RFMOS, BJT, CAP (MIM), IND
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP"]
+    # Excluded from G2: RFMOS, BJT, IND
+    # CAP included for S-Varicap only (MIM caps excluded)
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "CAP"]
 
     # Devices excluded from CMOS5L (not supported in M1-M4-TM1 stack or not CMOS)
     excluded_devices = [
         "schottky_nbl1",  # Schottky diode - not in CMOS5L
         "res_metal5",     # Metal5 resistor - no M5 in CMOS5L
         "res_topmetal2",  # TopMetal2 resistor - no TM2 in CMOS5L
+        "cap_cmim",       # MIM capacitor - not in CMOS5L
+        "rfcmim",         # RF MIM capacitor - not in CMOS5L
     ]
 
     # Parse Existing devices
@@ -526,13 +530,13 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # selected device - CMOS5L only supports these device groups
-    # Excluded: RFMOS, BJT, CAP (MIM), IND
-    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP"]
+    # Excluded: RFMOS, BJT, IND, MIM capacitors
+    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "CAP"]
     target_device_group = args["--device"]
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices for CMOS5L are (MOS, DIODE, RES, ESD, TAP) only"
+            "Allowed devices for CMOS5L are (MOS, DIODE, RES, ESD, TAP, CAP) only"
         )
         exit(1)
 

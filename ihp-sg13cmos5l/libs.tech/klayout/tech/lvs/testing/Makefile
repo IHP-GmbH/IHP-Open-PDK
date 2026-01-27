@@ -72,6 +72,7 @@ list-devices:
 	@echo "test-LVS-RES"
 	@echo "test-LVS-ESD"
 	@echo "test-LVS-TAP"
+	@echo "test-LVS-CAP"
 
 #==========================
 # --------- HELP ----------

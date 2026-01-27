@@ -11,12 +11,13 @@ This directory contains the LVS regression testing infrastructure for the slim C
 | RES | Resistors (poly, silicide, metal M1-M4, TM1) | Supported |
 | ESD | ESD protection devices | Supported |
 | TAP | Substrate/well taps | Supported |
+| CAP | S-Varicap (thick gate oxide varactor) | Supported |
 
 ## Excluded Device Groups (Not in CMOS5L)
 
 - **RFMOS**: RF MOSFET devices
 - **BJT**: HBT bipolar transistors (npn13G2, npn13G2L, npn13G2V)
-- **CAP**: MIM capacitors (CMiM, rfCMiM)
+- **MIM**: MIM capacitors (cap_cmim, rfcmim)
 - **IND**: Inductors (inductor2, inductor3)
 - **Schottky**: Schottky diodes
 
@@ -41,6 +42,7 @@ make test-LVS-RES
 make test-LVS-TAP
 make test-LVS-DIODE
 make test-LVS-ESD
+make test-LVS-CAP
 
 # Run switch test (quick sanity check)
 make test-LVS-switch
