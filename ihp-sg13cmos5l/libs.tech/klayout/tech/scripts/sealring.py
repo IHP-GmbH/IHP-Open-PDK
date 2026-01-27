@@ -25,9 +25,9 @@ def generate_sealring(width: float, heigth: float, output: str, offset_x: float,
     :type heigth: float
     :param output: Path and name of the file where the sealring should be written to.
     :type output: str
-    :param offset_x: Translation in X direction in µm.
+    :param offset_x: Translation in X direction in um.
     :type offset_x: float
-    :param offset_y: Translation in Y direction in µm.
+    :param offset_y: Translation in Y direction in um.
     :type offset_y: float
 
     """
@@ -58,7 +58,7 @@ def generate_sealring(width: float, heigth: float, output: str, offset_x: float,
     pcell = layout.add_pcell_variant(lib, pcell_decl.id(), {'w': f'{width}u', 'l': f'{heigth}u'})
     layout.cell(pcell)
 
-    # Convert offset from µm to dbu
+    # Convert offset from um to dbu
     dx = int(float(offset_x) * 1000)
     dy = int(float(offset_y) * 1000)
 
