@@ -16,7 +16,7 @@
 # limitations under the License.
 #=========================================================================================
 #
-# IHP-SG13CMOS5L Slim PDK - Modified for Metal5 as top layer (no TopMetal1/2)
+# IHP-SG13CMOS5L CMOS5L - Modified for Metal5 as top layer (no TopMetal1/2)
 #
 #=========================================================================================
 
@@ -38,7 +38,7 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
   pad_m_l.forget
 
   unless PRECHECK_DRC
-    # Slim PDK: Metal list M1-M5 only (no TopMetal1/2)
+    # CMOS5L: Metal list M1-M5 only (no TopMetal1/2)
     metals = [
       [metal1_drw, 'M1'],
       [metal2_drw, 'M2'],
@@ -63,7 +63,7 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
       pad_fr_l.forget
     end
 
-    # Rule Pad.i: dfpad without Metal5 not allowed (Slim PDK: M5 is top layer)
+    # Rule Pad.i: dfpad without Metal5 not allowed (CMOS5L: M5 is top layer)
     logger.info('Executing rule Pad.i')
     pad_i_l = dfpad_drw.not(metal5_drw)
     pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without Metal5 not allowed')

@@ -19,7 +19,7 @@
 #====================================================================================================================
 #----------------------------------------- IHP-SG13CMOS5L DRC RULE DECK --------------------------------------------
 #====================================================================================================================
-# Slim PDK version: CMOS-only with M1-M4-TM1 metal stack
+# CMOS5L version: CMOS-only with M1-M4-TM1 metal stack
 # Metal stack: M1 → Via1 → M2 → Via2 → M3 → Via3 → M4 → TopVia1 → TopMetal1
 # Excludes: Metal5, Via4, TopVia2, TopMetal2, MIM, HBT, Schottky
 #====================================================================================================================
@@ -311,7 +311,7 @@ if TABLES.any?{|x| cont_tables.include?(x)}
   cont_nseal.forget
 end
 
-# Pad derivations (slim PDK: TopMetal1 as top layer)
+# Pad derivations (CMOS5L: TopMetal1 as top layer)
 pad_tables = %w[main pad]
 if TABLES.any?{|x| pad_tables.include?(x)}
   logger.info('Starting pad general derivations (TM1 top)')
@@ -365,7 +365,7 @@ if CONNECTIVITY_RULES
   connect(via2_drw, metal3_con)
   connect(metal3_con, via3_drw)
   connect(via3_drw, metal4_con)
-  # M4 → TopVia1 → TopMetal1 (slim PDK top layer)
+  # M4 → TopVia1 → TopMetal1 (CMOS5L top layer)
   connect(metal4_con, topvia1_drw)
   connect(topvia1_drw, topmetal1_con)
 
@@ -442,9 +442,9 @@ logger.info('Running all FORBIDDEN rules') if FORBIDDEN
 # %include rule_decks/beol/5_23_topmetal1filler.drc
 # %include rule_decks/beol/5_27_passiv.drc
 # %include rule_decks/beol/9_1_lbe.drc
-# REMOVED: rule_decks/beol/5_24_topvia2.drc (TopVia2 - not in slim stack)
-# REMOVED: rule_decks/beol/5_25_topmetal2.drc (TopMetal2 - not in slim stack)
-# REMOVED: rule_decks/beol/5_26_topmetal2filler.drc (TopMetal2 filler - not in slim stack)
+# REMOVED: rule_decks/beol/5_24_topvia2.drc (TopVia2 - not in CMOS5L stack)
+# REMOVED: rule_decks/beol/5_25_topmetal2.drc (TopMetal2 - not in CMOS5L stack)
+# REMOVED: rule_decks/beol/5_26_topmetal2filler.drc (TopMetal2 filler - not in CMOS5L stack)
 # REMOVED: rule_decks/beol/6_9_copperpillar.drc (requires TopMetal2)
 # REMOVED: rule_decks/beol/6_9_solderbump.drc (requires TopMetal2)
 # REMOVED: rule_decks/beol/6_11_mim.drc (MIM capacitor)
@@ -459,6 +459,7 @@ logger.info('Running all FORBIDDEN rules') if FORBIDDEN
 
 # FORBIDDEN Patterns
 # %include rule_decks/forbidden/3_2_forbidden.drc
+# %include rule_decks/forbidden/3_2_forbidden_cmos5l.drc
 
 #================================================
 #--------------------- TAIL ---------------------

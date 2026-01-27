@@ -46,7 +46,7 @@ ANALYSIS_RULES = [
     "viol_not_golden",
     "golden_not_viol",
 ]
-# Modified for IHP-SG13CMOS5L Slim PDK
+# Modified for IHP-SG13CMOS5L CMOS5L
 # Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
 # - Removed Metal5, Via4, TopMetal2, TopVia2
 # - TopMetal1 (TM1) is the top routing layer
@@ -68,6 +68,20 @@ RULES_VAR = {
         "pemwind",
         "pbiwind",
         "pempoly",
+    ),
+    "cmos5l_forb_lay": (  # CMOS5L-specific forbidden layers
+        # Metal stack layers (not in CMOS5L M1-M4-TM1 stack)
+        "Metal5",
+        "Metal5.filler",
+        "Via4",
+        "TopMetal2",
+        "TopMetal2.filler",
+        "TopVia2",
+        # Device/passive layers (not in CMOS5L)
+        "TRANS",
+        "nBuLay",
+        "MIM",
+        "Vmim",
     ),
     "seal_b_lay": (
         "metal1",
@@ -1038,7 +1052,7 @@ def aggregate_results(
         "rule_status"
     ] = "Rule Failed"
 
-    # Mark rules NOT in deck as skipped (slim PDK may not have all rules)
+    # Mark rules NOT in deck as skipped (CMOS5L may not have all rules)
     df.loc[df["in_rule_deck"] < 1, "rule_status"] = "Rule Not In Deck (Skipped)"
 
     # If the testcase itself failed to run

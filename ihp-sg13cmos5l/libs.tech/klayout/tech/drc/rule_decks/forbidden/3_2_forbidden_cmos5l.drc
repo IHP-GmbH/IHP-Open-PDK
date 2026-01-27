@@ -1,0 +1,73 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#================================================
+#-------- 3.2. CMOS5L Forbidden Layers ----------
+#================================================
+# These layers exist in the full SG13G2 PDK but are prohibited
+# in the CMOS5L CMOS5L (M1-M4-TM1 metal stack).
+#
+# Metal stack in CMOS5L:
+#   M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
+#
+# CMOS5L-specific forbidden layers (10 layers):
+#   Metal stack layers:
+#   - Metal5 (67/0): Not in CMOS5L metal stack
+#   - Metal5.filler (67/22): Not in CMOS5L metal stack
+#   - Via4 (66/0): Not in CMOS5L metal stack
+#   - TopMetal2 (134/0): Not in CMOS5L metal stack
+#   - TopMetal2.filler (134/22): Not in CMOS5L metal stack
+#   - TopVia2 (133/0): Not in CMOS5L metal stack
+#
+#   Device/passive layers:
+#   - TRANS (26/0): HBT transistor layer
+#   - nBuLay (32/0): HBT buried layer
+#   - MIM (36/0): MIM capacitor layer
+#   - Vmim (129/0): MIM capacitor via layer
+#
+# Note: Additional forbidden layers (HBT, LDMOS, Flash, etc.) are
+# inherited from the G2 PDK via the symlinked 3_2_forbidden.drc file.
+
+if TABLES.include?('forbidden') || TABLES.include?('forbidden_cmos5l') || FORBIDDEN
+  logger.info('Starting 3.2. CMOS5L FORBIDDEN layers check')
+
+  # Define CMOS5L forbidden layers (present in G2, excluded from CMOS5L)
+  # These are layers that exist in the full PDK but are prohibited in the CMOS5L
+  cmos5l_forb_lays = {
+    # Metal stack layers (not in CMOS5L M1-M4-TM1 stack)
+    'Metal5' => metal5_drw,
+    'Metal5.filler' => metal5_filler,
+    'Via4' => via4_drw,
+    'TopMetal2' => topmetal2_drw,
+    'TopMetal2.filler' => topmetal2_filler,
+    'TopVia2' => topvia2_drw,
+    # Device/passive layers (not in CMOS5L)
+    'TRANS' => trans_drw,
+    'nBuLay' => nbulay_drw,
+    'MIM' => mim_drw,
+    'Vmim' => vmim_drw
+  }
+
+  # Iterate through each layer and output the forbidden rule
+  # NOTE: Variable name 'cmos5l_forb_lay' matches RULES_VAR key in run_regression.py
+  cmos5l_forb_lays.each do |cmos5l_forb_lay, lay|
+    logger.info("Executing rule CMOS5L.FORB.#{cmos5l_forb_lay}")
+    lay.output("CMOS5L.FORB.#{cmos5l_forb_lay}",
+               "CMOS5L.FORB.#{cmos5l_forb_lay} : 3.2. #{cmos5l_forb_lay} layer is prohibited in CMOS5L CMOS5L (M1-M4-TM1 stack).")
+  end
+end

@@ -729,7 +729,7 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser(
-        description="Run IHP-SG13CMOS5L Golden DRC Results Generation (Slim PDK).",
+        description="Run IHP-SG13CMOS5L Golden DRC Results Generation (CMOS5L).",
         usage=USAGE,
     )
 

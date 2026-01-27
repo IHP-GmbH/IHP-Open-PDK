@@ -16,7 +16,7 @@
 # limitations under the License.
 #=========================================================================================
 #
-# Modified for IHP-SG13CMOS5L Slim PDK
+# Modified for IHP-SG13CMOS5L CMOS5L
 # Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
 # - TopMetal1 (layer 126) is the top routing layer
 # - Removed Metal5 (layer 67), Via4 (layer 66), TopMetal2 (layer 134), TopVia2 (layer 133)
@@ -211,7 +211,7 @@ topmetal1_slit = get_polygons(126, 24)
 count = topmetal1_slit.count
 logger.info("topmetal1_slit has #{count} polygons")
 
-# Metal5 and TopMetal2 layers removed for slim PDK (layers 67, 134)
+# Metal5 and TopMetal2 layers removed for CMOS5L (layers 67, 134)
 
 lbe_drw = get_polygons(157, 0)
 count = lbe_drw.count
@@ -281,7 +281,7 @@ metal2 = metal2_drw.join(metal2_filler).not(metal2_slit)
 metal3 = metal3_drw.join(metal3_filler).not(metal3_slit)
 metal4 = metal4_drw.join(metal4_filler).not(metal4_slit)
 topmetal1 = topmetal1_drw.join(topmetal1_filler).not(topmetal1_slit)
-# Metal5 and TopMetal2 derivations removed for slim PDK
+# Metal5 and TopMetal2 derivations removed for CMOS5L
 
 # Forget unused layers to free memory
 activ_drw.forget
@@ -294,7 +294,7 @@ metal2_filler.forget
 metal3_filler.forget
 metal4_filler.forget
 topmetal1_filler.forget
-# Metal5 and TopMetal2 filler forget calls removed for slim PDK
+# Metal5 and TopMetal2 filler forget calls removed for CMOS5L
 
 if PRECHECK_DRC
   # Forget unused layers to free memory
@@ -308,7 +308,7 @@ if PRECHECK_DRC
   metal4_slit.forget
   topmetal1_drw.forget
   topmetal1_slit.forget
-  # Metal5 and TopMetal2 drw/slit forget calls removed for slim PDK
+  # Metal5 and TopMetal2 drw/slit forget calls removed for CMOS5L
 end
 
 #===================================================================================
@@ -439,7 +439,7 @@ m3_dens_ratio = m3_area / chip_area
 logger.info('Computing metal4 area and density...')
 m4_area = metal4.area
 m4_dens_ratio = m4_area / chip_area
-# Metal5 removed for slim PDK - TopMetal1 density handled separately with TM1.c/TM1.d rules
+# Metal5 removed for CMOS5L - TopMetal1 density handled separately with TM1.c/TM1.d rules
 
 dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio]
 metal_start_index = 2
@@ -539,7 +539,7 @@ tm1_d_val = drc_rules['TM1_d'].to_f
 CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}") if tm1_dens_ratio > tm1_d_val
 topmetal1.forget
 
-# TopMetal2 density rules removed for slim PDK (TM2.c, TM2.d)
+# TopMetal2 density rules removed for CMOS5L (TM2.c, TM2.d)
 
 #================================================
 # --------------------- LBE ---------------------
@@ -564,7 +564,7 @@ lbe_drw.forget
 #================================================
 
 unless PRECHECK_DRC
-  # layer lists - Metal5 removed, TopMetal1 added for slim PDK
+  # layer lists - Metal5 removed, TopMetal1 added for CMOS5L
   metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, topmetal1_slit]
   metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, topmetal1_drw]
   metals_names = %w[metal1 metal2 metal3 metal4 topmetal1]
@@ -599,7 +599,7 @@ unless PRECHECK_DRC
   metal4_slit.forget
   topmetal1_drw.forget
   topmetal1_slit.forget
-  # Metal5 and TopMetal2 drw/slit forget calls removed for slim PDK
+  # Metal5 and TopMetal2 drw/slit forget calls removed for CMOS5L
 end
 
 #================================================
@@ -644,7 +644,7 @@ log_layer_density(logger, 'Metal2',    m2_area,   m2_dens_ratio,   mn_j_val, mn_
 log_layer_density(logger, 'Metal3',    m3_area,   m3_dens_ratio,   mn_j_val, mn_k_val)
 log_layer_density(logger, 'Metal4',    m4_area,   m4_dens_ratio,   mn_j_val, mn_k_val)
 log_layer_density(logger, 'TopMetal1', tm1_area,  tm1_dens_ratio,  tm1_c_val, tm1_d_val)
-# Metal5 and TopMetal2 density reports removed for slim PDK
+# Metal5 and TopMetal2 density reports removed for CMOS5L
 log_layer_density(logger, 'LBE',       lbe_area,  lbe_dens_ratio,  nil, lbe_i_val)
 
 # ===================================

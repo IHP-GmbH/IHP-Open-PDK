@@ -16,7 +16,7 @@
 # limitations under the License.
 #=========================================================================================
 #
-# IHP-SG13CMOS5L Slim PDK - Modified for Metal5 as top layer (no TopMetal1/2)
+# IHP-SG13CMOS5L CMOS5L - Modified for Metal5 as top layer (no TopMetal1/2)
 #
 #=========================================================================================
 
@@ -86,13 +86,13 @@ if TABLES.include?('sealring') || BEOL
   seal_n_l1.forget
 
   unless PRECHECK_DRC
-    # Slim PDK: Metal stack ends at Metal5 (no TopMetal1/2)
+    # CMOS5L: Metal stack ends at Metal5 (no TopMetal1/2)
     seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw,
                    activ_drw, psd_drw]
     seal_b_names = %w[metal1 metal2 metal3 metal4 metal5 activ psd]
 
     # Rule Seal.b: Min. Activ space to EdgeSeal-Activ, EdgeSeal-pSD, EdgeSeal-Metal(n=1-5)
-    # is 4.90 um (Slim PDK: Metal5 is top layer)
+    # is 4.90 um (CMOS5L: Metal5 is top layer)
     seal_b_value = drc_rules['Seal_b'].to_f
     seal_b_names.zip(seal_b_lays).each do |seal_b_lay, lay|
       logger.info("Executing rule seal.b_#{seal_b_lay}")

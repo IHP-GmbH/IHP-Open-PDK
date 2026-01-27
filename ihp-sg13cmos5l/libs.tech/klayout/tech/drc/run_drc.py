@@ -14,7 +14,7 @@
 # limitations under the License.
 # =========================================================================================
 #
-# Modified for IHP-SG13CMOS5L slim PDK (CMOS-only, M1-M5)
+# Modified for IHP-SG13CMOS5L CMOS5L (CMOS-only, M1-M5)
 # Based on ihp-sg13g2 run_drc.py
 #
 
@@ -596,7 +596,7 @@ def run_parallel_run(
     if not args.no_density:
         rule_deck_files["density"] = rule_deck_full_path / "rule_decks" / "density.drc"
 
-    # Note: sg13cmos5l_maximal.drc not available in slim PDK - extra rules disabled
+    # Note: sg13cmos5l_maximal.drc not available in CMOS5L - extra rules disabled
     # if not args.disable_extra_rules:
     #     rule_deck_files["sg13cmos5l_maximal"] = (
     #         rule_deck_full_path / "rule_decks" / "sg13cmos5l_maximal.drc"
@@ -691,7 +691,7 @@ def run_single_processor(
     # Run additional checks if requested
     run_check_by_flag(args.antenna, "antenna")
     run_check_by_flag(not args.no_density, "density")
-    # Note: sg13cmos5l_maximal.drc not available in slim PDK - extra rules disabled
+    # Note: sg13cmos5l_maximal.drc not available in CMOS5L - extra rules disabled
     # run_check_by_flag(not args.disable_extra_rules, "sg13cmos5l_maximal")
 
     # Final result verification
@@ -751,7 +751,7 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser(
-        description="Run IHP SG13CMOS5L OpenSource DRC checks (Slim PDK - CMOS only, M1-M5)",
+        description="Run IHP SG13CMOS5L OpenSource DRC checks (CMOS5L - CMOS only, M1-M5)",
         usage=USAGE,
     )
 
@@ -823,7 +823,7 @@ def parse_args():
     parser.add_argument(
         "--disable_extra_rules",
         action="store_true",
-        help="Disable the remaining DRC rules from the full rule set (not applicable in slim PDK).",
+        help="Disable the remaining DRC rules from the full rule set (not applicable in CMOS5L).",
     )
     parser.add_argument(
         "--no_density", action="store_true", help="Disable density rule checks."

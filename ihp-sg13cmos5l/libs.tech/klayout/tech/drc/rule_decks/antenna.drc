@@ -16,9 +16,9 @@
 # limitations under the License.
 #=========================================================================================
 #
-# Modified for IHP-SG13CMOS5L Slim PDK
+# Modified for IHP-SG13CMOS5L CMOS5L
 # - Removed TopVia1 (layer 125), TopMetal1 (layer 126), TopVia2 (layer 133), TopMetal2 (layer 134) references
-# - Slim PDK uses Metal5 as the top routing layer
+# - CMOS5L uses Metal5 as the top routing layer
 # - Removed rules: Ant.b_TopMetal1, Ant.b_TopMetal2, Ant.e_TopMetal1, Ant.e_TopMetal2,
 #                  Ant.d_TopVia1, Ant.d_TopVia2, Ant.f_TopVia1, Ant.f_TopVia2
 #
@@ -232,7 +232,7 @@ count = recog_esd.count
 logger.info("recog_esd has #{count} polygons")
 polygons_count += count
 
-# TopVia/TopMetal layers removed for slim PDK (layers 125, 126, 133, 134)
+# TopVia/TopMetal layers removed for CMOS5L (layers 125, 126, 133, 134)
 
 logger.info("Total no. of polygons in the design is #{polygons_count}")
 
@@ -350,7 +350,7 @@ ant_c_errors.output('Ant.c', "7.1 Ant.c: Max. ratio of Cont area to connected Ga
 # Cumulative Antenna Ratio Calculations
 logger.info('Starting cumulative antenna ratio calculations')
 
-# Define the sequence of layers with metadata (Metal1-Metal5, Via1-Via4 only for slim PDK)
+# Define the sequence of layers with metadata (Metal1-Metal5, Via1-Via4 only for CMOS5L)
 layers = [
   [:metal1_drw,    'm1_ratio',  'm'],
   [:via1_drw,      'v1_ratio',  'v'],
@@ -361,7 +361,7 @@ layers = [
   [:metal4_drw,    'm4_ratio',  'm'],
   [:via4_drw,      'v4_ratio',  'v'],
   [:metal5_drw,    'm5_ratio',  'm']
-  # TopVia/TopMetal removed for slim PDK
+  # TopVia/TopMetal removed for CMOS5L
 ]
 
 # Container for all antenna ratios
@@ -408,14 +408,14 @@ logger.info('Executing rules Ant.b and Ant.e')
 ant_b_ratio = drc_rules['Ant_b'].to_f
 ant_e_ratio = drc_rules['Ant_e'].to_f
 
-# Define the cumulative steps (Metal1-Metal5 only for slim PDK)
+# Define the cumulative steps (Metal1-Metal5 only for CMOS5L)
 steps = [
   { met_name: 'Metal1',    ratio: "m1_ratio" },
   { met_name: 'Metal2',    ratio: "sum_m1_m2",  add: "m2_ratio" },
   { met_name: 'Metal3',    ratio: "sum_m1_m3",  add: "m3_ratio" },
   { met_name: 'Metal4',    ratio: "sum_m1_m4",  add: "m4_ratio" },
   { met_name: 'Metal5',    ratio: "sum_m1_m5",  add: "m5_ratio" }
-  # TopMetal removed for slim PDK
+  # TopMetal removed for CMOS5L
 ].freeze
 
 # Loop through each step
@@ -460,13 +460,13 @@ logger.info('Executing rules Ant.d and Ant.f')
 ant_d_ratio = drc_rules['Ant_d'].to_f
 ant_f_ratio = drc_rules['Ant_f'].to_f
 
-# Define the cumulative steps for vias (Via1-Via4 only for slim PDK)
+# Define the cumulative steps for vias (Via1-Via4 only for CMOS5L)
 via_steps = [
   { via_name: 'Via1',    ratio: "sum_v1",     add: "v1_ratio", first: true },
   { via_name: 'Via2',    ratio: "sum_v1_v2",  add: "v2_ratio" },
   { via_name: 'Via3',    ratio: "sum_v1_v3",  add: "v3_ratio" },
   { via_name: 'Via4',    ratio: "sum_v1_v4",  add: "v4_ratio" }
-  # TopVia removed for slim PDK
+  # TopVia removed for CMOS5L
 ].freeze
 
 # Loop through each via step
