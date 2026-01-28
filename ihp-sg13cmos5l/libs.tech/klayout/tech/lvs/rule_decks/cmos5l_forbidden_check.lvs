@@ -1,0 +1,97 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================================
+#-------- CMOS5L FORBIDDEN LAYER CHECK ----------
+#================================================
+# This check verifies that no forbidden layers are present in the design.
+# CMOS5L uses M1-M4-TM1 metal stack and excludes HBT/bipolar devices.
+#
+# Reference: SG13CMOS5L_os_layout_rules.pdf Section 3.2
+#
+# If forbidden layers are found, LVS will report an error and the
+# extracted netlist may be incorrect.
+#================================================
+
+logger.info('Starting CMOS5L Forbidden Layer Check')
+
+# Define forbidden layers for CMOS5L (21 layers per PDF Section 3.2)
+cmos5l_forbidden_layers = {
+  # HBT/Bipolar layers
+  'BiWind' => [3, 0],
+  'PEmWind' => [11, 0],
+  'BasPoly' => [13, 0],
+  'TRANS' => [26, 0],
+  'nBuLay' => [32, 0],
+  'DeepCo' => [35, 0],
+  'PEmPoly' => [53, 0],
+  'EmPoly' => [55, 0],
+  'PBiWind' => [58, 0],
+  'ColWind' => [139, 0],
+  # MIM capacitor layers
+  'MIM' => [36, 0],
+  'Vmim' => [129, 0],
+  # Metal stack layers (not in M1-M4-TM1)
+  'Via4' => [66, 0],
+  'Metal5' => [67, 0],
+  'Metal5.filler' => [67, 22],
+  'TopVia2' => [133, 0],
+  'TopMetal2' => [134, 0],
+  'TopMetal2.filler' => [134, 22],
+  # Other forbidden layers
+  'LDMOS' => [57, 0],
+  'NoDRC' => [62, 0],
+  'Flash' => [71, 0]
+}
+
+# Check each forbidden layer
+forbidden_found = []
+
+cmos5l_forbidden_layers.each do |layer_name, gds_spec|
+  layer_num = gds_spec[0]
+  layer_dt = gds_spec[1]
+
+  # Get polygons on this layer
+  layer_polygons = polygons(layer_num, layer_dt)
+  poly_count = layer_polygons.count
+
+  if poly_count > 0
+    forbidden_found << "#{layer_name} (#{layer_num}/#{layer_dt}): #{poly_count} polygons"
+    logger.error("CMOS5L FORBIDDEN: #{layer_name} (#{layer_num}/#{layer_dt}) has #{poly_count} polygons - this layer is prohibited!")
+  end
+end
+
+# Report summary
+if forbidden_found.empty?
+  logger.info('CMOS5L Forbidden Layer Check: PASSED - No forbidden layers found')
+else
+  logger.error('=' * 70)
+  logger.error('CMOS5L FORBIDDEN LAYER CHECK: FAILED')
+  logger.error('The following forbidden layers were found in the design:')
+  forbidden_found.each { |msg| logger.error("  - #{msg}") }
+  logger.error('')
+  logger.error('These layers are prohibited in CMOS5L designs per Section 3.2')
+  logger.error('of SG13CMOS5L_os_layout_rules.pdf')
+  logger.error('')
+  logger.error('LVS extraction will continue but results may be INCORRECT.')
+  logger.error('Please remove these layers from your design.')
+  logger.error('=' * 70)
+end
+
+logger.info('CMOS5L Forbidden Layer Check completed')

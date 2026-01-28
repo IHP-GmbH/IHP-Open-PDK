@@ -396,12 +396,22 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "CAP"]
 
     # Devices excluded from CMOS5L (not supported in M1-M4-TM1 stack or not CMOS)
+    # Devices excluded from CMOS5L (not supported in M1-M4-TM1 stack or require forbidden layers)
+    # Reference: PR #3 comment - devices using nBuLay (deep n-well) are not in CMOS5L
     excluded_devices = [
-        "schottky_nbl1",  # Schottky diode - not in CMOS5L
-        "res_metal5",     # Metal5 resistor - no M5 in CMOS5L
-        "res_topmetal2",  # TopMetal2 resistor - no TM2 in CMOS5L
-        "cap_cmim",       # MIM capacitor - not in CMOS5L
-        "rfcmim",         # RF MIM capacitor - not in CMOS5L
+        # Schottky diode - requires nBuLay
+        "schottky_nbl1",
+        # Metal5/TopMetal2 resistors - forbidden metal layers
+        "res_metal5",
+        "res_topmetal2",
+        # MIM capacitors - MIM layer is forbidden
+        "cap_cmim",
+        "rfcmim",
+        # ESD devices requiring nBuLay (deep n-well) - forbidden layer per Section 3.2
+        "idiodevss_2kv",  # Uses .and(nbulay_drw) in derivation
+        "idiodevss_4kv",  # Derives from idiodevss_2kv
+        "nmoscl_2",       # Uses .and(nbulay_drw) in derivation
+        "nmoscl_4",       # Uses .and(nbulay_drw) in derivation
     ]
 
     # Parse Existing devices
