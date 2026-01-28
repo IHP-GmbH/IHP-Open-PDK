@@ -18,8 +18,19 @@
 """Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS Regression.
 
 SG13CMOS5L supports CMOS-only devices with M1-M4-TM1 metal stack.
-Supported: MOS, RES, DIODE, ESD, TAP, CAP (S-Varicap only)
-Excluded: RFMOS, BJT, IND, MIM capacitors (cap_cmim, rfcmim)
+Supported: MOS, RES, DIODE, ESD (diodevdd/vss only), TAP
+Excluded: RFMOS, BJT, IND, CAP, MIM capacitors
+
+Note on nBuLay (32/0) - FORBIDDEN per Layout Rules Section 3.2:
+  The following devices use nBuLay (via nwell_iso derivation) and are excluded:
+  - All "idiode" ESD devices (idiodevdd_*, idiodevss_*)
+  - nmoscl_* ESD devices
+  - sg13_hv_svaricap (S-Varicap)
+  - schottky_nbl1
+
+  Documentation contradiction: Process Spec lists S-Varicap as available,
+  but the LVS derivation uses nwell_iso which requires nBuLay. The testcase
+  GDS also contains nBuLay. This needs clarification from IHP.
 
 Usage:
     run_regression.py (--help| -h)
@@ -391,27 +402,43 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     """
 
     # CMOS5L-compatible device groups only
-    # Excluded from G2: RFMOS, BJT, IND
-    # CAP included for S-Varicap only (MIM caps excluded)
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "CAP"]
+    # Excluded from G2: RFMOS, BJT, IND, CAP
+    # CAP excluded because S-Varicap uses nBuLay (see note in docstring)
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP"]
 
-    # Devices excluded from CMOS5L (not supported in M1-M4-TM1 stack or not CMOS)
-    # Devices excluded from CMOS5L (not supported in M1-M4-TM1 stack or require forbidden layers)
-    # Reference: PR #3 comment - devices using nBuLay (deep n-well) are not in CMOS5L
+    # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
+    # Reference: SG13CMOS5L_os_layout_rules.pdf Section 3.2 - nBuLay (32/0) is forbidden
+    #
+    # nBuLay usage in LVS derivations (general_derivations.lvs):
+    #   nwell_iso = nwell_drw.and(nbulay_drw)
+    #
+    # Devices using nwell_iso (and thus nBuLay):
+    #   - S-Varicap: varicap_core = ngate_hv_base.and(nwell_iso)
+    #   - idiodevdd: nw_idiode = nwell_iso.interacting(pwell_block)
+    #   - idiodevss: uses nbulay_drw directly
+    #   - nmoscl: uses nbulay_drw directly
+    #   - schottky: uses nwell_iso
     excluded_devices = [
-        # Schottky diode - requires nBuLay
+        # Schottky diode - requires nBuLay via nwell_iso
         "schottky_nbl1",
         # Metal5/TopMetal2 resistors - forbidden metal layers
         "res_metal5",
         "res_topmetal2",
-        # MIM capacitors - MIM layer is forbidden
+        # MIM capacitors - MIM layer (36/0) is forbidden
         "cap_cmim",
         "rfcmim",
-        # ESD devices requiring nBuLay (deep n-well) - forbidden layer per Section 3.2
-        "idiodevss_2kv",  # Uses .and(nbulay_drw) in derivation
-        "idiodevss_4kv",  # Derives from idiodevss_2kv
-        "nmoscl_2",       # Uses .and(nbulay_drw) in derivation
-        "nmoscl_4",       # Uses .and(nbulay_drw) in derivation
+        # S-Varicap - requires nBuLay via nwell_iso (testcase has nBuLay shapes)
+        "sg13_hv_svaricap",
+        # ESD devices using nBuLay - forbidden layer per Section 3.2
+        # idiodevdd uses nw_idiode which derives from nwell_iso (requires nBuLay)
+        "idiodevdd_2kv",
+        "idiodevdd_4kv",
+        # idiodevss uses .and(nbulay_drw) directly in derivation
+        "idiodevss_2kv",
+        "idiodevss_4kv",
+        # nmoscl uses .and(nbulay_drw) directly in derivation
+        "nmoscl_2",
+        "nmoscl_4",
     ]
 
     # Parse Existing devices
@@ -540,13 +567,13 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # selected device - CMOS5L only supports these device groups
-    # Excluded: RFMOS, BJT, IND, MIM capacitors
-    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "CAP"]
+    # Excluded: RFMOS, BJT, IND, CAP (S-Varicap uses nBuLay)
+    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP"]
     target_device_group = args["--device"]
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices for CMOS5L are (MOS, DIODE, RES, ESD, TAP, CAP) only"
+            "Allowed devices for CMOS5L are (MOS, DIODE, RES, ESD, TAP) only"
         )
         exit(1)
 
