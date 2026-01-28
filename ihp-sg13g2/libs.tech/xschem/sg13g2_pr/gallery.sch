@@ -12,7 +12,7 @@ CMOS devices} 20 -1500 0 0 0.6 0.6 {}
 T {High voltage 
 CMOS devices} 20 -1370 0 0 0.6 0.6 {}
 T {ESD devices} 20 -1230 0 0 0.6 0.6 {}
-T {Antenna diodes} 20 -1090 0 0 0.6 0.6 {}
+T {Diodes} 20 -1090 0 0 0.6 0.6 {}
 T {Polysilicon 
 resistors} 20 -980 0 0 0.6 0.6 {}
 T {Tap devices} 20 -820 0 0 0.6 0.6 {}
@@ -235,4 +235,10 @@ spiceprefix=X
 w=1.0e-6
 l=2.0e-6
 m=1
+}
+C {sg13g2_pr/schottky_nbl1.sym} 680 -1070 0 0 {name=D10
+model=schottky_nbl1
+Nx=1
+Ny=1
+spiceprefix=X
 }

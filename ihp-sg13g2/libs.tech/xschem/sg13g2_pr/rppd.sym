@@ -1,4 +1,4 @@
-v {xschem version=3.4.7 file_version=1.2
+v {xschem version=3.4.8RC file_version=1.3
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@ v {xschem version=3.4.7 file_version=1.2
 }
 G {}
 K {type=res
+lvs_format="R@name @pinlist @value \\$SUB=@body \\$[@model\\\\] w=@w l=@l b=@b m=@m"
 format="@spiceprefix@name @pinlist @body @model w=@w l=@l m=@m b=@b"
 template="name=R1
 w=0.5e-6
@@ -25,11 +26,13 @@ body=sub!
 spiceprefix=X
 b=0
 m=1
+value=\\"expr_eng(  ( 70.0e-6 / @w + 260.0 * ( (@b + 1)* @l + ( 1.081*( @w + 6.0e-9 ) + 0.18e-6 )*@b ) / ( @w + 6.0e-9 ) ) / @m  )\\"
 "
 drc="res_drc @name @symname @model @w @l"
 }
 V {}
 S {}
+F {}
 E {}
 L 4 0 20 0 30 {}
 L 4 0 20 7.5 17.5 {}
@@ -42,12 +45,12 @@ L 4 -7.5 -7.5 7.5 -12.5 {}
 L 4 -7.5 -17.5 7.5 -12.5 {}
 L 4 -7.5 -17.5 0 -20 {}
 L 4 0 -30 0 -20 {}
-B 5 -2.5 27.5 2.5 32.5 {name=M dir=inout propag=1 pinnumber=2}
-B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 pinnumber=1}
+B 5 -2.5 -32.5 2.5 -27.5 {name=P dir=inout propag=0 sim_pinnumber=1}
+B 5 -2.5 27.5 2.5 32.5 {name=M dir=inout propag=1 sim_pinnumber=2}
 T {w/l = @w / @l} 15 -3.75 0 0 0.2 0.2 {layer=13}
 T {@model} 15 -16.25 0 0 0.2 0.2 {}
-T {@spiceprefix@name} 15 -28.75 0 0 0.2 0.2 {}
-T {tcleval(R=[ ev \{ ( 70.0e-6 / @w + 260.0 * ( (@b + 1)*@l + ( 1.081*( @w + 6.0e-9 ) + 0.18e-6 )*@b ) / ( @w + 6.0e-9 ) ) / @m \} ] )} 15 30 0 0 0.2 0.2 {layer=13}
+T {R@name} 15 -28.75 0 0 0.2 0.2 {}
+T {R=@value} 15 30 0 0 0.2 0.2 {layer=13}
 T {} 15 20 0 0 0.2 0.2 {}
 T {b=@b} 15 6.25 0 0 0.2 0.2 {layer=13}
 T {m=@m} 15 16.25 0 0 0.2 0.2 {layer=13}
