@@ -19,10 +19,13 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
@@ -31,12 +34,14 @@ class ResistorInfo:
     minus_pin_box: Box
 
 
-class ResistorBase(DloGen):
+class ResistorBase(DeviceBase):
     @classmethod
     def defineParamSpecs(cls, specs):
         specs('NumberOfSegments', 1, 'Number of Segments')
         specs('SegmentConnection', 'Serial', 'Segment Connection', ChoiceConstraint(['None', 'Serial', 'Parallel']))
         specs('SegmentSpacing', '2u', 'Segment Spacing')
+
+        super().defineParamSpecs(specs)
 
     def setupParams(self, params):
         # process parameter values entered by user
@@ -45,11 +50,20 @@ class ResistorBase(DloGen):
         self.segment_connection = params['SegmentConnection']
         self.segment_spacing = Numeric(params['SegmentSpacing'])*1e6
 
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.PSUB]  #GuardRingType.DNWELL
+
     @abstractmethod
     def genSingleResistorLayout(self, index: int, x_offset: float) -> ResistorInfo:
         raise NotImplementedError('subclasses must overwrite the method genSingleResistorLayout()')
 
-    def genLayout(self):
+    def genDeviceLayout(self):
         met1_drw = Layer('Metal1', 'drawing')
 
         x_offset = 0.0
