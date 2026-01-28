@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 """
-Generate KLayout layer files from JSON database.
-Reads ihp-sg13cmos5l_layers.json and generates:
-  - sg13cmos5l.lyp (layer properties)
-  - sg13cmos5l.lyt (technology config)
-  - sg13cmos5l.map (LEF/DEF layer mapping)
+DEPRECATED: This script is no longer functional.
+
+The layer_tracking/ directory and its JSON databases have been removed.
+The KLayout files (sg13cmos5l.lyp, sg13cmos5l.lyt, sg13cmos5l.map) are now
+manually maintained in libs.tech/klayout/tech/.
+
+For reference, this script previously:
+- Read ihp-sg13cmos5l_layers.json from layer_tracking/
+- Generated sg13cmos5l.lyp (layer properties)
+- Generated sg13cmos5l.lyt (technology config)
+- Generated sg13cmos5l.map (LEF/DEF layer mapping)
+
+The layer_tracking system was deprecated because the PDF documentation
+(SG13CMOS5L_os_layout_rules.pdf) is the authoritative source for allowed
+and forbidden layers, not JSON databases.
+
+See Section 3.2 of SG13CMOS5L_os_layout_rules.pdf for the official list
+of forbidden layers in the CMOS5L PDK.
 """
 
 import json
@@ -436,6 +449,22 @@ DIEAREA          ALL                          189                4
 
 
 def main():
+    print("=" * 70)
+    print("DEPRECATED: This script is no longer functional.")
+    print("=" * 70)
+    print()
+    print("The layer_tracking/ directory and JSON databases have been removed.")
+    print("The KLayout files are now manually maintained:")
+    print("  - libs.tech/klayout/tech/sg13cmos5l.lyp")
+    print("  - libs.tech/klayout/tech/sg13cmos5l.lyt")
+    print("  - libs.tech/klayout/tech/sg13cmos5l.map")
+    print()
+    print("The PDF documentation is the authoritative source for layer info:")
+    print("  - libs.doc/doc/SG13CMOS5L_os_layout_rules.pdf (Section 3.2)")
+    print()
+    return 1
+
+    # NOTE: The code below is kept for reference but will not execute
     parser = argparse.ArgumentParser(
         description='Generate KLayout layer files from JSON database'
     )

@@ -16,7 +16,8 @@
 # limitations under the License.
 #=========================================================================================
 #
-# IHP-SG13CMOS5L CMOS5L - Modified for Metal5 as top layer (no TopMetal1/2)
+# IHP-SG13CMOS5L CMOS5L - Modified for M1-M4-TM1 metal stack
+# Metal5 (67/0) is a forbidden layer per Section 3.2 of layout rules
 #
 #=========================================================================================
 
@@ -86,13 +87,13 @@ if TABLES.include?('sealring') || BEOL
   seal_n_l1.forget
 
   unless PRECHECK_DRC
-    # CMOS5L: Metal stack ends at Metal5 (no TopMetal1/2)
-    seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw,
+    # CMOS5L: Metal stack M1-M4-TM1 (Metal5 is forbidden)
+    seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, topmetal1_drw,
                    activ_drw, psd_drw]
-    seal_b_names = %w[metal1 metal2 metal3 metal4 metal5 activ psd]
+    seal_b_names = %w[metal1 metal2 metal3 metal4 topmetal1 activ psd]
 
-    # Rule Seal.b: Min. Activ space to EdgeSeal-Activ, EdgeSeal-pSD, EdgeSeal-Metal(n=1-5)
-    # is 4.90 um (CMOS5L: Metal5 is top layer)
+    # Rule Seal.b: Min. Activ space to EdgeSeal-Activ, EdgeSeal-pSD, EdgeSeal-Metal(n=1-4,TM1)
+    # is 4.90 um (CMOS5L: TopMetal1 is top layer)
     seal_b_value = drc_rules['Seal_b'].to_f
     seal_b_names.zip(seal_b_lays).each do |seal_b_lay, lay|
       logger.info("Executing rule seal.b_#{seal_b_lay}")

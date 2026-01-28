@@ -16,7 +16,9 @@
 # limitations under the License.
 #=========================================================================================
 #
-# IHP-SG13CMOS5L CMOS5L - Modified for Metal5 as top layer (no TopMetal1/2)
+# IHP-SG13CMOS5L CMOS5L - Modified for M1-M4-TM1 metal stack
+# Metal5 (67/0) is a forbidden layer per Section 3.2 of layout rules
+# TopMetal1 is the top layer for pads in CMOS5L
 #
 #=========================================================================================
 
@@ -38,13 +40,13 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
   pad_m_l.forget
 
   unless PRECHECK_DRC
-    # CMOS5L: Metal list M1-M5 only (no TopMetal1/2)
+    # CMOS5L: Metal list M1-M4 and TM1 (Metal5 is forbidden)
     metals = [
       [metal1_drw, 'M1'],
       [metal2_drw, 'M2'],
       [metal3_drw, 'M3'],
       [metal4_drw, 'M4'],
-      [metal5_drw, 'M5']
+      [topmetal1_drw, 'TM1']
     ]
 
     # Rule Pad.fR: Min. recommended Metaln exit length is 7.00 um
@@ -63,10 +65,10 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
       pad_fr_l.forget
     end
 
-    # Rule Pad.i: dfpad without Metal5 not allowed (CMOS5L: M5 is top layer)
+    # Rule Pad.i: dfpad without TopMetal1 not allowed (CMOS5L: TM1 is top layer)
     logger.info('Executing rule Pad.i')
-    pad_i_l = dfpad_drw.not(metal5_drw)
-    pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without Metal5 not allowed')
+    pad_i_l = dfpad_drw.not(topmetal1_drw)
+    pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without TopMetal1 not allowed')
     pad_i_l.forget
   end
 end

@@ -16,7 +16,8 @@
 # limitations under the License.
 #=========================================================================================
 #
-# IHP-SG13CMOS5L CMOS5L - Modified for Metal5 as top layer (no TopMetal1/2)
+# IHP-SG13CMOS5L CMOS5L - Modified for M1-M4-TM1 metal stack
+# Metal5 (67/0) is a forbidden layer per Section 3.2 of layout rules
 #
 #=========================================================================================
 
@@ -29,9 +30,9 @@ if TABLES.include?('metalslits') || BEOL
 
   # Metal slits derivations
 
-  # CMOS5L: Metal slit layers M1-M5 only (no TopMetal1/2)
-  metals_slit_lays = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit]
-  metals_abbrev = %w[M1 M2 M3 M4 M5]
+  # CMOS5L: Metal slit layers M1-M4 and TM1 (Metal5 is forbidden)
+  metals_slit_lays = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, topmetal1_slit]
+  metals_abbrev = %w[M1 M2 M3 M4 TM1]
 
   unless PRECHECK_DRC
     # Rule Slt.e1: No slits required on MIM

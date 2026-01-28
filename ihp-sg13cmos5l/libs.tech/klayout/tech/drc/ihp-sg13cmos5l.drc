@@ -157,8 +157,8 @@ logger.info("RECOMMENDED enabled: #{RECOMMENDED}")
 PRECHECK_DRC = bool_check?($precheck_drc)
 logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
 
-# Connectivity rules
-conn_tables = %w[main nwell nbulay]
+# Connectivity rules (CMOS5L: no nBuLay - forbidden layer)
+conn_tables = %w[main nwell]
 CONNECTIVITY_RULES = TABLES.any?{|x| conn_tables.include?(x)}
 logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}.")
 
@@ -243,57 +243,52 @@ pwell_allowed = CHIP.not(pwell_block)
 digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
 pwell = pwell_allowed.not(nwell_drw).not(digisub_gap)
 
-# nBulay
-nbulay_tables = %w[main nbulay nwell activfiller]
-if TABLES.any?{|x| nbulay_tables.include?(x)}
-  nbulay_gen_sized = nwell_drw.sized(-1.495.um).sized(0.495.um)
-  nbuLay_gen = nbulay_gen_sized.not(nbulay_block.join(res_drw))
-  nbuLay_gen_nbulay = nbuLay_gen.join(nbulay_drw)
-end
+# nBuLay - REMOVED for CMOS5L (forbidden layer per Section 3.2 of layout rules)
+# nBuLay (32/0) is not allowed in CMOS5L designs
 
-# n activ
-nact_pact_tables = %w[main pwellblock gatpoly cont latchup nwell nbulay]
+# n activ (CMOS5L: no nbulay table)
+nact_pact_tables = %w[main pwellblock gatpoly cont latchup nwell]
 if TABLES.any?{|x| nact_pact_tables.include?(x)}
   logger.info('Starting n-Activ derivations')
   nactiv  = activ_drw.not(psd_drw.join(nsd_block))
 end
 
-# p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont latchup nwell nbulay]
+# p activ (CMOS5L: no nbulay table)
+pact_pact_tables = %w[main pwellblock gatpoly cont latchup nwell]
 if TABLES.any?{|x| pact_pact_tables.include?(x)}
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
-# p tap
-ptap_tables = %w[main pwellblock latchup nwell nbulay]
+# p tap (CMOS5L: no nbulay table)
+ptap_tables = %w[main pwellblock latchup nwell]
 if TABLES.any?{|x| ptap_tables.include?(x)}
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
 end
 
-# n tap
-ntap_tables = %w[main nwell nbulay]
+# n tap (CMOS5L: no nbulay table)
+ntap_tables = %w[main nwell]
 if TABLES.any?{|x| ntap_tables.include?(x)}
   logger.info('Starting ntap derivations')
   ntap = nactiv.and(nwell_drw)
 end
 
-# activ FETs
-pact_fet_tables = %w[main gatpoly nwell nbulay]
+# activ FETs (CMOS5L: no nbulay table)
+pact_fet_tables = %w[main gatpoly nwell]
 if TABLES.any?{|x| pact_fet_tables.include?(x)}
   logger.info('Starting pact FET derivations')
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay]
+nact_fet_tables = %w[main pwellblock gatpoly latchup nwell]
 if TABLES.any?{|x| nact_fet_tables.include?(x)}
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
 end
 
-# Gate FETs
-gate_tables = %w[main gatpoly nwell nbulay]
+# Gate FETs (CMOS5L: no nbulay table)
+gate_tables = %w[main gatpoly nwell]
 if TABLES.any?{|x| gate_tables.include?(x)}
   logger.info('Starting Gate derivations')
   res_mk = polyres_drw.join(res_drw)
@@ -330,11 +325,10 @@ drc_tole = 0.005.um
 if CONNECTIVITY_RULES
   logger.info('Starting IHP-SG13CMOS5L DRC connectivity related derivations.')
 
-  # Wells
-  nwell_ring_niso = nwell_drw.with_holes.not(nbulay_drw)
-  nwell_holes = nwell_drw.holes.not(nwell_drw)
-  isoPWell  = nbulay_drw.and(nwell_holes)
-  pwell_sub = pwell.not(isoPWell).join(nwell_ring_niso)
+  # Wells (CMOS5L: simplified - no nBuLay isolation)
+  # nBuLay (32/0) is a forbidden layer in CMOS5L per Section 3.2
+  nwell_ring = nwell_drw.with_holes
+  pwell_sub = pwell.join(nwell_ring)
 
   # conn layers (M1-M4-TM1 stack)
   poly_con      = gatpoly_drw.not(res_mk)
@@ -345,14 +339,12 @@ if CONNECTIVITY_RULES
   topmetal1_con = topmetal1_drw.not(topmetal1_res)
 
   logger.info('Starting IHP-SG13CMOS5L DRC connectivity setup')
-  # Inter-layer
+  # Inter-layer (CMOS5L: no nBuLay connections - forbidden layer)
   connect(pwell_sub, pwell)
   connect(pwell, ptap)
   connect(nwell_drw, ntap)
   connect(cont_drw, nactiv)
   connect(cont_drw, pactiv)
-  connect(nbulay_drw, nbuLay_gen_nbulay)
-  connect(nbuLay_gen_nbulay, nwell_drw)
   connect(ntap, cont_drw)
   connect(ptap, cont_drw)
   connect(poly_con, cont_drw)

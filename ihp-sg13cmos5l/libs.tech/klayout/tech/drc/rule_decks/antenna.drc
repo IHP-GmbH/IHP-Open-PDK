@@ -17,10 +17,9 @@
 #=========================================================================================
 #
 # Modified for IHP-SG13CMOS5L CMOS5L
-# - Removed TopVia1 (layer 125), TopMetal1 (layer 126), TopVia2 (layer 133), TopMetal2 (layer 134) references
-# - CMOS5L uses Metal5 as the top routing layer
-# - Removed rules: Ant.b_TopMetal1, Ant.b_TopMetal2, Ant.e_TopMetal1, Ant.e_TopMetal2,
-#                  Ant.d_TopVia1, Ant.d_TopVia2, Ant.f_TopVia1, Ant.f_TopVia2
+# - CMOS5L uses M1-M4-TM1 metal stack (no Metal5, Via4, TopVia2, TopMetal2)
+# - Metal5 (67/0), Via4 (66/0), TopVia2 (133/0), TopMetal2 (134/0) are forbidden layers
+# - Per Section 3.2 of SG13CMOS5L_os_layout_rules.pdf
 #
 #=========================================================================================
 
@@ -212,14 +211,17 @@ count = metal4_drw.count
 logger.info("metal4_drw has #{count} polygons")
 polygons_count += count
 
-via4_drw = get_polygons(66, 0)
-count = via4_drw.count
-logger.info("via4_drw has #{count} polygons")
+# Via4 (66/0) and Metal5 (67/0) are forbidden layers in CMOS5L
+# Per Section 3.2 of SG13CMOS5L_os_layout_rules.pdf
+
+topvia1_drw = get_polygons(125, 0)
+count = topvia1_drw.count
+logger.info("topvia1_drw has #{count} polygons")
 polygons_count += count
 
-metal5_drw = get_polygons(67, 0)
-count = metal5_drw.count
-logger.info("metal5_drw has #{count} polygons")
+topmetal1_drw = get_polygons(126, 0)
+count = topmetal1_drw.count
+logger.info("topmetal1_drw has #{count} polygons")
 polygons_count += count
 
 recog_diode = get_polygons(99, 31)
@@ -350,7 +352,8 @@ ant_c_errors.output('Ant.c', "7.1 Ant.c: Max. ratio of Cont area to connected Ga
 # Cumulative Antenna Ratio Calculations
 logger.info('Starting cumulative antenna ratio calculations')
 
-# Define the sequence of layers with metadata (Metal1-Metal5, Via1-Via4 only for CMOS5L)
+# Define the sequence of layers with metadata (M1-M4-TM1 stack for CMOS5L)
+# Metal5 (67/0) and Via4 (66/0) are forbidden layers per Section 3.2
 layers = [
   [:metal1_drw,    'm1_ratio',  'm'],
   [:via1_drw,      'v1_ratio',  'v'],
@@ -359,9 +362,8 @@ layers = [
   [:metal3_drw,    'm3_ratio',  'm'],
   [:via3_drw,      'v3_ratio',  'v'],
   [:metal4_drw,    'm4_ratio',  'm'],
-  [:via4_drw,      'v4_ratio',  'v'],
-  [:metal5_drw,    'm5_ratio',  'm']
-  # TopVia/TopMetal removed for CMOS5L
+  [:topvia1_drw,   'tv1_ratio', 'v'],
+  [:topmetal1_drw, 'tm1_ratio', 'm']
 ]
 
 # Container for all antenna ratios
@@ -400,22 +402,22 @@ diode_presence.forget
 # -------------- Ant.b/e -------------
 # ====================================
 
-# Ant.b: Max. ratio of cumulative metal area (from Metal1 to Metal5) to connected Gate area (without protection diode)
-# Ant.e: Max. ratio of cumulative metal area (from Metal1 to Metal5) to connected Gate area (with protection diode)
+# Ant.b: Max. ratio of cumulative metal area (from Metal1 to TopMetal1) to connected Gate area (without protection diode)
+# Ant.e: Max. ratio of cumulative metal area (from Metal1 to TopMetal1) to connected Gate area (with protection diode)
 logger.info('Executing rules Ant.b and Ant.e')
 
 # Get the Ant.b/e ratio from the JSON rules
 ant_b_ratio = drc_rules['Ant_b'].to_f
 ant_e_ratio = drc_rules['Ant_e'].to_f
 
-# Define the cumulative steps (Metal1-Metal5 only for CMOS5L)
+# Define the cumulative steps (M1-M4-TM1 stack for CMOS5L)
+# Metal5 is a forbidden layer per Section 3.2
 steps = [
   { met_name: 'Metal1',    ratio: "m1_ratio" },
   { met_name: 'Metal2',    ratio: "sum_m1_m2",  add: "m2_ratio" },
   { met_name: 'Metal3',    ratio: "sum_m1_m3",  add: "m3_ratio" },
   { met_name: 'Metal4',    ratio: "sum_m1_m4",  add: "m4_ratio" },
-  { met_name: 'Metal5',    ratio: "sum_m1_m5",  add: "m5_ratio" }
-  # TopMetal removed for CMOS5L
+  { met_name: 'TopMetal1', ratio: "sum_m1_tm1", add: "tm1_ratio" }
 ].freeze
 
 # Loop through each step
@@ -451,8 +453,8 @@ end
 # -------------- Ant.d/f -------------
 # ====================================
 
-# Ant.d: Max. ratio of cumulative via area (from Via1 to Via4) to connected Gate area (without protection diode)
-# Ant.f: Max. ratio of cumulative via area (from Via1 to Via4) to connected Gate area (with protection diode)
+# Ant.d: Max. ratio of cumulative via area (from Via1 to TopVia1) to connected Gate area (without protection diode)
+# Ant.f: Max. ratio of cumulative via area (from Via1 to TopVia1) to connected Gate area (with protection diode)
 
 logger.info('Executing rules Ant.d and Ant.f')
 
@@ -460,13 +462,13 @@ logger.info('Executing rules Ant.d and Ant.f')
 ant_d_ratio = drc_rules['Ant_d'].to_f
 ant_f_ratio = drc_rules['Ant_f'].to_f
 
-# Define the cumulative steps for vias (Via1-Via4 only for CMOS5L)
+# Define the cumulative steps for vias (Via1-Via3, TopVia1 for CMOS5L)
+# Via4 is a forbidden layer per Section 3.2
 via_steps = [
-  { via_name: 'Via1',    ratio: "sum_v1",     add: "v1_ratio", first: true },
-  { via_name: 'Via2',    ratio: "sum_v1_v2",  add: "v2_ratio" },
-  { via_name: 'Via3',    ratio: "sum_v1_v3",  add: "v3_ratio" },
-  { via_name: 'Via4',    ratio: "sum_v1_v4",  add: "v4_ratio" }
-  # TopVia removed for CMOS5L
+  { via_name: 'Via1',    ratio: "sum_v1",      add: "v1_ratio", first: true },
+  { via_name: 'Via2',    ratio: "sum_v1_v2",   add: "v2_ratio" },
+  { via_name: 'Via3',    ratio: "sum_v1_v3",   add: "v3_ratio" },
+  { via_name: 'TopVia1', ratio: "sum_v1_tv1",  add: "tv1_ratio" }
 ].freeze
 
 # Loop through each via step
