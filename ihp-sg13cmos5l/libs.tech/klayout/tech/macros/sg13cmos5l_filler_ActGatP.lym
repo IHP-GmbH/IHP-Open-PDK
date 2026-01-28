@@ -36,7 +36,6 @@
   SalBlock = source.input("28/0")
   NWell = source.input("31/0")
   PWell_block = source.input("46/21")
-  TRANS = source.input("26/0")
   EdgeSeal = source.input("39/0")
 
   # Fill exclusion area
@@ -81,7 +80,6 @@
   Activ_cpy=Activ.dup
   Poly_cpy=GatPoly.dup
   Cnt_cpy=Cont.dup
-  TRANS_cpy=TRANS.dup
   NWell_cpy_out=NWell.dup
   NWell_cpy_in=NWell.dup
   PWell_block_cpy_out=PWell_block.dup
@@ -96,10 +94,6 @@
   Activ_cpy.size(sep,sep, "square_limit")
   AFil_c1 = Activ_cpy
 
-  sep=1.0                                     ### AFil.e
-  TRANS_cpy.size(sep, sep, "square_limit")
-  AFil_e = TRANS_cpy
-
   sep=1.0                                     ### AFil.d
   NWell_cpy_out.size(sep, sep, "square_limit")
   NWell_cpy_in.size(-sep, -sep, "square_limit")
@@ -110,7 +104,7 @@
   PWell_block_cpy_in.size(-sep, -sep, "square_limit")
   AFil_i = PWell_block_cpy_out - PWell_block_cpy_in
 
-  exclLayAct = AFil_c | AFil_c1 | AFil_e | AFil_d | AFil_i | Activ_nofill
+  exclLayAct = AFil_c | AFil_c1 | AFil_d | AFil_i | Activ_nofill
 
   ##########################################################################
   # CREATE GatPoly FILLER
@@ -120,7 +114,6 @@
   Poly_filler_cpy=GatPoly_filler.dup
   Poly_gp_cpy=GatPoly.dup
   Cnt_gp_cpy=Cont.dup
-  TRANS_gp_cpy=TRANS.dup
   NWell_gp_cpy=NWell.dup
   NWell_gp_cpy2=NWell.dup
   pSD_cpy = pSD.dup
@@ -140,16 +133,12 @@
   SalBlock_cpy.size(sep, sep, "square_limit")
   GFil_d = Activ_gp_cpy | Poly_gp_cpy | Cnt_gp_cpy | pSD_cpy | nSD_block_cpy | SalBlock_cpy
 
-  sep=1.1                                     ###GFil.f
-  TRANS_gp_cpy.size(sep, sep, "square_limit")
-  GFil_f = TRANS_gp_cpy
-
   sep=1.1                                     ###GFil.e
   NWell_gp_cpy.size(sep, sep, "square_limit")
   NWell_gp_cpy2.size(-sep, -sep, "square_limit")
   GFil_e = NWell_gp_cpy - NWell_gp_cpy2
 
-  exclLayGatP = GFil_c | GFil_d | GFil_f | GFil_e | GatPoly_nofill
+  exclLayGatP = GFil_c | GFil_d | GFil_e | GatPoly_nofill
 
   ActoutGatP = exclLayGatP - exclLayAct
   GatPoutAct = exclLayAct - exclLayGatP
