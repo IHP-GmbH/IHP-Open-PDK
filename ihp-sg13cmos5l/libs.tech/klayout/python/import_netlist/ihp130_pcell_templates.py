@@ -282,50 +282,6 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*cap_cmim(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*m=(?P<m>\d+)).*$"
-        ),
-        "pcell_library": "SG13_dev",
-        "pcell_name": "cmim",
-        "params": [
-            {
-                "name": "w",
-                "type": "string",
-            },
-            {
-                "name": "l",
-                "type": "string",
-            },
-            {
-                "name": "m",
-                "type": "int",
-            },
-        ],
-        "default_params": {"w": "7.0e-6", "l": "7.0e-6", "m": 1},
-    },
-    {
-        "regex": re.compile(
-            r"^.*cap_rfcmim(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*wfeed=(?P<wfeed>\d+(\.\d+)?e-?\d+)).*$"
-        ),
-        "pcell_library": "SG13_dev",
-        "pcell_name": "rfcmim",
-        "params": [
-            {
-                "name": "w",
-                "type": "string",
-            },
-            {
-                "name": "l",
-                "type": "string",
-            },
-            {
-                "name": "wfeed",
-                "type": "string",
-            },
-        ],
-        "default_params": {"w": "10.0e-6", "l": "10.0e-6", "wfeed": "5.0e-6"},
-    },
-    {
-        "regex": re.compile(
             r"^.*dantenna(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*w=(?P<w>\d+(\.\d+)?u)).*$"
         ),
         "pcell_library": "SG13_dev",
@@ -359,56 +315,6 @@ templates = [
             },
         ],
         "default_params": {"l": "0.78u", "w": "0.78u"},
-    },
-    {
-        "regex": re.compile(
-            r"^.*npn13G2(?=.*\bNx=(?P<Nx>\d+)\b)(?!.*\bEl=).*"
-        ),
-        "pcell_library": "SG13_dev",
-        "pcell_name": "npn13G2",
-        "params": [
-            {
-                "name": "Nx",
-                "type": "int",
-            }
-        ],
-        "default_params": {"Nx": 1},
-    },
-    {
-        "regex": re.compile(
-            r"^.*npn13G2l(?=.*\bNx=(?P<Nx>\d+)\b)(?=.*\bEl=(?P<El>\d+(\.\d+)?)).*"
-        ),
-        "pcell_library": "SG13_dev",
-        "pcell_name": "npn13G2L",
-        "params": [
-            {
-                "name": "Nx",
-                "type": "int",
-            },
-            {
-                "name": "El",
-                "type": "float",
-            },
-        ],
-        "default_params": {"Nx": 1, "El": 1.0},
-    },
-    {
-        "regex": re.compile(
-            r"^.*npn13G2v(?=.*\bNx=(?P<Nx>\d+)\b)(?=.*\bEl=(?P<El>\d+)).*"
-        ),
-        "pcell_library": "SG13_dev",
-        "pcell_name": "npn13G2V",
-        "params": [
-            {
-                "name": "Nx",
-                "type": "int",
-            },
-            {
-                "name": "El",
-                "type": "int",
-            },
-        ],
-        "default_params": {"Nx": 1, "El": 1},
     },
     {
         "regex": re.compile(
