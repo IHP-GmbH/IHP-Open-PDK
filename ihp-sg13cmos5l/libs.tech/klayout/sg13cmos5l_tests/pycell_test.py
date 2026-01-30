@@ -41,7 +41,7 @@ pcellRppd = layout.create_cell("rppd", "SG13_dev", {})
 # Varicap (CMOS-compatible)
 pcellSVaricap = layout.create_cell("SVaricap", "SG13_dev", {})
 
-# Via stack (M1-M5 only)
+# Via stack (M1-M4-TM1 only)
 pcellViaStack = layout.create_cell("via_stack", "SG13_dev", {})
 
 # Substrate taps
@@ -75,7 +75,7 @@ pcellNoFillerStack = layout.create_cell("NoFillerStack", "SG13_dev", {})
 # Parasitic PNP (tbd.3)
 pcellPnpMPA = layout.create_cell("pnpMPA", "SG13_dev", {})
 
-# Sealring (M1-M5 only)
+# Sealring (M1-M4-TM1 only)
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 
 # Create top cell and place instances

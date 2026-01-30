@@ -46,7 +46,7 @@ ANALYSIS_RULES = [
     "viol_not_golden",
     "golden_not_viol",
 ]
-# Modified for IHP-SG13CMOS5L CMOS5L
+# Modified for IHP-SG13CMOS5L
 # Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
 # - Removed Metal5, Via4, TopMetal2, TopVia2
 # - TopMetal1 (TM1) is the top routing layer

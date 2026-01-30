@@ -130,5 +130,13 @@ class SVaricap(DloGen):
         
         dbCreateRect(self, activ, Box(x1-0.49, y1-gateS-0.5+gateOactiv, x1-gateS+NX*pcStepX+0.33, y1+w+0.5-gateOactiv))
         dbCreateRect(self, nwell, Box(x1-0.73, y1-gateS-0.5+gateOnwell, x1-gateS+NX*pcStepX+0.57, y1+w+0.5-gateOnwell))
+        # CMOS5L: ThickGateOx replaces nBuLay for DRC device recognition
+        # (nBuLay is a forbidden layer in CMOS5L)
+        # TGO.a requires ThickGateOx extends 0.27um beyond Activ on all sides.
+        # Must cover tie Activ regions (extending 0.76um beyond main Activ at top/bottom).
+        gateOxOactiv = 0.27
+        gateOx_yl = y1-gateS-0.5+gateOactiv-0.76-gateOxOactiv
+        gateOx_yr = y1+w+0.5-gateOactiv+0.76+gateOxOactiv
+        dbCreateRect(self, gateOx, Box(x1-0.49-gateOxOactiv, gateOx_yl, x1-gateS+NX*pcStepX+0.33+gateOxOactiv, gateOx_yr))
         dbCreateLabel(self, text, Point(x1-0.49, y1-gateS-0.5+gateOactiv), 'SVaricap', 'centerLeft', 'R0', Font.EURO_STYLE, 0.25)
             

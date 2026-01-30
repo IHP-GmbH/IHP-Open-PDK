@@ -17,7 +17,7 @@
 """
 Create DRC test GDS files for TopVia1, TopMetal1, and TopMetal1Filler rules.
 
-SG13CMOS5L CMOS5L - Metal stack: M1-V1-M2-V2-M3-V3-M4-TV1-TM1
+SG13CMOS5L - Metal stack: M1-V1-M2-V2-M3-V3-M4-TV1-TM1
 - TopVia1 connects Metal4 (not Metal5 as in full PDK) to TopMetal1
 """
 
