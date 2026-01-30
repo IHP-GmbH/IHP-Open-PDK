@@ -266,10 +266,32 @@ drc_rules = get_drc_values(logger)
 
 # === LAYOUT EXTENT ===
 CHIP = extent.sized(0.0)
-chip_area = CHIP.area
-logger.info("Total area of the design is #{chip_area} um^2.")
-tiles_boundary = tile_boundary(CHIP)
 chip_bbox = CHIP.bbox
+
+# Use prBoundary (39/4) for chip area when available.
+# extent.sized(0.0) returns the bounding box of ALL shapes in the layout,
+# which can be much larger than the actual design area when shapes exist
+# outside the design boundary (labels, alignment marks, etc.).
+# prBoundary defines the actual chip boundary and gives correct density.
+prboundary_drw = get_polygons(39, 4)
+prboundary_count = prboundary_drw.count
+logger.info("prboundary_drw has #{prboundary_count} polygons")
+
+if prboundary_count > 0
+  chip_area = prboundary_drw.area
+  logger.info("Using prBoundary (39/4) for chip area: #{chip_area} um^2.")
+  extent_area = CHIP.area
+  if extent_area > chip_area * 1.01
+    logger.warn("Layout extent area (#{extent_area} um^2) is larger than prBoundary area (#{chip_area} um^2).")
+    logger.warn('Shapes exist outside prBoundary. Using prBoundary for density calculation.')
+  end
+else
+  chip_area = CHIP.area
+  logger.info("No prBoundary (39/4) found. Using layout extent for chip area: #{chip_area} um^2.")
+end
+prboundary_drw.forget
+
+tiles_boundary = tile_boundary(CHIP)
 
 # Density derivations
 logger.info('Starting density IHP-SG13CMOS5L derivations.')
