@@ -268,30 +268,47 @@ drc_rules = get_drc_values(logger)
 CHIP = extent.sized(0.0)
 chip_bbox = CHIP.bbox
 
-# Use prBoundary (39/4) for chip area when available.
+# Use prBoundary for chip area when available (3-tier fallback).
 # extent.sized(0.0) returns the bounding box of ALL shapes in the layout,
 # which can be much larger than the actual design area when shapes exist
 # outside the design boundary (labels, alignment marks, etc.).
-# prBoundary defines the actual chip boundary and gives correct density.
-prboundary_drw = get_polygons(39, 4)
-prboundary_count = prboundary_drw.count
-logger.info("prboundary_drw has #{prboundary_count} polygons")
+#
+# Fallback order:
+#   1. prBoundary (189/0) - official boundary layer per layer map
+#   2. EdgeSeal.boundary (39/4) - common workaround when 189/0 not drawn
+#   3. Layout extent - last resort
+prboundary_189 = get_polygons(189, 0)
+prboundary_189_count = prboundary_189.count
+logger.info("prBoundary (189/0) has #{prboundary_189_count} polygons")
 
-if prboundary_count > 0
-  chip_area = prboundary_drw.area
-  chip_boundary_bbox = prboundary_drw.bbox
-  chip_boundary_region = prboundary_drw
-  logger.info("Using prBoundary (39/4) for chip area: #{chip_area} um^2.")
-  extent_area = CHIP.area
-  if extent_area > chip_area * 1.01
-    logger.warn("Layout extent area (#{extent_area} um^2) is larger than prBoundary area (#{chip_area} um^2).")
-    logger.warn('Shapes exist outside prBoundary. Using prBoundary for density calculation.')
-  end
+edgeseal_boundary = get_polygons(39, 4)
+edgeseal_boundary_count = edgeseal_boundary.count
+logger.info("EdgeSeal.boundary (39/4) has #{edgeseal_boundary_count} polygons")
+
+if prboundary_189_count > 0
+  chip_area = prboundary_189.area
+  chip_boundary_bbox = prboundary_189.bbox
+  chip_boundary_region = prboundary_189
+  logger.info("Using prBoundary (189/0) for chip area: #{chip_area} um^2.")
+  edgeseal_boundary.forget
+elsif edgeseal_boundary_count > 0
+  chip_area = edgeseal_boundary.area
+  chip_boundary_bbox = edgeseal_boundary.bbox
+  chip_boundary_region = edgeseal_boundary
+  logger.info("Using EdgeSeal.boundary (39/4) for chip area: #{chip_area} um^2.")
+  prboundary_189.forget
 else
   chip_area = CHIP.area
   chip_boundary_bbox = chip_bbox
   chip_boundary_region = CHIP
-  logger.info("No prBoundary (39/4) found. Using layout extent for chip area: #{chip_area} um^2.")
+  logger.info("No boundary layer found. Using layout extent for chip area: #{chip_area} um^2.")
+  prboundary_189.forget
+  edgeseal_boundary.forget
+end
+
+extent_area = CHIP.area
+if chip_area < extent_area * 0.99
+  logger.warn("Layout extent (#{extent_area} um^2) > chip boundary (#{chip_area} um^2). Shapes exist outside boundary.")
 end
 
 # Calculate chip dimensions for windowed density checks
