@@ -1,4 +1,4 @@
-# ihp-sg13cmos5l
+# IHP SG13CMOS5L PDK (M1-M4-TM1 stack)
 > [!WARNING]
 > This repo is meant to be used **only** as a temporary storage during the development of the `build/compile` migration script for the sg13 cmos5l PDK.
 
