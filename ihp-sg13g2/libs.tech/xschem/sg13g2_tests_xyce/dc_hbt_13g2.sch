@@ -97,7 +97,7 @@ C {simulator_commands_shown.sym} 40 -680 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerHBT.lib hbt_typ
+.lib $::MODELS_XYCE/cornerHBT.lib hbt_typ
 )"}
 C {simulator_commands_shown.sym} -350 -690 0 0 {name=Libs_Ngspice
 simulator=ngspice

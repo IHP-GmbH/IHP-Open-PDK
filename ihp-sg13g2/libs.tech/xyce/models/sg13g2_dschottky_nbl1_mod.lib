@@ -1,0 +1,113 @@
+      
+*#######################################################################
+*
+* Copyright 2025 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+* Technology: SG13G2
+* Lot: PQ45802
+* Wafer: 05
+* Reticle: T458
+* Block: S427Ka
+* Chip : X7Y02
+* DUT: dschottky_nbl1
+* Temperature range: -40C ... +125C
+* Operator: FKo
+* DC Measurements  at T=27C, T=70C, T=-40C and T=125C
+* Noise Measurements at T=27C
+* Measurement Date: Jun 21 Mon 11:12:05 2021
+*
+
+
+.subckt schottky_nbl1 A C S 
+.param
++l=1E-06  
++w=3E-07  
++Nx=1  
++Ny=1  
++scaling=1E-06  
++ls=((Nx*(l+2e-6))/scaling)+0.5  
++ws=((Ny*(w+1.7e-6))/scaling)+0.5
+
+dmain 1  C   dmain_mod area = ((Nx*Ny)*(l*w))/(scaling*scaling)
+drev  C  1   drev_mod area = ((Nx*Ny)*(l*w))/(scaling*scaling)
+dsub  S  C   dsub_mod area = (ls*ws)
+Q1    A  C S mod1_pnp area= ((Nx*Ny)*(l*w))/(scaling*scaling)
+
+rsmain A  1   R=(1360)/(Nx*Ny) tc1=2.975e-3 tc2=4.630e-6 
+cstray A  C   C=(2.185E-014/25)*(Nx*Ny)
+cin    A  S   C=(5E-016/5)*(Nx)
+cdsub  C  2   C=(1.7E-014/168)*(ls*ws)
+csub   2  S   C=6E-016
+rsub   2  S   R=1E+004
+
+.ends schottky_nbl1
+
+.model mod1_pnp pnp (
++ tnom=27
++ is=2E-18
++ nf =0.93304
++ nr=0.848
++ ikf=0.0128824955169313
++ bf=0.287719968668579
++ rc=420000
++ rb=408
++ kf ='6.704272E-08*schottky_nbl1_kf'
++ af =0.53
++ eg=0.95)
+
+.model dmain_mod d (
++ tnom =27
++ level =1
++ is ='3.829E-10*schottky_nbl1_is'
++ n =1.057
++ ikf =0.07311
++ cj =8E-16
++ cjsw =0
++ m =0.569
++ vj =0.4
++ eg =0.450
++ xti =4.633
++ kf ='3.16227766016838E-12*schottky_nbl1_kf'
++ af =1.205 )
+
+.model drev_mod d (
++ tnom =27
++ level =1
++ is =2.707E-10
++ n =16.9
++ ikf =1.66E-05
++ eg =6.5
++ xti =4
++ kf ='3.43962955648912E-09*schottky_nbl1_kf'
++ af =1.75 )
+
+.model dsub_mod d (
++ tnom=27  
++ is =1.141E-16
++ rs =19700
++ n =1
++ ikf =5E-07
++ cj =1.5E-16
++ cjsw =0
++ m =0.6
++ vj =0.5
++ eg =1.17
++ xti =3
++ bv =23
++ tcv =-0.00079
++ ibv =1E-15
++ nbv =1 )
+

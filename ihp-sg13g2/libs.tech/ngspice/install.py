@@ -1,0 +1,1 @@
+../xschem/install.py

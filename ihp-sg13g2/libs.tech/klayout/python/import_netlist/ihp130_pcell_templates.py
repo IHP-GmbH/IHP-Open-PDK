@@ -19,10 +19,12 @@
 
 import re
 
+NUMBER = r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[a-zA-Zµ]+)?"
+
 templates = [
     {
         "regex": re.compile(
-            r"^.*sg13_lv_nmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
+            rf"^.*sg13_lv_nmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "nmos",
@@ -48,7 +50,7 @@ templates = [
     },  # Your updated template for sg13_lv_nmos
     {
         "regex": re.compile(
-            r"^.*sg13_lv_pmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
+            rf"^.*sg13_lv_pmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "pmos",
@@ -74,7 +76,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_hv_nmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
+            rf"^.*sg13_hv_nmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "nmosHV",
@@ -100,7 +102,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_hv_pmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
+            rf"^.*sg13_hv_pmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?!.*rfmode).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "pmosHV",
@@ -126,7 +128,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_lv_nmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
+            rf"^.*sg13_lv_nmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rfnmos",
@@ -162,7 +164,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_lv_pmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
+            rf"^.*sg13_lv_pmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rfpmos",
@@ -198,7 +200,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_hv_nmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
+            rf"^.*sg13_hv_nmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rfnmosHV",
@@ -234,7 +236,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*sg13_hv_pmos(?=.*w=(?P<w>\d+(\.\d+)?u))(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
+            rf"^.*sg13_hv_pmos(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*ng=(?P<ng>\d+))(?=.*m=(?P<m>\d+))(?=.*rfmode=(?P<rfmode>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rfpmosHV",
@@ -269,7 +271,7 @@ templates = [
         },
     },
     {
-        "regex": re.compile(r"^.*bondpad(?=.*size=(?P<size>\d+(\.\d+)?u)).*$"),
+        "regex": re.compile(rf"^.*bondpad(?=.*size=(?P<size>{NUMBER})).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "bondpad",
         "params": [
@@ -282,7 +284,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*cap_cmim(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*m=(?P<m>\d+)).*$"
+            rf"^.*cap_cmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "cmim",
@@ -304,7 +306,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*cap_rfcmim(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*wfeed=(?P<wfeed>\d+(\.\d+)?e-?\d+)).*$"
+            rf"^.*cap_rfcmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*wfeed=(?P<wfeed>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rfcmim",
@@ -326,7 +328,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*dantenna(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*w=(?P<w>\d+(\.\d+)?u)).*$"
+            rf"^.*dantenna(?=.*l=(?P<l>{NUMBER}))(?=.*w=(?P<w>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "dantenna",
@@ -344,7 +346,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*dpantenna(?=.*l=(?P<l>\d+(\.\d+)?u))(?=.*w=(?P<w>\d+(\.\d+)?u)).*$"
+            rf"^.*dpantenna(?=.*l=(?P<l>{NUMBER}))(?=.*w=(?P<w>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "dpantenna",
@@ -362,7 +364,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*npn13G2(?=.*\bNx=(?P<Nx>\d+)\b)(?!.*\bEl=).*"
+            r"^.*\bnpn13G2\b(?=.*\bNx=(?P<Nx>\d+)\b).*"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "npn13G2",
@@ -376,7 +378,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*npn13G2l(?=.*\bNx=(?P<Nx>\d+)\b)(?=.*\bEl=(?P<El>\d+(\.\d+)?)).*"
+            rf"^.*npn13G2l(?=.*\bNx=(?P<Nx>\d+)\b)(?=.*\bEl=(?P<El>{NUMBER})).*"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "npn13G2L",
@@ -394,7 +396,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*npn13G2v(?=.*\bNx=(?P<Nx>\d+)\b)(?=.*\bEl=(?P<El>\d+)).*"
+            rf"^.*\bnpn13G2v\b(?=.*\bNx=(?P<Nx>\d+)\b).*"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "npn13G2V",
@@ -403,25 +405,17 @@ templates = [
                 "name": "Nx",
                 "type": "int",
             },
-            {
-                "name": "El",
-                "type": "int",
-            },
         ],
-        "default_params": {"Nx": 1, "El": 1},
+        "default_params": {"Nx": 1},
     },
     {
         "regex": re.compile(
-            r"^.*ntap1(?=.*R=(?P<R>\d+(\.\d+)?))(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+)).*$"
+            rf"^.*ntap1(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "ntap1",
         "params": [
             {
-                "name": "R",
-                "type": "float",
-            },
-            {
                 "name": "w",
                 "type": "string",
             },
@@ -430,20 +424,16 @@ templates = [
                 "type": "string",
             },
         ],
-        "default_params": {"R": 262.8, "w": "0.78e-6", "l": "0.78e-6"},
+        "default_params": {"w": "0.78e-6", "l": "0.78e-6"},
     },
     {
         "regex": re.compile(
-            r"^.*ptap1(?=.*R=(?P<R>\d+(\.\d+)?))(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+)).*$"
+            rf"^.*ptap1(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "ptap1",
         "params": [
             {
-                "name": "R",
-                "type": "float",
-            },
-            {
                 "name": "w",
                 "type": "string",
             },
@@ -452,11 +442,11 @@ templates = [
                 "type": "string",
             },
         ],
-        "default_params": {"R": 262.8, "w": "0.78e-6", "l": "0.78e-6"},
+        "default_params": {"w": "0.78e-6", "l": "0.78e-6"},
     },
     {
         "regex": re.compile(
-            r"^.*rhigh(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
+            rf"^.*rhigh(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rhigh",
@@ -482,7 +472,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*rppd(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
+            rf"^.*rppd(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rppd",
@@ -508,7 +498,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            r"^.*rsil(?=.*w=(?P<w>\d+(\.\d+)?e-?\d+))(?=.*l=(?P<l>\d+(\.\d+)?e-?\d+))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
+            rf"^.*rsil(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rsil",
@@ -525,26 +515,22 @@ templates = [
                 "name": "m",
                 "type": "int",
             },
-            {
-                "name": "b",
-                "type": "int",
-            },
         ],
-        "default_params": {"w": "0.5e-6", "l": "0.5e-6", "m": 1, "b": 0},
+        "default_params": {"w": "0.5e-6", "l": "0.5e-6", "m": 1},
     },
     {
         "regex": re.compile(
-            r"^.*sg13_hv_svaricap(?=.*W=(?P<W>\d+(\.\d+)?e-?\d+))(?=.*L=(?P<L>\d+(\.\d+)?e-?\d+))(?=.*Nx=(?P<Nx>\d+)).*$"
+            rf"^.*sg13_hv_svaricap(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*Nx=(?P<Nx>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "SVaricap",
         "params": [
             {
-                "name": "W",
+                "name": "w",
                 "type": "string",
             },
             {
-                "name": "L",
+                "name": "l",
                 "type": "string",
             },
             {
@@ -552,7 +538,7 @@ templates = [
                 "type": "int",
             },
         ],
-        "default_params": {"W": "3.74e-6", "L": "0.3e-6", "Nx": 1},
+        "default_params": {"w": "3.74e-6", "l": "0.3e-6", "Nx": 1},
     },
     ###################################################################
     {
@@ -626,5 +612,61 @@ templates = [
             }
         ],
         "default_params": {"model": "nmoscl_4", "m": 1},
+    },
+    {
+        "regex": re.compile(r"^.*schottky_nbl1(?=.*Nx=(?P<Nx>\d+))(?=.*Ny=(?P<Ny>\d+)).*$"),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "schottky",
+        "params": [
+            {
+                "name": "Nx",
+                "type": "int",
+            },
+            {
+                "name": "Ny",
+                "type": "int",
+            },
+        ],
+        "default_params": {"Nx": 1, "Ny": 1},
+    },
+    {
+        "regex": re.compile(
+            rf"^.*isolbox(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER})).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "isolbox",
+        "params": [
+            {
+                "name": "w",
+                "type": "string",
+            },
+            {
+                "name": "l",
+                "type": "string",
+            },
+        ],
+        "default_params": {"w": "3u", "l": "3u"},
+    },
+    {
+        "regex": re.compile(
+            rf"^.*pnpMPA(?=.*a=(?P<a>{NUMBER}))(?=.*p=(?P<p>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "pnpMPA",
+        "params": [
+            {
+                "name": "a",
+                "type": "string",
+            },
+            {
+                "name": "p",
+                "type": "string",
+            },
+            {
+                "name": "m",
+                "type": "int",
+            },
+        ],
+    "default_params": {"a": "2e-12", "p": "6e-6", "m": 1},
     },
 ]

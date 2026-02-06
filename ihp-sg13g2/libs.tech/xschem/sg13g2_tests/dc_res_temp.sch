@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 B 2 -130 -610 670 -210 {flags=graph
 
@@ -60,7 +61,7 @@ lab=Vcc}
 C {devices/code_shown.sym} -310 180 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ_stat
+.lib $::MODELS_NGSPICE/cornerRES.lib res_typ_stat
 "}
 C {devices/code_shown.sym} 570 -100 0 0 {name=NGSPICE only_toplevel=true 
 value="
@@ -94,6 +95,14 @@ C {devices/gnd.sym} 240 90 0 0 {name=l2 lab=GND}
 C {devices/ammeter.sym} 240 -40 0 0 {name=Vppd}
 C {devices/gnd.sym} 420 90 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 420 -40 0 0 {name=Vrh}
+C {sg13g2_pr/sub.sym} -30 90 0 0 {name=l6 lab=sub!}
+C {sg13g2_pr/ptap1.sym} -30 60 0 0 {name=R4
+model=ptap1
+spiceprefix=X
+w=0.78e-6
+l=0.78e-6
+}
+C {devices/gnd.sym} -30 30 2 0 {name=l7 lab=GND}
 C {sg13g2_pr/rsil.sym} 90 40 0 0 {name=R1
 w=0.5e-6
 l=0.5e-6
@@ -103,27 +112,19 @@ spiceprefix=X
 b=0
 m=1
 }
-C {sg13g2_pr/sub.sym} -30 90 0 0 {name=l6 lab=sub!}
-C {sg13g2_pr/ptap1.sym} -30 60 0 0 {name=R4
-model=ptap1
-spiceprefix=X
-w=0.78e-6
-l=0.78e-6
-}
-C {devices/gnd.sym} -30 30 2 0 {name=l7 lab=GND}
-C {sg13g2_pr/rppd.sym} 240 40 0 0 {name=R2
+C {sg13g2_pr/rhigh.sym} 420 40 0 0 {name=R3
 w=0.5e-6
 l=0.5e-6
-model=rppd
+model=rhigh
 body=sub!
 spiceprefix=X
 b=0
 m=1
 }
-C {sg13g2_pr/rhigh.sym} 420 40 0 0 {name=R3
+C {sg13g2_pr/rppd.sym} 240 40 0 0 {name=R2
 w=0.5e-6
 l=0.5e-6
-model=rhigh
+model=rppd
 body=sub!
 spiceprefix=X
 b=0

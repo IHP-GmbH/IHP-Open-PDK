@@ -483,6 +483,7 @@ def run_test_case(
         f"--run_dir={output_loc} "
         f"--run_mode=flat "
         f"--no_density "
+        f"--disable_extra_rules "
         f"> {pattern_log} 2>&1"
     )
 

@@ -8,10 +8,17 @@ Explains how to test SG13G2 DRC rule decks.
 - [IHP-SG13G2 DRC Testing](#ihp-sg13g2-drc-testing)
 - [Table of contents](#table-of-contents)
   - [Folder Structure](#folder-structure)
-  - [Prerequisites](#prerequisites)
+  - [**Prerequisites**](#prerequisites)
   - [Installation](#installation)
-  - [Usage Guide](#usage-guide)
+  - [**Usage Guide**](#usage-guide)
+    - [🧪 Golden Results (For Developers Only)](#-golden-results-for-developers-only)
+    - [🔁 Regression Testing](#-regression-testing)
   - [DRC Regression Outputs](#drc-regression-outputs)
+    - [📁 Folder Structure of regression run results](#-folder-structure-of-regression-run-results)
+    - [🧾 Output Regression Log](#-output-regression-log)
+      - [📋 Sample Regression Output](#-sample-regression-output)
+      - [📊 Explanation of Result Columns](#-explanation-of-result-columns)
+      - [✅ Summary Insights](#-summary-insights)
 
 ## Folder Structure
 
@@ -27,11 +34,11 @@ Explains how to test SG13G2 DRC rule decks.
 You need the following set of tools installed to be able to run SG13G2 DRC regression:
 
 - Python 3.9+
-- KLayout 0.29.0+
+- KLayout 0.30.3+
 
 We have tested this using the following setup:
 - Python 3.9.18
-- KLayout 0.30.1
+- KLayout 0.30.3
 
 ## Installation
 

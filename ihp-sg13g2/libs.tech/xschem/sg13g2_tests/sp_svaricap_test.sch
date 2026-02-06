@@ -28,9 +28,9 @@ N 80 -35 80 0 {lab=GND}
 C {devices/code_shown.sym} -517.5 382.5 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerCAP.lib cap_typ
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ
-.lib $::SG13G2_MODELS/cornerMOShv.lib mos_tt
+.lib $::MODELS_NGSPICE/cornerCAP.lib cap_typ
+.lib $::MODELS_NGSPICE/cornerRES.lib res_typ
+.lib $::MODELS_NGSPICE/cornerMOShv.lib mos_tt
 "}
 C {devices/code_shown.sym} 382.5 -85 0 0 {name=NGSPICE only_toplevel=true 
 value="

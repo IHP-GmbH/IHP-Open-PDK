@@ -202,8 +202,8 @@ C {simulator_commands_shown.sym} 200 -1030 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOShv.lib mos_tt
 )"}
 C {simulator_commands_shown.sym} -250 -1030 0 0 {name=Libs_Ngspice
 simulator=ngspice

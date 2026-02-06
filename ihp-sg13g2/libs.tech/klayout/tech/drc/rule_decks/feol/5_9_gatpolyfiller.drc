@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('gatpolyfiller') || FEOL
+  #================================================
+  #----------------- 5.9 GatPoly:filler -----------
+  #================================================
+
+  logger.info('Starting 5.9 GatPoly:filler')
+
+  # GatPoly filler derivations
+  gfil_d_g = activ_drw.join(gatpoly_drw).join(cont_drw).join(psd_drw).join(nsd_block).join(salblock_drw)
+  gfil_e_g = nwell_drw.join(nbulay_drw)
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for GatPoly:filler table.')
+  end
+
+  # Rule GFil.d: Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is 1.1 um
+  logger.info('Executing rule GFil.d')
+  gfil_d_value = drc_rules['GFil_d'].to_f
+  gfil_d = gfil_d_g.sep(gatpoly_filler, gfil_d_value.um, euclidian)
+  gfil_d.output('GFil.d',
+                "5.9. GFil.d : Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is #{gfil_d_value} um")
+  gfil_d_g.forget
+  gfil_d.forget
+
+  unless PRECHECK_DRC
+    # Rule GFil.e: Min. GatPoly:filler space to NWell, nBuLay is 1.10 um
+    logger.info('Executing rule GFil.e')
+    gfil_e_value = drc_rules['GFil_e'].to_f
+    gfil_e_l = gfil_e_g.sep(gatpoly_filler, gfil_e_value.um, euclidian)
+    gfil_e_l.output('GFil.e', "5.9. GFil.e Min. GatPoly:filler space to NWell, nBuLay is #{gfil_e_value} um")
+    gfil_e_l.forget
+
+    # Rule GFil.i: Max. GatPoly:nofill area (µm²) is 400um x 400um
+    logger.info('Executing rule GFil.i')
+    gfil_i_value = drc_rules['GFil_i'].to_f
+    gfil_i = gatpoly_nofill.with_bbox_max(gfil_i_value.um + 0.001.um, nil)
+    gfil_i.output('GFil.i', "5.9. GFil.i Max. GatPoly:nofill area (µm²) is #{gfil_i_value} um x #{gfil_i_value} um")
+    gfil_i.forget
+  end
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after GatPoly:filler table.")
+  end
+end

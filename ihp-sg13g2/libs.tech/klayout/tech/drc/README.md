@@ -13,6 +13,7 @@ Explains how to use the SG13G2 DRC rule decks.
     - [CLI](#cli)
       - [DRC Outputs](#drc-outputs)
     - [GUI](#gui)
+  - [This set includes additional residual rules that are not part of the main set. These rules can be deactivated by using the `--disable_extra_rules` switch when executing the DRC. Please note that these rules have not been verified or tested and may be slower.](#this-set-includes-additional-residual-rules-that-are-not-part-of-the-main-set-these-rules-can-be-deactivated-by-using-the---disable_extra_rules-switch-when-executing-the-drc-please-note-that-these-rules-have-not-been-verified-or-tested-and-may-be-slower)
 
 
 ## Folder Structure
@@ -31,11 +32,11 @@ Explains how to use the SG13G2 DRC rule decks.
 You need the following set of tools installed to be able to run SG13G2 DRC:
 
 - Python 3.9+
-- KLayout 0.29.0+
+- KLayout 0.30.3+
 
 We have tested this using the following setup:
 - Python 3.9.18
-- KLayout 0.30.1
+- KLayout 0.30.3
 
 ## Installation
 
@@ -60,7 +61,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
             [--disable_extra_rules] [--no_feol] [--no_beol] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid] [--macro_gen]
+            [--antenna_only] [--no_offgrid]
 ```
 
 **Example:**
@@ -91,7 +92,6 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --antenna             Enable antenna rule checks.
   --antenna_only        Run only antenna rules.
   --no_offgrid          Disable offgrid rule checks.
-  --macro_gen           Only generate the DRC rule deck without running.
 ```
 
 > **ℹ️ Note**  

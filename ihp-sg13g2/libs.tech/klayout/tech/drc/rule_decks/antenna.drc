@@ -1,10 +1,29 @@
 # frozen_string_literal: true
 
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
 #====================================================================================================================
 #--------------------------------------------- IHP-SG13G2 DRC RULE DECK ---------------------------------------------
 #====================================================================================================================
 require 'time'
 require 'logger'
+require 'json'
+require 'pathname'
+require 'etc'
 
 exec_start_time = Time.now
 
@@ -21,6 +40,9 @@ file_logger.formatter = formatter
 # Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
+
+# Don't buffer stdout
+$stdout.sync = true
 
 # MultiLogger class to broadcast to multiple loggers
 class MultiLogger
@@ -48,7 +70,7 @@ logger = MultiLogger.new(stdout_logger, file_logger)
 #----------------- FILE SETUP -------------------
 #================================================
 
-logger.info("Starting running IHP-SG13G2 Klayout DRC Antenna runset on #{$input}")
+logger.info("Starting running IHP-SG13G2 Klayout DRC antenna runset on #{$input}")
 logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
 
 if $input
@@ -62,13 +84,13 @@ end
 logger.info('Loading database to memory is complete.')
 
 if $report
-  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at: #{$report}")
-  report('Antenna DRC Run Report at', $report)
+  logger.info("IHP-SG13G2 Klayout DRC antenna runset output at: #{$report}")
+  report('DRC Run Report at', $report)
 else
   layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
   report_path = layout_dir.join('sg13g2_drc_antenna.lyrdb').to_s
-  logger.info("IHP-SG13G2 Klayout DRC Antenna runset output at default location: #{report_path}")
-  report('Antenna DRC Run Report at', report_path)
+  logger.info("IHP-SG13G2 Klayout DRC runset output at default location: #{report_path}")
+  report('DRC Run Report at', report_path)
 end
 
 #================================================
@@ -91,14 +113,447 @@ def setup_run_mode(run_mode)
   end
 end
 
+# Threads
+$threads = ($threads || Etc.nprocessors).to_i
+threads($threads)
+logger.info("KLayout will use #{$threads} thread(s) in tiling mode.")
+
 # Run mode
+$run_mode = $run_mode || 'deep'
 setup_run_mode($run_mode)
-logger.info("#{$run_mode} mode is enabled for #{TABLE_NAME} table.")
+logger.info("#{$run_mode} mode is enabled for antenna table.")
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
 #================================================
 
+polygons_count = 0
+logger.info('Read in polygons from layers.')
+
+def get_polygons(layer, data_type)
+  ps = polygons(layer, data_type)
+  $run_mode == 'deep' ? ps : ps.merged
+end
+
+activ_drw = get_polygons(1, 0)
+count = activ_drw.count
+logger.info("activ_drw has #{count} polygons")
+polygons_count += count
+
+gatpoly_drw = get_polygons(5, 0)
+count = gatpoly_drw.count
+logger.info("gatpoly_drw has #{count} polygons")
+polygons_count += count
+
+cont_drw = get_polygons(6, 0)
+count = cont_drw.count
+logger.info("cont_drw has #{count} polygons")
+polygons_count += count
+
+nsd_block = get_polygons(7, 21)
+count = nsd_block.count
+logger.info("nsd_block has #{count} polygons")
+polygons_count += count
+
+metal1_drw = get_polygons(8, 0)
+count = metal1_drw.count
+logger.info("metal1_drw has #{count} polygons")
+polygons_count += count
+
+metal2_drw = get_polygons(10, 0)
+count = metal2_drw.count
+logger.info("metal2_drw has #{count} polygons")
+polygons_count += count
+
+psd_drw = get_polygons(14, 0)
+count = psd_drw.count
+logger.info("psd_drw has #{count} polygons")
+polygons_count += count
+
+digisub_drw = get_polygons(16, 0)
+count = digisub_drw.count
+logger.info("digisub_drw has #{count} polygons")
+polygons_count += count
+
+via1_drw = get_polygons(19, 0)
+count = via1_drw.count
+logger.info("via1_drw has #{count} polygons")
+polygons_count += count
+
+via2_drw = get_polygons(29, 0)
+count = via2_drw.count
+logger.info("via2_drw has #{count} polygons")
+polygons_count += count
+
+metal3_drw = get_polygons(30, 0)
+count = metal3_drw.count
+logger.info("metal3_drw has #{count} polygons")
+polygons_count += count
+
+nwell_drw = get_polygons(31, 0)
+count = nwell_drw.count
+logger.info("nwell_drw has #{count} polygons")
+polygons_count += count
+
+pwell_block = get_polygons(46, 21)
+count = pwell_block.count
+logger.info("pwell_block has #{count} polygons")
+polygons_count += count
+
+via3_drw = get_polygons(49, 0)
+count = via3_drw.count
+logger.info("via3_drw has #{count} polygons")
+polygons_count += count
+
+metal4_drw = get_polygons(50, 0)
+count = metal4_drw.count
+logger.info("metal4_drw has #{count} polygons")
+polygons_count += count
+
+via4_drw = get_polygons(66, 0)
+count = via4_drw.count
+logger.info("via4_drw has #{count} polygons")
+polygons_count += count
+
+metal5_drw = get_polygons(67, 0)
+count = metal5_drw.count
+logger.info("metal5_drw has #{count} polygons")
+polygons_count += count
+
+recog_diode = get_polygons(99, 31)
+count = recog_diode.count
+logger.info("recog_diode has #{count} polygons")
+polygons_count += count
+
+recog_esd = get_polygons(99, 30)
+count = recog_esd.count
+logger.info("recog_esd has #{count} polygons")
+polygons_count += count
+
+topvia1_drw = get_polygons(125, 0)
+count = topvia1_drw.count
+logger.info("topvia1_drw has #{count} polygons")
+polygons_count += count
+
+topmetal1_drw = get_polygons(126, 0)
+count = topmetal1_drw.count
+logger.info("topmetal1_drw has #{count} polygons")
+polygons_count += count
+
+topvia2_drw = get_polygons(133, 0)
+count = topvia2_drw.count
+logger.info("topvia2_drw has #{count} polygons")
+polygons_count += count
+
+topmetal2_drw = get_polygons(134, 0)
+count = topmetal2_drw.count
+logger.info("topmetal2_drw has #{count} polygons")
+polygons_count += count
+
+
+logger.info("Total no. of polygons in the design is #{polygons_count}")
+
+#================================================
+# -------------------- UTILS --------------------
+#================================================
+
+# Method to get DRC values from JSON files
+def get_drc_values(logger)
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  $drc_json_default = $drc_json_default || File.expand_path(File.join(script_dir, 'sg13g2_tech_default.json'))
+  $drc_json = $drc_json || File.expand_path(File.join(script_dir, '../../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json'))
+
+  tech_rules = {}
+  if $drc_json && $drc_json != $drc_json_default
+    begin
+      tech_drc_content = File.read($drc_json)
+      tech_drc_data = JSON.parse(tech_drc_content)
+      tech_rules = tech_drc_data['drc_rules'] || {}
+      logger.info("Loaded TECH DRC rules values from #{$drc_json}")
+    rescue StandardError => e
+      logger.error("Error reading TECH DRC rules from #{$drc_json}: #{e.message}")
+      raise "Error reading TECH DRC rules from #{$drc_json}: #{e.message}"
+    end
+  end
+
+  begin
+    default_drc_content = File.read($drc_json_default)
+    default_drc_data = JSON.parse(default_drc_content)
+    default_rules = default_drc_data['drc_rules'] || {}
+    logger.info("Loaded default DRC rules values from #{$drc_json_default}")
+  rescue StandardError => e
+    logger.error("Error reading default DRC rules from #{$drc_json_default}: #{e.message}")
+    raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
+  end
+
+  merged_rules = tech_rules.merge(default_rules)
+
+  # Report any fallback rules used
+  missing_keys = default_rules.keys - tech_rules.keys
+  unless missing_keys.empty?
+    logger.warn('The following rules values were missing in tech json and default values were used:')
+    missing_keys.each { |rule| logger.warn("  - #{rule}") }
+  end
+
+  merged_rules
+end
+
+# Extract DRC rules values from the JSON file
+drc_rules = get_drc_values(logger)
+
 #================================================
 #-------------- COMMON DERIVATIONS --------------
 #================================================
+
+# === LAYOUT EXTENT ===
+CHIP = extent.sized(0.0)
+chip_area = CHIP.area
+chip_bbox = CHIP.bbox
+chip_w = chip_bbox.width
+chip_l = chip_bbox.height
+
+logger.info("Total area of the design is #{chip_area} um^2.")
+logger.info("The design dimensions are #{chip_w} µm * #{chip_l} µm.")
+
+# === General Derivations ===
+logger.info('Starting general IHP-SG13G2 derivations.')
+
+# Base
+gate = gatpoly_drw.and(activ_drw)
+poly_on_field = gatpoly_drw.not(activ_drw)
+nactiv_con = activ_drw.not(gatpoly_drw).not(psd_drw.join(nsd_block))
+pactiv_con = activ_drw.not(gatpoly_drw).and(psd_drw)
+
+# Diode
+dantenna = nactiv_con.and(recog_diode).not(nwell_drw)
+dpantenna = pactiv_con.and(recog_diode).and(nwell_drw)
+diode = nactiv_con.join(pactiv_con)
+
+#================================================
+#----------------- MAIN RUNSET ------------------
+#================================================
+
+logger.info('Starting IHP-SG13G2 DRC rules.')
+
+# ===============================================================
+# ---------------------- 7.1 Antenna Rules ----------------------
+# ===============================================================
+
+logger.info('Starting 7.1 Antenna Rules table')
+
+# =====================================
+# -------------- Ant.a/c --------------
+# =====================================
+
+# Initial Connectivity
+connect(poly_on_field, gate)
+connect(gate, cont_drw)
+connect(poly_on_field, cont_drw)
+connect(dantenna, cont_drw)
+connect(dpantenna, cont_drw)
+connect(diode, cont_drw)
+
+# Rule Ant.a: Max. ratio of GatPoly over field oxide area to connected Gate area
+logger.info('Executing rule Ant.a')
+ant_a_ratio = drc_rules['Ant_a'].to_f
+ant_a_errors = antenna_check(gate, poly_on_field, ant_a_ratio)
+ant_a_errors.output('Ant.a', "7.1 Ant.a: Max. ratio of GatPoly over field oxide area to connected Gate area: #{ant_a_ratio}")
+
+# Rule Ant.c: Max. ratio of Cont area to connected Gate area
+logger.info('Executing rule Ant.c')
+ant_c_ratio = drc_rules['Ant_c'].to_f
+ant_c_errors = antenna_check(gate, cont_drw, ant_c_ratio)
+ant_c_errors.output('Ant.c', "7.1 Ant.c: Max. ratio of Cont area to connected Gate area: #{ant_c_ratio}")
+
+# ===============================================
+# -------------- Ant.b/e & Ant.d/f --------------
+# ===============================================
+
+# Cumulative Antenna Ratio Calculations
+logger.info('Starting cumulative antenna ratio calculations')
+
+# Define the sequence of layers with metadata
+layers = [
+  [:metal1_drw,    'm1_ratio',  'm'],
+  [:via1_drw,      'v1_ratio',  'v'],
+  [:metal2_drw,    'm2_ratio',  'm'],
+  [:via2_drw,      'v2_ratio',  'v'],
+  [:metal3_drw,    'm3_ratio',  'm'],
+  [:via3_drw,      'v3_ratio',  'v'],
+  [:metal4_drw,    'm4_ratio',  'm'],
+  [:via4_drw,      'v4_ratio',  'v'],
+  [:metal5_drw,    'm5_ratio',  'm'],
+  [:topvia1_drw,   'tv1_ratio', 'v'],
+  [:topmetal1_drw, 'tm1_ratio', 'm'],
+  [:topvia2_drw,   'tv2_ratio', 'v'],
+  [:topmetal2_drw, 'tm2_ratio', 'm']
+]
+
+# Container for all antenna ratios
+antenna_ratios = {}
+
+# Start with contact → metal1
+previous = :cont_drw
+
+layers.each do |layer, ratio_name, var|
+  logger.info("Evaluating #{layer} ratio")
+
+  # Connect previous layer to current
+  connect(eval(previous.to_s), eval(layer.to_s))
+
+  # Compute ratio and store in hash
+  antenna_ratios[ratio_name] = evaluate_nets(
+    gate,
+    { var => eval(layer.to_s) },
+    "put('#{ratio_name}', area(#{var}) / area)"
+  )
+
+  previous = layer
+end
+
+# diode existence flag
+logger.info('Evaluating diode presence')
+diode_presence = evaluate_nets(gate, { 'd' => diode }, "put('has_diode', area(d) > 0.16 ? 1 : 0)")
+
+# Create a base layer with all individual ratios and the diode flag
+logger.info('Creating base layer with all individual ratios and diode flag')
+ar_all_layers = (antenna_ratios.values.reduce(:+) + diode_presence).merged_props
+antenna_ratios.values.each(&:forget)
+diode_presence.forget
+
+# ====================================
+# -------------- Ant.b/e -------------
+# ====================================
+
+# Ant.b: Max. ratio of cumulative metal area (from Metal1 to TopMetal2) to connected Gate area (without protection diode)
+# Ant.e: Max. ratio of cumulative metal area (from Metal1 to TopMetal2) to connected Gate area (with protection diode)
+logger.info('Executing rules Ant.b and Ant.e')
+
+# Get the Ant.b/e ratio from the JSON rules
+ant_b_ratio = drc_rules['Ant_b'].to_f 
+ant_e_ratio = drc_rules['Ant_e'].to_f
+
+# Define the cumulative steps
+steps = [
+  { met_name: 'Metal1',    ratio: "m1_ratio" },
+  { met_name: 'Metal2',    ratio: "sum_m1_m2",  add: "m2_ratio" },
+  { met_name: 'Metal3',    ratio: "sum_m1_m3",  add: "m3_ratio" },
+  { met_name: 'Metal4',    ratio: "sum_m1_m4",  add: "m4_ratio" },
+  { met_name: 'Metal5',    ratio: "sum_m1_m5",  add: "m5_ratio" },
+  { met_name: 'TopMetal1', ratio: "sum_m1_tm1", add: "tm1_ratio" },
+  { met_name: 'TopMetal2', ratio: "sum_m1_tm2", add: "tm2_ratio" }
+].freeze
+
+# Loop through each step
+steps.each_with_index do |step, idx|
+  met_name  = step[:met_name]
+  ratio = step[:ratio]
+
+  # Add cumulative expression if defined
+  if step[:add]
+    prev_ratio = steps[idx - 1][:ratio]
+    logger.info("Evaluating cumulative ratio after #{met_name}")
+    ar_all_layers.evaluate(
+      "put('#{ratio}', value('#{prev_ratio}') + value('#{step[:add]}'))",
+      {},
+      true
+    )
+  end
+
+  # Ant.b check (no diode)
+  logger.info("Executing Ant.b_#{met_name}")
+  ant_b = ar_all_layers.selected_if("(value('has_diode') == 0 && value('#{ratio}') >= #{ant_b_ratio})")
+  ant_b.output("Ant.b_#{met_name}", "7.1 Ant.b_#{met_name}: Max. ratio of cumulative #{met_name} area to connected Gate area (without protection diode) = #{ant_b_ratio}.")
+  ant_b.forget
+
+  # Ant.e check (with diode)
+  logger.info("Executing Ant.e_#{met_name}")
+  ant_e = ar_all_layers.selected_if("(value('has_diode') == 1 && value('#{ratio}') >= #{ant_e_ratio})")
+  ant_e.output("Ant.e_#{met_name}", "7.1 Ant.e_#{met_name}: Max. ratio of cumulative #{met_name} area to connected Gate area (with protection diode) = #{ant_e_ratio}.")
+  ant_e.forget
+end
+
+# ====================================
+# -------------- Ant.d/f -------------
+# ====================================
+
+# Ant.d: Max. ratio of cumulative via area (from Via1 to TopVia2) to connected Gate area (without protection diode)
+# Ant.f: Max. ratio of cumulative via area (from Via1 to TopVia2) to connected Gate area (with protection diode)
+
+logger.info('Executing rules Ant.d and Ant.f')
+
+# Get the Ant.d/f ratio from the JSON rules
+ant_d_ratio = drc_rules['Ant_d'].to_f 
+ant_f_ratio = drc_rules['Ant_f'].to_f
+
+# Define the cumulative steps for vias
+via_steps = [
+  { via_name: 'Via1',    ratio: "sum_v1",     add: "v1_ratio", first: true },
+  { via_name: 'Via2',    ratio: "sum_v1_v2",  add: "v2_ratio" },
+  { via_name: 'Via3',    ratio: "sum_v1_v3",  add: "v3_ratio" },
+  { via_name: 'Via4',    ratio: "sum_v1_v4",  add: "v4_ratio" },
+  { via_name: 'TopVia1', ratio: "sum_v1_tv1", add: "tv1_ratio" },
+  { via_name: 'TopVia2', ratio: "sum_v1_tv2", add: "tv2_ratio" }
+].freeze
+
+# Loop through each via step
+via_steps.each_with_index do |step, idx|
+  via_name  = step[:via_name]
+  ratio = step[:ratio]
+
+  # Build cumulative ratio
+  if step[:first]
+    logger.info("Evaluating cumulative ratio after #{via_name}")
+    ar_all_layers.evaluate(
+      "put('#{ratio}', value('#{step[:add]}'))",
+      {},
+      true
+    )
+  else
+    prev_ratio = via_steps[idx - 1][:ratio]
+    logger.info("Evaluating cumulative ratio after #{via_name}")
+    ar_all_layers.evaluate(
+      "put('#{ratio}', value('#{prev_ratio}') + value('#{step[:add]}'))",
+      {},
+      true
+    )
+  end
+
+  # Ant.d check (no diode)
+  logger.info("Executing Ant.d_#{via_name}")
+  ant_d = ar_all_layers.selected_if("(value('has_diode') == 0 && value('#{ratio}') >= #{ant_d_ratio})")
+  ant_d.output("Ant.d_#{via_name}", "7.1 Ant.d_#{via_name}: Max. ratio of cumulative #{via_name} area to connected Gate area (without protection diode) = #{ant_d_ratio}.")
+  ant_d.forget
+
+  # Ant.f check (with diode)
+  logger.info("Executing Ant.f_#{via_name}")
+  ant_f = ar_all_layers.selected_if("(value('has_diode') == 1 && value('#{ratio}') >= #{ant_f_ratio})")
+  ant_f.output("Ant.f_#{via_name}", "7.1 Ant.f_#{via_name}: Max. ratio of cumulative #{via_name} area to connected Gate area (with protection diode) = #{ant_f_ratio}.")
+  ant_f.forget
+end
+ar_all_layers.forget
+
+# Rule Ant.g: Minimum Diode Size
+logger.info('Executing rule Ant.g')
+ant_g_min_area = drc_rules['Ant_g'].to_f
+dantenna_connected= antenna_check(gate, dantenna, 0)
+dpantenna_connected= antenna_check(gate, dpantenna, 0)
+ant_g_l1 = dantenna_connected.with_area(0, ant_g_min_area)
+ant_g_l2 = dpantenna_connected.with_area(0, ant_g_min_area)
+ant_g = ant_g_l1.join(ant_g_l2)
+ant_g.output('Ant.g', "7.1 Ant.g: Minimum Size of protection diode (µm²): #{ant_g_min_area}")
+ant_g_l1.forget
+ant_g_l2.forget
+ant_g.forget
+
+# Rule Ant.h: dantenna in NWell not allowed
+logger.info('Executing rule Ant.h')
+ant_h_errors = nactiv_con.and(recog_diode).not(psd_drw).not(recog_esd).and(nwell_drw)
+ant_h_errors.output('Ant.h', '7.1. Ant.h: dantenna in NWell not allowed.')
+ant_h_errors.forget
+
+# Rule Ant.i: dpantenna in PWell not allowed
+logger.info('Executing rule Ant.i')
+ant_i_errors = pactiv_con.and(recog_diode).not(recog_esd).not(nwell_drw.join(pwell_block))
+ant_i_errors.output('Ant.i', '7.1. Ant.i: dpantenna in PWell not allowed.')
+ant_i_errors.forget

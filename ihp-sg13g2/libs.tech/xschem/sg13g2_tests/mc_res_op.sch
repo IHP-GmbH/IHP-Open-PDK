@@ -38,8 +38,8 @@ lab=Vcc}
 C {devices/code_shown.sym} 370 -340 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-*.lib $::SG13G2_MODELS/cornerRES.lib res_typ
-.lib $::SG13G2_MODELS/cornerRES.lib res_typ_stat
+*.lib $::MODELS_NGSPICE/cornerRES.lib res_typ
+.lib $::MODELS_NGSPICE/cornerRES.lib res_typ_stat
 "}
 C {devices/code_shown.sym} -490 -480 0 0 {name=NGSPICE only_toplevel=true 
 value="

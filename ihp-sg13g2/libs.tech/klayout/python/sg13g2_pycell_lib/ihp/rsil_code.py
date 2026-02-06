@@ -22,10 +22,12 @@ from cni.dlo import *
 from .geometry import *
 from .thermal import *
 from .utility_functions import *
+from .res_base_code import *
 
 import math
 
-class rsil(DloGen):
+
+class rsil(ResistorBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -76,6 +78,8 @@ class rsil(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '0.0', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -84,7 +88,12 @@ class rsil(DloGen):
         self.ps = Numeric(params['ps'])
         self.resistance = Numeric(params['R'])
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    def genSingleResistorLayout(self, index: int, x_offset: float) -> ResistorInfo:
+        """
+        Template method defined in res_base_code.ResistorBase
+        """
         l = self.l
         w = self.w
         ps = self.ps
@@ -162,7 +171,7 @@ class rsil(DloGen):
             wcontact = w+2*contoverlay
         
         # insertion point is at (0,0) - contoverlay    
-        xpos1 = 0-contoverlay
+        xpos1 = 0-contoverlay + x_offset   # x_offset in segmentation array
         ypos1 = 0
         xpos2 = xpos1+wcontact
         ypos2 = 0
@@ -202,7 +211,10 @@ class rsil(DloGen):
         ypos1 = ypos2+(li_poly_over-metover)*dir
         ypos2 = ypos2+(consize+li_poly_over+metover)*dir
         dbCreateRect(self, metlayer, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2))
-        MkPin(self, 'PLUS', 1, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2), metlayer)
+
+        plus_pin_box = Box(xpos1+contbar_poly_over-endcap, ypos1,
+                           xpos2-contbar_poly_over+endcap, ypos2)
+        MkPin(self, f"PLUS{index}", 1, plus_pin_box, metlayer)
         
         # **************************************************************
         # Resistorbody
@@ -251,7 +263,10 @@ class rsil(DloGen):
         ypos1 = ypos2+(li_poly_over-metover)*dir
         ypos2 = ypos2+(consize+li_poly_over+metover)*dir
         dbCreateRect(self, metlayer, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2))
-        MkPin(self, 'MINUS', 2, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2), metlayer)
+
+        minus_pin_box = Box(xpos1+contbar_poly_over-endcap, ypos1,
+                            xpos2-contbar_poly_over+endcap, ypos2)
+        MkPin(self, f"MINUS{index}", 2, minus_pin_box, metlayer)
         
         # now draw the label
         resistance = CbResCalc('R', 0, l*1e-6, w*1e-6, 0, ps*1e-6, Cell)
@@ -264,3 +279,6 @@ class rsil(DloGen):
             rot = 'R90'
             
         lbl = dbCreateLabel(self, Layer(textlayer, 'drawing'), labelpos, labeltext, 'centerCenter', rot, Font.EURO_STYLE, labelheight)
+
+        return ResistorInfo(plus_pin_box=plus_pin_box,
+                            minus_pin_box=minus_pin_box)

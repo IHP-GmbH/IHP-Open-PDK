@@ -1,3 +1,21 @@
+########################################################################
+#
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
 puts stdout "Sourcing design .magicrc for technology ihp-sg13g2 ..."
 
 # Put grid on 0.005 pitch.  This is important, as some commands don't
@@ -31,8 +49,7 @@ tech load [file dirname [file normalize [info script]]]/ihp-sg13g2.tech
 if {[tech name] != "ihp-sg13g2"} {quit -noprompt}
 
 # load device generator
-# NOTE:  Commented out for alpha pre-release.
-# source [file dirname [file normalize [info script]]]/ihp-sg13g2.tcl
+source [file dirname [file normalize [info script]]]/ihp-sg13g2.tcl
 
 # load bind keys (optional)
 # source [file dirname [file normalize [info script]]]/ihp-sg13g2-BindKeys
@@ -43,7 +60,7 @@ snap lambda
 # set sg13g2 standard power, ground, and substrate names
 set VDD VDD
 set GND VSS
-set SUB VSUB
+set SUB sub!
 
 # Allow override of type of magic library views used, "mag" or "maglef",
 # from environment variable MAGTYPE

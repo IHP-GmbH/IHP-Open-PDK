@@ -110,8 +110,8 @@ C {simulator_commands_shown.sym} -10 -1100 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.include $::SG13G2_MODELS_XYCE/diodes.lib
-.include $::SG13G2_MODELS_XYCE/sg13g2_bondpad.lib
+.include $::MODELS_XYCE/diodes.lib
+.include $::MODELS_XYCE/sg13g2_bondpad.lib
 )"}
 C {simulator_commands_shown.sym} -400 -1070 0 0 {name=Libs_Ngspice
 simulator=ngspice

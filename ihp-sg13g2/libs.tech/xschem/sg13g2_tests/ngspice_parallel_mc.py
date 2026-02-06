@@ -40,19 +40,19 @@ if os.path.exists(final_result_file):
     os.remove(final_result_file)
 
 #get nr_workers from netlist
-match = re.search(r"^\s*(\*\*nr_workers)\s*=\s*(.+)$", netlist, re.MULTILINE)
+match = re.search(r"^[ \t]*\*\*nr_workers[ \t]*=[ \t]*(\d+)[ \t]*$", netlist, re.MULTILINE)
 if match:
-    nr_workers = int(match.group(2).strip())
+    nr_workers = int(match.group(1).strip())
 else:
-    print("Info: **nr_workers statement not found, setting it to 10.")
+    print("Info: **nr_workers statement not found or erroneous, setting it to 10.")
     nr_workers = 10
 
 #get nr_mc_sims from netlist
-match = re.search(r"^\s*(\*\*nr_mc_sims)\s*=\s*(.+)$", netlist, re.MULTILINE)
+match = re.search(r"^[ \t]*\*\*nr_mc_sims[ \t]*=[ \t]*(\d+)[ \t]*$", netlist, re.MULTILINE)
 if match:
-    nr_mc_sims = int(match.group(2).strip())
+    nr_mc_sims = int(match.group(1).strip())
 else:
-    print("Info: **nr_mc_sims statement not found, setting it 100.")
+    print("Info: **nr_mc_sims statement not found or erroneous, setting it 100.")
     nr_mc_sims = 100
 
 #get plot parameters from netlist
@@ -107,9 +107,11 @@ def run_worker(args):
                     writer.writerow(list(result.values()))
                 else:
                     writer.writerow(['N/A', 'ERROR in receiving results'])
+                    writeHeadings = False
             except subprocess.CalledProcessError:
                 if writeHeadings:
                     writer.writerow(['N/A', 'ERROR'])
+                    writeHeadings = False
                 writer.writerow(['N/A', 'ERROR in process handling'])
 
 if __name__ == "__main__":
@@ -131,6 +133,10 @@ if __name__ == "__main__":
                         out.writelines([line for line in lines if "ERROR" not in line])
                     else: # skip the header
                         out.writelines([line for line in lines[1:] if "ERROR" not in line])
+                    error_lines = [line for line in lines[1:] if "ERROR" in line]
+                    if error_lines:
+                        print(f"Errors found in worker {i} results:")
+                        print("".join(error_lines))
                 os.remove(part_file)
 
     # plot results
@@ -148,58 +154,56 @@ if __name__ == "__main__":
             for row in reader:
                 for header in reader.fieldnames:
                     results_dict[header].append(float(row[header]))
-            # Set the number of columns for subplot grid
-            n_cols = 2  # Change this to 1, 2, 3, etc.
-            n_plots = len(results_plot_list)
-            n_rows = math.ceil(n_plots / n_cols)
 
-            # Create subplots
-            fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
-            axs = axs.flatten()  # Flatten in case of multiple rows/columns
-            i = 0
-            for var in results_plot_list:
-                data = np.array(results_dict[var.lower()])
-                mean = data.mean()
-                std = data.std()
-                axs[i].hist(data, bins=50, color='skyblue', edgecolor='black')
-                axs[i].set_title(f"Histogram of {var}")
-                axs[i].set_xlabel(f"{var}")
-                axs[i].set_ylabel("Count")
-                ymax = axs[i].get_ylim()[1]
+        # Set the number of columns for subplot grid
+        n_cols = 2  # Change this to 1, 2, 3, etc.
+        n_plots = len(results_plot_list)
+        n_rows = math.ceil(n_plots / n_cols)
 
-                # Plot mean line (solid green)
-                axs[i].axvline(mean, color='green', linestyle='-', linewidth=2)
-                axs[i].text(mean, ymax * 0.95, 'Mean', color='green', rotation=90,
-                            verticalalignment='top', horizontalalignment='center')
+        # Create subplots
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
+        axs = axs.flatten()  # Flatten in case of multiple rows/columns
+        i = 0
+        for var in results_plot_list:
+            data = np.array(results_dict[var.lower()])
+            mean = data.mean()
+            std = data.std()
+            axs[i].hist(data, bins=50, color='skyblue', edgecolor='black')
+            axs[i].set_title(f"Histogram of {var}")
+            axs[i].set_xlabel(f"{var}")
+            axs[i].set_ylabel("Count")
+            ymax = axs[i].get_ylim()[1]
 
-                # Plot sigma lines (dashed red)
-                for sigma_mult in [1, 2, 3]:
-                    pos = mean + sigma_mult * std
-                    neg = mean - sigma_mult * std
+            # Plot mean line (solid green)
+            axs[i].axvline(mean, color='green', linestyle='-', linewidth=2)
+            axs[i].text(mean, ymax * 0.95, 'Mean', color='green', rotation=90, verticalalignment='top', horizontalalignment='center')
 
-                    axs[i].axvline(pos, color='red', linestyle='--', linewidth=1)
-                    axs[i].axvline(neg, color='red', linestyle='--', linewidth=1)
+            # Plot sigma lines (dashed red)
+            for sigma_mult in [1, 2, 3]:
+                pos = mean + sigma_mult * std
+                neg = mean - sigma_mult * std
 
-                    # Labels for sigma lines with a slight vertical offset to avoid overlap
-                    y_pos = ymax * (1 - 0.1 * sigma_mult)
+                axs[i].axvline(pos, color='red', linestyle='--', linewidth=1)
+                axs[i].axvline(neg, color='red', linestyle='--', linewidth=1)
 
-                    axs[i].text(pos, y_pos, f'+{sigma_mult}σ', color='red', rotation=90,
-                                verticalalignment='top', horizontalalignment='right')
-                    axs[i].text(neg, y_pos, f'-{sigma_mult}σ', color='red', rotation=90,
-                                verticalalignment='top', horizontalalignment='left')
+                # Labels for sigma lines with a slight vertical offset to avoid overlap
+                y_pos = ymax * (1 - 0.1 * sigma_mult)
 
-                # Set more x-axis ticks for better readability
-                x_min = mean - 4 * std
-                x_max = mean + 4 * std
-                ticks = np.arange(x_min, x_max + std/2, std/2)
-                axs[i].set_xticks(ticks)
-                i = i + 1
+                axs[i].text(pos, y_pos, f'+{sigma_mult}σ', color='red', rotation=90, verticalalignment='top', horizontalalignment='right')
+                axs[i].text(neg, y_pos, f'-{sigma_mult}σ', color='red', rotation=90, verticalalignment='top', horizontalalignment='left')
 
-            # Hide unused subplots
-            for j in range(i, len(axs)):
-                axs[j].axis('off')
-            plt.tight_layout()
-            plt.show()
+            # Set more x-axis ticks for better readability
+            x_min = mean - 4 * std
+            x_max = mean + 4 * std
+            ticks = np.arange(x_min, x_max + std/2, std/2)
+            axs[i].set_xticks(ticks)
+            i = i + 1
+
+        # Hide unused subplots
+        for j in range(i, len(axs)):
+            axs[j].axis('off')
+        plt.tight_layout()
+        plt.show()
         
     end_time = time.time()
     runtime = end_time - start_time

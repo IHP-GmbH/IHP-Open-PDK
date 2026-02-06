@@ -24,6 +24,53 @@ import pya
 from .ihp130_pcell_templates import templates
 
 
+SI_MULTIPLIERS = {
+    "t": 1e12,
+    "g": 1e9,
+    "meg": 1e6,
+    "k": 1e3,
+    "m": 1e-3,
+    "u": 1e-6,
+    "µ": 1e-6,
+    "n": 1e-9,
+    "p": 1e-12,
+    "f": 1e-15,
+}
+
+
+def parse_si_value(value):
+    if not isinstance(value, str):
+        return value
+
+    cleaned = value.strip()
+    match = re.fullmatch(r"([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*([a-zA-Zµ]+)?", cleaned)
+    if not match:
+        return value
+
+    number = float(match.group(1))
+    suffix = match.group(2)
+    if not suffix:
+        return number
+
+    suffix = suffix.lower()
+    if suffix in SI_MULTIPLIERS:
+        return number * SI_MULTIPLIERS[suffix]
+
+    if suffix.endswith("m") and len(suffix) == 2:
+        prefix = suffix[0]
+        if prefix in SI_MULTIPLIERS:
+            return number * SI_MULTIPLIERS[prefix]
+
+    return value
+
+
+def normalize_params(params):
+    normalized = {}
+    for key, value in params.items():
+        normalized[key] = parse_si_value(value)
+    return normalized
+
+
 def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=pya.Trans.R0):
     """
     Create a new instance of a PCell
@@ -222,17 +269,20 @@ def ihp130_import_netlist():
             match = template['regex'].match(line)
             if match:
                 any_match = True
-                params = template['default_params']
+                params = normalize_params(template['default_params'])
               
                 # Parse parameters
                 for param in template['params']:
                     #print(f"Parsing parameter {param['name']}")
                     if param["type"] == "string":
-                        params[param['name']] = match.group(param['name'])
+                        parsed_value = parse_si_value(match.group(param['name']))
+                        params[param['name']] = parsed_value
                     if param["type"] == "int":
-                        params[param['name']] = int(match.group(param['name']))
+                        parsed_value = parse_si_value(match.group(param['name']))
+                        params[param['name']] = int(parsed_value)
                     if param["type"] == "float":
-                        params[param['name']] = float(match.group(param['name']))
+                        parsed_value = parse_si_value(match.group(param['name']))
+                        params[param['name']] = float(parsed_value)
               
                 # Multiplicity 'm'
                 m = 1
@@ -273,4 +323,3 @@ def ihp130_import_netlist():
     for name in subckt_definitions.keys():
         if subckt_definitions[name]['references'] == 0:
             create_subckt_instance(name, subckt_definitions)
-

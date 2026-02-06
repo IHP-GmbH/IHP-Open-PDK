@@ -25,6 +25,7 @@ from cni.dlo import PCellWrapper
 
 # Creates the SG13_dev technology
 from .sg13_tech import *
+from .sg13_tech_info import *
 
 from pypreprocessor.pypreprocessor import preprocessor as preProcessor
 
@@ -72,7 +73,8 @@ moduleNames = [
         'NoFillerStack_code',
         'SVaricap_code',
         'pnpMPA_code',
-        'isolbox_code'
+        'isolbox_code',
+        'schottky_code'
 ]
 
 def getProcessNames():

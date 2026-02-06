@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="npn13G2v" schematic_id = "Q">
+    <Description>
+         SG13G2 high power HBT transistor
+    </Description>
+    <Models>
+        <DefaultModel value="BJT_IHP">
+        </DefaultModel>
+        <SpiceModel value="npn13G2">
+        </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'Q{PartCounter} {nets} {bulk} {{{model}}}::model='nonempty'
+            {{Nx={Nx}}}::Nx='nonempty' ">
+        </NgspiceNetlist>
+        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+           <File>{QUCS_S_COMPONENTS_LIBRARY}/Bjt.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="npn13G2v" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="Nx" unit="" default_value="1" show="true">
+            <Description>Number of emitters</Description>
+        </Parameter>
+        <Parameter name="bulk" unit="" default_value="sub!" show="false">
+            <Description>Third terminal net name</Description>
+        </Parameter>
+        <Parameter name="type" unit="" default_value="npn" show="false">
+            <Description>Device type</Description>
+        </Parameter>
+    </Parameters>
+</Component>

@@ -23,6 +23,7 @@ require 'time'
 require 'logger'
 require 'json'
 require 'pathname'
+require 'etc'
 
 exec_start_time = Time.now
 
@@ -39,6 +40,9 @@ file_logger.formatter = formatter
 # Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
+
+# Don't buffer stdout
+$stdout.sync = true
 
 # MultiLogger class to broadcast to multiple loggers
 class MultiLogger
@@ -99,11 +103,13 @@ def bool_check?(obj)
   obj.to_s.downcase == 'true'
 end
 
-# threads
-threads($thr.to_i)
-logger.info("Klayout will use #{$thr} thread(s)")
+# Threads
+$threads = ($threads || Etc.nprocessors).to_i
+threads($threads)
+logger.info("KLayout will use #{$threads} thread(s) in tiling mode.")
 
 # Enable deep mode for reading layers and processing general derivations
+$run_mode = 'deep'
 deep
 logger.info('Deep mode enabled: reading layers and preparing general derivations.')
 
@@ -237,6 +243,10 @@ logger.info("lbe_drw has #{count} polygons")
 
 # Method to get DRC values from JSON files
 def get_drc_values(logger)
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  $drc_json_default = $drc_json_default || File.expand_path(File.join(script_dir, 'sg13g2_tech_default.json'))
+  $drc_json = $drc_json || File.expand_path(File.join(script_dir, '../../../python/sg13g2_pycell_lib/sg13g2_tech_mod.json'))
+
   tech_rules = {}
   if $drc_json && $drc_json != $drc_json_default
     begin
@@ -246,6 +256,7 @@ def get_drc_values(logger)
       logger.info("Loaded TECH DRC rules values from #{$drc_json}")
     rescue StandardError => e
       logger.error("Error reading TECH DRC rules from #{$drc_json}: #{e.message}")
+      raise "Error reading TECH DRC rules from #{$drc_json}: #{e.message}"
     end
   end
 
@@ -256,7 +267,7 @@ def get_drc_values(logger)
     logger.info("Loaded default DRC rules values from #{$drc_json_default}")
   rescue StandardError => e
     logger.error("Error reading default DRC rules from #{$drc_json_default}: #{e.message}")
-    return {}
+    raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
   end
 
   merged_rules = tech_rules.merge(default_rules)

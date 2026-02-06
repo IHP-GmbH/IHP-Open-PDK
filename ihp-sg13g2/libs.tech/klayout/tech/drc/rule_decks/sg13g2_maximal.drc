@@ -79,12 +79,12 @@ logger.info('Loading database to memory is complete.')
 
 if $report
   logger.info("IHP-SG13G2 Klayout DRC maximum runset output at: #{$report}")
-  report('maximum DRC Run Report at', $report)
+  report('Maximum DRC Run Report at', $report)
 else
   layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
   report_path = layout_dir.join('sg13g2_drc_maximal.lyrdb').to_s
   logger.info("IHP-SG13G2 Klayout DRC maximum runset output at default location: #{report_path}")
-  report('maximum DRC Run Report at', report_path)
+  report('Maximum DRC Run Report at', report_path)
 end
 
 #================================================
@@ -118,8 +118,8 @@ logger.info("#{$run_mode} mode is enabled for sg13g2_maximal runset.")
 # Tech switches
 # Initial definitions of control flow variables
 # Strings from the command line have to be converted
-if defined? $offGridRules
-    $offGridRules = $offGridRules.to_s.downcase == "true"
+if defined? $no_offgrid
+    $offGridRules = $no_offgrid.to_s.downcase == "false"
 else
     $offGridRules = true
 end
@@ -136,8 +136,8 @@ else
     $latchUpRules = true
 end
 
-if defined? $recommendedRules
-    $recommendedRules = $recommendedRules.to_s.downcase == "true"
+if defined? $no_recommended
+    $recommendedRules = $no_recommended.to_s.downcase == "false"
 else
     $recommendedRules = true
 end

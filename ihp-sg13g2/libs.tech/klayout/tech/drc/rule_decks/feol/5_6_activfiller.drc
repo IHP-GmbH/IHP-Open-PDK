@@ -1,0 +1,96 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('activfiller') || FEOL
+  #================================================
+  #------------------ 5.6 Activ:filler ------------
+  #================================================
+
+  logger.info('Starting 5.6 Activ:filler table')
+
+  # Activ:filler derivations
+  afil_c_g = cont_drw.join(gatpoly_drw)
+  afil_d_g = nwell_drw.join(nbulay_drw)
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for Activ:filler table.')
+  end
+
+  # Rule AFil.c1: Min. Activ:filler space to Activ is 0.42 um
+  logger.info('Executing rule AFil.c1')
+  afil_c1_value = drc_rules['AFil_c1'].to_f
+  afil_c1 = activ_drw.sep(activ_filler, afil_c1_value.um, euclidian)
+  afil_c1.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
+  afil_c1.forget
+
+  unless PRECHECK_DRC
+    # Rule AFil.c: Min. Activ:filler space to Cont, GatPoly is 1.10 um
+    logger.info('Executing rule AFil.c')
+    afil_c_value = drc_rules['AFil_c'].to_f
+    afil_c_l = afil_c_g.sep(activ_filler, afil_c_value.um, euclidian)
+    afil_c_l.output('AFil.c', "5.6. AFil.c Min. Activ:filler space to Cont, GatPoly is #{afil_c_value} um")
+    afil_c_g.forget
+    afil_c_l.forget
+
+    # Rule AFil.d: Min. Activ:filler space to NWell, nBuLay is 1.00 um
+    logger.info('Executing rule AFil.d')
+    afil_d_value = drc_rules['AFil_d'].to_f
+    afil_d_l1 = afil_d_g.sep(activ_filler, afil_d_value.um, euclidian)
+    afil_d_l2 = nwell_drw.enclosing(activ_filler, afil_d_value.um, euclidian)
+    afil_d_l3 = nbuLay_gen_nbulay.enclosing(activ_filler, afil_d_value.um, euclidian)
+    afil_d_l = afil_d_l1.join(afil_d_l2).join(afil_d_l3)
+    afil_d_l.output('AFil.d', "5.6. AFil.d Min. Activ:filler space to NWell, nBuLay is #{afil_d_value} um")
+    afil_d_g.forget
+    afil_d_l1.forget
+    afil_d_l2.forget
+    afil_d_l3.forget
+    afil_d_l.forget
+
+    # Rule AFil.e: Min. Activ:filler space to TRANS is 1.00 um
+    logger.info('Executing rule AFil.e')
+    afil_e_value = drc_rules['AFil_e'].to_f
+    afil_e = trans_drw.sep(activ_filler, afil_e_value.um, euclidian)
+    afil_e.output('AFil.e', "5.6. AFil.e Min. Activ:filler space to TRANS is #{afil_e_value} um")
+    afil_e.forget
+
+    # Rule AFil.j: Min. nSD:block and SalBlock enclosure of Activ:filler inside PWell:block is 0.25 um
+    logger.info('Executing rule AFil.j')
+    afil_j_value = drc_rules['AFil_j'].to_f
+    afil_j_l1 = nsd_block.and(pwell_block)
+    afil_j_l2 = salblock_drw.and(pwell_block)
+    afil_j_l3 = afil_j_l1.enclosing(activ_filler, afil_j_value.um, euclidian)
+    afil_j_l4 = afil_j_l2.enclosing(activ_filler, afil_j_value.um, euclidian)
+    afil_j_l = afil_j_l3.join(afil_j_l4)
+    afil_j_l.output('AFil.j',
+                    "5.6. AFil.j Min. nSD:block and SalBlock enclosure of Activ:filler inside PWell:block is #{afil_j_value} um")
+    afil_j_l1.forget
+    afil_j_l2.forget
+    afil_j_l3.forget
+    afil_j_l4.forget
+    afil_j_l.forget
+  end
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after Activ:filler table.")
+  end
+end

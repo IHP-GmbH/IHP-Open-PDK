@@ -1,22 +1,5 @@
 set current_folder [file dirname [file normalize [info script]]]
 
-# Technology lib
-set ::env(LIB) [dict create]
-dict set ::env(LIB) nom_typ_1p20V_25C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_typ_1p20V_25C.lib"
-dict set ::env(LIB) nom_fast_1p32V_m40C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_fast_1p32V_m40C.lib"
-dict set ::env(LIB) nom_slow_1p08V_125C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_slow_1p08V_125C.lib"
-
-# Corners
-set ::env(STA_CORNERS) "\
-nom_fast_1p32V_m40C \
-nom_slow_1p08V_125C \
-nom_typ_1p20V_25C \
-"
-
-set ::env(DEFAULT_CORNER) "nom_typ_1p20V_25C"
-
-set ::env(TIMING_VIOLATION_CORNERS) "*typ*"
-
 # Synthesis mapping
  # Latch mapping
 set ::env(SYNTH_LATCH_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/latch_map.v"
@@ -55,7 +38,7 @@ set ::env(FILL_CELLS) "sg13g2_fill_1 sg13g2_fill_2"
 set ::env(DECAP_CELLS) "sg13g2_decap_*"
 
 # Diode insertion
-set ::env(DIODE_CELL) "sg13g2_antennanp"
+set ::env(DIODE_CELL) "sg13g2_antennanp/A"
 
 set ::env(GPL_CELL_PADDING) {0}
 set ::env(DPL_CELL_PADDING) {0}
@@ -63,16 +46,11 @@ set ::env(DPL_CELL_PADDING) {0}
 set ::env(CELL_PAD_EXCLUDE) "sg13g2_fill_* sg13g2_decap_*"
 
 # PDN
-set ::env(FP_PDN_RAIL_WIDTH) 0.44
+set ::env(PDN_RAIL_WIDTH) 0.44
 
 # CTS
-# Buffer selection still needs some work
-# There were situations where only the largest buffer was used
-# Ultimately, OpenROAD should select the buffers automatically
-set ::env(CTS_ROOT_BUFFER) sg13g2_buf_8
-set ::env(CTS_CLK_BUFFERS) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2 sg13g2_buf_1"
-#set ::env(CTS_ROOT_BUFFER) sg13g2_buf_16
-#set ::env(CTS_CLK_BUFFERS) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2"
+set ::env(CTS_ROOT_BUFFER) sg13g2_buf_16
+set ::env(CTS_CLK_BUFFERS) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2"
 
 #set ::env(CTS_CLK_BUFFER_LIST) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2"
 

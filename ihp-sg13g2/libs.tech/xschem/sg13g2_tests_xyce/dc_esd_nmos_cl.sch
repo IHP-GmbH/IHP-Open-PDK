@@ -82,22 +82,12 @@ C {lab_pin.sym} 1740 -630 1 0 {name=p1 sig_type=std_logic lab=Vin1}
 C {devices/gnd.sym} 1850 -490 0 0 {name=l9 lab=GND}
 C {devices/ammeter.sym} 1850 -600 0 0 {name=Vmda1}
 C {lab_pin.sym} 1850 -640 1 0 {name=p8 sig_type=std_logic lab=Vin1}
-C {sg13g2_pr/nmoscl_2.sym} 1850 -530 2 1 {name=D7
-model=nmoscl_2
-m=1
-spiceprefix=X
-}
 C {isource.sym} 1740 -540 2 0 {name=I0 value=0}
 C {devices/gnd.sym} 2030 -490 0 0 {name=l1 lab=GND}
 C {lab_pin.sym} 2030 -630 1 0 {name=p2 sig_type=std_logic lab=Vin2}
 C {devices/gnd.sym} 2120 -490 0 0 {name=l4 lab=GND}
 C {devices/ammeter.sym} 2120 -600 0 0 {name=Vmda2}
 C {lab_pin.sym} 2120 -640 1 0 {name=p3 sig_type=std_logic lab=Vin2}
-C {sg13g2_pr/nmoscl_2.sym} 2120 -530 2 1 {name=D1
-model=nmoscl_4
-m=1
-spiceprefix=X
-}
 C {isource.sym} 2030 -540 2 0 {name=I1 value=0}
 C {launcher.sym} 530 -1240 0 0 {name=h2
 descr=SimulateXyce
@@ -122,7 +112,7 @@ C {simulator_commands_shown.sym} 450 -1660 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
 )"}
 C {simulator_commands_shown.sym} 40 -1670 0 0 {name=Libs_Ngspice
 simulator=ngspice
@@ -186,3 +176,13 @@ value="
 .print dc format=raw file=dc_esd_nmos_cl.raw i(Vmda1)  i(Vmda2) v(Vin1) v(Vin2) 
 "
 "}
+C {sg13g2_pr/nmoscl_2.sym} 1850 -530 2 0 {name=D1
+model=nmoscl_2
+m=1
+spiceprefix=X
+}
+C {sg13g2_pr/nmoscl_4.sym} 2120 -530 2 0 {name=D2
+model=nmoscl_4
+m=1
+spiceprefix=X
+}

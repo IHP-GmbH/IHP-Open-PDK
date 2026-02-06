@@ -82,7 +82,7 @@ D3 1 2 dcorner area=DEV_C
 *             (anode  cathode)
 .params l=780n  w=780n  DEV_A=(l*w)/1p  DEV_P=(l+w)/0.5u  DEV_C=4
 D1 1 2 dparea area=DEV_A
-D2 1 2 dperimeter area=DEV_P
+D2 1 2 dpperim area=DEV_P
 D3 1 2 dpcorner area=DEV_C
 .ends dpantenna
 
@@ -114,7 +114,7 @@ D3 1 2 dpcorner area=DEV_C
 +l=3u
 +w=3u
 +aw=(w-2.1u)*(l-2.1u)
-+pw=(w+l)*2 - 8*1.05u
++pw=(w+l)*2-8*1.05u
 +ab=(w*l)
 +pb=(w+l)*2
 +xd=0
@@ -154,7 +154,7 @@ xdnwpsub NWell bn ddnwpsub l='l' w='w'
 +l=3u
 +w=3u
 +aw=(w-2.1u)*(l-2.1u)
-+pw=(w+l)*2 - 8*1.05u
++pw=(w+l)*2-8*1.05u
 +xd=0
 +mf=1
 +scaling=1e-6
@@ -169,33 +169,33 @@ dinrevlside NWell isosub dinrevlside_mod area=mf*pws pj=0
 dinrevh NWell isosub dinrevh_mod area=mf*aws pj=0
 dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 
-.model dinner_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dinner_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=1.5e-19
 +n=1.02
 +ik=100e-9
 +xti=1.9
 +bv=9.7
 +ibv=1e-12
-*+nbv=0.1
-*+tcv=-698.557e-6
++nbv=0.1
++tcv=-698.557e-6
 +rs=5e5
 
-.model dinrevl_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dinrevl_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=1e-18
 +n=100
 +xti=2200
 
-.model dinrevlside_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dinrevlside_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=10e-18
 +n=100
 +xti=2200
 
-.model dinrevh_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dinrevh_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=3e-21
 +n=30
 +xti=700
 
-.model dincaparea_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dincaparea_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=1e-25
 +cj=967.2e-18
 +cjsw=436e-18
@@ -204,7 +204,7 @@ dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 +vj=0.7312
 +php=0.7036
 
-.model dinneredge_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dinneredge_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=3.89e-20
 +jsw=7.239e-20
 +n=1.01
@@ -213,8 +213,8 @@ dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 +xti=1.529
 +bv=9.7
 +ibv=1e-12
-*+nbv=0.1
-*+tcv=-698.557e-6
++nbv=0.1
++tcv=-698.557e-6
 +isr=20e-18
 +rs=5e4
 *+rsw=12e3
@@ -246,7 +246,7 @@ douter bn NWell dsub_mod area=mf*abus pj=0
 doutcapcorner bn NWell doutcapcorner_mod area=1.0e-10 pj=mf*14.4
 doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 
-.model dsub_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dsub_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=4.052e-18
 +n=1.01
 +ik=1.023e-9
@@ -257,7 +257,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +isr=86e-18
 +rs=5e5
 
-.model dsubedge0_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dsubedge0_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=4.052e-18
 +n=1.01
 +jsw=17.26e-18
@@ -270,7 +270,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +nbv=0.5
 +rs=10e3
 
-.model dsubedgexds_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model dsubedgexds_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=4.052e-18
 +n=1.01
 +jsw=17.26e-18
@@ -279,12 +279,12 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +xti=2.112
 +bv='(-11.70818-8.218455*xds+9.586918*ln(xds)+51.45397*sqrt(xds))'
 +tcv=-980.73e-6
-+nbv=(5.452942+(0.4699715-5.452942)/((1+((xds/0.982607)**308.6349))**0.005495705))
++nbv='5.452942+(0.4699715-5.452942)/((1+((xds/0.982607)**308.6349))**0.005495705)'
 +isr=1e-16
 +rs=28e3
-+rsw=16e3
+*+rsw=16e3
 
-.model doutcapcorner_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model doutcapcorner_mod d tnom=27 level=1 tlevc=0 tlev=2
 +jsw=1e-25
 +cjsw='(389.8354-784.332*xds+736.9852*(xds**1.33)-91.4155*xds*xds+5.388092*xds*xds*xds)*1e-18'
 +mjsw='0.3029153+16.37804*xds-16.45657*(xds**0.9972906)'
@@ -292,7 +292,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +bv='(213.2898+(145-213.2898)/((1+(xds/0.9145351)**38.88081)**0.02169905))'
 +nbv=200
 
-.model doutcaparea_mod d tnom=27 level=2 tlevc=0 tlev=2
+.model doutcaparea_mod d tnom=27 level=1 tlevc=0 tlev=2
 +is=1e-25
 +cj=70.13e-18
 +mj=0.3874

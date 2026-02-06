@@ -15,55 +15,88 @@
 // type: Corner
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Corner ();
+module sg13g2_Corner (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler200
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler200 ();
+module sg13g2_Filler200 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler400
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler400 ();
+module sg13g2_Filler400 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler1000
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler1000 ();
+module sg13g2_Filler1000 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler2000
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler2000 ();
+module sg13g2_Filler2000 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler4000
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler4000 ();
+module sg13g2_Filler4000 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Filler10000
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_Filler10000 ();
+module sg13g2_Filler10000 (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
+
 // type: Input
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadIn (pad, p2c);
+module sg13g2_IOPadIn (iovdd, iovss, vdd, vss, pad, p2c);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	output p2c;
 
@@ -80,7 +113,11 @@ endmodule
 // type: Output4mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadOut4mA (pad, c2p);
+module sg13g2_IOPadOut4mA (iovdd, iovss, vdd, vss, pad, c2p);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 
@@ -97,7 +134,11 @@ endmodule
 // type: Output16mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadOut16mA (pad, c2p);
+module sg13g2_IOPadOut16mA (iovdd, iovss, vdd, vss, pad, c2p);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 
@@ -114,7 +155,11 @@ endmodule
 // type: Output30mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadOut30mA (pad, c2p);
+module sg13g2_IOPadOut30mA (iovdd, iovss, vdd, vss, pad, c2p);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 
@@ -131,7 +176,11 @@ endmodule
 // type: TriStateOutput4mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadTriOut4mA (pad, c2p, c2p_en);
+module sg13g2_IOPadTriOut4mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 	input c2p_en;
@@ -150,7 +199,11 @@ endmodule
 // type: TriStateOutput16mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadTriOut16mA (pad, c2p, c2p_en);
+module sg13g2_IOPadTriOut16mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 	input c2p_en;
@@ -169,7 +222,11 @@ endmodule
 // type: TriStateOutput30mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadTriOut30mA (pad, c2p, c2p_en);
+module sg13g2_IOPadTriOut30mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 	input c2p_en;
@@ -188,29 +245,11 @@ endmodule
 // type: InputOutput4mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadInOut4mA (pad, c2p, c2p_en, p2c);
-	inout pad;
-	input c2p;
-	input c2p_en;
-	output p2c;
-
-	// Function
-	assign pad = (c2p_en) ? c2p : 1'bz;
-	assign p2c = pad;
-
-	// Timing
-	specify
-		if (c2p_en == 1'b1)
-			(c2p => pad) = 0;
-		(pad => p2c) = 0;
-	endspecify
-endmodule
-`endcelldefine
-
-// type: InputOutput4mA
-`timescale 1ns/10ps
-`celldefine
-module sg13g2_IOPadInOut16mA (pad, c2p, c2p_en, p2c);
+module sg13g2_IOPadInOut4mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en, p2c);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 	input c2p_en;
@@ -232,7 +271,37 @@ endmodule
 // type: InputOutput4mA
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadInOut30mA (pad, c2p, c2p_en, p2c);
+module sg13g2_IOPadInOut16mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en, p2c);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
+	inout pad;
+	input c2p;
+	input c2p_en;
+	output p2c;
+
+	// Function
+	assign pad = (c2p_en) ? c2p : 1'bz;
+	assign p2c = pad;
+
+	// Timing
+	specify
+		if (c2p_en == 1'b1)
+			(c2p => pad) = 0;
+		(pad => p2c) = 0;
+	endspecify
+endmodule
+`endcelldefine
+
+// type: InputOutput4mA
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_IOPadInOut30mA (iovdd, iovss, vdd, vss, pad, c2p, c2p_en, p2c);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	input c2p;
 	input c2p_en;
@@ -254,7 +323,11 @@ endmodule
 // type: Analog
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadAnalog (pad, padres);
+module sg13g2_IOPadAnalog (iovdd, iovss, vdd, vss, pad, padres);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 	inout pad;
 	inout padres;
 
@@ -273,27 +346,43 @@ endmodule
 // type: IOVss
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadIOVss ();
+module sg13g2_IOPadIOVss (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: IOVdd
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadIOVdd ();
+module sg13g2_IOPadIOVdd (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Vss
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadVss ();
+module sg13g2_IOPadVss (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine
 
 // type: Vdd
 `timescale 1ns/10ps
 `celldefine
-module sg13g2_IOPadVdd ();
+module sg13g2_IOPadVdd (iovdd, iovss, vdd, vss);
+	inout iovdd;
+	inout iovss;
+	inout vdd;
+	inout vss;
 endmodule
 `endcelldefine

@@ -1,6 +1,12 @@
 # IHP Open Source PDK
 130nm BiCMOS Open Source PDK, dedicated for Analog/Digital, Mixed Signal and RF Design
 
+---
+> [!WARNING]
+> ### 📘 Installation Notice
+>
+> Before using this repository, **please review the [Installation Guide](https://ihp-open-pdk-docs.readthedocs.io/en/latest/install/installation.html)** for download procedure and to ensure your environment is set up correctly. The guide provides step-by-step instructions and important prerequisites. You can find it here: **[Installation Guide](https://ihp-open-pdk-docs.readthedocs.io/en/latest/install/installation.html)**.
+---
 ## Acknowledgment
 Special thanks to the following publicly funded German projects for their financial support, which has contributed to this work:  
 IHP Open130-G2 (16ME0852) https://www.elektronikforschung.de/projekte/ihp-open130-g2  
@@ -26,6 +32,13 @@ While the SG13G2 process node and the PDK from which this open source
 release was derived have been used to create many designs that have been
 successfully manufactured in significant quantities, the open source PDK
 is not intended to be used for production at this moment.
+
+# Documentation
+
+Comprehensive documentation for the IHP Open Source PDK is available on [ReadTheDocs](https://ihp-open-pdk-docs.readthedocs.io/en/latest/).
+For building or contributing, visit the [IHP-Open-PDK-docs repository](https://github.com/IHP-GmbH/IHP-Open-PDK-docs).
+
+The documentation provides detailed information on PDK installation, setup for supported EDA tools, device libraries, layout rules, process specifications and design flow examples. It is the recommended starting point for users who want to explore the PDK structure, simulation models, layout design environments, etc.
 
 # SG13G2 Process Node
 
@@ -62,10 +75,15 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
     * GDSII
 * KLayout tool data:
     * layer property and tech files
-    * DRC rules (minimal/maximal set)
+    * DRC rules
     * LVS rules
-    * PyCells (1st priority)
+    * PyCells
     * XSection initial settings
+    * 2.5D viewer configuration
+* Magic tool data:
+    * tech files, parasitic extraction rules
+    * DRC rules
+    * LVS rules
 * MOS/HBT/Passive device models for ngspice/Xyce
 * xschem: primitive device symbols, settings and testbenches
 * Qucs-S: primitive device symbols, settings and testbenches
@@ -91,12 +109,17 @@ backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm t
 * KLayout
     * Download: https://www.klayout.de/build.html
     * Source: https://github.com/KLayout/klayout
+* Magic
+    * Download: http://opencircuitdesign.com/magic/download.html
+    * Source: https://github.com/RTimothyEdwards/magic
 * OpenEMS
     * Source: https://github.com/thliebig/openEMS-Project
 * OpenROAD
     * Source: https://github.com/The-OpenROAD-Project/OpenROAD
 * OpenROAD-flow-scripts
     * Source: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+* LibreLane
+    * Source: https://github.com/librelane/librelane
  
 ## Tool versions (tested with)
 [versions.txt](versions.txt)

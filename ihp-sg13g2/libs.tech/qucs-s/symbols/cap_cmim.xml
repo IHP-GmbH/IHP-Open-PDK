@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="cap_cmim" schematic_id = "C">
+    <Description>
+        SG13G2 MiM capacitor
+    </Description>
+    <Models>
+            <DefaultModel value="cmim">
+            </DefaultModel>
+            <SpiceModel value="cmim">
+            </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'C{PartCounter} {nets} {{{model}}}::model='nonempty'
+            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' m={m}">
+        </NgspiceNetlist>
+        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+            <File>{QUCS_S_COMPONENTS_LIBRARY}/Capacitor.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="cap_cmim" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="7.0" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="l" unit="u" default_value="7.0" show="true">
+            <Description>Length</Description>
+        </Parameter>
+        <Parameter name="m" unit="" default_value="1" show="true">
+            <Description>Multiplier</Description>
+        </Parameter>
+        <Parameter name="C" unit="F" equation="m*((w*l*1.e-3) + 2*(w+l)*40e-12)" show="true">
+            <Description>Capacitance value</Description>
+        </Parameter>
+    </Parameters>
+</Component>

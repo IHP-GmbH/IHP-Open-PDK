@@ -41,8 +41,8 @@ jobs:
         id: cache-klayout
         uses: actions/cache@v4
         with:
-          path: klayout-0_30_2.deb
-          key: klayout-deb-cache-ubuntu-0_30_2
+          path: klayout-0_30_3.deb
+          key: klayout-deb-cache-ubuntu-0_30_3
           restore-keys: |
             klayout-deb-cache-
 
@@ -51,14 +51,77 @@ jobs:
         run: |
           echo "Downloading KLayout .deb..."
           curl -L --retry 5 --retry-delay 5 --retry-all-errors \
-            -o klayout-0_30_2.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.2-1_amd64.deb
+            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
 
       - name: ⚙️ Install KLayout
         run: |
           sudo apt update -qq -y
-          sudo apt install ./klayout-0_30_2.deb
+          sudo apt install ./klayout-0_30_3.deb
           echo "✅ KLayout version:"
           klayout -v
 
       - name: 🧪 Run KLayout DRC Regression
         run: make test-DRC-main
+
+      - name: ⛰️ Run KLayout top-level DRC Deck
+        run: |
+          klayout -b -r ihp-sg13g2/libs.tech/klayout/tech/drc/ihp-sg13g2.drc \
+            -rd run_mode=deep \
+            -rd threads=1 \
+            -rd no_feol=false \
+            -rd no_beol=false \
+            -rd no_offgrid=false \
+            -rd no_pin=false \
+            -rd no_forbidden=false \
+            -rd input=ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true
+
+      - name: ⛰️ Run KLayout top-level DRC Deck with selected tables
+        run: |
+          klayout -b -r ihp-sg13g2/libs.tech/klayout/tech/drc/ihp-sg13g2.drc \
+            -rd run_mode=deep \
+            -rd threads=1 \
+            -rd tables="nwell activ cont vian passiv lbe metal1" \
+            -rd no_feol=true \
+            -rd no_beol=true \
+            -rd no_offgrid=true \
+            -rd no_pin=true \
+            -rd no_forbidden=true \
+            -rd input=ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true
+
+      - name: 📜 Run KLayout "run_drc" script in sp
+        run: |
+          make env
+          . actions_venv/bin/activate; python3 ihp-sg13g2/libs.tech/klayout/tech/drc/run_drc.py \
+            --mp 1 \
+            --disable_extra_rules \
+            --path ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true
+
+      - name: 📜 Run KLayout "run_drc" script in mp
+        run: |
+          make env
+          . actions_venv/bin/activate; python3 ihp-sg13g2/libs.tech/klayout/tech/drc/run_drc.py \
+            --mp 2 \
+            --disable_extra_rules \
+            --path ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true
+
+      - name: 📜 Run KLayout "run_drc" script with selected tables in sp
+        run: |
+          make env
+          . actions_venv/bin/activate; python3 ihp-sg13g2/libs.tech/klayout/tech/drc/run_drc.py \
+            --mp 1 \
+            --table=nwell --table=activ --table=cont --table=via1 --table=mim --no_density --disable_extra_rules \
+            --path ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true
+
+      - name: 📜 Run KLayout "run_drc" script with selected tables in mp
+        run: |
+          make env
+          . actions_venv/bin/activate; python3 ihp-sg13g2/libs.tech/klayout/tech/drc/run_drc.py \
+            --mp 2 \
+            --table=nbulay --table=gatpoly --table=psd --table=vian --table=passiv --table=lbe --table=metal1 --no_density --disable_extra_rules \
+            --path ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
+          || true

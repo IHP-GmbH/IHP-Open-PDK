@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="inductor_2" schematic_id = "L">
+    <Description>
+        SG13G2 hexagonal inductor_2
+    </Description>
+    <Models>
+        <DefaultModel value="inductor_2">
+        </DefaultModel>
+        <SpiceModel value="L">
+        </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value = "{{{Letter}}}::schematic_id='nequal'L{PartCounter} {nets}  {model}  {{L={L}}}::L='nonempty' {{R={R}}}::R='nonempty' "> </NgspiceNetlist>
+        <CDLNetlist value = "{NgspiceNetlist}"> </CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+           <File>{QUCS_S_COMPONENTS_LIBRARY}/Inductor2.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="inductor" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="nr_r" unit="" default_value="1" show="true">
+            <Description>Number of turns</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="2.0" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="s" unit="u" default_value="2.1" show="true">
+            <Description>Spacng</Description>
+        </Parameter>
+        <Parameter name="bulk" unit="" default_value="sub!" show="false">
+            <Description>Third terminal net name</Description>
+        </Parameter>
+        <Parameter name="L" unit="H"
+            equation="w*s"
+            show="true">
+            <Description>Inductance value</Description>
+        </Parameter>
+        <Parameter name="R" unit="Ohm"
+            equation="nr_r*w"
+            show="false">
+            <Description>Series resistance value</Description>
+        </Parameter>
+    </Parameters>
+</Component>

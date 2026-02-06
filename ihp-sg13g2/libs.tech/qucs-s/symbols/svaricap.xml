@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="svaricap" schematic_id = "D">
+    <Description>
+        SG13G2 variable capacitor
+    </Description>
+    <Models>
+            <DefaultModel value="sg13_hv_svaricap">
+            </DefaultModel>
+            <SpiceModel value="svaricap">
+            </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'D{PartCounter} {nets} {bulk} {{{model}}}::model='nonempty'
+            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' {{Nx={Nx}}}::Nx='nonempty'">
+        </NgspiceNetlist>
+        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+            <File>{QUCS_S_COMPONENTS_LIBRARY}/Varicap.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="sg13_hv_svaricap" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="3.74" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="l" unit="u" default_value="0.3" show="true">
+            <Description>Length</Description>
+        </Parameter>
+        <Parameter name="bulk" unit="" default_value="sub!" show="false">
+            <Description>Bulk terminal net name</Description>
+        </Parameter>
+        <Parameter name="Nx" unit="" default_value="1" show="true">
+            <Description>Multiplier</Description>
+        </Parameter>
+    </Parameters>
+</Component>

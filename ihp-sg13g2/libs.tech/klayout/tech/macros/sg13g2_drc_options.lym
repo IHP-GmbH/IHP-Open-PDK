@@ -125,7 +125,8 @@
       'density_only' => false,
       'antenna' => false,
       'antenna_only' => false,
-      'no_offgrid' => false
+      'no_offgrid' => false,
+      'no_recommnded' => false,
     }
     save_options(yaml_file_path, defaults) rescue nil
     defaults
@@ -208,11 +209,13 @@
     chk_antenna = create_check_box("Enable Antenna Checks", options['antenna'], "Enables antenna rule checks.")
     chk_antenna_only = create_check_box("Run Only Antenna Checks", options['antenna_only'], "Runs *only* antenna checks and skips others.")
     chk_offgrid = create_check_box("Disable Offgrid Checks", options['no_offgrid'], "Skips offgrid and angles checks.")
+    chk_recommended = create_check_box("Disable Recommended Checks", options['no_recommended'], "Skips recommended checks.")
     @advanced_layout_setup.addRow("", chk_density)
     @advanced_layout_setup.addRow("", chk_density_only)
     @advanced_layout_setup.addRow("", chk_antenna)
     @advanced_layout_setup.addRow("", chk_antenna_only)
     @advanced_layout_setup.addRow("", chk_offgrid)
+    @advanced_layout_setup.addRow("", chk_recommended)
 
     # Tabs
     @tab_widget_setup = RBA::QTabWidget.new(@dialog_options)
@@ -229,7 +232,6 @@
     # style (can be adjusted)
     @dialog_options.setStyleSheet(
       "QDialog {\n" \
-      "  background-color: #f8f9fa;\n" \
       "  border-radius: 12px;\n" \
       "  padding: 12px;\n" \
       "}\n" \
@@ -450,6 +452,7 @@
     options['antenna'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
     options['antenna_only'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
     options['no_offgrid'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
+    options['no_recommended'] = @advanced_layout_update.itemAt(9).widget.checked if @advanced_layout_update.itemAt(9).widget
   end
 
  end

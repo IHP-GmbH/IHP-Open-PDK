@@ -1,0 +1,80 @@
+      
+*#######################################################################
+*
+* Copyright 2025 IHP PDK Authors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*    https://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+      
+* NOTE: use only typical mean file (this file) for Monte Carlo simulations of process tolerance!
+* Corner naming scheme:  typical/mean=tt,-3 sigma=ss, +3 sigma =ff 
+* NOTE: default of all   .param should be 1.0
+* NOTE: deviations from 1.0 are used to fit statistical results
+* Technology: SG13G2
+* Lot: PQ45802
+* Wafer: 05
+* Reticle: T458
+* Block: S427Ka
+* Chip : X7Y02
+* DUT: dschottky_nbl1
+* Temperature range: -40C ... +125C
+* Operator: FKo
+* DC Measurements  at T=27C, T=70C, T=-40C and T=125C
+* Noise Measurements at T=27C
+* Measurement Date: Jun 21 Mon 11:12:05 2021
+
+**************** CORNER_LIB OF sg13g2_dschottky_nbl1 TT MODEL ****************  
+* Typical           
+.LIB dio_tt    
+.param schottky_nbl1_is      = 1.28
+.param schottky_nbl1_kf      = 1.0000
+
+.include "diodes.lib"
+.include "sg13g2_esd.lib"
+.include "sg13g2_dschottky_nbl1_mod.lib"   
+.ENDL dio_tt  
+      
+* Statistical            
+.LIB dio_tt_stat    
+.param schottky_nbl1_is_norm      = 1.28
+.param schottky_nbl1_kf_norm      = 1.0000
+
+.include "diodes.lib"
+.include "sg13g2_esd.lib"
+.include "sg13g2_dschottky_nbl1_stat.lib"  
+.include "sg13g2_dschottky_nbl1_mod.lib"   
+.ENDL dio_tt_stat  
+  
+**************** CORNER_LIB OF sg13g2_dschottky_nbl1 SS MODEL  (-3 Sigma)**************** 
+* Slow n, Slow p    
+.LIB dio_ss   
+.param schottky_nbl1_is      = 0.85
+.param schottky_nbl1_kf      = 0.4
+  
+.include "diodes.lib"
+.include "sg13g2_esd.lib"
+.include "sg13g2_dschottky_nbl1_mod.lib"   
+.ENDL dio_ss  
+  
+**************** CORNER_LIB OF sg13g2_dschottky_nbl1 FF MODEL (+3 Sigma) **************** 
+* Fast n, Fast p    
+.LIB dio_ff  
+.param schottky_nbl1_is      = 1.92
+.param schottky_nbl1_kf      = 1.61
+
+.include "diodes.lib"
+.include "sg13g2_esd.lib"
+.include "sg13g2_dschottky_nbl1_mod.lib"   
+.ENDL dio_ff  
+  

@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 B 2 150 -490 950 -90 {flags=graph
 y1=0
@@ -74,7 +75,6 @@ value="
 .step  vgs 0.3 1.5 0.05
 .dc vds 0 3.0 0.01
 .print dc format=raw file=dc_hv_nmos.raw i(Vd)
-"
 "}
 C {launcher.sym} -190 -400 0 0 {name=h2
 descr=SimulateXyce
@@ -99,7 +99,7 @@ C {simulator_commands_shown.sym} -350 -730 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOShv.lib mos_tt
 )"}
 C {simulator_commands_shown.sym} -800 -730 0 0 {name=Libs_Ngspice
 simulator=ngspice

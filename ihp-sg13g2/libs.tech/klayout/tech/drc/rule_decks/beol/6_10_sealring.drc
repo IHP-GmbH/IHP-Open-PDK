@@ -1,0 +1,119 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+#===============================================
+# ------------------ 6.10 Sealring -------------
+#===============================================
+if TABLES.include?('sealring') || BEOL
+
+  logger.info('Starting 6.10 Sealring table')
+
+  # Sealring derivations
+
+  # Enable tiling mode for large designs
+  if en_tiles
+    # Run mode
+    setup_run_mode('tiling')
+    logger.info('Tiling mode is enabled for Seal.l rule.')
+  end
+
+  # Get the layers from the layer definition file
+  def sructures_outside(layer_def_file, binding_context, boundary)
+    layer_names = []
+
+    File.readlines(layer_def_file).each do |line|
+      next unless line.strip =~ /^(\w+)\s*=\s*get_polygons\s*\(\s*\d+\s*,\s*\d+\s*\)/
+
+      var_name = Regexp.last_match(1)
+      layer_names << var_name
+    end
+
+    layers = layer_names.filter_map do |name|
+      if binding_context.local_variable_defined?(name.to_sym)
+        binding_context.local_variable_get(name.to_sym)
+      else
+        logger.warn("Skipping undefined layer variable: '#{name}'")
+        nil
+      end
+    end
+
+    layers.each do |layer|
+      seal_l = layer.not(boundary)
+      seal_l.output('Seal.l', '6.10. Seal.l : No structures outside sealring boundary allowed')
+      seal_l.forget
+    end
+  end
+
+  # Rule Seal.l : No structures outside sealring boundary allowed
+  logger.info('Executing rule Seal.l')
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  layers_def_path = File.join(script_dir, '../layers_def.drc')
+  seal_l_l1 = edgeseal_bound.interacting(CHIP)
+  seal_l = sructures_outside(layers_def_path, binding, seal_l_l1) unless seal_l_l1.is_empty?
+  seal_l_l1.forget
+
+  if en_tiles
+    # Run mode
+    setup_run_mode($run_mode)
+    logger.info("#{$run_mode} mode is enabled after Seal.l rule.")
+  end
+
+  # Rule Seal.n : Sealring must be enclosed by an unbroken Passiv ring
+  logger.info('Executing rule Seal.n')
+  seal_n_l1 = passiv_drw.not(edgeseal_drw).holes
+  seal_n_l = edgeseal_drw.not(seal_n_l1)
+  seal_n_l.output('Seal.n', '6.10. seal.n : Sealring must be enclosed by an unbroken Passiv ring')
+  seal_n_l.forget
+  seal_n_l1.forget
+
+  unless PRECHECK_DRC
+    seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw,
+                     activ_drw, psd_drw]
+    seal_b_names = %w[metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2 activ psd]
+
+    # Rule Seal.b: Min. Activ space to EdgeSeal-Activ, EdgeSeal-pSD, EdgeSeal-Metal(n=1-5), EdgeSeal-TopMetal1,
+    # EdgeSeal-TopMetal2 is 4.90 um
+    seal_b_value = drc_rules['Seal_b'].to_f
+    seal_b_names.zip(seal_b_lays).each do |seal_b_lay, lay|
+      logger.info("Executing rule seal.b_#{seal_b_lay}")
+      seal_b_l1 = lay.and(edgeseal_drw)
+      seal_b_l = activ_drw.sep(seal_b_l1, seal_b_value.um, euclidian)
+      seal_b_l.output("Seal.b_#{seal_b_lay}",
+                    "6.10. Seal.b_#{seal_b_lay} : Min. Activ space to EdgeSeal-#{seal_b_lay} is #{seal_b_value} um")
+      seal_b_l1.forget
+      seal_b_l.forget
+    end
+
+    # Rule Seal.k: Min. EdgeSeal 45-degree corner length is 21.00 um
+    logger.info('Executing rule Seal.k')
+    seal_k_value = drc_rules['Seal_k'].to_f
+    seal_k_l1 = edgeseal_drw.edges.with_angle(45, absolute)
+    seal_k_l = seal_k_l1.with_length(nil, seal_k_value.um)
+    seal_k_l.output('Seal.k', "6.10. Seal.k : Min. EdgeSeal 45-degree corner length is #{seal_k_value} um")
+    seal_k_l1.forget
+    seal_k_l.forget
+
+    # Rule Seal.m : Only one sealring per chip allowed
+    logger.info('Executing rule Seal.m')
+    seal_m_l1 = CHIP.interacting(edgeseal_drw, 2)
+    seal_m_l = edgeseal_drw.and(seal_m_l1)
+    seal_m_l.output('Seal.m', '6.10. Seal.m : Only one sealring per chip allowed')
+    seal_m_l.forget
+    seal_m_l1.forget
+  end
+end
