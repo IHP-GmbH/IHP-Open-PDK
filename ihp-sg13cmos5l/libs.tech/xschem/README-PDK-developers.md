@@ -15,8 +15,8 @@ we use symbolic links to ensure schematic portability between G2 and CMOS5L.
 
 In the `xschemrc` file the global variable were change for the same reason. 
 
-SG13G2_MODELS - > NGSPICE_MODELS
-SG13G2_MODELS_XYCE -> XYCE_MODELS
+SG13G2_MODELS -> MODELS_NGSPICE
+SG13G2_MODELS_XYCE -> MODELS_XYCE
 
 same for SG13CMOS5L
 
