@@ -31,7 +31,7 @@ T {Create netlist, simulate with xyce} 790 -310 0 0 0.4 0.4 {}
 T {Simulation skeleton for ngspice} 1190 -780 0 0 0.4 0.4 {}
 T {Simulation skeleton for xyce} 1190 -470 0 0 0.4 0.4 {}
 T {Ctrl-Click to execute launcher} 440 -180 0 0 0.3 0.3 {layer=11}
-T {.save file can be created with IHP->"Create FET and BIP .save file"} 440 -160 0 0 0.3 0.3 {layer=11}
+T {.save file can be created with IHP->"Create FET .save file"} 440 -160 0 0 0.3 0.3 {layer=11}
 T {DEVICE GALLERY} 70 -1030 0 0 0.6 0.6 {}
 T {NGSPICE+Xyce testcases} 70 -920 0 0 0.6 0.6 {}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2025 IHP PDK Authors"}
@@ -56,9 +56,8 @@ only_toplevel=false
 value="tcleval(
 .lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
 .lib $::MODELS_XYCE/cornerMOShv.lib mos_tt
-.lib $::MODELS_XYCE/cornerHBT.lib hbt_typ
 .lib $::MODELS_XYCE/cornerRES.lib res_typ
-.lib $::MODELS_XYCE/cornerDIO.lib dio_typ
+.lib $::MODELS_XYCE/cornerDIO.lib dio_tt
 )"
       }
 C {devices/intuitive_interface_cheatsheet.sym} 1520 -1090 0 0 {name=x43}
@@ -89,7 +88,7 @@ set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
 # change the simulator to be used (Xyce)
 set sim(spice,default) 0
 
-# Create FET and BIP .save file
+# Create FET .save file
 mkdir -p $netlist_dir
 write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
 

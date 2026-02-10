@@ -56,4 +56,3 @@ C {sg13g2_tests_xyce/dc_esd_diodes.sym} 180 -270 0 0 {name=x31}
 C {sg13g2_tests_xyce/dc_esd_nmos_cl.sym} 180 -230 0 0 {name=x32}
 C {sg13g2_tests_xyce/dc_ntap1.sym} 180 -460 0 0 {name=x25}
 C {sg13g2_tests_xyce/dc_ptap1.sym} 180 -420 0 0 {name=x26}
-C {sg13g2_tests_xyce/dc_schottky.sym} 180 -190 0 0 {name=x34}
