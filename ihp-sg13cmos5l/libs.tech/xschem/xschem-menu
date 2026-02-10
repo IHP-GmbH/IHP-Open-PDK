@@ -1,7 +1,7 @@
 
 ##################### save and display MOSFET parameters #####################
 
-# writes the .save instructions for given FET or BIP instance
+# writes the .save instructions for given FET instance
 proc write_save_lines {type model schpath spiceprefix instname} {
   global sch_expand
   if {[regexp {[pn]mos} $type]} {
@@ -18,26 +18,6 @@ proc write_save_lines {type model schpath spiceprefix instname} {
     append sch_expand(savelist) ".save $devpath\[cgg\]\n"
     append sch_expand(savelist) ".save $devpath\[cgsol\]\n"
     append sch_expand(savelist) ".save $devpath\[cgdol\]\n"
-  } elseif {[regexp {vertical_npn} $type]} {
-    if {[regexp {_5t$} $model]} {
-      set model [string range $model 0 end-3]
-    }
-    set m q$model
-    set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
-
-    append sch_expand(savelist) ".save $devpath\[gm\]\n"
-    append sch_expand(savelist) ".save $devpath\[go\]\n"
-    append sch_expand(savelist) ".save $devpath\[gmu\]\n"
-    append sch_expand(savelist) ".save $devpath\[gpi\]\n"
-    append sch_expand(savelist) ".save $devpath\[gx\]\n"
-    append sch_expand(savelist) ".save $devpath\[vbe\]\n"
-    append sch_expand(savelist) ".save $devpath\[vbc\]\n"
-    append sch_expand(savelist) ".save $devpath\[ib\]\n"
-    append sch_expand(savelist) ".save $devpath\[ic\]\n"
-    append sch_expand(savelist) ".save $devpath\[cbe\]\n"
-    append sch_expand(savelist) ".save $devpath\[cbc\]\n"
-    append sch_expand(savelist) ".save $devpath\[cbep\]\n"
-    append sch_expand(savelist) ".save $devpath\[cbcp\]\n"
   }
   
 }
@@ -123,14 +103,12 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
 }
 ############ /sch_expand
 
-# generate the .save lines to save all mos parameters
+# generate the .save lines to save all MOS parameters
 proc save_params {} {
   global sch_expand
-  sch_expand 0 1 {npn}
-  append fet_bip_list $sch_expand(savelist)
   sch_expand 0 1 {[pn]mos}
-  append fet_bip_list $sch_expand(savelist)
-  return "* Place this .save file with a .include line in your testbench\n\n$fet_bip_list"
+  set fet_list $sch_expand(savelist)
+  return "* Place this .save file with a .include line in your testbench\n\n$fet_list"
 }
 
 # displays mos parameters simulation data , used in symbol annotate_fet_params.sym
@@ -201,6 +179,7 @@ value="
 .lib cornerMOSlv.lib mos_tt
 .lib cornerMOShv.lib mos_tt
 .lib cornerRES.lib res_typ
+.lib cornerDIO.lib dio_tt
 "
       }
     }
@@ -212,9 +191,10 @@ name=Libs_Xyce
 simulator=xyce
 only_toplevel=false
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
-.lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
-.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
+.lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOShv.lib mos_tt
+.lib $::MODELS_XYCE/cornerRES.lib res_typ
+.lib $::MODELS_XYCE/cornerDIO.lib dio_tt
 )"
       }
     }
