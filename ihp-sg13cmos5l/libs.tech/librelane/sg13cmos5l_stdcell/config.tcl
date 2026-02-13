@@ -2,9 +2,24 @@ set current_folder [file dirname [file normalize [info script]]]
 
 # Technology lib
 set ::env(LIB) [dict create]
-dict set ::env(LIB) nom_typ_1p20V_25C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib"
-dict set ::env(LIB) nom_fast_1p32V_m40C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_fast_1p32V_m40C.lib"
-dict set ::env(LIB) nom_slow_1p08V_125C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_slow_1p08V_125C.lib"
+#dict set ::env(LIB) nom_typ_1p20V_25C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib"
+# dict set ::env(LIB) nom_fast_1p32V_m40C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_fast_1p32V_m40C.lib"
+# dict set ::env(LIB) nom_slow_1p08V_125C "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_slow_1p08V_125C.lib"
+
+set ::env(LIB) [dict create]
+dict set ::env(LIB) nom_typ_1p20V_25C "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_typ_1p2V_3p3V_25C.lib\
+"
+dict set ::env(LIB) nom_fast_1p32V_m40C "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_fast_1p32V_m40C.lib\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_fast_1p32V_3p6V_m40C.lib\
+"
+dict set ::env(LIB) nom_slow_1p08V_125C "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13cmos5l_stdcell_slow_1p08V_125C.lib\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_slow_1p08V_3p0V_125C.lib\
+"
+
 
 # Corners
 set ::env(STA_CORNERS) "\
@@ -37,7 +52,7 @@ set ::env(PLACE_SITE_WIDTH) 0.48
 set ::env(PLACE_SITE_HEIGHT) 3.78
 
 # Welltap and endcap cells
-# There are no endcap and welltie cells in ihp-sg13g2
+# There are no endcap and welltie cells in ihp-sg13cmos5l
 # thus set to undefined to skip insertion
 #set ::env(WELLTAP_CELL) ""
 #set ::env(ENDCAP_CELL) ""

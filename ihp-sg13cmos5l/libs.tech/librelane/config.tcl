@@ -9,6 +9,9 @@ if { ![info exist ::env(STD_CELL_LIBRARY)] } {
 	set ::env(STD_CELL_LIBRARY) sg13cmos5l_stdcell
 }
 
+if { ![info exist ::env(PAD_CELL_LIBRARY)] } {
+	set ::env(PAD_CELL_LIBRARY) sg13cmos5l_io
+}
 # Tools - use KLayout for GDS streaming (Magic doesn't have CMOS5L support)
 set ::env(PRIMARY_GDSII_STREAMOUT_TOOL) "klayout"
 
@@ -38,6 +41,11 @@ set ::env(CELL_CDLS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBR
 # GPIO Pads - Not available for CMOS5L slim PDK
 # set ::env(GPIO_PADS_LEF) ""
 # set ::env(GPIO_PADS_VERILOG) ""
+set ::env(PAD_LEFS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lef/sg13cmos5l_io.lef"
+set ::env(PAD_GDS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/gds/sg13cmos5l_io.gds"
+set ::env(PAD_VERILOG_MODELS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v"
+set ::env(PAD_SPICE_MODELS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/spice/sg13cmos5l_io.spi"
+set ::env(PAD_CDLS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/cdl/sg13cmos5l_io.cdl"
 
 # Klayout setup
 set ::env(KLAYOUT_TECH) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg13cmos5l.lyt"
