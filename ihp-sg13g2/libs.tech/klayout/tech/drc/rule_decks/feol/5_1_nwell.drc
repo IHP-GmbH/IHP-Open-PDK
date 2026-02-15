@@ -37,14 +37,14 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
     logger.info('Executing rule NW.b1')
     nw_b1_value = drc_rules['NW_b1'].to_f
-    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne)
-    nw_b1_l2 = pwell_block.interacting(nwell_drw)
-    nw_b1_l3 = nw_b1_l2.sep(nwell_drw, nw_b1_value.um, without_touching_edges)
-    nw_b1 = nw_b1_l1.join(nw_b1_l3)
+    nw_b1_pblk = pwell_block.interacting(nwell_drw)
+    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne).polygons
+    nw_b1_l2 = nw_b1_pblk.sep(nwell_drw, nw_b1_value.um, without_touching_edges).polygons
+    nw_b1 = nw_b1_l1.join(nw_b1_l2).and(pwell)
     nw_b1.output('NW.b1', "5.1.NW.b1 : Min. PWell width between NWell regions (different net)  is #{nw_b1_value} um")
     nw_b1_l1.forget
     nw_b1_l2.forget
-    nw_b1_l3.forget
     nw_b1.forget
+    nw_b1_pblk.forget
   end
 end

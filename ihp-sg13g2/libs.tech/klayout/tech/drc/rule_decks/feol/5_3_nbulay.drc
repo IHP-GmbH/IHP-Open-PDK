@@ -27,8 +27,6 @@ if TABLES.include?('nbulay') || FEOL
     nbl_nets = nbuLay_gen_nbulay.nets
     nactiv_nets = nactiv.nets
     ptap_nets = ptap.nets
-    nbuLay_gen_nwell = nbuLay_gen_nbulay.interacting(nwell_drw)
-
 
     # Rule NBL.b: Min. nBuLay space or notch (same net) is 1.50 um
     logger.info('Executing rule NBL.b')
@@ -40,29 +38,29 @@ if TABLES.include?('nbulay') || FEOL
     # Rule NBL.c: Min. PWell width between nBuLay regions (different net) is 3.20 um
     logger.info('Executing rule NBL.c')
     nbl_c_value = drc_rules['NBL_c'].to_f
-    nbl_c_l1 = nbl_nets.space(nbl_c_value.um, props_ne)
-    nbl_c_l2 = pwell_block.interacting(nbuLay_gen_nwell)
-    nbl_c_l3 = nbl_c_l2.sep(nbuLay_gen_nwell, nbl_c_value.um, euclidian, without_touching_edges)
-    nbl_c = nbl_c_l1.join(nbl_c_l3)
+    nbl_c_pwl = pwell_block.interacting(nbuLay_gen_nbulay)
+    nbl_c_l1 = nbl_nets.space(nbl_c_value.um, props_ne).polygons
+    nbl_c_l2 = nbl_c_pwl.sep(nbuLay_gen_nbulay, nbl_c_value.um, euclidian, without_touching_edges).polygons
+    nbl_c = nbl_c_l1.join(nbl_c_l2).and(pwell)
     nbl_c.output('NBL.c', "5.3.NBL.c : Min. PWell width between nBuLay regions (different net) is #{nbl_c_value} um")
     nbl_c_l1.forget
     nbl_c_l2.forget
-    nbl_c_l3.forget
     nbl_c.forget
+    nbl_c_pwl.forget
 
     # Rule NBL.d: Min. PWell width between nBuLay and NWell (different net) is 2.20 um
     logger.info('Executing rule NBL.d')
     nbl_d_value = drc_rules['NBL_d'].to_f
-    nbl_d_l1 = nbl_nets.sep(nwell_nets, nbl_d_value.um, props_ne)
-    nbl_d_l2 = pwell_block.interacting(nwell_drw)
-    nbl_d_l3 = nbl_d_l2.sep(nbuLay_gen_nwell, nbl_d_value.um, euclidian, without_touching_edges)
-    nbl_d = nbl_d_l1.join(nbl_d_l3)
+    nbl_d_pwl = pwell_block.interacting(nwell_drw)
+    nbl_d_l1 = nbl_nets.sep(nwell_nets, nbl_d_value.um, props_ne).polygons
+    nbl_d_l2 = nbl_d_pwl.sep(nbuLay_gen_nbulay, nbl_d_value.um, euclidian, without_touching_edges).polygons
+    nbl_d = nbl_d_l1.join(nbl_d_l2).and(pwell)
     nbl_d.output('NBL.d',
-                 "5.3.NBL.d : Min. PWell width between nBuLay and NWell (different net) is #{nbl_d_value} um")
+                  "5.3.NBL.d : Min. PWell width between nBuLay and NWell (different net) is #{nbl_d_value} um")
     nbl_d_l1.forget
     nbl_d_l2.forget
-    nbl_d_l3.forget
     nbl_d.forget
+    nbl_d_pwl.forget
 
     # Rule NBL.e: Min. nBuLay space to unrelated N+Activ is 1.00 um
     logger.info('Executing rule NBL.e')
