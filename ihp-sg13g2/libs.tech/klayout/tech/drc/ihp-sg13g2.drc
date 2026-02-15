@@ -216,6 +216,23 @@ end
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
 
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c  # Keep wildcard characters as they are
+    else
+      Regexp.escape(c)
+    end
+  end.join
+  
+  pattern
+end
+
 #================================================
 #-------------- COMMON DERIVATIONS --------------
 #================================================
@@ -285,7 +302,7 @@ if TABLES.any?{|x| pact_fet_tables.include?(x)}
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay]
+nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay cont]
 if TABLES.any?{|x| nact_fet_tables.include?(x)}
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
@@ -326,6 +343,17 @@ if TABLES.any?{|x| schottky_tables.include?(x)}
   schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
   schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
   schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
+end
+
+# SVaricap derivations
+svaricap_tables = %w[main cont]
+if TABLES.any?{|x| svaricap_tables.include?(x)}
+  logger.info('Starting SVaricap general derivations')
+  svaricap_gate = gatpoly_drw.and(nwell_drw).and(nbulay_drw)
+  svaricap_patt = glob_to_case_insensitive_glob("SVaricap")
+  svaricap_text = text_drw.texts(svaricap_patt)
+  svaricap_recog = activ_drw.not_outside(svaricap_gate).interacting(svaricap_text)
+  svaricap = nwell_drw.not_outside(svaricap_recog)
 end
 
 # DRC tolerance value
