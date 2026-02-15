@@ -258,14 +258,14 @@ if TABLES.any?{|x| nact_pact_tables.include?(x)}
 end
 
 # p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup  nwell nbulay]
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup  nwell nbulay schottkydiode]
 if TABLES.any?{|x| pact_pact_tables.include?(x)}
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode]
 if TABLES.any?{|x| ptap_tables.include?(x)}
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
@@ -317,6 +317,15 @@ if TABLES.any?{|x| pad_tables.include?(x)}
   cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(topmetal2_drw)
   sbumppad = dfpad_sbump.and(passiv_sbump).and(topmetal2_drw)
   pad = passiv_drw.and(dfpad_drw).and(topmetal2_drw)
+end
+
+# schottky_nbl derivations
+schottky_tables = %w[main schottkydiode pwellblock]
+if TABLES.any?{|x| schottky_tables.include?(x)}
+  logger.info('Starting schottky_nbl general derivations')
+  schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+  schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
+  schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
 end
 
 # DRC tolerance value

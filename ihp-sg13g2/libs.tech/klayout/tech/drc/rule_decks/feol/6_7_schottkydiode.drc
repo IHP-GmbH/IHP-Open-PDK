@@ -25,19 +25,19 @@ if TABLES.include?('schottkydiode') || FEOL
 
   unless PRECHECK_DRC
     # Schottky diode derivations
-    contbar_nbulay = contbar.and(nbuLay_gen_nbulay)
+    schottky_contbar = contbar.and(schottky_nbl1)
 
     # Rule Sdiod.d: Min. and max. ContBar width inside nBuLay is 0.30 um
     logger.info('Executing rule Sdiod.d')
     sdiod_d_value = drc_rules['Sdiod_d'].to_f
-    sdiod_d_l = contbar_nbulay.without_bbox_min(sdiod_d_value.um)
+    sdiod_d_l = schottky_contbar.without_bbox_min(sdiod_d_value.um)
     sdiod_d_l.output('Sdiod.d', "6.7. Sdiod.d : Min. and max. ContBar width inside nBuLay is #{sdiod_d_value} um")
     sdiod_d_l.forget
 
     # Rule Sdiod.e: Min. and max. ContBar length inside nBuLay is 1.00 um
     logger.info('Executing rule Sdiod.e')
     sdiod_e_value = drc_rules['Sdiod_e'].to_f
-    sdiod_e_l = contbar_nbulay.without_bbox_max(sdiod_e_value.um)
+    sdiod_e_l = schottky_contbar.without_bbox_max(sdiod_e_value.um)
     sdiod_e_l.output('Sdiod.e', "6.7. Sdiod.e : Min. and max. ContBar length inside nBuLay is #{sdiod_e_value} um")
     sdiod_e_l.forget
   end
