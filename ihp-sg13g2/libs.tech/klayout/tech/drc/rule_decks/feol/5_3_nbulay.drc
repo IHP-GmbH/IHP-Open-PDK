@@ -72,10 +72,8 @@ if TABLES.include?('nbulay') || FEOL
     # Rule NBL.f: Min. nBuLay space to unrelated P+Activ is 0.50 um
     logger.info('Executing rule NBL.f')
     nbl_f_value = drc_rules['NBL_f'].to_f
-    nbl_f_nbl_nets = nbl_nets.not(svaricap)
-    nbl_f = nbl_f_nbl_nets.sep(ptap_nets, nbl_f_value.um, props_ne)
+    nbl_f = nbl_nets.sep(ptap_nets, nbl_f_value.um, props_ne).polygons.not(svaricap)
     nbl_f.output('NBL.f', "5.3.NBL.f : Min. nBuLay space to unrelated P+Activ is #{nbl_f_value} um")
     nbl_f.forget
-    nbl_f_nbl_nets.forget
   end
 end
