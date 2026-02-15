@@ -24,6 +24,8 @@ if TABLES.include?('cont') || FEOL
   logger.info('Starting 5.14. Cont table')
 
   # Cont derivations
+  act_sram = activ_drw.and(sram_drw)
+  act_nsram = activ_drw.not(sram_drw)
 
   # Rule Cnt.a: Min. and max. Cont width is 0.16µm
   logger.info('Executing rule Cnt.a')
@@ -43,16 +45,27 @@ if TABLES.include?('cont') || FEOL
     # Rule Cnt.c: Min. Activ enclosure of Cont is 0.07 um
     logger.info('Executing rule Cnt.c')
     cnt_c_value = drc_rules['Cnt_c'].to_f
-    cnt_c_l = cont_sq.not(digibnd_drw).enclosed(activ_drw, cnt_c_value.um, euclidian)
+    cnt_c_act = act_nsram.join(activ_mask).not(digibnd_drw)
+    cnt_c_l = cont_sq.enclosed(cnt_c_act, cnt_c_value.um, euclidian)
     cnt_c_l.output('Cnt.c', "5.14. Cnt.c Min. Activ enclosure of Cont is #{cnt_c_value} um")
     cnt_c_l.forget
+    cnt_c_act.forget
 
-    # Rule Cnt.c: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
-    logger.info('Executing rule Cnt.c')
+    # Rule Cnt.c.digibnd: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
+    logger.info('Executing rule Cnt.c.digibnd')
     cnt_c_digibnd_value = drc_rules['Cnt_c_digibnd'].to_f
-    cnt_c_l = cont_sq.and(digibnd_drw).enclosed(activ_drw, cnt_c_digibnd_value.um, euclidian)
-    cnt_c_l.output('Cnt.c.digibnd', "8.1.2. Cnt.c.digibnd Min. Activ enclosure of Cont (Inside DigiBnd) is #{cnt_c_digibnd_value} um")
-    cnt_c_l.forget
+    cnt_c_digibnd_act = act_nsram.join(activ_mask).and(digibnd_drw)
+    cnt_c_l_digibnd = cont_sq.enclosed(cnt_c_digibnd_act, cnt_c_digibnd_value.um, euclidian)
+    cnt_c_l_digibnd.output('Cnt.c.digibnd', "8.1.2. Cnt.c.digibnd Min. Activ enclosure of Cont (Inside DigiBnd) is #{cnt_c_digibnd_value} um")
+    cnt_c_l_digibnd.forget
+    cnt_c_digibnd_act.forget
+
+    # Rule Cnt.c.SRAM: Min. Activ enclosure of Cont (Inside SRAM) is 0.006 um
+    logger.info('Executing rule Cnt.c.SRAM')
+    cnt_c_sram_value = drc_rules['Cnt_c_sram'].to_f
+    cnt_c_l_sram = cont_sq.enclosed(act_sram, cnt_c_sram_value.um, euclidian)
+    cnt_c_l_sram.output('Cnt.c.SRAM', "8.3. Cnt.c.SRAM Min. Activ enclosure of Cont (Inside SRAM) is #{cnt_c_sram_value} um")
+    cnt_c_l_sram.forget
 
     # Rule Cnt.d: Min. GatPoly enclosure of Cont is 0.07 um
     logger.info('Executing rule Cnt.d')
