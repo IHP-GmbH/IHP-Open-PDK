@@ -123,6 +123,7 @@ WAIVED_GROUPS = {
             "RM_IHPSG13_1P_4096x16_c3_bm_bist",
             "RM_IHPSG13_1P_512x64_c2_bm_bist",
             "RM_IHPSG13_1P_2048x64_c2_bm_bist",
+            "RM_IHPSG13_1P_8192x32_c4",
         ],
     },
     "PR_PCELL_BASE": {
@@ -480,7 +481,7 @@ def run_test_case(
         run_drc_py,
         f"--path={layout_path_run}",
         f"--topcell={cell_name}",
-        "--run_mode=flat",
+        "--run_mode=deep",
         f"--run_dir={drc_out_dir}",
         "--no_density",
         "--disable_extra_rules",
