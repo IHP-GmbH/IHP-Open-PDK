@@ -1,0 +1,294 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('offgrid') || OFFGRID
+    #================================================
+    #-------------- OFFGRID CHECKS ------------------
+    #================================================
+    #
+    logger.info('Starting 3.1. offgrid table')
+
+    # Grid: 5 nm => 0.005 um
+    #
+    # NOTE (per PDK note):
+    # Offgrid (and angle) checks are NOT applied on the following layers:
+    # DigiBnd, DigiSub, dfpad, EdgeSeal, HeatRes, HeatTrans, IND, NoDRC, NoMetFiller,
+    # NoRCX, RadHard, Recog, RES, Scribe, SRAM, TEXT
+
+    GRID = 5.nm
+
+    def offgrid_check(layer_polys, base_name, grid = GRID)
+        return if layer_polys.nil?
+
+        layer_polys.ongrid(grid).output(
+        "#{base_name}_Offgrid",
+        "3.1 #{base_name}_Offgrid: #{base_name} layer is Offgrid (All features are on a drawing grid of 5 nm)"
+        )
+    end
+
+    # -----------------------------------------------------------------------------
+    # Layers to check:
+    # - Only include polygon layers (ones with get_polygons in layers_def.drc).
+    # - Do not include label layer like *_text.
+    # - Do not include excluded layers listed above.
+    # -----------------------------------------------------------------------------
+    OFFGRID_LAYERS = {
+        # ACTIV
+        "activ_drw"    => activ_drw,
+        "activ_pin"    => activ_pin,
+        "activ_mask"   => activ_mask,
+        "activ_filler" => activ_filler,
+        "activ_nofill" => activ_nofill,
+        "activ_opc"    => activ_opc,
+        "activ_iopc"   => activ_iopc,
+        "activ_noqrc"  => activ_noqrc,
+
+        # BIWIND / PEMWIND
+        "biwind_drw"  => biwind_drw,
+        "biwind_opc"  => biwind_opc,
+        "pemwind_drw" => pemwind_drw,
+
+        # GATPOLY
+        "gatpoly_drw"    => gatpoly_drw,
+        "gatpoly_pin"    => gatpoly_pin,
+        "gatpoly_filler" => gatpoly_filler,
+        "gatpoly_nofill" => gatpoly_nofill,
+        "gatpoly_opc"    => gatpoly_opc,
+        "gatpoly_iopc"   => gatpoly_iopc,
+        "gatpoly_noqrc"  => gatpoly_noqrc,
+
+        # CONT / NSD
+        "cont_drw" => cont_drw,
+        "cont_opc" => cont_opc,
+        "nsd_drw"  => nsd_drw,
+        "nsd_block" => nsd_block,
+
+        # METAL1
+        "metal1_drw"     => metal1_drw,
+        "metal1_pin"     => metal1_pin,
+        "metal1_mask"    => metal1_mask,
+        "metal1_filler"  => metal1_filler,
+        "metal1_nofill"  => metal1_nofill,
+        "metal1_slit"    => metal1_slit,
+        "metal1_opc"     => metal1_opc,
+        "metal1_noqrc"   => metal1_noqrc,
+        "metal1_res"     => metal1_res,
+        "metal1_iprobe"  => metal1_iprobe,
+        "metal1_diffprb" => metal1_diffprb,
+
+        # PASSIV
+        "passiv_drw"    => passiv_drw,
+        "passiv_pin"    => passiv_pin,
+        "passiv_pillar" => passiv_pillar,
+        "passiv_sbump"  => passiv_sbump,
+        "passiv_pdl"    => passiv_pdl,
+
+        # METAL2
+        "metal2_drw"     => metal2_drw,
+        "metal2_pin"     => metal2_pin,
+        "metal2_mask"    => metal2_mask,
+        "metal2_filler"  => metal2_filler,
+        "metal2_nofill"  => metal2_nofill,
+        "metal2_slit"    => metal2_slit,
+        "metal2_opc"     => metal2_opc,
+        "metal2_noqrc"   => metal2_noqrc,
+        "metal2_res"     => metal2_res,
+        "metal2_iprobe"  => metal2_iprobe,
+        "metal2_diffprb" => metal2_diffprb,
+
+        # BASPOLY / PSD / NLDB / VIA1
+        "baspoly_drw" => baspoly_drw,
+        "baspoly_pin" => baspoly_pin,
+        "psd_drw"     => psd_drw,
+        "nldb_drw"    => nldb_drw,
+        "via1_drw"    => via1_drw,
+
+        # BACKMETAL1 / BACKPASSIV
+        "backmetal1_drw"     => backmetal1_drw,
+        "backmetal1_pin"     => backmetal1_pin,
+        "backmetal1_mask"    => backmetal1_mask,
+        "backmetal1_filler"  => backmetal1_filler,
+        "backmetal1_nofill"  => backmetal1_nofill,
+        "backmetal1_slit"    => backmetal1_slit,
+        "backmetal1_opc"     => backmetal1_opc,
+        "backmetal1_noqrc"   => backmetal1_noqrc,
+        "backmetal1_res"     => backmetal1_res,
+        "backmetal1_iprobe"  => backmetal1_iprobe,
+        "backmetal1_diffprb" => backmetal1_diffprb,
+        "backpassiv_drw"     => backpassiv_drw,
+
+        # VARIOUS DEVICE / BLOCK LAYERS
+        "salblock_drw" => salblock_drw,
+        "via2_drw"     => via2_drw,
+
+        # METAL3
+        "metal3_drw"     => metal3_drw,
+        "metal3_pin"     => metal3_pin,
+        "metal3_mask"    => metal3_mask,
+        "metal3_filler"  => metal3_filler,
+        "metal3_nofill"  => metal3_nofill,
+        "metal3_slit"    => metal3_slit,
+        "metal3_opc"     => metal3_opc,
+        "metal3_noqrc"   => metal3_noqrc,
+        "metal3_res"     => metal3_res,
+        "metal3_iprobe"  => metal3_iprobe,
+        "metal3_diffprb" => metal3_diffprb,
+
+        # WELLS / BULAY
+        "nwell_drw"     => nwell_drw,
+        "nwell_pin"     => nwell_pin,
+        "nbulay_drw"    => nbulay_drw,
+        "nbulay_pin"    => nbulay_pin,
+        "nbulay_block"  => nbulay_block,
+        "pwell_drw"     => pwell_drw,
+        "pwell_pin"     => pwell_pin,
+        "pwell_block"   => pwell_block,
+
+        # EMWIND / DEEPCO / MIM
+        "emwind_drw" => emwind_drw,
+        "emwind_opc" => emwind_opc,
+        "deepco_drw" => deepco_drw,
+        "mim_drw"    => mim_drw,
+
+        # SUBSTRATE / IC / VIA3
+        "substrate_drw" => substrate_drw,
+        "ic_drw"        => ic_drw,
+        "via3_drw"      => via3_drw,
+
+        # PLDB
+        "pldb_drw" => pldb_drw,
+
+        # METAL4
+        "metal4_drw"     => metal4_drw,
+        "metal4_pin"     => metal4_pin,
+        "metal4_mask"    => metal4_mask,
+        "metal4_filler"  => metal4_filler,
+        "metal4_nofill"  => metal4_nofill,
+        "metal4_slit"    => metal4_slit,
+        "metal4_opc"     => metal4_opc,
+        "metal4_noqrc"   => metal4_noqrc,
+        "metal4_res"     => metal4_res,
+        "metal4_iprobe"  => metal4_iprobe,
+        "metal4_diffprb" => metal4_diffprb,
+
+        # VIA4 / METAL5
+        "via4_drw" => via4_drw,
+        "metal5_drw"     => metal5_drw,
+        "metal5_pin"     => metal5_pin,
+        "metal5_mask"    => metal5_mask,
+        "metal5_filler"  => metal5_filler,
+        "metal5_nofill"  => metal5_nofill,
+        "metal5_slit"    => metal5_slit,
+        "metal5_opc"     => metal5_opc,
+        "metal5_noqrc"   => metal5_noqrc,
+        "metal5_res"     => metal5_res,
+        "metal5_iprobe"  => metal5_iprobe,
+        "metal5_diffprb" => metal5_diffprb,
+
+        # BOUNDARIES / EXCHANGE / SPECIAL
+        "prboundary_drw" => prboundary_drw,
+
+        "exchange0_drw" => exchange0_drw,
+        "exchange0_pin" => exchange0_pin,
+        "exchange1_drw" => exchange1_drw,
+        "exchange1_pin" => exchange1_pin,
+        "exchange2_drw" => exchange2_drw,
+        "exchange2_pin" => exchange2_pin,
+        "exchange3_drw" => exchange3_drw,
+        "exchange3_pin" => exchange3_pin,
+        "exchange4_drw" => exchange4_drw,
+        "exchange4_pin" => exchange4_pin,
+
+        "isonwell_drw" => isonwell_drw,
+
+        # A few additional non-excluded layers from your list
+        "thickgateox_drw" => thickgateox_drw,
+        "pempoly_drw"     => pempoly_drw,
+        "fbe_drw"         => fbe_drw,
+        "empoly_drw"      => empoly_drw,
+        "ldmos_drw"       => ldmos_drw,
+        "pbiwind_drw"     => pbiwind_drw,
+        "colopen_drw"     => colopen_drw,
+        "extblock_drw"    => extblock_drw,
+        "nldd_drw"        => nldd_drw,
+        "pldd_drw"        => pldd_drw,
+        "next_drw"        => next_drw,
+        "pext_drw"        => pext_drw,
+        "nexthv_drw"      => nexthv_drw,
+        "pexthv_drw"      => pexthv_drw,
+        "graphgate_drw"   => graphgate_drw,
+        "mempad_drw"      => mempad_drw,
+        "topvia1_drw"     => topvia1_drw,
+        "topmetal1_drw"   => topmetal1_drw,
+        "topmetal1_pin"   => topmetal1_pin,
+        "topmetal1_mask"  => topmetal1_mask,
+        "topmetal1_filler" => topmetal1_filler,
+        "topmetal1_nofill" => topmetal1_nofill,
+        "topmetal1_slit"   => topmetal1_slit,
+        "topmetal1_noqrc"  => topmetal1_noqrc,
+        "topmetal1_res"    => topmetal1_res,
+        "topmetal1_iprobe" => topmetal1_iprobe,
+        "topmetal1_diffprb" => topmetal1_diffprb,
+        "inldpwl_drw"     => inldpwl_drw,
+        "polyres_drw"     => polyres_drw,
+        "polyres_pin"     => polyres_pin,
+        "vmim_drw"        => vmim_drw,
+        "nbulaycut_drw"   => nbulaycut_drw,
+        "antmetal1_drw"   => antmetal1_drw,
+        "topvia2_drw"     => topvia2_drw,
+        "topmetal2_drw"   => topmetal2_drw,
+        "topmetal2_pin"   => topmetal2_pin,
+        "topmetal2_mask"  => topmetal2_mask,
+        "topmetal2_filler" => topmetal2_filler,
+        "topmetal2_nofill" => topmetal2_nofill,
+        "topmetal2_slit"   => topmetal2_slit,
+        "topmetal2_noqrc"  => topmetal2_noqrc,
+        "topmetal2_res"    => topmetal2_res,
+        "topmetal2_iprobe" => topmetal2_iprobe,
+        "topmetal2_diffprb" => topmetal2_diffprb,
+        "snsring_drw"     => snsring_drw,
+        "sensor_drw"      => sensor_drw,
+        "snsarms_drw"     => snsarms_drw,
+        "snscmosvia_drw"  => snscmosvia_drw,
+        "colwind_drw"     => colwind_drw,
+        "flm_drw"         => flm_drw,
+        "hafniumox_drw"   => hafniumox_drw,
+        "memvia_drw"      => memvia_drw,
+        "thinfilmres_drw" => thinfilmres_drw,
+        "rfmem_drw"       => rfmem_drw,
+        "snsbotvia_drw"   => snsbotvia_drw,
+        "snstopvia_drw"   => snstopvia_drw,
+        "deepvia_drw"     => deepvia_drw,
+        "fgetch_drw"      => fgetch_drw,
+        "ctrgat_drw"      => ctrgat_drw,
+        "fgimp_drw"       => fgimp_drw,
+        "emwihv_drw"      => emwihv_drw,
+        "lbe_drw"         => lbe_drw,
+        "alcustop_drw"    => alcustop_drw
+    }.freeze
+
+    # Executing Offgrid rules
+    OFFGRID_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Offgrid")
+        offgrid_check(layer_polys, name, GRID)
+    end
+end
+
+# =====================================================
+# -------------------- END OF FILE --------------------
+# =====================================================

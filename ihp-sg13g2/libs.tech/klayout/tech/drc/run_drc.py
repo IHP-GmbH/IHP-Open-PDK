@@ -306,6 +306,9 @@ def get_list_of_tables(drc_dir: str, switches: dict):
     if switches["no_forbidden"] == "false":
         add_tables(Path(drc_dir) / "rule_decks" / "forbidden", tables)
 
+    if switches["no_offgrid"] == "false":
+        add_tables(Path(drc_dir) / "rule_decks" / "geometry", tables)
+
     if switches["no_pin"] == "false":
         add_tables(Path(drc_dir) / "rule_decks" / "pin", tables)
 
