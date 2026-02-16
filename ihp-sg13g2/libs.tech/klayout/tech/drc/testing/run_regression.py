@@ -382,10 +382,10 @@ def run_test_case(
         f"--table={table_name} "
         f"--topcell={cell_name} "
         f"--run_dir={output_loc} "
-        f"--run_mode=deep "
-        f"--no_offgrid "
-        f"--no_density "
-        f"--disable_extra_rules "
+        "--run_mode=deep "
+        "--no_offgrid "
+        "--no_density "
+        "--disable_extra_rules "
         f"> {pattern_log} 2>&1"
     )
 

@@ -40,6 +40,8 @@ import time
 import logging
 import traceback
 import concurrent.futures
+import re
+import ast
 from datetime import datetime, timezone
 from subprocess import run
 from docopt import docopt
@@ -68,24 +70,68 @@ SRAM_GDS_DIR = "sg13g2_sram/gds"
 SUPPORTED_LIBS = {"sg13g2_io", "sg13g2_pr", "sg13g2_stdcell", "sg13g2_sram"}
 
 # ==============================
-# Exclusions (with reasons)
+# Cells policies
 # ==============================
-EXCLUDED_TESTS = {
-    "sg13g2_io/sg13g2_IOPadInOut30mA": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-    "sg13g2_io/sg13g2_IOPadOut30mA": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-    "sg13g2_io/sg13g2_IOPadTriOut30mA": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-    "sg13g2_pr/nmos": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-    "sg13g2_pr/nmosHV": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-    "sg13g2_pr/pmos": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-    "sg13g2_pr/pmosHV": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+# 1) Fully ignored cells (not executed at all) -> status = "Excluded"
+IGNORE_TESTS = {
     "sg13g2_pr/colors_and_stipples": "Not an actual physical cell; visualization/example content only.",
-    "sg13g2_pr/dantenna": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-    "sg13g2_stdcell/sg13g2_fill_1": "Expected standalone violations; filler not used alone. Violations disappear in real layouts.",
+}
+
+# 2) Waived-violations cells (executed) -> pass only if violated rules ⊆ allowed set
+#    If the cell violates anything outside the allowed list -> Failed.
+WAIVED_TESTS = {
+    # IO: allow only metal1_pin_offgrid
+    "sg13g2_io/sg13g2_IOPadInOut30mA": {
+        "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
+        "allowed_rules": {"metal1_pin_offgrid"},
+    },
+    "sg13g2_io/sg13g2_IOPadOut30mA": {
+        "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
+        "allowed_rules": {"metal1_pin_offgrid"},
+    },
+    "sg13g2_io/sg13g2_IOPadTriOut30mA": {
+        "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
+        "allowed_rules": {"metal1_pin_offgrid"},
+    },
+
+    # PR: allow only specific known rules for PCell templates
+    "sg13g2_pr/nmos": {
+        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
+    },
+    "sg13g2_pr/nmosHV": {
+        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
+    },
+    "sg13g2_pr/pmos": {
+        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
+    },
+    "sg13g2_pr/pmosHV": {
+        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
+    },
+
+    # PR: dantenna allow LU.b only
+    "sg13g2_pr/dantenna": {
+        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
+        "allowed_rules": {"LU.b"},
+    },
+
+    # STDCELL: filler standalone expected
+    "sg13g2_stdcell/sg13g2_fill_1": {
+        "reason": "Expected standalone violations; filler not used alone. Violations disappear in real layouts.",
+        "allowed_rules": {"pSD.k"},
+    },
 }
 
 
-def exclusion_reason(lib: str, cell_name: str) -> str | None:
-    return EXCLUDED_TESTS.get(f"{lib}/{cell_name}")
+def ignore_reason(lib: str, cell_name: str) -> str | None:
+    return IGNORE_TESTS.get(f"{lib}/{cell_name}")
+
+
+def waived_info(lib: str, cell_name: str) -> dict | None:
+    return WAIVED_TESTS.get(f"{lib}/{cell_name}")
 
 
 # ==============================
@@ -162,6 +208,35 @@ def gdstk_list_first_level_cells(gds_path: str, topcell_name: str) -> list[str]:
 
 
 # ==============================
+# DRC log parsing helpers
+# ==============================
+
+_VIOLATED_RULES_RE = re.compile(r"Violated rules are\s*:\s*(\{.*\})")
+
+
+def extract_violated_rules(log_content: str) -> set[str]:
+    """
+    Parse the DRC log and return the set of violated rule names.
+
+    Expected line format in log:
+        Violated rules are : {'Act.b', 'Act.d', ...}
+    """
+    m = _VIOLATED_RULES_RE.search(log_content)
+    if not m:
+        return set()
+
+    raw = m.group(1).strip()
+    try:
+        parsed = ast.literal_eval(raw)
+    except Exception:
+        return set()
+
+    if isinstance(parsed, (set, list, tuple)):
+        return {str(x) for x in parsed}
+    return set()
+
+
+# ==============================
 # Test discovery (libs.ref)
 # ==============================
 
@@ -177,10 +252,14 @@ def discover_libref_tests(libref_root: str) -> pd.DataFrame:
     - SRAM:
         * For each *.gds file, run each topcell inside it.
 
-    Excluded tests are kept in report but not executed.
+    Fully-ignored tests are kept in report but not executed.
+    Waived-violations tests are executed and pass only if violations are limited to allowed rules.
 
     Returns:
-        DataFrame columns: lib, cell_name, layout_path, exclude_reason, run_id
+        DataFrame columns:
+            lib, cell_name, layout_path,
+            ignore_reason, waiver_reason, allowed_rules,
+            run_id
     """
     libref_root = os.path.abspath(libref_root)
     logging.info("Step: Discovering tests from libs.ref ...")
@@ -193,13 +272,18 @@ def discover_libref_tests(libref_root: str) -> pd.DataFrame:
     tests: list[dict] = []
 
     def add_test(lib: str, cell_name: str, layout_path: str) -> None:
-        reason = exclusion_reason(lib, cell_name)
+        ig = ignore_reason(lib, cell_name) or ""
+        w = waived_info(lib, cell_name) or {}
+        waiver_reason = str(w.get("reason", "")) if w else ""
+        allowed = sorted(list(w.get("allowed_rules", set()))) if w else []
         tests.append(
             {
                 "lib": lib,
                 "cell_name": cell_name,
                 "layout_path": layout_path,
-                "exclude_reason": reason if reason else "",
+                "ignore_reason": ig,
+                "waiver_reason": waiver_reason,
+                "allowed_rules": ",".join(allowed),  # CSV-friendly
             }
         )
 
@@ -288,8 +372,10 @@ def discover_libref_tests(libref_root: str) -> pd.DataFrame:
     for l, n in sorted(by_lib.items()):
         logging.info(f"  - {l}: {n} cells")
 
-    excluded_count = (df["exclude_reason"].astype(str).str.len() > 0).sum()
-    logging.info(f"Excluded tests: {excluded_count}")
+    ignored_count = (df["ignore_reason"].astype(str).str.len() > 0).sum()
+    waived_count = (df["allowed_rules"].astype(str).str.len() > 0).sum()
+    logging.info(f"Ignored (not run): {ignored_count}")
+    logging.info(f"Waived-policy cells (run with allowed rules): {waived_count}")
 
     return df
 
@@ -312,7 +398,7 @@ def build_tests_dataframe(libref_root: str, target_cell: str | None, target_lib:
         logging.error("No valid test cases found after filtering.")
         raise RuntimeError("No tests after filtering.")
 
-    logging.info(f"Total cells/tests to run (including excluded): {len(tc_df)}")
+    logging.info(f"Total cells/tests to run (including ignore/waive policies): {len(tc_df)}")
     return tc_df
 
 
@@ -320,8 +406,22 @@ def build_tests_dataframe(libref_root: str, target_cell: str | None, target_lib:
 # DRC execution
 # ==============================
 
-def run_test_case(drc_dir: str, layout_path: str, run_dir: str, lib: str, cell_name: str) -> str:
-    """Run a single DRC test case and return 'Passed' / 'Failed'."""
+def run_test_case(
+    drc_dir: str,
+    layout_path: str,
+    run_dir: str,
+    lib: str,
+    cell_name: str,
+    allowed_rules: set[str] | None = None,
+) -> tuple[str, str]:
+    """
+    Run a single DRC test case and return (status, violated_rules_csv).
+
+    - If DRC passes normally -> ("Passed", "")
+    - If DRC fails:
+        * If allowed_rules is provided and violated_rules ⊆ allowed_rules -> ("Passed (Waived)", "<violations>")
+        * Else -> ("Failed", "<violations>")
+    """
     cell_dir = os.path.join(run_dir, lib, cell_name)
     os.makedirs(cell_dir, exist_ok=True)
 
@@ -333,12 +433,12 @@ def run_test_case(drc_dir: str, layout_path: str, run_dir: str, lib: str, cell_n
         shutil.copyfile(layout_path, layout_path_run)
     except Exception as e:
         logging.error(f"[{lib}/{cell_name}] Failed to copy GDS: {e}")
-        return "Failed"
+        return "Failed", ""
 
     run_drc_py = os.path.join(drc_dir, "run_drc.py")
     if not os.path.isfile(run_drc_py):
         logging.error(f"run_drc.py not found in DRC dir: {run_drc_py}")
-        return "Failed"
+        return "Failed", ""
 
     drc_out_dir = os.path.join(run_dir, f"drc_run_{lib}_{cell_name}")
 
@@ -350,6 +450,7 @@ def run_test_case(drc_dir: str, layout_path: str, run_dir: str, lib: str, cell_n
         "--run_mode=flat",
         f"--run_dir={drc_out_dir}",
         "--no_density",
+        "--disable_extra_rules",
     ]
 
     logger_prefix = f"[{lib}/{cell_name}]"
@@ -360,58 +461,97 @@ def run_test_case(drc_dir: str, layout_path: str, run_dir: str, lib: str, cell_n
             lf.write("Command:\n")
             lf.write(" ".join(cmd) + "\n\n")
             lf.flush()
-
             res = run(cmd, stdout=lf, stderr=lf, text=True)
             rc = res.returncode
     except Exception as e:
         logging.error(f"{logger_prefix} DRC generated an exception: {e}")
         traceback.print_exc()
-        return "Failed"
+        return "Failed", ""
 
-    if os.path.isfile(pattern_log):
-        try:
-            with open(pattern_log, "r", encoding="utf-8", errors="replace") as f:
-                log_content = f.read()
-        except Exception as e:
-            logging.error(f"{logger_prefix} Could not read DRC log: {e}")
-            return "Failed"
+    if not os.path.isfile(pattern_log):
+        logging.error(f"❌ {logger_prefix} No DRC log found: {pattern_log}")
+        return "Failed", ""
 
-        if rc == 0 and "KLayout DRC Check Passed" in log_content:
-            logging.info(f"✅ {logger_prefix} passed DRC.")
-            return "Passed"
+    try:
+        with open(pattern_log, "r", encoding="utf-8", errors="replace") as f:
+            log_content = f.read()
+    except Exception as e:
+        logging.error(f"{logger_prefix} Could not read DRC log: {e}")
+        return "Failed", ""
 
-        logging.error(f"❌ {logger_prefix} failed DRC.")
-        return "Failed"
+    # Normal pass
+    if rc == 0 and "KLayout DRC Check Passed" in log_content:
+        logging.info(f"✅ {logger_prefix} passed DRC.")
+        return "Passed", ""
 
-    logging.error(f"❌ {logger_prefix} No DRC log found: {pattern_log}")
-    return "Failed"
+    # Failed -> parse violated rules (if available)
+    violated = extract_violated_rules(log_content)
+    violated_csv = ",".join(sorted(violated)) if violated else ""
+
+    # Waiver logic
+    if allowed_rules is not None:
+        # If we couldn't parse rules, be conservative and fail
+        if not violated:
+            logging.error(f"❌ {logger_prefix} failed DRC, but violated rules could not be parsed from log.")
+            return "Failed", violated_csv
+
+        if violated.issubset(allowed_rules):
+            logging.info(
+                f"✅ {logger_prefix} passed with WAIVER. Violations limited to allowed rules: "
+                f"{sorted(violated)}"
+            )
+            return "Passed (Waived)", violated_csv
+
+        unexpected = sorted(violated - allowed_rules)
+        logging.error(
+            f"❌ {logger_prefix} failed DRC (WAIVER REJECTED). Unexpected violated rules: {unexpected}"
+        )
+        return "Failed", violated_csv
+
+    # No waiver policy -> fail
+    logging.error(f"❌ {logger_prefix} failed DRC.")
+    return "Failed", violated_csv
 
 
 def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: str, run_dir: str, num_workers: int) -> pd.DataFrame:
     """
     Execute DRC runs for all cells concurrently using a thread pool.
 
-    Excluded tests are marked as "Excluded" and are not executed.
+    - Ignored tests -> status "Excluded" (not executed)
+    - Waived-policy tests -> executed; pass only if violated rules are a subset of allowed rules
     """
     logging.info("Step: Running all test cases ...")
     logging.info(f"Parallel workers: {num_workers}")
 
     tc_df = tc_df.copy()
     tc_df["cell_status"] = "Pending"
+    tc_df["violated_rules"] = ""
 
     excluded_count = 0
     runnable_count = 0
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
         future_to_run_id = {}
+
         for _, row in tc_df.iterrows():
-            reason = str(row.get("exclude_reason", "")).strip()
-            if reason:
-                # Log exclusion ONLY when we "reach" this cell in the run sequence
-                logging.info(f"[{row['lib']}/{row['cell_name']}] EXCLUDED: {reason}")
+            lib = row["lib"]
+            cell = row["cell_name"]
+
+            ig = str(row.get("ignore_reason", "")).strip()
+            if ig:
+                logging.info(f"[{lib}/{cell}] EXCLUDED: {ig}")
                 tc_df.loc[tc_df["run_id"] == row["run_id"], "cell_status"] = "Excluded"
                 excluded_count += 1
                 continue
+
+            allowed_rules_str = str(row.get("allowed_rules", "")).strip()
+            allowed_rules = set(filter(None, [x.strip() for x in allowed_rules_str.split(",")])) if allowed_rules_str else None
+
+            if allowed_rules is not None:
+                waiver_reason = str(row.get("waiver_reason", "")).strip()
+                logging.info(
+                    f"[{lib}/{cell}] WAIVER ENABLED: allowed_rules={sorted(allowed_rules)} | reason={waiver_reason}"
+                )
 
             runnable_count += 1
             fut = executor.submit(
@@ -419,8 +559,9 @@ def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: str, run_dir: str, num_work
                 drc_dir,
                 row["layout_path"],
                 run_dir,
-                row["lib"],
-                row["cell_name"],
+                lib,
+                cell,
+                allowed_rules,
             )
             future_to_run_id[fut] = row["run_id"]
 
@@ -429,8 +570,9 @@ def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: str, run_dir: str, num_work
         for future in concurrent.futures.as_completed(future_to_run_id):
             run_id = future_to_run_id[future]
             try:
-                status = future.result()
+                status, violated_csv = future.result()
                 tc_df.loc[tc_df["run_id"] == run_id, "cell_status"] = status
+                tc_df.loc[tc_df["run_id"] == run_id, "violated_rules"] = violated_csv
             except Exception as exc:
                 logging.error(f"Run {run_id} raised an exception: {exc}")
                 tc_df.loc[tc_df["run_id"] == run_id, "cell_status"] = "exception"
@@ -450,8 +592,7 @@ def run_regression(
     Full DRC regression flow.
 
     Final report includes all discovered cells with status:
-        - Passed / Failed / Excluded / exception
-    and includes exclude_reason column.
+        - Passed / Passed (Waived) / Failed / Excluded / exception
     """
     logging.info("Step: Building test list ...")
     tc_df = build_tests_dataframe(libref_root, target_cell, target_lib)
@@ -461,7 +602,18 @@ def run_regression(
     results_df.drop_duplicates(inplace=True)
     results_df.drop("run_id", inplace=True, axis=1)
 
-    results_df = results_df[["lib", "cell_name", "layout_path", "cell_status", "exclude_reason"]]
+    results_df = results_df[
+        [
+            "lib",
+            "cell_name",
+            "layout_path",
+            "cell_status",
+            "violated_rules",
+            "ignore_reason",
+            "waiver_reason",
+            "allowed_rules",
+        ]
+    ]
     results_df = results_df.sort_values(["lib", "cell_name"]).reset_index(drop=True)
 
     results_path = os.path.join(output_path, "all_test_cases_results.csv")
@@ -470,13 +622,13 @@ def run_regression(
 
     failing = results_df[results_df["cell_status"].isin(["Failed", "exception"])]
     if len(failing) > 0:
-        logging.error("Some test cases failed DRC (excluded tests are not counted as failures).")
+        logging.error("Some test cases failed DRC (Excluded are not counted as failures).")
         failing_list = failing["cell_name"].tolist()
         logging.error(f"Failing cells count: {len(failing_list)}")
         logging.error(f"Failing cells (first 50): {failing_list[:50]}")
         return False
 
-    logging.info("🎉 All runnable DRC testcases passed successfully (some may be excluded).")
+    logging.info("🎉 All runnable DRC testcases passed successfully (some may be excluded or waived).")
     return True
 
 
@@ -507,7 +659,7 @@ def main(drc_dir: str, libref_root: str, output_path: str, target_cell: str | No
 # ==============================
 
 if __name__ == "__main__":
-    args = docopt(__doc__, version="DRC Regression: 0.3")
+    args = docopt(__doc__, version="DRC Regression: 0.4")
 
     run_name = datetime.now(timezone.utc).strftime("drc_cells_%Y_%m_%d_%H_%M_%S")
     run_dir = args["--run_dir"]
