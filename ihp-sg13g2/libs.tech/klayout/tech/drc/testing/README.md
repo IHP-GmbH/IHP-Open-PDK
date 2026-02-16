@@ -19,6 +19,10 @@ Explains how to test SG13G2 DRC rule decks.
       - [📋 Sample Regression Output](#-sample-regression-output)
       - [📊 Explanation of Result Columns](#-explanation-of-result-columns)
       - [✅ Summary Insights](#-summary-insights)
+  - [Cells Regression Testing](#cells-regression-testing)
+    - [DRC Cells Regression Outputs](#drc-cells-regression-outputs)
+      - [📁 Folder Structure of regression run results](#-folder-structure-of-regression-run-results-1)
+      - [🧾 Output Cells Regression Log](#-output-cells-regression-log)
 
 ## Folder Structure
 
@@ -190,3 +194,61 @@ The regression also validates:
 
 - **Test coverage**: Ensures each rule exists in the unit tests (`in_tests = 1`).
 - **Rule deck integrity**: Confirms the rule is present in the rule deck (`in_rule_deck = 1`).
+
+---
+
+## Cells Regression Testing
+
+Use the regression script to validate the SG13G2 cells (pr, io, std, sram)
+
+```bash
+Usage:
+    run_regression_cells.py (--help | -h)
+    run_regression_cells.py [--cell=<cell>] [--run_dir=<run_dir_path>] [--mp=<num>]
+
+Options:
+    --help -h                 Show this help message.
+    --cell=<cell>             Run regression for a specific cell only.
+    --run_dir=<run_dir_path>  Output directory to store results [default: pwd].
+    --mp=<num>                Number of threads for parallel DRC runs.
+```
+
+**Example:**
+
+To run all cells:
+
+```bash
+python3 run_regression_cells.py --run_dir=regression_cells_results
+```
+
+### DRC Cells Regression Outputs
+
+You could find the regression run results at your run directory if you previously specified it through `--run_name=<run_name>`. Default path of run directory is `drc_cells_<date>_<time>` in current directory.
+
+#### 📁 Folder Structure of regression run results
+
+```text
+📁 drc_cells_<date>_<time>
+ ┣ 📜 drc_cells_<date>_<time>.log
+ ┗ 📁 <cell_name>
+    ┣ 📜 <cell_name>.gds
+    ┣ 📜 <cell_name>_drc.log
+ ┗ 📁 drc_run<cell_name>
+    ┣ 📜 <cell_name>_*.lyrdb
+    ┣ 📜 <cell_name>_*.log  
+    ┣ ..
+ ```
+
+The result is a database file (`<cell_name>_*.lyrdb`) contains all violations. 
+You could view it on your file as explained above.
+
+#### 🧾 Output Cells Regression Log
+
+After completing a DRC cells regression run, a summary log is generated that provides detailed insights into the DRC results from the tested rule deck.
+
+```bash
+14-Oct-2025 17:53:40 | INFO    | 📄 Saved results to: /home/farag/Team_mabrains/ihp/IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/drc/testing/regression_cells_results/drc_cells_2025_10_14_14_10_18/all_test_cases_results.csv
+14-Oct-2025 17:53:40 | ERROR   | Some test cases failed DRC.
+14-Oct-2025 17:53:40 | ERROR   | Failing cells: ['RM_IHPSG13_2P_256x16_c2_bm_bist', 'RM_IHPSG13_1P_512x8_c3_bm_bist']
+14-Oct-2025 17:53:40 | INFO    | Total execution time: 2602.91s
+```
