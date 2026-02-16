@@ -282,7 +282,7 @@ if TABLES.any?{|x| pact_pact_tables.include?(x)}
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode contbar via1]
 if TABLES.any?{|x| ptap_tables.include?(x)}
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
@@ -354,6 +354,19 @@ if TABLES.any?{|x| svaricap_tables.include?(x)}
   svaricap_text = text_drw.texts(svaricap_patt)
   svaricap_recog = activ_drw.not_outside(svaricap_gate).interacting(svaricap_text)
   svaricap = nwell_drw.not_outside(svaricap_recog)
+end
+
+# HBT derivations
+npn_tables = %w[main npnsubstratetie contbar via1]
+if TABLES.any?{|x| npn_tables.include?(x)}
+  logger.info('Starting HBT general derivations')
+  sg13g2_patt  = glob_to_case_insensitive_glob("npn13G2")
+  sg13g2l_patt = glob_to_case_insensitive_glob("npn13G2L")
+  sg13g2v_patt = glob_to_case_insensitive_glob("npn13G2V")
+  npn_mk = trans_drw.and(ptap.holes)
+  npn13g2 = npn_mk.interacting(text_drw.texts(sg13g2_patt)).covering(emwind_drw.and(activ_mask).and(nsd_block))
+  npn13g2l = npn_mk.interacting(text_drw.texts(sg13g2l_patt)).covering(emwind_drw.and(activ_drw))
+  npn13g2v = npn_mk.interacting(text_drw.texts(sg13g2v_patt)).covering(emwihv_drw.and(activ_drw))
 end
 
 # DRC tolerance value
