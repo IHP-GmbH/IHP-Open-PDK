@@ -80,18 +80,18 @@ IGNORE_TESTS = {
 # 2) Waived-violations cells (executed) -> pass only if violated rules ⊆ allowed set
 #    If the cell violates anything outside the allowed list -> Failed.
 WAIVED_TESTS = {
-    # IO: allow only metal1_pin_offgrid
+    # IO: allow only metal1_pin_Offgrid
     "sg13g2_io/sg13g2_IOPadInOut30mA": {
         "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-        "allowed_rules": {"metal1_pin_offgrid"},
+        "allowed_rules": {"metal1_pin_Offgrid"},
     },
     "sg13g2_io/sg13g2_IOPadOut30mA": {
         "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-        "allowed_rules": {"metal1_pin_offgrid"},
+        "allowed_rules": {"metal1_pin_Offgrid"},
     },
     "sg13g2_io/sg13g2_IOPadTriOut30mA": {
         "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-        "allowed_rules": {"metal1_pin_offgrid"},
+        "allowed_rules": {"metal1_pin_Offgrid"},
     },
 
     # PR: allow only specific known rules for PCell templates
