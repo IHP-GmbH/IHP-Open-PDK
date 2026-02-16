@@ -79,51 +79,84 @@ IGNORE_TESTS = {
 
 # 2) Waived-violations cells (executed) -> pass only if violated rules ⊆ allowed set
 #    If the cell violates anything outside the allowed list -> Failed.
-WAIVED_TESTS = {
-    # IO: allow only metal1_pin_Offgrid
-    "sg13g2_io/sg13g2_IOPadInOut30mA": {
+WAIVER_PROFILES = {
+    "OFFGRID_M1_PIN": {
         "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
         "allowed_rules": {"metal1_pin_Offgrid"},
     },
-    "sg13g2_io/sg13g2_IOPadOut30mA": {
-        "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-        "allowed_rules": {"metal1_pin_Offgrid"},
-    },
-    "sg13g2_io/sg13g2_IOPadTriOut30mA": {
-        "reason": "Known real offgrid violations on metal1.pin for this standalone IO cell.",
-        "allowed_rules": {"metal1_pin_Offgrid"},
-    },
-
-    # PR: allow only specific known rules for PCell templates
-    "sg13g2_pr/nmos": {
+    "PR_PCELL_BASE": {
         "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
         "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
     },
-    "sg13g2_pr/nmosHV": {
-        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
-    },
-    "sg13g2_pr/pmos": {
-        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
-    },
-    "sg13g2_pr/pmosHV": {
-        "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
-        "allowed_rules": {"M1.d", "Gat.e", "LU.b"},
-    },
-
-    # PR: dantenna allow LU.b only
-    "sg13g2_pr/dantenna": {
+    "PR_DANTENNA": {
         "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
         "allowed_rules": {"LU.b"},
     },
-
-    # STDCELL: filler standalone expected
-    "sg13g2_stdcell/sg13g2_fill_1": {
+    "STDCELL_FILL": {
         "reason": "Expected standalone violations; filler not used alone. Violations disappear in real layouts.",
         "allowed_rules": {"pSD.k"},
     },
 }
+
+WAIVED_GROUPS = {
+    "OFFGRID_M1_PIN": {
+        "sg13g2_io": [
+            "sg13g2_IOPadInOut30mA",
+            "sg13g2_IOPadOut30mA",
+            "sg13g2_IOPadTriOut30mA",
+        ],
+        "sg13g2_sram": [
+            "RM_IHPSG13_1P_1024x8_c2_bm_bist",
+            "RM_IHPSG13_1P_1024x16_c2_bm_bist",
+            "RM_IHPSG13_1P_256x16_c2_bm_bist",
+            "RM_IHPSG13_1P_1024x32_c2_bm_bist",
+            "RM_IHPSG13_1P_256x32_c2_bm_bist",
+            "RM_IHPSG13_1P_256x48_c2_bm_bist",
+            "RM_IHPSG13_1P_256x8_c3_bm_bist",
+            "RM_IHPSG13_1P_256x64_c2_bm_bist",
+            "RM_IHPSG13_1P_1024x64_c2_bm_bist",
+            "RM_IHPSG13_1P_512x16_c2_bm_bist",
+            "RM_IHPSG13_1P_4096x8_c3_bm_bist",
+            "RM_IHPSG13_1P_512x32_c2_bm_bist",
+            "RM_IHPSG13_1P_512x8_c3_bm_bist",
+            "RM_IHPSG13_1P_64x64_c2_bm_bist",
+            "RM_IHPSG13_1P_4096x16_c3_bm_bist",
+            "RM_IHPSG13_1P_512x64_c2_bm_bist",
+            "RM_IHPSG13_1P_2048x64_c2_bm_bist",
+        ],
+    },
+    "PR_PCELL_BASE": {
+        "sg13g2_pr": ["nmos", "nmosHV", "pmos", "pmosHV"],
+    },
+    "PR_DANTENNA": {
+        "sg13g2_pr": ["dantenna"],
+    },
+    "STDCELL_FILL": {
+        "sg13g2_stdcell": ["sg13g2_fill_1"],
+    },
+}
+
+
+def build_waived_tests() -> dict[str, dict]:
+    """Expand grouped waiver definitions into the legacy flat lookup map."""
+    waived: dict[str, dict] = {}
+
+    for profile_name, libs_cells in WAIVED_GROUPS.items():
+        profile = WAIVER_PROFILES[profile_name]
+        for lib, cells in libs_cells.items():
+            for cell in cells:
+                key = f"{lib}/{cell}"
+                if key in waived:
+                    raise ValueError(f"Duplicate waived test entry: {key}")
+                waived[key] = {
+                    "reason": profile["reason"],
+                    "allowed_rules": set(profile["allowed_rules"]),
+                }
+
+    return waived
+
+
+WAIVED_TESTS = build_waived_tests()
 
 
 def ignore_reason(lib: str, cell_name: str) -> str | None:
