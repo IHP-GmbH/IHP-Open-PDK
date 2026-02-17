@@ -92,6 +92,10 @@ WAIVER_PROFILES = {
         "reason": "Parametric (PCell) template; not used as-is. Violations disappear in real layouts.",
         "allowed_rules": {"LU.b"},
     },
+    "PR_INDUCTOR": {
+        "reason": "Known real anlges violations on metal1.pin for this standalone IO cell.",
+        "allowed_rules": {"topmetal2_drw_Angle45"},
+    },
     "STDCELL_FILL": {
         "reason": "Expected standalone violations; filler not used alone. Violations disappear in real layouts.",
         "allowed_rules": {"pSD.k"},
@@ -131,6 +135,9 @@ WAIVED_GROUPS = {
     },
     "PR_DANTENNA": {
         "sg13g2_pr": ["dantenna"],
+    },
+    "PR_INDUCTOR": {
+        "sg13g2_pr": ["inductor3"],
     },
     "STDCELL_FILL": {
         "sg13g2_stdcell": ["sg13g2_fill_1"],

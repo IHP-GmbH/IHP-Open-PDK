@@ -16,7 +16,10 @@
 # limitations under the License.
 #=========================================================================================
 
-if TABLES.include?('offgrid') || OFFGRID
+# Run offgrid checks only when:
+# - explicitly requested via table "offgrid", or
+# - running the aggregate "main" flow with OFFGRID enabled.
+if TABLES.include?('offgrid') || (TABLES.include?('main') && OFFGRID)
     #================================================
     #-------------- OFFGRID CHECKS ------------------
     #================================================
