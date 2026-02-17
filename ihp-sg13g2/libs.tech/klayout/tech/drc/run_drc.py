@@ -403,6 +403,7 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
     switches["no_offgrid"] = "true" if arguments.no_offgrid else "false"
+    switches["density_sanity"] = "true" if arguments.density_sanity else "false"
     switches["density"] = "false" if arguments.no_density else "true"
     switches["no_forbidden"] = "false"
     switches["no_pin"] = "false"
@@ -742,7 +743,7 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--no_density]
+            [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--no_recommended]
     """
@@ -824,6 +825,11 @@ def parse_args():
     )
     parser.add_argument(
         "--no_density", action="store_true", help="Disable density rule checks."
+    )
+    parser.add_argument(
+        "--density_sanity",
+        action="store_true",
+        help="Enable optional density boundary sanity markers (default: disabled).",
     )
     parser.add_argument(
         "--density_only", action="store_true", help="Run only density rules."

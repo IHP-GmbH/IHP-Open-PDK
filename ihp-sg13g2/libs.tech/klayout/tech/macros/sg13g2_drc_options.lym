@@ -123,10 +123,11 @@
       'disable_extra_rules' => false,
       'no_density' => true,
       'density_only' => false,
+      'density_sanity' => false,
       'antenna' => false,
       'antenna_only' => false,
       'no_offgrid' => false,
-      'no_recommnded' => false,
+      'no_recommended' => false,
     }
     save_options(yaml_file_path, defaults) rescue nil
     defaults
@@ -209,12 +210,14 @@
     # Advanced options - checkboxes with tooltips and styling
     chk_density = create_check_box("Disable Density Checks", options['no_density'], "Disables density rule checks.")
     chk_density_only = create_check_box("Run Only Density Checks", options['density_only'], "Runs *only* density checks and skips others.")
+    chk_density_sanity = create_check_box("Enable Density Sanity Markers", options['density_sanity'], "Emits optional boundary sanity markers (DEN.BND.*) in density runs.")
     chk_antenna = create_check_box("Enable Antenna Checks", options['antenna'], "Enables antenna rule checks.")
     chk_antenna_only = create_check_box("Run Only Antenna Checks", options['antenna_only'], "Runs *only* antenna checks and skips others.")
     chk_offgrid = create_check_box("Disable Offgrid Checks", options['no_offgrid'], "Skips offgrid and angles checks.")
     chk_recommended = create_check_box("Disable Recommended Checks", options['no_recommended'], "Skips recommended checks.")
     @advanced_layout_setup.addRow("", chk_density)
     @advanced_layout_setup.addRow("", chk_density_only)
+    @advanced_layout_setup.addRow("", chk_density_sanity)
     @advanced_layout_setup.addRow("", chk_antenna)
     @advanced_layout_setup.addRow("", chk_antenna_only)
     @advanced_layout_setup.addRow("", chk_offgrid)
@@ -452,10 +455,11 @@
     options['density_thr'] = @advanced_layout_update.itemAt(3).widget.value if @advanced_layout_update.itemAt(3).widget
     options['no_density'] = @advanced_layout_update.itemAt(4).widget.checked if @advanced_layout_update.itemAt(4).widget
     options['density_only'] = @advanced_layout_update.itemAt(5).widget.checked if @advanced_layout_update.itemAt(5).widget
-    options['antenna'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
-    options['antenna_only'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
-    options['no_offgrid'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
-    options['no_recommended'] = @advanced_layout_update.itemAt(9).widget.checked if @advanced_layout_update.itemAt(9).widget
+    options['density_sanity'] = @advanced_layout_update.itemAt(6).widget.checked if @advanced_layout_update.itemAt(6).widget
+    options['antenna'] = @advanced_layout_update.itemAt(7).widget.checked if @advanced_layout_update.itemAt(7).widget
+    options['antenna_only'] = @advanced_layout_update.itemAt(8).widget.checked if @advanced_layout_update.itemAt(8).widget
+    options['no_offgrid'] = @advanced_layout_update.itemAt(9).widget.checked if @advanced_layout_update.itemAt(9).widget
+    options['no_recommended'] = @advanced_layout_update.itemAt(10).widget.checked if @advanced_layout_update.itemAt(10).widget
   end
 
  end

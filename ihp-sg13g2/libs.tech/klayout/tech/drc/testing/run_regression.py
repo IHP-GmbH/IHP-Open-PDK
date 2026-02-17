@@ -367,7 +367,9 @@ def run_test_case(
     if "antenna" in str(layout_path):
         switches += " --antenna_only"
     elif "density" in str(layout_path):
-        switches += " --density_only"
+        # Density regression must explicitly enable sanity markers so DEN.BND.*
+        # rules are exercised and validated by regression.
+        switches += " --density_only --density_sanity"
 
     # Creating run folder structure
     pattern_name = f"{testcase_basename}_{cell_name}"
@@ -645,24 +647,33 @@ def parse_existing_rules(
         drc_files = [table_rule_file]
 
     rules_data = list()
-    output_pattern = re.compile(r"""\.output\(\s*(['"])(.*?)\1""")
+    output_pattern = re.compile(r"""\.output\(\s*(['"])(.*?)\1""", re.DOTALL)
+    density_helper_pattern = re.compile(
+        r"""output_(?:local_density_violations|global_density_violation)\(\s*[^,]+,\s*[^,]+,\s*(['"])(.*?)\1""",
+        re.DOTALL,
+    )
 
     for runset in drc_files:
         with open(runset, "r") as f:
-            for line in f:
-                match = output_pattern.search(line)
-                if match:
-                    rule_str = match.group(2)
-                    expanded_rules = expand_interpolations(rule_str, rules_vars)
-                    for rule_name in expanded_rules:
-                        rule_info = {
-                            "table_name": os.path.basename(runset)
-                            .replace(".drc", "")
-                            .split("_")[-1],
-                            "rule_name": rule_name,
-                            "in_rule_deck": 1,
-                        }
-                        rules_data.append(rule_info)
+            runset_text = f.read()
+
+        rule_strings = [m.group(2) for m in output_pattern.finditer(runset_text)]
+        rule_strings += [m.group(2) for m in density_helper_pattern.finditer(runset_text)]
+
+        for rule_str in rule_strings:
+            expanded_rules = expand_interpolations(rule_str, rules_vars)
+            for rule_name in expanded_rules:
+                # Skip unresolved Ruby interpolation placeholders
+                if "#{" in rule_name:
+                    continue
+                rule_info = {
+                    "table_name": os.path.basename(runset)
+                    .replace(".drc", "")
+                    .split("_")[-1],
+                    "rule_name": rule_name,
+                    "in_rule_deck": 1,
+                }
+                rules_data.append(rule_info)
 
     df = pd.DataFrame(rules_data)
     df.drop_duplicates(inplace=True)

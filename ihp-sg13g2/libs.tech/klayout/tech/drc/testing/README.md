@@ -247,8 +247,7 @@ You could view it on your file as explained above.
 After completing a DRC cells regression run, a summary log is generated that provides detailed insights into the DRC results from the tested rule deck.
 
 ```bash
-14-Oct-2025 17:53:40 | INFO    | 📄 Saved results to: /home/farag/Team_mabrains/ihp/IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/drc/testing/regression_cells_results/drc_cells_2025_10_14_14_10_18/all_test_cases_results.csv
-14-Oct-2025 17:53:40 | ERROR   | Some test cases failed DRC.
-14-Oct-2025 17:53:40 | ERROR   | Failing cells: ['RM_IHPSG13_2P_256x16_c2_bm_bist', 'RM_IHPSG13_1P_512x8_c3_bm_bist']
-14-Oct-2025 17:53:40 | INFO    | Total execution time: 2602.91s
+16-Feb-2026 21:08:19 | INFO    | 📄 Saved results to: /home/runner/work/IHP-Open-PDK/IHP-Open-PDK/drc_cells_2026_02_16_21_00_15/all_test_cases_results.csv
+16-Feb-2026 21:08:19 | INFO    | 🎉 All runnable DRC testcases passed successfully (some may be excluded or waived).
+16-Feb-2026 21:08:19 | INFO    | Total execution time: 482.96s
 ```
