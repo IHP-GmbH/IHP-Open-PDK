@@ -145,6 +145,8 @@
 |npn13G2.bR       |6.1.3.  npn13G2.bR Max. recommended total number of npn13G2 emitters per chip                                               |4000      
 |npn13G2L.cR      |6.1.3.  npn13G2L.cR Max. recommended total number of npn13G2L emitters per chip                                             |800       
 |npn13G2V.cR      |6.1.3.  npn13G2V.cR Max. recommended total number of npn13G2V emitters per chip                                             |800       
+|Sdiod.b          |6.7.  Sdiod.b Min. and max. nSD:block enclosure of ContBar                                                                  |0.4       
+|Sdiod.c          |6.7.  Sdiod.c Min. and max. SalBlock enclosure of ContBar                                                                   |0.45      
 |Sdiod.d          |6.7.  Sdiod.d Min. and max. ContBar width inside nBuLay                                                                     |0.3       
 |Sdiod.e          |6.7.  Sdiod.e Min. and max. ContBar length inside nBuLay                                                                    |1         
 |Pad.fR_M1        |6.9.  Pad.fR_M1 Min. recommended Metal1 exit length                                                                         |7         

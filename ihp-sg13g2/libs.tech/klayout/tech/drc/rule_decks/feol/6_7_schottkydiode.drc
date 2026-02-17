@@ -26,6 +26,38 @@ if TABLES.include?('schottkydiode') || FEOL
   unless PRECHECK_DRC
     # Schottky diode derivations
     schottky_contbar = contbar.and(schottky_nbl1)
+    schottky_nsd_block = nsd_block.and(schottky_nbl1)
+    schottky_salblock = salblock_drw.and(schottky_nbl1)
+
+    # Rule Sdiod.b: Min. and max. nSD:block enclosure of ContBar is 0.40 um
+    logger.info('Executing rule Sdiod.b')
+    sdiod_b_value = drc_rules['Sdiod_b'].to_f
+    sdiod_b_contbar_sized = schottky_contbar.sized(sdiod_b_value.um)
+    # Min enclosure side: catch ContBar not enclosed by at least the target value.
+    sdiod_b_l1 = schottky_contbar.enclosed(schottky_nsd_block, sdiod_b_value.um, euclidian).polygons
+    # Max enclosure side: catch nSD:block extensions beyond the expected ContBar + enclosure.
+    sdiod_b_l2 = schottky_nsd_block.interacting(schottky_contbar).not(sdiod_b_contbar_sized)
+    sdiod_b_l = sdiod_b_l1.join(sdiod_b_l2)
+    sdiod_b_l.output('Sdiod.b', "6.7. Sdiod.b : Min. and max. nSD:block enclosure of ContBar = #{sdiod_b_value} um")
+    sdiod_b_contbar_sized.forget
+    sdiod_b_l1.forget
+    sdiod_b_l2.forget
+    sdiod_b_l.forget
+
+    # Rule Sdiod.c: Min. and max. SalBlock enclosure of ContBar is 0.45 um
+    logger.info('Executing rule Sdiod.c')
+    sdiod_c_value = drc_rules['Sdiod_c'].to_f
+    sdiod_c_contbar_sized = schottky_contbar.sized(sdiod_c_value.um)
+    # Min enclosure side: catch ContBar not enclosed by at least the target value.
+    sdiod_c_l1 = schottky_contbar.enclosed(schottky_salblock, sdiod_c_value.um, euclidian).polygons
+    # Max enclosure side: catch SalBlock extensions beyond the expected ContBar + enclosure.
+    sdiod_c_l2 = schottky_salblock.interacting(schottky_contbar).not(sdiod_c_contbar_sized)
+    sdiod_c_l = sdiod_c_l1.join(sdiod_c_l2)
+    sdiod_c_l.output('Sdiod.c', "6.7. Sdiod.c : Min. and max. SalBlock enclosure of ContBar = #{sdiod_c_value} um")
+    sdiod_c_contbar_sized.forget
+    sdiod_c_l1.forget
+    sdiod_c_l2.forget
+    sdiod_c_l.forget
 
     # Rule Sdiod.d: Min. and max. ContBar width inside nBuLay is 0.30 um
     logger.info('Executing rule Sdiod.d')
@@ -40,5 +72,9 @@ if TABLES.include?('schottkydiode') || FEOL
     sdiod_e_l = schottky_contbar.without_bbox_max(sdiod_e_value.um)
     sdiod_e_l.output('Sdiod.e', "6.7. Sdiod.e : Min. and max. ContBar length inside nBuLay is #{sdiod_e_value} um")
     sdiod_e_l.forget
+
+    schottky_nsd_block.forget
+    schottky_salblock.forget
+    schottky_contbar.forget
   end
 end

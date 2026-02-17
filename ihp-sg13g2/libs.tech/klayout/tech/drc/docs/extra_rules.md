@@ -146,8 +146,6 @@
 | nmosi.f                  | Min. nSD:block width to separate ptap in nmosi                                          | 0.62         |
 | nmosi.g                  | Min. SalBlock overlap of nSD:block over Activ                                           | 0.15         |
 | Sdiod.a                  | Min. and max. PWell:block enclosure of ContBar                                          | 0.25         |
-| Sdiod.b                  | Min. and max. nSD:block enclosure of ContBar                                            | 0.4          |
-| Sdiod.c                  | Min. and max. SalBlock enclosure of ContBar                                             | 0.45         |
 | Pad.aR                   | Min. recommended Pad width                                                              | 30           |
 | Pad.a1                   | Max. Pad width                                                                          | 150          |
 | Pad.bR                   | Min. recommended Pad space                                                              | 8.4          |
