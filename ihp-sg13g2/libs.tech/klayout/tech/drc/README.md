@@ -61,7 +61,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
             [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid]
+            [--antenna_only] [--no_offgrid] [--no_angle]
 ```
 
 **Example:**
@@ -93,6 +93,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --antenna             Enable antenna rule checks.
   --antenna_only        Run only antenna rules.
   --no_offgrid          Disable offgrid rule checks.
+  --no_angle            Disable angle rule checks.
 ```
 
 > **ℹ️ Note**  

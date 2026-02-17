@@ -385,9 +385,6 @@ def run_test_case(
         f"--topcell={cell_name} "
         f"--run_dir={output_loc} "
         "--run_mode=deep "
-        "--no_offgrid "
-        "--no_density "
-        "--disable_extra_rules "
         f"> {pattern_log} 2>&1"
     )
 

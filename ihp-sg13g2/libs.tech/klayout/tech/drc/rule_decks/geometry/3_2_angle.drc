@@ -16,43 +16,54 @@
 # limitations under the License.
 #=========================================================================================
 
-if TABLES.include?('offgrid') || OFFGRID
+if TABLES.include?('angle') || ANGLE
     #================================================
-    #-------------- OFFGRID CHECKS ------------------
+    #--------------- ANGLE CHECKS -------------------
     #================================================
     #
-    logger.info('Starting 3.1. offgrid table')
+    logger.info('Starting 3.2. angle table')
 
-    # Grid: 5 nm => 0.005 um
-    #
+    # Rule intent:
+    # 1) Acute corners < 87 degree are not allowed.
+    # 2) Specific layers allow only orthogonal edge angles (0/90).
+    # 3) Specific layers allow only 0/45/90 edge angles.
     # NOTE (per PDK note):
-    # Offgrid (and angle) checks are NOT applied on the following layers:
-    # DigiBnd, DigiSub, dfpad, EdgeSeal, HeatRes, HeatTrans, IND, NoDRC, NoMetFiller,
-    # NoRCX, RadHard, Recog, RES, Scribe, SRAM, TEXT
+    # Offgrid and angle checks are NOT applied on:
+    # DigiBnd, DigiSub, dfpad, EdgeSeal, HeatRes, HeatTrans, IND, NoDRC,
+    # NoMetFiller, NoRCX, RadHard, Recog, RES, Scribe, SRAM, TEXT.
+    #
+    # Circular polygons are excluded from geometry checks by design.
 
-    GRID = 5.nm
+    ACUTE_LIMIT_DEG = 87.0
 
-    def offgrid_check(layer_polys, base_name, grid = GRID)
-        return if layer_polys.nil?
+    # Layers explicitly constrained to orthogonal edges only.
+    ORTHO_ONLY_LAYERS = {
+        "cont_drw"    => cont_drw,
+        "via1_drw"    => via1_drw,
+        "via2_drw"    => via2_drw,
+        "via3_drw"    => via3_drw,
+        "via4_drw"    => via4_drw,
+        "vmim_drw"    => vmim_drw,
+        "topvia1_drw" => topvia1_drw,
+        "topvia2_drw" => topvia2_drw
+    }.freeze
 
-        # Circular polygons are intentionally excluded from offgrid checks.
-        # These shapes are approximated by many short segments and would
-        # otherwise generate noisy offgrid markers.
-        layer_polys_wo_circles = layer_polys.not(get_circle(layer_polys))
+    # Layers explicitly constrained to orthogonal + 45-degree edges.
+    ORTHO_45_LAYERS = {
+        "gatpoly_drw"   => gatpoly_drw,
+        "activ_drw"     => activ_drw,
+        "metal1_drw"    => metal1_drw,
+        "metal2_drw"    => metal2_drw,
+        "metal3_drw"    => metal3_drw,
+        "metal4_drw"    => metal4_drw,
+        "metal5_drw"    => metal5_drw,
+        "topmetal1_drw" => topmetal1_drw,
+        "topmetal2_drw" => topmetal2_drw
+    }.freeze
 
-        layer_polys_wo_circles.ongrid(grid).output(
-        "#{base_name}_Offgrid",
-        "3.1 #{base_name}_Offgrid: #{base_name} layer is Offgrid (All features are on a drawing grid of 5 nm)"
-        )
-    end
-
-    # -----------------------------------------------------------------------------
-    # Layers to check:
-    # - Only include polygon layers (ones with get_polygons in layers_def.drc).
-    # - Do not include label layer like *_text.
-    # - Do not include excluded layers listed above.
-    # -----------------------------------------------------------------------------
-    OFFGRID_LAYERS = {
+    # Acute-angle checks apply on the same geometry scope as offgrid
+    # (all non-excluded polygon layers used for mask generation).
+    ACUTE_SCOPE_LAYERS = {
         # ACTIV
         "activ_drw"    => activ_drw,
         "activ_pin"    => activ_pin,
@@ -221,7 +232,7 @@ if TABLES.include?('offgrid') || OFFGRID
 
         "isonwell_drw" => isonwell_drw,
 
-        # A few additional non-excluded layers from your list
+        # Additional non-excluded layers.
         "thickgateox_drw" => thickgateox_drw,
         "pempoly_drw"     => pempoly_drw,
         "fbe_drw"         => fbe_drw,
@@ -287,10 +298,73 @@ if TABLES.include?('offgrid') || OFFGRID
         "alcustop_drw"    => alcustop_drw
     }.freeze
 
-    # Executing Offgrid rules
-    OFFGRID_LAYERS.each do |name, layer_polys|
-        logger.info("Executing rule #{name}_Offgrid")
-        offgrid_check(layer_polys, name, GRID)
+    def non_circular_polys(layer_polys, circle_cache)
+        return nil if layer_polys.nil?
+
+        circles = circle_cache[layer_polys.object_id]
+        unless circles
+            circles = get_circle(layer_polys)
+            circle_cache[layer_polys.object_id] = circles
+        end
+
+        layer_polys.not(circles)
+    end
+
+    def acute_angle_check(layer_polys, base_name, acute_limit_deg, circle_cache)
+        return if layer_polys.nil?
+
+        # Polygon `with_angle` returns corners in the specified angle interval.
+        # Here we flag corners with angle < 87 degree.
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        acute_corners = non_circular.with_angle(0.0, acute_limit_deg)
+        acute_corners.output(
+            "#{base_name}_Acute",
+            "3.2 #{base_name}_Acute: acute corner angle below #{acute_limit_deg} degree is not allowed."
+        )
+    end
+
+    def orthogonal_edge_angle_check(layer_polys, base_name, circle_cache)
+        return if layer_polys.nil?
+
+        # Allowed edge angles: 0 and 90 degree (absolute mode).
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        invalid_edges = non_circular.edges.without_angle(0, absolute).without_angle(90, absolute)
+        invalid_edges.output(
+            "#{base_name}_Angle90",
+            "3.2 #{base_name}_Angle90: only orthogonal edges (0/90 degree) are allowed."
+        )
+    end
+
+    def orthogonal_45_edge_angle_check(layer_polys, base_name, circle_cache)
+        return if layer_polys.nil?
+
+        # Allowed edge angles: 0, 45 and 90 degree (absolute mode).
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        invalid_edges = non_circular.edges.without_angle(0, absolute).without_angle(45, absolute).without_angle(90, absolute)
+        invalid_edges.output(
+            "#{base_name}_Angle45",
+            "3.2 #{base_name}_Angle45: only 0/45/90 degree edges are allowed."
+        )
+    end
+
+    circle_cache = {}
+
+    # 1) Global acute-angle checks.
+    ACUTE_SCOPE_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Acute")
+        acute_angle_check(layer_polys, name, ACUTE_LIMIT_DEG, circle_cache)
+    end
+
+    # 2) Edge-angle restrictions for orthogonal-only layers.
+    ORTHO_ONLY_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Angle90")
+        orthogonal_edge_angle_check(layer_polys, name, circle_cache)
+    end
+
+    # 3) Edge-angle restrictions for 0/45/90 layers.
+    ORTHO_45_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Angle45")
+        orthogonal_45_edge_angle_check(layer_polys, name, circle_cache)
     end
 end
 
