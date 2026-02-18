@@ -221,7 +221,7 @@ def emit_important_summary(run_dir, run_meta, collector, total_time):
         ("Results Dir", run_dir),
         ("Warnings", str(len(all_warns))),
         ("Errors", str(len(all_errs))),
-        ("Duration (s)", str(total_time)),
+        ("Run Time (s)", str(total_time)),
     ]
     _emit_summary_table(rows)
 
@@ -768,7 +768,7 @@ if __name__ == "__main__":
             lvs_run_dir,
             run_meta,
             collector,
-            round(time.time() - t0, 6),
+            round(time.time() - t0, 3),
         )
 
     if exit_code != 0:

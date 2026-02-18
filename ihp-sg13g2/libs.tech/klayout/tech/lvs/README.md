@@ -31,11 +31,11 @@ Explains how to use the SG13G2 LVS rule decks.
 You need the following set of tools installed to be able to run SG13G2 LVS:
 
 - Python 3.9+
-- KLayout 0.29.0+
+- KLayout 0.30.2+
 
 We have tested this using the following setup:
-- Python 3.9.18
-- KLayout 0.29.0
+- Python 3.12.4
+- KLayout 0.30.3
 
 ## Installation
 
@@ -54,12 +54,13 @@ You have the option to execute the SG13G2-LVS through either a Python script via
 The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks with switches to select subsets of all checks.
 
 ```bash
-    run_lvs.py (--help| -h)
-    run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>)
-    [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
-    [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
-    [--purge] [--purge_nets] [--verbose]
+run_lvs.py (--help | -h)
+run_lvs.py --layout=<layout_path>
+           [--netlist=<netlist_path>] [--run_dir=<run_dir_path>]
+           [--topcell=<topcell_name>] [--run_mode=<run_mode>]
+           [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
+           [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+           [--purge] [--purge_nets] [--verbose] [--allow_unmatched_ports]
 ```
 
 **Options:**
@@ -68,13 +69,13 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--layout=<layout_path>`            Specifies the file path of the input GDS file.
 
-- `--netlist=<netlist_path>`          Specifies the file path of the input netlist file.
+- `--netlist=<netlist_path>`          Optional path to the schematic netlist file.
 
-- `--run_dir=<run_dir_path>`          Run directory to save all the generated results [default: pwd]
+- `--run_dir=<run_dir_path>`          Run directory to save generated results. By default, a timestamped run directory is created in the current directory.
 
 - `--topcell=<topcell_name>`          Specifies the name of the top cell to be used.
 
-- `--run_mode=<run_mode>`             Selects the allowed KLayout mode. (flat, deep). [default: flat]
+- `--run_mode=<run_mode>`             Selects the allowed KLayout mode (`flat`, `deep`). [default: flat]
 
 - `--no_net_names`                    Omits net names in the extracted netlist.
 
@@ -98,6 +99,8 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 - `--verbose`                         Enables detailed rule execution logs for debugging purposes.
 
+- `--allow_unmatched_ports`           Allows unmatched top-level ports during comparison mode.
+
 
 ---
 **NOTE**
@@ -115,12 +118,18 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 <br/>
 
 * The options `no_series_res` and `no_parallel_res` are specifically designed to disable layout simplification for resistors exclusively. When specified, they take priority over `combine_devices` option.
+<br/>
+
+* If `--net_only` is not set and no `--netlist` is provided, the script enables netlist-only extraction automatically for that run and logs a clear warning.
+<br/>
+
+* If both `--netlist` and `--net_only` are provided, `--net_only` takes precedence and the schematic netlist input is ignored (with a warning).
 ---
 
 **Example:**
 
 ```bash
-    python3 run_lvs.py --layout=testing/testcases/unit/mos_devices/layout/sg13_lv_nmos.gds --netlist=testing/testcases/unit/mos_devices/netlist/sg13_lv_nmos.cdl --run_dir=test_nmos
+    python3 run_lvs.py --layout=testing/testcases/unit/mos_devices/layout/sg13_lv_nmos.gds --netlist=testing/testcases/unit/mos_devices/netlist/sg13_lv_nmos.cdl --run_dir=test_nmos --allow_unmatched_ports
 ```
 
 #### LVS Outputs
@@ -132,7 +141,8 @@ You could find the run results at your run directory if you previously specified
 ```text
 📁 lvs_run_<date>_<time>
  ┣ 📜 lvs_run_<date>_<time>.log
- ┗ 📜 <your_design_name>.cir
+ ┣ 📜 <your_design_name>.log
+ ┣ 📜 <your_design_name>_extracted.cir
  ┗ 📜 <your_design_name>.lvsdb
  ```
 
@@ -169,6 +179,12 @@ After selecting Netlist Browser option, you could load the database file and vis
 </p>
 
 Additionally, you can find the extracted netlist generated from your design at (`<device_name>_extracted.cir`) in the output run directory.
+
+At the end of each CLI run, `run_lvs.py` prints an **Important Summary** table that highlights:
+- run status and mode
+- final LVS outcome
+- results directory path
+- warning/error counts and key messages
 
 ### GUI
 

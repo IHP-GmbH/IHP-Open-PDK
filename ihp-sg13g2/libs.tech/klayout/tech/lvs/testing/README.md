@@ -19,11 +19,11 @@ At a minimum:
 
 You need the following set of tools installed to be able to run the regression:
 - Python 3.9+
-- KLayout 0.29.0+
+- KLayout 0.30.2+
 
 We have tested this using the following setup:
-- Python 3.9.18
-- KLayout 0.29.0
+- Python 3.12.4
+- KLayout 0.30.3
 
 ## Installation
 
@@ -88,8 +88,8 @@ The following table explains the list of available SG13G2 devices we have suppor
 ## Devices Regression Usage
 
 ```bash
-  run_regression.py (--help| -h)
-  run_regression.py [--device=<device>] [--run_dir=<run_dir_path>] [--mp=<num>]
+run_regression.py (--help | -h)
+run_regression.py [--device=<device>] [--run_dir=<run_dir_path>] [--mp=<num>]
 ```
 
 Example:
@@ -104,9 +104,9 @@ Example:
     
 - `--device=<device>`          Select device category you want to run regression on.
 
-- `--run_dir=<run_dir_path>`   Run directory to save all the results [default: pwd]
+- `--run_dir=<run_dir_path>`   Run directory to save all the results. By default, a timestamped run directory is created in the current directory.
 
-- `--mp=<num>`                 The number of threads used in run.
+- `--mp=<num>`                 Number of worker threads. By default, uses `cpu_count`.
 
 
 Another approach for testing SG13G2 devices, you could make a full test for SG13G2 LVS rule deck, by executing the following command in current testing directory:
@@ -118,8 +118,8 @@ Another approach for testing SG13G2 devices, you could make a full test for SG13
 ## Cells Regression Usage
 
 ```bash
-  run_regression_cells.py (--help| -h)
-  run_regression_cells.py [--cell=<cell>] [--run_dir=<run_dir_path>] [--mp=<num>]
+run_regression_cells.py (--help | -h)
+run_regression_cells.py [--cell=<cell>] [--run_dir=<run_dir_path>] [--mp=<num>]
 ```
 
 Example:
@@ -134,9 +134,9 @@ python3 run_regression_cells.py --cell=sg13g2_inv_1 --run_dir=test_inv
     
 - `--cell=<cell>`              Specify the cell to run; all cells run if not specified.
 
-- `--run_dir=<run_dir_path>`   Run directory to save all the results [default: pwd]
+- `--run_dir=<run_dir_path>`   Run directory to save all the results. By default, a timestamped run directory is created in the current directory.
 
-- `--mp=<num>`                 The number of threads used in run.
+- `--mp=<num>`                 Number of worker threads. By default, uses `cpu_count`.
 
 
 Another approach for testing SG13G2 cells, you could make a full test for SG13G2 cells, by executing the following command in current testing directory:
@@ -148,7 +148,8 @@ Another approach for testing SG13G2 cells, you could make a full test for SG13G2
 
 ## LVS Outputs
 
-You could find the regression run results at your run directory if you previously specified it through `--run_name=<run_name>`. Default path of run directory is `unit_tests_<date>_<time>` in the current testing directory.
+You can find regression run results in the directory provided through `--run_dir`.
+If `--run_dir` is not provided, the scripts create a timestamped run directory in the current working directory.
 
 **Folder Structure of regression run results**
 
