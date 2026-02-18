@@ -15,26 +15,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # ==========================================================================
 
-"""Run IHP 130nm BiCMOS Open Source PDK - SG13G2 LVS Regression For Cells.
-
-Usage:
-    run_regression_cells.py (--help| -h)
-    run_regression_cells.py [--cell=<cell>] [--run_dir=<run_dir_path>] [--mp=<num>]
-
-Options:
-    --help -h                 Print this help message.
-    --cell=<cell>             Specify the cell to run; all cells run if not specified.
-    --run_dir=<run_dir_path>  Run directory to save all the results [default: pwd]
-    --mp=<num>                The number of threads used in run.
-"""
+"""Run IHP 130nm BiCMOS Open Source PDK - SG13G2 LVS cell regression."""
 
 from subprocess import check_call
 import concurrent.futures
 import traceback
 import yaml
-from docopt import docopt
+import argparse
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import pandas as pd
 import logging
@@ -357,7 +346,7 @@ def run_regression(lvs_dir, cells_dir, output_path, target_cell, cpu_count, cell
         return True
 
 
-def main(lvs_dir, cells_dir, output_path, target_cell, cells):
+def main(lvs_dir, cells_dir, output_path, target_cell, cells, workers_count):
     """
     Main function to run LVS regression for SG13G2 std cells.
 
@@ -379,9 +368,6 @@ def main(lvs_dir, cells_dir, output_path, target_cell, cells):
         If all regression passed, it returns true. If any of the cells failed it returns false.
     """
 
-    # No. of threads
-    cpu_count = os.cpu_count() if args["--mp"] is None else int(args["--mp"])
-
     # info logs for args
     logging.info("Run folder is: {}".format(output_path))
     logging.info("Target cell is: {}".format(target_cell))
@@ -391,7 +377,7 @@ def main(lvs_dir, cells_dir, output_path, target_cell, cells):
 
     # Calling regression function
     run_status = run_regression(
-        lvs_dir, cells_dir, output_path, target_cell, cpu_count, cells
+        lvs_dir, cells_dir, output_path, target_cell, workers_count, cells
     )
 
     #  End of execution time
@@ -405,15 +391,40 @@ def main(lvs_dir, cells_dir, output_path, target_cell, cells):
 
 
 if __name__ == "__main__":
+    USAGE = """
+    run_regression_cells.py (--help | -h)
+    run_regression_cells.py [--cell=<cell>] [--run_dir=<run_dir_path>] [--mp=<num>]
+    """
 
-    # docopt setup
-    args = docopt(__doc__, version="LVS Regression: 0.2")
+    parser = argparse.ArgumentParser(
+        description="Run IHP SG13G2 LVS std-cell regression.",
+        usage=USAGE,
+    )
+    parser.add_argument(
+        "--cell",
+        type=str,
+        default=None,
+        help="Target cell name. If omitted, run all cells.",
+    )
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Run directory to save all results. Default creates timestamped dir in cwd.",
+    )
+    parser.add_argument(
+        "--mp",
+        type=int,
+        default=None,
+        help="Number of worker threads. Default uses os.cpu_count().",
+    )
+    args = parser.parse_args()
 
     # default run name
-    run_name = datetime.utcnow().strftime("cells_tests_%Y_%m_%d_%H_%M_%S")
+    run_name = datetime.now(timezone.utc).strftime("cells_tests_%Y_%m_%d_%H_%M_%S")
 
     # args setup
-    run_dir = args["--run_dir"]
+    run_dir = args.run_dir
     if run_dir == "pwd" or run_dir == "" or run_dir is None:
         output_path = os.path.join(os.path.abspath(os.getcwd()), run_name)
     else:
@@ -458,11 +469,12 @@ if __name__ == "__main__":
         exit(1)
 
     # selected cell
-    target_cell = args["--cell"]
+    target_cell = args.cell
     if target_cell and (target_cell not in cells):
         logging.error("Selected cell doesn't exist, please recheck.")
         logging.info(f"Allowed cells are {cells}")
         exit(1)
 
     # Calling main function
-    main(lvs_dir, cells_dir, output_path, target_cell, cells)
+    workers_count = os.cpu_count() if args.mp is None else int(args.mp)
+    main(lvs_dir, cells_dir, output_path, target_cell, cells, workers_count)
