@@ -181,10 +181,24 @@ class CustomSchottky < RBA::DeviceClassBJT3Transistor
 end
 
 # Taps device class
-class CustomTap < RBA::DeviceClassDiode
+class CustomTap < RBA::DeviceClassResistor
   def initialize
     super
+    clear_terminals
     clear_parameters
+    clear_equivalent_terminal_ids
+
+    # Keep taps visible as resistor-class devices in LVS DB, but
+    # preserve terminal polarity (TIE/WELL). Allow parallel-only reduction
+    # using tap-specific combiner; disallow serial reduction.
+    self.combiner = TapDeviceCombiner.new
+    self.supports_serial_combination = false
+    self.supports_parallel_combination = true
+
+    tie = add_terminal(RBA::DeviceTerminalDefinition.new('TIE'))
+    tie.name = 'TIE'
+    well = add_terminal(RBA::DeviceTerminalDefinition.new('WELL'))
+    well.name = 'WELL'
     add_parameter(RBA::DeviceParameterDefinition.new('A', 'Area', 0, true))
     add_parameter(RBA::DeviceParameterDefinition.new('P', 'Perimeter', 0, true))
     enable_parameter('A', true)

@@ -197,3 +197,22 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
     true
   end
 end
+
+class TapDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Combine only in parallel with preserved terminal polarity:
+  # TIE->TIE and WELL->WELL. No serial combination for taps.
+  def combine_devices(a, b)
+    return false unless PARALLEL_RES
+    return false unless same_net(a, b, 'TIE') && same_net(a, b, 'WELL')
+
+    a.set_parameter('A', a.parameter('A') + b.parameter('A'))
+    a.set_parameter('P', a.parameter('P') + b.parameter('P'))
+
+    b.disconnect_terminal('TIE')
+    b.disconnect_terminal('WELL')
+
+    true
+  end
+end

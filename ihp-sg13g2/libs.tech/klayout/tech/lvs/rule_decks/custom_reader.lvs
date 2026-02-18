@@ -169,7 +169,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     if RES_DEV.any? { |res| model.downcase.start_with?(res) }
       DeviceCustomRes.new(model, num_nets)
     elsif num_nets == 2 && model.downcase.include?('tap')
-      RBA::DeviceClassDiode.new
+      CustomTap.new
     elsif num_nets == 2
       RBA::DeviceClassResistor.new
     elsif num_nets == 3
@@ -215,7 +215,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       if RES_DEV.any? { |res| model.downcase.start_with?(res) }
         gen_term_names(model, nets.size)
       elsif model.downcase.include?('tap')
-        %w[C A]
+        %w[TIE WELL]
       else
         nets.size == 3 ? %w[A B W] : %w[A B]
       end

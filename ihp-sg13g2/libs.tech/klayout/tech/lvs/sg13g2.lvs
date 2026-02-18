@@ -373,61 +373,72 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 
 logger.info('Starting SG13G2 LVS Options Preparations')
 
-# === Extract Netlist Only ===
-netlist if NET_ONLY
-return if NET_ONLY
-
-# === Aligns the extracted netlist vs. the schematic ===
-logger.info('Starting SG13G2 LVS Alignment')
-align
-
-#=== NETLIST OPTIONS ===
-logger.info('Starting SG13G2 LVS Simplification')
-# SIMPLIFY
-netlist.simplify if SIMPLIFY
-schematic.simplify if SIMPLIFY
-
-# TOP_LVL_PINS
-netlist.make_top_level_pins if TOP_LVL_PINS
-schematic.make_top_level_pins if TOP_LVL_PINS
-
-# COMBINE_DEVICES
-netlist.combine_devices if COMBINE_DEVICES
-schematic.combine_devices if COMBINE_DEVICES
-
-# PURGE
-netlist.purge if PURGE
-schematic.purge if PURGE
-
-# PURGE_NETS
-netlist.purge_nets if PURGE_NETS
-schematic.purge_nets if PURGE_NETS
-
-#=== IGNORE EXTREME VALUES ===
-max_res(1e9)
-min_caps(1e-18)
-
-# === COMPARISON === 
-if ALLOW_UNMATCHED_PORTS 
-  logger.info('Starting SG13G2 LVS Comparison')
-  success = compare
-else
-  logger.info('Starting SG13G2 LVS Comparison with flag_missing_ports')
-  success = compare && flag_missing_ports
+log_option_action = lambda do |label, option_name, enabled|
+  state = enabled ? 'ENABLED' : 'SKIPPED'
+  logger.info("[#{label}] #{option_name}: #{state}")
 end
 
-#================================================
-#------------- COMPARISON RESULTS ---------------
-#================================================
+apply_netlist_options = lambda do |target_netlist, label|
+  log_option_action.call(label, 'simplify', SIMPLIFY)
+  target_netlist.simplify if SIMPLIFY
 
-if ! success
-  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-  logger.error("ERROR : Netlists don't match")
-  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  log_option_action.call(label, 'make_top_level_pins', TOP_LVL_PINS)
+  target_netlist.make_top_level_pins if TOP_LVL_PINS
+
+  log_option_action.call(label, 'combine_devices', COMBINE_DEVICES)
+  target_netlist.combine_devices if COMBINE_DEVICES
+
+  log_option_action.call(label, 'purge', PURGE)
+  target_netlist.purge if PURGE
+
+  log_option_action.call(label, 'purge_nets', PURGE_NETS)
+  target_netlist.purge_nets if PURGE_NETS
+end
+
+if NET_ONLY
+  logger.info('NET_ONLY enabled: apply extraction netlist options and skip comparison.')
+  logger.info('SG13G2 LVS flow: extraction -> option preparation -> write netlist -> exit.')
+  logger.info('Starting SG13G2 LVS Simplification')
+  apply_netlist_options.call(netlist, 'layout_netlist')
+  netlist
 else
-  logger.info('==========================================')
-  logger.info('INFO : Congratulations! Netlists match.')
-  logger.info('==========================================')
+  logger.info('SG13G2 LVS flow: extraction -> alignment -> option preparation -> comparison.')
+  # === Aligns the extracted netlist vs. the schematic ===
+  logger.info('Starting SG13G2 LVS Alignment')
+  align
+
+  #=== NETLIST OPTIONS ===
+  logger.info('Starting SG13G2 LVS Simplification')
+  apply_netlist_options.call(netlist, 'layout_netlist')
+  apply_netlist_options.call(schematic, 'schematic_netlist')
+
+  #=== IGNORE EXTREME VALUES ===
+  max_res(1e9)
+  min_caps(1e-18)
+
+  # === COMPARISON ===
+  if ALLOW_UNMATCHED_PORTS
+    logger.info('Starting SG13G2 LVS Comparison')
+    success = compare
+  else
+    logger.info('Starting SG13G2 LVS Comparison in strict port mode.')
+    logger.info('flag_missing_ports enabled: missing/mislabeled top-level ports are treated as errors.')
+    success = compare && flag_missing_ports
+  end
+
+  #================================================
+  #------------- COMPARISON RESULTS ---------------
+  #================================================
+
+  if ! success
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    logger.error("ERROR : Netlists don't match")
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  else
+    logger.info('==========================================')
+    logger.info('INFO : Congratulations! Netlists match.')
+    logger.info('==========================================')
+  end
 end
 
 exec_end_time = Time.now

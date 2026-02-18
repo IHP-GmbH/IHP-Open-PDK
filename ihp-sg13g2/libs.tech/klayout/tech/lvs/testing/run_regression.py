@@ -187,7 +187,19 @@ def get_switches(yaml_file, rule_name):
         except yaml.YAMLError as exc:
             print(exc)
 
-    return [f"{param}={value}" for param, value in yaml_dic[rule_name].items()]
+    switches = []
+    for param, value in yaml_dic[rule_name].items():
+        if value is None:
+            switches.append(f"{param}")
+        elif isinstance(value, bool):
+            if value:
+                switches.append(f"{param}")
+        elif isinstance(value, str) and value == "":
+            switches.append(f"{param}")
+        else:
+            switches.append(f"{param}={value}")
+
+    return switches
 
 
 def run_test_case(
