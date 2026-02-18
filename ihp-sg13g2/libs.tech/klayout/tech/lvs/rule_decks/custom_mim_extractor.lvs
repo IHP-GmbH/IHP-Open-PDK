@@ -44,6 +44,8 @@ class DeviceCustomMIM < RBA::DeviceClassCapacitor
     ter2 = add_terminal(RBA::DeviceTerminalDefinition.new("mim_btm"))
     ter1.name = "mim_top"
     ter2.name = "mim_btm"
+    # Enable MIM combiner for both cap_cmim and rfcmim classes.
+    self.combiner = MIMCAPNDeviceCombiner.new
 
     # Adding extra param & terminal for rfcmim
     return unless name.downcase.include?('rfcmim')
@@ -71,15 +73,8 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
   def setup
     # Set up layers and register device class for extraction.
     define_layers
-    # Register device class for extraction.
+    # Register the configured device class for extraction.
     @reg_dev = DeviceCustomMIM.new(name)
-
-    # Disable combination for rfcmim
-    if name.downcase.include?('rfcmim')
-      @reg_dev.combiner = nil 
-    else
-      @reg_dev.combiner = MIMCAPNDeviceCombiner.new
-    end
     register_device_class(@reg_dev)
   end
 

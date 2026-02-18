@@ -66,28 +66,20 @@ module DeviceCombinerMethods
 
     return false unless a_net1 && b_net1 && a_net2 && b_net2
 
-    series_con_a1 = a_net1.expanded_name == b_net1.expanded_name || a_net1.expanded_name == b_net2.expanded_name
-    series_con_a2 = a_net2.expanded_name == b_net1.expanded_name || a_net2.expanded_name == b_net2.expanded_name
-    series_con = series_con_a1 || series_con_a2
+    # Series merge requires exactly one shared node between the two devices.
+    # This avoids collapsing true parallel resistors when PARALLEL_RES is disabled.
+    shared = []
+    shared << [0, 0, b_net2] if a_net1.expanded_name == b_net1.expanded_name
+    shared << [0, 1, b_net1] if a_net1.expanded_name == b_net2.expanded_name
+    shared << [1, 0, b_net2] if a_net2.expanded_name == b_net1.expanded_name
+    shared << [1, 1, b_net1] if a_net2.expanded_name == b_net2.expanded_name
 
-    # Reroute terminal connections based on cluster IDs
-    if series_con_a1
-      if a_net1.expanded_name == b_net1.expanded_name
-        a.connect_terminal(0, b_net2)
-      else
-        a.connect_terminal(0, b_net1)
-      end
-    end
+    return false unless shared.size == 1
 
-    if series_con_a2
-      if a_net2.expanded_name == b_net1.expanded_name
-        a.connect_terminal(1, b_net2)
-      else
-        a.connect_terminal(1, b_net1)
-      end
-    end
-
-    series_con
+    # Re-route the matched terminal in device A to the unmatched terminal in B.
+    a_term, _b_term, target_net = shared[0]
+    a.connect_terminal(a_term, target_net)
+    true
   end
 
   # A helper function to check whether two parameters have approximately the same value
@@ -101,11 +93,14 @@ class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
 
   # Method to check and perform device combination
   def combine_devices(a, b)
-    # Check if both devices have the same net
+    # Require top/bottom net equality for all MIM devices.
+    # For rfcmim, also require the same substrate terminal (`mim_sub`).
     return false unless same_net(a, b, 'mim_top') && same_net(a, b, 'mim_btm')
+    return false if a.device_class.name.downcase.include?('rfcmim') && !same_net(a, b, 'mim_sub')
 
     # Check if parameters are the same
     return false unless same_parameter(a, b, 'w') && same_parameter(a, b, 'l')
+    return false if a.device_class.name.downcase.include?('rfcmim') && !same_parameter(a, b, 'wfeed')
 
     # Combine by summing up 'm' parameter
     a.set_parameter('m', a.parameter('m') + b.parameter('m'))
@@ -114,8 +109,8 @@ class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
     b.disconnect_terminal('mim_top')
     b.disconnect_terminal('mim_btm')
 
-    # Disconnect mim_sub terminal if present and model name includes 'rfcmim'
-    b.disconnect_terminal('mim_sub') if b.name.downcase.include?('rfcmim')
+    # Disconnect substrate terminal only for rfcmim devices.
+    b.disconnect_terminal('mim_sub') if b.device_class.name.downcase.include?('rfcmim')
 
     true
   end

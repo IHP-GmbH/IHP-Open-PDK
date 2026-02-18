@@ -42,7 +42,9 @@ rfmim_area = pwell_block.interacting(mim_drw)
 rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
-rfmim_sub = ptap.extents.interacting(rfmim_area)
+# For rfcmim cells with fixed geometry, a local expansion of `rfmim_area` gives a
+# deterministic substrate region that reaches the intended ptap ring.
+rfmim_sub = rfmim_area.sized(1.um)
 rfmeas_mk = metal5_con.overlapping(rfmim_btm).and(rfmim_area)
 
 # === svaricap ===

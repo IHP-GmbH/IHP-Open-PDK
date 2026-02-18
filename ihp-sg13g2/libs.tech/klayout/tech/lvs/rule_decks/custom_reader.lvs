@@ -316,7 +316,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_capacitor_params(device, model, params)
     device.set_parameter('w', (params['W'] || 0.0) * 1e6)
     device.set_parameter('l', (params['L'] || 0.0) * 1e6)
-    device.set_parameter('m', params['M'] || params['MF'] || 1.0) if model.downcase.include?('cap_cmim')
+    device.set_parameter('m', params['M'] || params['MF'] || 1.0) if model.downcase.include?('mim')
 
     if model.downcase.include?('mim')
       device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
