@@ -32,11 +32,11 @@ class ConsoleColorFormatter(logging.Formatter):
 
     RESET = "\033[0m"
     COLORS = {
-        logging.DEBUG: "\033[36m",    # cyan
-        logging.INFO: "\033[32m",     # green
-        logging.WARNING: "\033[33m",  # yellow
-        logging.ERROR: "\033[31m",    # red
-        logging.CRITICAL: "\033[41m", # red background
+        logging.DEBUG: "\033[36m",     # cyan
+        logging.INFO: "\033[32m",      # green
+        logging.WARNING: "\033[33m",   # yellow
+        logging.ERROR: "\033[31m",     # red
+        logging.CRITICAL: "\033[41m",  # red background
     }
 
     def __init__(self, fmt, datefmt=None, use_color=False):
