@@ -241,7 +241,7 @@ END TopVia1
 LAYER TopMetal1
   TYPE		ROUTING ;
   DIRECTION	HORIZONTAL ;
-  PITCH		2.28 ;
+  PITCH		3.28 ;
   OFFSET	1.64 ;
   WIDTH		1.64 ;
   MINIMUMDENSITY        25.0 ;
@@ -833,7 +833,7 @@ Via Via3_DC2R DEFAULT
         RECT -0.515 -0.145 0.105 0.145 ;
 END Via3_DC2R
 
-#######   TopVia1 (M4 to TM1)  ##############################
+#######   TopVia1 (M4 to TM1)   ##############
 
 Via TopVia1EWNS DEFAULT
   RESISTANCE 4.0 ;
@@ -845,7 +845,8 @@ Via TopVia1EWNS DEFAULT
     RECT -0.75 -0.75 0.75 0.75 ;
 END TopVia1EWNS
 
-#############################################
+#######   Via generation rules  ###############
+
 ViaRULE via1Array GENERATE
     LAYER Metal1 ;
         ENCLOSURE 0.050 0.010 ;
@@ -885,16 +886,17 @@ ViaRULE via3Array GENERATE
         RESISTANCE 20.0 ;
 END via3Array
 
-###########################################
-ViaRULE viagen45 GENERATE
+########   TopVia1 generation rule  ############
+
+ViaRULE viaTop1Array GENERATE
   LAYER Metal4 ;
-    ENCLOSURE 0 0 ;
+    ENCLOSURE 0.1 0.1 ;
   LAYER TopMetal1 ;
-    ENCLOSURE 0.61 0.61 ;
+    ENCLOSURE 0.42 0.42 ;
   LAYER TopVia1 ;
     RECT -0.21 -0.21 0.21 0.21 ;
     SPACING 0.84 BY 0.84 ;
     RESISTANCE 4.0 ;
-END viagen45
+END viaTop1Array
 
 END LIBRARY
