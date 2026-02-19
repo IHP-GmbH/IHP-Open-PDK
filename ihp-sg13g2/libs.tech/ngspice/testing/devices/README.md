@@ -15,7 +15,6 @@
     - [Setup Python Virtual Environment](#setup-python-virtual-environment)
   - [Usage](#usage)
     - [Running Tests with Makefile](#running-tests-with-makefile)
-      - [Test Runners](#test-runners)
       - [Device Configurations](#device-configurations)
       - [Available Targets](#available-targets)
         - [Group Targets](#group-targets)
@@ -92,7 +91,7 @@ This stage validates the SG13G2 model cards by comparing **measured silicon data
  ┣ 📜 Makefile             Main entry point for running device tests  
  ┣ 📁 configs              YAML configuration files and templates for SG13G2 devices  
  ┣ 📁 models_verifier      Python package for simulation and verification  
- ┣ 📁 validation           Pytest test cases and Jupyter notebooks  
+ ┣ 📁 validation           Validation plotting helpers and analysis scripts  
  ┣ 📁 workflow_notebooks   Step-by-step notebooks for running and visualizing the verification flow  
  ┗ 📜 README.md            Documentation for SG13G2 models testing (this file)  
 ```
@@ -157,11 +156,6 @@ Each configuration file defines:
 The provided **Makefile** is the main entry point for running device tests.  
 It supports both **group-level** (e.g., all MOS or all HBT) and **device-level** (single-device) execution.
 
-#### Test Runners
-
-- **Default runner**: `models_verifier` (recommended)  
-- **Alternative runner**: `pytest` (append `RUNNER=pytest` to the command)
-
 #### Device Configurations
 
 Each Makefile target corresponds to one of the YAML configuration files under the [configs directory](configs/).  
@@ -169,7 +163,7 @@ For example:
 - `make test-nmos_lv` → uses `configs/mos/sg13_lv_nmos.yaml`
 - `make test-npn13g2` → uses `configs/hbt/sg13g2_npn13g2.yaml`
 
-The Makefile automatically detects and passes the corresponding configuration file to the selected test runner.
+The Makefile automatically passes the corresponding configuration file to the verifier.
 
 ---
 
@@ -192,16 +186,16 @@ Each device can be run individually:
 
 #### Examples
 
-Run all devices with the default runner (`models_verifier`):  
+Run all devices with the verifier:  
 
 ```bash  
 make test-all  
 ```
 
-Run only MOS devices using 'pytest':  
+Run only MOS devices:  
 
 ```bash  
-make test-mos RUNNER=pytest  
+make test-mos  
 ```
 
 Run a single device (example: LV NMOS) with the verifier:  
@@ -210,10 +204,10 @@ Run a single device (example: LV NMOS) with the verifier:
 make test-nmos_lv  
 ```
 
-Run the PNP MPA device with pytest:  
+Run the PNP MPA device:  
 
 ```bash  
-make test-pnp_mpa RUNNER=pytest  
+make test-pnp_mpa  
 ```
 
 For a full list of available targets and options, run:  

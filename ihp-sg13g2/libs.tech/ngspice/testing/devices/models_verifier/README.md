@@ -47,4 +47,4 @@ It runs **measurement-vs-simulation comparisons** using ngspice, aggregates resu
   Applies tolerance thresholds (percentage or count of out-of-range points). Generates pass/fail reports.
 
 * **`constants.py`**
-  Stores mappings and CASES used in pytest parametrization.
+  Stores shared device mappings and case definitions used by verifier flows.

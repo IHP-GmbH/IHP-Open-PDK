@@ -18,24 +18,17 @@
 # Makefile for Device Testing (IHP SG13G2 PDK)
 # =========================================================
 # Usage:
-#   make <target> [RUNNER=verifier|pytest]
+#   make <target>
 #
 # Example:
 #   make test-all
-#   make test-mos RUNNER=pytest
-#
-# Default runner is 'verifier'.
+#   make test-nmos_lv
 # =========================================================
 
 # ------------------------
 # Global settings
 # ------------------------
-RUNNER      ?= verifier
-PYTEST_ARGS  = --tb=short -p no:capture
-PYTEST_FILE  = validation/test_devices.py
-
 VERIFIER_BIN = python3 -m models_verifier.models_verifier
-PYTEST_BIN   = python3 -m pytest $(PYTEST_FILE) $(PYTEST_ARGS)
 
 # ------------------------
 # Device configuration files
@@ -63,15 +56,11 @@ ALL_DEVICES = $(MOS_DEVICES) $(HBT_DEVICES) $(PNP_DEVICES)
 all: test-all
 
 # ------------------------
-# Unified test runner
+# Unified test runner (models_verifier only)
 # ------------------------
 define run_test
-	@echo ">>> Running $(1) with $(RUNNER) ..."
-	@if [ "$(RUNNER)" = "pytest" ]; then \
-		$(PYTEST_BIN) -k "$(1)"; \
-	else \
-		$(VERIFIER_BIN) --config $(2); \
-	fi
+	@echo ">>> Running $(1) with verifier ..."
+	@$(VERIFIER_BIN) --config $(2)
 endef
 
 # ------------------------
@@ -90,13 +79,13 @@ test-npn13g2v:  ; $(call run_test,npn13g2v,$(NPN13G2V_CONFIG))
 # Grouped targets
 # ------------------------
 test-mos:
-	@for dev in $(MOS_DEVICES); do $(MAKE) test-$$dev RUNNER=$(RUNNER); done
+	@for dev in $(MOS_DEVICES); do $(MAKE) test-$$dev; done
 
 test-hbt:
-	@for dev in $(HBT_DEVICES); do $(MAKE) test-$$dev RUNNER=$(RUNNER); done
+	@for dev in $(HBT_DEVICES); do $(MAKE) test-$$dev; done
 
 test-pnp:
-	@for dev in $(PNP_DEVICES); do $(MAKE) test-$$dev RUNNER=$(RUNNER); done
+	@for dev in $(PNP_DEVICES); do $(MAKE) test-$$dev; done
 
 test-all: test-mos test-hbt test-pnp
 
@@ -108,7 +97,7 @@ help:
 	@echo " Device Testing Makefile (IHP SG13G2 PDK)"
 	@echo "========================================================="
 	@echo " Usage:"
-	@echo "   make <target> [RUNNER=verifier|pytest]"
+	@echo "   make <target>"
 	@echo
 	@echo " Targets:"
 	@echo "   test-all          - Run all device tests"
@@ -117,12 +106,7 @@ help:
 	@echo "   test-pnp          - Run PNP device tests ($(PNP_DEVICES))"
 	@echo "   test-<device>     - Run a specific device (e.g. make test-nmos_lv)"
 	@echo
-	@echo " Options:"
-	@echo "   RUNNER=verifier   Use models_verifier (default)"
-	@echo "   RUNNER=pytest     Use pytest"
-	@echo
 	@echo " Examples:"
 	@echo "   make test-all"
-	@echo "   make test-mos RUNNER=pytest"
 	@echo "   make test-npn13g2"
-	@echo "   make test-pmos_lv RUNNER=pytest"
+	@echo "   make test-pmos_lv"
