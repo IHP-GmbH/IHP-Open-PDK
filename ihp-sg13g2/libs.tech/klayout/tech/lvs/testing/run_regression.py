@@ -246,7 +246,7 @@ def run_test_case(
     call_str = (
         f"python3 {lvs_dir}/run_lvs.py --layout={layout_path_run} "
         f"--netlist={netlist_path_run} --run_dir={output_loc} {switches} "
-        f"--allow_unmatched_ports > {pattern_log} 2>&1"
+        f"--ignore_top_ports_mismatch > {pattern_log} 2>&1"
     )
 
     # Starting klayout run

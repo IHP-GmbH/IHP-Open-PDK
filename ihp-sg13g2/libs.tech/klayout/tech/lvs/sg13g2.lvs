@@ -117,10 +117,15 @@ NET_ONLY = bool_check?($net_only)
 
 logger.info("Selected NET_ONLY option: #{NET_ONLY}")
 
-# ALLOW_UNMATCHED_PORTS
-ALLOW_UNMATCHED_PORTS = bool_check?($allow_unmatched_ports)
+# IGNORE_TOP_PORTS_MISMATCH
+IGNORE_TOP_PORTS_MISMATCH = bool_check?($ignore_top_ports_mismatch)
 
-logger.info("Selected ALLOW_UNMATCHED_PORTS option: #{ALLOW_UNMATCHED_PORTS}")
+logger.info("Selected IGNORE_TOP_PORTS_MISMATCH option: #{IGNORE_TOP_PORTS_MISMATCH}")
+
+# IMPLICIT_NETS
+IMPLICIT_NETS = ($implicit_nets || '').to_s.strip
+
+logger.info("Selected IMPLICIT_NETS option: #{IMPLICIT_NETS.empty? ? '(none)' : IMPLICIT_NETS}")
 
 # TOP_LVL_PINS
 TOP_LVL_PINS = bool_check?($top_lvl_pins)
@@ -157,14 +162,6 @@ PARALLEL_RES = !bool_check?($no_parallel_res)
 
 logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
 
-#=== PRINT DETAILS ===
-logger.info("Verbose mode: #{$verbose}")
-if $verbose == 'true'
-  verbose(true)
-else
-  verbose(false)
-end
-
 # === RUN MODE ===
 case $run_mode
 when 'deep'
@@ -178,6 +175,27 @@ else
 end
 
 # === Tech Switches ===
+
+#==================================================
+# --------------- IMPLICIT CONNECTIONS -------------
+#==================================================
+# KLayout LVS docs:
+# https://www.klayout.de/doc/manual/lvs.html
+# "connect_implicit" creates a virtual combined physical net
+# that is matched against the corresponding logical net name.
+if !IMPLICIT_NETS.empty?
+  nets_to_connect = IMPLICIT_NETS.split(',').map(&:strip).reject(&:empty?)
+  if nets_to_connect.empty?
+    logger.info('WARNING : IMPLICIT_NETS was set but no valid entries were found after parsing.')
+  else
+    logger.info(
+      "Applying implicit connections (case-sensitive, pattern supported) for nets: #{nets_to_connect.join(', ')}"
+    )
+    nets_to_connect.each do |net_pattern|
+      connect_implicit(net_pattern)
+    end
+  end
+end
 
 #================================================
 # --------------- CUSTOM CLASSES ----------------
@@ -417,7 +435,7 @@ else
   min_caps(1e-18)
 
   # === COMPARISON ===
-  if ALLOW_UNMATCHED_PORTS
+  if IGNORE_TOP_PORTS_MISMATCH
     logger.info('Starting SG13G2 LVS Comparison')
     success = compare
   else

@@ -22,7 +22,7 @@ import os
 import logging
 import klayout.db
 from datetime import datetime, timezone
-from subprocess import run
+from subprocess import Popen, PIPE, STDOUT
 import time
 import sys
 
@@ -449,11 +449,11 @@ def generate_klayout_switches(args, layout_path, netlist_path, effective_net_onl
         "combine_devices": "true" if args.combine_devices else "false",
         "purge": "true" if args.purge else "false",
         "purge_nets": "true" if args.purge_nets else "false",
-        "verbose": "true" if args.verbose else "false",
         "topcell": get_run_top_cell_name(args, layout_path),
         "input": os.path.abspath(layout_path),
         "schematic": os.path.abspath(netlist_path) if netlist_path else None,
-        "allow_unmatched_ports": "true" if args.allow_unmatched_ports else "false",
+        "ignore_top_ports_mismatch": "true" if args.ignore_top_ports_mismatch else "false",
+        "implicit_nets": f'"{args.implicit_nets}"' if args.implicit_nets else '""',
     }
 
     return switches
@@ -527,12 +527,23 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
     sws_str = build_switches_string(new_sws)
 
     run_str = f"klayout -b -r {lvs_file} {sws_str}"
-    proc = run(run_str, shell=True, text=True, capture_output=True)
+    proc = Popen(
+        run_str,
+        shell=True,
+        text=True,
+        stdout=PIPE,
+        stderr=STDOUT,
+        bufsize=1,
+    )
 
+    output_lines = []
     if proc.stdout:
-        sys.stdout.write(proc.stdout)
-    if proc.stderr:
-        sys.stderr.write(proc.stderr)
+        for line in proc.stdout:
+            output_lines.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+    proc.wait()
+    combined_output = "".join(output_lines)
 
     if proc.returncode != 0:
         raise KLayoutRunError(
@@ -543,8 +554,8 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
                 "extracted_netlist_path": ext_net_path,
             },
             returncode=proc.returncode,
-            stdout_text=proc.stdout,
-            stderr_text=proc.stderr,
+            stdout_text=combined_output,
+            stderr_text=combined_output,
         )
 
     return {
@@ -648,7 +659,8 @@ if __name__ == "__main__":
                [--topcell=<topcell_name>] [--run_mode=<run_mode>]
                [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
-               [--purge] [--purge_nets] [--verbose] [--allow_unmatched_ports]
+               [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
+               [--implicit_nets=<nets>]
     """
 
     parser = argparse.ArgumentParser(
@@ -678,8 +690,8 @@ if __name__ == "__main__":
         "--run_mode",
         type=str,
         choices=["flat", "deep"],
-        default="deep",
-        help="KLayout run mode. [default: deep]",
+        default="flat",
+        help="KLayout run mode. [default: flat]",
     )
     parser.add_argument("--no_net_names", action="store_true", help="Omit net names in extracted netlist.")
     parser.add_argument("--spice_comments", action="store_true", help="Include comments in extracted netlist.")
@@ -691,11 +703,19 @@ if __name__ == "__main__":
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose rule-execution logging.")
     parser.add_argument(
-        "--allow_unmatched_ports",
+        "--implicit_nets",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated net names/patterns for implicit connections "
+            '(case-sensitive), e.g. "VDD,VSS" or "*".'
+        ),
+    )
+    parser.add_argument(
+        "--ignore_top_ports_mismatch",
         action="store_true",
-        help="Allow unmatched top-level ports during comparison.",
+        help="Ignore top-level port mismatches during comparison.",
     )
     args = parser.parse_args()
 

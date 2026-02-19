@@ -1,0 +1,95 @@
+* memlib
+
+
+* Device subcircuits
+*
+.subckt rsil n1 n2 l=1e-6 w=1e-6
+.param rsil_res={l*7.0/w}
+Rres n1 n2 r={rsil_res} rsil l=l w=w
+.ends rsil
+
+.subckt rppd n1 n2 l=1e-6 w=1e-6
+.param rppd_res={l*260.0/w}
+Rres n1 n2 r={rppd_res} rppd l=l w=w
+.ends rppd
+
+.subckt dantenna an cat params: w=0.48e-6 l=0.48e-6
+Ddio an cat dantenna a=(w*l) p=(2*(w + l))
+.ends dantenna
+
+.subckt dpantenna an cat params: w=0.48e-6 l=0.48e-6
+Ddio an cat dpantenna a=(w*l) p=(2*(w + l))
+.ends dpantenna
+
+.subckt sg13_lv_nmos s g d b params: l=0.13e-6 w=0.15e-6
+Mtrans s g d b sg13_lv_nmos l=l w=w
+.ends sg13_lv_nmos
+
+.subckt sg13_lv_pmos s g d b params: l=0.13e-6 w=0.15e-6
+Mtrans s g d b sg13_lv_pmos l=l w=w
+.ends sg13_lv_pmos
+
+.subckt sg13_hv_nmos s g d b params: l=0.45e-6 w=0.3e-6
+Mtrans s g d b sg13_hv_nmos l=l w=w
+.ends sg13_hv_nmos
+
+.subckt sg13_hv_pmos s g d b params: l=0.45e-6 w=0.3e-6
+Mtrans s g d b sg13_hv_pmos l=l w=w
+.ends sg13_hv_pmos
+
+* Library cells
+*
+.subckt inv_x0 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xpmos vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+.ends inv_x0
+
+.subckt nand2_x0 vdd vss nq i0 i1
+Xi0_nmos vss i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 nq vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi1_nmos _net0 i1 nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos nq i1 vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+.ends nand2_x0
+
+.subckt SP6TCNonOverlapClock_8S vss vdd clk firststage[0] firststage[1] firststage[2] firststage[3] firststage[4] firststage[5] firststage[6] firststage[7] firststage[8] secondstage[0] secondstage[1] secondstage[2] secondstage[3] secondstage[4] secondstage[5] secondstage[6] secondstage[7] secondstage[8]
+Xclkinv vdd vss clk clk_n inv_x0
+Xfirstnand2 vdd vss firststage[0] clk secondstage[8] nand2_x0
+Xfirststage[0] vdd vss firststage[0] firststage[1] inv_x0
+Xfirststage[1] vdd vss firststage[1] firststage[2] inv_x0
+Xfirststage[2] vdd vss firststage[2] firststage[3] inv_x0
+Xfirststage[3] vdd vss firststage[3] firststage[4] inv_x0
+Xfirststage[4] vdd vss firststage[4] firststage[5] inv_x0
+Xfirststage[5] vdd vss firststage[5] firststage[6] inv_x0
+Xfirststage[6] vdd vss firststage[6] firststage[7] inv_x0
+Xfirststage[7] vdd vss firststage[7] firststage[8] inv_x0
+Xsecondnand2 vdd vss secondstage[0] clk_n firststage[8] nand2_x0
+Xsecondstage[0] vdd vss secondstage[0] secondstage[1] inv_x0
+Xsecondstage[1] vdd vss secondstage[1] secondstage[2] inv_x0
+Xsecondstage[2] vdd vss secondstage[2] secondstage[3] inv_x0
+Xsecondstage[3] vdd vss secondstage[3] secondstage[4] inv_x0
+Xsecondstage[4] vdd vss secondstage[4] secondstage[5] inv_x0
+Xsecondstage[5] vdd vss secondstage[5] secondstage[6] inv_x0
+Xsecondstage[6] vdd vss secondstage[6] secondstage[7] inv_x0
+Xsecondstage[7] vdd vss secondstage[7] secondstage[8] inv_x0
+.ends SP6TCNonOverlapClock_8S
+
+.subckt buf_x1 vdd vss i q
+Xstage0_nmos _i_n i vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xstage0_pmos _i_n i vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xnmos vss _i_n q vss sg13_lv_nmos l=1.3e-07 w=1.07e-06
+Xpmos vdd _i_n q vdd sg13_lv_pmos l=1.3e-07 w=1.06e-06
+.ends buf_x1
+
+.subckt inv_x1 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=1.3e-07 w=1.46e-06
+Xpmos vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=1.45e-06
+.ends inv_x1
+
+.subckt SP6TCClockGenerator vss vdd clk decodeclk columnclk precharge_n wl_en we_en
+Xnonovl vss vdd clk firststage[0] firststage[1] firststage[2] firststage[3] firststage[4] firststage[5] firststage[6] firstpulse firststage[8] secondstage[0] secondstage[1] secondstage[2] secondstage[3] secondstage[4] secondstage[5] secondstage[6] secondpulse secondstage[8] SP6TCNonOverlapClock_8S
+Xdecodeclkbuf vdd vss clk decodeclk buf_x1
+Xcolumnclkbuf vdd vss clk columnclk buf_x1
+Xwlenbuf vdd vss firstpulse wl_en buf_x1
+Xweenbuf vdd vss firstpulse we_en buf_x1
+Xprechargeinv vdd vss secondpulse precharge_n inv_x1
+.ends SP6TCClockGenerator

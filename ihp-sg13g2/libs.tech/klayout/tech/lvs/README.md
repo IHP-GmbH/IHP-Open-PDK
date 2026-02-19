@@ -60,7 +60,8 @@ run_lvs.py --layout=<layout_path>
            [--topcell=<topcell_name>] [--run_mode=<run_mode>]
            [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
            [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
-           [--purge] [--purge_nets] [--verbose] [--allow_unmatched_ports]
+           [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
+           [--implicit_nets=<nets>]
 ```
 
 **Options:**
@@ -97,9 +98,9 @@ run_lvs.py --layout=<layout_path>
 
 - `--purge_nets`                      Purges floating nets from both layout and schematic netlists.
 
-- `--verbose`                         Enables detailed rule execution logs for debugging purposes.
+- `--ignore_top_ports_mismatch`       Ignores top-level port mismatches during comparison mode.
 
-- `--allow_unmatched_ports`           Allows unmatched top-level ports during comparison mode.
+- `--implicit_nets=<nets>`            Comma-separated net names/patterns for implicit connections (case-sensitive), e.g., `"VDD,VSS"` or `"*"`.
 
 
 ---
@@ -124,12 +125,15 @@ run_lvs.py --layout=<layout_path>
 <br/>
 
 * If both `--netlist` and `--net_only` are provided, `--net_only` takes precedence and the schematic netlist input is ignored (with a warning).
+<br/>
+
+* Implicit connections are useful for bottom-up checks where some nets are intentionally open at block level (for example power nets to be connected at top level). Avoid using implicit connections for final top-level signoff LVS.
 ---
 
 **Example:**
 
 ```bash
-    python3 run_lvs.py --layout=testing/testcases/unit/mos_devices/layout/sg13_lv_nmos.gds --netlist=testing/testcases/unit/mos_devices/netlist/sg13_lv_nmos.cdl --run_dir=test_nmos --allow_unmatched_ports
+    python3 run_lvs.py --layout=testing/testcases/unit/mos_devices/layout/sg13_lv_nmos.gds --netlist=testing/testcases/unit/mos_devices/netlist/sg13_lv_nmos.cdl --run_dir=test_nmos --ignore_top_ports_mismatch --implicit_nets=VDD,VSS
 ```
 
 #### LVS Outputs
@@ -199,7 +203,7 @@ KLAYOUT_PATH=$PDKPATH/libs.tech/klayout:$PDKPATH/libs.tech/klayout/tech/ klayout
 > **_NOTE:_** In this context, `PDKPATH` refers to the path leading to the IHP-Open-PDK/ihp-sg13g2 directory within the current repository.
 
 
-Then, you will get the LVS menus for SG13G2, you could set your desired options as shown below:
+Then, you will get the LVS menus for SG13G2, you could set your desired options as shown below. The GUI now uses the same Python backend (`run_lvs.py`) and run-flow style as CLI.
 
 <p align="center">
   <img src="images/lvs_menus_1.png" width="70%" >
@@ -221,7 +225,13 @@ Then, you will get the LVS menus for SG13G2, you could set your desired options 
 * To utilize the LVS options, an active cell must be present. The currently active cell is automatically chosen as the default for running LVS. You could change it using `Top Cell` option.
 <br/>
 
-* To conduct the LVS comparison, you must specify the path to the schematic netlist via `Netlist Path` option. If no path is provided, the tool will search for the netlist file automatically. It will look for files with extensions such as .cdl, .spice, or .cir in the same directory as the layout file, matching the name of the layout file.
+* `Netlist Path` is optional when `Netlist Only` is enabled.
+<br/>
+
+* If no netlist is provided and `Netlist Only` is disabled, the backend logs a clear warning and automatically runs in extraction-only mode for that run.
+<br/>
+
+* You can pass implicit connection patterns through `Implicit Nets` in the advanced tab (for example: `VDD,VSS` or `*`).
 
 ---
 
@@ -236,6 +246,6 @@ Finally, after setting your option, you could execute the LVS using `Run Klayout
   Fig. 7. Running LVS using Klayout menus
 </p>
 
-Upon executing the LVS, the result database will appear on your layout interface, allowing you to verify the outcome of the run similarly as shown above in Fig. 4.
+Upon executing the LVS, a live log window is shown and the generated result database is loaded on your layout interface automatically, allowing you to verify the outcome as shown above in Fig. 4.
 
-Additionally, you can find the extracted netlist generated from your design at (`<layout_name>_extracted.cir`) in the same directory as the layout file.
+Additionally, all run outputs (log, extracted netlist, report database) are available in the selected `Output Run Directory`.
