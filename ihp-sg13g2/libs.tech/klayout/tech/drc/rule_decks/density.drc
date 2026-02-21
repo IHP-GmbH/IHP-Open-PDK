@@ -427,6 +427,11 @@ def output_global_density_violation(report_channel, logger, rule_name, rule_desc
   detail_lines.each { |line| item.add_value(RBA::RdbItemValue::new(line)) }
 end
 
+# Format ratio values as percent text with fixed precision.
+def format_percent(value, digits = 2)
+  format("%.#{digits}f", value * 100.0)
+end
+
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
 
@@ -559,7 +564,7 @@ if SANITY_DENSITY_RULES
     logger.warn("Sanity check: both prBoundary (189/0) and EdgeSeal.boundary (39/4) are present. prBoundary takes precedence for density area.")
     if area_delta_ratio > 0.01
       CHIP.output('DEN.BND.3',
-                  "Sanity check: both boundary layers exist and differ in area by #{(area_delta_ratio * 100).round(2)}%. prBoundary is used for density.")
+                  "Sanity check: both boundary layers exist and differ in area by #{format_percent(area_delta_ratio)}%. prBoundary is used for density.")
     end
   end
 else
@@ -662,7 +667,7 @@ if act_dens_ratio < afil_g_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'AFil.g',
-                                  "5.6. AFil.g: Min. global Activ density [%]: #{afil_g_val * 100}.",
+                                  "5.6. AFil.g: Min. global Activ density [%]: #{format_percent(afil_g_val)}.",
                                   chip_bbox,
                                   act_area,
                                   chip_area,
@@ -678,7 +683,7 @@ if act_dens_ratio > afil_g1_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'AFil.g1',
-                                  "5.6. AFil.g1: Max. global Activ density [%]: #{afil_g1_val * 100}.",
+                                  "5.6. AFil.g1: Max. global Activ density [%]: #{format_percent(afil_g1_val)}.",
                                   chip_bbox,
                                   act_area,
                                   chip_area,
@@ -705,7 +710,7 @@ afilg2_min = activ.with_density_backup(0.0..afil_g2_val,
 output_local_density_violations(report_channel,
                                 logger,
                                 'AFil.g2',
-                                "5.6. AFil.g2: Min. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} µm2 chip area [%]: #{afil_g2_val * 100}.",
+                                "5.6. AFil.g2: Min. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} µm2 chip area [%]: #{format_percent(afil_g2_val)}.",
                                 afilg2_min,
                                 activ,
                                 chip_for_density,
@@ -725,7 +730,7 @@ afilg3_max = activ.with_density_backup(afil_g3_val..1.0,
 output_local_density_violations(report_channel,
                                 logger,
                                 'AFil.g3',
-                                "5.6. AFil.g3: Max. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} µm2 chip area [%]: #{afil_g3_val * 100}.",
+                                "5.6. AFil.g3: Max. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} µm2 chip area [%]: #{format_percent(afil_g3_val)}.",
                                 afilg3_max,
                                 activ,
                                 chip_for_density,
@@ -749,7 +754,7 @@ if poly_dens_ratio < gfil_g_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'GFil.g',
-                                  "5.9. GFil.g: Min. global GatPoly density [%]: #{gfil_g_val * 100}.",
+                                  "5.9. GFil.g: Min. global GatPoly density [%]: #{format_percent(gfil_g_val)}.",
                                   chip_bbox,
                                   poly_area,
                                   chip_area,
@@ -776,7 +781,7 @@ if m1_dens_ratio < m1_j_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'M1.j',
-                                  "5.16. M1.j: Min. global Metal1 density [%]: #{m1_j_val * 100}.",
+                                  "5.16. M1.j: Min. global Metal1 density [%]: #{format_percent(m1_j_val)}.",
                                   chip_bbox,
                                   m1_area,
                                   chip_area,
@@ -791,7 +796,7 @@ if m1_dens_ratio > m1_k_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'M1.k',
-                                  "5.16. M1.k: Max. global Metal1 density [%]: #{m1_k_val * 100}.",
+                                  "5.16. M1.k: Max. global Metal1 density [%]: #{format_percent(m1_k_val)}.",
                                   chip_bbox,
                                   m1_area,
                                   chip_area,
@@ -833,7 +838,7 @@ dens_ratios.each_with_index do |ratio, index|
     output_global_density_violation(report_channel,
                                     logger,
                                     "M#{met_no}.j",
-                                    "5.17. M#{met_no}.j: Min. global Metal#{met_no} density [%]: #{mn_j_val * 100}.",
+                                    "5.17. M#{met_no}.j: Min. global Metal#{met_no} density [%]: #{format_percent(mn_j_val)}.",
                                     chip_bbox,
                                     met_area,
                                     chip_area,
@@ -848,7 +853,7 @@ dens_ratios.each_with_index do |ratio, index|
     output_global_density_violation(report_channel,
                                     logger,
                                     "M#{met_no}.k",
-                                    "5.17. M#{met_no}.k: Max. global Metal#{met_no} density [%]: #{mn_k_val * 100}.",
+                                    "5.17. M#{met_no}.k: Max. global Metal#{met_no} density [%]: #{format_percent(mn_k_val)}.",
                                     chip_bbox,
                                     met_area,
                                     chip_area,
@@ -887,7 +892,7 @@ mets_lay.each_with_index do |met_lay, index|
   output_local_density_violations(report_channel,
                                   logger,
                                   "M#{metalfiller_no}Fil.h",
-                                  "5.18. M#{metalfiller_no}Fil.h: Min. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} µm2 chip area [%]: #{mfil_h_val * 100}",
+                                  "5.18. M#{metalfiller_no}Fil.h: Min. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} µm2 chip area [%]: #{format_percent(mfil_h_val)}",
                                   mfilh_min,
                                   met_lay,
                                   chip_for_density,
@@ -905,7 +910,7 @@ mets_lay.each_with_index do |met_lay, index|
   output_local_density_violations(report_channel,
                                   logger,
                                   "M#{metalfiller_no}Fil.k",
-                                  "5.18. M#{metalfiller_no}Fil.k: Max. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} µm2 chip area [%]: #{mfil_k_val * 100}.",
+                                  "5.18. M#{metalfiller_no}Fil.k: Max. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} µm2 chip area [%]: #{format_percent(mfil_k_val)}.",
                                   mfilk_max,
                                   met_lay,
                                   chip_for_density,
@@ -935,7 +940,7 @@ if tm1_dens_ratio < tm1_c_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'TM1.c',
-                                  "5.22. TM1.c: Min. global TopMetal1 density [%]: #{tm1_c_val * 100}.",
+                                  "5.22. TM1.c: Min. global TopMetal1 density [%]: #{format_percent(tm1_c_val)}.",
                                   chip_bbox,
                                   tm1_area,
                                   chip_area,
@@ -951,7 +956,7 @@ if tm1_dens_ratio > tm1_d_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'TM1.d',
-                                  "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}",
+                                  "5.22. TM1.d: Max. global TopMetal1 density [%]: #{format_percent(tm1_d_val)}",
                                   chip_bbox,
                                   tm1_area,
                                   chip_area,
@@ -977,7 +982,7 @@ if tm2_dens_ratio < tm2_c_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'TM2.c',
-                                  "5.25. TM2.c: Min. global TopMetal2 density [%]: #{tm2_c_val * 100}.",
+                                  "5.25. TM2.c: Min. global TopMetal2 density [%]: #{format_percent(tm2_c_val)}.",
                                   chip_bbox,
                                   tm2_area,
                                   chip_area,
@@ -993,7 +998,7 @@ if tm2_dens_ratio > tm2_d_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'TM2.d',
-                                  "5.25. TM2.d: Max. global TopMetal2 density [%]: #{tm2_d_val * 100}.",
+                                  "5.25. TM2.d: Max. global TopMetal2 density [%]: #{format_percent(tm2_d_val)}.",
                                   chip_bbox,
                                   tm2_area,
                                   chip_area,
@@ -1019,7 +1024,7 @@ if lbe_dens_ratio > lbe_i_val
   output_global_density_violation(report_channel,
                                   logger,
                                   'LBE.i',
-                                  "9.1. LBE.i: Max. global LBE density [%]: #{lbe_i_val * 100}.",
+                                  "9.1. LBE.i: Max. global LBE density [%]: #{format_percent(lbe_i_val)}.",
                                   chip_bbox,
                                   lbe_area,
                                   chip_area,
@@ -1053,7 +1058,7 @@ unless PRECHECK_DRC
     connect(slt_i_l2, slt_i_l1)
     slt_i_l3 = antenna_check(slt_i_l2, slt_i_l1, slt_i_inverse)
     slt_i_l3.output("Slt.i_#{met_abbrev}",
-                    "Min. #{met_name}:slit density for any Metal plate bigger than 35µm x 35µm [%] is #{slt_i_val * 100}.")
+                    "Min. #{met_name}:slit density for any Metal plate bigger than 35µm x 35µm [%] is #{format_percent(slt_i_val)}.")
     slt_i_l1.forget
     slt_i_l2.forget
     slt_i_l3.forget
