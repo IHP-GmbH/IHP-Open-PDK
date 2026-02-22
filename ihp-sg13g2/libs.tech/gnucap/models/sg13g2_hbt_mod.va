@@ -1,0 +1,688 @@
+`include "disciplines.vams"
+
+module npn13G2(node_c, node_b, node_e, node_bn);
+  inout node_c, node_b, node_e, node_bn;
+  electrical node_c, node_b, node_e, node_bn;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real le = 0.96e-6;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((1.3E+01 * pow((4 / nx), 1) * `vbic_rcx)),
+    .IBEI((1.9E-19 * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((4.56E-15 * pow((nx * 0.25), 0.8) * `vbic_cjcp)),
+    .NEI(1.066),
+    .EAIS(1.12),
+    .XIN(3.30),
+    .CJEP((3.56E-15 * (nx * 0.25) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((2.08E-13 * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.056),
+    .TR(3.50E-13),
+    .ITF((0.585 * (nx * 0.25))),
+    .XII(3.30),
+    .IKF((0.009 * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((5.5 * (4 / nx))),
+    .PS(0.46),
+    .BFN(1.00),
+    .IKR((0.01 * (nx * 0.25))),
+    .CBEO((8.00E-16 * pow((nx * 0.25), 0.975))),
+    .MS(0.23),
+    .IBEN((4.00E-16 * (nx * 0.25))),
+    .ISP((4.00E-20 * (nx * 0.25))),
+    .RS(1),
+    .RBX((6.93E+00 * pow((4 / nx), 0.95) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.96),
+    .QCO(1.00E-18),
+    .NCI(1.103),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((1 * selft * 3.26E+03 * pow((4 / nx), 0.9))),
+    .XRE(-0.42),
+    .XIS(2.30),
+    .IBCNP((5.00E-15 * (nx * 0.25))),
+    .TD((2.80E-13 * pow((nx * 0.25), 0))),
+    .NF(1.018),
+    .PE(0.92),
+    .NR(1.01),
+    .AVC2(10.81),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(1.80),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (nx * 0.25))),
+    .MC(0.12),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00188),
+    .CJE((8.418E-15 * pow((nx * 0.25), 0.975) * `vbic_cje)),
+    .KFN((6.00E-9 * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((2.36E-15 * (nx * 0.25))),
+    .ME(0.12),
+    .IS((4.81E-17 * (nx * 0.25) * `vbic_is)),
+    .GAMM(2.25E-14),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (nx * 0.25))),
+    .VO(0.80),
+    .IBCI((1.50E-20 * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.056),
+    .EANE(1.12),
+    .RE((7.13E+00 * pow((4 / nx), 1) * `vbic_re)),
+    .RCI((1.29E+01 * pow((4 / nx), 1))),
+    .CJC((1.53E-15 * (nx * 0.25) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((.00E-04 * (nx * 0.25))),
+    .XTF(10.0),
+    .IBCIP((2.00E-15 * pow((nx * 0.25), 0.7))),
+    .CTH((1.60E-12 * pow((nx * 0.25), 0.95))),
+    .QTF(1.00E-18),
+    .PC(0.558),
+    .EAIC(1.12),
+    .RBI((2.20E+01 * pow((4 / nx), 0.95) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (nx * 0.25)))
+  ) Qnpn13G2 (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r((300 + 100 * nx))) Rsub (node_s1, node_bn);
+  sp_capacitor #(.c((2.30E-14 - (1.50E-15 * nx)))) Csub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+endmodule
+
+module npn13G2_5t(node_c, node_b, node_e, node_bn, node_t);
+  inout node_c, node_b, node_e, node_bn, node_t;
+  electrical node_c, node_b, node_e, node_bn, node_t;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real le = 0.96e-6;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((1.3E+01 * pow((4 / nx), 1) * `vbic_rcx)),
+    .IBEI((1.9E-19 * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((4.56E-15 * pow((nx * 0.25), 0.8) * `vbic_cjcp)),
+    .NEI(1.066),
+    .EAIS(1.12),
+    .XIN(3.30),
+    .CJEP((3.56E-15 * (nx * 0.25) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((2.08E-13 * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.056),
+    .TR(3.50E-13),
+    .ITF((0.585 * (nx * 0.25))),
+    .XII(3.30),
+    .IKF((0.009 * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((5.5 * (4 / nx))),
+    .PS(0.46),
+    .BFN(1.00),
+    .IKR((0.01 * (nx * 0.25))),
+    .CBEO((8.00E-16 * pow((nx * 0.25), 0.975))),
+    .MS(0.23),
+    .IBEN((4.00E-16 * (nx * 0.25))),
+    .ISP((4.00E-20 * (nx * 0.25))),
+    .RS(1),
+    .RBX((6.93E+00 * pow((4 / nx), 0.95) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.96),
+    .QCO(1.00E-18),
+    .NCI(1.103),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((1 * selft * 3.26E+03 * pow((4 / nx), 0.9))),
+    .XRE(-0.42),
+    .XIS(2.30),
+    .IBCNP((5.00E-15 * (nx * 0.25))),
+    .TD((2.80E-13 * pow((nx * 0.25), 0))),
+    .NF(1.018),
+    .PE(0.92),
+    .NR(1.01),
+    .AVC2(10.81),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(1.80),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (nx * 0.25))),
+    .MC(0.12),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00188),
+    .CJE((8.418E-15 * pow((nx * 0.25), 0.975) * `vbic_cje)),
+    .KFN((6.00E-9 * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((2.36E-15 * (nx * 0.25))),
+    .ME(0.12),
+    .IS((4.81E-17 * (nx * 0.25) * `vbic_is)),
+    .GAMM(2.25E-14),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (nx * 0.25))),
+    .VO(0.80),
+    .IBCI((1.50E-20 * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.056),
+    .EANE(1.12),
+    .RE((7.13E+00 * pow((4 / nx), 1) * `vbic_re)),
+    .RCI((1.29E+01 * pow((4 / nx), 1))),
+    .CJC((1.53E-15 * (nx * 0.25) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((.00E-04 * (nx * 0.25))),
+    .XTF(10.0),
+    .IBCIP((2.00E-15 * pow((nx * 0.25), 0.7))),
+    .CTH((1.60E-12 * pow((nx * 0.25), 0.95))),
+    .QTF(1.00E-18),
+    .PC(0.558),
+    .EAIC(1.12),
+    .RBI((2.20E+01 * pow((4 / nx), 0.95) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (nx * 0.25)))
+  ) Qnpn13G2 (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r((300 + 100 * nx))) Rsub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+  sp_capacitor #(.c((2.30E-14 - (1.50E-15 * nx)))) Csub (node_s1, node_bn);
+endmodule
+
+module npn13G2l(node_c, node_b, node_e, node_bn);
+  inout node_c, node_b, node_e, node_bn;
+  electrical node_c, node_b, node_e, node_bn;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real le = 2.50e-6;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((3.90E+00 * (2.5 / el) * pow((4 / nx), 0.9) * `vbic_rcx)),
+    .IBEI((2.01E-19 * pow((el / 2.5), 0.85) * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((8.36E-15 * pow((el / 2.5), 0.55) * pow((nx * 0.25), 0.8) * `vbic_cjcp)),
+    .NEI(1.035),
+    .EAIS(1.12),
+    .XIN(3.30),
+    .CJEP((7.77E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((2.31E-13 * pow((el / 2.5), 0.15) * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.045),
+    .TR(5.00E-13),
+    .ITF((1.658 * (el / 2.5) * (nx * 0.25))),
+    .XII(3.30),
+    .IKF((0.032 * (el / 2.5) * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((15.0 * pow((2.5 / el), 0.7) * (4 / nx))),
+    .PS(0.46),
+    .BFN(1.00),
+    .IKR((0.01 * (el / 2.5) * (nx * 0.25))),
+    .CBEO((1.92E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.95))),
+    .MS(0.23),
+    .IBEN((1.20E-15 * pow((el / 2.5), 0.85) * (nx * 0.25))),
+    .ISP((4.00E-20 * (el / 2.5) * (nx * 0.25))),
+    .RS((1 * (2.5 / el) * (4 / nx))),
+    .RBX((2.54E+00 * pow((2.5 / el), 0.7) * (4 / nx) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.70),
+    .QCO(1.00E-18),
+    .NCI(1.050),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((selft * 1.63E+03 * pow((2.5 / el), 0.85) * pow((4 / nx), 0.8))),
+    .XRE(-0.42),
+    .XIS(2.30),
+    .IBCNP((5.00E-15 * (el / 2.5) * (nx * 0.25))),
+    .TD((2.8e-13 * (el / 2.5))),
+    .NF(1.004),
+    .PE(0.92),
+    .NR(1.01),
+    .AVC2(10.81),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(1.80),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (el / 2.5) * (nx * 0.25))),
+    .MC(0.12),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00188),
+    .CJE((2.166E-14 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.95) * `vbic_cje)),
+    .KFN((3.00E-9 * (2.5 / el) * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((6.33E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975))),
+    .ME(0.12),
+    .IS((7.50E-17 * pow((el / 2.5), 0.85) * (nx * 0.25) * `vbic_is)),
+    .GAMM(3.00E-14),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VO(0.80),
+    .IBCI((3.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.078),
+    .EANE(1.12),
+    .RE((3.19E+00 * (2.5 / el) * pow((4 / nx), 0.88) * `vbic_re)),
+    .RCI((7.50E+00 * pow((2.5 / el), 0.85) * pow((4 / nx), 1))),
+    .CJC((3.83E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((1.00E-04 * (el / 2.5) * (nx * 0.25))),
+    .XTF(10.0),
+    .IBCIP((2.00E-15 * (el / 2.5) * pow((nx * 0.25), 0.7))),
+    .CTH((4.18E-12 * pow((el / 2.5), 0.8) * pow((nx * 0.25), 0.8))),
+    .QTF(1.00E-18),
+    .PC(0.558),
+    .EAIC(1.12),
+    .RBI((7.26E+00 * pow((2.5 / el), 0.7) * (4 / nx) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (el / 2.5) * (nx * 0.25)))
+  ) Qnpn13G2l (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r(((300 + (400 * nx)) * pow((el / 2.5), 0.5)))) Rsub (node_s1, node_bn);
+  sp_capacitor #(.c(((1.70E-14 - (2.00E-15 * nx)) * pow((el / 2.5), 0)))) Csub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+endmodule
+
+module npn13G2l_5t(node_c, node_b, node_e, node_bn, node_t);
+  inout node_c, node_b, node_e, node_bn, node_t;
+  electrical node_c, node_b, node_e, node_bn, node_t;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real le = 2.50e-6;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((3.90E+00 * (2.5 / el) * pow((4 / nx), 0.9) * `vbic_rcx)),
+    .IBEI((2.01E-19 * pow((el / 2.5), 0.85) * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((8.36E-15 * pow((el / 2.5), 0.55) * pow((nx * 0.25), 0.8) * `vbic_cjcp)),
+    .NEI(1.035),
+    .EAIS(1.12),
+    .XIN(3.30),
+    .CJEP((7.77E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((2.31E-13 * pow((el / 2.5), 0.15) * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.045),
+    .TR(5.00E-13),
+    .ITF((1.658 * (el / 2.5) * (nx * 0.25))),
+    .XII(3.30),
+    .IKF((0.032 * (el / 2.5) * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((15.0 * pow((2.5 / el), 0.7) * (4 / nx))),
+    .PS(0.46),
+    .BFN(1.00),
+    .IKR((0.01 * (el / 2.5) * (nx * 0.25))),
+    .CBEO((1.92E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.95))),
+    .MS(0.23),
+    .IBEN((1.20E-15 * pow((el / 2.5), 0.85) * (nx * 0.25))),
+    .ISP((4.00E-20 * (el / 2.5) * (nx * 0.25))),
+    .RS((1 * (2.5 / el) * (4 / nx))),
+    .RBX((2.54E+00 * pow((2.5 / el), 0.7) * (4 / nx) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.70),
+    .QCO(1.00E-18),
+    .NCI(1.050),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((selft * 1.63E+03 * pow((2.5 / el), 0.85) * pow((4 / nx), 0.8))),
+    .XRE(-0.42),
+    .XIS(2.30),
+    .IBCNP((5.00E-15 * (el / 2.5) * (nx * 0.25))),
+    .TD((2.8e-13 * (el / 2.5))),
+    .NF(1.004),
+    .PE(0.92),
+    .NR(1.01),
+    .AVC2(10.81),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(1.80),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (el / 2.5) * (nx * 0.25))),
+    .MC(0.12),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00188),
+    .CJE((2.166E-14 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.95) * `vbic_cje)),
+    .KFN((3.00E-9 * (2.5 / el) * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((6.33E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975))),
+    .ME(0.12),
+    .IS((7.50E-17 * pow((el / 2.5), 0.85) * (nx * 0.25) * `vbic_is)),
+    .GAMM(3.00E-14),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VO(0.80),
+    .IBCI((3.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.078),
+    .EANE(1.12),
+    .RE((3.19E+00 * (2.5 / el) * pow((4 / nx), 0.88) * `vbic_re)),
+    .RCI((7.50E+00 * pow((2.5 / el), 0.85) * pow((4 / nx), 1))),
+    .CJC((3.83E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((1.00E-04 * (el / 2.5) * (nx * 0.25))),
+    .XTF(10.0),
+    .IBCIP((2.00E-15 * (el / 2.5) * pow((nx * 0.25), 0.7))),
+    .CTH((4.18E-12 * pow((el / 2.5), 0.8) * pow((nx * 0.25), 0.8))),
+    .QTF(1.00E-18),
+    .PC(0.558),
+    .EAIC(1.12),
+    .RBI((7.26E+00 * pow((2.5 / el), 0.7) * (4 / nx) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (el / 2.5) * (nx * 0.25)))
+  ) Qnpn13G2l (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r(((300 + (400 * nx)) * pow((el / 2.5), 0.5)))) Rsub (node_s1, node_bn);
+  sp_capacitor #(.c(((1.70E-14 - (2.00E-15 * nx)) * pow((el / 2.5), 0)))) Csub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+endmodule
+
+module npn13G2v(node_c, node_b, node_e, node_bn);
+  inout node_c, node_b, node_e, node_bn;
+  electrical node_c, node_b, node_e, node_bn;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real le = 2.50e-6;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((1.30E+01 * (2.5 / el) * pow((4 / nx), 0.9) * `vbic_rcx)),
+    .IBEI((3.02E-19 * pow((el / 2.5), 0.925) * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((7.60E-15 * pow((el / 2.5), 0.65) * pow((nx * 0.25), 0.5) * `vbic_cjcp)),
+    .NEI(1.043),
+    .EAIS(1.12),
+    .XIN(3.00),
+    .CJEP((6.48E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((4.10E-13 * pow((el / 2.5), 0) * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.030),
+    .TR(1.50E-12),
+    .ITF((0.390 * (el / 2.5) * (nx * 0.25))),
+    .XII(3.00),
+    .IKF((0.022 * (el / 2.5) * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((6.5 * pow((2.5 / el), 0.75) * (4 / nx))),
+    .PS(0.31),
+    .BFN(1.00),
+    .IKR((0.01 * (el / 2.5) * (nx * 0.25))),
+    .CBEO((2.28E-15 * pow((el / 2.5), 0.94) * pow((nx * 0.25), 0.95))),
+    .MS(0.16),
+    .IBEN((1.44E-15 * pow((el / 2.5), 0.925) * (nx * 0.25))),
+    .ISP((4.00E-20 * (el / 2.5) * (nx * 0.25))),
+    .RS((1 * (2.5 / el) * (4 / nx))),
+    .RBX((1.54E+00 * pow((2.5 / el), 0.75) * (4 / nx) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.70),
+    .QCO(1.00E-18),
+    .NCI(1.050),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((selft * 1.55E+03 * pow((2.5 / el), 1) * pow((4 / nx), 0.88))),
+    .XRE(-0.35),
+    .XIS(2.70),
+    .IBCNP((5.00E-15 * (el / 2.5) * (nx * 0.25))),
+    .TD((5.60E-13 * (el / 2.5))),
+    .NF(1.016),
+    .PE(0.88),
+    .NR(1.01),
+    .AVC2(17.14),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(2.20),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (el / 2.5) * (nx * 0.25))),
+    .MC(0.09),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00075),
+    .CJE((2.594E-14 * pow((el / 2.5), 0.94) * pow((nx * 0.25), 0.95) * `vbic_cje)),
+    .KFN((6.00E-7 * (2.5 / el) * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((4.37E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975))),
+    .ME(0.13),
+    .IS((1.22E-16 * pow((el / 2.5), 0.8) * (nx * 0.25) * `vbic_is)),
+    .GAMM(3.30E-12),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VO(2.40),
+    .IBCI((7.50E-19 * (el / 2.5) * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.056),
+    .EANE(1.12),
+    .RE((3.30E+00 * (2.5 / el) * pow((4 / nx), 0.88) * `vbic_re)),
+    .RCI((1.53E+02 * pow((2.5 / el), 0.9) * (4 / nx))),
+    .CJC((2.52E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((1.00E-04 * (el / 2.5) * (nx * 0.25))),
+    .XTF(60.0),
+    .IBCIP((2.00E-15 * (el / 2.5) * pow((nx * 0.25), 0.7))),
+    .CTH((4.40E-12 * pow((el / 2.5), 1) * pow((nx * 0.25), 0.8))),
+    .QTF(1.00E-18),
+    .PC(0.397),
+    .EAIC(1.12),
+    .RBI((6.60E+00 * pow((2.5 / el), 0.75) * (4 / nx) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (el / 2.5) * (nx * 0.25)))
+  ) Qnpn13G2v (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r(((300 + (400 * nx)) * pow((el / 2.5), 0.85)))) Rsub (node_s1, node_bn);
+  sp_capacitor #(.c(((1.70E-14 - (2.00E-15 * nx)) * pow((el / 2.5), 0)))) Csub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+endmodule
+
+module npn13G2v_5t(node_c, node_b, node_e, node_bn, node_t);
+  inout node_c, node_b, node_e, node_bn, node_t;
+  electrical node_c, node_b, node_e, node_bn, node_t;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real nx = 1;
+  parameter real le = 2.50e-6;
+  parameter real dtemp = 0;
+  parameter real ny = 1;
+  parameter real we = 0.12e-6;
+  parameter real el = le * 1e6;
+  parameter real selft = 1;
+  vbic_4T_et_cf #(
+    .HRCF(1000),
+    .RCX((1.30E+01 * (2.5 / el) * pow((4 / nx), 0.9) * `vbic_rcx)),
+    .IBEI((3.02E-19 * pow((el / 2.5), 0.925) * (nx * 0.25) * `vbic_ibei)),
+    .CJCP((7.60E-15 * pow((el / 2.5), 0.65) * pow((nx * 0.25), 0.5) * `vbic_cjcp)),
+    .NEI(1.043),
+    .EAIS(1.12),
+    .XIN(3.00),
+    .CJEP((6.48E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .XVO(1.50),
+    .TF((4.10E-13 * pow((el / 2.5), 0) * `vbic_tf * pow(((($temperature - 273.15) + 273) / 300), 0.7))),
+    .EA(1.030),
+    .TR(1.50E-12),
+    .ITF((0.390 * (el / 2.5) * (nx * 0.25))),
+    .XII(3.00),
+    .IKF((0.022 * (el / 2.5) * (nx * 0.25))),
+    .AJE(-0.50),
+    .RBP((6.5 * pow((2.5 / el), 0.75) * (4 / nx))),
+    .PS(0.31),
+    .BFN(1.00),
+    .IKR((0.01 * (el / 2.5) * (nx * 0.25))),
+    .CBEO((2.28E-15 * pow((el / 2.5), 0.94) * pow((nx * 0.25), 0.95))),
+    .MS(0.16),
+    .IBEN((1.44E-15 * pow((el / 2.5), 0.925) * (nx * 0.25))),
+    .ISP((4.00E-20 * (el / 2.5) * (nx * 0.25))),
+    .RS((1 * (2.5 / el) * (4 / nx))),
+    .RBX((1.54E+00 * pow((2.5 / el), 0.75) * (4 / nx) * `vbic_rbx)),
+    .WSP(1),
+    .NCN(1.70),
+    .QCO(1.00E-18),
+    .NCI(1.050),
+    .XRS(1.50),
+    .VEF(189),
+    .RTH((selft * 1.55E+03 * pow((2.5 / el), 1) * pow((4 / nx), 0.88))),
+    .XRE(-0.35),
+    .XIS(2.70),
+    .IBCNP((5.00E-15 * (el / 2.5) * (nx * 0.25))),
+    .TD((5.60E-13 * (el / 2.5))),
+    .NF(1.016),
+    .PE(0.88),
+    .NR(1.01),
+    .AVC2(17.14),
+    .WBE(1.00),
+    .NCNP(1.50),
+    .DTEMP(dtemp),
+    .AJC(-0.50),
+    .AFN(2.20),
+    .AJS(-0.50),
+    .IBENP((2.00E-14 * (el / 2.5) * (nx * 0.25))),
+    .MC(0.09),
+    .NFP(1.04),
+    .NEN(2.00),
+    .TAVC(-0.00075),
+    .CJE((2.594E-14 * pow((el / 2.5), 0.94) * pow((nx * 0.25), 0.95) * `vbic_cje)),
+    .KFN((6.00E-7 * (2.5 / el) * (4 / nx))),
+    .EANS(1.12),
+    .CBCO((4.37E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975))),
+    .ME(0.13),
+    .IS((1.22E-16 * pow((el / 2.5), 0.8) * (nx * 0.25) * `vbic_is)),
+    .GAMM(3.30E-12),
+    .FC(0.80),
+    .TNOM(27),
+    .IBEIP((4.00E-19 * (el / 2.5) * (nx * 0.25))),
+    .VO(2.40),
+    .IBCI((7.50E-19 * (el / 2.5) * (nx * 0.25))),
+    .VTF(20.0),
+    .EAIE(1.056),
+    .EANE(1.12),
+    .RE((3.30E+00 * (2.5 / el) * pow((4 / nx), 0.88) * `vbic_re)),
+    .RCI((1.53E+02 * pow((2.5 / el), 0.9) * (4 / nx))),
+    .CJC((2.52E-15 * pow((el / 2.5), 0.85) * pow((nx * 0.25), 0.975) * `vbic_cjc)),
+    .TNF(0.00015),
+    .VER(5.3),
+    .IKP((1.00E-04 * (el / 2.5) * (nx * 0.25))),
+    .XTF(60.0),
+    .IBCIP((2.00E-15 * (el / 2.5) * pow((nx * 0.25), 0.7))),
+    .CTH((4.40E-12 * pow((el / 2.5), 1) * pow((nx * 0.25), 0.8))),
+    .QTF(1.00E-18),
+    .PC(0.397),
+    .EAIC(1.12),
+    .RBI((6.60E+00 * pow((2.5 / el), 0.75) * (4 / nx) * `vbic_rbx)),
+    .NCIP(1.00),
+    .EANC(1.12),
+    .AVC1(2.40),
+    .IBCN((1.00E-15 * (el / 2.5) * (nx * 0.25)))
+  ) Qnpn13G2v (node_c, node_b, node_e, node_s1, node_t);
+  sp_resistor #(.r(((300 + (400 * nx)) * pow((el / 2.5), 0.85)))) Rsub (node_s1, node_bn);
+  sp_capacitor #(.c(((1.70E-14 - (2.00E-15 * nx)) * pow((el / 2.5), 0)))) Csub (node_s1, node_bn);
+  sp_resistor #(.r(1e9)) Rt (node_t, node_0);
+endmodule
+
+`define ccb0 970e-018
+`define isc0 2e-023
+`define ikr0 4e-007
+`define rc0 1e+003
+`define rb0 700
+module pnpMPA(node_c, node_b, node_e);
+  inout node_c, node_b, node_e;
+  electrical node_c, node_b, node_e;
+
+  parameter integer _rdist_seed = 0;
+
+  parameter real a = 2e-12;
+  parameter real p = 6e-6;
+  parameter real ac = 13.33e-12;
+  parameter real pc = 14.64e-6;
+  parameter real dev_a = a * 1e12;
+  parameter real dev_p = p * 1e6;
+  parameter real sub_a = ac * 1e12;
+  parameter real sub_p = pc * 1e6;
+  sp_bjt #(
+    .ise(1e-022),
+    .cjs(0),
+    .tre1(0),
+    .rbm((0.9 * `rb0 * `sgp_mpa_rb)),
+    .trm1(0.001),
+    .is((1.660E-19 * `sgp_mpa_is)),
+    .vjs(0.95),
+    .vje(0.46),
+    .mjs(0.5),
+    .tnom(27),
+    .re((20 * `sgp_mpa_re)),
+    .xtb(2.44),
+    .isc(((`isc0 * (sub_a)) / (dev_a))),
+    .br(0.00015),
+    .xti(2.54),
+    .nf(1.015),
+    .mje(0.126),
+    .vjc(0.58),
+    .tre2(0),
+    .var(150),
+    .rc(((`rc0 / (sub_a)) * (dev_a) * `sgp_mpa_rc)),
+    .ikf(0.0003),
+    .cjc((((`ccb0 * (sub_a)) / (dev_a)) * `sgp_mpa_cjc)),
+    .nc(1),
+    .area(dev_a),
+    .irb(1e-015),
+    .vaf(100),
+    .cje((1.72e-015 * `sgp_mpa_cje)),
+    .nr(1),
+    .eg(1.17),
+    .trc2(3.02E-005),
+    .trm2(0),
+    .ne(1),
+    .trc1(-0.01121),
+    .bf((1.10 * `sgp_mpa_bf)),
+    .ikr(((`ikr0 * (sub_a)) / (dev_a))),
+    .type(-1),
+    .rb((`rb0 * `sgp_mpa_rb)),
+    .mjc(0.3)
+  ) QpnpMPA (node_c, node_b, node_e);
+endmodule
+
