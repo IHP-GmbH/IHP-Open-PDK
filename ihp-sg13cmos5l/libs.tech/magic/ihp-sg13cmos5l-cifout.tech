@@ -681,11 +681,6 @@ style drc
  scalefactor 10  nanometers
  options calma-permissive-labels
 
- # Find nwell spacing to diffusion in pwell.
- templayer nwell_space_to_pwell_active nwell
- grow 390
- and active_in_pwell
-
  # Check latchup rule (20um minimum from tap diffusion to any
  # non-tap diffusion.
 
@@ -693,14 +688,12 @@ style drc
  bloat-all (*psd,*hvpsd,*ptap,*hvptap)/a pwell,space/w 20000
 
  templayer ptap_missing *ndiff,*hvndiff
- and-not dnwell
  and-not ptap_reach
 
  templayer ntap_reach
  bloat-all (*nsd,*hvnsd,*ntap,*hvntap)/a nwell,pnp 20000
 
  templayer ntap_missing *pdiff,*hvpdiff
- and-not pwell_in_dnwell
  and-not ntap_reach
 
  # hV nwell must be 2um from any other nwell
