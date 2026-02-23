@@ -29,7 +29,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.b: Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is 0.62 um
     logger.info('Executing rule NW.b')
     nw_b_value = drc_rules['NW_b'].to_f
-    nw_b_l = nwell_nets.space(nw_b_value.um, props_eq)
+    nw_b_l = nwell_drw.nets.space(nw_b_value.um, props_eq)
     nw_b_l.output('NW.b',
                   "5.1.NW.b : Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is #{nw_b_value} um")
     nw_b_l.forget
@@ -37,7 +37,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
     logger.info('Executing rule NW.b1')
     nw_b1_value = drc_rules['NW_b1'].to_f
-    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne)
+    nw_b1_l1 = nwell_drw.nets.space(nw_b1_value.um, props_ne)
     nw_b1_l2 = pwell_block.interacting(nwell_drw)
     nw_b1_l3 = nw_b1_l2.sep(nwell_drw, nw_b1_value.um, without_touching_edges)
     nw_b1 = nw_b1_l1.join(nw_b1_l3)

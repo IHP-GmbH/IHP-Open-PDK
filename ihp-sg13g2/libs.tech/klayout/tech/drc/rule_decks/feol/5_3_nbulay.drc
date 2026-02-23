@@ -53,7 +53,7 @@ if TABLES.include?('nbulay') || FEOL
     # Rule NBL.d: Min. PWell width between nBuLay and NWell (different net) is 2.20 um
     logger.info('Executing rule NBL.d')
     nbl_d_value = drc_rules['NBL_d'].to_f
-    nbl_d_l1 = nbl_nets.sep(nwell_nets, nbl_d_value.um, props_ne)
+    nbl_d_l1 = nbl_nets.sep(nwell_drw.nets, nbl_d_value.um, props_ne)
     nbl_d_l2 = pwell_block.interacting(nwell_drw)
     nbl_d_l3 = nbl_d_l2.sep(nbuLay_gen_nwell, nbl_d_value.um, euclidian, without_touching_edges)
     nbl_d = nbl_d_l1.join(nbl_d_l3)
