@@ -70,6 +70,12 @@ set ::env(KLAYOUT_LVS_OPTIONS) [dict create run_mode deep ]
 # set ::env(KLAYOUT_LVS_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/lvs/sg13cmos5l.lvs"
 # set ::env(KLAYOUT_LVS_OPTIONS) [dict create run_mode deep ]
 
+## magic setup
+set ::env(MAGICRC) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/magic/ihp-sg13cmos5l.magicrc"
+set ::env(MAGIC_TECH) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/magic/ihp-sg13cmos5l.tech"
+# netgen setup
+set ::env(NETGEN_SETUP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/netgen/ihp-sg13cmos5l_setup.tcl"
+
 # No tap cells
 set ::env(FP_TAPCELL_DIST) 0
 
