@@ -52,7 +52,20 @@ set ::env(KLAYOUT_TECH) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg1
 set ::env(KLAYOUT_PROPERTIES) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg13cmos5l.lyp"
 set ::env(KLAYOUT_DEF_LAYER_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg13cmos5l.map"
 set ::env(KLAYOUT_DRC_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/ihp-sg13cmos5l.drc"
-set ::env(KLAYOUT_DRC_OPTIONS) [dict create densityRules 0 ]
+set ::env(KLAYOUT_DRC_OPTIONS) [dict create]
+dict set ::env(KLAYOUT_DRC_OPTIONS) no_recommended true
+dict set ::env(KLAYOUT_DRC_OPTIONS) run_mode deep
+
+set ::env(KLAYOUT_DENSITY_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/rule_decks/density.drc"
+set ::env(KLAYOUT_DENSITY_OPTIONS) [dict create]
+
+set ::env(KLAYOUT_ANTENNA_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/rule_decks/antenna.drc"
+set ::env(KLAYOUT_ANTENNA_OPTIONS) [dict create]
+
+set ::env(KLAYOUT_FILLER_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/scripts/filler.py"
+
+set ::env(KLAYOUT_LVS_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/lvs/sg13cmos5l.lvs"  
+set ::env(KLAYOUT_LVS_OPTIONS) [dict create run_mode deep ]
 # LVS not yet available for CMOS5L
 # set ::env(KLAYOUT_LVS_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/lvs/sg13cmos5l.lvs"
 # set ::env(KLAYOUT_LVS_OPTIONS) [dict create run_mode deep ]

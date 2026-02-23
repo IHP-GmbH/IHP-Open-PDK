@@ -15,7 +15,7 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'sealring'
 
-def generate_sealring(width: float, heigth: float, output: str, offset_x: float, offset_y: float):
+def generate_sealring(width: float, heigth: float, input: str | None, output: str, offset_x: float, offset_y: float):
     """Function to create a new layout, add the sealring PCell to sealring_top
     and save it somewhere on the filesystem.
 
@@ -25,23 +25,26 @@ def generate_sealring(width: float, heigth: float, output: str, offset_x: float,
     :type heigth: float
     :param output: Path and name of the file where the sealring should be written to.
     :type output: str
-    :param offset_x: Translation in X direction in um.
+    :param offset_x: Translation in X direction in µm.
     :type offset_x: float
-    :param offset_y: Translation in Y direction in um.
+    :param offset_y: Translation in Y direction in µm.
     :type offset_y: float
 
     """
     layout = klayout.db.Layout(True)
     layout.dbu = 0.001
 
+    if input:
+        layout.read(input)
+
     lib = pya.Library.library_by_name(LIB)
     if lib is None:
         raise RuntimeError(
             "Could not find the 'SG13_dev' PCell library in the current KLayout environment.\n"
-            "Please make sure the SG13CMOS5L PDK is properly installed and configured in KLayout.\n"
+            "Please make sure the SG13G2 PDK is properly installed and configured in KLayout.\n"
             "This may involve:\n"
             "- Cloning the IHP-Open-PDK repository with all submodules (use --recursive)\n"
-            "- Ensuring the SG13CMOS5L technology is registered in KLayout (e.g. using -n sg13cmos5l)\n"
+            "- Ensuring the SG13G2 technology is registered in KLayout (e.g. using -n sg13g2)\n"
             "- Running KLayout with a version that supports Python PCells and properly loads them\n"
             "- Verifying that 'SG13_dev' appears in the Library Browser under PCells"
         )
@@ -54,11 +57,15 @@ def generate_sealring(width: float, heigth: float, output: str, offset_x: float,
     width = float(width) - edge_box * 2
     heigth = float(heigth) - edge_box * 2
 
-    top_cell = layout.cell(layout.add_cell("sealring_top"))
+    if input:
+        top_cell = layout.top_cell()
+    else:
+        top_cell = layout.cell(layout.add_cell("sealring_top"))
+
     pcell = layout.add_pcell_variant(lib, pcell_decl.id(), {'w': f'{width}u', 'l': f'{heigth}u'})
     layout.cell(pcell)
 
-    # Convert offset from um to dbu
+    # Convert offset from µm to dbu
     dx = int(float(offset_x) * 1000)
     dy = int(float(offset_y) * 1000)
 
@@ -71,7 +78,12 @@ def generate_sealring(width: float, heigth: float, output: str, offset_x: float,
     # Create directory where the sealring should be written to.
     pathlib.Path(output).parent.mkdir(parents=True, exist_ok=True)
 
-    layout.write(output)
+    # Don't save PCell information in the "$$$CONTEXT_INFO$$$" cell
+    # as this could cause issues further downstream
+    options = pya.SaveLayoutOptions()
+    options.write_context_info = False
+
+    layout.write(output, options)
 
 try:
     width
@@ -101,4 +113,12 @@ try:
 except NameError:
     offset_y = 0.0
 
-generate_sealring(width, height, output, offset_x, offset_y)  # pylint: disable=undefined-variable
+try:
+    input
+    # Ignore built-in input function
+    if callable(input):
+        input = None
+except NameError:
+    input = None
+
+generate_sealring(width, height, input, output, offset_x, offset_y)  # pylint: disable=undefined-variable

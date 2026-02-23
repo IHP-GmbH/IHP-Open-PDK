@@ -41,7 +41,7 @@ NO_ACTIV = 'no_activ' in globals()
 NO_METAL = 'no_metal' in globals()
 NO_TOPMETAL = 'no_topmetal' in globals()
 
-scripts = [(NO_ACTIV, 'ActGatP'), (NO_METAL, 'Metal'), (NO_TOPMETAL, 'TopMetal')]
+scripts = [(NO_ACTIV, 'ActGatP'), (NO_METAL, 'Metal')]
 
 for disabled, area in scripts:
     if disabled:
