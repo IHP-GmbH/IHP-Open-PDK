@@ -162,8 +162,9 @@ PRECHECK_DRC = bool_check?($precheck_drc)
 logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
 
 # Connectivity rules
-conn_tables = %w[main nwell nbulay]
-CONNECTIVITY_RULES = TABLES.any?{|x| conn_tables.include?(x)}
+# Needed for full FEOL runs and for explicit nwell/nbulay table runs.
+conn_tables = %w[nwell nbulay]
+CONNECTIVITY_RULES = FEOL || TABLES.any?{|x| conn_tables.include?(x)}
 logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}.")
 
 #================================================
