@@ -43,6 +43,7 @@ module SG13G2LVSOptions
 
   DEFAULT_OPTIONS = {
     'netlist' => '',
+    'layout_netlist' => '',
     'top_cell' => '',
     'run_mode' => 'flat',
     'run_dir' => '',
@@ -137,7 +138,7 @@ module SG13G2LVSOptions
 
   def self.get_top_cell_names
     active_cellview = RBA::CellView.active
-    raise StandardError, 'No active cellview found.' if active_cellview.nil?
+    return ['TOP'] if active_cellview.nil? || active_cellview.cell.nil?
 
     layout = active_cellview.layout
     active_cell_name = active_cellview.cell.name
@@ -154,7 +155,7 @@ module SG13G2LVSOptions
 
   def self.get_active_cell_name
     active_cellview = RBA::CellView.active
-    raise StandardError, 'No active cellview found.' if active_cellview.nil?
+    return 'TOP' if active_cellview.nil? || active_cellview.cell.nil?
 
     active_cellview.cell.name
   end
@@ -205,7 +206,20 @@ module SG13G2LVSOptions
     @widgets[:run_mode] = create_combo_box(options['run_mode'], ['flat', 'deep'])
     @widgets[:top_cell].setToolTip('Top layout cell used as the root of extraction/comparison.')
     @widgets[:run_mode].setToolTip('flat: flattened extraction, deep: hierarchical extraction.')
-    @widgets[:netlist] = create_file_input(options['netlist'])
+    @widgets[:netlist] = create_file_input(
+      options['netlist'],
+      placeholder: 'Optional in extraction-only mode',
+      input_tooltip: 'Path to schematic CDL/SPICE netlist used in comparison mode. Ignored in extraction-only mode.',
+      browse_tooltip: 'Browse to select a schematic netlist file',
+      dialog_title: 'Select Schematic Netlist'
+    )
+    @widgets[:layout_netlist] = create_file_input(
+      options['layout_netlist'],
+      placeholder: 'Optional path to pre-extracted layout netlist (SVS mode)',
+      input_tooltip: 'Path to layout-side CDL/SPICE netlist. When set, extraction is skipped and this file is used.',
+      browse_tooltip: 'Browse to select a layout netlist file',
+      dialog_title: 'Select Layout Netlist'
+    )
     @widgets[:net_only] = create_check_box(
       'Extraction Only (Netlist Only)',
       options['net_only'],
@@ -281,6 +295,7 @@ module SG13G2LVSOptions
     basic_inputs_layout.addRow('Top Cell:', @widgets[:top_cell])
     basic_inputs_layout.addRow('Run Mode:', @widgets[:run_mode])
     basic_inputs_layout.addRow('Netlist Path:', @widgets[:netlist][:container])
+    basic_inputs_layout.addRow('Layout Netlist Path:', @widgets[:layout_netlist][:container])
     basic_inputs_layout.addRow('', @widgets[:net_only])
     basic_inputs_layout.addRow('', @widgets[:ignore_top_ports_mismatch])
     basic_layout.addWidget(basic_inputs_group)
@@ -290,7 +305,8 @@ module SG13G2LVSOptions
     basic_tips_layout.setSpacing(6)
     tips_text = [
       "Tip: 'Ignore Top-Port Mismatches' (--ignore_top_ports_mismatch) is for block-level LVS only; avoid it for top-level signoff.",
-      "Tip: If netlist path is empty and extraction-only is disabled, the run auto-switches to extraction-only."
+      "Tip: If netlist path is empty and extraction-only is disabled, the run auto-switches to extraction-only.",
+      "Tip: If layout netlist path is set, extraction is skipped and the provided file is used as layout-side input."
     ]
     tips_text.each do |txt|
       tip_label = RBA::QLabel.new("• #{txt}")
@@ -484,14 +500,12 @@ module SG13G2LVSOptions
     line_edit
   end
 
-  def self.create_file_input(text)
+  def self.create_file_input(text, placeholder:, input_tooltip:, browse_tooltip:, dialog_title:)
     input = RBA::QLineEdit.new
     input.text = text.to_s
-    input.setPlaceholderText('Optional in extraction-only mode')
+    input.setPlaceholderText(placeholder)
     input.setMinimumHeight(35)
-    input.setToolTip(
-      'Path to schematic CDL/SPICE netlist used in comparison mode. Ignored in extraction-only mode.'
-    )
+    input.setToolTip(input_tooltip)
 
     browse_button = RBA::QPushButton.new('Browse')
     browse_button.setCursor(RBA::QCursor.new(RBA::Qt::PointingHandCursor))
@@ -511,10 +525,10 @@ module SG13G2LVSOptions
       "  background-color: #155a9c; " \
       "}"
     )
-    browse_button.setToolTip('Browse to select a netlist file')
+    browse_button.setToolTip(browse_tooltip)
     browse_button.clicked.connect(Proc.new {
       file_filter = 'CDL/SPICE (*.cdl *.spice *.cir);;All Files (*)'
-      selected = RBA::FileDialog.get_open_file_name('Select Netlist', '.', file_filter)
+      selected = RBA::FileDialog.get_open_file_name(dialog_title, '.', file_filter)
       input.text = selected.to_s
     })
 
@@ -608,6 +622,7 @@ module SG13G2LVSOptions
     options['top_cell'] = @widgets[:top_cell].currentText.to_s
     options['run_mode'] = @widgets[:run_mode].currentText.to_s
     options['netlist'] = @widgets[:netlist][:input].text.to_s
+    options['layout_netlist'] = @widgets[:layout_netlist][:input].text.to_s
     options['run_dir'] = @widgets[:run_dir][:input].text.to_s
 
     options['net_only'] = @widgets[:net_only].checked

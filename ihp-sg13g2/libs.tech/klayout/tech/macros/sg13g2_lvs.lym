@@ -47,6 +47,7 @@ $python_pid = nil
 
 DEFAULT_OPTIONS = {
   'netlist' => '',
+  'layout_netlist' => '',
   'top_cell' => '',
   'run_mode' => 'flat',
   'run_dir' => '',
@@ -118,20 +119,6 @@ if required > detected
 end
 puts "Your KLayout version is: #{klayout_v}"
 
-active_cellview = RBA::CellView.active
-if active_cellview.nil? or active_cellview.filename.to_s.strip.empty?
-  raise StandardError, 'No active layout file is available. Open a layout before running LVS.'
-end
-
-layout_path = Pathname.new(active_cellview.filename).to_s
-layout = active_cellview.layout
-active_cell_name = active_cellview.cell.name.to_s
-
-cell_names = []
-layout.each_cell do |cell|
-  cell_names &lt;&lt; cell.name
-end
-
 macro_dir = File.dirname(File.expand_path(__FILE__))
 project_root = File.expand_path('..', macro_dir)
 run_script = File.join(project_root, 'lvs', 'run_lvs.py')
@@ -143,17 +130,38 @@ end
 yaml_file = File.join(ENV['HOME'], '.ihp_pdk', 'ihp_sg13g2_lvs_options.yml')
 options = load_options(yaml_file)
 
+layout_netlist_path = options['layout_netlist'].to_s.strip
+active_cellview = RBA::CellView.active
+has_layout = !(active_cellview.nil? || active_cellview.filename.to_s.strip.empty?)
+
+layout_path = nil
+active_cell_name = ''
+cell_names = []
+
+if has_layout
+  layout_path = Pathname.new(active_cellview.filename).to_s
+  layout = active_cellview.layout
+  active_cell_name = active_cellview.cell.name.to_s
+  layout.each_cell do |cell|
+    cell_names &lt;&lt; cell.name
+  end
+elsif layout_netlist_path.empty?
+  raise StandardError, 'No active layout file is available. Open a layout or set Layout Netlist Path in LVS options.'
+else
+  puts 'No active layout file detected. Running with provided layout netlist input.'
+end
+
 run_mode = options['run_mode'].to_s.strip
 run_mode = 'flat' if run_mode.empty?
 
 top_cell = options['top_cell'].to_s.strip
-if top_cell.empty? or !cell_names.include?(top_cell)
+if has_layout and (top_cell.empty? || !cell_names.include?(top_cell))
   top_cell = active_cell_name
 end
 
 run_dir = options['run_dir'].to_s.strip
 if run_dir.empty?
-  safe_top = top_cell.gsub(/[^A-Za-z0-9_.-]/, '_')
+  safe_top = top_cell.to_s.strip.empty? ? 'TOP' : top_cell.gsub(/[^A-Za-z0-9_.-]/, '_')
   timestamp = Time.now.strftime('%Y_%m_%d_%H_%M_%S')
   run_dir = File.expand_path("lvs_run_#{safe_top}_#{timestamp}")
 else
@@ -161,13 +169,14 @@ else
 end
 
 cmd_opts = []
-cmd_opts &lt;&lt; "--layout=#{Shellwords.escape(layout_path)}"
-cmd_opts &lt;&lt; "--topcell=#{Shellwords.escape(top_cell)}"
+cmd_opts &lt;&lt; "--layout=#{Shellwords.escape(layout_path)}" if layout_path and !layout_path.empty?
+cmd_opts &lt;&lt; "--topcell=#{Shellwords.escape(top_cell)}" unless top_cell.empty?
 cmd_opts &lt;&lt; "--run_mode=#{Shellwords.escape(run_mode)}"
 cmd_opts &lt;&lt; "--run_dir=#{Shellwords.escape(run_dir)}"
 
 netlist_path = options['netlist'].to_s.strip
 cmd_opts &lt;&lt; "--netlist=#{Shellwords.escape(netlist_path)}" unless netlist_path.empty?
+cmd_opts &lt;&lt; "--layout_netlist=#{Shellwords.escape(layout_netlist_path)}" unless layout_netlist_path.empty?
 
 %w[
   no_net_names

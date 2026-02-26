@@ -55,8 +55,8 @@ The `run_lvs.py` script takes your gds and netlist files to run LVS rule decks w
 
 ```bash
 run_lvs.py (--help | -h)
-run_lvs.py --layout=<layout_path>
-           [--netlist=<netlist_path>] [--run_dir=<run_dir_path>]
+run_lvs.py [--layout=<layout_path>]
+           [--netlist=<netlist_path>] [--layout_netlist=<layout_netlist_path>] [--run_dir=<run_dir_path>]
            [--topcell=<topcell_name>] [--run_mode=<run_mode>]
            [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
            [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
@@ -68,9 +68,11 @@ run_lvs.py --layout=<layout_path>
 
 - `--help -h`                         Displays this help message.
 
-- `--layout=<layout_path>`            Specifies the file path of the input GDS file.
+- `--layout=<layout_path>`            Optional path to the input GDS file. Required unless `--layout_netlist` is provided.
 
 - `--netlist=<netlist_path>`          Optional path to the schematic netlist file.
+
+- `--layout_netlist=<layout_netlist_path>` Optional path to a layout-side netlist file. When provided, layout extraction is skipped and this netlist is used for comparison/output.
 
 - `--run_dir=<run_dir_path>`          Run directory to save generated results. By default, a timestamped run directory is created in the current directory.
 
@@ -125,6 +127,15 @@ run_lvs.py --layout=<layout_path>
 <br/>
 
 * If both `--netlist` and `--net_only` are provided, `--net_only` takes precedence and the schematic netlist input is ignored (with a warning).
+<br/>
+
+* SVS flow is used for schematic-vs-schematic style checks: compare two netlists without layout extraction.
+<br/>
+
+* SVS inputs are `--netlist` (schematic-side netlist) and `--layout_netlist` (layout-side/pre-extracted netlist). `--layout` is optional in this mode.
+<br/>
+
+* In SVS flow (`--layout_netlist`), if `--layout` is omitted, the backend creates a temporary empty layout only to satisfy KLayout LVS layout-context requirements.
 <br/>
 
 * Implicit connections are useful for bottom-up checks where some nets are intentionally open at block level (for example power nets to be connected at top level). Avoid using implicit connections for final top-level signoff LVS.
