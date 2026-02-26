@@ -12,5 +12,4 @@ python3 "${SCRIPT_DIR}/../../../../run_lvs.py" \
   --layout="${SCRIPT_DIR}/SP6TCClockGenerator.gds" \
   --netlist="${SCRIPT_DIR}/SP6TCClockGenerator.cdl" \
   --implicit_nets=vdd \
-  --ignore_top_ports_mismatch \
-  --run_dir=/tmp/lvs_implicit_connections_run
+  --ignore_top_ports_mismatch
