@@ -210,7 +210,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'Q'
       model.downcase.include?('pnp') ? %w[C B E] : %w[C B E S]
     when 'C'
-      model.downcase.include?('varicap') ? gen_term_with_sub(model, nets.size) : gen_mim_terms(model)
+      model.downcase.include?('varicap') ? %w[G1 W G2 SUB] : gen_mim_terms(model)
     when 'R'
       if RES_DEV.any? { |res| model.downcase.start_with?(res) }
         gen_term_names(model, nets.size)
@@ -316,6 +316,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_capacitor_params(device, model, params)
     device.set_parameter('w', (params['W'] || 0.0) * 1e6)
     device.set_parameter('l', (params['L'] || 0.0) * 1e6)
+    device.set_parameter('Nx', params['NX'] || 1.0) if model.downcase.include?('varicap')
     device.set_parameter('m', params['M'] || params['MF'] || 1.0) if model.downcase.include?('mim')
 
     if model.downcase.include?('mim')

@@ -127,13 +127,24 @@ end
 class DeviceCustomVaractor < RBA::DeviceClassCapacitorWithBulk
   include DeviceClassMethods
 
-  def initialize(name, num)
-    # clear terminals and parameters of resistor class
+  def initialize(_name, _num)
+    super()
+    # clear terminals and parameters of varactor class
     clear_parameters
     clear_terminals
+    clear_equivalent_terminal_ids
 
     add_parameters('w', 'l')
-    add_terminals(name, num, 1)
+    add_parameter(RBA::DeviceParameterDefinition.new('Nx', 'multiplier', 1, true))
+
+    g1 = add_terminal(RBA::DeviceTerminalDefinition.new('G1'))
+    g1.name = 'G1'
+    w = add_terminal(RBA::DeviceTerminalDefinition.new('W'))
+    w.name = 'W'
+    g2 = add_terminal(RBA::DeviceTerminalDefinition.new('G2'))
+    g2.name = 'G2'
+    sub = add_terminal(RBA::DeviceTerminalDefinition.new('SUB'))
+    sub.name = 'SUB'
   end
 end
 

@@ -64,7 +64,7 @@ The following table explains the list of available SG13G2 devices we have suppor
 | rhigh           |:white_check_mark:|
 | lvsres          |:white_check_mark:|
 | **Capacitors**  |                  |
-| SVaricap        |:white_check_mark:|
+| sg13_hv_svaricap|:white_check_mark:|
 | cap_cmim        |:white_check_mark:|
 | rfcmim          |:white_check_mark:|
 | **ESD**         |                  |
