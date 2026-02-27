@@ -47,11 +47,20 @@ if TABLES.include?('cont') || FEOL
     cnt_c_l.output('Cnt.c', "5.14. Cnt.c Min. Activ enclosure of Cont is #{cnt_c_value} um")
     cnt_c_l.forget
 
-    # Rule Cnt.c: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
-    logger.info('Executing rule Cnt.c')
+    # Rule Cnt.c.digibnd: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
+    # Exclude SVaricap region to match G2 maximal (Cnt.c.Digi) and CMOS5L maximal behavior.
+    # G2 maximal uses: Cont_SQ.ext_not(SVaricap_or_trans_bip)
+    # CMOS5L maximal uses: Cont_SQ.ext_not(SVaricap)
+    # Simplified SVaricap detection: NWell AND ThickGateOx (same as Cnt.e below).
+    # LIMITATION: This is broader than the maximal's precise device recognition which
+    # also requires NGate, GatPoly, Activ, and a "SVaricap" text label.
+    # SVaricap contacts on Activ are by design and must not trigger this check.
+    logger.info('Executing rule Cnt.c.digibnd')
     cnt_c_digibnd_value = drc_rules['Cnt_c_digibnd'].to_f
-    cnt_c_l = cont_sq.and(digibnd_drw).enclosed(activ_drw, cnt_c_digibnd_value.um, euclidian)
+    cnt_c_svaricap = nwell_drw.and(thickgateox_drw)
+    cnt_c_l = cont_sq.not(cnt_c_svaricap).and(digibnd_drw).enclosed(activ_drw, cnt_c_digibnd_value.um, euclidian)
     cnt_c_l.output('Cnt.c.digibnd', "8.1.2. Cnt.c.digibnd Min. Activ enclosure of Cont (Inside DigiBnd) is #{cnt_c_digibnd_value} um")
+    cnt_c_svaricap.forget
     cnt_c_l.forget
 
     # Rule Cnt.d: Min. GatPoly enclosure of Cont is 0.07 um
