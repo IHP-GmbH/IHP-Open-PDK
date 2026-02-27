@@ -21,16 +21,16 @@
 # TopMetal1 is the top layer for pads in CMOS5L
 #
 # DRM vs DRC implementation notes:
-# Pad.fR and Pad.i are defined in BOTH DRMs (G2 Section 6.9, CMOS5L Section 6.4)
-# but the G2 maximal DRC deck does NOT implement them. This deck does.
-#   - G2 DRM Pad.fR: Metal(n), TopMetal1, TopMetal2 exit length = 7.00 um
-#   - CMOS5L DRM Pad.fR: Metal(n), TopMetal1 exit length = 7.00 um
-#   - G2 DRM Pad.i: dfpad without TopMetal2 not allowed
-#   - CMOS5L DRM Pad.i: dfpad without TopMetal1 not allowed
+# The following rules are defined in BOTH DRMs (G2 Section 6.9, CMOS5L Section 6.4)
+# but neither the G2 nor CMOS5L maximal DRC decks implement them.
+# Pad.fR and Pad.i are commented out below to stay aligned with G2 maximal --
+# a design checked with either deck should produce the same results.
 #
-# Missing from this deck vs CMOS5L DRM Section 6.4:
+# Not implemented (in DRM but not in any maximal DRC deck):
 #   - Pad.eR: Min. recommended Metal(n), TopMetal1 exit width = 7.00 um
+#   - Pad.fR: Min. recommended Metal(n), TopMetal1 exit length = 7.00 um
 #   - Pad.gR: Min. recommended Metal4 (within dfpad) enclosure of TopVia1 = 1.40 um
+#   - Pad.i:  dfpad without TopMetal1 not allowed
 #   - Pad.kR: TopVia1 under Pad not allowed
 #
 #=========================================================================================
@@ -54,34 +54,36 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
 
   unless PRECHECK_DRC
     # CMOS5L: Metal list M1-M4 and TM1 (Metal5 is forbidden)
-    metals = [
-      [metal1_drw, 'M1'],
-      [metal2_drw, 'M2'],
-      [metal3_drw, 'M3'],
-      [metal4_drw, 'M4'],
-      [topmetal1_drw, 'TM1']
-    ]
+    # metals = [
+    #   [metal1_drw, 'M1'],
+    #   [metal2_drw, 'M2'],
+    #   [metal3_drw, 'M3'],
+    #   [metal4_drw, 'M4'],
+    #   [topmetal1_drw, 'TM1']
+    # ]
 
     # Rule Pad.fR: Min. recommended Metaln exit length is 7.00 um
-    metals.each do |metal_lay, met_abbrev|
-      logger.info("Executing rule Pad.fR_#{met_abbrev}")
-      pad_fr_value = drc_rules['Pad_fR'].to_f
-      pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
-      pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
-      pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
-      pad_fr_l = pad_fr_l3.not(pad_fr_l1)
-      pad_fr_l.output("Pad.fR_#{met_abbrev}",
-                    "6.9. Pad.fR_#{met_abbrev} : Min. recommended #{met_abbrev} exit length is #{pad_fr_value} um")
-      pad_fr_l1.forget
-      pad_fr_l2.forget
-      pad_fr_l3.forget
-      pad_fr_l.forget
-    end
+    # Commented out: defined in DRM but not implemented in G2 or CMOS5L maximal decks.
+    # metals.each do |metal_lay, met_abbrev|
+    #   logger.info("Executing rule Pad.fR_#{met_abbrev}")
+    #   pad_fr_value = drc_rules['Pad_fR'].to_f
+    #   pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
+    #   pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
+    #   pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
+    #   pad_fr_l = pad_fr_l3.not(pad_fr_l1)
+    #   pad_fr_l.output("Pad.fR_#{met_abbrev}",
+    #                 "6.9. Pad.fR_#{met_abbrev} : Min. recommended #{met_abbrev} exit length is #{pad_fr_value} um")
+    #   pad_fr_l1.forget
+    #   pad_fr_l2.forget
+    #   pad_fr_l3.forget
+    #   pad_fr_l.forget
+    # end
 
     # Rule Pad.i: dfpad without TopMetal1 not allowed (CMOS5L: TM1 is top layer)
-    logger.info('Executing rule Pad.i')
-    pad_i_l = dfpad_drw.not(topmetal1_drw)
-    pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without TopMetal1 not allowed')
-    pad_i_l.forget
+    # Commented out: defined in DRM but not implemented in G2 or CMOS5L maximal decks.
+    # logger.info('Executing rule Pad.i')
+    # pad_i_l = dfpad_drw.not(topmetal1_drw)
+    # pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without TopMetal1 not allowed')
+    # pad_i_l.forget
   end
 end
