@@ -292,15 +292,27 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for a BJT device.
   def map_bjt_params(device, model, params)
+    we = params['WE'] || params['W'] || 0.0
+    le = params['LE'] || params['L'] || 0.0
+
     if model.downcase.include?('pnp')
-      device.set_parameter('AE', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
-      device.set_parameter('PE', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
+      area = params['A'] || params['AE'] || (we * le)
+      perim = params['P'] || params['PE'] || ((we + le) * 2)
     else
-      device.set_parameter('AE', (params['AE'] || ((params['WE'] || 0.0) * (params['LE'] || 0.0))) * 1e12)
-      device.set_parameter('PE', (params['PE'] || (((params['WE'] || 0.0) + (params['LE'] || 0.0)) * 2)) * 1e6)
+      area = params['AE'] || params['A'] || (we * le)
+      perim = params['PE'] || params['P'] || ((we + le) * 2)
     end
-    device.set_parameter('NE', params['M'] || params['NE'] || 1.0)
-    device.set_parameter('m',  params['M'] || params['NE'] || 1.0)
+
+    nx = params['NX'] || params['NE'] || 1.0
+    mult = params['M'] || 1.0
+
+    # Keep AE/PE mapping for extraction/schematic compatibility while
+    # using NX as emitter-count and M as instance multiplier.
+    device.set_parameter('AE', area * 1e12)
+    device.set_parameter('PE', perim * 1e6)
+    device.set_parameter('Nx', nx)
+    device.set_parameter('NE', nx)
+    device.set_parameter('m', mult)
   end
 
   # Map parameters for a diode device.
