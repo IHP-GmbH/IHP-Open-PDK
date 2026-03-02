@@ -48,19 +48,13 @@ if TABLES.include?('cont') || FEOL
     cnt_c_l.forget
 
     # Rule Cnt.c.digibnd: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
-    # Exclude SVaricap region to match G2 maximal (Cnt.c.Digi) and CMOS5L maximal behavior.
-    # G2 maximal uses: Cont_SQ.ext_not(SVaricap_or_trans_bip)
-    # CMOS5L maximal uses: Cont_SQ.ext_not(SVaricap)
-    # Simplified SVaricap detection: NWell AND ThickGateOx (same as Cnt.e below).
-    # LIMITATION: This is broader than the maximal's precise device recognition which
-    # also requires NGate, GatPoly, Activ, and a "SVaricap" text label.
-    # SVaricap contacts on Activ are by design and must not trigger this check.
+    # NOTE: Aligned with G2 modular (no SVaricap exclusion). Both G2 and CMOS5L maximals
+    # exclude SVaricap from this check, but the modular does not. This is tracked in
+    # https://github.com/IHP-GmbH/IHP-Open-PDK/issues/842
     logger.info('Executing rule Cnt.c.digibnd')
     cnt_c_digibnd_value = drc_rules['Cnt_c_digibnd'].to_f
-    cnt_c_svaricap = nwell_drw.and(thickgateox_drw)
-    cnt_c_l = cont_sq.not(cnt_c_svaricap).and(digibnd_drw).enclosed(activ_drw, cnt_c_digibnd_value.um, euclidian)
+    cnt_c_l = cont_sq.and(digibnd_drw).enclosed(activ_drw, cnt_c_digibnd_value.um, euclidian)
     cnt_c_l.output('Cnt.c.digibnd', "8.1.2. Cnt.c.digibnd Min. Activ enclosure of Cont (Inside DigiBnd) is #{cnt_c_digibnd_value} um")
-    cnt_c_svaricap.forget
     cnt_c_l.forget
 
     # Rule Cnt.d: Min. GatPoly enclosure of Cont is 0.07 um
@@ -71,14 +65,12 @@ if TABLES.include?('cont') || FEOL
     cnt_d_l.forget
 
     # Rule Cnt.e: Min. Cont on GatPoly space to Activ is 0.14 um
-    # CMOS5L: Exclude SVaricap region (contacts on GatPoly over Activ are by design)
+    # NOTE: Aligned with G2 modular (no SVaricap exclusion). See issue #842.
     logger.info('Executing rule Cnt.e')
     cnt_e_value = drc_rules['Cnt_e'].to_f
-    cnt_e_svaricap = nwell_drw.and(thickgateox_drw)
-    cnt_e_l1 = cont_sq.and(gatpoly_drw).not(cnt_e_svaricap)
+    cnt_e_l1 = cont_sq.and(gatpoly_drw)
     cnt_e_l = cnt_e_l1.sep(activ_drw, cnt_e_value.um, euclidian)
     cnt_e_l.output('Cnt.e', "5.14. Cnt.e Min. Cont on GatPoly space to Activ is #{cnt_e_value} um")
-    cnt_e_svaricap.forget
     cnt_e_l1.forget
     cnt_e_l.forget
 
