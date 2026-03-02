@@ -25,9 +25,9 @@ def generate_sealring(width: float, heigth: float, input: str | None, output: st
     :type heigth: float
     :param output: Path and name of the file where the sealring should be written to.
     :type output: str
-    :param offset_x: Translation in X direction in µm.
+    :param offset_x: Translation in X direction in um.
     :type offset_x: float
-    :param offset_y: Translation in Y direction in µm.
+    :param offset_y: Translation in Y direction in um.
     :type offset_y: float
 
     """
@@ -41,10 +41,10 @@ def generate_sealring(width: float, heigth: float, input: str | None, output: st
     if lib is None:
         raise RuntimeError(
             "Could not find the 'SG13_dev' PCell library in the current KLayout environment.\n"
-            "Please make sure the SG13G2 PDK is properly installed and configured in KLayout.\n"
+            "Please make sure the SG13cmos5l PDK is properly installed and configured in KLayout.\n"
             "This may involve:\n"
             "- Cloning the IHP-Open-PDK repository with all submodules (use --recursive)\n"
-            "- Ensuring the SG13G2 technology is registered in KLayout (e.g. using -n sg13g2)\n"
+            "- Ensuring the SG13CMOS technology is properly installed and registered in KLayout (e.g. using -n sg13cmos5l)\n"
             "- Running KLayout with a version that supports Python PCells and properly loads them\n"
             "- Verifying that 'SG13_dev' appears in the Library Browser under PCells"
         )
