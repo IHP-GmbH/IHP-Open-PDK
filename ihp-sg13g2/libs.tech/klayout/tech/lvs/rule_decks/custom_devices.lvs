@@ -68,39 +68,6 @@ class DeviceCustomRes < RBA::DeviceClassResistor
   end
 end
 
-# BJT-3term device calss
-class CustomBJT3 < RBA::DeviceClassBJT3Transistor
-
-  def initialize
-    super
-    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
-    add_parameter(RBA::DeviceParameterDefinition.new('Nx', 'emitters count', 1, false))
-    self.combiner = BJTDeviceCombiner.new
-
-    enable_parameter('AE', true)
-    enable_parameter('PE', true)
-    enable_parameter('Nx', true)
-    enable_parameter('NE', true)
-  end
-end
-
-# BJT-4term device calss
-class CustomBJT4 < RBA::DeviceClassBJT4Transistor
-  include DeviceClassMethods
-
-  def initialize
-    super
-    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
-    add_parameter(RBA::DeviceParameterDefinition.new('Nx', 'emitters count', 1, false))
-    self.combiner = BJTDeviceCombiner.new
-
-    enable_parameter('AE', true)
-    enable_parameter('PE', true)
-    enable_parameter('Nx', true)
-    enable_parameter('NE', true)
-  end
-end
-
 # inductor device calss
 class DeviceCustomInd < RBA::DeviceClassInductor
   include DeviceClassMethods
@@ -252,3 +219,7 @@ end
 #========= CUSTOM MIM-EXTRACTOR =========
 
 # %include custom_mim_extractor.lvs
+
+#========= CUSTOM BJT-EXTRACTOR =========
+
+# %include custom_bjt_extractor.lvs

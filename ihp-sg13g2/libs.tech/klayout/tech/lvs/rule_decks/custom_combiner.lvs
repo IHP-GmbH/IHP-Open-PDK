@@ -141,74 +141,29 @@ end
 class BJTDeviceCombiner < RBA::GenericDeviceCombiner
   include DeviceCombinerMethods
 
-  def bjt_param(device, name, default = nil)
-    value = device.parameter(name) rescue nil
-    value.nil? ? default : value
-  end
-
-  # Some multi-emitter BJTs are extracted as one-device-per-emitter finger
-  # (Nx=1, m=1). Detect this pattern so combiner can fold two fingers into
-  # one physical device with Nx=2 before summing multipliers across devices.
-  def multi_emitter_finger?(device)
-    model = device.device_class.name.to_s.downcase
-    return false unless %w[npn13g2 npn13g2l npn13g2v].include?(model)
-
-    nx = bjt_param(device, 'Nx', 1.0)
-    m = bjt_param(device, 'm', 1.0)
-    return false unless nx <= 1.0 && m <= 1.0
-
-    ae = bjt_param(device, 'AE')
-    ab = bjt_param(device, 'AB')
-    return false unless ae && ae > 0.0 && ab && ab > 0.0
-
-    (ab / ae) > 150.0
-  end
-
-  def normalize_bjt_parameters(device)
-    nx = device.parameter('Nx') rescue nil
-    ne = device.parameter('NE') rescue nil
-    m = device.parameter('m') rescue nil
-
-    return unless (nx.nil? || nx <= 1.0) && ne && ne > 1.0
-
-    device.set_parameter('Nx', ne)
-    return unless m && m > 0.0
-
-    # If m includes emitter replication already, move it to Nx and keep
-    # multiplier as device-count only.
-    m_norm = m / ne
-    device.set_parameter('m', m_norm) if m_norm > 0.0
-  end
-
-  # Method to check and perform device combination
+# Method to check and perform device combination
   def combine_devices(a, b)
     bjt3_nets = %w[C B E]
     bjt4_nets = %w[C B E S]
 
-    normalize_bjt_parameters(a)
-    normalize_bjt_parameters(b)
+    is_pnp = a.device_class.name.downcase.include?('pnp')
 
-    # Determine the correct nets based on device type (assuming PNP or NPN)
-    bjt_nets = a.device_class.name.downcase.include?('pnp') ? bjt3_nets : bjt4_nets
+    # Determine the correct nets based on device type
+    bjt_nets = is_pnp ? bjt3_nets : bjt4_nets
 
     # Check if terminals have the same net
     return false unless bjt_nets.all? { |net| same_net(a, b, net) }
 
-    # Check if parameters are the same
-    return false unless %w[AE PE Nx].all? { |param| same_parameter(a, b, param) }
+    # Check if exact parameters are the same (Skip Nx for PNP)
+    params_to_check = %w[we le]
+    params_to_check << 'Nx' unless is_pnp
+    
+    return false unless params_to_check.all? { |param| same_parameter(a, b, param) }
 
-    # Combine emitter fingers into one multi-emitter device first, then sum
-    # multipliers across equivalent devices.
-    if multi_emitter_finger?(a) && multi_emitter_finger?(b)
-      a.set_parameter('Nx', 2.0)
-      a.set_parameter('m', 1.0)
-    else
-      a.set_parameter('m', a.parameter('m') + b.parameter('m'))
-    end
+    # Combine parameters
+    a.set_parameter('m', a.parameter('m') + b.parameter('m'))
 
-    a.set_parameter('NE', a.parameter('Nx'))
-
-    # Disconnect the second device and let the system clean it up
+    # Disconnect the second device
     bjt_nets.each { |term| b.disconnect_terminal(term) }
 
     true

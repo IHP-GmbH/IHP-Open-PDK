@@ -53,11 +53,13 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
   # Determine the unit for each parameter
   def get_unit(key)
     case key
-    when 'W', 'L', 'w', 'wfeed', 'l', 's', 'd', 'ps', 'WE', 'LE', 'We', 'Le'
+    when 'W', 'L', 'w', 'wfeed', 'l', 's', 'd', 'ps'
       'u'  # micrometers
-    when 'AS', 'AD', 'AE', 'AB', 'AC', 'A'
+    when 'we', 'le'
+      'n'  # emitters are written in nanometers
+    when 'AS', 'AD', 'A'
       'p'  # picometers (these are areas um^2)
-    when 'PS', 'PD', 'PE', 'PB', 'PC', 'P', 'Perim'
+    when 'PS', 'PD', 'P', 'Perim'
       'u'  # micrometers (perimeters)
     else
       ''  # no unit
@@ -66,82 +68,29 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate default parameters for the device
   def generate_default_parameters(device, device_class)
-    return generate_bjt_parameters(device, device_class) if bjt_model?(device_class.name)
-
     parameters = device_class.parameter_definitions.map do |pd|
+      value = format_parameter_value(pd.name, device.parameter(pd.id))
+      next if value.nil?
+
       unit = get_unit(pd.name)
-      value = device.parameter(pd.id)
-      if value && value > 0
-        format('%<name>s=%<value>.12g%<unit>s', name: pd.name, value: value, unit: unit)
-      elsif value
+      if unit.empty?
         format('%<name>s=%<value>.12g', name: pd.name, value: value)
+      else
+        format('%<name>s=%<value>.12g%<unit>s', name: pd.name, value: value, unit: unit)
       end
     end
     # Use compact to remove any nil values
     parameters.compact.join(' ')
   end
 
-  def bjt_model?(model_name)
-    %w[npn13g2 npn13g2l npn13g2v pnpmpa].include?(model_name.to_s.downcase)
-  end
+  def format_parameter_value(name, value)
+    return nil if value.nil?
 
-  def param_value(device, device_class, param_name)
-    param_id = device_class.parameter_id(param_name)
-    return nil if param_id.nil?
-
-    device.parameter(param_id)
-  rescue StandardError
-    nil
-  end
-
-  def find_first_param(device, device_class, names)
-    names.each do |name|
-      value = param_value(device, device_class, name)
-      return value unless value.nil?
+    case name
+    when 'we', 'le'
+      value * 1_000.0
+    else
+      value
     end
-    nil
-  end
-
-  def derive_we_le_from_ae_pe(ae, pe)
-    return [nil, nil] if ae.nil? || pe.nil? || ae <= 0.0 || pe <= 0.0
-
-    sum = pe / 2.0
-    disc = (sum * sum) - (4.0 * ae)
-    disc = 0.0 if disc.negative?
-
-    root = Math.sqrt(disc)
-    we = (sum - root) / 2.0
-    le = (sum + root) / 2.0
-    [we, le]
-  end
-
-  def generate_bjt_parameters(device, device_class)
-    we = find_first_param(device, device_class, %w[We WE W])
-    le = find_first_param(device, device_class, %w[Le LE L])
-
-    if we.nil? || le.nil? || we <= 0.0 || le <= 0.0
-      ae = find_first_param(device, device_class, %w[AE A])
-      pe = find_first_param(device, device_class, %w[PE P])
-      we, le = derive_we_le_from_ae_pe(ae, pe)
-    end
-
-    nx = find_first_param(device, device_class, %w[Nx NX])
-    ne = find_first_param(device, device_class, %w[NE])
-    m = find_first_param(device, device_class, %w[m M])
-
-    # Keep emitter-count in Nx. Some extracted BJTs carry emitter information
-    # in NE and reflect it in m during simplification.
-    if (nx.nil? || nx <= 1.0) && ne && ne > 1.0
-      nx = ne
-      m = m / ne if m && m > ne
-    end
-    nx ||= 1.0
-
-    parameters = []
-    parameters << format('We=%<value>.12gu', value: we) if we && we > 0.0
-    parameters << format('Le=%<value>.12gu', value: le) if le && le > 0.0
-    parameters << format('Nx=%<value>.12g', value: nx) if nx && nx > 0.0
-    parameters << format('m=%<value>.12g', value: m) if m && m > 0.0
-    parameters.join(' ')
   end
 end

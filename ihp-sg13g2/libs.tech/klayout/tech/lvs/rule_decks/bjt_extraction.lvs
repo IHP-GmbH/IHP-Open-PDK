@@ -30,7 +30,8 @@ logger.info('Starting BJT EXTRACTION')
 logger.info('Starting NPN-BJT EXTRACTION')
 
 logger.info('Extraction of npn13G2 BJT transistor')
-extract_devices(bjt4('npn13G2', CustomBJT4), {
+extract_devices(CustomBJTExtractor.new('npn13G2', false), {
+                  'MK' => npn_mk,
                   'C' => npn13G2_c,
                   'B' => npn13G2_b,
                   'E' => npn13G2_e,
@@ -42,7 +43,8 @@ extract_devices(bjt4('npn13G2', CustomBJT4), {
                 })
 
 logger.info('Extraction of npn13G2L BJT transistor')
-extract_devices(bjt4('npn13G2l', CustomBJT4), {
+extract_devices(CustomBJTExtractor.new('npn13G2l', false), {
+                  'MK' => npn_mk,
                   'C' => npn13G2l_c,
                   'B' => npn13G2l_b,
                   'E' => npn13G2l_e,
@@ -54,7 +56,8 @@ extract_devices(bjt4('npn13G2l', CustomBJT4), {
                 })
 
 logger.info('Extraction of npn13G2V BJT transistor')
-extract_devices(bjt4('npn13G2v', CustomBJT4), {
+extract_devices(CustomBJTExtractor.new('npn13G2v', false), {
+                  'MK' => npn_mk,
                   'C' => npn13G2v_c,
                   'B' => npn13G2v_b,
                   'E' => npn13G2v_e,
@@ -73,9 +76,12 @@ logger.info('Starting PNP-BJT EXTRACTION')
 
 # pnp_mpa BJT
 logger.info('Extracting pnpMPA BJT')
-extract_devices(bjt3('pnpMPA', CustomBJT3), { 'C' => pnp_mpa_c.extents,
-                                  'B' => pnp_mpa_b.extents,
-                                  'E' => pnp_mpa_e,
-                                  'tC' => pnp_mpa_c,
-                                  'tB' => pnp_mpa_b,
-                                  'tE' => pnp_mpa_e })
+extract_devices(CustomBJTExtractor.new('pnpMPA', true), { 
+                  'MK' => pnp_mk,
+                  'C' => pnp_mpa_c.extents,
+                  'B' => pnp_mpa_b.extents,
+                  'E' => pnp_mpa_e,
+                  'tC' => pnp_mpa_c,
+                  'tB' => pnp_mpa_b,
+                  'tE' => pnp_mpa_e 
+                })

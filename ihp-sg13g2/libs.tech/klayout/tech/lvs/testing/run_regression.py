@@ -129,6 +129,21 @@ def build_tests_dataframe(unit_test_cases_dir, target_device_group):
         )
     )
 
+    for layout in all_unit_test_cases_layout:
+        if not layout.is_file():
+            logging.error(f"{layout} is not a file.")
+            exit(1)
+    for netlist in all_unit_test_cases_netlist:
+        if not netlist.is_file():
+            logging.error(f"{netlist} is not a file.")
+            exit(1)
+
+    # Check if each layout has a netlist file
+    for layout, netlist in zip(all_unit_test_cases_layout, all_unit_test_cases_netlist):
+        if layout.name.replace(".gds", "") != netlist.name.replace(".cdl", ""):
+            logging.error(f"{layout} does not have a matching netlist file.")
+            exit(1)
+
     if len(all_unit_test_cases_netlist) != len(all_unit_test_cases_layout):
         logging.error("Each testcase should have Layout and Netlist file")
         exit(1)
