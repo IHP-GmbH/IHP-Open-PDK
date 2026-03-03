@@ -58,6 +58,7 @@ The following table explains the list of available SG13G2 devices we have suppor
 | dantenna        |:white_check_mark:|
 | dpantenna       |:white_check_mark:|
 | schottky_nbl1   |:white_check_mark:|
+| isolbox         |:white_check_mark:|
 | **Resistors**   |                  |
 | rsil            |:white_check_mark:|
 | rppd            |:white_check_mark:|

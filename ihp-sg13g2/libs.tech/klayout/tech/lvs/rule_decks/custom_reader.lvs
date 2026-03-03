@@ -77,7 +77,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'R'
       super("#{line} R=0", element)
     when 'D'
-      if line.downcase.include?('diodev') || line.downcase.include?('schottky')
+      if line.downcase.include?('diodev') || line.downcase.include?('schottky') || line.downcase.include?('isolbox')
         super(line.to_s, 'Q')
       else
         super(line.to_s, element)
@@ -155,7 +155,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Create a diode device class.
   def create_diode(model)
-    if model.downcase.include?('diodev') || model.downcase.include?('schottky')
+    if model.downcase.include?('isolbox')
+      Isolbox3Term.new
+    elsif model.downcase.include?('diodev') || model.downcase.include?('schottky')
       Esd3Term.new
     elsif model.downcase.include?('nmoscl')
       Esd2Term.new
@@ -181,7 +183,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Create a bjt device class.
   def create_bjt(model, _num_nets)
-    if model.downcase.include?('pnp')
+    if model.downcase.include?('isolbox')
+      Isolbox3Term.new
+    elsif model.downcase.include?('pnp')
       CustomBJT3.new
     else
       CustomBJT4.new
@@ -208,7 +212,13 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'M'
       %w[D G S B]
     when 'Q'
-      model.downcase.include?('pnp') ? %w[C B E] : %w[C B E S]
+      if model.downcase.include?('isolbox')
+        %w[S I Bn]
+      elsif model.downcase.include?('pnp')
+        %w[C B E]
+      else
+        %w[C B E S]
+      end
     when 'C'
       model.downcase.include?('varicap') ? %w[G1 W G2 SUB] : gen_mim_terms(model)
     when 'R'
@@ -220,7 +230,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
         nets.size == 3 ? %w[A B W] : %w[A B]
       end
     when 'D'
-      if model.downcase.include?('diodevdd')
+      if model.downcase.include?('isolbox')
+        %w[S I Bn]
+      elsif model.downcase.include?('diodevdd')
         %w[B E C]
       elsif model.downcase.include?('diodevss')
         %w[C E B]
@@ -292,6 +304,15 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for a BJT device.
   def map_bjt_params(device, model, params)
+    if model.downcase.include?('isolbox')
+      a = params['A'] || params['a'] || ((params['W'] || 0.0) * (params['L'] || 0.0))
+      p = params['P'] || params['p'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)
+
+      device.set_parameter('a', a * 1e12)
+      device.set_parameter('p', p * 1e6)
+      return
+    end
+
     we = params['WE'] || params['W'] || 0.0
     le = params['LE'] || params['L'] || 0.0
     
@@ -306,6 +327,15 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Map parameters for a diode device.
   def map_diode_params(device, model, params)
+    if model.downcase.include?('isolbox')
+      a = params['A'] || params['a'] || ((params['W'] || 0.0) * (params['L'] || 0.0))
+      p = params['P'] || params['p'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)
+
+      device.set_parameter('a', a * 1e12)
+      device.set_parameter('p', p * 1e6)
+      return
+    end
+
     unless model.downcase.include?('diodev') || model.downcase.include?('schottky') || model.downcase.include?('nmoscl')
       device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
       device.set_parameter('P', (params['P'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
