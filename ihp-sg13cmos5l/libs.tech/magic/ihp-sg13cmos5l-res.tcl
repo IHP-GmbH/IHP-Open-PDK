@@ -102,6 +102,7 @@ proc sg13cmos5l::res_recalc {field parameters} {
 #  nx	 Number devices in X
 #  snake Use snake geometry (if not present, snake geometry not allowed)
 #  dummy Flag to mark addition of dummy resistor
+#  bar	 Use bar contacts on terminals
 #
 # Non-user editable values:
 #
@@ -121,7 +122,7 @@ proc sg13cmos5l::res_recalc {field parameters} {
 proc sg13cmos5l::rsil_defaults {} {
     return {w 0.50 l 2.00 m 1 nx 1 wmin 0.50 lmin 0.50 class resistor \
 		rho 7.0 val 14.0 dummy 0 dw 0.0 term 0.0 \
-		sterm 0.0 caplen 0 snake 0 guard 1 \
+		sterm 0.0 caplen 0 snake 0 guard 1 bar 1 \
 		glc 1 grc 1 gtc 1 gbc 1 roverlap 0 endcov 100 \
 		full_metal 1 hv_guard 0 n_guard 0 vias 1 \
 		viagb 0 viagt 0 viagl 0 viagr 0 doports 1}
@@ -131,14 +132,14 @@ proc sg13cmos5l::rppd_defaults {} {
     return {w 0.50 l 2.00 m 1 nx 1 wmin 0.50 lmin 0.50 class resistor \
 		rho 260.0 val 520.0 dummy 0 dw 0.0 term 0.0 \
 		sterm 0.0 caplen 0 guard 1 glc 1 grc 1 gtc 1 gbc 1 \
-		snake 0 full_metal 1 vias 1 n_guard 0 hv_guard 0 \
+		snake 0 full_metal 1 vias 1 n_guard 0 hv_guard 0 bar 1 \
 		viagb 0 viagt 0 viagl 0 viagr 0 doports 1}
 }
 
 proc sg13cmos5l::rhigh_defaults {} {
     return {w 0.50 l 2.00 m 1 nx 1 wmin 0.50 lmin 0.50 class resistor \
 		rho 1360 val 2720.0 dummy 0 dw 0.0 term 0.0 \
-		sterm 0.0 caplen 0 \
+		sterm 0.0 caplen 0 bar 1 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 \
 		snake 0 full_metal 1 n_guard 0 hv_guard 0 vias 1 \
 		viagb 0 viagt 0 viagl 0 viagr 0 doports 1}
@@ -276,6 +277,9 @@ proc sg13cmos5l::res_dialog {device parameters} {
     if {[dict exists $parameters snake]} {
 	magic::add_checkbox snake "Use snake geometry" $parameters
     }
+    if {[dict exists $parameters bar]} {
+	magic::add_checkbox bar "Bar contacts on terminals" $parameters
+    }
     if {[dict exists $parameters roverlap]} {
 	if {[dict exists $parameters endcov]} {
             magic::add_checkbox roverlap "Overlap at end contact" $parameters
@@ -373,6 +377,7 @@ proc sg13cmos5l::res_device {parameters} {
     set eps  0.0005
 
     # Set local default values if they are not in parameters
+    set bar 0			;# no bar contacts by default
     set doports 0		;# no port labels by default
     set endcov 0	 	;# percent coverage of end contacts
     set roverlap 0		;# overlap resistors at end contacts
@@ -547,6 +552,14 @@ proc sg13cmos5l::res_device {parameters} {
 		${end_surround} ${metal_surround} \
 		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
     }
+    # Cover the device area with property MASKHINTS_CONTBAR to specify
+    # that all contacts in the area are bar contacts
+    if {${bar} != 0} {
+	set curunits [units]
+	units microns
+	property MASKHINTS_CONTBAR $cext
+	units {*}$curunits
+    }
     popbox
 
     popbox
@@ -564,6 +577,7 @@ proc sg13cmos5l::res_snake_device {nf parameters} {
     set eps  0.0005
 
     # Set local default values if they are not in parameters
+    set bar 0			;# no bar contacts by default
     set doports 0		;# no port labels by default
     set endcov 100	 	;# percent coverage of end contacts
     set vias 0			;# add vias over terminal contacts
@@ -781,6 +795,16 @@ proc sg13cmos5l::res_snake_device {nf parameters} {
     box move $dir ${mask_clearance}um
     box grow $dir ${res_to_endcont}um
 
+    # Cover the device area with property MASKHINTS_CONTBAR to specify
+    # that all contacts in the area are bar contacts
+    if {${bar} != 0} {
+	set curunits [units]
+	units microns
+	property MASKHINTS_CONTBAR $cext
+	units {*}$curunits
+    }
+    popbox
+
     if {$well_res_overlap > 0} {
 	set well_extend [+ ${well_res_overlap} [/ ${end_contact_size} 2.0] ${end_surround}]
 	box grow $dir ${well_extend}um
@@ -800,10 +824,11 @@ proc sg13cmos5l::res_snake_device {nf parameters} {
 
 proc sg13cmos5l::res_draw {parameters} {
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set defaults if they are not in parameters
+    set bar 0		;# do not use bar contacts
     set snake 0		;# some resistors don't allow snake geometry
     set roverlap 0	;# overlap resistors at contacts
     set guard 0		;# draw a guard ring
@@ -930,7 +955,7 @@ proc sg13cmos5l::res_draw {parameters} {
     popbox
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

@@ -97,12 +97,17 @@ if __name__ == '__main__':
         extra_sep = 0.0
 
     if os.environ.get('PDK_ROOT'):
-        magic_path = os.environ.get('PDK_ROOT') + '/ihp-sg13g2/libs.tech/magic/'
+        magic_path = os.environ.get('PDK_ROOT') + '/ihp-sg13cmos5l/libs.tech/magic/'
     else:
+        # Assume that the path to the script is the path to the PDK.
+        script_path = os.path.abspath(__file__)
+        magic_path = os.path.split(script_path)[0] + '/'
+
+    rcfile_path = magic_path + 'ihp-sg13cmos5l.magicrc'
+    if not os.path.isfile(rcfile_path):
+        print("Can't find " + rcfile_path)
         print('Unknown path to magic files.  Please set $PDK_ROOT')
         sys.exit(1)
-
-    rcfile_path = magic_path + 'ihp-sg13g2.magicrc'
 
     curpath = os.getcwd()
     ofile = open(curpath + '/generate_seal.tcl', 'w') 
@@ -112,7 +117,7 @@ if __name__ == '__main__':
     print('crashbackups stop', file=ofile)
     print('locking disable', file=ofile)
     print('tech unlock *', file=ofile)
-    print('snap internal', file=ofile)
+    print('units internal', file=ofile)
     print('source ' + magic_path + 'sealring_corner.tcl', file=ofile)
     # Note:  Total width includes the separation on both sides
     print('set separation [magic::u2i [expr {10.8 + ' + str(extra_sep) + '}]]',

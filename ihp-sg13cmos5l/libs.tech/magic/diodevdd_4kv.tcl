@@ -20,7 +20,7 @@
 
 suspendall
 tech unlock *
-snap internal
+units internal
 load diodevdd_4kv -silent
 box values 0 0 0 0
 box values 312 312 2558 7098

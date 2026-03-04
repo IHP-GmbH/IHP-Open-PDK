@@ -1,6 +1,6 @@
 ########################################################################
 #
-# Copyright 2025 IHP PDK Authors
+# Copyright 2026 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ if {[catch {set testname $sealring_suffix}]} {
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load sealring_side${sealring_suffix} -silent
 box values -26 -26 [expr $sealring_width + 26] 726
 paint pwell
@@ -66,16 +67,15 @@ box values 0 298 $sealring_width 700
 paint metal4
 box values 0 0 $sealring_width 260
 paint metal4
-box values 0 260 $sealring_width 298
+box values 0 260 $sealring_width 344
 paint sealvia4
-box values 0 344 $sealring_width 700
-paint metal5
-box values 0 0 $sealring_width 260
+box values 0 0 $sealring_width 700
 paint metal5
 box values 0 -1440 $sealring_width -600
 paint seal
-property FIXED_BBOX "0 -1440 $sealring_width 700"
+property FIXED_BBOX 0 -1440 $sealring_width 700
 select clear
 view
+units {*}$curunits
 tech revert
 resumeall

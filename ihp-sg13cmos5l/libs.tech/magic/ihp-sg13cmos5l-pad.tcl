@@ -62,8 +62,8 @@ proc sg13cmos5l::bondpad_dialog {parameters} {
 
 proc sg13cmos5l::bondpad_draw {parameters} {
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set defaults if they are not in parameters
     set shape	octagon	;# Draw an octagon shape
@@ -204,7 +204,7 @@ proc sg13cmos5l::bondpad_draw {parameters} {
 
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

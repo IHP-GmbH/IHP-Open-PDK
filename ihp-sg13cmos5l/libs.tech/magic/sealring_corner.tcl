@@ -20,8 +20,10 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load sealring_corner -silent
+box values 0 0 0 0
 box values -26 3351 1601 4226
 paint pwell
 box values -26 3299 2476 3351
@@ -264,37 +266,37 @@ box values 3760 260 4200 298
 paint sealvia3
 box values 0 3585 260 4200
 paint metal4
-box values 298 3623 1575 4200
+box values 344 3669 1575 4200
 paint metal4
 box values 0 3325 1135 3585
 paint metal4
 box values 875 2710 1135 3325
 paint metal4
-box values 1173 3325 1575 3623
+box values 1219 3325 1575 3669
 paint metal4
-box values 1173 2748 2450 3325
+box values 1219 2794 2450 3325
 paint metal4
 box values 875 2450 2010 2710
 paint metal4
 box values 1750 1835 2010 2450
 paint metal4
-box values 2048 2450 2450 2748
+box values 2094 2450 2450 2794
 paint metal4
-box values 2048 1873 3325 2450
+box values 2094 1919 3325 2450
 paint metal4
 box values 1750 1575 2885 1835
 paint metal4
 box values 2625 960 2885 1575
 paint metal4
-box values 2923 1575 3325 1873
+box values 2969 1575 3325 1919
 paint metal4
-box values 2923 998 4200 1575
+box values 2969 1044 4200 1575
 paint metal4
 box values 2625 700 3760 960
 paint metal4
 box values 3500 260 3760 700
 paint metal4
-box values 3798 298 4200 998
+box values 3844 344 4200 1044
 paint metal4
 box values 3500 0 4200 260
 paint metal4
@@ -318,41 +320,15 @@ box values 3760 344 3844 960
 paint sealvia4
 box values 3760 260 4200 344
 paint sealvia4
-box values 0 3585 260 4200
+box values 0 3325 1575 4200
 paint metal5
-box values 440 3765 1575 4200
+box values 875 2450 2450 3325
 paint metal5
-box values 0 3325 1135 3585
+box values 1750 1575 3325 2450
 paint metal5
-box values 875 2710 1135 3325
+box values 2625 700 4200 1575
 paint metal5
-box values 1315 3325 1575 3765
-paint metal5
-box values 1315 2890 2450 3325
-paint metal5
-box values 875 2450 2010 2710
-paint metal5
-box values 1750 1835 2010 2450
-paint metal5
-box values 2190 2450 2450 2890
-paint metal5
-box values 2190 2015 3325 2450
-paint metal5
-box values 1750 1575 2885 1835
-paint metal5
-box values 2625 960 2885 1575
-paint metal5
-box values 3065 1575 3325 2015
-paint metal5
-box values 3065 1140 4200 1575
-paint metal5
-box values 2625 700 3760 960
-paint metal5
-box values 3500 260 3760 700
-paint metal5
-box values 3940 440 4200 1140
-paint metal5
-box values 3500 0 4200 260
+box values 3500 0 4200 700
 paint metal5
 box values -1440 2725 -600 4200
 paint seal
@@ -374,8 +350,9 @@ box values 1185 -740 4200 -600
 paint seal
 box values 2060 -1440 4200 -740
 paint seal
-property FIXED_BBOX "-1440 -1440 4200 4200"
+property FIXED_BBOX -1440 -1440 4200 4200
 select clear
 view
 tech revert
+units {*}$curunits
 resumeall

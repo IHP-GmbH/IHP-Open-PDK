@@ -174,12 +174,12 @@ if __name__ == '__main__':
     #    that should be checked in the absence of a PDK_ROOT environment variable,
     #    and/or it should be possible to specify the PDK root directory from the
     #    command line.
-    # 2) This script uses ihp-sg13g2-GDS.tech which exactly represents all layout
+    # 2) This script uses ihp-sg13cmos5l-GDS.tech which exactly represents all layout
     #	 layers without conversion to generated layers, which is preferable for
     #	 doing fill generation.
 
     if os.environ.get('PDK_ROOT'):
-        techfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13g2/libs.tech/magic/ihp-sg13g2-GDS.tech'
+        techfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13cmos5l/libs.tech/magic/ihp-sg13cmos5l-GDS.tech'
     else:
         print('Unknown path to magic IHP tech file.  Please set $PDK_ROOT')
         sys.exit(1)
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     print('locking disable', file=ofile)
     print('tech unlock *', file=ofile)
     print('scalegrid 1 2', file=ofile)
-    print('snap internal', file=ofile)
+    print('units internal', file=ofile)
     print('box values 0 0 0 0', file=ofile)
     print('box size 800um 800um', file=ofile)
     print('set stepbox [box values]', file=ofile)
@@ -366,7 +366,7 @@ if __name__ == '__main__':
             print('drc off', file=ofile)
             print('tech unlock *', file=ofile)
             print('scalegrid 1 2', file=ofile)
-            print('snap internal', file=ofile)
+            print('units internal', file=ofile)
             print('box values 0 0 0 0', file=ofile)
             print('set filename [file root [lindex $argv $argc-1]]', file=ofile)
             print('load $filename', file=ofile)
@@ -379,7 +379,7 @@ if __name__ == '__main__':
         print('drc off', file=ofile)
         print('tech unlock *', file=ofile)
         print('scalegrid 1 2', file=ofile)
-        print('snap internal', file=ofile)
+        print('units internal', file=ofile)
         print('box values 0 0 0 0', file=ofile)
 
         print('set ifile [open fill_gen_info.txt r]', file=ofile)

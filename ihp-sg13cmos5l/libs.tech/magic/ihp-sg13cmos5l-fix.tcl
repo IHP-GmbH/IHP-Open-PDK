@@ -219,14 +219,11 @@ proc sg13cmos5l::diodevdd_2kv_generate {} {
     tag load {}
     load diodevdd_2kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/diodevdd_2kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -248,14 +245,11 @@ proc sg13cmos5l::diodevdd_4kv_generate {} {
     tag load {}
     load diodevdd_4kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/diodevdd_4kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -277,14 +271,11 @@ proc sg13cmos5l::diodevss_2kv_generate {} {
     tag load {}
     load diodevss_2kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/diodevss_2kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -306,14 +297,11 @@ proc sg13cmos5l::diodevss_4kv_generate {} {
     tag load {}
     load diodevss_4kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/diodevss_4kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -335,14 +323,11 @@ proc sg13cmos5l::nmoscl_2_generate {} {
     tag load {}
     load nmoscl_2 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/nmoscl_2.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -364,14 +349,11 @@ proc sg13cmos5l::nmoscl_4_generate {} {
     tag load {}
     load nmoscl_4 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13cmos5l::script_path}/nmoscl_4.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox

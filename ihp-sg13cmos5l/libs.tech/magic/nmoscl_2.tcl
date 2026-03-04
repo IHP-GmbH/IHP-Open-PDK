@@ -20,7 +20,8 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load nmoscl_2 -silent
 box values 0 0 0 0
 box values -450 3642 6992 3924
@@ -1143,5 +1144,6 @@ box values 290 3402 290 3402
 label sub! FreeSans 200 0 0 0 c psd
 select clear
 view
+units {*}$curunits
 tech revert
 resumeall

@@ -131,11 +131,11 @@ if __name__ == '__main__':
     #  3. The location of this script
 
     if os.environ.get('PDK_ROOT'):
-        rcfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13g2/libs.tech/magic/ihp-sg13g2.magicrc'
+        rcfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13cmos5l/libs.tech/magic/ihp-sg13cmos5l.magicrc'
     elif os.path.isfile(layoutpath + '/.magicrc'):
         rcfile_path = layoutpath + '/.magicrc'
-    elif os.path.isfile(scriptpath + '/ihp-sg13g2.magicrc'):
-        rcfile_path = scriptpath + '/ihp-sg13g2.magicrc'
+    elif os.path.isfile(scriptpath + '/ihp-sg13cmos5l.magicrc'):
+        rcfile_path = scriptpath + '/ihp-sg13cmos5l.magicrc'
     else:
         print('Unknown path to magic startup script.  Please set $PDK_ROOT')
         sys.exit(1)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
         print('#!/bin/env wish', file=ofile)
         print('crashbackups stop', file=ofile)
         print('drc off', file=ofile)
-        print('snap internal', file=ofile)
+        print('units internal', file=ofile)
 
         print('set starttime [orig_clock format [orig_clock seconds] -format "%D %T"]', file=ofile)
         print('puts stdout "Started reading GDS: $starttime"', file=ofile)
