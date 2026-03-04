@@ -19,8 +19,10 @@
 #----------------------------------------------------------------
 
 proc sg13cmos5l::subconn_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 0.16} {
       puts stderr "Substrate tap width must be at least 0.16um"
       return
@@ -33,26 +35,29 @@ proc sg13cmos5l::subconn_draw {} {
    paint psc
    pushbox
    pushbox
-   box grow c 0.07um
+   box grow c 0.07
    paint psd
    popbox
    if {$w > $h} {
-      box grow e 0.05um
-      box grow w 0.05um
+      box grow e 0.05
+      box grow w 0.05
    } else {
-      box grow n 0.05um
-      box grow s 0.05um
+      box grow n 0.05
+      box grow s 0.05
    }
    paint m1
    popbox
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13cmos5l::hvsubconn_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 0.16} {
       puts stderr "Substrate tap width must be at least 0.16um"
       return
@@ -64,20 +69,21 @@ proc sg13cmos5l::hvsubconn_draw {} {
    suspendall
    paint hvpsc
    pushbox
-   box grow c 0.07um
+   box grow c 0.07
    paint hvpsd
    pushbox
    popbox
    if {$w > $h} {
-      box grow e 0.05um
-      box grow w 0.05um
+      box grow e 0.05
+      box grow w 0.05
    } else {
-      box grow n 0.05um
-      box grow s 0.05um
+      box grow n 0.05
+      box grow s 0.05
    }
    paint m1
    popbox
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
@@ -89,66 +95,71 @@ proc sg13cmos5l::hvsubconn_draw {} {
 #----------------------------------------------------------------
 
 proc sg13cmos5l::guard_ring_draw {ctype dtype} {
+   set curunits [units]
+   units microns
    pushbox
    box width 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
    box height 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
-   box move n [box height]i
+   box move n [box height]
    box height 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
-   box move e [box width]i
+   box move e [box width]
    box width 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13cmos5l::subconn_guard_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -169,13 +180,16 @@ proc sg13cmos5l::subconn_guard_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13cmos5l::hvsubconn_guard_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -196,13 +210,16 @@ proc sg13cmos5l::hvsubconn_guard_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13cmos5l::nwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -218,7 +235,7 @@ proc sg13cmos5l::nwell_draw {} {
    tech unlock *
    pushbox
    pushbox
-   box grow c 0.390um
+   box grow c 0.390
    paint nwell
    popbox
 
@@ -227,13 +244,16 @@ proc sg13cmos5l::nwell_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13cmos5l::hvnwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -249,7 +269,7 @@ proc sg13cmos5l::hvnwell_draw {} {
    tech unlock *
    pushbox
    pushbox
-   box grow c 0.770um
+   box grow c 0.770
    paint nwell
    popbox
 
@@ -258,6 +278,7 @@ proc sg13cmos5l::hvnwell_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
