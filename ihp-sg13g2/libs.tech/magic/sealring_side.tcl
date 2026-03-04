@@ -34,7 +34,8 @@ if {[catch {set testname $sealring_suffix}]} {
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load sealring_side${sealring_suffix} -silent
 box values -26 -26 [expr $sealring_width + 26] 726
 paint pwell
@@ -84,8 +85,9 @@ box values 0 0 $sealring_width 700
 paint metal7
 box values 0 -1440 $sealring_width -600
 paint seal
-property FIXED_BBOX "0 -1440 $sealring_width 700"
+property FIXED_BBOX 0 -1440 $sealring_width 700
 select clear
 view
+units {*}$curunits
 tech revert
 resumeall

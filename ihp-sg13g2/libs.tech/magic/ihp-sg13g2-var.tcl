@@ -342,8 +342,8 @@ proc sg13g2::var_device {parameters} {
 
 proc sg13g2::var_draw {parameters} {
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set defaults if they are not in parameters
     set var_spacing 0.25
@@ -446,7 +446,7 @@ proc sg13g2::var_draw {parameters} {
     popbox
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

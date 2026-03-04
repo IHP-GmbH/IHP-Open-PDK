@@ -451,12 +451,7 @@ style gdsii
 # CONT
 #----------------------------------------------------------------
 # For purposes of differentiating square contact vias and bars,
-# identify resistor terminals, and also use a CONTBAR mask hint
-# as a way to identify bar contacts.
-
- templayer resterm
-	bloat-all nres,pres,xres (*poly)/a
-	and-not nres,pres,xres
+# use a CONTBAR mask hint as a way to identify bar contacts.
 
  templayer contbar
 	mask-hints CONTBAR
@@ -473,7 +468,6 @@ style gdsii
 
  layer CONT allcont
 	and-not contlarge
-	and-not resterm
 	and-not sealring
 	and-not contbar
 	squares-grid 0 160 180
@@ -481,7 +475,6 @@ style gdsii
 
  layer CONT allcont
 	and contlarge
-	and-not resterm
 	and-not sealring
 	and-not contbar
  	squares-grid 0 160 200
@@ -492,14 +485,10 @@ style gdsii
 #----------------------------------------------------------------
 
  # Base contacts are drawn as-is, either bar or square, as
- # are schottky diode contacts, and contact in the seal ring.
+ # are schottky diode contacts, and contacts in the seal ring.
 
  layer CONT pbc,sdic
 	or contbar
-	calma	6 0
-
- layer CONT pc
-	and resterm
 	calma	6 0
 
  layer CONT sealc
@@ -1036,14 +1025,32 @@ style drc
  # non-tap diffusion.
 
  templayer ptap_reach
- bloat-all (*psd,*hvpsd,*ptap,*hvptap)/a pwell,space/w 20000
+ # bloat-all (*psd,*hvpsd,*ptap,*hvptap)/a pwell,space/w 20000
+ or (*psd,*hvpsd,*ptap,*hvptap)/a
+ # steps of 620 ensure that the step doesn't reach across a narrow nwell
+ # 620 * 32 + 160 = 20000
+ repeat 32
+ grow 620
+ and-not nwell
+ endrepeat
+ grow 160
+ and-not nwell
+
 
  templayer ptap_missing *ndiff,*hvndiff
  and-not dnwell
  and-not ptap_reach
 
  templayer ntap_reach
- bloat-all (*nsd,*hvnsd,*ntap,*hvntap)/a nwell,pnp 20000
+ # bloat-all (*nsd,*hvnsd,*ntap,*hvntap)/a nwell,pnp 20000
+ or (*nsd,*hvnsd,*ntap,*hvntap)/a
+ # 620 * 32 + 160 = 20000
+ repeat 32
+ grow 620
+ and nwell,pnp
+ endrepeat
+ grow 160
+ and nwell,pnp
 
  templayer ntap_missing *pdiff,*hvpdiff
  and-not pwell_in_dnwell
@@ -1177,7 +1184,16 @@ style drc
 
  # No uncontacted butted tap area should be more than 6um away from a contact.
  templayer tap_far_from_contact
-	bloat-all (pdc,ndc,hvpdc,hvndc)/a (alldiff)/a 6000
+	# bloat-all (pdc,ndc,hvpdc,hvndc)/a (alldiff)/a 6000
+	or (pdc,ndc,hvpdc,hvndc)/a
+	# Distance of 210 avoids reaching over space to another diffusion area
+	# 210 * 28 + 120 = 6000
+	repeat 28
+        grow 210
+	and (alldiff)/a
+	endrepeat
+	grow 120
+	and (alldiff)/a
 	and butted_tap,butted_diff
 	noninteracting (psc,nsc,ptapc,ntapc,hvpsc,hvnsc,hvptapc,hvntapc,sealc)/a
 
@@ -1185,8 +1201,16 @@ style drc
 	and-not tap_far_from_contact
 
  templayer tap_contact_halo
-	bloat-all (psc,nsc,ptapc,ntapc,hvpsc,hvnsc,hvptapc,hvntapc,sealc)/a \
-		(allnactivetap,allpactivetap)/a 6000
+	# bloat-all (psc,nsc,ptapc,ntapc,hvpsc,hvnsc,hvptapc,hvntapc,sealc)/a \
+	#	(allnactivetap,allpactivetap)/a 6000
+	or (psc,nsc,ptapc,ntapc,hvpsc,hvnsc,hvptapc,hvntapc,sealc)/a
+	# 210 * 28 + 120 = 6000
+	repeat 28
+	grow 210
+	and (allnactivetap,allpactivetap)/a
+	endrepeat
+	grow 120
+	and (allnactivetap,allpactivetap)/a
 
  templayer tap_far_from_tap_contact psd,nsd,ptap,ntap,hvpsd,hvnsd,hvptap,hvntap
 	and-not tap_contact_halo

@@ -20,7 +20,8 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load scr1 -silent
 box values 0 0 0 0
 box values -1524 -466 1524 5466
@@ -267,5 +268,6 @@ select area label
 setlabel sticky true
 select clear
 view
+units {*}$curunits
 tech revert
 resumeall

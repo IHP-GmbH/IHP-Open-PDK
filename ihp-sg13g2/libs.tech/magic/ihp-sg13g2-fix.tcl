@@ -247,14 +247,11 @@ proc sg13g2::diodevdd_2kv_generate {} {
     tag load {}
     load diodevdd_2kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/diodevdd_2kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -276,14 +273,11 @@ proc sg13g2::diodevdd_4kv_generate {} {
     tag load {}
     load diodevdd_4kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/diodevdd_4kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -305,14 +299,11 @@ proc sg13g2::diodevss_2kv_generate {} {
     tag load {}
     load diodevss_2kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/diodevss_2kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -334,14 +325,11 @@ proc sg13g2::diodevss_4kv_generate {} {
     tag load {}
     load diodevss_4kv -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/diodevss_4kv.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -363,14 +351,11 @@ proc sg13g2::nmoscl_2_generate {} {
     tag load {}
     load nmoscl_2 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/nmoscl_2.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -392,14 +377,11 @@ proc sg13g2::nmoscl_4_generate {} {
     tag load {}
     load nmoscl_4 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/nmoscl_4.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -421,14 +403,11 @@ proc sg13g2::scr1_generate {} {
     tag load {}
     load scr1 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/scr1.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -450,14 +429,11 @@ proc sg13g2::schottky_nbl1_generate {} {
     tag load {}
     load schottky_nbl1 -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
 
     source ${sg13g2::script_path}/schottky_nbl1.tcl
 
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
     tag load $ltag
     tech revert
     box values {*}$curbox

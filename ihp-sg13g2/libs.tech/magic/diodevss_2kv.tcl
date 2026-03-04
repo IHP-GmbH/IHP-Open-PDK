@@ -20,7 +20,8 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load diodevss_2kv -silent
 box values 0 0 0 0
 box values 0 7140 1944 7410
@@ -495,5 +496,6 @@ select area label
 setlabel sticky true
 select clear
 view
+set units {*}$curunits
 tech revert
 resumeall
