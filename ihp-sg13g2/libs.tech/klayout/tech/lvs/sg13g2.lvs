@@ -92,18 +92,7 @@ end
 #---------------- SRAM SUPPORT ------------------
 #================================================
 
-# Which of the SRAM cells have a floating bulk and thus will never
-# fulfill port matching
-def floating_bulk_sram_cell?(cell_name)
-  ( \
-    (cell_name =~ /^SP6T\w*Cell$/) \
-    or (cell_name =~ /^DP8T\w*Cell$/) \
-    or (cell_name =~ /^SP6T\w*WLDrive/) \
-    or (cell_name =~ /^DP8T\w*WLDrive/) \
-    or (cell_name =~ /^SP6T\w*Array_\d+X\d+$/) \
-    or (cell_name =~ /^DP8T\w*Array_\d+X\d+$/) \
-  )
-end
+# %include rule_decks/sram_integration.lvs
 
 #================================================
 #------------------ SWITCHES --------------------
@@ -134,15 +123,6 @@ NET_ONLY = bool_check?($net_only)
 
 logger.info("Selected NET_ONLY option: #{NET_ONLY}")
 
-# ALLOW_UNMATCHED_PORTS
-if floating_bulk_sram_cell?(src.cell_name)
-  ALLOW_UNMATCHED_PORTS = true
-else
-  ALLOW_UNMATCHED_PORTS = bool_check?($allow_unmatched_ports)
-end
-
-logger.info("Selected ALLOW_UNMATCHED_PORTS option: #{ALLOW_UNMATCHED_PORTS}")
-
 # LAYOUT_NETLIST
 LAYOUT_NETLIST_PATH = ($layout_netlist || '').to_s.strip
 LAYOUT_NETLIST = !LAYOUT_NETLIST_PATH.empty?
@@ -150,9 +130,13 @@ LAYOUT_NETLIST = !LAYOUT_NETLIST_PATH.empty?
 logger.info("Selected LAYOUT_NETLIST option: #{LAYOUT_NETLIST ? LAYOUT_NETLIST_PATH : '(none)'}")
 
 # IGNORE_TOP_PORTS_MISMATCH
-IGNORE_TOP_PORTS_MISMATCH = bool_check?($ignore_top_ports_mismatch)
+floating_bulk_sram_top = src && floating_bulk_sram_cell?(src.cell_name)
+IGNORE_TOP_PORTS_MISMATCH = bool_check?($ignore_top_ports_mismatch) || floating_bulk_sram_top
 
 logger.info("Selected IGNORE_TOP_PORTS_MISMATCH option: #{IGNORE_TOP_PORTS_MISMATCH}")
+if floating_bulk_sram_top && !bool_check?($ignore_top_ports_mismatch)
+  logger.info("Floating-bulk SRAM top cell '#{src.cell_name}' detected: enabling IGNORE_TOP_PORTS_MISMATCH.")
+end
 
 # IMPLICIT_NETS
 IMPLICIT_NETS = ($implicit_nets || '').to_s.strip
@@ -273,31 +257,9 @@ else
   logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
 end
 
-#================================================
-#------ FlowSpace SRAM custom connection --------
-#================================================
+logger.info('Applying SRAM integration support.')
+apply_sram_integration
 
-# logger.info('FlowSpace custom setup')
-
-# The compiler allows to configure a prefix for the sub-cell names
-# but the prefix will start with SP6T for the single port RAM and
-# DP8T for the dual port RAM
-
-# Some nets in the SRAM design may be disjointed in a sub-cell layout
-connect_implicit('SP6T*Cell', 'vss')
-connect_implicit('DP8T*Cell', 'vss')
-connect_implicit('DP8T*Array*', 'vss')
-connect_implicit('SP6T*', 'vdd')
-connect_implicit('DP8T*', 'vdd')
-connect_implicit('SP6T*Array*', 'nwell')
-connect_implicit('DP8T*Array*', 'nwell')
-
-# Some hacking is needed to handle shared source/drain regions
-# between different cells
-sharedsd_cells = [
-  "SP6T*Cell", "SP6T*Precharge*", "SP6T*RowDecoderNand3*", "SP6T*WLDrive*",
-  "DP8T*Cell", "DP8T*Precharge*", "DP8T*RowDecoderNand3*", "DP8T*WLDrive*",
-]
 #================================================================
 #------------------------- MAIN RUNSET --------------------------
 #================================================================
@@ -405,7 +367,7 @@ else
   # ----- MOSFET EXTRACTION -------
   #================================
 
-  cheat(sharedsd_cells) {
+  cheat(SRAM_SHAREDSD_CELLS) {
 
   # %include rule_decks/mos_extraction.lvs
 
