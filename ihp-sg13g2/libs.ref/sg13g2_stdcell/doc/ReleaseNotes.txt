@@ -1,8 +1,8 @@
 Tech Info
 ------------------------------------------------------------------------------------------
 Technology   : SG13G2
-Revision     : rev0.1.3
-Date         : 20 Jun 2025
+Revision     : rev0.1.4
+Date         : 12 Jan 2026
 
 ------------------------------------------------------------------------------------------
 The 0.13-micron standard cells can be used for the BiCMOS technology with a 0.13 CMOS process.
@@ -13,6 +13,48 @@ Important Notes:
 
 1. Changes for Release:
 ==========================================================================================
+Rev0.1.4: The update includes Liberty models update, verilog models update, small fixes of technology LEF file. Instance names are updated in CDL and spice netlists of standard cells.
+Changes:
+- Liberty models were re-characterized and regenerated to fix typos in SDF conditions. Values of timing/power can be different due to using of new versions of characterizer and simulator (#650),
+- "Cell footprint" attribute is updated to define cell families (#698),
+- Test cells function sintax is changed from "`" to "!",
+- Attribute "sdf_edges : start_edge" is added to flip-flops to ensure correct SDF annotation and consistensy between STA and gate-level simulation,
+- Timing specification sections are updated in Verilog models,
+- UDP (user-defined primitives) models are removed from file "sg13g2_stdcell.v" and put to separate file "sg13g2_udp.v",
+- Port order of cells in Verilog model is changed to be consistent with CDL and Spice netlists,
+- TopMetal1 picth value is changed from 2.28 to 3.28 in technology LEF (#722),
+- BUSBITCHARS attribute is aligned to "[]",
+- Changed ViaRULE name to viaTop1Array 
+- Changed ViaRULE name to viaTop2Array
+- Changed ENCLOSURE for Metal5 and TopVia1 to align with DRC rules
+- Changed ENCLOSURE for TopMetal2 to align with DRC rule 
+	##########################################
+	ViaRULE viaTop1Array GENERATE
+	  LAYER Metal5 ;
+	    ENCLOSURE 0.1 0.1 ;
+	  LAYER TopMetal1 ;
+	    ENCLOSURE 0.42 0.42 ;
+	  LAYER TopVia1 ;
+	    RECT -0.21 -0.21 0.21 0.21 ;
+	    SPACING 0.84 BY 0.84 ;
+	    RESISTANCE 4.0 ;
+	END viaTop1Array
+
+	ViaRULE viaTop2Array GENERATE
+	  LAYER TopMetal1 ;
+	    ENCLOSURE 0.5 0.5 ;
+	  LAYER TopMetal2 ;
+	    ENCLOSURE 0.5 0.5 ;
+	  LAYER TopVia2 ;
+	    RECT -0.45 -0.45 0.45 0.45 ;
+	    SPACING 1.96 BY 1.96 ;
+	    RESISTANCE 2.2 ;
+	END viaTop2Array
+	#########################################
+- CDL views are updated: instances are renamed,
+- CDL and spice netlists are re-generated with updated instance names.
+
+
 Rev0.1.3: !IMPORTANT!: It is strongly recommended to save previous library version for debugging early implemented designs. It is NOT ALLOWED simple cell layout replacement in existing designs. Designs require re-synthesis of layout. 
 Changes:
 - routing directions of metal were changed to opposite state in technology LEF file: M1(H), M2(V), M3(H), M4(V), M5(H), TM1(V), TM2(H),
