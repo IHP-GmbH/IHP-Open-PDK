@@ -105,14 +105,46 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   private
 
+  # Prepare MOS params for comparison
+  def map_mos_model(model, params)
+    map_params = (params || {}).dup
+    rfmode_raw = map_params['RFMODE'] || map_params['rfmode']
+    rfmode = RFMODE_TO_BINARY.call(rfmode_raw)
+
+    map_params['RFMODE'] = rfmode unless rfmode.nil?
+    map_params.delete('rfmode')
+
+    [model, map_params]
+  end
+
   # Process device element
   def process_device(ele, circuit, name, model, nets, params)
-    cls = circuit.netlist.device_class_by_name(model)
-    cls ||= create_device_class(ele, circuit, model, nets.size)
+    # For MOS devices, map RF model naming before class lookup/creation.
+    if ele == 'M'
+      model, params = map_mos_model(model, params)
+    end
+
+    cls = device_class_cache(circuit.netlist, model)
+    unless cls
+      cls = create_device_class(ele, circuit, model, nets.size)
+      device_class_cache(circuit.netlist, model, cls)
+    end
 
     device = circuit.create_device(cls, name)
     connect_terminals(ele, device, model, nets)
     map_params(ele, device, model, params)
+  end
+
+  # prevents accidental duplicate class definitions.
+  def device_class_cache(netlist, model, klass = nil)
+    @device_class_cache ||= {}
+    key = device_class_key(netlist, model)
+    @device_class_cache[key] = klass unless klass.nil?
+    @device_class_cache[key] ||= netlist.device_class_by_name(model)
+  end
+
+  def device_class_key(netlist, model)
+    "#{netlist.object_id}:#{model.to_s.downcase}"
   end
 
   # Create or retrieve the device class based on the element type, model name, and number of nets.
@@ -124,7 +156,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # @return [RBA::DeviceClass] The created or retrieved device class.
   def create_device_class(ele, circuit, model, num_nets)
     cls = case ele
-          when 'M' then RBA::DeviceClassMOS4Transistor.new
+          when 'M' then create_mos
           when 'C' then create_capacitor(model, num_nets)
           when 'R' then create_resistor(model, num_nets)
           when 'Q' then create_bjt(model, num_nets)
@@ -137,6 +169,13 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     cls.name = model
     circuit.netlist.add(cls)
     cls
+  end
+
+  # Create MOS4 device class.
+  def create_mos
+    mos_class = RBA::DeviceClassMOS4Transistor.new
+    mos_class.add_parameter(RBA::DeviceParameterDefinition.new('rfmode', 'rf mode', 0, true))
+    mos_class
   end
 
   # Create a capacitor device class.
@@ -300,6 +339,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_mos_params(device, params)
     device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
     device.set_parameter('L', (params['L'] || 0.0) * 1e6)
+    device.set_parameter('rfmode', RFMODE_TO_BINARY.call(params['RFMODE']) || 0.0)
   end
 
   # Map parameters for a BJT device.

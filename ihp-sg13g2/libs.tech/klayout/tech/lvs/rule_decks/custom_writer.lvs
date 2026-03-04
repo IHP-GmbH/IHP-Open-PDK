@@ -19,22 +19,45 @@
 
 #=============== CUSTOM WRITER ===================
 
-# %include globals.lvs
-
 # Custom writer for SPICE netlists
 class CustomWriter < RBA::NetlistSpiceWriterDelegate
   # Write device to SPICE format
   # @param device [RBA::Device] The device to be written
   def write_device(device)
     device_class = device.device_class
+    model_name, default_rfmode = map_mos_output(device_class.name)
+    explicit_rfmode = read_rfmode_parameter(device, device_class)
+    rfmode = explicit_rfmode.nil? ? default_rfmode : explicit_rfmode
     str = generate_device_prefix(device, device_class)
     str += generate_device_terminals(device, device_class)
-    str += "#{device_class.name} "
+    str += "#{model_name} "
     str += generate_default_parameters(device, device_class)
+    str = str.strip
+    str += " rfmode=#{rfmode}" unless rfmode.nil?
     emit_line(str)
   end
 
   private
+
+  # Map RF MOS as base MOS model name with rfmode flag.
+  def map_mos_output(model_name)
+    key = model_name.to_s.downcase
+    MOS_OUTPUT_MODEL_MAP.fetch(key, [model_name, nil])
+  end
+
+  # Read rfmode from device parameters.
+  # Returns nil when rfmode is unavailable so writer can apply default mapping.
+  def read_rfmode_parameter(device, device_class)
+    return nil unless device_class.has_parameter?('rfmode')
+
+    param_id = device_class.parameter_id('rfmode')
+    return nil if param_id.nil?
+
+    value = device.parameter(param_id)
+    return nil if value.nil?
+
+    RFMODE_TO_BINARY.call(value)
+  end
 
   # Generate device prefix using the global prefix map
   def generate_device_prefix(device, device_class)
@@ -69,6 +92,8 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
   # Generate default parameters for the device
   def generate_default_parameters(device, device_class)
     parameters = device_class.parameter_definitions.map do |pd|
+      next if pd.name.to_s.casecmp('rfmode').zero?
+
       value = format_parameter_value(pd.name, device.parameter(pd.id))
       next if value.nil?
 
