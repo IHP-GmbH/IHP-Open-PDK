@@ -411,8 +411,8 @@ proc sg13g2::cap_device {parameters} {
 
 proc sg13g2::cap_draw {parameters} {
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set defaults if they are not in parameters
     set coverlap 0	;# overlap capacitors at contacts
@@ -618,7 +618,7 @@ proc sg13g2::cap_draw {parameters} {
     popbox
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

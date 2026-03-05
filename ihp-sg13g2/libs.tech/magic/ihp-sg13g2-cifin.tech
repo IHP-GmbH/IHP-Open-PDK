@@ -139,10 +139,22 @@ style  sg13g2 variants ()
  layer digisub DIGITALID
  labels DIGITALID
 
+ # Define schottky diode device from the salicide block.
+ templayer schottkyarea DIODE
+ and SBLK
+
+ templayer schottkyexpanded schottkyarea
+ grow 1900
+
  # Documentation allows PWELLBLK overlapping NWELL but since
  # this is effectively redundant, the two have been placed on
  # the same plane (well) and NWELL masks PWELLBLK in magic.
+ # Do not keep PWELLBLK in a Schottky diode layout because
+ # it does not follow DRC rules, and is auto-generated on
+ # output.
+
  layer pblock PWELLBLK
+ and-not schottkyexpanded
  and-not NWELL
  labels PWELLBLK
 
@@ -377,10 +389,6 @@ style  sg13g2 variants ()
  and PSD
  and-not SBLK
 
- # Define schottky diode device from the salicide block.
- templayer schottkyarea DIODE
- and SBLK
-
  layer schottky schottkyarea
  and-not CONT
  labels DIODE
@@ -583,6 +591,15 @@ style  sg13g2 variants ()
  and PSD
  and NSD
  labels POLYRES
+
+ # Find CONTBAR areas (other than pbc, sdic, or sealc)
+ # and mark them with CONT mask hints.
+ templayer contbar CONT
+ and-not EDGESEAL
+ and-not npnarea,hvnpnarea,lvnpnarea
+ and-not schottkyarea
+ not-square
+ mask-hints CONTBAR
 
  # Copy (non-resistor) poly areas up for contact checks
  templayer xpolycheck polycheck

@@ -863,8 +863,8 @@ proc sg13g2::mos_device {parameters} {
 
 proc sg13g2::mos_draw {parameters} {
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set defaults if they are not in parameters
     set is_rf 0		;# assume non-RF device by default
@@ -1197,7 +1197,7 @@ proc sg13g2::mos_draw {parameters} {
     popbox
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

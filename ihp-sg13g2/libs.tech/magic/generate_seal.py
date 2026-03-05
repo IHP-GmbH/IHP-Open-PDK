@@ -112,7 +112,7 @@ if __name__ == '__main__':
     print('crashbackups stop', file=ofile)
     print('locking disable', file=ofile)
     print('tech unlock *', file=ofile)
-    print('snap internal', file=ofile)
+    print('units internal', file=ofile)
     print('source ' + magic_path + 'sealring_corner.tcl', file=ofile)
     # Note:  Total width includes the separation on both sides
     print('set separation [magic::u2i [expr {10.8 + ' + str(extra_sep) + '}]]',

@@ -20,7 +20,8 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load sealring_corner -silent
 box values -26 3351 1601 4226
 paint pwell
@@ -460,8 +461,9 @@ box values 1185 -740 4200 -600
 paint seal
 box values 2060 -1440 4200 -740
 paint seal
-property FIXED_BBOX "-1440 -1440 4200 4200"
+property FIXED_BBOX -1440 -1440 4200 4200
 select clear
 view
 tech revert
+units {*}$curunits
 resumeall

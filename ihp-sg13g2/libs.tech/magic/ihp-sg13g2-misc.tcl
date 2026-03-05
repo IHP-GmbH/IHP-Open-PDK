@@ -19,8 +19,10 @@
 #----------------------------------------------------------------
 
 proc sg13g2::subconn_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 0.16} {
       puts stderr "Substrate tap width must be at least 0.16um"
       return
@@ -33,26 +35,29 @@ proc sg13g2::subconn_draw {} {
    paint psc
    pushbox
    pushbox
-   box grow c 0.07um
+   box grow c 0.07
    paint psd
    popbox
    if {$w > $h} {
-      box grow e 0.05um
-      box grow w 0.05um
+      box grow e 0.05
+      box grow w 0.05
    } else {
-      box grow n 0.05um
-      box grow s 0.05um
+      box grow n 0.05
+      box grow s 0.05
    }
    paint m1
    popbox
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::hvsubconn_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 0.16} {
       puts stderr "Substrate tap width must be at least 0.16um"
       return
@@ -64,20 +69,21 @@ proc sg13g2::hvsubconn_draw {} {
    suspendall
    paint hvpsc
    pushbox
-   box grow c 0.07um
+   box grow c 0.07
    paint hvpsd
    pushbox
    popbox
    if {$w > $h} {
-      box grow e 0.05um
-      box grow w 0.05um
+      box grow e 0.05
+      box grow w 0.05
    } else {
-      box grow n 0.05um
-      box grow s 0.05um
+      box grow n 0.05
+      box grow s 0.05
    }
    paint m1
    popbox
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
@@ -89,66 +95,71 @@ proc sg13g2::hvsubconn_draw {} {
 #----------------------------------------------------------------
 
 proc sg13g2::guard_ring_draw {ctype dtype} {
+   set curunits [units]
+   units microns
    pushbox
    box width 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
    box height 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
-   box move n [box height]i
+   box move n [box height]
    box height 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
 
    pushbox
-   box move e [box width]i
+   box move e [box width]
    box width 0
-   box grow c 0.08um
+   box grow c 0.08
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint $ctype
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint $dtype
    popbox
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::subconn_guard_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -169,13 +180,16 @@ proc sg13g2::subconn_guard_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::hvsubconn_guard_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -196,13 +210,16 @@ proc sg13g2::hvsubconn_guard_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::nwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -218,7 +235,7 @@ proc sg13g2::nwell_draw {} {
    tech unlock *
    pushbox
    pushbox
-   box grow c 0.390um
+   box grow c 0.390
    paint nwell
    popbox
 
@@ -227,13 +244,16 @@ proc sg13g2::nwell_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::hvnwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    # NOTE:  Width and height are determined by the requirement for
    # a contact on each side.  There is not much that can be done
    # with an guarded nwell smaller than that, anyway.
@@ -249,7 +269,7 @@ proc sg13g2::hvnwell_draw {} {
    tech unlock *
    pushbox
    pushbox
-   box grow c 0.770um
+   box grow c 0.770
    paint nwell
    popbox
 
@@ -258,13 +278,16 @@ proc sg13g2::hvnwell_draw {} {
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::deep_nwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 3.0} {
       puts stderr "Deep-nwell region width must be at least 3.0um"
       return
@@ -278,96 +301,99 @@ proc sg13g2::deep_nwell_draw {} {
    paint dnwell
    pushbox
    pushbox
-   box grow c 0.425um
+   box grow c 0.425
    pushbox
-   box width 0.79um
+   box width 0.79
    paint nwell
    popbox
    pushbox
-   box height 0.79um
+   box height 0.79
    paint nwell
    popbox
    pushbox
-   box move n ${h}um
-   box move n 0.85um
-   box move s 0.79um
-   box height 0.79um
+   box move n $h
+   box move n 0.85
+   box move s 0.79
+   box height 0.79
    paint nwell
    popbox
    pushbox
-   box move e ${w}um
-   box move e 0.85um
-   box move w 0.79um
-   box width 0.79um
+   box move e $w
+   box move e 0.85
+   box move w 0.79
+   box width 0.79
    paint nwell
    popbox
 
    popbox
-   box grow c 0.03um
+   box grow c 0.03
 
    pushbox
    box width 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint nsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint nsd
    popbox
 
    pushbox
    box height 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint nsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint nsd
    popbox
 
    pushbox
-   box move n [box height]i
+   box move n [box height]
    box height 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint nsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint nsd
    popbox
 
    pushbox
-   box move e [box width]i
+   box move e [box width]
    box width 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint nsc
-   box grow c 0.07um
+   box grow c 0.07
    paint nsd
    popbox
 
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------
 
 proc sg13g2::hvdeep_nwell_draw {} {
-   set w [magic::i2u [box width]]
-   set h [magic::i2u [box height]]
+   set curunits [units]
+   units microns
+   set w [box width]
+   set h [box height]
    if {$w < 3.0} {
       puts stderr "MV Deep-nwell region width must be at least 3.0um"
       return
@@ -381,89 +407,90 @@ proc sg13g2::hvdeep_nwell_draw {} {
    paint dnwell
    pushbox
    pushbox
-   box grow c 0.805um
+   box grow c 0.805
    pushbox
-   box width 1.55um
+   box width 1.55
    paint nwell
    popbox
    pushbox
-   box height 1.55um
+   box height 1.55
    paint nwell
    popbox
    pushbox
-   box move n ${h}um
-   box move n 1.61um
-   box move s 1.55um
-   box height 1.55um
+   box move n $h
+   box move n 1.61
+   box move s 1.55
+   box height 1.55
    paint nwell
    popbox
    pushbox
-   box move e ${w}um
-   box move e 1.61um
-   box move w 1.55um
-   box width 1.55um
+   box move e $w
+   box move e 1.61
+   box move w 1.55
+   box width 1.55
    paint nwell
    popbox
 
    popbox
-   box grow c 0.03um
+   box grow c 0.03
 
    pushbox
    box width 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint hvnsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint hvnsd
    popbox
 
    pushbox
    box height 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint hvnsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint hvnsd
    popbox
 
    pushbox
-   box move n [box height]i
+   box move n [box height]
    box height 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow e -0.3um
-   box grow w -0.3um
+   box grow e -0.3
+   box grow w -0.3
    paint hvnsc
    popbox
-   box grow c 0.07um
+   box grow c 0.07
    paint hvnsd
    popbox
 
    pushbox
-   box move e [box width]i
+   box move e [box width]
    box width 0
-   box grow c 0.085um
+   box grow c 0.085
    paint m1
    pushbox
-   box grow n -0.3um
-   box grow s -0.3um
+   box grow n -0.3
+   box grow s -0.3
    paint hvnsc
-   box grow c 0.07um
+   box grow c 0.07
    paint hvnsd
    popbox
 
    popbox
    tech revert
    resumeall
+   units {*}$curunits
 }
 
 #----------------------------------------------------------------

@@ -373,7 +373,6 @@ proc sg13g2::via_draw {parameters} {
     # puts stdout "Diagnostic 2:  metalwidth = $metalwidth   metalheight = $metalheight" 
 
     # For each metal layer, paint the metal and contact
-    snap internal
     for {set i $metalbot} {$i <= $metaltop} {incr i} {
 	set lmetalwidth [lindex $metalwidth $i]
 	set lmetalheight [lindex $metalheight $i]

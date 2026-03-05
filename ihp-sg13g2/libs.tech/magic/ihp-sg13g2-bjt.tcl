@@ -195,8 +195,8 @@ proc sg13g2::npn13g2_base_generate {} {
     tag load {}
     load npn13g2_base -silent
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Everything here is fixed geometry
     box values -0.975um 1.02um 0.975um 1.26um
@@ -246,7 +246,7 @@ proc sg13g2::npn13g2_base_generate {} {
     
     # Return to our regularly scheduled program
     load $curcell
-    snap $savesnap
+    units {*}$curunits
     tag load $ltag
     tech revert
     box values {*}$curbox
@@ -263,8 +263,8 @@ proc sg13g2::npn13g2_draw {parameters} {
     # To be done:  Loop over number of emitters
 
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -365,7 +365,7 @@ proc sg13g2::npn13g2_draw {parameters} {
     }
     popbox
 
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 
@@ -376,8 +376,8 @@ proc sg13g2::npn13g2l_draw {parameters} {
     # To be done:  Loop over number of emitters
 
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -611,7 +611,7 @@ proc sg13g2::npn13g2l_draw {parameters} {
     }
 
     popbox
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 
@@ -624,8 +624,8 @@ proc sg13g2::npn13g2v_draw {parameters} {
     # To be done:  Loop over number of emitters
 
     tech unlock *
-    set savesnap [snap]
-    snap internal
+    set curunits [units]
+    units internal
 
     # Set a local variable for each rule in ruleset
     foreach key [dict keys $sg13g2::ruleset] {
@@ -861,7 +861,7 @@ proc sg13g2::npn13g2v_draw {parameters} {
     }
 
     popbox
-    snap $savesnap
+    units {*}$curunits
     tech revert
 }
 

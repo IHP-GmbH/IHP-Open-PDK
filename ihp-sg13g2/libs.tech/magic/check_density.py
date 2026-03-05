@@ -150,7 +150,7 @@ if __name__ == '__main__':
         print('#!/bin/env wish', file=ofile)
         print('crashbackups stop', file=ofile)
         print('drc off', file=ofile)
-        print('snap internal', file=ofile)
+        print('units internal', file=ofile)
 
         print('set starttime [orig_clock format [orig_clock seconds] -format "%D %T"]', file=ofile)
         print('puts stdout "Started reading GDS: $starttime"', file=ofile)

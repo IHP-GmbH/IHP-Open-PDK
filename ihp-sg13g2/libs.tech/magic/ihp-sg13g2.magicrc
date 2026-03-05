@@ -54,24 +54,11 @@ source [file dirname [file normalize [info script]]]/ihp-sg13g2.tcl
 # load bind keys (optional)
 # source [file dirname [file normalize [info script]]]/ihp-sg13g2-BindKeys
 
-# set units to lambda grid 
-snap lambda
+# set units to microns
+units microns
 
 # set sg13g2 standard power, ground, and substrate names
 set VDD VDD
 set GND VSS
 set SUB sub!
-
-# Allow override of type of magic library views used, "mag" or "maglef",
-# from environment variable MAGTYPE
-
-if {[catch {set MAGTYPE $env(MAGTYPE)}]} {
-   set MAGTYPE mag
-}
-
-# add path to reference cells
-addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_pr/${MAGTYPE}
-addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_io/${MAGTYPE}
-addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_stdcell/${MAGTYPE}
-addpath [file dirname [file normalize [info script]]]/../../libs.ref/sg13g2_sram/${MAGTYPE}
 

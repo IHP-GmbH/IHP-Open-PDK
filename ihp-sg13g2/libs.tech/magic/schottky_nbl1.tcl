@@ -20,7 +20,8 @@
 
 suspendall
 tech unlock *
-snap internal
+set curunits [units]
+units internal
 load schottky_nbl1 -silent
 box values 0 0 0 0
 box values -110 -84 350 464
@@ -201,8 +202,9 @@ select area label
 setlabel sticky true
 # Note: Use mask hint for pblock to avoid DRC errors.
 # PWELLBLK will be generated automatically.
-property MASKHINTS_PWELLBLK "-326 -368 566 -130 -326 -130 -160 510 400 -130 566 510 -326 510 566 670"
+property MASKHINTS_PWELLBLK -326 -368 566 -130 -326 -130 -160 510 400 -130 566 510 -326 510 566 670
 select clear
 view
+units {*}$curunits
 tech revert
 resumeall
