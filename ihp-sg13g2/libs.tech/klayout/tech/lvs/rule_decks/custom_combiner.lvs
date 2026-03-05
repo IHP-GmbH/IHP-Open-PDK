@@ -177,6 +177,13 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
   def combine_devices(a, b)
     res_nets = [0, 1] # Using id instead of names
 
+    # 3-terminal resistors are combined only when substrate nets match.
+    model = a.device_class.name
+    sub_term = "#{model}_sub"
+    if !a.device_class.terminal_id(sub_term).nil?
+      return false unless same_net(a, b, sub_term)
+    end
+
     # Check if same parameters
 
     # Check if terminals series or parallel (With same params)
@@ -192,6 +199,8 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
 
     # Disconnect the second device and let the system clean it up
     res_nets.each { |term| b.disconnect_terminal(term) }
+    # Disconnect substrate terminal when present.
+    b.disconnect_terminal(sub_term) if !b.device_class.terminal_id(sub_term).nil?
 
     true
   end

@@ -23,26 +23,188 @@
 class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Cleanup sch for R, C elements
   def clean_sch(line, element)
-    # Extracting parameters with values
+    return clean_cap_line(line) if element == 'C'
+    return clean_res_line(line) if element == 'R'
+
+    line
+  end
+
+  # Accepted capacitor forms:
+  # 2T (cap_cmim)
+  # - C1 PLUS MINUS cap_cmim w=6.99u l=6.99u m=1 C=74.620f
+  # - C1 PLUS MINUS $[cap_cmim] 74.620f w=6.99u l=6.99u m=1
+  # - C1 PLUS MINUS cap_cmim 74.620f w=6.99u l=6.99u m=1
+  # 3T (rfcmim)
+  # - C1 N1 N2 SUB rfcmim w=7u l=7u wfeed=3u m=1 C=74.823f
+  #
+  # Input : raw capacitor netlist line.
+  # Output: compact line with device pins + valid key=value params.
+  # Usage : called by clean_sch for element 'C'.
+  def clean_cap_line(line)
     valid_params = line.scan(/\b\w+\s*=\s*\S+\b/)
 
-    case element
-    when 'R'
-      # For 2 term res [<nets> <model> <params>]
-      num_terms = 3
-    when 'C'
-      # Determine number of terms based on component type
-      num_terms =
-        if line.downcase.include?('varicap')
-          5
-        elsif line.downcase.include?('rfcmim')
-          4
-        else
-          3
-        end
-    end
+    num_terms =
+      if line.downcase.include?('varicap')
+        5
+      elsif line.downcase.include?('rfcmim')
+        4
+      else
+        3
+      end
+
     line_no_param = line.split(' ').take(num_terms).join(' ')
     "#{line_no_param.strip} #{valid_params.join(' ')}"
+  end
+
+  # Accepted resistor forms:
+  # 2T (metal resistor)
+  # - Rm2 net3 net4 res_metal1 l=1.5u w=5u R=20k
+  # - Rm1 net1 net2 20k $[res_metal1] l=1u w=5u
+  # - Rm1 net1 net2 3.6m $[res_topmetal1] l=1u w=5u
+  # 3T (poly resistor)
+  # - Rs1 net1 net2 sub rsil m=1 l=0.5u w=0.5u R=3.1583k
+  # - RR1 net8 net9 3.1583k $SUB=sub! $rhigh w=0.5e-6 l=0.96e-6 b=0
+  #
+  # Internal rewrite target:
+  # - R n1 n2 [sub] [R|0] MODEL=<name> <params>
+  #
+  # Input : raw resistor netlist line.
+  # Output: parser-stable resistor line with explicit MODEL=<name>.
+  # Usage : called by clean_sch for element 'R'.
+  def clean_res_line(line)
+    fields = split_res_fields(line)
+    return line if fields.size < 4
+
+    rewrite_poly_with_sub_param(fields) || rewrite_res_from_model_position(fields) || line
+  end
+
+  # Input : raw resistor netlist line.
+  # Output: field list with normalized spacing around '=' and separators.
+  # Usage : first step in clean_res_line.
+  def split_res_fields(line)
+    line.gsub(/\s*=\s*/, '=').gsub(/\s+\/\s+/, ' ').gsub(/\s+\\\s+/, ' ').split
+  end
+
+  # Handle: R n1 n2 RVAL $SUB=sub! <poly_model> <params>
+  #
+  # Input : resistor field list.
+  # Output: rewritten line, or nil when this form does not match.
+  # Usage : first rewrite attempt in clean_res_line.
+  def rewrite_poly_with_sub_param(fields)
+    sub_idx = fields.find_index { |f| f.upcase.start_with?('$SUB=') || f.upcase.start_with?('SUB=') }
+    return nil if sub_idx.nil?
+
+    model_idx = fields.find_index { |f| poly_res_model?(f) }
+    return nil if model_idx.nil? || model_idx <= 2
+
+    value_idx = fields.each_index.find { |i| i >= 2 && i < model_idx && resistor_value_field?(fields[i]) }
+    return nil if value_idx.nil?
+
+    prefix = fields.take(value_idx - 2)
+    n1 = fields[value_idx - 2]
+    n2 = fields[value_idx - 1]
+    # Poly resistor value is not used in LVS comparison.
+    # Keep parser behavior stable by forcing positional value to 0.
+    value = '0'
+    model = canonical_res_model_name(fields[model_idx])
+    sub = fields[sub_idx].split('=', 2)[1]
+    rest = fields.each_with_index.filter_map do |field, idx|
+      next if idx <= value_idx
+      next if idx == sub_idx || idx == model_idx
+
+      field
+    end
+
+    build_clean_res_line(prefix, n1, n2, sub, value, model, rest)
+  end
+
+  # Handle:
+  # - Metal 2T: R n1 n2 <metal_model> [R] <params>
+  # - Poly 3T : R n1 n2 <sub> <poly_model> [R] <params>
+  #
+  # Input : resistor field list.
+  # Output: rewritten line, or nil when this form does not match.
+  # Usage : second rewrite attempt in clean_res_line.
+  def rewrite_res_from_model_position(fields)
+    model_idx = fields.find_index { |f| resistor_model_field?(f) }
+    return nil if model_idx.nil?
+
+    model = canonical_res_model_name(fields[model_idx])
+    rest = fields.drop(model_idx + 1)
+    value = resistor_value_field?(rest.first) ? rest.shift : '0'
+
+    if metal_res_model?(model)
+      # Form: Rm1 n1 n2 20k res_metal1 ...
+      if model_idx >= 3 && resistor_value_field?(fields[model_idx - 1])
+        prefix = fields.take(model_idx - 3)
+        n1 = fields[model_idx - 3]
+        n2 = fields[model_idx - 2]
+        value = fields[model_idx - 1]
+        return build_clean_res_line(prefix, n1, n2, nil, value, model, rest)
+      end
+
+      return nil if model_idx < 2
+
+      prefix = fields.take(model_idx - 2)
+      n1 = fields[model_idx - 2]
+      n2 = fields[model_idx - 1]
+      return build_clean_res_line(prefix, n1, n2, nil, value, model, rest)
+    end
+
+    return nil if model_idx < 3
+
+    prefix = fields.take(model_idx - 3)
+    n1 = fields[model_idx - 3]
+    n2 = fields[model_idx - 2]
+    sub = fields[model_idx - 1]
+    build_clean_res_line(prefix, n1, n2, sub, value, model, rest)
+  end
+
+  # Input : one resistor model field candidate.
+  # Output: model name without '$' prefix or surrounding [].
+  # Usage : called before model checks and rewrite output.
+  def canonical_res_model_name(field)
+    return '' if field.nil?
+
+    model = field.to_s.strip
+    model = model[1..] if model.start_with?('$')
+    model = Regexp.last_match(1) if model.match?(/^\[(.+)\]$/)
+    model.downcase
+  end
+
+  # Input : one resistor field candidate.
+  # Output: true if the field is a supported resistor model name.
+  # Usage : used to detect resistor model position in netlist line.
+  def resistor_model_field?(field)
+    model = canonical_res_model_name(field)
+    RES_DEV.include?(model) || metal_res_model?(model)
+  end
+
+  def metal_res_model?(model)
+    model.start_with?('res_metal') || model.start_with?('res_topmetal')
+  end
+
+  # Input : one resistor field candidate.
+  # Output: true if the field is a poly resistor model from RES_DEV.
+  # Usage : used by $SUB-based 3-terminal rewrite path.
+  def poly_res_model?(field)
+    RES_DEV.include?(canonical_res_model_name(field))
+  end
+
+  # Input : one resistor field candidate.
+  # Output: true if the field is parsed as numeric value (e.g. 20k, 3.1e-6).
+  # Usage : optional resistor value detection.
+  def resistor_value_field?(field)
+    !!(field && field.match?(/\A[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?[a-zA-Z]*\z/))
+  end
+
+  # Input : parsed resistor parts.
+  # Output: canonical clean resistor line with MODEL=<name>.
+  # Usage : shared builder for all resistor rewrite paths.
+  def build_clean_res_line(prefix, n1, n2, sub, value, model, rest)
+    base = prefix + [n1, n2]
+    base << sub unless sub.nil?
+    (base + [value, "MODEL=#{model}"] + rest).join(' ').strip
   end
 
   # Override parse_element method to handle exceptions gracefully
@@ -59,9 +221,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     # to
     # C0 PLUS1 MINUS1 cap_cmim 74.620f w=6.99u l=6.99u m=1
     line = line.gsub(/\$\[([^\]]+)\]/, '\1')
-
-    # Prep sch for R, C
-    line = clean_sch(line, element) if %w[R C].include?(element)
+    # Prep sch for C/R.
+    line = clean_sch(line, element) if element == 'C' || element == 'R'
 
     super
   rescue StandardError
@@ -122,6 +283,12 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     # For MOS devices, map RF model naming before class lookup/creation.
     if ele == 'M'
       model, params = map_mos_model(model, params)
+    end
+    if ele == 'R'
+      # clean_res_line stores resistor model in MODEL=<name>.
+      # Read it back here before class selection.
+      parsed_model = params && params.delete('MODEL')
+      model = parsed_model unless parsed_model.nil? || parsed_model.to_s.empty?
     end
 
     cls = device_class_cache(circuit.netlist, model)
@@ -207,8 +374,12 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Create a resistor device class.
   def create_resistor(model, num_nets)
-    if RES_DEV.any? { |res| model.downcase.start_with?(res) }
-      DeviceCustomRes.new(model, num_nets)
+    if RES_DEV.include?(model.downcase)
+      raise ArgumentError, 'Poly resistor should have 3 nodes, please recheck' unless num_nets == 3
+
+      # Poly resistors are handled as 3-terminal devices:
+      # two main terminals and one substrate terminal.
+      DeviceCustomRes.new(model, 2, 1)
     elsif num_nets == 2 && model.downcase.include?('tap')
       CustomTap.new
     elsif num_nets == 2
@@ -261,8 +432,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     when 'C'
       model.downcase.include?('varicap') ? %w[G1 W G2 SUB] : gen_mim_terms(model)
     when 'R'
-      if RES_DEV.any? { |res| model.downcase.start_with?(res) }
-        gen_term_names(model, nets.size)
+      if RES_DEV.include?(model.downcase)
+        gen_res_terms(model, nets.size)
       elsif model.downcase.include?('tap')
         %w[TIE WELL]
       else
@@ -292,6 +463,13 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Generate terminal names based on model and the number of nets.
   def gen_term_names(model, size)
     (0...size).map { |i| "#{model}_#{i + 1}" }
+  end
+
+  # Generate terminal names for poly resistors with optional substrate net.
+  def gen_res_terms(model, size)
+    terms = ["#{model}_1", "#{model}_2"]
+    terms << "#{model}_sub" if size >= 3
+    terms
   end
 
   # Generate terminal names based on model and the number of nets.
@@ -405,7 +583,7 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       device.set_parameter('A', (params['A'] || ((params['W'] || 0.0) * (params['L'] || 0.0))) * 1e12)
       device.set_parameter('P',
                            (params['P'] || params['PERIM'] || (((params['W'] || 0.0) + (params['L'] || 0.0)) * 2)) * 1e6)
-    elsif RES_DEV.any? { |res| model.downcase.start_with?(res) }
+    elsif RES_DEV.include?(model.downcase)
       device.set_parameter('w', (params['W'] || 0.0) * 1e6)
       device.set_parameter('l', (params['L'] || 0.0) * 1e6)
       device.set_parameter('ps', (params['PS'] || 0.0) * 1e6)
@@ -425,4 +603,5 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     device.set_parameter('d', (params['D'] || 0.0) * 1e6)
     device.set_parameter('nr_r', params['NR_R'] || 0.0)
   end
+
 end
