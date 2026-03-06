@@ -93,18 +93,25 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   layer_geometry (Array): Array of layer geometries.
     dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
 
-    dev_mk.merged.each do |region|
+    varicap = name.downcase.include?('varicap')
+    mk_regions = varicap ? meas_mk.merged : dev_mk.merged
+
+    mk_regions.each do |region|
       region_sel = RBA::Region.new(region)
+      marker_scope = varicap ? dev_mk.interacting(region_sel) : region_sel
       region_ports = ports.interacting(region_sel)
-      region_sub_mk = sub_mk.nil? ? nil : sub_mk.interacting(region_sel)
+      region_sub_mk = sub_mk.nil? ? nil : sub_mk.interacting(marker_scope)
 
       if region_ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
         $logger.info("No. of ports exist for #{@name} is #{region_ports.size}, should be #{@num}")
       else
         device = create_device
-        set_device_parameters(device, region, dev, region_ports, meas_mk, dev_mk)
-        define_and_sort_terminals(device, region_ports, region_sub_mk)
+        local_dev = varicap ? dev.interacting(region_sel) : dev
+        local_meas_mk = varicap ? meas_mk.interacting(region_sel) : meas_mk
+        local_dev_mk = varicap ? marker_scope : dev_mk
+        set_device_parameters(device, region, local_dev, region_ports, local_meas_mk, local_dev_mk)
+        define_and_sort_terminals(device, region_ports, region_sub_mk, local_dev)
       end
     end
   end
@@ -255,7 +262,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     [width, space, diameter, no_turns]
   end
 
-  def define_and_sort_terminals(device, ports, sub_mk)
+  def define_and_sort_terminals(device, ports, sub_mk, core_region = nil)
     # Define and sort terminals based on location.
     #
     # Args:
@@ -290,10 +297,25 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
         return nil
       end
 
-      define_terminal(device, @reg_dev.terminal_id('SUB'), 4, sub_mk[0])
-      %w[G1 W G2].each_with_index do |terminal_name, index|
-        define_terminal(device, @reg_dev.terminal_id(terminal_name), 1, sorted_ports[index])
+      varicap_ports = []
+      ports.merged.each { |p| varicap_ports << p }
+
+      if varicap_ports.size != 3
+        $logger.info("Varicap terminals for #{@name} are invalid (ports=#{varicap_ports.size})")
+        return nil
       end
+
+      core_sel = core_region || RBA::Region.new
+      overlaps = varicap_ports.map { |p| RBA::Region.new(p).and(core_sel).area }
+      w_idx = overlaps.each_with_index.min[1]
+      w_port = varicap_ports[w_idx]
+      poly_ports = varicap_ports.each_with_index.reject { |_, idx| idx == w_idx }.map(&:first)
+      sorted_poly = poly_ports.sort_by { |poly| [poly.bbox.center.x, poly.bbox.center.y] }
+
+      define_terminal(device, @reg_dev.terminal_id('SUB'), 4, sub_mk[0])
+      define_terminal(device, @reg_dev.terminal_id('G1'), 1, sorted_poly[0])
+      define_terminal(device, @reg_dev.terminal_id('W'), 1, w_port)
+      define_terminal(device, @reg_dev.terminal_id('G2'), 1, sorted_poly[1])
       return nil
     end
 
