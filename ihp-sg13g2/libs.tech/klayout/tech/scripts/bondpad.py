@@ -1,9 +1,21 @@
-"""Module to automatically generate a bondpad and create a new GDS file. Can be used in
-Klayout's batch mode. For example:
+"""Module to automatically generate a bondpad and create GDS and LEF files.
 
-klayout -n sg13g2 -zz -r bondpad.py \
-        -rd diameter=70.0 -rd shape=square -rd output=macros/bondpad_70x70.gds.gz
+Can be used in Klayout's batch mode. For example:
 
+# Generate GDS only:
+klayout -n sg13cmos5l -zz -r bondpad.py \
+        -rd diameter=70.0 -rd shape=square -rd gds_output=macros/bondpad_70x70.gds.gz
+
+# Generate both GDS and LEF:
+klayout -n sg13cmos5l -zz -r bondpad.py \
+        -rd diameter=70.0 -rd shape=square -rd gds_output=macros/bondpad_70x70.gds.gz \
+        -rd lef_output=macros/bondpad_70x70.lef
+
+# LEF output features:
+# - MACRO with CLASS COVER BUMP for bondpad identification
+# - PIN PAD on TopMetal2 (bondable surface)
+# - OBS (obstructions) for Metal1-Metal4 routing blockage
+# - Proper SG13CG2 layer names matching tech.lef
 """
 # pylint: disable=import-error
 import pathlib
@@ -14,20 +26,116 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'bondpad'
 
-def generate_bondpad(diameter: float, shape: str, output: str):
+METAL_LAYERS = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']
+
+
+def generate_bondpad_lef(size: float, shape: str, output: str, bottom_metal: int,
+                         passiv_enclosure: float = 2.1):
+    """Generate LEF file for a bondpad macro.
+
+    :param cell_name: Name of the macro (e.g., 'bondpad_70x70')
+    :param size: Size of the bondpad in microns
+    :param shape: Shape of the bondpad ('square', 'octagon', 'circle')
+    :param output: Path and name of the LEF file to write.
+    :param bottom_metal: Lowest metal layer index (1-4)
+    :param passiv_enclosure: Passivation enclosure in TopMetal1 (default 2.1um)
+    """
+    radius = size / 2
+    cell_name = pathlib.Path(output).resolve().name.split('.')[0]
+
+    # The pad opening is TopMetal1 minus passivation enclosure
+    pad_opening = size - 2 * passiv_enclosure
+
+    metal_enclosures = {
+        'TopMetal2': 0.0,
+        'TopMetal1': 0.0,
+        'Metal5': 0.0,
+        'Metal4': 0.0,
+        'Metal3': 0.0,
+        'Metal2': 0.0,
+        'Metal1': 0.0,
+    }
+
+    # Create directory
+    pathlib.Path(output).parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output, 'w', encoding='utf-8') as f:
+        # LEF header
+        f.write("VERSION 5.7 ;\n")
+        f.write("NOWIREEXTENSIONATPIN ON ;\n")
+        f.write("DIVIDERCHAR \"/\" ;\n")
+        f.write("BUSBITCHARS \"[]\" ;\n")
+        f.write("\n")
+
+        # MACRO definition
+        f.write(f"MACRO {cell_name}\n")
+        f.write("  CLASS COVER ;\n")
+        f.write(f"  FOREIGN {cell_name} ;\n")
+        f.write("  ORIGIN 0.000 0.000  ;\n")
+        f.write(f"  SIZE {size:.3f} BY {size:.3f} ;\n")
+        f.write("\n")
+
+        # PIN definition - PAD on TopMetal1
+        f.write("  PIN PAD\n")
+        f.write("    DIRECTION INOUT ;\n")
+        f.write("    USE SIGNAL ;\n")
+        f.write("    PORT\n")
+        f.write("      LAYER TopMetal1 ;\n")
+        if shape == 'square':
+            # Square bondpad - simple rectangle
+            enc = metal_enclosures['TopMetal2']
+            f.write(f"        RECT {enc:.3f} {enc:.3f} {size - enc:.3f} {size - enc:.3f} ;\n")
+        elif shape == 'octagon':
+            # Octagon - approximate with polygon
+            # For LEF, we use a rectangle that inscribes the octagon
+            enc = metal_enclosures['TopMetal2']
+            # Octagon corner cut = size * (1 - 1/sqrt(2)) / 2 ≈ 0.146 * size
+            corner = size * 0.146
+            f.write(f"        RECT {corner + enc:.3f} {enc:.3f} {size - corner - enc:.3f} {size - enc:.3f} ;\n")
+            f.write(f"        RECT {enc:.3f} {corner + enc:.3f} {size - enc:.3f} {size - corner - enc:.3f} ;\n")
+        else:  # circle - approximate with rectangle
+            enc = metal_enclosures['TopMetal2']
+            f.write(f"        RECT {enc:.3f} {enc:.3f} {size - enc:.3f} {size - enc:.3f} ;\n")
+        f.write("    END\n")
+        f.write("  END PAD\n")
+        f.write("\n")
+
+        # OBS (Obstructions) - block routing on metal layers
+        f.write("  OBS\n")
+
+        # Add obstruction for each metal layer from bottom_metal to TopMetal1
+        for i in range(bottom_metal - 1, 6):  # Metal1 (idx 0) to TopMetal1 (idx 3)
+            layer_name = METAL_LAYERS[i]
+            enc = metal_enclosures.get(layer_name, 2.0)
+            f.write(f"    LAYER {layer_name} ;\n")
+            f.write(f"      RECT {enc:.3f} {enc:.3f} {size - enc:.3f} {size - enc:.3f} ;\n")
+
+        # Also add TopMetal1 as obstruction (except for PAD pin area)
+        # This prevents routing over the bondpad
+        f.write(f"    LAYER TopMetal2 ;\n")
+        enc = metal_enclosures['TopMetal2']
+        f.write(f"      RECT {enc:.3f} {enc:.3f} {size - enc:.3f} {size - enc:.3f} ;\n")
+
+        f.write("  END\n")
+        f.write(f"END {cell_name}\n")
+        f.write("\n")
+        f.write("END LIBRARY\n")
+
+    print(f"LEF written to: {output}")
+
+
+def generate_bondpad_gds(diameter: float, shape: str, output: str, bottom_metal: int):
     """Function to create a new layout, add the bondpad PCell to a top cell called
     similar to the filename and save it somewhere on the filesystem.
 
-    :param width: Diameter of the bondpad.
-    :type width: float
-    :param height: Shape of the bondpad.
-    :type heigth: str
-    :param output: Path and name of the file where the bondpad should be written to.
-    :type output: str
-
+    :param diameter: Diameter of the bondpad in microns.
+    :param shape: Shape of the bondpad ('square', 'octagon', 'circle').
+    :param output: Path and name of the GDS file to write.
+    :param bottom_metal: Lowest metal layer (1-6).
     """
     layout = klayout.db.Layout(True)
     layout.dbu = 0.001
+    offset = int(diameter / 2 / layout.dbu)
 
     lib = pya.Library.library_by_name(LIB)
     pcell_decl = lib.layout().pcell_declaration(PCELL)
@@ -37,23 +145,27 @@ def generate_bondpad(diameter: float, shape: str, output: str):
     pcell = layout.add_pcell_variant(lib, pcell_decl.id(),
         {'diameter': f'{diameter}u', 'shape': shape})
     layout.cell(pcell)
-    top_cell.insert(klayout.db.CellInstArray(pcell, klayout.db.Trans()))
+    top_cell.insert(klayout.db.CellInstArray(pcell, klayout.db.Trans(klayout.db.Vector(offset, offset))))
 
     # Create directory where the bondpad should be written to.
     pathlib.Path(output).parent.mkdir(parents=True, exist_ok=True)
 
     layout.write(output)
+    print(f"GDS written to: {output}")
+
+
+# Handle command-line arguments passed via -rd
 
 try:
-    diameter
+    diameter  # noqa: F821 - defined by klayout -rd
 except NameError:
-    print("Missing width argument. Please define '-rd diameter=<diameter>'")
+    print("Missing diameter argument. Please define '-rd diameter=<diameter>'")
     sys.exit(1)
 
 try:
-    shape
+    shape  # noqa: F821 - defined by klayout -rd
 except NameError:
-    shape = 'octagon' # pylint: disable=invalid-name
+    shape = 'octagon'  # pylint: disable=invalid-name
 
 allowed_shapes = ('octagon', 'square', 'circle')
 if shape not in allowed_shapes:
@@ -61,9 +173,38 @@ if shape not in allowed_shapes:
     sys.exit(1)
 
 try:
-    output
+    gds_output  # noqa: F821 - defined by klayout -rd
 except NameError:
-    print("Missing output argument. Please define '-rd output=<path-to-bondpad>'")
+    gds_output = None  # pylint: disable=invalid-name
+
+# Optional LEF output
+try:
+    lef_output  # noqa: F821 - defined by klayout -rd
+except NameError:
+    lef_output = None  # pylint: disable=invalid-name
+
+if gds_output is None and lef_output is None:
+    print("Missing GDS or LEF output argument. Please define '-rd gds_output=<path-to-bondpad>'")
+    print("  '-rd gds_output=<path-to-bondpad/bondpad.gds>'")
+    print("or")
+    print("  '-rd lef_output=<path-to-bondbad/bondpad.lef>'")
     sys.exit(1)
 
-generate_bondpad(diameter, shape, output) # pylint: disable=undefined-variable
+# Optional bottom metal (default: Metal1)
+try:
+    bottom_metal  # noqa: F821 - defined by klayout -rd
+    bottom_metal = int(bottom_metal)
+except NameError:
+    bottom_metal = 3  # pylint: disable=invalid-name
+
+if bottom_metal < 1 or bottom_metal > 6:
+    print(f"Invalid bottom_metal={bottom_metal}. Must be 1-6.")
+    sys.exit(1)
+
+if gds_output:
+    # pylint: disable=undefined-variable
+    generate_bondpad_gds(float(diameter), shape, gds_output, bottom_metal)
+
+if lef_output:
+    # pylint: disable=undefined-variable
+    generate_bondpad_lef(float(diameter), shape, lef_output, bottom_metal)
