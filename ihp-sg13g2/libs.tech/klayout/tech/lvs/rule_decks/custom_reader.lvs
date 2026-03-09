@@ -290,16 +290,26 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   private
 
-  # Prepare MOS params for comparison
+  # Prepare MOS model+params for comparison.
+  # Supports both input netlist styles:
+  # - old RF model names (rfnmos/rfpmos/...) without rfmode
+  # - base model names with explicit rfmode
   def map_mos_model(model, params)
     map_params = (params || {}).dup
+    model_key = model.to_s.downcase
     rfmode_raw = map_params['RFMODE'] || map_params['rfmode']
     rfmode = RFMODE_TO_BINARY.call(rfmode_raw)
+    mapped = RF_TO_BASE_MOS_MODEL.fetch(model_key, model_key)
+
+    # rf* naming implies RF mode when rfmode is not provided explicitly.
+    if RF_TO_BASE_MOS_MODEL.key?(model_key) && rfmode.nil?
+      rfmode = 1
+    end
 
     map_params['RFMODE'] = rfmode unless rfmode.nil?
     map_params.delete('rfmode')
 
-    [model, map_params]
+    [mapped, map_params]
   end
 
   # Process device element

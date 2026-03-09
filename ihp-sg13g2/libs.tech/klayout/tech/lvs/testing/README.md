@@ -43,10 +43,10 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 |  | `sg13_hv_nmos` | `MN1 D G S B sg13_hv_nmos w=0.6u l=0.45u m=1 ng=1` | `W`, `L`, `rfmode` | [`M1`](#note-m1) | [CDL](./testcases/unit/mos_devices/netlist/sg13_hv_nmos.cdl) / [GDS](./testcases/unit/mos_devices/layout/sg13_hv_nmos.gds) |
 |  | `sg13_lv_pmos` | `MP1 D G S B sg13_lv_pmos w=150n l=130n m=1 ng=1` | `W`, `L`, `rfmode` | [`M1`](#note-m1) | [CDL](./testcases/unit/mos_devices/netlist/sg13_lv_pmos.cdl) / [GDS](./testcases/unit/mos_devices/layout/sg13_lv_pmos.gds) |
 |  | `sg13_hv_pmos` | `MP1 D G S B sg13_hv_pmos w=0.3u l=0.4u m=1 ng=1` | `W`, `L`, `rfmode` | [`M1`](#note-m1) | [CDL](./testcases/unit/mos_devices/netlist/sg13_hv_pmos.cdl) / [GDS](./testcases/unit/mos_devices/layout/sg13_hv_pmos.gds) |
-| **RF-MOSFET** | `rfnmos` | `MN1 D G S B sg13_lv_nmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfnmos.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfnmos.gds) |
-|  | `rfnmosHV` | `MN1 D G S B sg13_hv_nmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfnmoshv.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfnmoshv.gds) |
-|  | `rfpmos` | `MP1 D G S B sg13_lv_pmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfpmos.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfpmos.gds) |
-|  | `rfpmosHV` | `MP1 D G S B sg13_hv_pmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfpmoshv.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfpmoshv.gds) |
+| **RF-MOSFET** | `rfnmos` | `MN1 D G S B rfnmos w=1.0u l=0.72u ng=1 m=1`<br>`or`<br>`MN1 D G S B sg13_lv_nmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfnmos.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfnmos.gds) |
+|  | `rfnmosHV` | `MN1 D G S B rfnmoshv w=1.0u l=0.72u ng=1 m=1`<br>`or`<br>`MN1 D G S B sg13_hv_nmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfnmoshv.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfnmoshv.gds) |
+|  | `rfpmos` | `MP1 D G S B rfpmos w=1.0u l=0.72u ng=1 m=1`<br>`or`<br>`MP1 D G S B sg13_lv_pmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfpmos.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfpmos.gds) |
+|  | `rfpmosHV` | `MP1 D G S B rfpmoshv w=1.0u l=0.72u ng=1 m=1`<br>`or`<br>`MP1 D G S B sg13_hv_pmos rfmode=1 w=1.0u l=0.72u ng=1 m=1` | `W`, `L`, `rfmode` | [`RF1`](#note-rf1) | [CDL](./testcases/unit/rfmos_devices/netlist/rfpmoshv.cdl) / [GDS](./testcases/unit/rfmos_devices/layout/rfpmoshv.gds) |
 | **BJT** | `npn13G2` | `Q1 C B E S npn13G2 le=900n we=70n Nx=1 m=1` | `we`, `le`, `m`, `Nx` | [`B1`](#note-b1) | [CDL](./testcases/unit/bjt_devices/netlist/npn13G2.cdl) / [GDS](./testcases/unit/bjt_devices/layout/npn13G2.gds) |
 |  | `npn13G2L` | `Q1 C B E S npn13G2l le=1.0u we=70n Nx=1 m=1` | `we`, `le`, `m`, `Nx` | [`B1`](#note-b1) | [CDL](./testcases/unit/bjt_devices/netlist/npn13G2l.cdl) / [GDS](./testcases/unit/bjt_devices/layout/npn13G2l.gds) |
 |  | `npn13G2V` | `Q1 C B E S npn13G2v le=1.0u we=120n Nx=1 m=1` | `we`, `le`, `m`, `Nx` | [`B1`](#note-b1) | [CDL](./testcases/unit/bjt_devices/netlist/npn13G2v.cdl) / [GDS](./testcases/unit/bjt_devices/layout/npn13G2v.gds) |
@@ -80,7 +80,7 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 ### Notes
 
 - <a id="note-m1"></a>`M1`: `rfmode` defaults to `0` if it is not provided. The `m` parameter is folded into total extracted width.
-- <a id="note-rf1"></a>`RF1`: RF MOS devices reuse the base MOS model name with `rfmode=1`.
+- <a id="note-rf1"></a>`RF1`: RF MOS netlists support both formats: `rf*` model names, or base MOS model names with `rfmode=1`.
 - <a id="note-b1"></a>`B1`: The netlist may use either `we/le` or `w/l`.
 - <a id="note-d1"></a>`D1`: The netlist may use either `A/P` or `W/L`.
 - <a id="note-i1"></a>`I1`: `isolbox` compares `A/P`; if `A/P` are missing they are derived from `W/L`.
