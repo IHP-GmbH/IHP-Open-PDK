@@ -1,7 +1,7 @@
 # IHP SG13G2 Technology files for magic
 
-> version 1.0.0
-    November 3, 2025 
+> version 1.0.1
+    March 10, 2026 
     Open Circuit Design, LLC
 
 Included in this pre-release:
@@ -25,6 +25,7 @@ Included in this pre-release:
 8. Density rule check (`check_density.py`) script
 9. Fill generation (`generate_fill.py`) script 
 10. Seal ring generator (`generate_seal.py`) script
+11. Script for configuring magic for reading SRAM macros (`read_sram_gds.tcl`)
 
 All magic technology files and associated scripts in this release:
 
@@ -68,6 +69,7 @@ All magic technology files and associated scripts in this release:
 	* generate_fill.py	Python script to generate fill patterns
 	* generate_seal.py	Python script to create a seal ring
 	* check_density.py	Python script to run density checks
+	* read_sram_gds.tcl	Tcl script to configure magic for reading SRAM macros
 
 6. Support script data:
 	* sealring_corner.tcl	Seal ring corner subcircuit generator
