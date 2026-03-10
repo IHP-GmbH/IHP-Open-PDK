@@ -1518,6 +1518,7 @@ TopMetal1_filler = source.polygons("126/22")
 TopMetal1_nofill = source.polygons("126/23")
 TopMetal1_slit = source.polygons("126/24")
 PolyRes = source.polygons("128/0")
+LBE = source.polygons("157/0")
 NoMetFiller = source.polygons("160/0")
 Activ_Act_a = Activ.ext_width(0.15.um)
 Activ_Act_d = Activ.ext_with_area([["<", 0.122.um2]])
@@ -2725,6 +2726,18 @@ end.().output("NW.f1.dig", "Min. NWell space to substrate tie in P+Activ inside 
 -> do
     Cont_SQ.ext_not(SVaricap).ext_enclosed(Act_Nsram_or_Activ_mask.ext_and(DigiBnd), 0.05.um, consider_overlaps_as_errors: true)
 end.().output("Cnt.c.Digi", "Min. Activ enclosure of Cont inside DigiBnd = 0.05")
+-> do
+    LBE.ext_with_area([["<", 250000.0.um2]])
+end.().output("LBE.b2", "Min. LBE area (µm²) = 30000.00")
+-> do
+    LBE.ext_separation(dfpad, 50.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.e.dfPad", "Min. LBE space to dfpad and Passiv = 50.00")
+-> do
+    LBE.ext_separation(Passiv, 50.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.e.Passiv", "Min. LBE space to dfpad and Passiv = 50.00")
+-> do
+    LBE.ext_separation(Activ, 30.0.um, consider_intersecting_edges: false, ignore_non_axis_aligned_edges: true)
+end.().output("LBE.f", "Min. LBE space to Activ = 30.00")
 
 if $offGridRules
 	-> do
@@ -2892,6 +2905,9 @@ if $offGridRules
 	-> do
 	    PolyRes.ongrid(5.nm)
 	end.().output("OffGrid.PolyRes", "PolyRes is off-grid")
+	-> do
+	    LBE.ongrid(5.nm)
+	end.().output("OffGrid.LBE", "LBE is off-grid")
 end
 
 puts("Number of DRC errors for maximum rule set: #{$drc_error_count}")
