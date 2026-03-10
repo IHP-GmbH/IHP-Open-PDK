@@ -39,10 +39,11 @@ extract
  planeorder metal3      6
  planeorder metal4      7
  planeorder metal5      8
- planeorder metal6      9
- planeorder metal7     10
- planeorder passiv     11
- planeorder comment    12
+ planeorder cap1        9
+ planeorder metal6     10
+ planeorder metal7     11
+ planeorder passiv     12
+ planeorder comment    13
 
  # Antenna check parameters
  # Note that checks w/diode diffusion are not modeled
@@ -82,7 +83,7 @@ variants (),(lvs)
  resist (allm2)/metal2            88
  resist (allm3)/metal3            88
  resist (allm4)/metal4            88
- resist (allm5,*mimcap)/metal5    88
+ resist (allm5)/metal5    	  88
  resist (allm6)/metal6            18
  resist (allm7)/metal7            11
 
@@ -108,7 +109,7 @@ variants (hrhc),(hrlc)
  resist (allm2)/metal2           103
  resist (allm3)/metal3           103
  resist (allm4)/metal4           103
- resist (allm5,*mimcap)/metal5   103
+ resist (allm5)/metal5   	 103
  resist (allm6)/metal6            21
  # actually 14.5, but must be integer
  resist (allm7)/metal7            15
@@ -135,7 +136,7 @@ variants (lrhc),(lrlc)
  resist (allm2)/metal2            73
  resist (allm3)/metal3            73
  resist (allm4)/metal4            73
- resist (allm5,*mimcap)/metal5    73
+ resist (allm5)/metal5    	  73
  resist (allm6)/metal6            15
  # actually 7.5, but must be integer
  resist (allm7)/metal7             7
@@ -342,50 +343,50 @@ variants ()
  defaultsideoverlap allm3 metal3 allm4 metal4 40.019
 
 # metal5
- defaultsidewall    allm5,*mimcap metal5 53.129 0.021
- defaultareacap     allm5,*mimcap metal5 7.136
- defaultperimeter   allm5,*mimcap metal5 27.527
+ defaultsidewall    allm5 metal5 53.129 0.021
+ defaultareacap     allm5 metal5 7.136
+ defaultperimeter   allm5 metal5 27.527
 
 # metal5->subs
- defaultoverlap     allm5,*mimcap metal5 pwell well  7.136
- defaultsideoverlap allm5,*mimcap metal5 pwell well  27.527
+ defaultoverlap     allm5 metal5 pwell well  7.136
+ defaultsideoverlap allm5 metal5 pwell well  27.527
 
 # metal5->nwell
- defaultoverlap     allm5,*mimcap metal5 nwell well  7.136
- defaultsideoverlap allm5,*mimcap metal5 nwell well  27.527
+ defaultoverlap     allm5 metal5 nwell well  7.136
+ defaultsideoverlap allm5 metal5 nwell well  27.527
 
 # metal5->diff
- defaultoverlap     allm5,*mimcap metal5 alldifflvnonfet active  7.766
- defaultsideoverlap allm5,*mimcap metal5 alldifflvnonfet active  28.227
+ defaultoverlap     allm5 metal5 alldifflvnonfet active  7.766
+ defaultsideoverlap allm5 metal5 alldifflvnonfet active  28.227
 
 # metal5->hvdiff
- defaultoverlap     allm5,*mimcap metal5 alldiffhvnonfet active  7.758
- defaultsideoverlap allm5,*mimcap metal5 alldiffhvnonfet active  28.221
+ defaultoverlap     allm5 metal5 alldiffhvnonfet active  7.758
+ defaultsideoverlap allm5 metal5 alldiffhvnonfet active  28.221
 
 # metal5->gatpoly
- defaultoverlap     allm5,*mimcap metal5 allpoly active 8.046
- defaultsideoverlap allm5,*mimcap metal5 allpoly active 28.414
+ defaultoverlap     allm5 metal5 allpoly active 8.046
+ defaultsideoverlap allm5 metal5 allpoly active 28.414
  defaultsideoverlap allpoly active allm5,*mimcap metal5 4.178
 
 # metal5->metal1
- defaultoverlap     allm5,*mimcap metal5 allm1 metal1 10.000
- defaultsideoverlap allm5,*mimcap metal5 allm1 metal1 29.935
+ defaultoverlap     allm5 metal5 allm1 metal1 10.000
+ defaultsideoverlap allm5 metal5 allm1 metal1 29.935
  defaultsideoverlap allm1 metal1 allm5,*mimcap metal5 9.725
 
 # metal5->metal2
- defaultoverlap     allm5,*mimcap metal5 allm2 metal2 13.962
- defaultsideoverlap allm5,*mimcap metal5 allm2 metal2 32.116
+ defaultoverlap     allm5 metal5 allm2 metal2 13.962
+ defaultsideoverlap allm5 metal5 allm2 metal2 32.116
  defaultsideoverlap allm2 metal2 allm5,*mimcap metal5 16.534
 
 # metal5->metal3
- defaultoverlap     allm5,*mimcap metal5 allm3 metal3 23.122
- defaultsideoverlap allm5,*mimcap metal5 allm3 metal3 36.971
- defaultsideoverlap allm3 metal3 allm5,*mimcap metal5 24.785
+ defaultoverlap     allm5 metal5 allm3 metal3 23.122
+ defaultsideoverlap allm5 metal5 allm3 metal3 36.971
+ defaultsideoverlap allm3 metal3 allm5 metal5 24.785
 
 # metal5->metal4
- defaultoverlap     allm5,*mimcap metal5 allm4 metal4 67.225
- defaultsideoverlap allm5,*mimcap metal5 allm4 metal4 49.517
- defaultsideoverlap allm4 metal4 allm5,*mimcap metal5 41.956
+ defaultoverlap     allm5 metal5 allm4 metal4 67.225
+ defaultsideoverlap allm5 metal5 allm4 metal4 49.517
+ defaultsideoverlap allm4 metal4 allm5 metal5 41.956
 
 # topmetal1
  defaultsidewall    allm6 metal6 162.172 0.343
@@ -435,7 +436,7 @@ variants ()
 
 # topmetal1->metal5
  defaultoverlap     allm6 metal6 allm5 metal5 42.708
- defaultsideoverlap allm6 metal6 allm5 metal5 65.859
+ defaultsideoverlap allm6,mimcc/m6 metal6 allm5 metal5 65.859
  defaultsideoverlap allm5 metal5 allm6 metal6 36.377
 
 # topmetal2
@@ -1117,7 +1118,7 @@ variants (hrlc),(lrlc)
 
 #---------------------------------------------------------
 
-variants *
+variants (lvs)
 
  # Area coefficient of the MiM cap for estimation of values for CDL
  # netlist output.
@@ -1163,8 +1164,8 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  device msubcircuit pnpMPA pnp *pdiff pwell,space/w a1=a p1=p
 
  # Capacitors
- device csubcircuit cap_cmim *mimcap *m5 w=w l=l
- device csubcircuit cap_rfcmim *mimcap *m5 +pblock w=w l=l
+ device csubcircuit cap_cmim *mimcap m5 w=w l=l
+ device csubcircuit cap_rfcmim *mimcap m5 +pblock w=w l=l
  # Varactor:  Note that the SVaractor is a complex device incorporating
  # multiple varactor fingers.  This will normally be handled from a
  # generated cell using a "device" property.  In case varactor structures
@@ -1237,8 +1238,8 @@ variants (lvs)
  device bjt pnpMPA pnp *pdiff pwell,space/w a1=a p1=p
 
  # Capacitors
- device capacitor cap_cmim *mimcap *m5 c=c
- device capacitor cap_rfcmim *mimcap *m5 +pblock c=c
+ device capacitor cap_cmim *mimcap m5 c=c
+ device capacitor cap_rfcmim *mimcap m5 +pblock c=c
 
  # Diodes
  device pdiode dpantenna *pdiode nwell w=w l=l a=a p=p
