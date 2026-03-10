@@ -195,6 +195,11 @@ count = nwell_drw.count
 logger.info("nwell_drw has #{count} polygons")
 polygons_count += count
 
+nbulay_drw = get_polygons(32, 0)
+count = nbulay_drw.count
+logger.info("nbulay_drw has #{count} polygons")
+polygons_count += count
+
 pwell_block = get_polygons(46, 21)
 count = pwell_block.count
 logger.info("pwell_block has #{count} polygons")
@@ -250,6 +255,11 @@ count = topmetal2_drw.count
 logger.info("topmetal2_drw has #{count} polygons")
 polygons_count += count
 
+text_drw = labels(63, 0)
+count = text_drw.count
+logger.info("text_drw has #{count} polygons")
+polygons_count += count
+
 
 logger.info("Total no. of polygons in the design is #{polygons_count}")
 
@@ -301,6 +311,23 @@ end
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
 
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c  # Keep wildcard characters as they are
+    else
+      Regexp.escape(c)
+    end
+  end.join
+  
+  pattern
+end
+
 #================================================
 #-------------- COMMON DERIVATIONS --------------
 #================================================
@@ -328,6 +355,16 @@ pactiv_con = activ_drw.not(gatpoly_drw).and(psd_drw)
 dantenna = nactiv_con.and(recog_diode).not(nwell_drw)
 dpantenna = pactiv_con.and(recog_diode).and(nwell_drw)
 diode = nactiv_con.join(pactiv_con)
+
+# isolbox derivations for Ant.h
+nact_nwell = nactiv_con.and(nwell_drw.join(pwell_block))
+schottky_nbl1 = nbulay_drw.and(recog_diode).and(nwell_drw).and(nsd_block)
+isolbox_1_a = nbulay_drw.not_outside(recog_diode).not_outside(nact_nwell)
+isolbox_1_b = recog_diode.not_outside(nbulay_drw).not_outside(nact_nwell)
+isolbox_1 = isolbox_1_a.join(isolbox_1_b)
+isolbox_2 = isolbox_1.not_interacting(schottky_nbl1)
+isolbox_patt = glob_to_case_insensitive_glob("isolbox")
+isolbox = isolbox_2.interacting(text_drw.texts(isolbox_patt))
 
 #================================================
 #----------------- MAIN RUNSET ------------------
@@ -548,7 +585,7 @@ ant_g.forget
 
 # Rule Ant.h: dantenna in NWell not allowed
 logger.info('Executing rule Ant.h')
-ant_h_errors = nactiv_con.and(recog_diode).not(psd_drw).not(recog_esd).and(nwell_drw)
+ant_h_errors = nactiv_con.and(recog_diode).not(recog_esd).not_interacting(isolbox).and(nwell_drw)
 ant_h_errors.output('Ant.h', '7.1. Ant.h: dantenna in NWell not allowed.')
 ant_h_errors.forget
 

@@ -141,6 +141,10 @@ logger.info("BEOL enabled: #{BEOL}")
 OFFGRID = !bool_check?($no_offgrid)
 logger.info("OFFGRID enabled: #{OFFGRID}")
 
+# ANGLE
+ANGLE = !bool_check?($no_angle)
+logger.info("ANGLE enabled: #{ANGLE}")
+
 # PIN
 PIN = !bool_check?($no_pin)
 logger.info("PIN enabled: #{PIN}")
@@ -158,8 +162,9 @@ PRECHECK_DRC = bool_check?($precheck_drc)
 logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
 
 # Connectivity rules
-conn_tables = %w[main nwell nbulay]
-CONNECTIVITY_RULES = TABLES.any?{|x| conn_tables.include?(x)}
+# Needed for full FEOL runs and for explicit nwell/nbulay table runs.
+conn_tables = %w[nwell nbulay]
+CONNECTIVITY_RULES = FEOL || TABLES.any?{|x| conn_tables.include?(x)}
 logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}.")
 
 #================================================
@@ -216,6 +221,23 @@ end
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
 
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c  # Keep wildcard characters as they are
+    else
+      Regexp.escape(c)
+    end
+  end.join
+  
+  pattern
+end
+
 #================================================
 #-------------- COMMON DERIVATIONS --------------
 #================================================
@@ -258,14 +280,14 @@ if TABLES.any?{|x| nact_pact_tables.include?(x)}
 end
 
 # p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup  nwell nbulay]
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup nwell nbulay schottkydiode contbar via1]
 if TABLES.any?{|x| pact_pact_tables.include?(x)}
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode contbar via1]
 if TABLES.any?{|x| ptap_tables.include?(x)}
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
@@ -285,7 +307,7 @@ if TABLES.any?{|x| pact_fet_tables.include?(x)}
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay]
+nact_fet_tables = %w[main pwellblock gatpoly latchup nwell nbulay cont]
 if TABLES.any?{|x| nact_fet_tables.include?(x)}
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
@@ -317,6 +339,39 @@ if TABLES.any?{|x| pad_tables.include?(x)}
   cu_pillarpad = passiv_pillar.and(dfpad_pillar).and(topmetal2_drw)
   sbumppad = dfpad_sbump.and(passiv_sbump).and(topmetal2_drw)
   pad = passiv_drw.and(dfpad_drw).and(topmetal2_drw)
+end
+
+# schottky_nbl derivations
+schottky_tables = %w[main schottkydiode pwellblock]
+if TABLES.any?{|x| schottky_tables.include?(x)}
+  logger.info('Starting schottky_nbl general derivations')
+  schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+  schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
+  schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
+end
+
+# SVaricap derivations
+svaricap_tables = %w[main cont nbulay nwell]
+if TABLES.any?{|x| svaricap_tables.include?(x)}
+  logger.info('Starting SVaricap general derivations')
+  svaricap_gate = gatpoly_drw.and(nwell_drw).and(nbulay_drw)
+  svaricap_patt = glob_to_case_insensitive_glob("SVaricap")
+  svaricap_text = text_drw.texts(svaricap_patt)
+  svaricap_recog = activ_drw.not_outside(svaricap_gate).interacting(svaricap_text)
+  svaricap = nwell_drw.not_outside(svaricap_recog)
+end
+
+# HBT derivations
+npn_tables = %w[main npnsubstratetie contbar via1]
+if TABLES.any?{|x| npn_tables.include?(x)}
+  logger.info('Starting HBT general derivations')
+  sg13g2_patt  = glob_to_case_insensitive_glob("npn13G2")
+  sg13g2l_patt = glob_to_case_insensitive_glob("npn13G2L")
+  sg13g2v_patt = glob_to_case_insensitive_glob("npn13G2V")
+  npn_mk = trans_drw.and(ptap.holes)
+  npn13g2 = npn_mk.interacting(text_drw.texts(sg13g2_patt)).covering(emwind_drw.and(activ_mask).and(nsd_block))
+  npn13g2l = npn_mk.interacting(text_drw.texts(sg13g2l_patt)).covering(emwind_drw.and(activ_drw))
+  npn13g2v = npn_mk.interacting(text_drw.texts(sg13g2v_patt)).covering(emwihv_drw.and(activ_drw))
 end
 
 # DRC tolerance value
@@ -460,6 +515,8 @@ logger.info('Running all FORBIDDEN rules') if FORBIDDEN
 
 # %include rule_decks/pin/7_4_pin.drc
 
+# %include rule_decks/geometry/3_1_offgrid.drc
+# %include rule_decks/geometry/3_2_angle.drc
 # %include rule_decks/forbidden/3_2_forbidden.drc
 
 #================================================

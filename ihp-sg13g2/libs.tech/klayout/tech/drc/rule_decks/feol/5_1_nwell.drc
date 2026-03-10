@@ -37,14 +37,44 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
     logger.info('Executing rule NW.b1')
     nw_b1_value = drc_rules['NW_b1'].to_f
-    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne)
-    nw_b1_l2 = pwell_block.interacting(nwell_drw)
-    nw_b1_l3 = nw_b1_l2.sep(nwell_drw, nw_b1_value.um, without_touching_edges)
-    nw_b1 = nw_b1_l1.join(nw_b1_l3)
+    nw_b1_pblk = pwell_block.interacting(nwell_drw)
+    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne).polygons
+    nw_b1_l2 = nw_b1_pblk.sep(nwell_drw, nw_b1_value.um, without_touching_edges).polygons
+    nw_b1 = nw_b1_l1.join(nw_b1_l2).and(pwell)
     nw_b1.output('NW.b1', "5.1.NW.b1 : Min. PWell width between NWell regions (different net)  is #{nw_b1_value} um")
     nw_b1_l1.forget
     nw_b1_l2.forget
-    nw_b1_l3.forget
     nw_b1.forget
+    nw_b1_pblk.forget
+
+  end
+
+  if !PRECHECK_DRC
+    # Shared base for NW.f1 variants: substrate tie in P+Activ inside ThickGateOx.
+    nw_f1_ptap_thickgateox = ptap.and(thickgateox_drw)
+    # Exclude SVaricap devices from the NWell side for both NW.f1 checks.
+    nw_f1_nwell = nwell_drw.not(svaricap)
+
+    # Rule NW.f1: Min. NWell space to substrate tie in P+Activ inside ThickGateOx is 0.62 um
+    logger.info('Executing rule NW.f1')
+    nw_f1_value = drc_rules['NW_f1'].to_f
+    nw_f1_ptap = nw_f1_ptap_thickgateox.not(digibnd_drw)
+    nw_f1_l = nw_f1_nwell.sep(nw_f1_ptap, nw_f1_value.um, euclidian)
+    nw_f1_l.output('NW.f1',
+                   "5.1.NW.f1 : Min. NWell space to substrate tie in P+Activ inside ThickGateOx = #{nw_f1_value} um")
+    nw_f1_l.forget
+    nw_f1_ptap.forget
+
+    # Rule NW.f1.digibnd: Min. NWell space to substrate tie in P+Activ inside ThickGateOx (Inside DigiBnd) is 0.24 um
+    logger.info('Executing rule NW.f1.digibnd')
+    nw_f1_digibnd_value = drc_rules['NW_f1_digibnd'].to_f
+    nw_f1_digibnd_ptap = nw_f1_ptap_thickgateox.and(digibnd_drw)
+    nw_f1_digibnd_l = nw_f1_nwell.sep(nw_f1_digibnd_ptap, nw_f1_digibnd_value.um, euclidian)
+    nw_f1_digibnd_l.output('NW.f1.digibnd',
+                           "5.1.NW.f1.digibnd : Min. NWell space to substrate tie in P+Activ inside ThickGateOx (Inside DigiBnd) = #{nw_f1_digibnd_value} um")
+    nw_f1_digibnd_l.forget
+    nw_f1_digibnd_ptap.forget
+    nw_f1_nwell.forget
+    nw_f1_ptap_thickgateox.forget
   end
 end

@@ -44,12 +44,14 @@ if TABLES.include?('mim') || BEOL
     mim_d.output('MIM.d', "6.11. MIM.d : Min. MIM enclosure of TopVia1 is #{mim_d_value} um")
     mim_d.forget
 
-    # Rule MIM.gR: Max. recommended total MIM area per chip (µm²) is 174800.00 µm²
-    logger.info('Executing rule MIM.gR')
-    mim_gr_value = drc_rules['Mim_gR'].to_f
-    mim_total_area = mim_drw.area
-    if mim_total_area > mim_gr_value.um
-      mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm², Total used MIM area is #{mim_total_area} µm²")
+    if RECOMMENDED
+      # Rule MIM.gR: Max. recommended total MIM area per chip (µm²) is 174800.00 µm²
+      logger.info('Executing rule MIM.gR')
+      mim_gr_value = drc_rules['Mim_gR'].to_f
+      mim_total_area = mim_drw.area
+      if mim_total_area > mim_gr_value.um
+        mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm², Total used MIM area is #{mim_total_area} µm²")
+      end
     end
   end
 end

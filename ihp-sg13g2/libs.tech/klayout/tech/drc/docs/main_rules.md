@@ -2,6 +2,8 @@
 |-----------------|----------------------------------------------------------------------------------------------------------------------------|----------
 |NW.b             |5.1.  NW.b Min. NWell space or notch (same net). NWell regions separated by less  than this value will be merged.           |0.62      
 |NW.b1            |5.1.  NW.b1 Min. PWell width between NWell regions (different net)                                                          |1.8       
+|NW.f1            |5.1.  NW.f1 Min. NWell space to substrate tie in P+Activ inside ThickGateOx                                                 |0.62      
+|NW.f1.digibnd    |5.1.  NW.f1.digibnd Min. NWell space to substrate tie in P+Activ inside ThickGateOx (Inside DigiBnd)                       |0.24      
 |PWB.d            |5.2.  PWB.d Min. PWell:block overlap of NWell                                                                               |0         
 |PWB.e            |5.2.  PWB.e Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell                                             |0.31      
 |PWB.e1           |5.2.  PWB.e1 Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell                                                |0.62      
@@ -143,6 +145,8 @@
 |npn13G2.bR       |6.1.3.  npn13G2.bR Max. recommended total number of npn13G2 emitters per chip                                               |4000      
 |npn13G2L.cR      |6.1.3.  npn13G2L.cR Max. recommended total number of npn13G2L emitters per chip                                             |800       
 |npn13G2V.cR      |6.1.3.  npn13G2V.cR Max. recommended total number of npn13G2V emitters per chip                                             |800       
+|Sdiod.b          |6.7.  Sdiod.b Min. and max. nSD:block enclosure of ContBar                                                                  |0.4       
+|Sdiod.c          |6.7.  Sdiod.c Min. and max. SalBlock enclosure of ContBar                                                                   |0.45      
 |Sdiod.d          |6.7.  Sdiod.d Min. and max. ContBar width inside nBuLay                                                                     |0.3       
 |Sdiod.e          |6.7.  Sdiod.e Min. and max. ContBar length inside nBuLay                                                                    |1         
 |Pad.fR_M1        |6.9.  Pad.fR_M1 Min. recommended Metal1 exit length                                                                         |7         
