@@ -565,6 +565,18 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       return
     end
 
+    if model.downcase.include?('pnp')
+      w = params['W'] || params['w'] || 0.0
+      l = params['L'] || params['l'] || 0.0
+      a = params['A'] || params['a'] || (w * l)
+      p = params['P'] || params['p'] || ((w + l) * 2)
+
+      device.set_parameter('A', a * 1e12)
+      device.set_parameter('P', p * 1e6)
+      device.set_parameter('m', params['M'] || 1.0)
+      return
+    end
+
     we = params['WE'] || params['W'] || 0.0
     le = params['LE'] || params['L'] || 0.0
     

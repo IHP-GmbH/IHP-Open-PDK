@@ -155,7 +155,7 @@ class BJTDeviceCombiner < RBA::GenericDeviceCombiner
     return false unless bjt_nets.all? { |net| same_net(a, b, net) }
 
     # Check if exact parameters are the same (Skip Nx for PNP)
-    params_to_check = %w[we le]
+    params_to_check = is_pnp ? %w[A P] : %w[we le]
     params_to_check << 'Nx' unless is_pnp
     
     return false unless params_to_check.all? { |param| same_parameter(a, b, param) }

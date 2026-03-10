@@ -42,6 +42,24 @@ class CustomBJT3 < RBA::DeviceClassBJT3Transistor
   end
 end
 
+# BJT-3term PNP device class
+class CustomBJT3Pnp < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'emitter area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'emitter perimeter', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+    enable_parameter('m', true)
+
+    self.combiner = BJTDeviceCombiner.new
+  end
+end
+
 # BJT-4term device class
 class CustomBJT4 < RBA::DeviceClassBJT4Transistor
   include DeviceClassMethods
@@ -90,7 +108,7 @@ class CustomBJTExtractor < RBA::GenericDeviceExtractor
     define_layer('tS', 'Terminal Substrate') if !@is_pnp # Index 8 (NPN)
 
     if @is_pnp
-      @reg_dev = CustomBJT3.new
+      @reg_dev = CustomBJT3Pnp.new
     else
       @reg_dev = CustomBJT4.new
     end
@@ -170,8 +188,13 @@ class CustomBJTExtractor < RBA::GenericDeviceExtractor
         we = first_emitter.bbox.width * $unit
         le = first_emitter.bbox.height * $unit
 
-        device.set_parameter('we', we)
-        device.set_parameter('le', le)
+        if @is_pnp
+          device.set_parameter('A', we * le)
+          device.set_parameter('P', (we + le) * 2)
+        else
+          device.set_parameter('we', we)
+          device.set_parameter('le', le)
+        end
         device.set_parameter('m', 1)
 
         # Only set Nx for NPN devices
