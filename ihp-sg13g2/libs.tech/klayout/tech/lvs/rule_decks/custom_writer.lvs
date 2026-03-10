@@ -67,10 +67,20 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
 
   # Generate device terminals
   def generate_device_terminals(device, device_class)
-    terminals = device_class.terminal_definitions.map do |td|
+    default_terminals = device_class.terminal_definitions.map do |td|
       net_to_string(device.net_for_terminal(td.id))
     end
-    "#{terminals.join(' ')} "
+
+    return "#{default_terminals.join(' ')} " unless device_class.name.to_s.downcase.include?('schottky')
+
+    ordered_names = %w[E B C]
+    ordered_ids = ordered_names.map { |name| device_class.terminal_id(name) }
+    return "#{default_terminals.join(' ')} " if ordered_ids.any?(&:nil?)
+
+    ordered_terminals = ordered_ids.map do |term_id|
+      net_to_string(device.net_for_terminal(term_id))
+    end
+    "#{ordered_terminals.join(' ')} "
   end
 
   # Determine the unit for each parameter
