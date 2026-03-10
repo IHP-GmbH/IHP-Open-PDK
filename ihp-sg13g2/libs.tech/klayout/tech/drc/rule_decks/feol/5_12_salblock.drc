@@ -1,0 +1,71 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('salblock') || FEOL
+  #==============================================
+  #------------- 5.12. SalBlock ----------------
+  #==============================================
+
+  logger.info('Starting 5.12. SalBlock table')
+
+  # Rule Sal.a: Min. SalBlock width is 0.42 um
+  logger.info('Executing rule Sal.a')
+  sal_a_value = drc_rules['Sal_a'].to_f
+  sal_a_l = salblock_drw.width(sal_a_value.um, euclidian)
+  sal_a_l.output('Sal.a', "5.12. Sal.a : Min. SalBlock width: #{sal_a_value} um")
+  sal_a_l.forget
+
+  # Rule Sal.b: Min. SalBlock space or notch is 0.42 um
+  logger.info('Executing rule Sal.b')
+  sal_b_value = drc_rules['Sal_b'].to_f
+  sal_b_l = salblock_drw.space(sal_b_value.um, euclidian)
+  sal_b_l.output('Sal.b', "5.12. Sal.b : Min. SalBlock space or notch: #{sal_b_value} um")
+  sal_b_l.forget
+
+  unless PRECHECK_DRC
+    # SalBlock derivations
+    gatpoly_res = polyres_drw.join(gatpoly_drw)
+
+    # Rule Sal.c: Min. SalBlock extension over Activ or GatPoly is 0.20 um
+    logger.info('Executing rule Sal.c')
+    sal_c_value = drc_rules['Sal_c'].to_f
+    sal_c_l1 = gatpoly_res.enclosed(salblock_drw, sal_c_value.um, euclidian)
+    sal_c_l1.output('Sal.c', "5.12. Sal.c : Min. SalBlock extension over Activ or GatPoly: #{sal_c_value} um")
+    sal_c_l1.forget
+    sal_c_l2 = activ_drw.enclosed(salblock_drw, sal_c_value.um, euclidian)
+    sal_c_l2.output('Sal.c', "5.12. Sal.c : Min. SalBlock extension over Activ or GatPoly: #{sal_c_value} um")
+    sal_c_l2.forget
+
+    # Rule Sal.d: Min. SalBlock space to unrelated Activ or GatPoly is 0.20 um
+    logger.info('Executing rule Sal.d')
+    sal_d_value = drc_rules['Sal_d'].to_f
+    sal_d_l1 = salblock_drw.separation(gatpoly_res, sal_d_value.um, euclidian)
+    sal_d_l1.output('Sal.d', "5.12. Sal.d : Min. SalBlock space to unrelated Activ or GatPoly: #{sal_d_value} um")
+    sal_d_l1.forget
+    sal_d_l2 = salblock_drw.separation(activ_drw, sal_d_value.um, euclidian)
+    sal_d_l2.output('Sal.d', "5.12. Sal.d : Min. SalBlock space to unrelated Activ or GatPoly: #{sal_d_value} um")
+    sal_d_l2.forget
+
+    # Rule Sal.e: Min. SalBlock space to Cont is 0.20 um
+    logger.info('Executing rule Sal.e')
+    sal_e_value = drc_rules['Sal_e'].to_f
+    sal_e_l = salblock_drw.separation(cont_drw, sal_e_value.um, euclidian)
+    sal_e_l.output('Sal.e', "5.12. Sal.e : Min. SalBlock space to Cont: #{sal_e_value} um")
+    sal_e_l.forget
+  end
+end

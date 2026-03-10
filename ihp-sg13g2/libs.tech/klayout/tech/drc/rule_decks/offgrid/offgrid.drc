@@ -1,0 +1,409 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('offgrid') || OFFGRID
+  #==============================================
+  #-------------- Off-Grid Checks ---------------
+  #==============================================
+
+  logger.info('Starting Off-Grid checks (5 nm manufacturing grid)')
+
+  grid = drc_rules['grid'].to_f
+
+  # FEOL layers
+
+  logger.info('Executing rule OffGrid.NWell')
+  offgrid_l = nwell_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.NWell', 'NWell is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.PWell')
+  offgrid_l = pwell_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.PWell', 'PWell is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.PWell_block')
+  offgrid_l = pwell_block.ongrid(grid.um)
+  offgrid_l.output('OffGrid.PWell_block', 'PWell_block is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.nBuLay')
+  offgrid_l = nbulay_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.nBuLay', 'nBuLay is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.nBuLay_block')
+  offgrid_l = nbulay_block.ongrid(grid.um)
+  offgrid_l.output('OffGrid.nBuLay_block', 'nBuLay_block is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Activ')
+  offgrid_l = activ_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Activ', 'Activ is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.ThickGateOx')
+  offgrid_l = thickgateox_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.ThickGateOx', 'ThickGateOx is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Activ_filler')
+  offgrid_l = activ_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Activ_filler', 'Activ_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.GatPoly_filler')
+  offgrid_l = gatpoly_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.GatPoly_filler', 'GatPoly_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.GatPoly')
+  offgrid_l = gatpoly_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.GatPoly', 'GatPoly is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.pSD')
+  offgrid_l = psd_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.pSD', 'pSD is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.nSD')
+  offgrid_l = nsd_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.nSD', 'nSD is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.nSD_block')
+  offgrid_l = nsd_block.ongrid(grid.um)
+  offgrid_l.output('OffGrid.nSD_block', 'nSD_block is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.EXTBlock')
+  offgrid_l = extblock_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.EXTBlock', 'EXTBlock is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.SalBlock')
+  offgrid_l = salblock_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.SalBlock', 'SalBlock is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Cont')
+  offgrid_l = cont_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Cont', 'Cont is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Activ_nofill')
+  offgrid_l = activ_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Activ_nofill', 'Activ_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.GatPoly_nofill')
+  offgrid_l = gatpoly_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.GatPoly_nofill', 'GatPoly_nofill is off-grid')
+  offgrid_l.forget
+
+  # BEOL layers
+
+  logger.info('Executing rule OffGrid.Metal1')
+  offgrid_l = metal1_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal1', 'Metal1 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Via1')
+  offgrid_l = via1_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Via1', 'Via1 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal2')
+  offgrid_l = metal2_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal2', 'Metal2 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Via2')
+  offgrid_l = via2_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Via2', 'Via2 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal3')
+  offgrid_l = metal3_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal3', 'Metal3 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Via3')
+  offgrid_l = via3_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Via3', 'Via3 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal4')
+  offgrid_l = metal4_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal4', 'Metal4 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Via4')
+  offgrid_l = via4_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Via4', 'Via4 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal5')
+  offgrid_l = metal5_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal5', 'Metal5 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.MIM')
+  offgrid_l = mim_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.MIM', 'MIM is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Vmim')
+  offgrid_l = vmim_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Vmim', 'Vmim is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopVia1')
+  offgrid_l = topvia1_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopVia1', 'TopVia1 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal1')
+  offgrid_l = topmetal1_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal1', 'TopMetal1 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopVia2')
+  offgrid_l = topvia2_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopVia2', 'TopVia2 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal2')
+  offgrid_l = topmetal2_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal2', 'TopMetal2 is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Passiv')
+  offgrid_l = passiv_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Passiv', 'Passiv is off-grid')
+  offgrid_l.forget
+
+  # Filler layers
+
+  logger.info('Executing rule OffGrid.Metal1_filler')
+  offgrid_l = metal1_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal1_filler', 'Metal1_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal2_filler')
+  offgrid_l = metal2_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal2_filler', 'Metal2_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal3_filler')
+  offgrid_l = metal3_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal3_filler', 'Metal3_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal4_filler')
+  offgrid_l = metal4_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal4_filler', 'Metal4_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal5_filler')
+  offgrid_l = metal5_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal5_filler', 'Metal5_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal1_filler')
+  offgrid_l = topmetal1_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal1_filler', 'TopMetal1_filler is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal2_filler')
+  offgrid_l = topmetal2_filler.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal2_filler', 'TopMetal2_filler is off-grid')
+  offgrid_l.forget
+
+  # NoFill layers
+
+  logger.info('Executing rule OffGrid.Metal1_nofill')
+  offgrid_l = metal1_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal1_nofill', 'Metal1_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal2_nofill')
+  offgrid_l = metal2_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal2_nofill', 'Metal2_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal3_nofill')
+  offgrid_l = metal3_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal3_nofill', 'Metal3_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal4_nofill')
+  offgrid_l = metal4_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal4_nofill', 'Metal4_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal5_nofill')
+  offgrid_l = metal5_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal5_nofill', 'Metal5_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal1_nofill')
+  offgrid_l = topmetal1_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal1_nofill', 'TopMetal1_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal2_nofill')
+  offgrid_l = topmetal2_nofill.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal2_nofill', 'TopMetal2_nofill is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.NoMetFiller')
+  offgrid_l = nometfiller_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.NoMetFiller', 'NoMetFiller is off-grid')
+  offgrid_l.forget
+
+  # Slit layers
+
+  logger.info('Executing rule OffGrid.Metal1_slit')
+  offgrid_l = metal1_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal1_slit', 'Metal1_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal2_slit')
+  offgrid_l = metal2_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal2_slit', 'Metal2_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal3_slit')
+  offgrid_l = metal3_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal3_slit', 'Metal3_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal4_slit')
+  offgrid_l = metal4_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal4_slit', 'Metal4_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Metal5_slit')
+  offgrid_l = metal5_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Metal5_slit', 'Metal5_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal1_slit')
+  offgrid_l = topmetal1_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal1_slit', 'TopMetal1_slit is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TopMetal2_slit')
+  offgrid_l = topmetal2_slit.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TopMetal2_slit', 'TopMetal2_slit is off-grid')
+  offgrid_l.forget
+
+  # Miscellaneous layers
+
+  logger.info('Executing rule OffGrid.EdgeSeal')
+  offgrid_l = edgeseal_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.EdgeSeal', 'EdgeSeal is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.EmWind')
+  offgrid_l = emwind_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.EmWind', 'EmWind is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.dfpad')
+  offgrid_l = dfpad_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.dfpad', 'dfpad is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Polimide')
+  offgrid_l = polimide_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Polimide', 'Polimide is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.TRANS')
+  offgrid_l = trans_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.TRANS', 'TRANS is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.IND')
+  offgrid_l = ind_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.IND', 'IND is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.RES')
+  offgrid_l = res_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.RES', 'RES is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.RFMEM')
+  offgrid_l = rfmem_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.RFMEM', 'RFMEM is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Recog_diode')
+  offgrid_l = recog_diode.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Recog_diode', 'Recog_diode is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.Recog_esd')
+  offgrid_l = recog_esd.ongrid(grid.um)
+  offgrid_l.output('OffGrid.Recog_esd', 'Recog_esd is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.DigiBnd')
+  offgrid_l = digibnd_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.DigiBnd', 'DigiBnd is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.DigiSub')
+  offgrid_l = digisub_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.DigiSub', 'DigiSub is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.SRAM')
+  offgrid_l = sram_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.SRAM', 'SRAM is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.dfpad_pillar')
+  offgrid_l = dfpad_pillar.ongrid(grid.um)
+  offgrid_l.output('OffGrid.dfpad_pillar', 'dfpad_pillar is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.dfpad_sbump')
+  offgrid_l = dfpad_sbump.ongrid(grid.um)
+  offgrid_l.output('OffGrid.dfpad_sbump', 'dfpad_sbump is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.DeepVia')
+  offgrid_l = deepvia_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.DeepVia', 'DeepVia is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.LBE')
+  offgrid_l = lbe_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.LBE', 'LBE is off-grid')
+  offgrid_l.forget
+
+  logger.info('Executing rule OffGrid.PolyRes')
+  offgrid_l = polyres_drw.ongrid(grid.um)
+  offgrid_l.output('OffGrid.PolyRes', 'PolyRes is off-grid')
+  offgrid_l.forget
+end
