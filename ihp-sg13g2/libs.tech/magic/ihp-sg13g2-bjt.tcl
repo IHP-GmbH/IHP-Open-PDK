@@ -228,13 +228,17 @@ proc sg13g2::npn13g2_base_generate {} {
 		0.445um 0.62um 0.235um 0.83um -0.235um 0.83um \
 		-0.445um 0.62um -0.925um 0.62um
 
-    polygon pbase -1.015um 2.47um -1.015um 0.86um -0.595um 0.44um \
+    polygon pbase -1.015um 2.51um -1.015um 0.86um -0.595um 0.44um \
 		-0.595um -0.73um -0.345um -0.98um 0.345um -0.98um \
 		0.595um -0.73um 0.595um 0.44um 1.015um 0.86um \
-		1.015um 2.47um
+		1.015um 2.51um
 
     box values -0.035um -0.45um 0.035um 0.45um
     paint gemitterc
+
+    # The collector contact is a bar contact and has to be specified
+    # as a bar contact using a mask-hint property
+    property MASKHINTS_CONTBAR -0.825um -1.21um 0.825um -1.05um
 
     # Cell has a text label at the bottom;  force it to attach to "comment"
     box position 0 -2.3um
@@ -322,8 +326,8 @@ proc sg13g2::npn13g2_draw {parameters} {
     pushbox
 
     box grow c 0.745um
-    box grow n 0.03um
-    box grow s 0.03um
+    box grow n 0.04um
+    box grow s 0.025um
     box grow e ${hxoffset}um
     box grow w ${hxoffset}um
     paint m2
@@ -336,8 +340,8 @@ proc sg13g2::npn13g2_draw {parameters} {
     pushbox
 
     box move n 1.135um
-    box grow n 0.12um
-    box grow s 0.12um
+    box grow n 0.125um
+    box grow s 0.115um
     box grow e 0.92um
     box grow w 0.92um
     box grow e ${hxoffset}um
@@ -352,8 +356,8 @@ proc sg13g2::npn13g2_draw {parameters} {
     pushbox
 
     box move s 1.135um
-    box grow n 0.12um
-    box grow s 0.12um
+    box grow n 0.125um
+    box grow s 0.115um
     box grow e 0.97um
     box grow w 0.97um
     box grow e ${hxoffset}um
