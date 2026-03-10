@@ -270,20 +270,24 @@ lappend devices cap_rfcmim
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" derive area w l
+	property "-circuit1 $dev" derive perimeter w l
 	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {l critical}
-	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit1 $dev" parallel {area add}
+	property "-circuit1 $dev" parallel {perimeter add}
+	property "-circuit1 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete ic
+	property "-circuit1 $dev" delete ic w l
     }
     if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" derive area w l
+	property "-circuit2 $dev" derive perimeter w l
 	property "-circuit2 $dev" parallel enable
-	property "-circuit2 $dev" parallel {l critical}
-	property "-circuit2 $dev" parallel {w add}
-	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit2 $dev" parallel {area add}
+	property "-circuit2 $dev" parallel {perimeter add}
+	property "-circuit2 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete ic
+	property "-circuit2 $dev" delete ic w l
     }
 }
 
