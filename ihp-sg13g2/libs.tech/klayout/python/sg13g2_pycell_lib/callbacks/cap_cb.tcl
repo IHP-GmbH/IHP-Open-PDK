@@ -45,7 +45,7 @@ proc CbCapCalc {calc c l w cell} {
       }  ;# C
       l {
           set weff   [expr $w+$lwd]
-          set result [expr (($c-2.0*$weff*$cpspec)/($caspec*$weff+2.0*$cpspec) - $lwd) * 1.0e-6] ;# in [m]
+          set result [expr ((c-2.0*$weff*$cpspec)/($caspec*$weff+2.0*$cpspec) - $lwd) * 1.0e-6] ;# in [m]
       }  ;# l
       w {
           set leff   [expr $l+$lwd]
@@ -67,7 +67,7 @@ proc CbCap {param} {
     global SG13_GRID
     
     set RC 1
-
+    
     # get cell name to make procedure sharing with different parameter sets possible
     set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
@@ -227,24 +227,24 @@ proc CbCap {param} {
         
         switch $param {
             C {
-                if {$wold!="" && $lold!=""} {
+                if {wold!="" && lold!=""} {
                     set c [CbCapCalc C 0 $lold $wold $cell]
                 }
             } ;# c
             w {
-                if {$lold!="" && $cold!=""} {
+                if {lold!="" && cold!=""} {
                     set w [CbCapCalc w $cold $lold 0 $cell]
                     set w [CbRoundm $w $SG13_GRID]
                 }
             } ;# w
             l {
-                if {$wold!="" && $cold!=""} {
+                if {wold!="" && cold!=""} {
                     set l [CbCapCalc l $cold 0 $wold $cell]
-                    set l [CbRoundm $l $SG13_GRID]
+                    set l [CbRoundm $l SG13_GRID]
                 }
             } ;# l
             lw {
-                if {$cold!=""} {
+                if {cold!=""} {
                     set l [CbCapCalc lw $cold 0 0 $cell]
                     set l [CbRoundm $l $SG13_GRID]
                     set w $l
