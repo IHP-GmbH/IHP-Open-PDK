@@ -183,13 +183,6 @@ def insert_stdcell_frames(gds_in: str, cell_list: list, ref_dir: str, out_dir: s
     for cell_ref in cell_list:
 
         cell = layout.cell(cell_ref)
-
-        search_gds = find_files_by_extension(ref_dir, f'{cell_ref}.gds')
-        if len(search_gds) == 0:
-            warn(f'Reference gds of {cell_ref} does not exist => Skipped', verbose=True)
-            continue
-
-        src_path = search_gds[0]
         dest_path = os.path.join(out_dir, f'{cell_ref}/layout/{cell_ref}.gds')
 
         if not os.path.exists(os.path.dirname(dest_path)):
@@ -197,12 +190,15 @@ def insert_stdcell_frames(gds_in: str, cell_list: list, ref_dir: str, out_dir: s
             out_path.mkdir(parents=True, exist_ok=True)
 
         if not cell:
-            if not os.path.exists(dest_path):
+            # Cell not in main GDS: try to copy from existing reference
+            search_gds = find_files_by_extension(ref_dir, f'{cell_ref}.gds')
+            if search_gds and not os.path.exists(dest_path):
+                src_path = search_gds[0]
                 info(f'Copy {src_path} -> {dest_path}', verbose=verbose)
                 shutil.copy(src_path, dest_path)
-            out_dir_by_cell[cell_ref] = os.path.dirname(dest_path)
-            warn(f'Copying non library cell {src_path} -> {dest_path}', verbose=verbose)
-            warn('Manual update may be needed', verbose=True)
+                out_dir_by_cell[cell_ref] = os.path.dirname(dest_path)
+            else:
+                warn(f'Cell {cell_ref} not found in GDS library => Skipped', verbose=True)
             continue
 
         info(f'Extracting cell => {cell.name}', verbose=True)
@@ -277,9 +273,23 @@ if __name__ == "__main__":
         # Create if it does not exist (first run)
         chk_path.mkdir(parents=True, exist_ok=True)
 
-    CELL_LIST = [os.path.basename(cdl_file).replace('.cdl', '') for cdl_file
-                 in find_files_by_extension(ref_dir, '.cdl')]
-    print(f'CELL_LIST={CELL_LIST}')
+    if args.cell_name:
+        CELL_LIST = [args.cell_name]
+    else:
+        CELL_LIST = [os.path.basename(cdl_file).replace('.cdl', '') for cdl_file
+                     in find_files_by_extension(ref_dir, '.cdl')]
+
+    # Bootstrap: if no existing testcases, extract all cell names from the CDL
+    if not CELL_LIST:
+        print(f'INFO: No existing testcases found, bootstrapping from {cdl_ref}')
+        with open(cdl_ref, 'rt') as f:
+            for line in f:
+                m = re.match(r'\.SUBCKT\s+(\S+)', line)
+                if m:
+                    CELL_LIST.append(m.group(1))
+        CELL_LIST = sorted(set(CELL_LIST))
+
+    print(f'CELL_LIST={CELL_LIST} ({len(CELL_LIST)} cells)')
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Replace GDS & CDL in testcases/sg13cmos5l_cells with libs.ref/sg13cmos5l_stdcell

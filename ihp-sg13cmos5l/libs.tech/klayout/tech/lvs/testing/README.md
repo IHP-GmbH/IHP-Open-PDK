@@ -44,8 +44,8 @@ Excluded layers: Metal5, Via4, TopMetal2, TopVia2
 ## Running Tests
 
 ```bash
-# Run all device LVS tests
-make test-LVS-main
+# Run all device LVS tests (switch + device regression)
+make test-LVS
 
 # Run specific device group
 make test-LVS-MOS
@@ -54,15 +54,45 @@ make test-LVS-TAP
 make test-LVS-DIODE
 make test-LVS-ESD
 
-# Run switch test (quick sanity check)
+# Run switch test (quick deep/flat sanity check)
 make test-LVS-switch
 
-# Run standard cell regression (requires testcases to be generated first)
+# Run SVS regression (1 PASS + 2 expected FAIL)
+make test-LVS-SVS
+
+# Run manual tests (ESD ptap, implicit connections, SRAM support)
+make test-LVS-manual
+
+# Run standard cell regression (generates testcases then runs LVS)
 make test-LVS-cells
 
 # List available device groups
 make list-devices
 ```
+
+## Manual Tests
+
+Manual tests validate advanced LVS features using CMOS-compatible testcases
+(symlinked from G2, with local run scripts invoking CMOS5L's run_lvs.py):
+
+| Test Suite | Description | Expected Result |
+|-----------|-------------|-----------------|
+| svs_testss | SVS flow: schematic-vs-schematic comparison | 1 PASS + 2 FAIL |
+| esd_ptap | ESD structure with ptap | PASS |
+| implicit_connections | SP6TCClockGenerator with implicit vdd net | PASS |
+| sram_support | SP01 SRAM cell (deep mode, OAS format) | PASS |
+
+## Cross-Verification
+
+The `run_cross_verification.py` script validates that CMOS5L LVS produces
+identical results to G2 LVS for all CMOS-compatible devices:
+
+```bash
+python3 run_cross_verification.py
+```
+
+This confirms that the forbidden layer check and CMOS5L branding do not
+introduce regressions relative to the G2 rule decks.
 
 ## run_lvs.py CLI
 
@@ -93,3 +123,5 @@ Test cases are symlinked from the G2 PDK where compatible:
 - `testcases/unit/esd_devices/` - Full symlinks from G2
 - `testcases/unit/res_devices/` - Selective symlinks (excludes M5, TM2 resistors)
 - `testcases/unit/diode_devices/` - Selective symlinks (excludes Schottky)
+- `testcases/extraction_checking/` - Symlink to G2 (NMOS switch test data)
+- `testcases/manual_tests/` - Data symlinks from G2, local run scripts
