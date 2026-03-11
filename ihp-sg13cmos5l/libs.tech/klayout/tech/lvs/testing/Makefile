@@ -72,7 +72,6 @@ list-devices:
 	@echo "test-LVS-RES"
 	@echo "test-LVS-ESD"
 	@echo "test-LVS-TAP"
-	@echo "test-LVS-CAP"
 
 #==========================
 # --------- HELP ----------
@@ -84,7 +83,7 @@ help:
 	@echo "... all                        (the default if no target is provided             )"
 	@echo "... test-LVS                   (To run LVS for all devices with switching test   )"
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
-	@echo "... test-LVS-stdcells          (To run LVS for all standard cells                )"
+	@echo "... test-LVS-cells             (To run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"

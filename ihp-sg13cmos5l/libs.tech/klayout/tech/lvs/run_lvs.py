@@ -15,48 +15,261 @@
 # SPDX-License-Identifier: Apache-2.0
 # ==========================================================================
 
-"""Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS.
+"""Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS."""
 
-This is the slim PDK version with CMOS-only devices and M1-M4-TM1 metal stack.
-No HBT, MIM capacitors, inductors, or top metals (M5, TM2) are supported.
-
-Usage:
-    run_lvs.py (--help| -h)
-    run_lvs.py (--layout=<layout_path>) (--netlist=<netlist_path>)
-    [--run_dir=<run_dir_path>] [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-    [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
-    [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
-    [--purge] [--purge_nets] [--verbose]
-    [--allow_unmatched_ports]
-
-Options:
-    --help -h                           Displays this help message.
-    --layout=<layout_path>              Specifies the file path of the input GDS file.
-    --netlist=<netlist_path>            Specifies the file path of the input netlist file.
-    --run_dir=<run_dir_path>            Run directory to save all the generated results [default: pwd]
-    --topcell=<topcell_name>            Specifies the name of the top cell to be used.
-    --run_mode=<run_mode>               Selects the allowed KLayout mode. (flat, deep). [default: deep]
-    --no_net_names                      Omits net names in the extracted netlist.
-    --spice_comments                    Includes netlist comments in the extracted netlist.
-    --net_only                          Generates netlist objects only in the extracted netlist.
-    --no_simplify                       Disables simplification for both layout and schematic.
-    --no_series_res                     Prevents simplification of series resistors for both layout and schematic.
-    --no_parallel_res                   Prevents simplification of parallel resistors for both layout and schematic.
-    --combine_devices                   Enables device combination for both layout and schematic netlists.
-    --top_lvl_pins                      Creates pins for top-level circuits in both layout and schematic netlists.
-    --purge                             Removes unused nets from both layout and schematic netlists.
-    --purge_nets                        Purges floating nets from both layout and schematic netlists.
-    --verbose                           Enables detailed rule execution logs for debugging purposes.
-    --allow_unmatched_ports             Allows unmatched or improperly labeled ports(pins) in the top-level circuit.
-"""
-
-from docopt import docopt
+import argparse
 import os
 import logging
 import klayout.db
 from datetime import datetime, timezone
-from subprocess import check_call
+from subprocess import Popen, PIPE, STDOUT
 import time
+import sys
+
+
+class ConsoleColorFormatter(logging.Formatter):
+    """Color formatter for console logs (file logs remain plain)."""
+
+    RESET = "\033[0m"
+    COLORS = {
+        logging.DEBUG: "\033[36m",     # cyan
+        logging.INFO: "\033[32m",      # green
+        logging.WARNING: "\033[33m",   # yellow
+        logging.ERROR: "\033[31m",     # red
+        logging.CRITICAL: "\033[41m",  # red background
+    }
+
+    def __init__(self, fmt, datefmt=None, use_color=False):
+        super().__init__(fmt=fmt, datefmt=datefmt)
+        self.use_color = use_color
+
+    def format(self, record):
+        original_levelname = record.levelname
+        if self.use_color:
+            color = self.COLORS.get(record.levelno, "")
+            if color:
+                record.levelname = f"{color}{record.levelname}{self.RESET}"
+        output = super().format(record)
+        record.levelname = original_levelname
+        return output
+
+
+class ImportantEventCollector(logging.Handler):
+    """Collect warning/error messages for end-of-run summary."""
+
+    def __init__(self):
+        super().__init__(level=logging.WARNING)
+        self.warnings = []
+        self.errors = []
+
+    def emit(self, record):
+        message = record.getMessage()
+        if record.levelno >= logging.ERROR:
+            self.errors.append(message)
+        elif record.levelno >= logging.WARNING:
+            self.warnings.append(message)
+
+
+class KLayoutRunError(RuntimeError):
+    """Raised when KLayout LVS execution fails."""
+
+    def __init__(self, message, artifacts, returncode, stdout_text="", stderr_text=""):
+        super().__init__(message)
+        self.artifacts = artifacts
+        self.returncode = returncode
+        self.stdout_text = stdout_text or ""
+        self.stderr_text = stderr_text or ""
+
+
+def setup_logging(lvs_run_dir, run_name):
+    """Configure console/file logging and return collector + main log path."""
+    log_format = "%(asctime)s | %(levelname)-7s | %(message)s"
+    log_datefmt = "%d-%b-%Y %H:%M:%S"
+    main_log_path = os.path.join(lvs_run_dir, f"{run_name}.log")
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.handlers.clear()
+
+    file_handler = logging.FileHandler(main_log_path)
+    file_handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=log_datefmt))
+
+    use_color = sys.stderr.isatty() and os.environ.get("NO_COLOR") is None and os.environ.get("TERM") != "dumb"
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(
+        ConsoleColorFormatter(fmt=log_format, datefmt=log_datefmt, use_color=use_color)
+    )
+
+    collector = ImportantEventCollector()
+
+    root.addHandler(file_handler)
+    root.addHandler(console_handler)
+    root.addHandler(collector)
+
+    return collector, main_log_path
+
+
+def evaluate_run_outcome(layout_log_path, effective_net_only, layout_netlist_path=None):
+    """Extract final run outcome message from KLayout LVS log."""
+    if effective_net_only:
+        if layout_netlist_path:
+            return "NET_ONLY mode: output netlist generated from --layout_netlist input."
+        return "NET_ONLY mode: extracted netlist generated from layout only."
+
+    if not layout_log_path or not os.path.isfile(layout_log_path):
+        return "Comparison mode: outcome unknown (layout log not found)."
+
+    try:
+        with open(layout_log_path, "r") as f:
+            content = f.read()
+    except OSError:
+        return "Comparison mode: outcome unknown (failed to read layout log)."
+
+    if "Congratulations! Netlists match." in content:
+        return "Comparison mode: PASS (netlists match)."
+    if "ERROR : Netlists don't match" in content:
+        return "Comparison mode: FAIL (netlists do not match)."
+    return "Comparison mode: completed (no explicit PASS/FAIL signature found)."
+
+
+def collect_layout_log_signals(layout_log_path, limit=5):
+    """Collect warning/error messages from the KLayout layout log."""
+    if not layout_log_path or not os.path.isfile(layout_log_path):
+        return [], []
+
+    warning_lines = []
+    error_lines = []
+
+    try:
+        with open(layout_log_path, "r") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if "WARNING :" in line or line.startswith("WARNING:"):
+                    warning_lines.append(line)
+                elif "ERROR :" in line or line.startswith("ERROR:"):
+                    error_lines.append(line)
+    except OSError:
+        return [], []
+
+    warning_lines = list(dict.fromkeys(warning_lines))[:limit]
+    error_lines = list(dict.fromkeys(error_lines))[:limit]
+    return warning_lines, error_lines
+
+
+def _summary_status_from_outcome(outcome_text):
+    """Map free-form outcome text to a compact status label."""
+    outcome = (outcome_text or "").upper()
+    if "PASS" in outcome:
+        return "PASS"
+    if "FAIL" in outcome:
+        return "FAIL"
+    if "NET_ONLY" in outcome:
+        return "NET_ONLY"
+    return "UNKNOWN"
+
+
+def _truncate_text(value, max_len):
+    """Truncate long summary values so the table stays readable."""
+    text = str(value) if value is not None else "n/a"
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 3] + "..."
+
+
+def _emit_summary_table(rows, key_width=16, value_width=None):
+    """Emit an ASCII summary table."""
+    if value_width is None:
+        max_value_len = max(len(str(value)) for _, value in rows) if rows else 0
+        value_width = max(60, max_value_len)
+
+    border = f"+-{'-' * key_width}-+-{'-' * value_width}-+"
+    logging.info(border)
+    for key, value in rows:
+        logging.info(
+            "| %s | %s |",
+            _truncate_text(key, key_width).ljust(key_width),
+            _truncate_text(value, value_width).ljust(value_width),
+        )
+    logging.info(border)
+
+
+def emit_important_summary(run_dir, run_meta, collector, total_time):
+    """Print a compact recap of the most important run information."""
+    logging.info("==============================================================================")
+    logging.info("Important Summary")
+
+    layout_path = run_meta.get("layout_path") if run_meta else None
+    topcell = run_meta.get("topcell") if run_meta else None
+    effective_net_only = run_meta.get("effective_net_only") if run_meta else False
+    run_mode = "NET_ONLY" if effective_net_only else "COMPARE"
+    outcome = run_meta.get("outcome", "n/a") if run_meta else "n/a"
+    status = _summary_status_from_outcome(outcome)
+
+    klayout_warns, klayout_errs = collect_layout_log_signals(
+        run_meta.get("layout_log_path") if run_meta else None
+    )
+    script_warns = list(dict.fromkeys(collector.warnings))
+    script_errs = list(dict.fromkeys(collector.errors))
+
+    all_warns = list(dict.fromkeys(script_warns + klayout_warns))
+    all_errs = list(dict.fromkeys(script_errs + klayout_errs))
+
+    rows = [
+        ("Status", status),
+        ("Mode", run_mode),
+        ("Outcome", outcome),
+        ("Layout", os.path.basename(layout_path) if layout_path else "n/a"),
+        ("Top Cell", topcell or "n/a"),
+        ("Results Dir", run_dir),
+        ("Warnings", str(len(all_warns))),
+        ("Errors", str(len(all_errs))),
+        ("Run Time (s)", str(total_time)),
+    ]
+    _emit_summary_table(rows)
+
+    if all_errs:
+        logging.error("Key errors:")
+        for msg in all_errs[:5]:
+            logging.error("  - %s", msg)
+    if all_warns:
+        logging.warning("Key warnings:")
+        for msg in all_warns[:5]:
+            logging.warning("  - %s", msg)
+
+    logging.info("==============================================================================")
+
+
+def discover_run_artifacts(run_dir, main_log_path):
+    """Best-effort discovery of generated run artifacts in a run directory."""
+    layout_logs = []
+    result_dbs = []
+    extracted_netlists = []
+
+    try:
+        for name in os.listdir(run_dir):
+            full_path = os.path.join(run_dir, name)
+            if full_path == main_log_path:
+                continue
+            if name.endswith(".log"):
+                layout_logs.append(full_path)
+            elif name.endswith(".lvsdb"):
+                result_dbs.append(full_path)
+            elif name.endswith("_extracted.cir"):
+                extracted_netlists.append(full_path)
+    except OSError:
+        return {
+            "layout_log_path": None,
+            "report_path": None,
+            "extracted_netlist_path": None,
+        }
+
+    return {
+        "layout_log_path": sorted(layout_logs)[0] if layout_logs else None,
+        "report_path": sorted(result_dbs)[0] if result_dbs else None,
+        "extracted_netlist_path": (
+            sorted(extracted_netlists)[0] if extracted_netlists else None
+        ),
+    }
 
 
 def check_klayout_version():
@@ -139,15 +352,15 @@ def get_top_cell_names(gds_path):
     return top_cells
 
 
-def get_run_top_cell_name(arguments, layout_path):
+def get_run_top_cell_name(args, layout_path):
     """
     Get the top cell name to use for running. If it's provided by the user, we use the user input.
     If not, we get it from the GDS file.
 
     Parameters
     ----------
-    arguments : dict
-        Dictionary that holds the user inputs for the script generated by docopt.
+    args : argparse.Namespace
+        Parsed command-line arguments.
     layout_path : string
         Path to the target layout.
 
@@ -158,8 +371,8 @@ def get_run_top_cell_name(arguments, layout_path):
 
     """
 
-    if arguments["--topcell"]:
-        topcell = arguments["--topcell"]
+    if args.topcell:
+        topcell = args.topcell
     else:
         layout_topcells = get_top_cell_names(layout_path)
         if len(layout_topcells) > 1:
@@ -173,19 +386,85 @@ def get_run_top_cell_name(arguments, layout_path):
     return topcell
 
 
-def generate_klayout_switches(arguments, layout_path, netlist_path):
+def normalize_optional_path(path_value):
+    """
+    Normalize optional file path arguments.
+
+    Parameters
+    ----------
+    path_value : str or None
+        Path value to normalize.
+
+    Returns
+    -------
+    str or None
+        Absolute normalized path, or None when empty/missing.
+    """
+    if path_value is None:
+        return None
+
+    path_value = path_value.strip()
+    if path_value == "":
+        return None
+
+    return os.path.abspath(os.path.expanduser(path_value))
+
+
+def safe_abs_path(path_value):
+    """
+    Safely normalize an optional path for reporting.
+
+    Parameters
+    ----------
+    path_value : str or None
+        Path value to normalize.
+
+    Returns
+    -------
+    str or None
+        Absolute normalized path, or None when empty/missing.
+    """
+    normalized = normalize_optional_path(path_value)
+    return normalized if normalized else None
+
+
+def create_dummy_layout(layout_path, topcell_name):
+    """
+    Create a temporary empty layout with one top cell.
+
+    Parameters
+    ----------
+    layout_path : str
+        Output path for the temporary layout.
+    topcell_name : str
+        Top cell name for the temporary layout.
+    """
+    layout = klayout.db.Layout()
+    layout.dbu = 0.001
+    layout.create_cell(topcell_name)
+    layout.write(layout_path)
+
+
+def generate_klayout_switches(
+    args, layout_path, netlist_path, layout_netlist_path, effective_net_only
+):
     """
     Parse all the args from input to prepare switches for LVS run.
 
     Parameters
     ----------
-    arguments : dict
-        Dictionary that holds the arguments used by user in the run command.
-        This is generated by docopt library.
+    args : argparse.Namespace
+        Parsed command-line arguments.
     layout_path : string
         Path to the layout file that we will run LVS on.
-    netlist_path : string
+    netlist_path : string or None
         Path to the netlist file that we will run LVS on.
+        If None, schematic loading is delegated to the runset fallback logic.
+    layout_netlist_path : string or None
+        Optional path to a pre-extracted layout-side netlist. When provided,
+        the runset uses this netlist for the layout side and skips extraction.
+    effective_net_only : bool
+        Effective net-only mode for this run.
 
     Returns
     -------
@@ -194,29 +473,30 @@ def generate_klayout_switches(arguments, layout_path, netlist_path):
     """
     switches = dict()
 
-    if arguments["--run_mode"] in ["flat", "deep"]:
-        run_mode = arguments["--run_mode"]
+    if args.run_mode in ["flat", "deep"]:
+        run_mode = args.run_mode
     else:
         logging.error("Allowed klayout modes are (flat , deep) only")
         exit(1)
 
     switches = {
         "run_mode": run_mode,
-        "no_net_names": "true" if arguments.get("--no_net_names") else "false",
-        "spice_comments": "true" if arguments.get("--spice_comments") else "false",
-        "net_only": "true" if arguments.get("--net_only") else "false",
-        "top_lvl_pins": "true" if arguments.get("--top_lvl_pins") else "false",
-        "no_simplify": "true" if arguments.get("--no_simplify") else "false",
-        "no_series_res": "true" if arguments.get("--no_series_res") else "false",
-        "no_parallel_res": "true" if arguments.get("--no_parallel_res") else "false",
-        "combine_devices": "true" if arguments.get("--combine_devices") else "false",
-        "purge": "true" if arguments.get("--purge") else "false",
-        "purge_nets": "true" if arguments.get("--purge_nets") else "false",
-        "verbose": "true" if arguments.get("--verbose") else "false",
-        "topcell": get_run_top_cell_name(arguments, layout_path),
+        "no_net_names": "true" if args.no_net_names else "false",
+        "spice_comments": "true" if args.spice_comments else "false",
+        "net_only": "true" if effective_net_only else "false",
+        "top_lvl_pins": "true" if args.top_lvl_pins else "false",
+        "no_simplify": "true" if args.no_simplify else "false",
+        "no_series_res": "true" if args.no_series_res else "false",
+        "no_parallel_res": "true" if args.no_parallel_res else "false",
+        "combine_devices": "true" if args.combine_devices else "false",
+        "purge": "true" if args.purge else "false",
+        "purge_nets": "true" if args.purge_nets else "false",
+        "topcell": get_run_top_cell_name(args, layout_path),
         "input": os.path.abspath(layout_path),
-        "schematic": os.path.abspath(netlist_path),
-        "allow_unmatched_ports": "true" if arguments.get("--allow_unmatched_ports") else "false",
+        "schematic": os.path.abspath(netlist_path) if netlist_path else None,
+        "layout_netlist": os.path.abspath(layout_netlist_path) if layout_netlist_path else None,
+        "ignore_top_ports_mismatch": "true" if args.ignore_top_ports_mismatch else "false",
+        "implicit_nets": f'"{args.implicit_nets}"' if args.implicit_nets else '""',
     }
 
     return switches
@@ -231,7 +511,7 @@ def build_switches_string(sws: dict):
     sws : dict
         Dictionary that holds the Antenna switches.
     """
-    return " ".join(f"-rd {k}={v}" for k, v in sws.items())
+    return " ".join(f"-rd {k}={v}" for k, v in sws.items() if v is not None)
 
 
 def check_lvs_results(results_db_files: list):
@@ -243,6 +523,9 @@ def check_lvs_results(results_db_files: list):
     results_db_files : list
         A list of strings that represent paths to results databases of all the LVS runs.
     """
+
+    if isinstance(results_db_files, str):
+        results_db_files = [results_db_files]
 
     if len(results_db_files) < 1:
         logging.error("Klayout did not generate any db results. Please check run logs")
@@ -266,8 +549,8 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
 
     Returns
     -------
-    string
-        string that represent the path to the results output database for this run.
+    dict
+        Output artifact paths generated for this run.
 
     """
 
@@ -287,12 +570,45 @@ def run_check(lvs_file: str, path: str, run_dir: str, sws: dict):
     sws_str = build_switches_string(new_sws)
 
     run_str = f"klayout -b -r {lvs_file} {sws_str}"
-    check_call(run_str, shell=True)
+    proc = Popen(
+        run_str,
+        shell=True,
+        text=True,
+        stdout=PIPE,
+        stderr=STDOUT,
+        bufsize=1,
+    )
 
-    return report_path
+    output_lines = []
+    if proc.stdout:
+        for line in proc.stdout:
+            output_lines.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+    proc.wait()
+    combined_output = "".join(output_lines)
+
+    if proc.returncode != 0:
+        raise KLayoutRunError(
+            "KLayout LVS execution failed.",
+            artifacts={
+                "report_path": report_path,
+                "layout_log_path": log_path,
+                "extracted_netlist_path": ext_net_path,
+            },
+            returncode=proc.returncode,
+            stdout_text=combined_output,
+            stderr_text=combined_output,
+        )
+
+    return {
+        "report_path": report_path,
+        "layout_log_path": log_path,
+        "extracted_netlist_path": ext_net_path,
+    }
 
 
-def main(lvs_run_dir: str, arguments: dict):
+def main(lvs_run_dir: str, args: argparse.Namespace):
     """
     Main function to run the LVS.
 
@@ -300,47 +616,113 @@ def main(lvs_run_dir: str, arguments: dict):
     ----------
     lvs_run_dir : str
         String with absolute path of the full run dir.
-    arguments : dict
-        Dictionary that holds the arguments used by user in the run command.
-        This is generated by docopt library.
+    args : argparse.Namespace
+        Parsed command-line arguments.
     """
 
     # Check Klayout version
     check_klayout_version()
 
-    # Check layout file existence
-    layout_path = arguments["--layout"]
-    layout_path = os.path.abspath(os.path.expanduser(layout_path))
-    if not os.path.exists(layout_path):
-        logging.error(
-            f"The input GDS file path {layout_path} doesn't exist, please recheck."
-        )
-        exit(1)
+    # Resolve optional input paths.
+    layout_path = normalize_optional_path(args.layout)
+    netlist_path = normalize_optional_path(args.netlist)
+    layout_netlist_path = normalize_optional_path(args.layout_netlist)
 
-    # Check layout type
-    layout_path = check_layout_type(layout_path)
+    # Resolve run mode behavior.
+    effective_net_only = args.net_only
 
-    # Check netlist file existence
-    netlist_path = arguments["--netlist"]
-    netlist_path = os.path.abspath(os.path.expanduser(netlist_path))
-    if not os.path.exists(netlist_path):
-        logging.error(
-            f"The input netlist file path {netlist_path} doesn't exist, please recheck."
+    # Layout is required for extraction flow. For layout-netlist flow, create a dummy layout automatically.
+    if layout_path is None:
+        if layout_netlist_path is None:
+            logging.error(
+                "Missing required input: provide --layout for extraction flow, "
+                "or provide --layout_netlist for netlist-vs-netlist flow."
+            )
+            exit(1)
+
+        dummy_topcell = args.topcell if args.topcell else "TOP"
+        if not args.topcell:
+            logging.warning(
+                "No --topcell was provided with --layout_netlist and no --layout. "
+                "Using autogenerated top cell name: TOP"
+            )
+
+        layout_path = os.path.join(lvs_run_dir, "__layout_netlist_dummy__.gds")
+        create_dummy_layout(layout_path, dummy_topcell)
+        logging.info(
+            "No layout was provided. Generated temporary empty layout for netlist flow at: %s",
+            layout_path,
         )
-        exit(1)
+    else:
+        if not os.path.exists(layout_path):
+            logging.error(
+                f"The input GDS file path {layout_path} doesn't exist, please recheck."
+            )
+            exit(1)
+        layout_path = check_layout_type(layout_path)
+
+    if netlist_path is None and not args.net_only:
+        logging.warning(
+            "No netlist was provided and --net_only was not set. "
+            "LVS comparison is disabled for this run; forcing --net_only behavior."
+        )
+        effective_net_only = True
+    elif netlist_path is not None and args.net_only:
+        logging.warning(
+            "Both --netlist and --net_only were provided. "
+            "The netlist input is ignored because net-only extraction was requested."
+        )
+        netlist_path = None
+
+    # Check netlist file existence (only when it is used for comparison).
+    if not effective_net_only and netlist_path:
+        if not os.path.exists(netlist_path):
+            logging.error(
+                f"The input netlist file path {netlist_path} doesn't exist, please recheck."
+            )
+            exit(1)
+        if not os.path.isfile(netlist_path):
+            logging.error(
+                f"The input netlist path {netlist_path} is not a file, please recheck."
+            )
+            exit(1)
+    if layout_netlist_path:
+        if not os.path.exists(layout_netlist_path):
+            logging.error(
+                f"The input layout netlist file path {layout_netlist_path} doesn't exist, please recheck."
+            )
+            exit(1)
+        if not os.path.isfile(layout_netlist_path):
+            logging.error(
+                f"The input layout netlist path {layout_netlist_path} is not a file, please recheck."
+            )
+            exit(1)
 
     lvs_rule_deck = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "sg13cmos5l.lvs"
     )
 
     # Get run switches
-    switches = generate_klayout_switches(arguments, layout_path, netlist_path)
+    switches = generate_klayout_switches(
+        args, layout_path, netlist_path, layout_netlist_path, effective_net_only
+    )
 
     # Run LVS check
-    res_db_files = run_check(lvs_rule_deck, layout_path, lvs_run_dir, switches)
+    run_artifacts = run_check(lvs_rule_deck, layout_path, lvs_run_dir, switches)
 
     # Check run
-    check_lvs_results(res_db_files)
+    check_lvs_results(run_artifacts["report_path"])
+
+    return {
+        "layout_path": layout_path,
+        "topcell": switches["topcell"],
+        "netlist_path_used": netlist_path,
+        "layout_netlist_path_used": layout_netlist_path,
+        "effective_net_only": effective_net_only,
+        "report_path": run_artifacts["report_path"],
+        "layout_log_path": run_artifacts["layout_log_path"],
+        "extracted_netlist_path": run_artifacts["extracted_netlist_path"],
+    }
 
 
 # ================================================================
@@ -349,39 +731,165 @@ def main(lvs_run_dir: str, arguments: dict):
 
 
 if __name__ == "__main__":
-    # arguments
-    arguments = docopt(__doc__, version="RUN LVS: 1.0")
+    USAGE = """
+    run_lvs.py (--help | -h)
+    run_lvs.py [--layout=<layout_path>]
+               [--netlist=<netlist_path>] [--layout_netlist=<layout_netlist_path>] [--run_dir=<run_dir_path>]
+               [--topcell=<topcell_name>] [--run_mode=<run_mode>]
+               [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
+               [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+               [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
+               [--implicit_nets=<nets>]
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Run IHP SG13CMOS5L LVS checks.",
+        usage=USAGE,
+    )
+    parser.add_argument(
+        "--layout",
+        type=str,
+        default=None,
+        help="Optional path to input GDS/OAS layout. Required unless --layout_netlist is provided.",
+    )
+    parser.add_argument(
+        "--netlist",
+        type=str,
+        default=None,
+        help="Optional path to schematic netlist (.cdl/.spice/.cir).",
+    )
+    parser.add_argument(
+        "--layout_netlist",
+        type=str,
+        default=None,
+        help=(
+            "Optional path to layout-side netlist (.cdl/.spice/.cir). "
+            "When provided, layout extraction is skipped and this netlist is used instead."
+        ),
+    )
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Run directory for outputs. Default creates timestamped dir in cwd.",
+    )
+    parser.add_argument("--topcell", type=str, help="Top cell name to run.")
+    parser.add_argument(
+        "--run_mode",
+        type=str,
+        choices=["flat", "deep"],
+        default="flat",
+        help="KLayout run mode. [default: flat]",
+    )
+    parser.add_argument("--no_net_names", action="store_true", help="Omit net names in extracted netlist.")
+    parser.add_argument("--spice_comments", action="store_true", help="Include comments in extracted netlist.")
+    parser.add_argument("--net_only", action="store_true", help="Generate extracted netlist only (skip comparison).")
+    parser.add_argument("--no_simplify", action="store_true", help="Disable simplify on layout/schematic netlists.")
+    parser.add_argument("--no_series_res", action="store_true", help="Disable resistor series simplification.")
+    parser.add_argument("--no_parallel_res", action="store_true", help="Disable resistor parallel simplification.")
+    parser.add_argument("--combine_devices", action="store_true", help="Enable generic device combination.")
+    parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
+    parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
+    parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
+    parser.add_argument(
+        "--implicit_nets",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated net names/patterns for implicit connections "
+            '(case-sensitive), e.g. "VDD,VSS" or "*".'
+        ),
+    )
+    parser.add_argument(
+        "--ignore_top_ports_mismatch",
+        action="store_true",
+        help="Ignore top-level port mismatches during comparison.",
+    )
+    parser.add_argument(
+        "--allow_unmatched_ports",
+        action="store_true",
+        help="Alias for --ignore_top_ports_mismatch (backwards compatibility).",
+    )
+    args = parser.parse_args()
+
+    # Backwards compatibility: --allow_unmatched_ports maps to --ignore_top_ports_mismatch
+    if args.allow_unmatched_ports:
+        args.ignore_top_ports_mismatch = True
 
     # Generate a timestamped run directory name
     now_str = datetime.now(timezone.utc).strftime("lvs_run_%Y_%m_%d_%H_%M_%S")
 
-    if (
-        arguments["--run_dir"] == "pwd"
-        or arguments["--run_dir"] == ""
-        or arguments["--run_dir"] is None
-    ):
+    if args.run_dir in ["pwd", "", None]:
         lvs_run_dir = os.path.join(os.path.abspath(os.getcwd()), now_str)
     else:
-        lvs_run_dir = os.path.abspath(arguments["--run_dir"])
+        lvs_run_dir = os.path.abspath(args.run_dir)
 
     os.makedirs(lvs_run_dir, exist_ok=True)
 
-    # logs format
-    logging.basicConfig(
-        level=logging.DEBUG,
-        handlers=[
-            logging.FileHandler(os.path.join(lvs_run_dir, "{}.log".format(now_str))),
-            logging.StreamHandler(),
-        ],
-        format="%(asctime)s | %(levelname)-7s | %(message)s",
-        datefmt="%d-%b-%Y %H:%M:%S",
-    )
+    # Setup logging
+    collector, main_log_path = setup_logging(lvs_run_dir, now_str)
 
     # Start of execution time
     t0 = time.time()
+    run_meta = None
+    exit_code = 0
 
-    # Calling main function
-    main(lvs_run_dir, arguments)
+    try:
+        # Calling main function
+        run_meta = main(lvs_run_dir, args)
+    except SystemExit as e:
+        exit_code = e.code if isinstance(e.code, int) else 1
+    except KLayoutRunError as e:
+        logging.error("KLayout run failed with exit code %s.", e.returncode)
+        for line in e.stderr_text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("WARNING:") or "WARNING :" in stripped:
+                logging.warning("KLayout stderr: %s", stripped)
+            elif stripped.startswith("ERROR:") or "ERROR :" in stripped:
+                logging.error("KLayout stderr: %s", stripped)
 
-    #  End of execution time
-    logging.info("Total execution time {}s".format(time.time() - t0))
+        run_meta = {
+            "layout_path": safe_abs_path(args.layout),
+            "topcell": args.topcell,
+            "netlist_path_used": normalize_optional_path(args.netlist),
+            "layout_netlist_path_used": normalize_optional_path(args.layout_netlist),
+            "effective_net_only": args.net_only,
+            "report_path": e.artifacts.get("report_path"),
+            "layout_log_path": e.artifacts.get("layout_log_path"),
+            "extracted_netlist_path": e.artifacts.get("extracted_netlist_path"),
+        }
+        exit_code = e.returncode
+    except Exception:
+        logging.exception("Unhandled exception during LVS run.")
+        exit_code = 1
+    finally:
+        if run_meta is None:
+            discovered = discover_run_artifacts(lvs_run_dir, main_log_path)
+            run_meta = {
+                "layout_path": safe_abs_path(args.layout),
+                "topcell": args.topcell,
+                "netlist_path_used": normalize_optional_path(args.netlist),
+                "layout_netlist_path_used": normalize_optional_path(args.layout_netlist),
+                "effective_net_only": args.net_only,
+                "report_path": discovered.get("report_path"),
+                "layout_log_path": discovered.get("layout_log_path"),
+                "extracted_netlist_path": discovered.get("extracted_netlist_path"),
+            }
+        if run_meta:
+            run_meta["outcome"] = evaluate_run_outcome(
+                run_meta.get("layout_log_path"),
+                run_meta.get("effective_net_only", False),
+                run_meta.get("layout_netlist_path_used"),
+            )
+        logging.getLogger().removeHandler(collector)
+        emit_important_summary(
+            lvs_run_dir,
+            run_meta,
+            collector,
+            round(time.time() - t0, 3),
+        )
+
+    if exit_code != 0:
+        raise SystemExit(exit_code)

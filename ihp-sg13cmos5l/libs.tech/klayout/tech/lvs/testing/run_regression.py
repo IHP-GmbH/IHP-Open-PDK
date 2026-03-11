@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # ==========================================================================
 
-"""Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS Regression.
+"""Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS device regression.
 
 SG13CMOS5L supports CMOS-only devices with M1-M4-TM1 metal stack.
 Supported: MOS, RES, DIODE, ESD (diodevdd/vss only), TAP
@@ -27,29 +27,15 @@ Note on nBuLay (32/0) - FORBIDDEN per Layout Rules Section 3.2:
   - nmoscl_* ESD devices
   - sg13_hv_svaricap (S-Varicap)
   - schottky_nbl1
-
-  Documentation contradiction: Process Spec lists S-Varicap as available,
-  but the LVS derivation uses nwell_iso which requires nBuLay. The testcase
-  GDS also contains nBuLay. This needs clarification from IHP.
-
-Usage:
-    run_regression.py (--help| -h)
-    run_regression.py [--device=<device>] [--run_dir=<run_dir_path>] [--mp=<num>]
-
-Options:
-    --help -h                 Print this help message.
-    --device=<device>         Select device category you want to run regression on.
-    --run_dir=<run_dir_path>  Run directory to save all the results [default: pwd]
-    --mp=<num>                The number of threads used in run.
 """
 
 from subprocess import check_call
 import concurrent.futures
 import traceback
 import yaml
-from docopt import docopt
+import argparse
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import pandas as pd
 import logging
@@ -158,6 +144,21 @@ def build_tests_dataframe(unit_test_cases_dir, target_device_group):
         )
     )
 
+    for layout in all_unit_test_cases_layout:
+        if not layout.is_file():
+            logging.error(f"{layout} is not a file.")
+            exit(1)
+    for netlist in all_unit_test_cases_netlist:
+        if not netlist.is_file():
+            logging.error(f"{netlist} is not a file.")
+            exit(1)
+
+    # Check if each layout has a netlist file
+    for layout, netlist in zip(all_unit_test_cases_layout, all_unit_test_cases_netlist):
+        if layout.name.replace(".gds", "") != netlist.name.replace(".cdl", ""):
+            logging.error(f"{layout} does not have a matching netlist file.")
+            exit(1)
+
     if len(all_unit_test_cases_netlist) != len(all_unit_test_cases_layout):
         logging.error("Each testcase should have Layout and Netlist file")
         exit(1)
@@ -205,7 +206,19 @@ def get_switches(yaml_file, rule_name):
         except yaml.YAMLError as exc:
             print(exc)
 
-    return [f"{param}={value}" for param, value in yaml_dic[rule_name].items()]
+    switches = []
+    for param, value in yaml_dic[rule_name].items():
+        if value is None:
+            switches.append(f"{param}")
+        elif isinstance(value, bool):
+            if value:
+                switches.append(f"{param}")
+        elif isinstance(value, str) and value == "":
+            switches.append(f"{param}")
+        else:
+            switches.append(f"{param}={value}")
+
+    return switches
 
 
 def run_test_case(
@@ -263,7 +276,7 @@ def run_test_case(
     call_str = (
         f"python3 {lvs_dir}/run_lvs.py --layout={layout_path_run} "
         f"--netlist={netlist_path_run} --run_dir={output_loc} {switches} "
-        f"--allow_unmatched_ports > {pattern_log} 2>&1"
+        f"--ignore_top_ports_mismatch > {pattern_log} 2>&1"
     )
 
     # Starting klayout run
@@ -439,6 +452,8 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         # nmoscl uses .and(nbulay_drw) directly in derivation
         "nmoscl_2",
         "nmoscl_4",
+        # isolbox - isolation box requires nBuLay-based isolation layers
+        "isolbox",
     ]
 
     # Parse Existing devices
@@ -486,7 +501,7 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         return True
 
 
-def main(lvs_dir, output_path, target_device_group):
+def main(lvs_dir, output_path, target_device_group, workers_count):
     """
     Main function to run LVS regression for SG13CMOS5L.
 
@@ -498,14 +513,13 @@ def main(lvs_dir, output_path, target_device_group):
         Path string to the location of the output results of the run.
     target_device_group : str or None
         Name of device group that we want to run regression for. If None, run all found.
+    workers_count : int
+        Number of worker threads to use.
     Returns
     -------
     bool
         If all regression passed, it returns true. If any of the devices failed it returns false.
     """
-
-    # No. of threads
-    cpu_count = os.cpu_count() if args["--mp"] is None else int(args["--mp"])
 
     # info logs for args
     logging.info("Run folder is: {}".format(output_path))
@@ -515,7 +529,7 @@ def main(lvs_dir, output_path, target_device_group):
     t0 = time.time()
 
     # Calling regression function
-    run_status = run_regression(lvs_dir, output_path, target_device_group, cpu_count)
+    run_status = run_regression(lvs_dir, output_path, target_device_group, workers_count)
 
     #  End of execution time
     logging.info("Total execution time {}s".format(time.time() - t0))
@@ -528,15 +542,40 @@ def main(lvs_dir, output_path, target_device_group):
 
 
 if __name__ == "__main__":
+    USAGE = """
+    run_regression.py (--help | -h)
+    run_regression.py [--device=<device>] [--run_dir=<run_dir_path>] [--mp=<num>]
+    """
 
-    # docopt setup
-    args = docopt(__doc__, version="LVS Regression: 0.2")
+    parser = argparse.ArgumentParser(
+        description="Run IHP SG13CMOS5L LVS device regression.",
+        usage=USAGE,
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="Target device group (MOS, DIODE, RES, ESD, TAP).",
+    )
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Run directory to save all results. Default creates timestamped dir in cwd.",
+    )
+    parser.add_argument(
+        "--mp",
+        type=int,
+        default=None,
+        help="Number of worker threads. Default uses os.cpu_count().",
+    )
+    args = parser.parse_args()
 
     # default run name
-    run_name = datetime.utcnow().strftime("unit_tests_%Y_%m_%d_%H_%M_%S")
+    run_name = datetime.now(timezone.utc).strftime("unit_tests_%Y_%m_%d_%H_%M_%S")
 
     # args setup
-    run_dir = args["--run_dir"]
+    run_dir = args.run_dir
     if run_dir == "pwd" or run_dir == "" or run_dir is None:
         output_path = os.path.join(os.path.abspath(os.getcwd()), run_name)
     else:
@@ -569,7 +608,7 @@ if __name__ == "__main__":
     # selected device - CMOS5L only supports these device groups
     # Excluded: RFMOS, BJT, IND, CAP (S-Varicap uses nBuLay)
     allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP"]
-    target_device_group = args["--device"]
+    target_device_group = args.device
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
@@ -578,4 +617,5 @@ if __name__ == "__main__":
         exit(1)
 
     # Calling main function
-    run_status = main(lvs_dir, output_path, target_device_group)
+    workers_count = os.cpu_count() if args.mp is None else int(args.mp)
+    run_status = main(lvs_dir, output_path, target_device_group, workers_count)
