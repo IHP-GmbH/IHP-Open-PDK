@@ -59,7 +59,9 @@ if TABLES.include?('nwell') || FEOL
     # Shared base for NW.f1 variants: substrate tie in P+Activ inside ThickGateOx.
     nw_f1_ptap_thickgateox = ptap.and(thickgateox_drw)
     # CMOS5L: No SVaricap exclusion needed (SVaricap is not a CMOS5L device).
-    nw_f1_nwell = nwell_drw
+    # .dup is required because nw_f1_nwell.forget would destroy nwell_drw otherwise
+    # (G2 uses nwell_drw.not(svaricap) which already creates a new object).
+    nw_f1_nwell = nwell_drw.dup
 
     # Rule NW.f1: Min. NWell space to substrate tie in P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.f1')
