@@ -18,13 +18,16 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .thermal import *
 from .utility_functions import *
 
 import math
 
-class pmos(DloGen):
+
+class pmos(DeviceBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -54,6 +57,8 @@ class pmos(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -61,7 +66,16 @@ class pmos(DloGen):
         self.l = Numeric(params['l'])
         self.ng = Numeric(params['ng'])
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.NWELL]
+
+    def genDeviceLayout(self):
         self.grid = self.tech.getGridResolution()
         self.techparams = self.tech.getTechParams()
         self.epsilon = self.techparams['epsilon1']

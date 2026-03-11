@@ -18,10 +18,13 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
-from .utility_functions import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
+from .utility_functions import *
 
-class cmim(DloGen):
+
+class cmim(DeviceBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -55,12 +58,24 @@ class cmim(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.w = Numeric(params['w']) * 1e6
         self.l = Numeric(params['l']) * 1e6
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        # return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.PSUB]
+
+    def genDeviceLayout(self):
         self.grid = self.tech.getGridResolution()
         self.techparams = self.tech.getTechParams()
         self.epsilon = self.techparams['epsilon1']
