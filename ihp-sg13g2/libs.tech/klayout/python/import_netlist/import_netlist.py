@@ -278,8 +278,11 @@ def ihp130_import_netlist():
                         parsed_value = parse_si_value(match.group(param['name']))
                         params[param['name']] = parsed_value
                     if param["type"] == "int":
-                        parsed_value = parse_si_value(match.group(param['name']))
-                        params[param['name']] = int(parsed_value)
+                        if match.group(param['name']) == None:
+                            params[param['name']] = 1
+                        else:
+                            parsed_value = parse_si_value(match.group(param['name']))
+                            params[param['name']] = int(parsed_value)
                     if param["type"] == "float":
                         parsed_value = parse_si_value(match.group(param['name']))
                         params[param['name']] = float(parsed_value)
