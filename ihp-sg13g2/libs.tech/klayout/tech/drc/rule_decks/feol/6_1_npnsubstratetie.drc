@@ -26,6 +26,119 @@ if TABLES.include?('npnsubstratetie') || FEOL
   # NPN Substrate-Tie derivations
 
   unless PRECHECK_DRC
+    # Basic structure of npn
+    npn_mk = trans_drw.and(ptap.holes)
+
+    # Derived layers for NPN rules
+    # subst_tie_hole: holes in pSD (substrate tie openings)
+    subst_tie_hole = (psd_drw.holes - psd_drw.with_holes).without_holes
+    # subst_tie_hole_w_npn: substrate tie holes with npn text labels
+    subst_tie_hole_w_npn = subst_tie_hole.interacting(text_drw.texts('npn*'))
+    # subst_tie_trans: TRANS inside NPN substrate tie holes
+    subst_tie_trans = trans_drw.inside(subst_tie_hole_w_npn)
+    # subst_tie_npn: pSD touching NPN substrate tie holes and touching TRANS
+    subst_tie_npn = psd_drw.interacting(subst_tie_hole_w_npn).interacting(trans_drw)
+
+    # Derived layers for emitter checks
+    # nSD driver layer
+    nsd_drv = nsd_drw.join(activ_drw.not(psd_drw.join(nsd_block)))
+    nact = activ_drw.and(nsd_drv)
+    pact = activ_drw.not(nact)
+
+    # nBuLayGen derivation
+    nbulay_gen_sized = nwell_drw.sized(-1.495.um).sized(0.495.um)
+    nbulay_gen = nbulay_gen_sized.not(nbulay_block.join(res_drw))
+    nbulay_gen_nbulay_npn = nbulay_gen.join(nbulay_drw)
+
+    # GatPoly (not SRAM-excluded in modular context)
+    gp_nsram = gatpoly_drw
+
+    # Emitter window derivations for npn devices
+    # transG2 variants: TRANS interacting with specific npn text labels
+    trans_g2 = trans_drw.interacting(text_drw.texts('npn13G2'))
+    trans_g2l = trans_drw.interacting(text_drw.texts('npn13G2L'))
+    trans_g2v = trans_drw.interacting(text_drw.texts('npn13G2V'))
+    emit_npn13g2 = emwind_drw.inside(trans_g2)
+    emit_npn13g2l = emwind_drw.inside(trans_g2l)
+    emit_npn13g2v = emwihv_drw.inside(trans_g2v)
+
+    # npnPActRing: P+Activ interacting TRANS with npn13 text
+    npn_trans_sized = trans_drw.interacting(text_drw.texts('npn13*')).sized(0.2.um)
+    npn_pact_ring = pact.interacting(npn_trans_sized)
+
+    # Rule npnG2.b: NPN Substrate-Tie must enclose TRANS
+    logger.info('Executing rule npnG2.b')
+    npng2_b_l = subst_tie_hole_w_npn.not_interacting(trans_drw)
+    npng2_b_l.output('npnG2.b', '6.1.3. npnG2.b : NPN Substrate-Tie must enclose TRANS')
+    npng2_b_l.forget
+
+    # Rule npnG2.c: pSD enclosure of Activ inside NPN Substrate-Tie is 0.20 um
+    logger.info('Executing rule npnG2.c')
+    npng2_c_l = npn_pact_ring.enclosed(subst_tie_npn, 0.20.um, euclidian)
+    npng2_c_l.output('npnG2.c', '6.1.3. npnG2.c : pSD enclosure of Activ inside NPN Substrate-Tie is 0.20 um')
+    npng2_c_l.forget
+
+    # Rule npnG2.d.N_Activ: Min. unrelated N+Activ space to TRANS is 1.21 um
+    logger.info('Executing rule npnG2.d.N_Activ')
+    npng2_d_nact_l = nact.separation(subst_tie_trans, 1.21.um, euclidian)
+    npng2_d_nact_l.output('npnG2.d.N_Activ',
+                          '6.1.3. npnG2.d.N_Activ : Min. unrelated N+Activ space to TRANS is 1.21 um')
+    npng2_d_nact_l.forget
+
+    # Rule npnG2.d.NWell: Min. unrelated NWell space to TRANS is 1.21 um
+    logger.info('Executing rule npnG2.d.NWell')
+    npng2_d_nwell_l = nwell_drw.separation(subst_tie_trans, 1.21.um, euclidian)
+    npng2_d_nwell_l.output('npnG2.d.NWell',
+                           '6.1.3. npnG2.d.NWell : Min. unrelated NWell space to TRANS is 1.21 um')
+    npng2_d_nwell_l.forget
+
+    # Rule npnG2.d.PWell_block: Min. unrelated PWell:block space to TRANS is 1.21 um
+    logger.info('Executing rule npnG2.d.PWell_block')
+    npng2_d_pwb_l = pwell_block.separation(subst_tie_trans, 1.21.um, euclidian)
+    npng2_d_pwb_l.output('npnG2.d.PWell_block',
+                         '6.1.3. npnG2.d.PWell_block : Min. unrelated PWell:block space to TRANS is 1.21 um')
+    npng2_d_pwb_l.forget
+
+    # Rule npnG2.d.nBuLay: Min. unrelated nBuLay space to TRANS is 1.21 um
+    logger.info('Executing rule npnG2.d.nBuLay')
+    npng2_d_nbl_l = nbulay_gen_nbulay_npn.separation(subst_tie_trans, 1.21.um, euclidian)
+    npng2_d_nbl_l.output('npnG2.d.nBuLay',
+                         '6.1.3. npnG2.d.nBuLay : Min. unrelated nBuLay space to TRANS is 1.21 um')
+    npng2_d_nbl_l.forget
+
+    # Rule npnG2.d.nSD_block: Min. unrelated nSD:block space to TRANS is 1.21 um
+    logger.info('Executing rule npnG2.d.nSD_block')
+    nsdb_outside_npn = nsd_block.outside(subst_tie_hole_w_npn)
+    npng2_d_nsdb_l = nsdb_outside_npn.separation(subst_tie_trans, 1.21.um, euclidian)
+    npng2_d_nsdb_l.output('npnG2.d.nSD_block',
+                          '6.1.3. npnG2.d.nSD_block : Min. unrelated nSD:block space to TRANS is 1.21 um')
+    npng2_d_nsdb_l.forget
+    nsdb_outside_npn.forget
+
+    # Rule npnG2.d1: Min. unrelated GatPoly space to TRANS is 0.90 um
+    logger.info('Executing rule npnG2.d1')
+    npng2_d1_l = gp_nsram.separation(subst_tie_trans, 0.90.um, euclidian)
+    npng2_d1_l.output('npnG2.d1', '6.1.3. npnG2.d1 : Min. unrelated GatPoly space to TRANS is 0.90 um')
+    npng2_d1_l.forget
+
+    # Rule npnG2.d2: Min. unrelated SalBlock space to TRANS is 0.90 um
+    logger.info('Executing rule npnG2.d2')
+    npng2_d2_l = salblock_drw.separation(subst_tie_trans, 0.90.um, euclidian)
+    npng2_d2_l.output('npnG2.d2', '6.1.3. npnG2.d2 : Min. unrelated SalBlock space to TRANS is 0.90 um')
+    npng2_d2_l.forget
+
+    # Rule npnG2.e: Min. unrelated Cont space to TRANS is 0.27 um
+    logger.info('Executing rule npnG2.e')
+    npng2_e_l = cont_drw.separation(subst_tie_trans, 0.27.um, euclidian)
+    npng2_e_l.output('npnG2.e', '6.1.3. npnG2.e : Min. unrelated Cont space to TRANS is 0.27 um')
+    npng2_e_l.forget
+
+    # Rule npn13G2.a: Min. and max. npn13G2 emitter length is 0.90 um
+    logger.info('Executing rule npn13G2.a')
+    npn13g2_a_short = emit_npn13g2.edges.with_length(0.07.um..0.90.um)
+    npn13g2_a_short.output('npn13G2.a', '6.1.3. npn13G2.a : Min. and max. npn13G2 emitter length is 0.90 um')
+    npn13g2_a_short.forget
+
     if RECOMMENDED
       # Rule npn13G2.bR: Max. recommended total number of npn13G2 emitters per chip is 4000
       logger.info('Executing rule npn13G2.bR ')
@@ -36,7 +149,21 @@ if TABLES.include?('npnsubstratetie') || FEOL
                            "6.1.3. npn13G2.bR : Max. recommended total number of npn13G2 emitters per chip is #{npn13g2_br_value}")
       npn13g2_br_l1.forget
       npn13g2_br_l.forget
+    end
 
+    # Rule npn13G2L.a: Min. npn13G2L emitter length is 1.00 um
+    logger.info('Executing rule npn13G2L.a')
+    npn13g2l_a_short = emit_npn13g2l.edges.with_length(0.07.um..1.00.um)
+    npn13g2l_a_short.output('npn13G2L.a', '6.1.3. npn13G2L.a : Min. npn13G2L emitter length is 1.00 um')
+    npn13g2l_a_short.forget
+
+    # Rule npn13G2L.b: Max. npn13G2L emitter length is 2.50 um
+    logger.info('Executing rule npn13G2L.b')
+    npn13g2l_b_long = emit_npn13g2l.edges.with_length(2.50.um, nil)
+    npn13g2l_b_long.output('npn13G2L.b', '6.1.3. npn13G2L.b : Max. npn13G2L emitter length is 2.50 um')
+    npn13g2l_b_long.forget
+
+    if RECOMMENDED
       # Rule npn13G2L.cR: Max. recommended total number of npn13G2L emitters per chip is 800
       logger.info('Executing rule npn13G2L.cR ')
       npn13g2l_cr_value = drc_rules['npn13G2L_cR'].to_i
@@ -46,7 +173,21 @@ if TABLES.include?('npnsubstratetie') || FEOL
                            "6.1.3. npn13G2L.cR : Max. recommended total number of npn13G2L emitters per chip is #{npn13g2l_cr_value}")
       npn13g2l_cr_l1.forget
       npn13g2l_cr_l.forget
+    end
 
+    # Rule npn13G2V.a: Min. npn13G2V emitter length is 1.00 um
+    logger.info('Executing rule npn13G2V.a')
+    npn13g2v_a_short = emit_npn13g2v.edges.with_length(0.12.um..1.00.um)
+    npn13g2v_a_short.output('npn13G2V.a', '6.1.3. npn13G2V.a : Min. npn13G2V emitter length is 1.00 um')
+    npn13g2v_a_short.forget
+
+    # Rule npn13G2V.b: Max. npn13G2V emitter length is 5.00 um
+    logger.info('Executing rule npn13G2V.b')
+    npn13g2v_b_long = emit_npn13g2v.edges.with_length(5.00.um, nil)
+    npn13g2v_b_long.output('npn13G2V.b', '6.1.3. npn13G2V.b : Max. npn13G2V emitter length is 5.00 um')
+    npn13g2v_b_long.forget
+
+    if RECOMMENDED
       # Rule npn13G2V.cR: Max. recommended total number of npn13G2V emitters per chip is 800
       logger.info('Executing rule npn13G2V.cR ')
       npn13g2v_cr_value = drc_rules['npn13G2V_cR'].to_i
@@ -57,5 +198,25 @@ if TABLES.include?('npnsubstratetie') || FEOL
       npn13g2v_cr_l1.forget
       npn13g2v_cr_l.forget
     end
+
+    # Cleanup derived layers
+    subst_tie_hole.forget
+    subst_tie_hole_w_npn.forget
+    subst_tie_trans.forget
+    subst_tie_npn.forget
+    nsd_drv.forget
+    nact.forget
+    pact.forget
+    nbulay_gen_sized.forget
+    nbulay_gen.forget
+    nbulay_gen_nbulay_npn.forget
+    trans_g2.forget
+    trans_g2l.forget
+    trans_g2v.forget
+    emit_npn13g2.forget
+    emit_npn13g2l.forget
+    emit_npn13g2v.forget
+    npn_trans_sized.forget
+    npn_pact_ring.forget
   end
 end

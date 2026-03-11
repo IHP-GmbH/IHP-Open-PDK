@@ -48,11 +48,54 @@ if TABLES.include?('via1') || BEOL
   v1b_l.forget
 
   unless PRECHECK_DRC
+    # Rule V1.b1: Min. Via1 space in an array of more than 3 rows and more than
+    # 3 columns is 0.29 um (required in one direction only; the other direction
+    # must be at least V1.b)
+    logger.info('Executing rule V1.b1')
+    v1_b1_value = drc_rules['V1_b1'].to_f
+    v1_b1_nr = drc_rules['V1_b1_nr'].to_i
+    v1_a_value = drc_rules['V1_a'].to_f
+    v1_b_value_arr = drc_rules['V1_b'].to_f
+    # Detect arrays: merge vias with half-b1 sizing, then filter by array size
+    v1b1_via_noseal = via1_drw.not(edgeseal_drw)
+    v1b1_merged = v1b1_via_noseal.sized((v1_b1_value * 0.5).um).sized(-(v1_b1_value * 0.5).um)
+    v1b1_array_size = (v1_b1_nr + 1) * v1_a_value + v1_b1_nr * v1_b_value_arr - 0.05
+    v1b1_arrays = v1b1_merged.sized(-(v1b1_array_size * 0.5).um).sized((v1b1_array_size * 0.5).um)
+    v1b1_in = v1b1_via_noseal.inside(v1b1_arrays)
+    v1b1_big = v1b1_in.sized(0.143.um).sized(-0.143.um)
+    v1b1_err1 = v1b1_big.not(v1b1_in)
+    v1b1_err2 = v1b1_err1.not(v1b1_err1.rectangles)
+    v1b1_l = v1b1_err2.join(v1b1_in.interacting(v1b1_err2))
+    v1b1_l.output('V1.b1',
+                  "5.19. V1.b1: Min. Via1 space in array > #{v1_b1_nr}x#{v1_b1_nr}: #{v1_b1_value} µm")
+    v1b1_via_noseal.forget
+    v1b1_merged.forget
+    v1b1_arrays.forget
+    v1b1_in.forget
+    v1b1_big.forget
+    v1b1_err1.forget
+    v1b1_err2.forget
+    v1b1_l.forget
+
     # Rule V1.c: Min. Metal1 enclosure of Via1 is 0.01 um
     logger.info('Executing rule V1.c')
     v1_c_value = drc_rules['V1_c'].to_f
     v1_c_l = via1_nseal.enclosed(metal1_drw, v1_c_value.um, euclidian)
     v1_c_l.output('V1.c', "5.19.  V1.c Min. Metal1 enclosure of Via1 is #{v1_c_value} um")
     v1_c_l.forget
+
+    # Rule V1.c1: Min. Metal1 endcap enclosure of Via1 is 0.05 um
+    # For Via1 at Metal1 corners at least one side must be treated as an endcap
+    # and for the other sides rule V1.c can be applied.
+    logger.info('Executing rule V1.c1')
+    v1_c1_value = drc_rules['V1_c1'].to_f
+    v1_c1_via = via1_drw.not(sram_drw).not(edgeseal_drw)
+    v1_c1_metal = metal1_drw.not(edgeseal_drw)
+    v1_c1_l = v1_c1_via.enclosed(v1_c1_metal, v1_c1_value.um, projection)
+    v1_c1_l.output('V1.c1',
+                  "5.19. V1.c1: Min. Metal1 endcap enclosure of Via1: #{v1_c1_value} µm")
+    v1_c1_via.forget
+    v1_c1_metal.forget
+    v1_c1_l.forget
   end
 end

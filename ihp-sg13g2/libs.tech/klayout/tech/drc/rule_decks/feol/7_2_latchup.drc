@@ -26,8 +26,63 @@ if TABLES.include?('latchup') || FEOL
   # Latch-up derivations
 
   unless PRECHECK_DRC
-    logger.info("Executing rule LU.b")
-    # sizing of ptap in rule LU.b
+    # Shared derivations for latch-up rules
+    # N+Activ and P+Activ inside wells
+    nsd_drv = nsd_drw.join(activ_drw.not(psd_drw.join(nsd_block)))
+    nact = activ_drw.and(nsd_drv)
+    pact = activ_drw.not(nact)
+    pwell_allowed = CHIP.not(pwell_block)
+    digisub_gap = digisub_drw.not(digisub_drw.sized(-1.nm))
+    pwell_lu = pwell_allowed.not(nwell_drw).not(digisub_gap)
+
+    # Well ties
+    nact_nwell = nact.and(nwell_drw)
+    pact_nwell = pact.and(nwell_drw)
+    nact_pwell = nact.not(nact_nwell)
+    pact_pwell = pact.not(pact_nwell)
+
+    # Gate
+    gate = activ_drw.and(gatpoly_drw)
+
+    # Act_connect = Activ not GatPoly
+    act_connect = activ_drw.not(gatpoly_drw)
+
+    # ntap: N+Activ inside NWell contacted
+    ntaparea = nact_nwell
+    ntap_lu = ntaparea.interacting(cont_drw.and(ntaparea))
+
+    # Soft n-tie (from nbulay region)
+    nbulay_gen_sized = nwell_drw.sized(-1.495.um).sized(0.495.um)
+    nbulay_gen = nbulay_gen_sized.not(nbulay_block.join(res_drw))
+    nbulay_gen_nbulay_lu = nbulay_gen.join(nbulay_drw)
+    hard_n_tie = ntap_lu.not_outside(nbulay_gen_nbulay_lu)
+    n_tie = ntap_lu.not_outside(nwell_drw)
+    soft_n_tie = n_tie.not(hard_n_tie)
+    all_ntie = ntap_lu.join(soft_n_tie)
+
+    # Device exclusion regions (simplified for latch-up context)
+    varicap_region = varicap_drw.and(nwell_drw).and(gatpoly_drw)
+    dev_exclud = recog_drw.join(varicap_region).join(trans_drw)
+
+    # Rule LU.a: Max. space from any portion of P+Activ inside NWell to an nSD-NWell tie is 20.00 um
+    logger.info('Executing rule LU.a')
+    lu_a_value = drc_rules['LU_a'].to_f
+    lu_a_ntie_sized = all_ntie
+    sz = 0.0
+    while sz < lu_a_value
+      lu_a_ntie_sized = lu_a_ntie_sized.sized(0.5.um, octagon_limit)
+      sz += 0.5
+    end
+    lu_a_ntie_nwell = lu_a_ntie_sized.and(nwell_drw)
+    lu_a = pact_nwell.not_interacting(lu_a_ntie_nwell).not_interacting(dev_exclud)
+    lu_a.output('LU.a',
+                "7.2. LU.a : Max. space from any portion of P+Activ inside NWell to an nSD-NWell tie is #{lu_a_value} um")
+    lu_a.forget
+    lu_a_ntie_sized.forget
+    lu_a_ntie_nwell.forget
+
+    # Rule LU.b: Max. space from any portion of N+Activ inside PWell to a pSD-PWell tie is 20.00 um
+    logger.info('Executing rule LU.b')
     lu_b_value = drc_rules['LU_b'].to_f
     lu_b_ptap_sized = ptap
     sz = 0.0
@@ -35,11 +90,131 @@ if TABLES.include?('latchup') || FEOL
       lu_b_ptap_sized = lu_b_ptap_sized.sized(0.5.um, octagon_limit)
       sz += 0.5
     end
-
-    # Rule LU.b : Max. space from any portion of N+Activ inside PWell to an pSD-PWell tie is 20.00 um
     lu_b = nact_fet.not_interacting(lu_b_ptap_sized)
     lu_b.output('LU.b',
                 "7.2. LU.b : Max. space from any portion of N+Activ inside PWell to an pSD-PWell tie is #{lu_b_value} um")
     lu_b.forget
+    lu_b_ptap_sized.forget
+
+    # Rule LU.c: Max. extension of an abutted NWell tie beyond Cont is 6.00 um
+    logger.info('Executing rule LU.c')
+    lu_c_value = drc_rules['LU_c'].to_f
+    # Abutted NWell ties: N+Activ in NWell that abuts P+Activ in NWell
+    abut_nwell_tie_edge = nact_nwell.edges.and(pact_nwell.edges)
+    abut_nwell_tie = nact_nwell.interacting(abut_nwell_tie_edge)
+    abut_nwell_tie_pact = pact.interacting(abut_nwell_tie)
+    abut_nwell_tie_cont = cont_drw.inside(abut_nwell_tie_pact)
+    # Size contacts inside abutted tie region, check for uncovered portions
+    lu_c_cont_sized = abut_nwell_tie_cont
+    sz_c = 0.0
+    while sz_c < lu_c_value
+      lu_c_cont_sized = lu_c_cont_sized.sized(0.5.um, octagon_limit)
+      sz_c += 0.5
+    end
+    lu_c_cont_nact = lu_c_cont_sized.and(act_connect.interacting(gate))
+    cont_not_outside_nact = cont_drw.not_outside(nact)
+    lu_c = abut_nwell_tie.not_interacting(lu_c_cont_nact).not_interacting(cont_not_outside_nact)
+    lu_c.output('LU.c',
+                "7.2. LU.c : Max. extension of an abutted NWell tie beyond Cont is #{lu_c_value} um")
+    lu_c.forget
+    lu_c_cont_sized.forget
+    lu_c_cont_nact.forget
+
+    # Rule LU.c1: Max. extension of an abutted substrate tie beyond Cont is 6.00 um
+    logger.info('Executing rule LU.c1')
+    # Abutted PWell ties: P+Activ in PWell that abuts N+Activ in PWell
+    abut_pwell_tie_edge = pact_pwell.edges.and(nact_pwell.edges)
+    abut_pwell_tie = pact_pwell.interacting(abut_pwell_tie_edge)
+    abut_pwell_tie_nact = nact.interacting(abut_pwell_tie)
+    abut_pwell_tie_cont = cont_drw.inside(abut_pwell_tie_nact)
+    lu_c1_cont_sized = abut_pwell_tie_cont
+    sz_c1 = 0.0
+    while sz_c1 < lu_c_value
+      lu_c1_cont_sized = lu_c1_cont_sized.sized(0.5.um, octagon_limit)
+      sz_c1 += 0.5
+    end
+    lu_c1_cont_act = lu_c1_cont_sized.and(act_connect)
+    cont_not_outside_pact = cont_drw.not_outside(pact)
+    lu_c1 = abut_pwell_tie.not_interacting(lu_c1_cont_act).not_interacting(cont_not_outside_pact)
+    lu_c1.output('LU.c1',
+                 "7.2. LU.c1 : Max. extension of an abutted substrate tie beyond Cont is #{lu_c_value} um")
+    lu_c1.forget
+    lu_c1_cont_sized.forget
+    lu_c1_cont_act.forget
+
+    # Rule LU.d: Max. extension of NWell tie Activ beyond Cont is 6.00 um
+    logger.info('Executing rule LU.d')
+    lu_d_value = drc_rules['LU_d'].to_f
+    # size_Cont = Cont enlarged inside Act_connect
+    size_cont_lu = cont_drw
+    sz_d = 0.0
+    while sz_d < lu_d_value
+      size_cont_lu = size_cont_lu.sized(0.5.um, octagon_limit)
+      sz_d += 0.5
+    end
+    size_cont_act = size_cont_lu.and(act_connect)
+    # NWell tie activ not interacting gate, outside SCR
+    nwell_tie_act = nact_nwell.not_interacting(activ_drw.interacting(gatpoly_drw))
+    lu_d = nwell_tie_act.not_interacting(size_cont_act)
+    lu_d.output('LU.d',
+                "7.2. LU.d : Max. extension of NWell tie Activ beyond Cont is #{lu_d_value} um")
+    lu_d.forget
+    size_cont_lu.forget
+    size_cont_act.forget
+    nwell_tie_act.forget
+
+    # Rule LU.d1: Max. extension of substrate tie Activ beyond Cont is 6.00 um
+    logger.info('Executing rule LU.d1')
+    lu_d1_cont_sized = cont_drw
+    sz_d1 = 0.0
+    while sz_d1 < lu_d_value
+      lu_d1_cont_sized = lu_d1_cont_sized.sized(0.5.um, octagon_limit)
+      sz_d1 += 0.5
+    end
+    lu_d1_cont_act = lu_d1_cont_sized.and(act_connect)
+    # PWell tie without varicap or abutted regions
+    bjt_ring = trans_drw.sized(1.08.um)
+    pwell_tie_wo_varicap_abut = pact_pwell.not_interacting(abut_pwell_tie.join(bjt_ring).join(varicap_region))
+    lu_d1 = pwell_tie_wo_varicap_abut.not_interacting(lu_d1_cont_act).not(gatpoly_drw)
+    lu_d1.output('LU.d1',
+                 "7.2. LU.d1 : Max. extension of substrate tie Activ beyond Cont is #{lu_d_value} um")
+    lu_d1.forget
+    lu_d1_cont_sized.forget
+    lu_d1_cont_act.forget
+
+    # Cleanup shared derivations
+    nsd_drv.forget
+    nact.forget
+    pact.forget
+    pwell_allowed.forget
+    pwell_lu.forget
+    nact_nwell.forget
+    pact_nwell.forget
+    nact_pwell.forget
+    pact_pwell.forget
+    gate.forget
+    act_connect.forget
+    ntap_lu.forget
+    nbulay_gen_sized.forget
+    nbulay_gen.forget
+    nbulay_gen_nbulay_lu.forget
+    hard_n_tie.forget
+    n_tie.forget
+    soft_n_tie.forget
+    all_ntie.forget
+    varicap_region.forget
+    dev_exclud.forget
+    abut_nwell_tie_edge.forget
+    abut_nwell_tie.forget
+    abut_nwell_tie_pact.forget
+    abut_nwell_tie_cont.forget
+    cont_not_outside_nact.forget
+    abut_pwell_tie_edge.forget
+    abut_pwell_tie.forget
+    abut_pwell_tie_nact.forget
+    abut_pwell_tie_cont.forget
+    cont_not_outside_pact.forget
+    bjt_ring.forget
+    pwell_tie_wo_varicap_abut.forget
   end
 end

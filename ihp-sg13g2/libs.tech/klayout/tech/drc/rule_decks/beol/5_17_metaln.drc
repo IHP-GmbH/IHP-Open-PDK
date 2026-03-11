@@ -26,6 +26,9 @@ if TABLES.include?('metaln') || BEOL
   # Metaln derivations
 
   # Metals/Vias lists
+  # For Mn.c: met_lay is the upper metal, via_lay is the lower via it encloses
+  # For Mn.c1: same relationship (endcap enclosure of via by upper metal)
+  # vias_lay[index] is the via BELOW mets_lay[index]
   mets_lay = [metal2_drw, metal3_drw, metal4_drw, metal5_drw]
   vias_lay = [via1_drw, via2_drw, via3_drw, via4_drw]
   metal_start_index = 2
@@ -49,6 +52,41 @@ if TABLES.include?('metaln') || BEOL
     mn_b_l.forget
 
     next if PRECHECK_DRC
+
+    # Rule Mn.c: Min. Metal(n) enclosure of Via(n-1) is 0.005 um
+    logger.info("Executing rule M#{met_no}.c")
+    mn_c_value = drc_rules['Mn_c'].to_f
+    mn_c_via = via_lay.not(edgeseal_drw)
+    mn_c_met = met_lay.not(edgeseal_drw)
+    mn_c_l = mn_c_via.enclosed(mn_c_met, mn_c_value.um, euclidian)
+    mn_c_l.output("M#{met_no}.c",
+                 "5.17. M#{met_no}.c: Min. Metal#{met_no} enclosure of Via#{met_no - 1}: #{mn_c_value} µm")
+    mn_c_via.forget
+    mn_c_met.forget
+    mn_c_l.forget
+
+    # Rule Mn.c1: Min. Metal(n) endcap enclosure of Via(n-1) is 0.05 um
+    # For vias at metal corners at least one side must be treated as an endcap
+    # and for the other sides rule Mn.c can be applied.
+    logger.info("Executing rule M#{met_no}.c1")
+    # No JSON key for Mn_c1; value 0.05 is constant across M2-M5 (per maximal deck)
+    mn_c1_value = 0.05
+    mn_c1_via = via_lay.not(sram_drw).not(edgeseal_drw)
+    mn_c1_met = met_lay.not(edgeseal_drw)
+    mn_c1_l = mn_c1_via.enclosed(mn_c1_met, mn_c1_value.um, projection)
+    mn_c1_l.output("M#{met_no}.c1",
+                  "5.17. M#{met_no}.c1: Min. Metal#{met_no} endcap enclosure of Via#{met_no - 1}: #{mn_c1_value} µm")
+    mn_c1_via.forget
+    mn_c1_met.forget
+    mn_c1_l.forget
+
+    # Rule Mn.d: Min. Metal(n) area is 0.144 µm²
+    logger.info("Executing rule M#{met_no}.d")
+    mn_d_value = drc_rules['Mn_d'].to_f
+    mn_d_l = met_lay.not(edgeseal_drw).with_area(nil, mn_d_value.um2)
+    mn_d_l.output("M#{met_no}.d",
+                 "5.17. M#{met_no}.d: Min. Metal#{met_no} area: #{mn_d_value} µm²")
+    mn_d_l.forget
 
     # Rule Mn.e: Min. space of Metal(n) lines if, at least one line is wider than 0.39 µm and the parallel run is more than 1.0 µm is 0.24 um
     logger.info("Executing rule M#{met_no}.e")

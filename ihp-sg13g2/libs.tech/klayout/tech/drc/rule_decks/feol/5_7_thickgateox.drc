@@ -25,6 +25,54 @@ if TABLES.include?('thickgateox') || FEOL
 
   # ThickGateOx derivations
 
+  # Rule TGO.a: Min. ThickGateOx extension over Activ is 0.27µm
+  logger.info('Executing rule TGO.a')
+  tgo_a_value = drc_rules['TGO_a'].to_f
+  tgoa_l1 = activ_drw.enclosed(thickgateox_drw, tgo_a_value.um, euclidian)
+  tgoa_l1.output('TGO.a', "5.7. TGO.a : Min. ThickGateOx extension over Activ: #{tgo_a_value} µm")
+  tgoa_l1.forget
+
+  unless PRECHECK_DRC
+    # Rule TGO.b: Min. space between ThickGateOx and Activ outside thick gate oxide region is 0.27µm
+    logger.info('Executing rule TGO.b')
+    tgo_b_value = drc_rules['TGO_b'].to_f
+    activ_not_tgo = activ_drw.not_interacting(thickgateox_drw)
+    tgob_l1 = thickgateox_drw.sep(activ_not_tgo, tgo_b_value.um, euclidian)
+    tgob_l1.output('TGO.b',
+                   "5.7. TGO.b : Min. space between ThickGateOx and Activ outside thick gate oxide region: #{tgo_b_value} µm")
+    activ_not_tgo.forget
+    tgob_l1.forget
+
+    # Rule TGO.c: Min. ThickGateOx extension over GatPoly over Activ is 0.34µm
+    logger.info('Executing rule TGO.c')
+    tgo_c_value = drc_rules['TGO_c'].to_f
+    tgo_gate = activ_drw.and(gatpoly_drw)
+    tgoc_l1 = tgo_gate.enclosed(thickgateox_drw, tgo_c_value.um, projection)
+    tgoc_l2 = tgoc_l1.and(activ_drw)
+    tgoc_l2.output('TGO.c',
+                   "5.7. TGO.c : Min. ThickGateOx extension over GatPoly over Activ: #{tgo_c_value} µm")
+    tgo_gate.forget
+    tgoc_l1.forget
+    tgoc_l2.forget
+
+    # Rule TGO.d: Min. space between ThickGateOx and GatPoly over Activ outside thick gate oxide region is 0.34µm
+    logger.info('Executing rule TGO.d')
+    tgo_d_value = drc_rules['TGO_d'].to_f
+    gate_out_tgo = activ_drw.and(gatpoly_drw).outside(thickgateox_drw)
+    tgod_l1 = thickgateox_drw.sep(gate_out_tgo, tgo_d_value.um, euclidian)
+    tgod_l1.output('TGO.d',
+                   "5.7. TGO.d : Min. space between ThickGateOx and GatPoly over Activ outside thick gate oxide region: #{tgo_d_value} µm")
+    gate_out_tgo.forget
+    tgod_l1.forget
+
+    # Rule TGO.e: Min. ThickGateOx space (merge if less than this value) is 0.86µm
+    logger.info('Executing rule TGO.e')
+    tgo_e_value = drc_rules['TGO_e'].to_f
+    tgoe_l1 = thickgateox_drw.space(tgo_e_value.um, euclidian)
+    tgoe_l1.output('TGO.e', "5.7. TGO.e : Min. ThickGateOx space (merge if less): #{tgo_e_value} µm")
+    tgoe_l1.forget
+  end
+
   # Rule TGO.f: Min. ThickGateOx width is 0.86µm
   logger.info('Executing rule TGO.f')
   tgo_f_value = drc_rules['TGO_f'].to_f

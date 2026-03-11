@@ -26,6 +26,20 @@ if TABLES.include?('mim') || BEOL
   # MIM derivations
 
   unless PRECHECK_DRC
+    # Rule MIM.a: Min. MIM width is 1.14 um
+    logger.info('Executing rule MIM.a')
+    mim_a_value = drc_rules['Mim_a'].to_f
+    mim_a = mim_drw.width(mim_a_value.um, euclidian)
+    mim_a.output('MIM.a', "6.11. MIM.a : Min. MIM width is #{mim_a_value} um")
+    mim_a.forget
+
+    # Rule MIM.b: Min. MIM space is 0.60 um
+    logger.info('Executing rule MIM.b')
+    mim_b_value = drc_rules['Mim_b'].to_f
+    mim_b = mim_drw.space(mim_b_value.um, euclidian)
+    mim_b.output('MIM.b', "6.11. MIM.b : Min. MIM space is #{mim_b_value} um")
+    mim_b.forget
+
     # Rule MIM.c: Min. Metal5 enclosure of MIM is 0.60 um
     logger.info('Executing rule MIM.c')
     mim_c_value = drc_rules['Mim_c'].to_f
@@ -44,14 +58,43 @@ if TABLES.include?('mim') || BEOL
     mim_d.output('MIM.d', "6.11. MIM.d : Min. MIM enclosure of TopVia1 is #{mim_d_value} um")
     mim_d.forget
 
+    # Rule MIM.e: Min. TopMetal1 space to MIM is 0.60 um
+    logger.info('Executing rule MIM.e')
+    mim_e_value = drc_rules['Mim_e'].to_f
+    mim_e = topmetal1_drw.sep(mim_drw, mim_e_value.um, euclidian)
+    mim_e.output('MIM.e', "6.11. MIM.e : Min. TopMetal1 space to MIM is #{mim_e_value} um")
+    mim_e.forget
+
+    # Rule MIM.f: Min. MIM area per MIM device (um2) is 1.30 um2
+    logger.info('Executing rule MIM.f')
+    mim_f_value = drc_rules['Mim_f'].to_f
+    mim_f = mim_drw.with_area(nil, mim_f_value.um)
+    mim_f.output('MIM.f', "6.11. MIM.f : Min. MIM area per MIM device is #{mim_f_value} um2")
+    mim_f.forget
+
+    # Rule MIM.g: Max. MIM area per MIM device (um2) is 5625.00 um2
+    logger.info('Executing rule MIM.g')
+    mim_g_value = drc_rules['Mim_g'].to_f
+    mim_g = mim_drw.with_area(mim_g_value.um, nil)
+    mim_g.output('MIM.g', "6.11. MIM.g : Max. MIM area per MIM device is #{mim_g_value} um2")
+    mim_g.forget
+
     if RECOMMENDED
-      # Rule MIM.gR: Max. recommended total MIM area per chip (µm²) is 174800.00 µm²
+      # Rule MIM.gR: Max. recommended total MIM area per chip (um2) is 174800.00 um2
       logger.info('Executing rule MIM.gR')
       mim_gr_value = drc_rules['Mim_gR'].to_f
       mim_total_area = mim_drw.area
       if mim_total_area > mim_gr_value.um
-        mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (µm²) is #{mim_gr_value} µm², Total used MIM area is #{mim_total_area} µm²")
+        mim_drw.output('MIM.gR', "6.11. MIM.gR : Max. recommended total MIM area per chip (um2) is #{mim_gr_value} um2, Total used MIM area is #{mim_total_area} um2")
       end
     end
+
+    # Rule MIM.h: TopVia1 must be over MIM
+    logger.info('Executing rule MIM.h')
+    mim_h_l1 = mim_drw.interacting(topvia1_drw.join(vmim_drw))
+    mim_h = mim_drw.not(mim_h_l1)
+    mim_h.output('MIM.h', '6.11. MIM.h : TopVia1 must be over MIM')
+    mim_h_l1.forget
+    mim_h.forget
   end
 end

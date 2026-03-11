@@ -47,6 +47,13 @@ if TABLES.include?('lbe') || BEOL
   lbeb1_l1.output('LBE.b1', "9.1. LBE.b1: Max. LBE area (µm²): #{lbe_b1_value} .um")
   lbeb1_l1.forget
 
+  # Rule LBE.b2: Min. LBE area (µm²) is 30000.
+  logger.info('Executing rule LBE.b2')
+  lbe_b2_value = drc_rules['LBE_b1'].to_f
+  lbeb2_l1 = lbe_drw.with_area(nil, lbe_b2_value.um)
+  lbeb2_l1.output('LBE.b2', "9.1. LBE.b2: Min. LBE area (µm²): 30000.00")
+  lbeb2_l1.forget
+
   # Rule LBE.c: Min. LBE space or notch is 100.00µm
   logger.info('Executing rule LBE.c')
   lbe_c_value = drc_rules['LBE_c'].to_f
@@ -60,6 +67,26 @@ if TABLES.include?('lbe') || BEOL
   lbed_l1 = lbe_in_seal.sep(edgeseal_drw, lbe_d_value.um, euclidian)
   lbed_l1.output('LBE.d', "9.1. LBE.d: Min. LBE space to inner edge of EdgeSeal: #{lbe_d_value} µm")
   lbed_l1.forget
+
+  # Rule LBE.e.dfPad: Min. LBE space to dfpad is 50.00µm
+  logger.info('Executing rule LBE.e.dfPad')
+  lbe_e_value = drc_rules['LBE_e'].to_f
+  lbee_dfpad_l1 = lbe_drw.sep(dfpad_drw, lbe_e_value.um, euclidian)
+  lbee_dfpad_l1.output('LBE.e.dfPad', "9.1. LBE.e.dfPad: Min. LBE space to dfpad and Passiv: #{lbe_e_value} µm")
+  lbee_dfpad_l1.forget
+
+  # Rule LBE.e.Passiv: Min. LBE space to Passiv is 50.00µm
+  logger.info('Executing rule LBE.e.Passiv')
+  lbee_passiv_l1 = lbe_drw.sep(passiv_drw, lbe_e_value.um, euclidian)
+  lbee_passiv_l1.output('LBE.e.Passiv', "9.1. LBE.e.Passiv: Min. LBE space to dfpad and Passiv: #{lbe_e_value} µm")
+  lbee_passiv_l1.forget
+
+  # Rule LBE.f: Min. LBE space to Activ is 30.00µm
+  logger.info('Executing rule LBE.f')
+  lbe_f_value = drc_rules['LBE_f'].to_f
+  lbef_l1 = lbe_drw.sep(activ_drw, lbe_f_value.um, euclidian)
+  lbef_l1.output('LBE.f', "9.1. LBE.f: Min. LBE space to Activ: #{lbe_f_value} µm")
+  lbef_l1.forget
 
   # Rule LBE.h: No LBE ring allowed.
   logger.info('Executing rule LBE.h')

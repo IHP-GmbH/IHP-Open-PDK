@@ -54,6 +54,35 @@ if TABLES.include?('vian') || BEOL
 
     next if PRECHECK_DRC
 
+    # Rule Vn.b1: Min. Via(n) space in an array of more than 3 rows and more than
+    # 3 columns is 0.29 um (required in one direction only; the other direction
+    # must be at least Vn.b)
+    logger.info("Executing rule V#{via_no}.b1")
+    vn_b1_value = drc_rules['Vn_b1'].to_f
+    vn_b1_nr = drc_rules['Vn_b1_nr'].to_i
+    vn_a_sz = drc_rules['Vn_a'].to_f
+    vn_b_arr = drc_rules['Vn_b'].to_f
+    # Detect arrays: merge vias with half-b1 sizing, then filter by array size
+    vnb1_via_noseal = via_lay.not(edgeseal_drw)
+    vnb1_merged = vnb1_via_noseal.sized((vn_b1_value * 0.5).um).sized(-(vn_b1_value * 0.5).um)
+    vnb1_array_size = (vn_b1_nr + 1) * vn_a_sz + vn_b1_nr * vn_b_arr - 0.05
+    vnb1_arrays = vnb1_merged.sized(-(vnb1_array_size * 0.5).um).sized((vnb1_array_size * 0.5).um)
+    vnb1_in = vnb1_via_noseal.inside(vnb1_arrays)
+    vnb1_big = vnb1_in.sized(0.143.um).sized(-0.143.um)
+    vnb1_err1 = vnb1_big.not(vnb1_in)
+    vnb1_err2 = vnb1_err1.not(vnb1_err1.rectangles)
+    vnb1_l = vnb1_err2.join(vnb1_in.interacting(vnb1_err2))
+    vnb1_l.output("V#{via_no}.b1",
+                  "5.20. V#{via_no}.b1: Min. Via#{via_no} space in array > #{vn_b1_nr}x#{vn_b1_nr}: #{vn_b1_value} µm")
+    vnb1_via_noseal.forget
+    vnb1_merged.forget
+    vnb1_arrays.forget
+    vnb1_in.forget
+    vnb1_big.forget
+    vnb1_err1.forget
+    vnb1_err2.forget
+    vnb1_l.forget
+
     # Rule Vn.c: Min. metal enclosure of Via is 0.005µm
     logger.info("Executing rule V#{via_no}.c")
     vn_c_value = drc_rules['Vn_c'].to_f
@@ -61,5 +90,19 @@ if TABLES.include?('vian') || BEOL
     vn_c_l.output("V#{via_no}.c",
                  "5.20. V#{via_no}.c : Min. Metal#{via_no} enclosure of Via#{via_no} is #{vn_c_value} µm")
     vn_c_l.forget
+
+    # Rule Vn.c1: Min. Metal(n) endcap enclosure of Via(n) is 0.05 um
+    # For Via(n) at Metal(n) corners at least one side must be treated as an endcap
+    # and for the other sides rule Vn.c can be applied.
+    logger.info("Executing rule V#{via_no}.c1")
+    vn_c1_value = drc_rules['Vn_c1'].to_f
+    vn_c1_via = via_lay.not(sram_drw).not(edgeseal_drw)
+    vn_c1_metal = metal_lay.not(edgeseal_drw)
+    vn_c1_l = vn_c1_via.enclosed(vn_c1_metal, vn_c1_value.um, projection)
+    vn_c1_l.output("V#{via_no}.c1",
+                  "5.20. V#{via_no}.c1: Min. Metal#{via_no} endcap enclosure of Via#{via_no}: #{vn_c1_value} µm")
+    vn_c1_via.forget
+    vn_c1_metal.forget
+    vn_c1_l.forget
   end
 end

@@ -34,6 +34,27 @@ if TABLES.include?('gatpolyfiller') || FEOL
     logger.info('Tiling mode is enabled for GatPoly:filler table.')
   end
 
+  # Rule GFil.a: Max. GatPoly:filler width is 5.00 um
+  logger.info('Executing rule GFil.a')
+  gfil_a_value = drc_rules['GFil_a'].to_f
+  gfil_a = gatpoly_filler.sized((-gfil_a_value / 2.0).um).sized((gfil_a_value / 2.0).um)
+  gfil_a.output('GFil.a', "5.9. GFil.a Max. GatPoly:filler width is #{gfil_a_value} um")
+  gfil_a.forget
+
+  # Rule GFil.b: Min. GatPoly:filler width is 0.70 um
+  logger.info('Executing rule GFil.b')
+  gfil_b_value = drc_rules['GFil_b'].to_f
+  gfil_b = gatpoly_filler.width(gfil_b_value.um, euclidian)
+  gfil_b.output('GFil.b', "5.9. GFil.b Min. GatPoly:filler width is #{gfil_b_value} um")
+  gfil_b.forget
+
+  # Rule GFil.c: Min. GatPoly:filler space is 0.80 um
+  logger.info('Executing rule GFil.c')
+  gfil_c_value = drc_rules['GFil_c'].to_f
+  gfil_c = gatpoly_filler.space(gfil_c_value.um, euclidian)
+  gfil_c.output('GFil.c', "5.9. GFil.c Min. GatPoly:filler space is #{gfil_c_value} um")
+  gfil_c.forget
+
   # Rule GFil.d: Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is 1.1 um
   logger.info('Executing rule GFil.d')
   gfil_d_value = drc_rules['GFil_d'].to_f
@@ -51,12 +72,27 @@ if TABLES.include?('gatpolyfiller') || FEOL
     gfil_e_l.output('GFil.e', "5.9. GFil.e Min. GatPoly:filler space to NWell, nBuLay is #{gfil_e_value} um")
     gfil_e_l.forget
 
+    # Rule GFil.f: Min. GatPoly:filler space to TRANS is 1.10 um
+    logger.info('Executing rule GFil.f')
+    gfil_f_value = drc_rules['GFil_f'].to_f
+    gfil_f = trans_drw.sep(gatpoly_filler, gfil_f_value.um, euclidian)
+    gfil_f.output('GFil.f', "5.9. GFil.f Min. GatPoly:filler space to TRANS is #{gfil_f_value} um")
+    gfil_f.forget
+
     # Rule GFil.i: Max. GatPoly:nofill area (µm²) is 400um x 400um
     logger.info('Executing rule GFil.i')
     gfil_i_value = drc_rules['GFil_i'].to_f
     gfil_i = gatpoly_nofill.with_bbox_max(gfil_i_value.um + 0.001.um, nil)
     gfil_i.output('GFil.i', "5.9. GFil.i Max. GatPoly:nofill area (µm²) is #{gfil_i_value} um x #{gfil_i_value} um")
     gfil_i.forget
+
+    # Rule GFil.j: Min. GatPoly:filler extension over Activ:filler (end cap) is 0.18 um
+    logger.info('Executing rule GFil.j')
+    gfil_j_value = drc_rules['GFil_j'].to_f
+    gfil_j = activ_filler.enclosed(gatpoly_filler, gfil_j_value.um, euclidian)
+    gfil_j.output('GFil.j',
+                  "5.9. GFil.j Min. GatPoly:filler extension over Activ:filler (end cap) is #{gfil_j_value} um")
+    gfil_j.forget
   end
 
   if en_tiles

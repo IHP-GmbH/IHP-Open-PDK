@@ -38,4 +38,31 @@ if TABLES.include?('activ') || FEOL
   actb_l1 = activ_drw.space(act_b_value.um, euclidian)
   actb_l1.output('Act.b', "5.5. Act.b : Min. Activ space or notch: #{act_b_value} µm.")
   actb_l1.forget
+
+  unless PRECHECK_DRC
+    # Rule Act.c: Min. Activ drain/source extension is 0.23µm
+    logger.info('Executing rule Act.c')
+    act_c_value = drc_rules['Act_c'].to_f
+    act_nsram = activ_drw.not(sram_drw)
+    actc_l1 = gatpoly_drw.enclosed(act_nsram, act_c_value.um, projection)
+    actc_l1.output('Act.c', "5.5. Act.c : Min. Activ drain/source extension: #{act_c_value} µm")
+    act_nsram.forget
+    actc_l1.forget
+
+    # Rule Act.d: Min. Activ area (µm²) is 0.122µm²
+    logger.info('Executing rule Act.d')
+    act_d_value = drc_rules['Act_d'].to_f
+    actd_l1 = activ_drw.with_area(nil, act_d_value.um2)
+    actd_l1.output('Act.d', "5.5. Act.d : Min. Activ area: #{act_d_value} µm²")
+    actd_l1.forget
+
+    # Rule Act.e: Min. Activ enclosed area (µm²) is 0.15µm²
+    logger.info('Executing rule Act.e')
+    act_e_value = drc_rules['Act_e'].to_f
+    activ_holes = activ_drw.holes.not(activ_drw)
+    acte_l1 = activ_holes.with_area(nil, act_e_value.um2)
+    acte_l1.output('Act.e', "5.5. Act.e : Min. Activ enclosed area: #{act_e_value} µm²")
+    activ_holes.forget
+    acte_l1.forget
+  end
 end

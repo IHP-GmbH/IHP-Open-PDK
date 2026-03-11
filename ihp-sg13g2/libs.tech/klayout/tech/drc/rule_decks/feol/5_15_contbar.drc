@@ -23,6 +23,16 @@ if TABLES.include?('contbar') || FEOL
 
   logger.info('Starting 5.15. ContBar table')
 
+  # ContBar derivations
+  nsd_or_nsdblock = psd_drw.join(nsd_block)
+  nactiv_local = activ_drw.not(nsd_or_nsdblock)
+  pactiv_local = activ_drw.and(psd_drw)
+  gate_local = activ_drw.and(gatpoly_drw)
+  contbar_gp = contbar.and(gatpoly_drw)
+  contbar_act = contbar.and(activ_drw)
+  contbar_nact = contbar.and(nactiv_local)
+  contbar_pact = contbar.and(pactiv_local)
+
   # Rule CntB.a: Min. and max. ContBar width is 0.16 um (precheck)
   logger.info('Executing rule CntB.a')
   cntb_a_value = drc_rules['CntB_a'].to_f
@@ -42,6 +52,15 @@ if TABLES.include?('contbar') || FEOL
   cntb_a1_l.forget
 
   unless PRECHECK_DRC
+    # Rule CntB.b: Min. ContBar space is 0.28 um
+    logger.info('Executing rule CntB.b')
+    cntb_b_value = drc_rules['CntB_b'].to_f
+    contbar_outside_trans = contbar.outside(trans_drw)
+    cntb_b_l = contbar_outside_trans.space(cntb_b_value.um, euclidian)
+    cntb_b_l.output('CntB.b', "5.15. CntB.b Min. ContBar space is #{cntb_b_value} um")
+    contbar_outside_trans.forget
+    cntb_b_l.forget
+
     # Rule CntB.b1: Min. ContBar space with common run > 5 µm is 0.36 um
     logger.info('Executing rule CntB.b1')
     cntb_b1_value = drc_rules['CntB_b1'].to_f
@@ -51,11 +70,90 @@ if TABLES.include?('contbar') || FEOL
                    "5.15. CntB.b1 Min. ContBar space with common run > #{cntb_b1_length} µm is #{cntb_b1_value} um")
     cntb_b1_l.forget
 
+    # Rule CntB.b2: Min. ContBar space to Cont is 0.22 um
+    logger.info('Executing rule CntB.b2')
+    cntb_b2_value = drc_rules['CntB_b2'].to_f
+    cntb_b2_l = contbar.separation(cont_sq, cntb_b2_value.um, euclidian)
+    cntb_b2_l.output('CntB.b2', "5.15. CntB.b2 Min. ContBar space to Cont is #{cntb_b2_value} um")
+    cntb_b2_l.forget
+
+    # Rule CntB.c: Min. Activ enclosure of ContBar is 0.07 um
+    logger.info('Executing rule CntB.c')
+    cntb_c_value = drc_rules['CntB_c'].to_f
+    cntb_c_l = contbar.outside(trans_drw).enclosed(activ_drw, cntb_c_value.um, euclidian)
+    cntb_c_l.output('CntB.c', "5.15. CntB.c Min. Activ enclosure of ContBar is #{cntb_c_value} um")
+    cntb_c_l.forget
+
+    # Rule CntB.d: Min. GatPoly enclosure of ContBar is 0.07 um
+    logger.info('Executing rule CntB.d')
+    cntb_d_value = drc_rules['CntB_d'].to_f
+    cntb_d_l = contbar.enclosed(gatpoly_drw, cntb_d_value.um, euclidian)
+    cntb_d_l.output('CntB.d', "5.15. CntB.d Min. GatPoly enclosure of ContBar is #{cntb_d_value} um")
+    cntb_d_l.forget
+
+    # Rule CntB.e: Min. ContBar on GatPoly space to Activ is 0.14 um
+    logger.info('Executing rule CntB.e')
+    cntb_e_value = drc_rules['CntB_e'].to_f
+    cntb_e_l = contbar_gp.separation(activ_drw, cntb_e_value.um, euclidian)
+    cntb_e_l.output('CntB.e', "5.15. CntB.e Min. ContBar on GatPoly space to Activ is #{cntb_e_value} um")
+    cntb_e_l.forget
+
+    # Rule CntB.f: Min. ContBar on Activ space to GatPoly is 0.11 um
+    logger.info('Executing rule CntB.f')
+    cntb_f_value = drc_rules['CntB_f'].to_f
+    cntb_f_l = contbar_act.separation(gatpoly_drw, cntb_f_value.um, euclidian)
+    cntb_f_l.output('CntB.f', "5.15. CntB.f Min. ContBar on Activ space to GatPoly is #{cntb_f_value} um")
+    cntb_f_l.forget
+
+    # Rule CntB.g: ContBar must be within Activ or GatPoly
+    logger.info('Executing rule CntB.g')
+    gp_or_act = gatpoly_drw.join(activ_drw)
+    cntb_g_l = contbar.not(gp_or_act).outside(trans_drw)
+    cntb_g_l.output('CntB.g', '5.15. CntB.g ContBar must be within Activ or GatPoly')
+    gp_or_act.forget
+    cntb_g_l.forget
+
+    # Rule CntB.g1: Min. pSD space to ContBar on nSD-Activ is 0.09 um
+    logger.info('Executing rule CntB.g1')
+    cntb_g1_value = drc_rules['CntB_g1'].to_f
+    cntb_g1_l = contbar_nact.separation(psd_drw, cntb_g1_value.um, euclidian)
+    cntb_g1_l.output('CntB.g1', "5.15. CntB.g1 Min. pSD space to ContBar on nSD-Activ is #{cntb_g1_value} um")
+    cntb_g1_l.forget
+
+    # Rule CntB.g2: Min. pSD overlap of ContBar on pSD-Activ is 0.09 um
+    logger.info('Executing rule CntB.g2')
+    cntb_g2_value = drc_rules['CntB_g2'].to_f
+    cntb_g2_l = contbar_pact.enclosed(psd_drw, cntb_g2_value.um, euclidian)
+    cntb_g2_l.output('CntB.g2', "5.15. CntB.g2 Min. pSD overlap of ContBar on pSD-Activ is #{cntb_g2_value} um")
+    cntb_g2_l.forget
+
+    # Rule CntB.h: ContBar must be covered with Metal1
+    logger.info('Executing rule CntB.h')
+    cntb_h_l = contbar.not(metal1_drw)
+    cntb_h_l.output('CntB.h', '5.15. CntB.h ContBar must be covered with Metal1')
+    cntb_h_l.forget
+
     # Rule CntB.h1: Min. Metal1 enclosure of ContBar is 0.05 um
     logger.info('Executing rule CntB.h1')
     cntb_h1_value = drc_rules['CntB_h1'].to_f
     cntb_h1_l = contbar.not(npn13g2).enclosed(metal1_drw, cntb_h1_value.um, euclidian)
     cntb_h1_l.output('CntB.h1', "5.15. CntB.h1 Min. Metal1 enclosure of ContBar is #{cntb_h1_value} um")
     cntb_h1_l.forget
+
+    # Rule CntB.j: ContBar on GatPoly over Activ is not allowed
+    logger.info('Executing rule CntB.j')
+    cntb_j_l = contbar.and(gate_local)
+    cntb_j_l.output('CntB.j', '5.15. CntB.j ContBar on GatPoly over Activ is not allowed')
+    cntb_j_l.forget
   end
+
+  # Cleanup local derivations
+  nsd_or_nsdblock.forget
+  nactiv_local.forget
+  pactiv_local.forget
+  gate_local.forget
+  contbar_gp.forget
+  contbar_act.forget
+  contbar_nact.forget
+  contbar_pact.forget
 end

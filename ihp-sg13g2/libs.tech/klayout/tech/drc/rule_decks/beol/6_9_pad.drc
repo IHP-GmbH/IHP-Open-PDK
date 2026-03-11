@@ -24,6 +24,11 @@ if TABLES.include?('pad') || BEOL
   logger.info('Starting 6.9 Pad table')
 
   # pad derivations
+  passiv_dfpad = passiv_drw.and(dfpad_drw)
+  act_edgeseal = activ_drw.and(edgeseal_drw)
+  act_edgeseal_not_recog = act_edgeseal.not(recog_drw)
+  act_not_edgeseal = activ_drw.not(edgeseal_drw)
+  gate = gatpoly_drw.and(activ_drw)
 
   # Rule Pad.m: SBumpPad and CuPillarPad in same layout not allowed
   logger.info('Executing rule Pad.m')
@@ -34,6 +39,50 @@ if TABLES.include?('pad') || BEOL
   pad_m_l.forget
 
   unless PRECHECK_DRC
+    # Rule Pad.aR: Min. recommended Pad width is 30.00 um
+    logger.info('Executing rule Pad.aR')
+    pad_ar_value = drc_rules['Pad_aR'].to_f
+    pad_ar_l = passiv_dfpad.width(pad_ar_value.um)
+    pad_ar_l.output('Pad.aR', "6.9. Pad.aR : Min. recommended Pad width is #{pad_ar_value} um")
+    pad_ar_l.forget
+
+    # Rule Pad.a1: Max. Pad width is 150.00 um
+    logger.info('Executing rule Pad.a1')
+    pad_a1_value = 150.0
+    pad_a1_l = passiv_dfpad.sized(-(pad_a1_value / 2.0).um).sized((pad_a1_value / 2.0).um)
+    pad_a1_l.output('Pad.a1', "6.9. Pad.a1 : Max. Pad width is #{pad_a1_value} um")
+    pad_a1_l.forget
+
+    # Rule Pad.bR: Min. recommended Pad space is 8.40 um
+    logger.info('Executing rule Pad.bR')
+    pad_br_value = drc_rules['Pad_bR'].to_f
+    pad_br_l = passiv_dfpad.space(pad_br_value.um)
+    pad_br_l.output('Pad.bR', "6.9. Pad.bR : Min. recommended Pad space is #{pad_br_value} um")
+    pad_br_l.forget
+
+    # Rule Pad.d: Min. Pad space to EdgeSeal is 7.50 um
+    logger.info('Executing rule Pad.d')
+    pad_d_value = drc_rules['Pad_d'].to_f
+    pad_d_l = passiv_dfpad.sep(act_edgeseal_not_recog, pad_d_value.um, euclidian)
+    pad_d_l.output('Pad.d', "6.9. Pad.d : Min. Pad space to EdgeSeal is #{pad_d_value} um")
+    pad_d_l.forget
+
+    # Rule Pad.dR: Min. recommended Pad to EdgeSeal space is 25.00 um
+    logger.info('Executing rule Pad.dR')
+    pad_dr_value = drc_rules['Pad_dR'].to_f
+    pad_dr_l = passiv_dfpad.sep(act_edgeseal_not_recog, pad_dr_value.um, euclidian)
+    pad_dr_l.output('Pad.dR',
+                    "6.9. Pad.dR : Min. recommended Pad to EdgeSeal space is #{pad_dr_value} um")
+    pad_dr_l.forget
+
+    # Rule Pad.d1R: Min. recommended Pad to Activ (inside chip area) space is 11.20 um
+    logger.info('Executing rule Pad.d1R')
+    pad_d1r_value = drc_rules['Pad_d1R'].to_f
+    pad_d1r_l = passiv_dfpad.sep(act_not_edgeseal, pad_d1r_value.um, euclidian)
+    pad_d1r_l.output('Pad.d1R',
+                     "6.9. Pad.d1R : Min. recommended Pad to Activ (inside chip area) space is #{pad_d1r_value} um")
+    pad_d1r_l.forget
+
     # metal list with names
     metals = [
       [metal1_drw, 'M1'],
@@ -63,10 +112,41 @@ if TABLES.include?('pad') || BEOL
       end
     end
 
+    # Rule Pad.gR: Min. recommended TopMetal1 (within dfpad) enclosure of TopVia2 is 1.40 um
+    logger.info('Executing rule Pad.gR')
+    pad_gr_value = drc_rules['Pad_gR'].to_f
+    pad_gr_l1 = metal5_drw.and(dfpad_drw)
+    pad_gr_l = topvia2_drw.enclosed(pad_gr_l1, pad_gr_value.um, euclidian).polygons
+    pad_gr_l.output('Pad.gR',
+                    "6.9. Pad.gR : Min. recommended TopMetal1 (within dfpad) enclosure of TopVia2 is #{pad_gr_value} um")
+    pad_gr_l1.forget
+    pad_gr_l.forget
+
     # Rule Pad.i: dfpad without TopMetal2 not allowed
     logger.info('Executing rule Pad.i')
     pad_i_l = dfpad_drw.not(topmetal2_drw)
     pad_i_l.output('Pad.i', '6.9. Pad.i : dfpad without TopMetal2 not allowed')
     pad_i_l.forget
+
+    # Rule Pad.jR: No devices under Pad allowed
+    logger.info('Executing rule Pad.jR')
+    pad_jr_l1 = mim_drw.and(passiv_dfpad)
+    pad_jr_l2 = gate.and(passiv_dfpad)
+    pad_jr_l1.output('Pad.jR', '6.9. Pad.jR : No devices under Pad allowed')
+    pad_jr_l2.output('Pad.jR', '6.9. Pad.jR : No devices under Pad allowed')
+    pad_jr_l1.forget
+    pad_jr_l2.forget
+
+    # Rule Pad.kR: TopVia2 under Pad not allowed
+    logger.info('Executing rule Pad.kR')
+    pad_kr_l = topvia2_drw.inside(passiv_dfpad)
+    pad_kr_l.output('Pad.kR', '6.9. Pad.kR : TopVia2 under Pad not allowed')
+    pad_kr_l.forget
   end
+
+  passiv_dfpad.forget
+  act_edgeseal.forget
+  act_edgeseal_not_recog.forget
+  act_not_edgeseal.forget
+  gate.forget
 end

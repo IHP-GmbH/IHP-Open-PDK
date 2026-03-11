@@ -24,6 +24,18 @@ if TABLES.include?('sealring') || BEOL
   logger.info('Starting 6.10 Sealring table')
 
   # Sealring derivations
+  selring_pass = passiv_drw.with_holes
+  sealring = edgeseal_drw.with_holes
+  ring_passiv = selring_pass.not(sealring)
+
+  # EdgeSeal intersections for Seal.a rules
+  seal_a_lays = [activ_drw, psd_drw, metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw,
+                 topmetal1_drw, topmetal2_drw]
+  seal_a_names = %w[Activ pSD Metal1 Metal2 Metal3 Metal4 Metal5 TopMetal1 TopMetal2]
+
+  # EdgeSeal intersections for Seal.c/d rules (contacts/vias)
+  seal_cv_lays = [cont_drw, via1_drw, via2_drw, via3_drw, via4_drw, topvia1_drw, topvia2_drw]
+  seal_cv_names = %w[Cont Via1 Via2 Via3 Via4 TopVia1 TopVia2]
 
   # Enable tiling mode for large designs
   if en_tiles
@@ -82,6 +94,18 @@ if TABLES.include?('sealring') || BEOL
   seal_n_l1.forget
 
   unless PRECHECK_DRC
+    # Rule Seal.a: Min. EdgeSeal-layer width is 3.50 um
+    seal_a_value = drc_rules['Seal_a'].to_f
+    seal_a_names.zip(seal_a_lays).each do |seal_a_name, lay|
+      logger.info("Executing rule Seal.a_#{seal_a_name}")
+      seal_a_l1 = lay.and(edgeseal_drw)
+      seal_a_l = seal_a_l1.width(seal_a_value.um, projection)
+      seal_a_l.output("Seal.a_#{seal_a_name}",
+                      "6.10. Seal.a_#{seal_a_name} : Min. EdgeSeal-#{seal_a_name} width is #{seal_a_value} um")
+      seal_a_l.forget
+      seal_a_l1.forget
+    end
+
     seal_b_lays = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw, topmetal1_drw, topmetal2_drw,
                      activ_drw, psd_drw]
     seal_b_names = %w[metal1 metal2 metal3 metal4 metal5 topmetal1 topmetal2 activ psd]
@@ -97,6 +121,104 @@ if TABLES.include?('sealring') || BEOL
                     "6.10. Seal.b_#{seal_b_lay} : Min. Activ space to EdgeSeal-#{seal_b_lay} is #{seal_b_value} um")
       seal_b_l1.forget
       seal_b_l.forget
+    end
+
+    # Rule Seal.c: EdgeSeal-Cont ring width = 0.16 um
+    logger.info('Executing rule Seal.c')
+    seal_c_value = drc_rules['Seal_c'].to_f
+    seal_c_l1 = cont_drw.and(edgeseal_drw)
+    seal_c_l2 = seal_c_l1.width(seal_c_value.um)
+    seal_c_l3 = seal_c_l1.sized(-(seal_c_value / 2.0).um).sized((seal_c_value / 2.0).um)
+    seal_c_l2.output('Seal.c', "6.10. Seal.c : EdgeSeal-Cont ring width is #{seal_c_value} um")
+    seal_c_l3.output('Seal.c', "6.10. Seal.c : EdgeSeal-Cont ring width is #{seal_c_value} um")
+    seal_c_l1.forget
+    seal_c_l2.forget
+    seal_c_l3.forget
+
+    # Rule Seal.c1: EdgeSeal-Via(n) ring width = 0.19 um
+    seal_c1_value = drc_rules['Seal_c1'].to_f
+    seal_c1_via_lays = [via1_drw, via2_drw, via3_drw, via4_drw]
+    seal_c1_via_names = %w[Via1 Via2 Via3 Via4]
+    seal_c1_via_names.zip(seal_c1_via_lays).each do |via_name, via_lay|
+      logger.info("Executing rule Seal.c1.#{via_name}")
+      seal_c1_l1 = via_lay.and(edgeseal_drw)
+      seal_c1_l2 = seal_c1_l1.width(seal_c1_value.um)
+      seal_c1_l3 = seal_c1_l1.sized(-(seal_c1_value / 2.0).um).sized((seal_c1_value / 2.0).um)
+      seal_c1_l2.output("Seal.c1.#{via_name}",
+                        "6.10. Seal.c1.#{via_name} : EdgeSeal-#{via_name} ring width is #{seal_c1_value} um")
+      seal_c1_l3.output("Seal.c1.#{via_name}",
+                        "6.10. Seal.c1.#{via_name} : EdgeSeal-#{via_name} ring width is #{seal_c1_value} um")
+      seal_c1_l1.forget
+      seal_c1_l2.forget
+      seal_c1_l3.forget
+    end
+
+    # Rule Seal.c2: EdgeSeal-TopVia1 ring width = 0.42 um
+    logger.info('Executing rule Seal.c2')
+    seal_c2_value = drc_rules['Seal_c2'].to_f
+    seal_c2_l1 = topvia1_drw.and(edgeseal_drw)
+    seal_c2_l2 = seal_c2_l1.width(seal_c2_value.um)
+    seal_c2_l3 = seal_c2_l1.sized(-(seal_c2_value / 2.0).um).sized((seal_c2_value / 2.0).um)
+    seal_c2_l2.output('Seal.c2', "6.10. Seal.c2 : EdgeSeal-TopVia1 ring width is #{seal_c2_value} um")
+    seal_c2_l3.output('Seal.c2', "6.10. Seal.c2 : EdgeSeal-TopVia1 ring width is #{seal_c2_value} um")
+    seal_c2_l1.forget
+    seal_c2_l2.forget
+    seal_c2_l3.forget
+
+    # Rule Seal.c3: EdgeSeal-TopVia2 ring width = 0.90 um
+    logger.info('Executing rule Seal.c3')
+    seal_c3_value = drc_rules['Seal_c3'].to_f
+    seal_c3_l1 = topvia2_drw.and(edgeseal_drw)
+    seal_c3_l2 = seal_c3_l1.width(seal_c3_value.um)
+    seal_c3_l3 = seal_c3_l1.sized(-(seal_c3_value / 2.0).um).sized((seal_c3_value / 2.0).um)
+    seal_c3_l2.output('Seal.c3', "6.10. Seal.c3 : EdgeSeal-TopVia2 ring width is #{seal_c3_value} um")
+    seal_c3_l3.output('Seal.c3', "6.10. Seal.c3 : EdgeSeal-TopVia2 ring width is #{seal_c3_value} um")
+    seal_c3_l1.forget
+    seal_c3_l2.forget
+    seal_c3_l3.forget
+
+    # Rule Seal.d: Min. EdgeSeal-Activ enclosure of EdgeSeal-contact/via ring = 1.30 um
+    seal_d_value = drc_rules['Seal_d'].to_f
+    act_edgeseal = activ_drw.and(edgeseal_drw)
+    seal_cv_names.zip(seal_cv_lays).each do |cv_name, cv_lay|
+      logger.info("Executing rule Seal.d.#{cv_name}")
+      seal_d_l1 = cv_lay.and(edgeseal_drw)
+      seal_d_l2 = seal_d_l1.enclosed(act_edgeseal, seal_d_value.um, euclidian).polygons
+      seal_d_l3 = seal_d_l1.not(act_edgeseal)
+      seal_d_l = seal_d_l2.join(seal_d_l3)
+      seal_d_l.output("Seal.d.#{cv_name}",
+                      "6.10. Seal.d.#{cv_name} : Min. EdgeSeal-Activ enclosure of EdgeSeal-#{cv_name} ring is #{seal_d_value} um")
+      seal_d_l1.forget
+      seal_d_l2.forget
+      seal_d_l3.forget
+      seal_d_l.forget
+    end
+    act_edgeseal.forget
+
+    # Rule Seal.e: Min. Passiv ring width outside of sealring = 4.20 um
+    logger.info('Executing rule Seal.e')
+    seal_e_value = drc_rules['Seal_e'].to_f
+    seal_e_l1 = ring_passiv.width(seal_e_value.um)
+    seal_e_l1.output('Seal.e', "6.10. Seal.e : Min. Passiv ring width outside of sealring is #{seal_e_value} um")
+    seal_e_l1.forget
+
+    # Rule Seal.f: Min. Passiv ring outside of sealring space to EdgeSeal-layer = Seal_f um
+    seal_f_value = drc_rules['Seal_f'].to_f
+    seal_f_names = %w[Activ pSD Metal1 Metal2 Metal3 Metal4 Metal5 TopMetal1 TopMetal2]
+    seal_f_lays = [activ_drw, psd_drw, metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw,
+                   topmetal1_drw, topmetal2_drw]
+    seal_f_names.zip(seal_f_lays).each do |sf_name, sf_lay|
+      logger.info("Executing rule Seal.f.#{sf_name}")
+      seal_f_l1 = sf_lay.and(edgeseal_drw)
+      seal_f_l2 = ring_passiv.sep(seal_f_l1, seal_f_value.um, euclidian)
+      seal_f_l3 = ring_passiv.and(seal_f_l1)
+      seal_f_l2.output("Seal.f.#{sf_name}",
+                       "6.10. Seal.f.#{sf_name} : Min. Passiv ring outside of sealring space to EdgeSeal-#{sf_name} is #{seal_f_value} um")
+      seal_f_l3.output("Seal.f.#{sf_name}",
+                       "6.10. Seal.f.#{sf_name} : Min. Passiv ring outside of sealring space to EdgeSeal-#{sf_name} is #{seal_f_value} um")
+      seal_f_l1.forget
+      seal_f_l2.forget
+      seal_f_l3.forget
     end
 
     # Rule Seal.k: Min. EdgeSeal 45-degree corner length is 21.00 um
@@ -116,4 +238,8 @@ if TABLES.include?('sealring') || BEOL
     seal_m_l.forget
     seal_m_l1.forget
   end
+
+  selring_pass.forget
+  sealring.forget
+  ring_passiv.forget
 end
