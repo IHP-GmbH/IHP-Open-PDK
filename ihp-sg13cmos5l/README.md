@@ -8,5 +8,5 @@ git clone --branch dev --recurse-submodules https://github.com/IHP-GmbH/IHP-Open
 cd IHP-Open-PDK
 git clone https://github.com/IHP-GmbH/ihp-sg13cmos5l.git
 ```
-You're done! Now return to your working directory and switch between PDKs changing the `$PDK` env variable.
+You're done! Now return to your working directory and switch between PDKs changing the `$PDK` env variable to `ihp-sg13cmos5l`.
 Note: for general configuration settings review the IHP-Open-PDK [documentation](https://ihp-open-pdk-docs.readthedocs.io/en/latest).
