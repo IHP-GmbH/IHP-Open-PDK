@@ -113,7 +113,7 @@ l=0.78e-6
 }
 C {sg13g2_pr/rhigh.sym} 390 -950 0 0 {name=R3
 w=0.5e-6
-l=0.5e-6
+l=0.96e-6
 model=rhigh
 spiceprefix=X
 b=0

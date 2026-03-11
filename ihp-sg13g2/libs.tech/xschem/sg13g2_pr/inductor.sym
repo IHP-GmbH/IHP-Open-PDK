@@ -1,0 +1,71 @@
+v {xschem version=3.4.8RC file_version=1.3
+*
+* This file is part of XSCHEM,
+* a schematic capture and Spice/Vhdl/Verilog netlisting tool for circuit
+* simulation.
+* Copyright (C) 1998-2024 Stefan Frederik Schippers
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+}
+G {}
+K {type=inductor
+format="@spiceprefix@name @pinlist @device w=@w s=@s d=@d nr_r=@nr_r m=@m"
+lvs_format="L@name @pinlist @device w=@w s=@s d=@d nr_r=@nr_r m=@m"
+tedax_format="footprint @name @footprint
+value @name @value
+device @name @device
+@comptag"
+template="name=L1
+m=1
+value=1n
+footprint=1206
+device=inductor
+spiceprefix=X
+w=10e-6
+s=10e-6
+d=222e-6
+nr_r=2"
+}
+V {}
+S {}
+F {}
+E {}
+L 4 7.5 -26.25 7.5 -21.25 {}
+L 4 5 -23.75 10 -23.75 {}
+L 4 0 22.5 0 30 {}
+L 4 0 -30 0 -22.5 {}
+B 5 -2.5 -32.5 2.5 -27.5 {name=p dir=inout propag=1 sim_pinnumber=1}
+B 5 -2.5 27.5 2.5 32.5 {name=m dir=inout propag=0 sim_pinnumber=2}
+B 5 27.5 27.5 32.5 32.5 {sim_pinnumber=3
+name=XXX
+dir=inout}
+A 4 0 15 7.5 90 180 {}
+A 4 0 0 7.5 90 180 {}
+A 4 0 -15 7.5 90 180 {}
+T {@#0:net_name} 5 -42.5 0 0 0.15 0.15 {layer=15 hide=instance}
+T {@#1:net_name} 5 32.5 0 0 0.15 0.15 {layer=15 hide=instance}
+T {@spice_get_current} -12.5 5 0 1 0.2 0.2 {layer=17}
+T {@name} 15 -38.75 0 0 0.2 0.2 {}
+T {w=@w
+s=@s
+d=@d
+nr_r=@nr_r
+} 15 -26.25 0 0 0.2 0.2 {layer=13}
+T {m=@m} -25 -13.75 0 0 0.2 0.2 {layer=13}
+T {@#2:net_name} 45 22.5 0 0 0.15 0.15 {layer=15 hide=instance}
+T {B} 40 30 0 1 0.15 0.15 {layer=7}
+T {@device} -55 -38.75 0 0 0.2 0.2 {}
+T {LA} -10 -30 0 1 0.15 0.15 {layer=7}
+T {LB} -10 20 0 1 0.15 0.15 {layer=7}

@@ -1,14 +1,8 @@
 set current_folder [file dirname [file normalize [info script]]]
 
 # Pad IO sites
-set ::env(PAD_SITE_NAME) "IOLibSite"
-set ::env(PAD_CORNER_SITE_NAME) "IOLibCSite"
-
-# Pad fake IO sites information
-set ::env(PAD_FAKE_SITE_HEIGHT) "180"
-set ::env(PAD_FAKE_SITE_WIDTH) "1"
-set ::env(PAD_FAKE_CORNER_SITE_HEIGHT) "180"
-set ::env(PAD_FAKE_CORNER_SITE_WIDTH) "180"
+set ::env(PAD_SITE_NAME) "sg13g2_ioSite"
+set ::env(PAD_CORNER_SITE_NAME) "sg13g2_cornerSite"
 
 # Set IO pad information
 set ::env(PAD_CELLS) [dict create]

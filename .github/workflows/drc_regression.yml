@@ -125,3 +125,34 @@ jobs:
             --table=nbulay --table=gatpoly --table=psd --table=vian --table=passiv --table=lbe --table=metal1 --no_density --disable_extra_rules \
             --path ihp-sg13g2/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
           || true
+
+  drc_regression_cells:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 💾 Restore KLayout .deb from cache
+        id: cache-klayout
+        uses: actions/cache@v4
+        with:
+          path: klayout-0_30_3.deb
+          key: klayout-deb-cache-ubuntu-0_30_3
+          restore-keys: |
+            klayout-deb-cache-
+      - name: 🔽 Download KLayout .deb if not cached
+        if: steps.cache-klayout.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading KLayout .deb..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
+            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
+      - name: ⚙️ Install KLayout
+        run: |
+          sudo apt update -qq -y
+          sudo apt install ./klayout-0_30_3.deb
+          echo "✅ KLayout version:"
+          klayout -v
+      - name: 🧪 Run DRC Regression for SG13G2 Cells
+        run: make test-DRC-cells

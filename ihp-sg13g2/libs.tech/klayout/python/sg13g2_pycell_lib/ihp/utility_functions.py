@@ -17,6 +17,7 @@
 ########################################################################
 
 import math
+from math import sqrt
 from io import StringIO
 
 from cni.dlo import Tech, Numeric

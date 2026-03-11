@@ -1,7 +1,7 @@
 # IHP SG13G2 Open PDK technology files
 
-for use with the Magic VLSI
-layout tool and netgen LVS tool
+For use with the Magic VLSI
+layout tool and Netgen LVS tool
 
 ## Notes and guidelines
 
@@ -20,10 +20,10 @@ There is a minimum version of magic required to run correctly
 with the IHP Open PDK.  This minimum version is stated in the
 tech file (`ihp-sg13g2.tech`) in the "version" section.  As of the
 beta pre-release of magic/netgen support for IHP SG13G2, the
-minimum required version of magic is 8.3.506.  Earlier versions
-of magic can be used by commenting out the "requires" line from
-the tech file, but some tech file contents may not be recognized
-or may not work correctly.
+minimum required version of magic is 8.3.573 (version dated
+November 3, 2025).  Earlier versions of magic can be used by
+commenting out the "requires" line from the tech file, but some
+tech file contents may not be recognized or may not work correctly.
 
 **Starting magic**:
 
@@ -109,7 +109,7 @@ follows (this list is not exhaustive):
 Layers which are not available in the Open PDK are not represented
 in the magic tech file, and will generate an error message when
 read from a GDS file.  Magic will not generate any of these layers
-in GDS output (unless GDS is designated "vendor" and copied
+in GDS output (unless GDS is designated "readonly" and copied
 directly from a file to output, bypassing processing in magic).
 
 A list of essential mask names in magic vs. IHP documentation is as
@@ -169,9 +169,10 @@ layout.
 
 ## Device extraction
 
-As of the pre-release version of the magic tech file, the list
-of devices in layout vs. device models in ngspice is not
-entirely consistent.  A list of extracted devices follows.
+As of the initial release version of the magic tech file, the list
+of devices in layout vs. device models in ngspice is not entirely
+consistent, as some devices are awaiting a merge of additional
+updates to the open PDK.  A list of extracted devices follows.
 Note that in some cases, such as the ESD transistors in the
 clamps, the presence of silicide block produces device behavior
 that is a significant departure from the extracted device type.
@@ -209,6 +210,8 @@ It is not recommended for use with the magic/netgen LVS flow.
 | nres                                 | rsil                  |
 | pres                                 | rppd                  |
 | xres                                 | rhigh                 |
+| ptap1				       | ptap1		       |
+| ntap1				       | ntap1		       |
 
 | Devices not extracted                                                            |
 |----------------------------------------------------------------------------------|
@@ -217,20 +220,21 @@ It is not recommended for use with the magic/netgen LVS flow.
 | inductor (requires additional information provided by the device generator)      |
 | iprobe, diffstbprobe (insufficient information and no device model)              |
 | SVaricap (no device model)                                                       |
-| ptap1 (to be completed)                                                          |
-| ntap1 (to be completed)                                                          |
 
-"RF" versions of devices are not separate device models but are enabled by
-passing parameter "rfmode" to the device model.  This parameter passing
-will be handled by the device generator.  The sole exception is the
-"cap_rfcmim" model, which likely will also be handled by the device
-generator.
+"RF" versions of MOSFET devices are not separate device models but are enabled
+by passing parameter "rfmode" to the device model.  This parameter passing
+is not yet handled by magic.
+
+The "cap_rfcmim" model has its own unique model.  The "cap_rfcmim"
+device is identified by the use of the p-well block layer underneath, and
+is automatically extracted as an "RF" device.
 
 **Undocumented device extraction**:
 
 The following resistor devices are extracted but do not have device models,
 and so are extracted as ideal SPICE components with value estimated from
-known sheet resistance values.
+known sheet resistance values.  The correct handling of these devices is
+waiting on a merge of a pull request enabling a model called "lvsres".
 
 | device       | description                               |
 |--------------|-------------------------------------------|
@@ -245,12 +249,22 @@ known sheet resistance values.
 | isodiffres   | diffusion resistor in isolated pwell taps |
 | hvisodiffres | diffusion resistor in SCR ptap            |
 
+SVaricap is an sg13g2 subcircuit, but the underlying device model
+is an sg13_hv_svaricap.  The SVaricap subcircuit contains two of
+these.  Since the SVaricap model simply instantiates a number of
+sg13_hv_svaricap devices, the extracted SVaricap subcircuit will
+simulate correctly, even though the SVaricap model is not
+directly instantiated.
+
+| device           | description                           |
+|------------------|---------------------------------------|
+| sg13_hv_svaricap | varactor				   |
+
 **Ignored devices**:
 
 | device      | description                                         |
 |-------------|-----------------------------------------------------|
-| hvpvaractor | parasitic device formed at the ends of SVaricap     |
-| fillfet     | device formed at the junction of fill diff and poly |
+| pvaractor   | parasitic device formed at the ends of SVaricap     |
 
 ## Fill pattern generation
 
@@ -270,6 +284,32 @@ with the command "cif ostyle patternfill()", placing the cursor box
 around the area to be filled, and typing, e.g., "cif paint MET1FILL
 met1fill".  Each fill layer must be generated individually.
 
+Python script usage:
+
+	generate_fill.py <layout_name> [-keep] [-test] [-dist]
+
+	where:
+		<layout_name> is the path to the GDS file to be filled.
+
+	If '-keep' is specified, then keep the generation script.
+	If '-test' is specified, then create but do not run the generation script.
+	If '-dist' is specified, then run distributed (multi-processing).
+
+## Seal ring generation
+
+Seal ring generation is implemented as a python script "generate_seal.py"
+which is separate from the Tcl-based device generators for modeled
+devices.
+
+Python script usage:
+
+	generate_seal.py <width> [<height> [<extra_separation>]]
+
+	where:
+		<width> and <height> are the padframe dimensions, in microns.
+		<extra_separation> is the distance from padframe to seal ring
+		in addition to the 5.4um absolute minimum.
+
 ## Auxiliary DRC checks
 
 Not all DRC rules are implemented directly by magic's DRC checker.
@@ -279,6 +319,16 @@ running pattern generation.  If the final design (including fill
 patterns) is saved as a .mag file or GDS file, then the script
 "check_density.py" will perform the entire set of density rule
 checks.
+
+Python script usage:
+
+	check_density.py [<layout_file_name>] [-keep] [-debug]
+
+	where:
+		<layout_file_name> is the path to the .gds or .mag file to be checked.
+
+	If '-keep' is specified, then keep the check script.
+	If '-debug' is specified, then print diagnostic information.
 
 Antenna violations can be checked by extracting the layout and
 then using the command "antennacheck [run]".  It is generally

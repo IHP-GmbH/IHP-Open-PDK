@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="ntap1" schematic_id = "R">
+    <Description>
+        SG13G2 well tap resistor
+    </Description>
+    <Models>
+        <DefaultModel value="ntap1">
+        </DefaultModel>
+        <SpiceModel value="ntap1">
+        </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value = "{{{Letter}}}::schematic_id='nequal'R{PartCounter} {nets} {model} {{R={R}}}::R='nonempty' {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty'"> </NgspiceNetlist>
+        <CDLNetlist value = "{NgspiceNetlist}"> </CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+           <File>{QUCS_S_COMPONENTS_LIBRARY}/ntap1.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="ntap1" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="0.78" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="l" unit="u" default_value="0.78" show="true">
+            <Description>Length</Description>
+        </Parameter>
+        <Parameter name="R" unit="Ohm"
+            equation="1.0 / (1.0 / (9.8e-10 / (w * l)) + 1.0 / (9.8e-4 / (2.0 * (w + l))))"
+            show="true">
+            <Description>Resistance value</Description>
+        </Parameter>
+    </Parameters>
+</Component>

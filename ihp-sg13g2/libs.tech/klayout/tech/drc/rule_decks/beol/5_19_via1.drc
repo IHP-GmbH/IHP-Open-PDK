@@ -30,13 +30,15 @@ if TABLES.include?('via1') || BEOL
   # Rule V1.a: Min. and max. Via1 width is 0.19µm
   logger.info('Executing rule V1.a')
   v1_a_value = drc_rules['V1_a'].to_f
-  v1a_l1 = via1_nseal.without_bbox_min(v1_a_value.um)
-  v1a_l2 = via1_nseal.without_bbox_max(v1_a_value.um)
+  via1_nseal_a = via1_nseal.not(npn13g2l)
+  v1a_l1 = via1_nseal_a.without_bbox_min(v1_a_value.um)
+  v1a_l2 = via1_nseal_a.without_bbox_max(v1_a_value.um)
   v1a_l = v1a_l1.join(v1a_l2)
   v1a_l.output('V1.a', "5.19. V1.a : Min. and max. Via1 width: #{v1_a_value} µm")
   v1a_l1.forget
   v1a_l2.forget
   v1a_l.forget
+  via1_nseal_a.forget
 
   # Rule V1.b: Min. Via1 space is 0.22µm
   logger.info('Executing rule V1.b')

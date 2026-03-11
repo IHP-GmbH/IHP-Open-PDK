@@ -295,6 +295,13 @@ def get_list_of_tables(drc_dir: str, switches: dict):
                 name = "_".join(parts[2:])
             else:
                 name = f.stem  # fallback: keep the full name
+
+            # Geometry tables have independent switches.
+            if name == "offgrid" and switches.get("no_offgrid", "false") == "true":
+                continue
+            if name == "angle" and switches.get("no_angle", "false") == "true":
+                continue
+
             tables.append(name)
 
     if switches["no_feol"] == "false":
@@ -305,6 +312,9 @@ def get_list_of_tables(drc_dir: str, switches: dict):
 
     if switches["no_forbidden"] == "false":
         add_tables(Path(drc_dir) / "rule_decks" / "forbidden", tables)
+
+    if (switches["no_offgrid"] == "false") or (switches.get("no_angle", "false") == "false"):
+        add_tables(Path(drc_dir) / "rule_decks" / "geometry", tables)
 
     if switches["no_pin"] == "false":
         add_tables(Path(drc_dir) / "rule_decks" / "pin", tables)
@@ -400,10 +410,22 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
     switches["no_offgrid"] = "true" if arguments.no_offgrid else "false"
+    switches["no_angle"] = "true" if arguments.no_angle else "false"
+    switches["density_sanity"] = "true" if arguments.density_sanity else "false"
     switches["density"] = "false" if arguments.no_density else "true"
     switches["no_forbidden"] = "false"
     switches["no_pin"] = "false"
     switches["no_recommended"] = "true" if arguments.no_recommended else "false"
+
+    # If explicit table(s) are requested, default to table-only behavior:
+    # - Do not auto-enable geometry tables unless explicitly selected.
+    # - Additional decks (density / maximal / antenna) are handled by the runner.
+    selected_tables = set(arguments.table or [])
+    if selected_tables:
+        if "offgrid" not in selected_tables:
+            switches["no_offgrid"] = "true"
+        if "angle" not in selected_tables:
+            switches["no_angle"] = "true"
 
     # Set topcell and input layout
     switches["topcell"] = get_run_top_cell_name(arguments, layout_path)
@@ -585,17 +607,24 @@ def run_parallel_run(
     """
     rule_deck_files = {}
 
-    # Optional checks
-    if args.antenna:
-        rule_deck_files["antenna"] = rule_deck_full_path / "rule_decks" / "antenna.drc"
+    table_only_mode = bool(args.table)
 
-    if not args.no_density:
-        rule_deck_files["density"] = rule_deck_full_path / "rule_decks" / "density.drc"
+    # Optional checks (disabled in table-only mode).
+    if not table_only_mode:
+        if args.antenna:
+            rule_deck_files["antenna"] = (
+                rule_deck_full_path / "rule_decks" / "antenna.drc"
+            )
 
-    if not args.disable_extra_rules:
-        rule_deck_files["sg13g2_maximal"] = (
-            rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
-        )
+        if not args.no_density:
+            rule_deck_files["density"] = (
+                rule_deck_full_path / "rule_decks" / "density.drc"
+            )
+
+        if not args.disable_extra_rules:
+            rule_deck_files["sg13g2_maximal"] = (
+                rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
+            )
 
     # Main table-based checks
     table_list = args.table if args.table else get_list_of_tables(rule_deck_full_path, switches)
@@ -683,10 +712,11 @@ def run_single_processor(
         switches["no_pin"] = "true"
     result_dbs.append(run_check(rule_deck_full_path / "ihp-sg13g2.drc", tables, layout_path, run_dir, switches))
 
-    # Run additional checks if requested
-    run_check_by_flag(args.antenna, "antenna")
-    run_check_by_flag(not args.no_density, "density")
-    run_check_by_flag(not args.disable_extra_rules, "sg13g2_maximal")
+    # Run additional checks only when not in table-only mode.
+    if not args.table:
+        run_check_by_flag(args.antenna, "antenna")
+        run_check_by_flag(not args.no_density, "density")
+        run_check_by_flag(not args.disable_extra_rules, "sg13g2_maximal")
 
     # Final result verification
     return check_drc_results(result_dbs, run_dir, layout_path, switches)
@@ -739,9 +769,9 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--no_density]
+            [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid] [--no_recommended]
+            [--antenna_only] [--no_offgrid] [--no_angle] [--no_recommended]
     """
 
     parser = argparse.ArgumentParser(
@@ -823,6 +853,11 @@ def parse_args():
         "--no_density", action="store_true", help="Disable density rule checks."
     )
     parser.add_argument(
+        "--density_sanity",
+        action="store_true",
+        help="Enable optional density boundary sanity markers (default: disabled).",
+    )
+    parser.add_argument(
         "--density_only", action="store_true", help="Run only density rules."
     )
     parser.add_argument(
@@ -832,7 +867,14 @@ def parse_args():
         "--antenna_only", action="store_true", help="Run only antenna rules."
     )
     parser.add_argument(
-        "--no_offgrid", action="store_true", help="Disable offgrid rule checks."
+        "--no_offgrid",
+        action="store_true",
+        help="Disable offgrid rule checks.",
+    )
+    parser.add_argument(
+        "--no_angle",
+        action="store_true",
+        help="Disable angle rule checks.",
     )
     parser.add_argument(
         "--no_recommended", action="store_true", help="Disable recommended rule checks."

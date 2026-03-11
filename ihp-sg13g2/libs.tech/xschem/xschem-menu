@@ -133,41 +133,74 @@ proc save_params {} {
   return "* Place this .save file with a .include line in your testbench\n\n$fet_bip_list"
 }
 
+# return numeric value or "" if missing
+proc raw_or_double {path} {
+  if {[catch {xschem raw value $path -1} v]} { return "" }
+  if {[string is double -strict $v]} { return $v }
+  return ""
+}
+
+# wrap to_eng; yield "NaN" for non-numeric
+proc to_eng_safe {v} {
+  if {[string is double -strict $v]} { return [to_eng $v] }
+  return "NaN"
+}
+
 # displays mos parameters simulation data , used in symbol annotate_fet_params.sym
 proc display_fet_params {instname} {
   set txt {}
-  set schpath [xschem get sim_sch_path]
-  set symbol [xschem getprop instance $instname cell::name]
+  set schpath     [xschem get sim_sch_path]
+  set symbol      [xschem getprop instance $instname cell::name]
   set spiceprefix [xschem getprop instance $instname spiceprefix]
-  set model [xschem translate $instname @model]
-  set type [xschem getprop symbol $symbol type]
+  set model       [xschem translate $instname @model]
+  set type        [xschem getprop symbol $symbol type]
 
   if {[regexp {[pn]mos} $type]} {
     set m n$model
     set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
 
-    append txt "ids   = [to_eng [xschem raw value i($devpath\[ids\]) -1]]\n"
-    append txt "gm    = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
-    append txt "gds   = [to_eng [xschem raw value $devpath\[gds\] -1]]\n"
-    append txt "vth   = [to_eng [xschem raw value v($devpath\[vth\]) -1]]\n"
-    append txt "vgs   = [to_eng [xschem raw value v($devpath\[vgs\]) -1]]\n"
-    append txt "vdss  = [to_eng [xschem raw value v($devpath\[vdss\]) -1]]\n"
-    append txt "vds   = [to_eng [xschem raw value v($devpath\[vds\]) -1]]\n"
-    append txt "cgg   = [to_eng [xschem raw value $devpath\[cgg\] -1]]\n"
+    set ids   [raw_or_double "i($devpath\[ids\])"]
+    set gm    [raw_or_double "$devpath\[gm\]"]
+    set gds   [raw_or_double "$devpath\[gds\]"]
+    set vth   [raw_or_double "v($devpath\[vth\])"]
+    set vgs   [raw_or_double "v($devpath\[vgs\])"]
+    set vdss  [raw_or_double "v($devpath\[vdss\])"]
+    set vds   [raw_or_double "v($devpath\[vds\])"]
+    set cgg0  [raw_or_double "$devpath\[cgg\]"]
+    set cgdol [raw_or_double "$devpath\[cgdol\]"]
+    set cgsol [raw_or_double "$devpath\[cgsol\]"]
+
+    # summed Cgg = cgg + cgdol + cgsol, or NaN if any missing
+    if {[string is double -strict $cgg0] && [string is double -strict $cgdol] && [string is double -strict $cgsol]} {
+      set cgg_sum [expr {$cgg0 + $cgdol + $cgsol}]
+    } else {
+      set cgg_sum ""
+    }
+
+    append txt "ids   = [to_eng_safe $ids]\n"
+    append txt "gm    = [to_eng_safe $gm]\n"
+    append txt "gds   = [to_eng_safe $gds]\n"
+    append txt "vth   = [to_eng_safe $vth]\n"
+    append txt "vgs   = [to_eng_safe $vgs]\n"
+    append txt "vdss  = [to_eng_safe $vdss]\n"
+    append txt "vds   = [to_eng_safe $vds]\n"
+    append txt "cgg   = [to_eng_safe $cgg_sum]\n"
+
+    # ft and gm/id only if inputs numeric
     set pi 3.141592654
-    set gm [xschem raw value $devpath\[gm\] -1]
-    set cgg [xschem raw value $devpath\[cgg\] -1]
-    set cgdol [xschem raw value $devpath\[cgdol\] -1]
-    set cgsol [xschem raw value $devpath\[cgsol\] -1]
-    set ids [xschem raw value i($devpath\[ids\]) -1]
-    if {[catch { expr $gm / $ids} gmid]} {
-      set gmid {}
+    if {[string is double -strict $gm] && [string is double -strict $cgg_sum] && $cgg_sum != 0} {
+      set ft [expr {$gm / (2.0 * $pi * $cgg_sum)}]
+    } else {
+      set ft ""
     }
-    if {[catch { expr $gm / 2 / $pi / ($cgg + $cgdol + $cgsol)} ft]} {
-      set ft {}
+    append txt "ft    = [to_eng_safe $ft]\n"
+
+    if {[string is double -strict $gm] && [string is double -strict $ids] && $ids != 0} {
+      set gmid [expr {$gm / $ids}]
+    } else {
+      set gmid ""
     }
-    append txt "ft    = [to_eng ${ft}]\n"
-    append txt "gm/id = [to_eng [expr $gmid]]\n"
+    append txt "gm/id = [to_eng_safe $gmid]\n"
   }
   return $txt
 }
@@ -175,11 +208,11 @@ proc display_fet_params {instname} {
 # displays biploar parameters simulation data , used in symbol annotate_bip_params.sym
 proc display_bip_params {instname} {
   set txt {}
-  set schpath [xschem get sim_sch_path]
-  set symbol [xschem getprop instance $instname cell::name]
+  set schpath     [xschem get sim_sch_path]
+  set symbol      [xschem getprop instance $instname cell::name]
   set spiceprefix [xschem getprop instance $instname spiceprefix]
-  set model [xschem translate $instname @model]
-  set type [xschem getprop symbol $symbol type]
+  set model       [xschem translate $instname @model]
+  set type        [xschem getprop symbol $symbol type]
 
   if {[regexp {vertical_npn} $type]} {
     if {[regexp {_5t$} $model]} {
@@ -188,36 +221,64 @@ proc display_bip_params {instname} {
     set m q$model
     set devpath [string tolower @q.$schpath$spiceprefix$instname.$m]
 
-    append txt "gm   = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
-    append txt "go   = [to_eng [xschem raw value $devpath\[go\] -1]]\n"
-    set gx [xschem raw value $devpath\[gx\] -1]
-    set gmu [xschem raw value $devpath\[gmu\] -1]
-    set gpi [xschem raw value $devpath\[gpi\] -1]
-    if {[catch { expr 1/$gx + 1/($gmu + $gpi)} rin]} {
-      set rin {}
+    # raw reads with guards
+    set gm   [raw_or_double "$devpath\[gm\]"]
+    set go   [raw_or_double "$devpath\[go\]"]
+    set gx   [raw_or_double "$devpath\[gx\]"]
+    set gmu  [raw_or_double "$devpath\[gmu\]"]
+    set gpi  [raw_or_double "$devpath\[gpi\]"]
+    set vbe  [raw_or_double "v($devpath\[vbe\])"]
+    set vbc  [raw_or_double "v($devpath\[vbc\])"]
+    set ib   [raw_or_double "i($devpath\[ib\])"]
+    set ic   [raw_or_double "i($devpath\[ic\])"]
+    set cbe  [raw_or_double "$devpath\[cbe\]"]
+    set cbc  [raw_or_double "$devpath\[cbc\]"]
+    set cbep [raw_or_double "$devpath\[cbep\]"]
+    set cbcp [raw_or_double "$devpath\[cbcp\]"]
+
+    # prints
+    append txt "gm   = [to_eng_safe $gm]\n"
+    append txt "go   = [to_eng_safe $go]\n"
+
+    # rin = 1/gx + 1/(gmu + gpi)
+    if {[string is double -strict $gx] && $gx != 0 && \
+        [string is double -strict $gmu] && [string is double -strict $gpi] && ($gmu + $gpi) != 0} {
+      set rin [expr {1.0/$gx + 1.0/($gmu + $gpi)}]
+    } else {
+      set rin ""
     }
-    append txt "rin  = [to_eng ${rin}]\n"
-    append txt "vbe  = [to_eng [xschem raw value v($devpath\[vbe\]) -1]]\n"
-    set vbe [xschem raw value v($devpath\[vbe\]) -1]
-    set vbc [xschem raw value v($devpath\[vbc\]) -1]
-    if {[catch { expr $vbe - $vbc} vce]} {
-      set vce {}
+    append txt "rin  = [to_eng_safe $rin]\n"
+
+    append txt "vbe  = [to_eng_safe $vbe]\n"
+
+    # vce = vbe - vbc
+    if {[string is double -strict $vbe] && [string is double -strict $vbc]} {
+      set vce [expr {$vbe - $vbc}]
+    } else {
+      set vce ""
     }
-    append txt "vce  = [to_eng ${vce}]\n"
-    append txt "ib   = [to_eng [xschem raw value i($devpath\[ib\]) -1]]\n"
-    append txt "ic   = [to_eng [xschem raw value i($devpath\[ic\]) -1]]\n"
-    append txt "cbe  = [to_eng [xschem raw value $devpath\[cbe\] -1]]\n"
-    append txt "cbc  = [to_eng [xschem raw value $devpath\[cbc\] -1]]\n"
+    append txt "vce  = [to_eng_safe $vce]\n"
+
+    append txt "ib   = [to_eng_safe $ib]\n"
+    append txt "ic   = [to_eng_safe $ic]\n"
+    append txt "cbe  = [to_eng_safe $cbe]\n"
+    append txt "cbc  = [to_eng_safe $cbc]\n"
+
+    # ft = gm / (2*pi*(cbe + cbc + cbep + cbcp))
     set pi 3.141592654
-    set gm [xschem raw value $devpath\[gm\] -1]
-    set cbe [xschem raw value $devpath\[cbe\] -1]
-    set cbc [xschem raw value $devpath\[cbc\] -1]
-    set cbep [xschem raw value $devpath\[cbep\] -1]
-    set cbcp [xschem raw value $devpath\[cbcp\] -1]
-    if {[catch { expr $gm / 2 / $pi / ($cbe + $cbc + $cbep + $cbcp)} ft]} {
-      set ft {}
+    if {[string is double -strict $gm] && \
+        [string is double -strict $cbe] && [string is double -strict $cbc] && \
+        [string is double -strict $cbep] && [string is double -strict $cbcp]} {
+      set csum [expr {$cbe + $cbc + $cbep + $cbcp}]
+      if {$csum != 0} {
+        set ft [expr {$gm / (2.0 * $pi * $csum)}]
+      } else {
+        set ft ""
+      }
+    } else {
+      set ft ""
     }
-    append txt "ft   = [to_eng ${ft}]\n"
+    append txt "ft   = [to_eng_safe $ft]\n"
   }
   return $txt
 }
@@ -236,7 +297,7 @@ proc menupdk {} {
 
     ## Create one entry
     $topwin.menubar.ihp add command -label {Create FET and BIP .save file} -command {
-      mkdir -p $netlist_dir
+      file mkdir $netlist_dir
       write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
       textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
     }

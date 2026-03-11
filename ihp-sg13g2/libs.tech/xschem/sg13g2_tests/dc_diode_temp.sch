@@ -56,7 +56,7 @@ C {devices/gnd.sym} -500 60 0 0 {name=l2 lab=GND}
 C {devices/code_shown.sym} -510 -160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.include $::SG13G2_MODELS/diodes.lib
+.include $::MODELS_NGSPICE/diodes.lib
 "}
 C {devices/code_shown.sym} 320 -230 0 0 {name=NGSPICE only_toplevel=true 
 value="

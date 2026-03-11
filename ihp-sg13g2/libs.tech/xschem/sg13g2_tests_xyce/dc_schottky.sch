@@ -97,7 +97,7 @@ C {simulator_commands_shown.sym} 430 -850 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerDIO.lib dio_tt
+.lib $::MODELS_XYCE/cornerDIO.lib dio_tt
 )"}
 C {simulator_commands_shown.sym} 0 -870 0 0 {name=Libs_Ngspice
 simulator=ngspice

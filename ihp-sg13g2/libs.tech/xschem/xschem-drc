@@ -75,16 +75,31 @@ proc fet_drc {instance symbol model w l ng } {
 # IHP SG13G2 resistors dimension checks
 proc res_drc {instance symbol model w l } {
   set res {}
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
   # puts "$instance $model $symbol w=$w l=$l nf=$nf"
   if { [string is double $w] && [string is double $l] } {
 
-    if { $w < 0.5e-6 } {
-      append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
-    }
+    switch -regexp $model {
+      {rsil$|rppd$} {
+        if { $w < 0.5e-6 } {
+          append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
+        }
 
-    if { $l < 0.5e-6 } {
-       append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.5u" \n
-    }
+        if { $l < 0.5e-6 } {
+          append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.5u" \n
+        }
+      }
+      {rhigh$} {
+        if { $w < 0.5e-6 } {
+          append res "${instance} ($model): resistor width is too small, w = $w, min. w > 0.5u" \n
+        }
+
+        if { $l < 0.96e-6 } {
+          append res "${instance} ($model): resistor length is too small, l = $l, min. l > 0.96u" \n
+        }
+      }
+    } ;# switch
   }
   return $res
 }

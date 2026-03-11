@@ -1,3 +1,21 @@
+########################################################################
+#
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
 #---------------------------------------------------------------
 # Setup file for netgen LVS
 # IHP ihp-sg13g2
@@ -96,7 +114,7 @@ foreach dev $devices {
 }
 
 #-------------------------------------------
-# (MOS) transistors
+# (MOS) transistors and varactor
 #-------------------------------------------
 
 set devices {}
@@ -107,6 +125,7 @@ lappend devices sg13_lv_pmos
 lappend devices nmosi
 lappend devices nmosiHV
 lappend devices scr1
+lappend devices sg13_hv_svaricap
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -251,20 +270,24 @@ lappend devices cap_rfcmim
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" derive area w l
+	property "-circuit1 $dev" derive perimeter w l
 	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {l critical}
-	property "-circuit1 $dev" parallel {w add}
-	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit1 $dev" parallel {area add}
+	property "-circuit1 $dev" parallel {perimeter add}
+	property "-circuit1 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete ic
+	property "-circuit1 $dev" delete ic w l
     }
     if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" derive area w l
+	property "-circuit2 $dev" derive perimeter w l
 	property "-circuit2 $dev" parallel enable
-	property "-circuit2 $dev" parallel {l critical}
-	property "-circuit2 $dev" parallel {w add}
-	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit2 $dev" parallel {area add}
+	property "-circuit2 $dev" parallel {perimeter add}
+	property "-circuit2 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete ic
+	property "-circuit2 $dev" delete ic w l
     }
 }
 

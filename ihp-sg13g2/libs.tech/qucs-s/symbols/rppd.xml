@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="rppd" schematic_id = "R">
+    <Description>
+        SG13G2 unsalicided resistor
+    </Description>
+    <Models>
+        <DefaultModel value="rppd">
+        </DefaultModel>
+        <SpiceModel value="rppd">
+        </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value = "{{{Letter}}}::schematic_id='nequal'R{PartCounter} {nets} {bulk} {model} {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' b={b} {{m={m}}}::m='nonempty'"> </NgspiceNetlist>
+        <CDLNetlist value = "{NgspiceNetlist}"> </CDLNetlist>
+        <XyceNetlist value = "{{{Letter}}}::schematic_id='nequal'R{PartCounter} {nets} {bulk} {model} {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' b={b} {{m={m}}}::m='nonempty'"> </XyceNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+           <File>{QUCS_S_COMPONENTS_LIBRARY}/ResistorEU.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="rppd" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="0.5" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="l" unit="u" default_value="0.5" show="true">
+            <Description>Length</Description>
+        </Parameter>
+        <Parameter name="b" unit="" default_value="0" show="false">
+            <Description>Number of bends</Description>
+        </Parameter>
+        <Parameter name="bulk" unit="" default_value="sub!" show="false">
+            <Description>Third terminal net name</Description>
+        </Parameter>
+        <Parameter name="m" unit="" default_value="1" show="false">
+            <Description>Multiplier</Description>
+        </Parameter>
+        <Parameter name="R" unit="Ohm"
+            equation="(70.0e-6 / w + 260.0 * ((b + 1)*l + (1.081*(w + 6.0e-9) + 0.18e-6)*b) / (w + 6.0e-9)) / m"
+            show="true">
+            <Description>Resistance value</Description>
+        </Parameter>
+    </Parameters>
+</Component>

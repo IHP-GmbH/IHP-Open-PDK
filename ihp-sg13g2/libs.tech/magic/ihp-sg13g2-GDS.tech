@@ -1,6 +1,6 @@
 ########################################################################
 #
-# Copyright 2024 IHP PDK Authors
+# Copyright 2025 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,186 +22,332 @@ tech
 end
 
 version
-    version 0.1.0
+    version 1.0.0
     description "IHP SG13G2: Vendor GDS layers and supplementary DRC"
     requires magic-8.3.124
 end
 
+#------------------------------------------------------------------------------
+# This tech file represents all GDS layers exactly in magic with no boolean
+# transforms to generated layer types.  It can be used to manipulate GDS and
+# is better for some DRC checks and for fill pattern generation.  However, it
+# does not properly understand connectivity and cannot be used for extraction.
+#------------------------------------------------------------------------------
+
 planes
- p1
- p2
- p3
- p4
- p5
- p6
- p7
- p8
- p9
- p10
- p11
- p12
- p13
- p14
- p15
- p16
- p17
- p18
- p19
- p20
- p21
- p22
- p23
- p24
- p25
- p26
- p27
- p28
- p29
- p30
- p31
- p32
- p33
- p34
- p35
- p36
- p37
- p38
- p39
- p40
- p41
- p42
- p43
+ dnwell,dw
+ well,w
+ implant1,i1
+ implant2,i2
+ implant3,i3
+ implant4,i4
+ implant5,i5
+ implant6,i6
+ implant7,i7
+ active,a
+ poly,p
+ contact,co
+ metal1,m1
+ via1,v1
+ metal2,m2
+ via2,v2
+ metal3,m3
+ via3,v3
+ metal4,m4
+ via4,v4
+ metal5,m5
+ via5,v5
+ mimcap,mc
+ metal6,m6
+ via6,v6
+ metal7,m7
+ glass,g
+ blockd,bd
+ blockp,bp
+ block1,b1
+ block2,b2
+ block3,b3
+ block4,b4
+ block5,b5
+ block6,b6
+ block7,b7
+ ident1,id1
+ ident2,id2
+ ident3,id3
+ ident4,id4
+ ident5,id5
+ ident6,id6
+ ident7,id7
+ ident8,id8
+ ident9,id9
+ ident10,id10
+ comment,c
+ error,e
 end
 
 types
- p1  NWELL,l1
- p1  NWELLP,l2
- p2  DNWELL,l3
- p3  DIFF,l4
- p4  THKOX,l5
- p5  POLY,l6
- p5  POLYP,l7
- p6  PSD,l8
- p7  NSD,l9
- p8  CONT,l10
- p9  MET1,l11
- p9  MET1T,l12
- p9  MET1P,l13
- p10 VIA1,l14
- p11 MET2,l15
- p11 MET2T,l16
- p11 MET2P,l17
- p12 VIA2,l18
- p13 MET3,l19
- p13 MET3T,l20
- p13 MET3P,l21
- p14 VIA3,l22
- p15 MET4,l23
- p15 MET4T,l24
- p15 MET4P,l25
- p16 VIA4,l26
- p17 MET5,l27
- p17 MET5T,l28
- p17 MET5P,l29
- p18 VIA5,l30
- p19 MET6,l31
- p19 MET6T,l32
- p19 MET6P,l33
- p20 VIA6,l34
- p21 MET7,l35
- p21 MET7T,l36
- p21 MET7P,l37
- p22 PAD,l38
- p22 PADP,l39
- p23 TEXT,l40
- p24 SBLK,l41
- p25 PNP,l42
- p26 NPN,l43
- p27 CAP,l44
- p28 IND,l45
- p29 POLYRES,l46
- p30 DIODE,l47
- p31 SUBS,l48
- p32 SUBST,l49
- p33 BOUND,l50
+ dw  DNWELL
+ dw  DEEPNBLK
+ w   NWELL
+ w   NWELLPIN
+ w   SUBS
+ w   DIGSUB
+ w   SUBTXT
+ w   PWELLBLK
+ a   DIFF
+ a   DIFFMASK
+ a   DIFFFILL
+ a   DIFFPIN
+
+ i1  PSD
+ i2  NSD
+ i2  NSDBLOCK
+ i3  THKOX
+ i4  SBLK
+ i5  EXTBLOCK
+ i6  EMITTER
+ i7  HVEMITTER
+
+ p   POLY
+ p   POLYPIN
+ p   POLYFILL
+ p   POLYRES
+ p   POLYRESPIN
+ co  CONT
+
+ m1  MET1
+ m1  MET1TXT
+ m1  MET1PIN
+ m1  MET1RES
+ m1  MET1FILL
+ m1  MET1SLIT
+ v1  VIA1
+ m2  MET2
+ m2  MET2TXT
+ m2  MET2PIN
+ m2  MET2RES
+ m2  MET2FILL
+ m2  MET2SLIT
+ v2  VIA2
+ m3  MET3
+ m3  MET3TXT
+ m3  MET3PIN
+ m3  MET3RES
+ m3  MET3FILL
+ m3  MET3SLIT
+ v3  VIA3
+ m4  MET4
+ m4  MET4TXT
+ m4  MET4PIN
+ m4  MET4RES
+ m4  MET4FILL
+ m4  MET4SLIT
+ v4  VIA4
+ m5  MET5
+ m5  MET5TXT
+ m5  MET5PIN
+ m5  MET5RES
+ m5  MET5FILL
+ m5  MET5SLIT
+ mc  MIM
+ v5  VIA5
+ v5  MIMCC
+ m6  MET6
+ m6  MET6TXT
+ m6  MET6PIN
+ m6  MET6RES
+ m6  MET6FILL
+ m6  MET6SLIT
+ v6  VIA6
+ m7  MET7
+ m7  MET7TXT
+ m7  MET7PIN
+ m7  MET7RES
+ m7  MET7FILL
+ m7  MET7SLIT
+
+ g   GLASS
+ g   PADPIN
+ g   PILLAR
+ g   SOLDER
+
+ id1 BOUND
+ id1 SEALBOUND
+ id1 INDBOUND
+ id2 DIODE
+ id2 RESDEF
+ id3 INDUCTOR
+ id3 INDPIN
+ id3 INDTXT
+ id4 CAPID
+ id5 FILLBLOCK
+ id6 EMITPOLY
+ id7 ESDID
+ id7 SRAMID
+ id7 DIGITALID
+ id7 BIPOLARID
+ id7 EDGESEAL
+ id8 HEATRES
+ id8 HEATTRANS
+ id9 IPROBE
+ id9 DPROBE
+ id9 THRUVIA
+ id9 PADID
+ id9 PILLARID
+ id9 SOLDERID
+ id10 RFMEMS
+ id10 DEVICE
+ id10 TSVID
+
+ bd  DIFFBLOCK
+ bd  DIFFNORCX
+ bp  POLYBLOCK
+ bp  POLYNORCX
+ b1  MET1BLOCK
+ b1  MET1NORCX
+ b2  MET2BLOCK
+ b2  MET2NORCX
+ b3  MET3BLOCK
+ b3  MET3NORCX
+ b4  MET4BLOCK
+ b4  MET4NORCX
+ b5  MET5BLOCK
+ b5  MET5NORCX
+ b6  MET6BLOCK
+ b6  MET6NORCX
+ b7  MET7BLOCK
+ b7  MET7NORCX
+
+ c   LVSTEXT
+ c   COMMENT
+ c   NORCX
+
+ e   ERROR
 end
 
 contact
 end
 
+aliases
+ ALLNWELL  NWELL,NWELLPIN
+ ALLDIFF  DIFF,DIFFPIN
+ ALLPOLY  POLY,POLYPIN
+ ALLM1  MET1,MET1TXT,MET1PIN,MET1RES
+ ALLM2  MET2,MET2TXT,MET2PIN,MET2RES
+ ALLM3  MET3,MET3TXT,MET3PIN,MET3RES
+ ALLM4  MET4,MET4TXT,MET4PIN,MET4RES
+ ALLM5  MET5,MET5TXT,MET5PIN,MET5RES
+ ALLM6  MET6,MET6TXT,MET6PIN,MET6RES
+ ALLM7  MET7,MET7TXT,MET7PIN,MET7RES
+ ALLPAD PADID,PADPIN
+end
+
+
 styles
-    styletype	mos
- l1   nwell
- l2   cwell
- l3   ndiffusion
- l4   pdiffusion
- l5   implant1
- l6   implant2
- l7   implant3
- l8   subcircuit
- l9    polysilicon
- l10   implant4
- l11   pdop_stripes
- l12   ndop_stripes
- l13   obsmetal1 contact_X'es
- l14   metal1
- l15   metal1
- l16   metal1
- l17   metal1 metal2 via1
- l18   metal2
- l19   metal2
- l20   metal2
- l21   metal2 metal3 via2
- l22   metal3
- l23   metal3
- l24   metal3
- l25   metal3 metal4 via3
- l26   metal4
- l27   metal4
- l28   metal4
- l29   metal4 metal5 via4
- l30   metal5
- l31   metal5
- l32   metal5
- l33   metal5 metal6 via5
- l34   metal6
- l35   metal6
- l36   metal6
- l37   overglass
- l38   overglass
- l39   overglass
- l40   subcircuit
- l41   comment
- l42   implant1
- l43   mim_top
- l44   mim_bottom
- l45   ntransistor_stripes
- l46   metal7
- l47   electrode
- l48   nwell_field_implant
- l49   hvndiff_mask
- l50   poly_light
-# l51   mvpdiff
-# l52   mvndiff
-# l53   hvpdiff
-# l54   cwellnsc
-# l55   poly_resist poly_resist_stripes
-# l56   ptransistor_stripes
-# l57   hvpdiff_mask
-# l58   poly_resist
-# l59   subcircuit
-# l60   nwell
-# l61   pwell
-# l62   nwell
-# l63   polysilicon
-# l64   pwell
-# l65   implant1
-# l66   implant2
-# l67   implant3
-# l68   implant4
-# l69   subcircuit
-# l70   polysilicon
-# l71   electrode_stripes
+ styletype	mos
+
+ DNWELL		cwell
+
+ NWELL		nwell
+ NWELLPIN	nwell
+ SUBS		pwell
+ SUBTXT		pwell
+
+ DIFF		ndiffusion
+ DIFFMASK	ndiffusion
+ DIFFFILL	ndiffusion
+ DIFFPIN	ndiffusion
+
+ PSD		pdop_stripes
+ NSD		ndop_stripes
+ THKOX		implant1
+ SBLK		implant2
+
+ POLY		polysilicon
+ POLYPIN	polysilicon
+ POLYFILL	polysilicon
+ POLYRES	polysilicon
+ POLYRESPIN	polysilicon
+ CONT		contact_X'es
+
+ MET1		metal1
+ MET1TXT	metal1
+ MET1PIN	metal1
+ MET1RES	metal1
+ MET1FILL	metal1
+ VIA1		via1
+ MET2		metal2
+ MET2TXT	metal2
+ MET2PIN	metal2
+ MET2RES	metal2
+ MET2FILL	metal2
+ VIA2		via2
+ MET3		metal3
+ MET3TXT	metal3
+ MET3PIN	metal3
+ MET3RES	metal3
+ MET3FILL	metal3
+ VIA3		via3
+ MET4		metal4
+ MET4TXT	metal4
+ MET4PIN	metal4
+ MET4RES	metal4
+ MET4FILL	metal4
+ VIA4		via4
+ MET5		metal5
+ MET5TXT	metal5
+ MET5PIN	metal5
+ MET5RES	metal5
+ MET5FILL	metal5
+ MIM		mim_top
+ VIA5		via5
+ MIMCC		via5
+ MET6		metal6
+ MET6TXT	metal6
+ MET6PIN	metal6
+ MET6RES	metal6
+ MET6FILL	metal6
+ VIA6		via6
+ MET7		metal7
+ MET7TXT	metal7
+ MET7PIN	metal7
+ MET7RES	metal7
+ MET7FILL	metal7
+
+ DPROBE		metal1 ndop_stripes
+ IPROBE		metal1 pdop_stripes
+ TSVID		subcircuit
+ THRUVIA	mems
+
+ PADID		overglass
+ PADPIN		overglass
+ GLASS		overglass
+ PILLAR		overglass
+ SOLDER		overglass
+ PILLARID	overglass
+ SOLDERID	overglass
+
+ DIODE		subcircuit
+ INDUCTOR	subcircuit
+ INDPIN		subcircuit
+ INDTXT		subcircuit
+ BOUND		subcircuit
+ CAPID		subcircuit
+ RESDEF		subcircuit
+
+ DIFFBLOCK	poly_resist_stripes
+ POLYBLOCK	poly_resist_stripes
+ MET1BLOCK	poly_resist_stripes
+ MET2BLOCK	poly_resist_stripes
+ MET3BLOCK	poly_resist_stripes
+ MET4BLOCK	poly_resist_stripes
+ MET5BLOCK	poly_resist_stripes
+ MET6BLOCK	poly_resist_stripes
+ MET7BLOCK	poly_resist_stripes
+
+ LVSTEXT	electrode
+ COMMENT	comment
+ ERROR		error_waffle
  error_p	error_waffle
  error_s	error_waffle
  error_ps	error_waffle
@@ -211,276 +357,1266 @@ compose
 end
 
 connect
+  # This is a very primitive connection table, and may not be useful.
+  # It does not correctly handle ReRAM or MiM caps.
+  DIFF CONT
+  POLY CONT
+  CONT MET1
+  MET1 VIA1
+  VIA1 MET2
+  MET2 VIA2
+  VIA2 MET3
+  MET3 VIA3
+  VIA3 MET4
+  MET4 VIA4
+  VIA4 MET5
+  MET5 VIA5
+  VIA5 MET6
+  MET6 VIA6
+  VIA6 MET7
 end
 
 cifoutput
-style gdsii
+style ihp-sg13g2
   scalefactor 10 nanometers
   options calma-permissive-labels
   gridlimit 1
-
- layer  NWELL NWELL,NWELLT,NWELLP
- calma 64 20
-
- layer NWELLT
- labels NWELLT noport
- calma 64 16
-
- layer NWELLP
- labels NWELLP port
- calma 64 5
 
  layer  DNWELL DNWELL
  labels DNWELL 
  calma 64 18
 
+ layer  DEEPNBLK DEEPNBLK
+ labels DEEPNBLK
+ calma 32 21
+
+ layer  NWELL NWELL
+ calma 31 0
+
+ layer NWELLPIN
+ labels NWELLPIN port
+ calma 31 2
+
  layer  DIFF DIFF
  labels DIFF 
- calma 65 20
+ calma 1 0
 
- layer  POLY POLY,POLYP,POLYT
- calma 66 20
+ layer DIFFMASK
+ labels DIFFMASK
+ calma 1 20
 
- layer POLYT
- labels POLYT noport
- calma 66 16
+ layer DIFFPIN
+ labels DIFFPIN port
+ calma 1 2
 
- layer POLYP
- labels POLYP port
- calma 66 5
+ layer DIFFBLOCK DIFFBLOCK
+ calma 1 23
+
+ layer DIFFNORCX DIFFNORCX
+ calma 1 28
+
+ layer DIFFFILL DIFFFILL
+ calma 1 22
+
+ layer  POLY POLY
+ calma 5 0
+
+ layer POLYPIN
+ labels POLYPIN port
+ calma 5 2
+
+ layer POLYBLOCK POLYBLOCK
+ calma 5 23
+
+ layer POLYNORCX POLYNORCX
+ calma 5 28
+
+ layer POLYFILL POLYFILL
+ calma 5 22
+
+ layer POLYRES POLYRES
+ labels POLYRES
+ calma 128 0
+
+ layer POLYRESPIN
+ labels POLYRESPIN port
+ calma 128 2
 
  layer  THKOX THKOX
  labels THKOX 
- calma 75 20
+ calma 44 0
 
  layer  PSD PSD
  labels PSD 
- calma 94 20
+ calma 14 0
 
  layer  NSD NSD
  labels NSD 
- calma 93 44
+ calma 7 0
+
+ layer  NSDBLOCK NSDBLOCK
+ labels NSDBLOCK 
+ calma 7 21
+
+ layer  EXTBLOCK EXTBLOCK
+ labels EXTBLOCK 
+ calma 111 0
+
+ layer  EMITTER EMITTER
+ labels EMITTER
+ calma 33 0
+
+ layer  HVEMITTER HVEMITTER
+ labels HVEMITTER
+ calma 156 0
 
  layer  CONT
  labels CONT
  calma 6 26
 
- layer  MET1 MET1,MET1T,MET1P
- calma 68 20
+ layer  MET1 MET1
+ calma 8 0
 
- layer  MET1T
- labels MET1T noport
- calma 68 16
+ layer  MET1TXT
+ labels MET1TXT noport
+ calma 8 25
 
- layer  MET1P
- labels MET1P port
- calma 68 5
+ layer  MET1PIN
+ labels MET1PIN port
+ calma 8 2
 
- layer  MET2 MET2,MET2T,MET2P,VIA1
- calma 69 20
+ layer  MET1RES MET1RES
+ labels MET1RES
+ calma 8 29
 
- layer  MET2T
- labels MET2T noport
- calma 69 16
+ layer MET1FILL MET1FILL
+ calma 8 22
 
- layer  MET2P
- labels MET2P port
- calma 69 5
+ layer MET1BLOCK MET1BLOCK
+ calma 8 23
+
+ layer MET1NORCX MET1NORCX
+ calma 8 28
 
  layer  VIA1 VIA1
  labels VIA1 
- calma 68 44
+ calma 19 0
 
- layer  MET3 MET3,MET3T,MET3P,VIA2
- calma 70 20
+ layer  MET2 MET2
+ calma 10 0
 
- layer  MET3T
- labels MET3T noport
- calma 70 16
+ layer  MET2TXT
+ labels MET2TXT noport
+ calma 10 25
 
- layer  MET3P
- labels MET3P port
- calma 70 5
+ layer  MET2PIN
+ labels MET2PIN port
+ calma 10 2
+
+ layer  MET2RES MET2RES
+ labels MET2RES
+ calma 10 29
+
+ layer MET2FILL MET2FILL
+ calma 10 22
+
+ layer MET2BLOCK MET2BLOCK
+ calma 10 23
+
+ layer MET2NORCX MET2NORCX
+ calma 10 28
 
  layer  VIA2 VIA2
  labels VIA2 
- calma 69 44
+ calma 29 0
 
- layer  MET4 MET4,MET4T,MET4P,VIA3
- calma 71 20
+ layer  MET3 MET3
+ calma 30 0
 
- layer  MET4T
- labels MET4T noport
- calma 71 16
+ layer  MET3TXT
+ labels MET3TXT noport
+ calma 30 25
 
- layer  MET4P
- labels MET4P port
- calma 71 5
+ layer  MET3PIN
+ labels MET3PIN port
+ calma 30 2
+
+ layer  MET3RES MET3RES
+ labels MET3RES
+ calma 30 29
+
+ layer MET3FILL MET3FILL
+ calma 30 22
+
+ layer MET3BLOCK MET3BLOCK
+ calma 30 23
+
+ layer MET3NORCX MET3NORCX
+ calma 30 28
 
  layer  VIA3 VIA3
  labels VIA3 
- calma 70 44
+ calma 49 0
 
- layer  MET5 MET5,MET5T,MET5P,VIA4
- calma 72 20
+ layer  MET4 MET4
+ calma 50 0
 
- layer  MET5T
- labels MET5T noport
- calma 72 16
+ layer  MET4TXT
+ labels MET4TXT noport
+ calma 50 25
 
- layer  MET5P
- labels MET5P port
- calma 72 5
+ layer  MET4PIN
+ labels MET4PIN port
+ calma 50 2
+
+ layer  MET4RES MET4RES
+ labels MET4RES
+ calma 50 29
+
+ layer MET4FILL MET4FILL
+ calma 50 22
+
+ layer MET4BLOCK MET4BLOCK
+ calma 50 23
+
+ layer MET4NORCX MET4NORCX
+ calma 50 28
 
  layer  VIA4 VIA4
  labels VIA4 
- calma 71 44
+ calma 66 0
 
- layer  PAD PAD,PADT,PADP
- calma 76 20
+ layer  MET5 MET5
+ calma 67 0
 
- layer  PADP
- labels PADP port
- calma 76 5
+ layer  MET5TXT
+ labels MET5TXT noport
+ calma 67 25
 
- layer  TEXT TEXT
- labels TEXT
- calma 83 44
+ layer  MET5PIN
+ labels MET5PIN port
+ calma 67 2
 
- layer PNP PNP
- labels PNP
- calma 82 44
+ layer  MET5RES MET5RES
+ labels MET5RES
+ calma 67 29
 
- layer CAP CAP
- labels CAP
- calma 82 64
+ layer MET5FILL MET5FILL
+ calma 67 22
 
- layer IND IND
- labels IND
- calma 82 24
+ layer MET5BLOCK MET5BLOCK
+ calma 67 23
 
- layer POLYRES POLYRES
- labels POLYRES
- calma 66 13
+ layer MET5NORCX MET5NORCX
+ calma 67 28
+
+ layer  VIA5 VIA5
+ labels VIA5
+ calma 125 0
+
+ layer  MET6 MET6
+ calma 126 0
+
+ layer  MET6TXT
+ labels MET6TXT noport
+ calma 126 25
+
+ layer  MET6PIN
+ labels MET6PIN port
+ calma 126 2
+
+ layer  MET6RES MET6RES
+ labels MET6RES
+ calma 126 29
+
+ layer MET6FILL MET6FILL
+ calma 126 22
+
+ layer MET6BLOCK MET6BLOCK
+ calma 126 23
+
+ layer MET6NORCX MET6NORCX
+ calma 126 28
+
+ layer  VIA6 VIA6
+ labels VIA6
+ calma 133 0
+
+ layer  MET7 MET7
+ calma 134 0
+
+ layer  MET7TXT
+ labels MET7TXT noport
+ calma 134 25
+
+ layer  MET7PIN
+ labels MET7PIN port
+ calma 134 2
+
+ layer  MET7RES MET7RES
+ labels MET7RES
+ calma 134 29
+
+ layer MET7FILL MET7FILL
+ calma 134 22
+
+ layer MET7BLOCK MET7BLOCK
+ calma 134 23
+
+ layer MET7NORCX MET7NORCX
+ calma 134 28
+
+ layer  PADID  PADID
+ calma 41 0
+
+ layer  PADPIN
+ labels PADPIN port
+ calma 9 2
+
+ layer  GLASS  GLASS
+ labels GLASS
+ calma 9 0
+
+ layer  PILLAR  PILLAR
+ labels PILLAR
+ calma 9 35
+
+ layer  SOLDER  SOLDER
+ labels SOLDER
+ calma 9 36
+
+ layer PILLARID PILLARID
+ labels PILLARID
+ calma 41 35
+
+ layer SOLDERID SOLDERID
+ labels SOLDERID
+ calma 41 36
+
+ layer RFMEMS RFMEMS
+ labels RFMEMS
+ calma 69 0
+
+ layer  LVSTEXT LVSTEXT
+ labels LVSTEXT
+ calma 63 0
+
+ layer CAPID CAPID
+ labels CAPID
+ calma 99 39
+
+ layer INDUCTOR INDUCTOR
+ labels INDUCTOR
+ calma 27 0
+
+ layer INDPIN
+ labels INDPIN port
+ calma 27 2
+ 
+ layer INDTXT
+ labels INDTXT text
+ calma 27 25
+
+ layer RESDEF RESDEF
+ labels RESDEF
+ calma 24 0
 
  layer DIODE DIODE
  labels DIODE
- calma 81 23
-
- layer PWELLP PWELLP
- labels PWELLP port
- calma 64 59
+ calma 99 31
 
  layer BOUND BOUND
  labels BOUND
- calma 235 4
+ calma 189 0
+
+ layer FILLBLOCK FILLBLOCK
+ labels FILLBLOCK
+ calma 160 0
+
+ layer EDGESEAL EDGESEAL
+ labels EDGESEAL
+ calma 39 0
+
+ layer IPROBE IPROBE
+ labels IPROBE
+ calma 8 33
+
+ layer DPROBE DPROBE
+ labels DPROBE
+ calma 8 34
+
+ layer THRUVIA THRUVIA
+ labels THRUVIA
+ calma 152 0
+
+ layer TSVID TSVID
+ labels TSVID
+ calma 99 32
+
+ layer INDBOUND INDBOUND
+ labels INDBOUND
+ calma 27 4
+
+ layer SEALBOUND SEALBOUND
+ labels SEALBOUND
+ calma 39 4
+
+ layer DEVICE DEVICE
+ labels DEVICE
+ calma 99 0
+
+ layer NORCX NORCX
+ labels NORCX
+ calma 148 0
+
+#----------------------------------------------------------------
+style patternfill variants (),(tiled)
+#----------------------------------------------------------------
+# Style used by scripts for automatically generating fill layers
+# NOTE: Be sure to generate output on flattened layout.
+#----------------------------------------------------------------
+ scalefactor 10  nanometers
+ options calma-permissive-labels
+ gridlimit 5
+
+#----------------------------------------------------------------
+# Generate and retain a layer representing the bounding box.
+#
+# For variant ():
+# The bounding box is the full extent of geometry on the top level
+# cell.
+#
+# For variant (tiled):
+# Use with a script that breaks layout into flattened tiles and runs
+# fill individually on each.  The tiles should be larger than the
+# step size, and each should draw a layer "comment" the size of the
+# step box.
+#----------------------------------------------------------------
+
+ variants ()
+     templayer	topbox
+	 bbox	top
+
+ variants (tiled)
+     templayer	topbox COMMENT
+	 # Each tile imposes the full keepout distance rule of
+	 # 3um on all sides.
+	 shrink 1500
+	 # This fills out the square where comment collides
+	 # with fillblock because they are on the same plane.
+	 maxrect external
+
+ variants *
+
+#----------------------------------------------------------------
+# Generate guard-band around nwells to keep DIFF from crossing
+# Spacing from nwell = AFil.d = 1.0um, GFil.e = 1.1um
+# Enclosure by nwell = AFil.d = 1.0um, GFil.e = 1.1um
+#
+# The well guardband is used for both poly and diff fill, and
+# since it is costly to differentiate between the two, the
+# simplest solution is to use the poly distance rule (1.1um)
+# for both.
+#----------------------------------------------------------------
+
+ templayer	well_shrink NWELL,DNWELL
+	shrink  1100
+
+ templayer	well_guardband NWELL,DNWELL
+	grow	1100
+	and-not	well_shrink
+
+#------------------------------------------------------------------------
+# Diffusion filler keep-out areas
+# Spacing to diffusion:  0.42um (AFil.c1)
+# Spacing to poly and contact: 1.10um (AFil.c)
+# Space to NPN bipolar: 1um (AFil.e)
+#
+# To do:  Ensure spacing to pwell-block (Afil.i)
+# Note: Fill patterns inside pwell-block are not automatically
+# generated but can be manually drawn.
+#------------------------------------------------------------------------
+
+ templayer      obstruct_diff ALLPOLY,POLYFILL
+	grow	100
+	or	BIPOLARID
+	grow	580
+	or	ALLDIFF,DIFFFILL,DIFFBLOCK
+
+ templayer      obstruct_poly ALLDIFF,DIFFFILL
+	grow	100
+	or	BIPOLARID
+	grow	580
+	or	ALLPOLY,POLYFILL,POLYBLOCK
+
+ templayer	obstruct_diffpoly obstruct_diff,obstruct_poly
+	grow	420
+	or	well_guardband
+
+#---------------------------------------------------
+# DIFF and POLY fill
+# Done in three passes at sizes 5000x4600, 2400x2000,
+# and 1000x1100 on diffusion.  Poly overlaps diffusion
+# with extensions, with sizes 5000x3000, 2400x1400,
+# and 1400x700
+#---------------------------------------------------
+
+ templayer	diffpolyfill_coarse topbox
+        slots   0 5000 2000 0 5000 2000 1360 0
+        and-not obstruct_diffpoly
+	and	topbox
+        shrink  2295
+        grow    2295
+
+ templayer	difffill_coarse diffpolyfill_coarse
+	slots	200 4600 1000 0 5000 1000 0 0
+
+ templayer	polyfill_coarse diffpolyfill_coarse
+	slots	0 5000 1000 1000 3000 1000 0 0
+
+ templayer      obstruct_diff_medium ALLPOLY,POLYFILL
+	or	polyfill_coarse
+	grow	100
+	or	trans
+	grow	580
+	or	ALLDIFF,DIFFFILL,DIFFBLOCK,difffill_coarse
+
+ templayer      obstruct_poly_medium obstruct_diff_psd
+	or	difffill_coarse
+	grow	100
+	or	trans
+	grow	580
+	or	ALLPOLY,POLYFILL,DIFFPOLY,polyfill_coarse
+
+ templayer      obstruct_diffpoly_medium obstruct_diff_medium,obstruct_poly_medium
+	grow	420
+	or	well_guardband
+
+ templayer	diffpolyfill_medium topbox
+        slots   0 2400 1200 0 2400 1200 750 0
+        and-not obstruct_diffpoly_medium
+	and	topbox
+        shrink  1195
+        grow    1195
+
+ templayer	difffill_medium diffpolyfill_medium
+	slots	200 2000 1000 0 2400 1000 0 0
+
+ templayer	polyfill_medium diffpolyfill_medium
+	slots	0 2400 1000 500 1400 1000 0 0
+
+ templayer      obstruct_diff_fine ALLPOLY,POLYFILL
+	or	polyfill_coarse,polyfill_medium
+	grow	100
+	or	trans
+	grow	580
+	or	ALLDIFF,DIFFFILL,DIFFBLOCK
+	or	difffill_coarse,difffill_medium
+
+ templayer      obstruct_poly_fine obstruct_diff_psd
+	or	difffill_coarse,difffill_medium
+	grow	100
+	or	BIPOLARID
+	grow	580
+	or	ALLPOLY,POLYFILL,POLYBLOCK
+	or	polyfill_coarse,polyfill_medium
+
+ templayer      obstruct_diffpoly_fine obstruct_diff_fine,obstruct_poly_fine
+	grow	420
+	or	well_guardband
+
+ templayer	diffpolyfill_fine topbox
+        slots   0 1400 1200 0 1100 1200 360 0
+        and-not obstruct_diffpoly_fine
+	and	topbox
+        shrink  545
+        grow    545
+
+ templayer	difffill_fine diffpolyfill_fine
+	slots	200 1000 1000 0 1100 1000 0 0
+
+ templayer	polyfill_fine diffpolyfill_fine
+	slots	0 1400 1000 200 700 1000 0 0
+
+#---------------------------------------------------
+ layer  DIFFFILL difffill_coarse
+	or	difffill_medium
+	or	difffill_fine
+ 	calma 	1 22
+
+ layer	POLYFILL polyfill_coarse
+	or	 polyfill_medium
+	or	 polyfill_fine
+ 	calma 	5 22
+
+#---------------------------------------------------
+# MET1 to MET5 rules:
+# Space to other metal1-5: 0.42um (MFil.c)
+# Space to TRANS: 1.0 (MFil.d)
+# Also:  Prohibiting metal1-5 fill under pads.
+#---------------------------------------------------
+# MET1 fill
+# Three passes in sizes 5000, 2000, and 1000
+#---------------------------------------------------
+
+ templayer	obstruct_m1 BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET1,MET1BLOCK,MET1FILL,FILLBLOCK
+        grow    420
+
+ templayer	met1fill_coarse topbox
+	# Make spacing 2um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 1500 500
+        and-not obstruct_m1
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m1_medium BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET1,MET1BLOCK,MET1FILL,FILLBLOCK
+	or	met1fill_coarse
+        grow    420
+
+ templayer	met1fill_medium topbox
+        slots   0 2000 420 0 2000 420 650 320
+        and-not obstruct_m1_medium
+	and	topbox
+	orthogonal
+        shrink  995
+        grow    995
+
+ templayer      obstruct_m1_fine BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET1,MET1BLOCK,MET1FILL,FILLBLOCK
+	or	met1fill_coarse,met1fill_medium
+        grow    420
+
+ templayer	met1fill_fine topbox
+        slots   0 1200 420 0 1200 420 300 0
+        and-not obstruct_m1_fine
+	and	topbox
+	orthogonal
+        shrink  595
+        grow    595
+
+ layer	MET1FILL met1fill_coarse
+	or	met1fill_medium
+	or	met1fill_fine
+ 	calma 	8 22
+
+#---------------------------------------------------
+# MET2 fill
+# Three passes in sizes 5000, 2000, and 1000
+#---------------------------------------------------
+
+ templayer	obstruct_m2 BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET2,MET2BLOCK,MET2FILL,FILLBLOCK
+        grow    420
+
+ templayer	met2fill_coarse topbox
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 2500 1500
+        and-not obstruct_m2
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m2_medium BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET2,MET2BLOCK,MET2FILL,FILLBLOCK
+	or	met2fill_coarse
+        grow    420
+
+ templayer	met2fill_medium topbox
+        slots   0 2000 420 0 2000 420 650 320
+        and-not obstruct_m2_medium
+	and	topbox
+	orthogonal
+        shrink  995
+        grow    995
+
+ templayer      obstruct_m2_fine BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET2,MET2BLOCK,MET2FILL,FILLBLOCK
+	or	met2fill_coarse,met2fill_medium
+        grow    420
+
+ templayer	met2fill_fine topbox
+        slots   0 1200 420 0 1200 420 300 0
+        and-not obstruct_m2_fine
+	and	topbox
+	orthogonal
+        shrink  595
+        grow    595
+
+ layer	MET2FILL met2fill_coarse
+	or met2fill_medium
+	or met2fill_fine
+ 	calma 	10 22
+
+#---------------------------------------------------
+# MET3 fill
+# Three passes in sizes 5000, 2000, and 1000
+#---------------------------------------------------
+
+ templayer	obstruct_m3 BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET3,MET3BLOCK,MET3FILL,FILLBLOCK
+        grow    420
+
+ templayer	met3fill_coarse topbox
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 3500 2500
+        and-not obstruct_m3
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m3_medium BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET3,MET3BLOCK,MET3FILL,FILLBLOCK
+	or	met3fill_coarse
+        grow    420
+
+ templayer	met3fill_medium topbox
+        slots   0 2000 420 0 2000 420 650 320
+        and-not obstruct_m3_medium
+	and	topbox
+	orthogonal
+        shrink  995
+        grow    995
+
+ templayer      obstruct_m3_fine BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET3,MET3BLOCK,MET3FILL,FILLBLOCK
+	or	met3fill_coarse,met3fill_medium
+        grow    420
+
+ templayer	met3fill_fine topbox
+        slots   0 1200 420 0 1200 420 300 0
+        and-not obstruct_m3_fine
+	and	topbox
+	orthogonal
+        shrink  595
+        grow    595
+
+ layer	MET3FILL met3fill_coarse
+	or	met3fill_medium
+	or	met3fill_fine
+ 	calma 	30 22
+
+#---------------------------------------------------
+# MET4 fill
+# Three passes in sizes 5000, 2000, and 1000
+#---------------------------------------------------
+
+ templayer	obstruct_m4 BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET4,MET4BLOCK,MET4FILL,FILLBLOCK
+        grow    420
+
+ templayer	met4fill_coarse topbox
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 4500 3500
+        and-not obstruct_m4
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m4_medium BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET4,MET4BLOCK,MET4FILL,FILLBLOCK
+	or	met4fill_coarse
+        grow    420
+
+ templayer	met4fill_medium topbox
+        slots   0 2000 420 0 2000 420 650 320
+        and-not obstruct_m4_medium
+	and	topbox
+	orthogonal
+        shrink  995
+        grow    995
+
+ templayer      obstruct_m4_fine BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET4,MET4BLOCK,MET4FILL,FILLBLOCK
+	or	met4fill_coarse,met4fill_medium
+        grow    420
+
+ templayer	met4fill_fine topbox
+        slots   0 1200 420 0 1200 420 300 0
+        and-not obstruct_m4_fine
+	and	topbox
+	orthogonal
+        shrink  595
+        grow    595
+
+ layer	MET4FILL met4fill_coarse
+	or	met4fill_medium
+	or	met4fill_fine
+ 	calma 	50 22
+
+#---------------------------------------------------
+# MET5 fill
+# Three passes in sizes 5000, 2000, and 1000
+#---------------------------------------------------
+
+ templayer	obstruct_m5 BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET5,MET5BLOCK,MET5FILL,MIM,FILLBLOCK
+        grow    420
+
+ templayer	met5fill_coarse topbox
+        # slots   0 5000 420 0 5000 420 1700 850
+	# Make spacing 2.00um so that max density is < 50%
+        slots   0 5000 2000 0 5000 2000 500 4500
+        and-not obstruct_m5
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ templayer      obstruct_m5_medium BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET5,MET5BLOCK,MET5FILL,MIM,FILLBLOCK
+	or	met5fill_coarse
+        grow    420
+
+ templayer	met5fill_medium topbox
+        slots   0 2000 420 0 2000 420 650 320
+        and-not obstruct_m5_medium
+	and	topbox
+	orthogonal
+        shrink  995
+        grow    995
+
+ templayer      obstruct_m5_fine BIPOLARID,PADID,EDGESEAL
+	grow	580
+	or	ALLMET5,MET5BLOCK,MET5FILL,MIM,FILLBLOCK
+	or	met5fill_coarse,met5fill_medium
+        grow    420
+
+ templayer	met5fill_fine topbox
+        slots   0 1200 420 0 1200 420 300 0
+        and-not obstruct_m5_fine
+	and	topbox
+	orthogonal
+        shrink  595
+        grow    595
+
+ layer	MET5FILL met5fill_coarse
+	or	met5fill_medium
+	or	met5fill_fine
+ 	calma 	67 22
+
+#---------------------------------------------------
+# MET6 (TopMetal1) fill
+# Space to other metal6: 3.0um (TM1MFil.c)
+# Space to TRANS: 4.9 (TM1Fil.d)
+# Also:  Prohibiting metal6 fill under pads.
+# Two passes in sizes 10000, 5000
+#---------------------------------------------------
+ templayer	obstruct_m6 BIPOLARID,PADID,EDGESEAL,SOLDERID,PILLARID
+	grow	1900
+	or	ALLMET6,MET6BLOCK,MET6FILL,FILLBLOCK
+        grow    3000
+
+ templayer	met6fill_coarse topbox
+        slots   0 10000 4000 0 10000 4000 2500 3500
+        and-not obstruct_m6
+	and	topbox
+	orthogonal
+        shrink  4995
+        grow    4995
+
+ templayer      obstruct_m6_medium BIPOLARID,PADID,EDGESEAL,SOLDERID,PILLARID
+	grow	1900
+	or	ALLMET6,MET6BLOCK,MET6FILL,FILLBLOCK
+	or	met6fill_coarse
+        grow    3000
+
+ templayer	met6fill_medium topbox
+        slots   0 5000 3000 0 5000 3000 1000 500
+        and-not obstruct_m6_medium
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ layer	MET6FILL met6fill_coarse
+	or	met6fill_medium
+ 	calma 	126 22
+
+#---------------------------------------------------
+# MET7 (TopMetal2) fill
+# Space to other metal7: 3.0um (TM2MFil.c)
+# Space to TRANS: 4.9 (TM2Fil.d)
+# Two passes in sizes 10000, 5000
+#---------------------------------------------------
+ templayer	obstruct_m7 BIPOLARID,PADID,EDGESEAL,SOLDERID,PILLARID
+	grow	1900
+	or	ALLMET7,MET7BLOCK,MET7FILL,FILLBLOCK
+        grow    3000
+
+ templayer	met7fill_coarse topbox
+        slots   0 10000 4000 0 10000 4000 4500 1500
+        and-not obstruct_m7
+	and	topbox
+	orthogonal
+        shrink  4995
+        grow    4995
+
+ templayer      obstruct_m7_medium BIPOLARID,PADID,EDGESEAL,SOLDERID,PILLARID
+	grow	1900
+	or	ALLMET7,MET7BLOCK,MET7FILL,FILLBLOCK
+	or	met7fill_coarse
+        grow    3000
+
+ templayer	met7fill_medium topbox
+        slots   0 5000 3000 0 5000 3000 1000 500
+        and-not obstruct_m7_medium
+	and	topbox
+	orthogonal
+        shrink  2495
+        grow    2495
+
+ layer	MET7FILL met7fill_coarse
+	or	met7fill_medium
+ 	calma 	134 22
 end
 
 cifinput
-style default
+style ihp-sg13g2
  scalefactor 10 nanometers
 
- layer l1  NWELL
- layer l2  NWELLP
- layer l3  DNWELL
- layer l4  DIFF
- layer l5  THKOX
- layer l6  POLY
- layer l7  POLYP
- layer l8  PSD
- layer l9  NSD
- layer l10 CONT
- layer l11 MET1
- layer l12 MET1T
- layer l13 MET1P
- layer l14 VIA1
- layer l15 MET2
- layer l16 MET2T
- layer l17 MET2P
- layer l18 VIA2
- layer l19 MET3
- layer l20 MET3T
- layer l21 MET3P
- layer l22 VIA3
- layer l23 MET4
- layer l24 MET4T
- layer l25 MET4P
- layer l26 VIA4
- layer l27 MET5
- layer l28 MET5T
- layer l29 MET5P
- layer l30 VIA5
- layer l31 MET6
- layer l32 MET6T
- layer l33 MET6P
- layer l34 VIA6
- layer l35 MET7
- layer l36 MET7T
- layer l37 MET7P
- layer l38 PAD
- layer l39 PADP
- layer l40 TEXT
- layer l41 SBLK
- layer l42 PNP
- layer l43 NPN
- layer l44 CAP
- layer l45 IND
- layer l46 POLYRES
- layer l47 DIODE
- layer l48 SUBS
- layer l49 SUBST
- layer l50 BOUND
+ layer DNWELL  DNWELL
 
- calma NWELL  31 0
- calma NWELLP 31 2
- calma DNWELL 32 0
- calma DIFF   1  0
- calma THKOX  44 0
- calma POLY   5  0
- calma POLYP  5  2
- calma PSD    14 0
- calma NSD    7  0
- calma CONT   6  0
- calma MET1   8  0
- calma MET1T  8  25
- calma MET1P  8  2
- calma VIA1   19 0
- calma MET2   10 0
- calma MET2T  10 25
- calma MET2P  10 2
- calma VIA2   29 0   
- calma MET3   30 0
- calma MET3T  30 25
- calma MET3P  30 2
- calma VIA3   49 0
- calma MET4   50 0
- calma MET4T  50 25
- calma MET4P  50 2
- calma VIA4   66 0
- calma MET5   67 0
- calma MET5T  67 25
- calma MET5P  67 2
- calma VIA5   125 0
- calma MET6   126 0
- calma MET6T  126 25
- calma MET6P  126 2
- calma VIA6   133 0
- calma MET7   134 0
- calma MET7T  134 25
- calma MET7P  134 2
- calma PAD    9   0
- calma PADP   9   2
- calma TEXT   63  0
- calma SBLK   28  0
- calma PNP    33  0
- calma NPN    55  0
- calma CAP    99  39
- calma IND    27  0
- calma POLYRES 24 0
- calma DIODE  99  31
- calma SUBS   40  0
- calma SUBST  40  25
- calma BOUND  189 *
+ layer SUBS	SUBS,SUBTXT
+ labels SUBS
+ labels SUBTXT	text
+
+ layer NWELL   NWELL,NWELLPIN
+ labels NWELL
+ labels NWELLPIN port
+
+ layer DIFF   DIFF,DIFFPIN
+ labels DIFF
+ labels DIFFPIN port
+
+ layer DIFFMASK DIFFMASK
+ layer DIFFFILL DIFFFILL
+ layer DIFFBLOCK DIFFBLOCK
+ layer DIFFNORCX DIFFNORCX
+
+ layer POLY   POLY,POLYPIN
+ and-not POLYRES
+ labels POLY
+ labels POLYPIN port
+
+ layer POLYRES  POLYRES,POLYRESPIN
+ labels POLYRES
+ labels POLYRESPIN port
+
+ layer POLYFILL POLYFILL
+ layer POLYBLOCK POLYBLOCK
+ layer POLYNORCX POLYNORCX
+
+ layer RESDEF RESDEF
+
+ layer CONT CONT
+
+ layer MET1 MET1,MET1PIN,MET1TXT
+ and-not MET1RES
+ labels MET1
+ labels MET1PIN port
+ labels MET1TXT text
+
+ layer MET1RES MET1RES
+ labels MET1RES
+
+ layer MET1FILL MET1FILL
+ layer MET1BLOCK MET1BLOCK
+ layer MET1NORCX MET1NORCX
+
+ layer VIA1 VIA1
+
+ layer MET2 MET2,MET2PIN,MET2TXT
+ and-not MET2RES
+ labels MET2
+ labels MET2PIN port
+ labels MET2TXT text
+
+ layer MET2RES MET2RES
+ labels MET2RES
+
+ layer MET2FILL MET2FILL
+ layer MET2BLOCK MET2BLOCK
+ layer MET2NORCX MET2NORCX
+
+ layer VIA2 VIA2
+
+ layer MET3 MET3,MET3PIN,MET3TXT
+ and-not MET3RES
+ labels MET3
+ labels MET3PIN port
+ labels MET3TXT text
+
+ layer MET3RES MET3RES
+ labels MET3RES
+
+ layer MET3FILL MET3FILL
+ layer MET3BLOCK MET3BLOCK
+ layer MET3NORCX MET3NORCX
+
+ layer VIA3 VIA3
+
+ layer MET4 MET4,MET4PIN,MET4TXT
+ and-not MET4RES
+ labels MET4
+ labels MET4PIN port
+ labels MET4TXT text
+
+ layer MET4RES MET4RES
+ labels MET4RES
+
+ layer MET4FILL MET4FILL
+ layer MET4BLOCK MET4BLOCK
+ layer MET4NORCX MET4NORCX
+
+ layer VIA4 VIA4
+
+ layer MET5 MET5,MET5PIN,MET5TXT
+ and-not MET5RES
+ labels MET5
+ labels MET5PIN port
+ labels MET5TXT text
+
+ layer MET5RES MET5RES
+ labels MET5RES
+
+ layer MET5FILL MET5FILL
+ layer MET5BLOCK MET5BLOCK
+ layer MET5NORCX MET5NORCX
+
+ layer MIM MIM
+ labels MIM
+
+ layer VIA5 VIA5
+
+ layer MIMCC MIMCC
+
+ layer MET6 MET6,MET6PIN,MET6TXT
+ and-not MET6RES
+ labels MET6
+ labels MET6PIN port
+ labels MET6TXT text
+
+ layer MET6RES MET6RES
+ labels MET6RES
+
+ layer MET6FILL MET6FILL
+ layer MET6BLOCK MET6BLOCK
+ layer MET6NORCX MET6NORCX
+
+ layer VIA6 VIA6
+
+ layer MET7 MET7,MET7PIN,MET7TXT
+ and-not MET7RES
+ labels MET7
+ labels MET7PIN port
+ labels MET7TXT text
+
+ layer MET7RES MET7RES
+ labels MET7RES
+
+ layer MET7FILL MET7FILL
+ layer MET7BLOCK MET7BLOCK
+ layer MET7NORCX MET7NORCX
+
+ layer PADID ALLPAD
+ labels PADID
+ labels PADPIN port
+
+ layer PILLAR PILLAR
+ layer SOLDER SOLDER
+ layer PILLARID PILLARID
+ layer SOLDERID SOLDERID
+ layer GLASS GLASS
+
+ layer THKOX  THKOX
+ layer PSD    PSD
+ layer NSD    NSD
+ layer SBLK   SBLK
+
+ layer CAP    CAP
+ layer CAPID CAPID
+ layer DIODE DIODE
+ layer ESDID ESDID
+ layer SRAMID SRAMID
+ layer DIGITALID DIGITALID
+ layer BIPOLARID BIPOLARID
+
+ layer INDUCTOR INDUCTOR,INDPIN,INDTXT
+ labels INDUCTOR
+ labels INDPIN port
+ labels INDTXT text
+
+ layer DEEPNBLK DEEPNBLK
+ layer PWELLBLK PWELLBLK
+ layer DIGSUB DIGSUB
+ layer NSDBLOCK NSDBLOCK
+ layer EXTBLOCK EXTBLOCK
+ layer EMITTER EMITTER
+ layer HVEMITTER HVEMITTER
+ layer HEATRES HEATRES
+ layer HEATTRANS HEATTRANS
+ layer EDGESEAL EDGESEAL
+ layer IPROBE IPROBE
+ layer DPROBE DPROBE
+ layer THRUVIA THRUVIA
+ layer TSVID TSVID
+ layer RFMEMS RFMEMS
+ layer DEVICE DEVICE
+
+ layer NORCX NORCX
+ layer FILLBLOCK FILLBLOCK
+
+ layer LVSTEXT LVSTEXT
+ layer BOUND BOUND
+ layer INDBOUND INDBOUND
+ layer SEALBOUND SEALBOUND
+
+ calma DNWELL   32  0
+ calma DEEPNBLK 32  21
+ calma NWELL    31  0
+ calma NWELLPIN 31  2
+ calma PWELLBLK 46  21
+ calma SUBS     40  0
+ calma SUBTXT   40  25
+ calma DIGSUB   60  0
+ calma DIFF     1   0
+ calma DIFFPIN  1   2
+ calma DIFFMASK 1   20
+ calma DIFFFILL 1   22
+ calma POLY     5   0
+ calma POLYPIN  5   2
+ calma POLYFILL 5   22
+ calma POLYRES  128 0
+ calma POLYRESPIN 128 2
+ calma THKOX    44  0
+ calma PSD      14  0
+ calma NSD      7   0
+ calma NSDBLOCK 7   21
+ calma EXTBLOCK 111 0
+ calma EMITTER  33  0
+ calma HVEMITTER 156 0
+ calma CONT     6   0
+ calma MET1     8   0
+ calma MET1TXT  8   25
+ calma MET1PIN  8   2
+ calma MET1RES  8   29
+ calma MET1FILL	8   22
+ calma VIA1     19  0
+ calma MET2     10  0
+ calma MET2TXT  10  25
+ calma MET2PIN  10  2
+ calma MET2RES  10  29
+ calma MET2FILL 10  22
+ calma VIA2     29  0   
+ calma MET3     30  0
+ calma MET3TXT  30  25
+ calma MET3PIN  30  2
+ calma MET3RES  30  29
+ calma MET3FILL 30  22
+ calma VIA3     49  0
+ calma MET4     50  0
+ calma MET4TXT  50  25
+ calma MET4PIN  50  2
+ calma MET4RES  50  29
+ calma MET4FILL 50  22
+ calma VIA4     66  0
+ calma MET5     67  0
+ calma MET5TXT  67  25
+ calma MET5PIN  67  2
+ calma MET5RES  67  29
+ calma MET5FILL 67  22
+ calma MIM	36  0
+ calma MIMCC	129 0
+ calma VIA5     125 0
+ calma MET6     126 0
+ calma MET6TXT  126 25
+ calma MET6PIN  126 2
+ calma MET6RES  126 29
+ calma MET6FILL 126 22
+ calma VIA6     133 0
+ calma MET7     134 0
+ calma MET7TXT  134 25
+ calma MET7PIN  134 2
+ calma MET7RES  134 29
+ calma MET7FILL 134 22
+ calma GLASS    9   0
+ calma PADPIN   9   2
+ calma SBLK     28  0
+ calma CAPID    99  39
+ calma INDUCTOR 27  0
+ calma INDPIN	27  2
+ calma INDTXT	27  25
+ calma RESDEF   24  0
+ calma DIODE    99  31
+ calma ESDID	99  30
+ calma SRAMID	25  0
+ calma DIGITALID 16 0
+ calma BIPOLARID 26 0
+ calma HEATRES   52 0
+ calma HEATTRANS 51 0
+ calma EDGESEAL  39 0
+ calma IPROBE	8   33
+ calma DPROBE	8   34
+ calma THRUVIA  152 0
+ calma TSVID	99  32
+ calma PADID	41  0
+ calma PILLAR    9  35
+ calma SOLDER    9  36
+ calma PILLARID 41  35
+ calma SOLDERID 41  36
+ calma RFMEMS	69  0
+ calma INDBOUND 27  4
+ calma SEALBOUND 39 4
+ calma DEVICE   99  0
+
+ calma BOUND    189 *
+ calma LVSTEXT  63  0
+ calma NORCX	148 *
+
+ calma FILLBLOCK 160 0
+ calma DIFFBLOCK 1   23
+ calma POLYBLOCK 5   23
+ calma MET1BLOCK 8   23
+ calma MET2BLOCK 10  23
+ calma MET3BLOCK 30  23
+ calma MET4BLOCK 50  23
+ calma MET5BLOCK 67  23
+ calma MET6BLOCK 126 23
+ calma MET7BLOCK 134 23
+
+ calma DIFFNORCX 1   28
+ calma POLYNORCX 5   28
+ calma MET1NORCX 8   28
+ calma MET2NORCX 10  28
+ calma MET3NORCX 30  28
+ calma MET4NORCX 50  28
+ calma MET5NORCX 67  28
+ calma MET6NORCX 126 28
+ calma MET7NORCX 134 28
 
 end
  
@@ -511,47 +1647,53 @@ end
 
 extract
 style default
- planeorder p1 0
- planeorder p2 1
- planeorder p3 2
- planeorder p4 3
- planeorder p5 4
- planeorder p6 5
- planeorder p7 6
- planeorder p8 7
- planeorder p9 8
- planeorder p10 9
- planeorder p11 10
- planeorder p12 11
- planeorder p13 12
- planeorder p14 13
- planeorder p15 14
- planeorder p16 15
- planeorder p17 16
- planeorder p18 17
- planeorder p19 18
- planeorder p20 19
- planeorder p21 20
- planeorder p22 21
- planeorder p23 22
- planeorder p24 23
- planeorder p25 24
- planeorder p26 25
- planeorder p27 26
- planeorder p28 27
- planeorder p29 28
- planeorder p30 29
- planeorder p31 30
- planeorder p32 31
- planeorder p33 32
- planeorder p34 33
- planeorder p35 34
- planeorder p36 35
- planeorder p37 36
- planeorder p38 37
- planeorder p39 38
- planeorder p40 39
- planeorder p41 40
- planeorder p42 41
- planeorder p43 42
+ planeorder dw   0
+ planeorder w    1
+ planeorder i1   2
+ planeorder i2   3
+ planeorder i3   4
+ planeorder i4   5
+ planeorder i5   6
+ planeorder i6   7
+ planeorder i7   8
+ planeorder a    9
+ planeorder p    10
+ planeorder co   11
+ planeorder m1   12
+ planeorder v1   13
+ planeorder m2   14
+ planeorder v2   15
+ planeorder m3   16
+ planeorder v3   17
+ planeorder m4   18
+ planeorder v4   19
+ planeorder m5   20
+ planeorder mc   21
+ planeorder v5   22
+ planeorder m6   23
+ planeorder v6   24
+ planeorder m7   25
+ planeorder g    26
+ planeorder bd   27
+ planeorder bp   28
+ planeorder b1   29
+ planeorder b2   30
+ planeorder b3   31
+ planeorder b4   32
+ planeorder b5   33
+ planeorder b6   34
+ planeorder b7   35
+ planeorder id1  36
+ planeorder id2  37
+ planeorder id3  38
+ planeorder id4  39
+ planeorder id5  40
+ planeorder id6  41
+ planeorder id7  42
+ planeorder id8  43
+ planeorder id9  44
+ planeorder id10 45
+ planeorder c    46
+ planeorder e    47
+
 end

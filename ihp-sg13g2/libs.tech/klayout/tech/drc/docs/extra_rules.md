@@ -3,7 +3,6 @@
 | NW.a                     | Min. NWell width                                                                        | 0.62         |
 | NW.d1                    | Min. NWell space to external N+Activ inside ThickGateOx                                 | 0.62         |
 | NW.f                     | Min. NWell space to substrate tie in P+Activ not inside ThickGateOx                     | 0.24         |
-| NW.f1                    | Min. NWell space to substrate tie in P+Activ inside ThickGateOx                         | 0.62         |
 | PWB.a                    | Min. PWell:block width                                                                  | 0.62         |
 | PWB.b                    | Min. PWell:block space or notch                                                         | 0.62         |
 | PWB.c                    | Min. PWell:block space to unrelated NWell                                               | 0.62         |
@@ -147,8 +146,6 @@
 | nmosi.f                  | Min. nSD:block width to separate ptap in nmosi                                          | 0.62         |
 | nmosi.g                  | Min. SalBlock overlap of nSD:block over Activ                                           | 0.15         |
 | Sdiod.a                  | Min. and max. PWell:block enclosure of ContBar                                          | 0.25         |
-| Sdiod.b                  | Min. and max. nSD:block enclosure of ContBar                                            | 0.4          |
-| Sdiod.c                  | Min. and max. SalBlock enclosure of ContBar                                             | 0.45         |
 | Pad.aR                   | Min. recommended Pad width                                                              | 30           |
 | Pad.a1                   | Max. Pad width                                                                          | 150          |
 | Pad.bR                   | Min. recommended Pad space                                                              | 8.4          |
@@ -232,7 +229,6 @@
 | Slt.f.TM2                | Min. TopMetal2 enclosure of TopMetal2:slit                                              | 1            |
 | Slt.h4                   | Min. TopMetal2:slit space to TopVia2                                                    | 1            |
 | NW.d1.dig                | Min. NWell space to external N+Activ inside ThickGateOx                                 | 0.31         |
-| NW.f1.dig                | Min. NWell space to substrate tie in P+Activ inside ThickGateOx                         | 0.24         |
 | LBE.b2                   | Min. LBE area (um2)                                                                     | 30000        |
 | LBE.e.dfPad              | Min. LBE space to dfpad and Passiv                                                      | 50           |
 | LBE.e.Passiv             | Min. LBE space to dfpad and Passiv                                                      | 50           |

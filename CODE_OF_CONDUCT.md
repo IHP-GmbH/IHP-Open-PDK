@@ -56,6 +56,24 @@ Examples of representing our community include using an official e-mail address,
 posting via an official social media account, or acting as an appointed
 representative at an online or offline event.
 
+## Open-Source Tooling & Vendor-Neutrality
+
+This project exists to advance open EDA ecosystems. To keep discussions focused and inclusive, we ask contributors to **minimize discussion of proprietary / commercial EDA tools**.
+
+**Do:**
+
+* Prefer open-source tools, formats, and workflows in examples, issues, and documentation.
+* Mention proprietary tools only when strictly necessary for interoperability, migration, or reproducibility?and provide an open alternative or generic description whenever possible.
+* Share factual, non-promotional information that helps improve open workflows (e.g., how to export open formats).
+
+**Don't:**
+
+* Use project spaces for marketing, endorsements, purchasing guidance, or sales outreach related to commercial tools.
+* Post or request proprietary content (e.g., license keys, serials, screenshots of non-redistributable materials, excerpts from paywalled manuals, or content from closed vendor forums).
+* File issues or PRs that can only be reproduced with proprietary tools without providing an open-source reproduction path.
+
+Community leaders may edit or remove content that violates this policy or derails open-source-focused discussions. Questions about this section can be directed to the enforcement contact listed below.
+
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be

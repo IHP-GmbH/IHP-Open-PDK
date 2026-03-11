@@ -51,6 +51,11 @@ test-LVS-cells:
 	@ python3 create_cell_testcases.py
 	@ python3 run_regression_cells.py
 
+.ONESHELL:
+test-LVS-SVS:
+	@echo "========== SG13G2 Manual SVS Regression =========="
+	@bash testcases/manual_tests/svs_testss/run_lvs.sh
+
 #=================================
 # -------- test-LVS-switch -------
 #=================================
@@ -88,6 +93,7 @@ help:
 	@echo "... test-LVS                   (To run LVS for all devices with switching test   )"
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
 	@echo "... test-LVS-stdcells          (To run LVS for all standard cells                )"
+	@echo "... test-LVS-SVS               (To run manual SVS regression: 1 PASS + 2 FAIL     )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"

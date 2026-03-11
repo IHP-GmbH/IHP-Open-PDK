@@ -1,0 +1,221 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# BJT-3term device class
+class CustomBJT3 < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+
+    add_parameter(RBA::DeviceParameterDefinition.new('we', 'emitter width', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('le', 'emitter length', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    enable_parameter('we', true)
+    enable_parameter('le', true)
+    enable_parameter('m', true)
+
+    self.combiner = BJTDeviceCombiner.new
+  end
+end
+
+# BJT-3term PNP device class
+class CustomBJT3Pnp < RBA::DeviceClassBJT3Transistor
+  def initialize
+    super
+    clear_parameters
+
+    add_parameter(RBA::DeviceParameterDefinition.new('A', 'emitter area', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('P', 'emitter perimeter', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    enable_parameter('A', true)
+    enable_parameter('P', true)
+    enable_parameter('m', true)
+
+    self.combiner = BJTDeviceCombiner.new
+  end
+end
+
+# BJT-4term device class
+class CustomBJT4 < RBA::DeviceClassBJT4Transistor
+  include DeviceClassMethods
+  def initialize
+    super
+    clear_parameters
+
+    add_parameter(RBA::DeviceParameterDefinition.new('we', 'emitter width', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('le', 'emitter length', 0, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('Nx', 'emitter count', 1, true))
+    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
+
+    enable_parameter('we', true)
+    enable_parameter('le', true)
+    enable_parameter('Nx', true)
+    enable_parameter('m', true)
+
+    self.combiner = BJTDeviceCombiner.new
+  end
+end
+
+#===============================================
+# ------------- CustomBJTExtractor -------------
+#===============================================
+
+# === CustomBJTExtractor ===
+class CustomBJTExtractor < RBA::GenericDeviceExtractor
+  def initialize(name, is_pnp=false)
+    self.name = name
+    @is_pnp = is_pnp
+    create
+  end
+
+  def setup
+    # Device core layers
+    define_layer('MK', 'Device Marker')        # Index 0
+    define_layer('C', 'Collector')             # Index 1
+    define_layer('B', 'Base')                  # Index 2
+    define_layer('E', 'Emitter')               # Index 3
+    define_layer('S', 'Substrate') if !@is_pnp # Index 4 (if NPN)
+
+    # Terminal connection layers
+    define_layer('tC', 'Terminal Collector')   # Index 4 (PNP) or 5 (NPN)
+    define_layer('tB', 'Terminal Base')        # Index 5 (PNP) or 6 (NPN)
+    define_layer('tE', 'Terminal Emitter')     # Index 6 (PNP) or 7 (NPN)
+    define_layer('tS', 'Terminal Substrate') if !@is_pnp # Index 8 (NPN)
+
+    if @is_pnp
+      @reg_dev = CustomBJT3Pnp.new
+    else
+      @reg_dev = CustomBJT4.new
+    end
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    conn = RBA::Connectivity.new
+
+    mk = layers[0]
+    c  = layers[1]
+    b  = layers[2]
+    e  = layers[3]
+    
+    # Cluster all core geometries together using the Marker
+    conn.connect(mk, b)
+    conn.connect(c, b)
+    conn.connect(e, b)
+    
+    # Connect the local device layers to their respective terminal layers
+    if @is_pnp
+      tc = layers[4]
+      tb = layers[5]
+      te = layers[6]
+      
+      conn.connect(tc, c)
+      conn.connect(tb, b)
+      conn.connect(te, e)
+    else
+      s  = layers[4]
+      tc = layers[5]
+      tb = layers[6]
+      te = layers[7]
+      ts = layers[8]
+      
+      conn.connect(s, b) # Group substrate into the same cluster
+      
+      conn.connect(tc, c)
+      conn.connect(tb, b)
+      conn.connect(te, e)
+      conn.connect(ts, s)
+    end
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    mk = layer_geometry[0]
+    c  = layer_geometry[1]
+    b  = layer_geometry[2]
+    e  = layer_geometry[3]
+    s  = @is_pnp ? nil : layer_geometry[4]
+
+    tc = @is_pnp ? layer_geometry[4] : layer_geometry[5]
+    tb = @is_pnp ? layer_geometry[5] : layer_geometry[6]
+    te = @is_pnp ? layer_geometry[6] : layer_geometry[7]
+    ts = @is_pnp ? nil : layer_geometry[8]
+
+    # Iterate over device markers
+    mk.merged.each do |mk_poly|
+      device_region = RBA::Region.new(mk_poly)
+      
+      emitters = e.interacting(device_region).merged
+      collectors = c.interacting(device_region).merged
+      bases = b.interacting(device_region).merged
+      subs = @is_pnp ? nil : s.interacting(device_region).merged
+
+      nx = emitters.count
+
+      # Only extract if this marker overlaps with the target device's active parts
+      if nx > 0 && !collectors.is_empty? && !bases.is_empty? && (@is_pnp || !subs.is_empty?)
+        device = create_device
+
+        first_emitter = nil
+        emitters.each { |ep| first_emitter = ep; break }
+
+        # calculate we, le
+        we = first_emitter.bbox.width * $unit
+        le = first_emitter.bbox.height * $unit
+
+        if @is_pnp
+          device.set_parameter('A', we * le)
+          device.set_parameter('P', (we + le) * 2)
+        else
+          device.set_parameter('we', we)
+          device.set_parameter('le', le)
+        end
+        device.set_parameter('m', 1)
+
+        # Only set Nx for NPN devices
+        if !@is_pnp
+          device.set_parameter('Nx', nx)
+        end
+
+        # Terminals definitions
+        tc_idx = @is_pnp ? 4 : 5
+        tb_idx = @is_pnp ? 5 : 6
+        te_idx = @is_pnp ? 6 : 7
+        ts_idx = 8
+
+        tc.interacting(device_region).merged.each { |poly| define_terminal(device, @reg_dev.terminal_id('C'), tc_idx, poly) }
+        tb.interacting(device_region).merged.each { |poly| define_terminal(device, @reg_dev.terminal_id('B'), tb_idx, poly) }
+        te.interacting(device_region).merged.each { |poly| define_terminal(device, @reg_dev.terminal_id('E'), te_idx, poly) }
+        
+        if !@is_pnp
+          ts.interacting(device_region).merged.each { |poly| define_terminal(device, @reg_dev.terminal_id('S'), ts_idx, poly) }
+        end
+      end
+    end
+  end
+end

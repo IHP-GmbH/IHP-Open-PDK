@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 B 2 460 -320 1260 80 {flags=graph
 y1=-1.2e-12
@@ -95,7 +96,7 @@ C {simulator_commands_shown.sym} -60 -470 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
 )"}
 C {simulator_commands_shown.sym} -450 -470 0 0 {name=Libs_Ngspice
 simulator=ngspice

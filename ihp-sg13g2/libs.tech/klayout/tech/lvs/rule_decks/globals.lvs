@@ -28,9 +28,9 @@ PREFIX_MAP = {
   'sg13_lv_pmos' => 'M',
   'sg13_hv_pmos' => 'M',
   'rfnmos' => 'M',
-  'rfnmosHV' => 'M',
+  'rfnmoshv' => 'M',
   'rfpmos' => 'M',
-  'rfpmosHV' => 'M',
+  'rfpmoshv' => 'M',
   'npn13G2' => 'Q',
   'npn13G2L' => 'Q',
   'npn13G2V' => 'Q',
@@ -38,11 +38,12 @@ PREFIX_MAP = {
   'dantenna' => 'D',
   'dpantenna' => 'D',
   'schottky_nbl1' => 'D',
+  'isolbox' => 'D',
   'rsil' => 'R',
   'rppd' => 'R',
   'rhigh' => 'R',
   'lvsres' => 'R',
-  'SVaricap' => 'C',
+  'sg13_hv_svaricap' => 'C',
   'cap_cmim' => 'C',
   'rfcmim' => 'C',
   'diodevss_4kv' => 'D',
@@ -66,3 +67,30 @@ CUSTOM_READER = %w[M C R Q L D].freeze
 
 # List of poly-resistors
 RES_DEV = ['rsil', 'rppd', 'rhigh']
+
+# RF MOS extraction models should be mapped to these base MOS model names.
+RF_TO_BASE_MOS_MODEL = {
+  'rfnmos' => 'sg13_lv_nmos',
+  'rfnmoshv' => 'sg13_hv_nmos',
+  'rfpmos' => 'sg13_lv_pmos',
+  'rfpmoshv' => 'sg13_hv_pmos'
+}.freeze
+
+# SPICE writer output map
+MOS_OUTPUT_MODEL_MAP = {
+  'sg13_lv_nmos' => ['sg13_lv_nmos', 0],
+  'rfnmos' => ['sg13_lv_nmos', 1],
+  'sg13_hv_nmos' => ['sg13_hv_nmos', 0],
+  'rfnmoshv' => ['sg13_hv_nmos', 1],
+  'sg13_lv_pmos' => ['sg13_lv_pmos', 0],
+  'rfpmos' => ['sg13_lv_pmos', 1],
+  'sg13_hv_pmos' => ['sg13_hv_pmos', 0],
+  'rfpmoshv' => ['sg13_hv_pmos', 1]
+}.freeze
+
+# Used by reader/writer/mapping to convert rfmode values to binary.
+RFMODE_TO_BINARY = lambda do |value|
+  next nil if value.nil?
+
+  value.to_s.strip.to_f >= 0.5 ? 1 : 0
+end.freeze

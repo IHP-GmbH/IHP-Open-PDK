@@ -59,9 +59,9 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--disable_extra_rules] [--no_feol] [--no_beol] [--no_density]
+            [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid]
+            [--antenna_only] [--no_offgrid] [--no_angle]
 ```
 
 **Example:**
@@ -87,17 +87,20 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --no_feol             Disable all FEOL-related DRC checks.
   --no_beol             Disable all BEOL-related DRC checks.
   --disable_extra_rules Disable the remaining DRC rules from the full rule set (may be slower).
+  --density_sanity      Enable optional density boundary sanity markers (default: disabled).
   --no_density          Disable density rule checks.
   --density_only        Run only density rules.
   --antenna             Enable antenna rule checks.
   --antenna_only        Run only antenna rules.
   --no_offgrid          Disable offgrid rule checks.
+  --no_angle            Disable angle rule checks.
 ```
 
 > **ℹ️ Note**  
 >
 > By default, the **main DRC rule set** is executed, which includes checks such as **density rules**.  
 > To skip density checks, use the `--no_density` option.
+> Density sanity markers are also disabled by default; enable them with `--density_sanity` when needed.
 >
 > If the `--drc_json=<json_path>` option is **not specified**, the script will get rule values as following:
 >

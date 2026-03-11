@@ -1,0 +1,39 @@
+.SUBCKT rfcmim_combiner_cases
+
+* ----------------------------------------------------------------------
+* RFCMIM combiner-focused testcase matrix
+*
+* Expected merge behavior in custom combiner:
+* 1) Merge only when mim_top/mim_btm/mim_sub are identical.
+* 2) Merge only when w/l/wfeed are identical.
+* 3) Resulting merged device should sum parameter m.
+* 4) Series-connected devices should not merge.
+* ----------------------------------------------------------------------
+
+* Case A: Parallel merge allowed (same nets, same geometry, same wfeed).
+* Expected: C_A1 + C_A2 + C_A3 can merge (m = 1 + 2 + 3 = 6).
+C_A1 A_TOP A_BTM SUB rfcmim w=7u l=7u wfeed=3u m=1
+C_A2 A_TOP A_BTM SUB rfcmim w=7u l=7u wfeed=3u m=2
+C_A3 A_TOP A_BTM SUB rfcmim w=7u l=7u wfeed=3u m=3
+
+* Case B: Parallel nets match, but wfeed differs.
+* Expected: no merge between C_B1 and C_B2.
+C_B1 B_TOP B_BTM SUB rfcmim w=7u l=7u wfeed=3u m=1
+C_B2 B_TOP B_BTM SUB rfcmim w=7u l=7u wfeed=5u m=1
+
+* Case c: Parallel nets and substrate match, but geometry differs.
+* Expected: no merge between C_C1 and C_C2.
+C_C1 C_TOP C_BTM SUB rfcmim w=7u   l=7u wfeed=3u m=1
+C_C2 C_TOP C_BTM SUB rfcmim w=7.2u l=7u wfeed=3u m=1
+
+* Case D: Same two physical nets but swapped terminal order.
+* Expected: no merge with strict mim_top/mim_btm matching.
+C_D1 D_TOP D_BTM SUB rfcmim w=7u l=7u wfeed=3u m=1
+C_D2 D_BTM D_TOP SUB rfcmim w=7u l=7u wfeed=3u m=1
+
+* Case E: Series chain (shared midpoint only).
+* Expected: no merge for series-connected rfcmim devices.
+C_E1 E_IN  E_MID SUB rfcmim w=7u l=7u wfeed=3u m=1
+C_E2 E_MID E_OUT SUB rfcmim w=7u l=7u wfeed=3u m=1
+
+.ENDS rfcmim_combiner_cases

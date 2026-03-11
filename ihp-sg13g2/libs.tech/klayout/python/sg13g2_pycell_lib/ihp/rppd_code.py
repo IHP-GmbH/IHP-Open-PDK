@@ -18,13 +18,15 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .res_base_code import *
 from .thermal import *
 from .geometry import *
 from .utility_functions import *
 
 import math
 
-class rppd(DloGen):
+
+class rppd(ResistorBase):
 
     @classmethod
     def defineParamSpecs(cls, specs):
@@ -80,7 +82,9 @@ class rppd(DloGen):
         specs('PWB', 'No', 'PWell Blockage', ChoiceConstraint(['Yes', 'No']))
         specs('m', '1', 'Multiplier')
         specs('trise', '0.0', 'Temp rise from ambient')
-     
+
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         self.grid = self.tech.getGridResolution()
         self.techparams = self.tech.getTechParams()
@@ -91,8 +95,13 @@ class rppd(DloGen):
         self.l = Numeric(params['l'])*1e6
         self.ps = Numeric(params['ps'])*1e6
         #self.resistance = Numeric(params['R'])
-                
-    def genLayout(self):
+
+        super().setupParams(params)
+
+    def genSingleResistorLayout(self, index: int, x_offset: float) -> ResistorInfo:
+        """
+        Template method defined in res_base_code.ResistorBase
+        """
         psdlayer = Layer('pSD')
         textlayer = Layer('TEXT')
         metlayer = Layer('Metal1')
@@ -164,7 +173,7 @@ class rppd(DloGen):
             wcontact = w+2*contoverlay
         
         # Insertionpoint for contact is at (0-contoverlay:0)
-        xpos1 = 0-contoverlay
+        xpos1 = 0-contoverlay + x_offset   # x_offset in segmentation array
         ypos1 = 0
         xpos2 = xpos1+wcontact
         ypos2 = 0
@@ -186,7 +195,7 @@ class rppd(DloGen):
             hiGetAttention()
             print('poly space < '+str(psmin))
         
-        # set contacts out of resitor-square?
+        # set contacts out of resistor-square?
         lcor = 0.0
         lsumnew = 0.0
         lsumold = 0.0
@@ -248,12 +257,12 @@ class rppd(DloGen):
         # contact area
         # number parallel contacts ncont, distance distc:
         wcon = wcontact-2.0*polyover
-        distc = consize+conspace;        
+        distc = consize+conspace
         ncont = math.floor((wcon+conspace)/distc + self.epsilon)
         if ncont < 1: 
             ncont = 1
             
-        distr = GridFix((wcon-ncont*distc+conspace)*0.5);
+        distr = GridFix((wcon-ncont*distc+conspace)*0.5)
         
         # draw contact
         # block for internal PCell
@@ -272,8 +281,9 @@ class rppd(DloGen):
         # new metal block
         dbCreateRect(self, metlayer, Box(xpos1+contbar_poly_over-endcap, ypos1, xpos2-contbar_poly_over+endcap, ypos2))
         
-        MkPin(self, 'PLUS', 1, Box(xpos1+contbar_poly_over-endcap, ypos1, 
-                                   xpos2-contbar_poly_over+endcap, ypos2), metlayer_pin)
+        plus_pin_box = Box(xpos1+contbar_poly_over-endcap, ypos1,
+                           xpos2-contbar_poly_over+endcap, ypos2)
+        MkPin(self, f"PLUS{index}", 1, plus_pin_box, metlayer_pin)
         
         # set xpos1/xpos2 back to right for resistorbody
         if asymcont :
@@ -440,8 +450,11 @@ class rppd(DloGen):
                                          xpos2-contbar_poly_over+endcap, 
                                          ypos2+(contactpush+consize+li_salblock+li_poly_over+metover+lcor)*dir))
         
-        MkPin(self, 'MINUS', 2, Box(xpos1+contbar_poly_over-endcap, ypos2+(contactpush+li_salblock+li_poly_over-metover+lcor)*dir, 
-                                    xpos2-contbar_poly_over+endcap, ypos2+(contactpush+consize+li_salblock+li_poly_over+metover+lcor)*dir), metlayer_pin)
+        minus_pin_box = Box(xpos1+contbar_poly_over-endcap,
+                            ypos2+(contactpush+li_salblock+li_poly_over-metover+lcor)*dir,
+                            xpos2-contbar_poly_over+endcap,
+                            ypos2+(contactpush+consize+li_salblock+li_poly_over+metover+lcor)*dir)
+        MkPin(self, f"MINUS{index}", 2, minus_pin_box, metlayer_pin)
 
         # fill notches in pas layer
         if (self.ps-2.0*psdover < psdNotch) and (self.ps-2.0*psdover > 0.0):
@@ -474,3 +487,6 @@ class rppd(DloGen):
         #lsizey = lbl.bbox.getHeight()
         #scale = min(self.w/lsizex, (self.l+2*poly_cont_len)/lsizey)  
         #SetSGq(lbl scale height) 
+
+        return ResistorInfo(plus_pin_box=plus_pin_box,
+                            minus_pin_box=minus_pin_box)

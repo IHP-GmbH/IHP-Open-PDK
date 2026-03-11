@@ -91,6 +91,8 @@ class npn13G2(DloGen):
         CMetY1 = self.CMetY1
         CMetY2 = self.CMetY2
 
+        Cell = self.__class__.__name__
+        
         STI = Numeric(STI)*1e6
         baspolyx = Numeric(baspolyx)*1e6
         bipwinx = Numeric(bipwinx)*1e6
@@ -209,6 +211,17 @@ class npn13G2(DloGen):
                     stepX * pcIndexX + le / 2,
                     -(we / 2 + leoffset),
                 ),
+            )
+            
+            # HeatTrans
+            ihpAddThermalBjtLayer(
+                self, 
+                Box(
+                    (stepX * pcIndexX - le / 2) - 0.05, (-we / 2 - leoffset) - 0.05, 
+                    (stepX * pcIndexX + le / 2) + 0.05, ( we / 2 + leoffset) + 0.05
+                ),
+                True,
+                Cell
             )
 
             pcLayer = 'Activ'

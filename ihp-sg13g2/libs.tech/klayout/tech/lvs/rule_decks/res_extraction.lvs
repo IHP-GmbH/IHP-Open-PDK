@@ -34,7 +34,7 @@ extract_devices(GeneralNTerminalExtractor.new('rsil', 2), {
                   'ports' => rsil_ports,
                   'meas_mk' => polyres_drw,
                   'dev_mk' => polyres_drw.interacting(rsil_res),
-                  'sub_mk' => pwell.join(nwell_drw)
+                  'sub_mk' => rsil_sub
                 })
 # rppd
 logger.info('Extracting rppd resistor')
@@ -43,7 +43,7 @@ extract_devices(GeneralNTerminalExtractor.new('rppd', 2), {
                   'ports' => rppd_ports,
                   'meas_mk' => polyres_drw,
                   'dev_mk' => polyres_drw.interacting(rppd_res),
-                  'sub_mk' => pwell.join(nwell_drw)
+                  'sub_mk' => rppd_sub
                 })
 
 # rhigh
@@ -53,37 +53,47 @@ extract_devices(GeneralNTerminalExtractor.new('rhigh', 2), {
                   'ports' => rhigh_ports,
                   'meas_mk' => polyres_drw,
                   'dev_mk' => polyres_drw.interacting(rhigh_res),
-                  'sub_mk' => pwell.join(nwell_drw)
+                  'sub_mk' => rhigh_sub
                 })
 
 # ===============
 # ---- METAL ----
 # ===============
+# Sheet resistance (ohm/sq), aligned with SG13G2 metal resistor defaults:
+# REF: ihp-sg13g2/libs.tech/parasitics/itf/sg13g2_typ.itf
+# REF: ihp-sg13g2/libs.tech/magic/ihp-sg13g2-res.tcl
+RSH_RES_METAL1 = 0.110
+RSH_RES_METAL2 = 0.088
+RSH_RES_METAL3 = 0.088
+RSH_RES_METAL4 = 0.088
+RSH_RES_METAL5 = 0.088
+RSH_RES_TOPMETAL1 = 0.018
+RSH_RES_TOPMETAL2 = 0.011
 
 # RM1
 logger.info('Extracting res_metal1 resistor')
-extract_devices(resistor('res_metal1', 1.0, RES2), { 'R' => res_metal1, 'C' => metal1_con })
+extract_devices(resistor('res_metal1', RSH_RES_METAL1, RES2), { 'R' => res_metal1, 'C' => metal1_con })
 
 # RM2
 logger.info('Extracting res_metal2 resistor')
-extract_devices(resistor('res_metal2', 1.0, RES2), { 'R' => res_metal2, 'C' => metal2_con })
+extract_devices(resistor('res_metal2', RSH_RES_METAL2, RES2), { 'R' => res_metal2, 'C' => metal2_con })
 
 # RM3
 logger.info('Extracting res_metal3 resistor')
-extract_devices(resistor('res_metal3', 1.0, RES2), { 'R' => res_metal3, 'C' => metal3_con })
+extract_devices(resistor('res_metal3', RSH_RES_METAL3, RES2), { 'R' => res_metal3, 'C' => metal3_con })
 
 # RM4
 logger.info('Extracting res_metal4 resistor')
-extract_devices(resistor('res_metal4', 1.0, RES2), { 'R' => res_metal4, 'C' => metal4_con })
+extract_devices(resistor('res_metal4', RSH_RES_METAL4, RES2), { 'R' => res_metal4, 'C' => metal4_con })
 
 # RM5
 logger.info('Extracting res_metal5 resistor')
-extract_devices(resistor('res_metal5', 1.0, RES2), { 'R' => res_metal5, 'C' => metal5_con })
+extract_devices(resistor('res_metal5', RSH_RES_METAL5, RES2), { 'R' => res_metal5, 'C' => metal5_con })
 
 # RTM1
 logger.info('Extracting res_topmetal1 resistor')
-extract_devices(resistor('res_topmetal1', 1.0, RES2), { 'R' => res_topmetal1, 'C' => topmetal1_con })
+extract_devices(resistor('res_topmetal1', RSH_RES_TOPMETAL1, RES2), { 'R' => res_topmetal1, 'C' => topmetal1_con })
 
 # RTM2
 logger.info('Extracting res_topmetal2 resistor')
-extract_devices(resistor('res_topmetal2', 1.0, RES2), { 'R' => res_topmetal2, 'C' => topmetal2_con })
+extract_devices(resistor('res_topmetal2', RSH_RES_TOPMETAL2, RES2), { 'R' => res_topmetal2, 'C' => topmetal2_con })

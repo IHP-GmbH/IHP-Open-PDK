@@ -1,31 +1,5 @@
 set current_folder [file dirname [file normalize [info script]]]
 
-# Technology lib
-set ::env(LIB) [dict create]
-dict set ::env(LIB) nom_typ_1p20V_25C "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_typ_1p20V_25C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_typ_1p2V_3p3V_25C.lib\
-"
-dict set ::env(LIB) nom_fast_1p32V_m40C "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_fast_1p32V_m40C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_fast_1p32V_3p6V_m40C.lib\
-"
-dict set ::env(LIB) nom_slow_1p08V_125C "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_slow_1p08V_125C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_slow_1p08V_3p0V_125C.lib\
-"
-
-# Corners
-set ::env(STA_CORNERS) "\
-nom_fast_1p32V_m40C \
-nom_slow_1p08V_125C \
-nom_typ_1p20V_25C \
-"
-
-set ::env(DEFAULT_CORNER) "nom_typ_1p20V_25C"
-
-set ::env(TIMING_VIOLATION_CORNERS) "*typ*"
-
 # Synthesis mapping
  # Latch mapping
 set ::env(SYNTH_LATCH_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/latch_map.v"

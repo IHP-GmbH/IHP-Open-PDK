@@ -58,6 +58,15 @@ test-DRC-main: env
 	@. $(VENV_RUN_COMMAND); python3 $(KLAYOUT_DRC_TESTS)/run_regression.py
 
 #=================================
+# -------- test-DRC-cells --------
+#=================================
+
+.ONESHELL:
+test-DRC-cells: env
+	@. $(VENV_RUN_COMMAND); echo "Running Klayout-DRC regression for all SG13G2 cells"
+	@. $(VENV_RUN_COMMAND); python3 $(KLAYOUT_DRC_TESTS)/run_regression_cells.py
+
+#=================================
 # ----- test-LVS_regression ------
 #=================================
 
@@ -78,6 +87,14 @@ test-LVS-% : env
 test-LVS-cells: env
 	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS for SG13G2 cells"
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-cells
+
+#=================================
+# -------- test-SVS-cell ---------
+#=================================
+
+test-SVS-cell: env
+	@. $(VENV_RUN_COMMAND); echo "Running Klayout-SVS for SG13G2 cell"
+	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-SVS-cell
 
 #=================================
 # -------- test-LVS-switch -------

@@ -67,7 +67,7 @@ set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
 set sim(spice,default) 0
 
 # Create FET and BIP .save file
-mkdir -p $netlist_dir
+file mkdir $netlist_dir
 write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
 
 # run netlist and simulation
@@ -249,7 +249,7 @@ set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
 set sim(spice,default) 0
 
 # Create FET and BIP .save file
-mkdir -p $netlist_dir
+file mkdir $netlist_dir
 write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
 
 # run netlist and simulation

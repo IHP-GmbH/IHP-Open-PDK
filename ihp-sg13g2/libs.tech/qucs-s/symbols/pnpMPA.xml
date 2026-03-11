@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<Component
+  xsi:noNamespaceSchemaLocation="Component.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  library="IHP SG13G2 devices" names="pnpMPA" schematic_id = "Q">
+    <Description>
+        SG13G2 pnpMPA
+    </Description>
+    <Models>
+        <DefaultModel value="pnpMPA">
+        </DefaultModel>
+        <SpiceModel value="Q">
+        </SpiceModel>
+    </Models>
+    <Netlists>
+        <NgspiceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'Q{PartCounter} {nets} {{{model}}}::model='nonempty'
+            {{a={A}}}::A='nonempty' {{p={P}}}::P='nonempty' {{m={m}}}::m='nonempty'">
+        </NgspiceNetlist>
+        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
+    </Netlists>
+    <Symbols>
+        <Symbol id="Standard">
+           <File>{QUCS_S_COMPONENTS_LIBRARY}/Bjt.sym</File>
+        </Symbol>
+    </Symbols>
+    <Parameters>
+        <Parameter name="model" unit="" default_value="pnpMPA" show="false">
+            <Description>Model name</Description>
+        </Parameter>
+        <Parameter name="Letter" unit="" default_value="X" show="false">
+            <Description>Spice prefix</Description>
+        </Parameter>
+        <Parameter name="w" unit="u" default_value="0.7" show="true">
+            <Description>Width</Description>
+        </Parameter>
+        <Parameter name="l" unit="u" default_value="2.0" show="true">
+            <Description>Length</Description>
+        </Parameter>
+        <Parameter name="A" unit="" equation="w*l" show="false">
+            <Description>Area</Description>
+        </Parameter>
+        <Parameter name="P" unit="" equation="2*(w+l)" show="false">
+            <Description>Perimeter</Description>
+        </Parameter>
+        <Parameter name="m" unit="" default_value="1" show="false">
+            <Description>Multiplier</Description>
+        </Parameter>
+        <Parameter name="type" unit="" default_value="pnp" show="false">
+            <Description>Device type</Description>
+        </Parameter>
+    </Parameters>
+</Component>

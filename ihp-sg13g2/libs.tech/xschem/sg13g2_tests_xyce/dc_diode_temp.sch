@@ -106,7 +106,7 @@ C {simulator_commands_shown.sym} 820 -630 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.include $::SG13G2_MODELS_XYCE/diodes.lib
+.include $::MODELS_XYCE/diodes.lib
 )"}
 C {simulator_commands_shown.sym} 430 -630 0 0 {name=Libs_Ngspice
 simulator=ngspice

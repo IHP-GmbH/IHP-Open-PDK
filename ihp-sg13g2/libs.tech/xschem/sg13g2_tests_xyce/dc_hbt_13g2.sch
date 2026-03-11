@@ -97,7 +97,7 @@ C {simulator_commands_shown.sym} 40 -680 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerHBT.lib hbt_typ
+.lib $::MODELS_XYCE/cornerHBT.lib hbt_typ
 )"}
 C {simulator_commands_shown.sym} -350 -690 0 0 {name=Libs_Ngspice
 simulator=ngspice
@@ -149,7 +149,7 @@ set sim(spice,1,cmd) \{ngspice  \\"$N\\" -a\}
 set sim(spice,default) 0
 
 # Create FET and BIP .save file
-mkdir -p $netlist_dir
+file mkdir $netlist_dir
 write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
 
 # run netlist and simulation

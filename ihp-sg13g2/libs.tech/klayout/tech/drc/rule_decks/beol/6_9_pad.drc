@@ -16,7 +16,7 @@
 # limitations under the License.
 #=========================================================================================
 
-if TABLES.include?('pad') || (BEOL && RECOMMENDED)
+if TABLES.include?('pad') || BEOL
 #===============================================
 # ------------------ 6.9 Pad -------------------
 #===============================================
@@ -45,20 +45,22 @@ if TABLES.include?('pad') || (BEOL && RECOMMENDED)
       [topmetal2_drw, 'TM2']
     ]
 
-    # Rule Pad.fR: Min. recommended Metaln exit length is 7.00 um
-    metals.each do |metal_lay, met_abbrev|
-      logger.info("Executing rule Pad.fR_#{met_abbrev}")
-      pad_fr_value = drc_rules['Pad_fR'].to_f
-      pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
-      pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
-      pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
-      pad_fr_l = pad_fr_l3.not(pad_fr_l1)
-      pad_fr_l.output("Pad.fR_#{met_abbrev}",
-                    "6.9. Pad.fR_#{met_abbrev} : Min. recommended #{met_abbrev} exit length is #{pad_fr_value} um")
-      pad_fr_l1.forget
-      pad_fr_l2.forget
-      pad_fr_l3.forget
-      pad_fr_l.forget
+    if RECOMMENDED
+      # Rule Pad.fR: Min. recommended Metaln exit length is 7.00 um
+      metals.each do |metal_lay, met_abbrev|
+        logger.info("Executing rule Pad.fR_#{met_abbrev}")
+        pad_fr_value = drc_rules['Pad_fR'].to_f
+        pad_fr_l1 = metal_lay.interacting(pad).not(dfpad_drw)
+        pad_fr_l2 = pad_fr_l1.edges.and(dfpad_drw)
+        pad_fr_l3 = pad_fr_l2.extended(in: pad_fr_value.um)
+        pad_fr_l = pad_fr_l3.not(pad_fr_l1)
+        pad_fr_l.output("Pad.fR_#{met_abbrev}",
+                      "6.9. Pad.fR_#{met_abbrev} : Min. recommended #{met_abbrev} exit length is #{pad_fr_value} um")
+        pad_fr_l1.forget
+        pad_fr_l2.forget
+        pad_fr_l3.forget
+        pad_fr_l.forget
+      end
     end
 
     # Rule Pad.i: dfpad without TopMetal2 not allowed

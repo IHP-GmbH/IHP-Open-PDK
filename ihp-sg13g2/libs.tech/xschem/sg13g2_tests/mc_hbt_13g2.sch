@@ -31,8 +31,8 @@ lab=#net1}
 C {devices/code_shown.sym} -200 160 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerHBT.lib hbt_typ_stat
-*.lib $::SG13G2_MODELS/cornerHBT.lib hbt_typ
+.lib $::MODELS_NGSPICE/cornerHBT.lib hbt_typ_stat
+*.lib $::MODELS_NGSPICE/cornerHBT.lib hbt_typ
 "}
 C {devices/code_shown.sym} 400 -590 0 0 {name=NGSPICE only_toplevel=true 
 value="

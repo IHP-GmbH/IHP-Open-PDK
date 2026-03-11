@@ -48,7 +48,7 @@ $python_pid = nil
 def load_options(yaml_file_path)
   if File.exist?(yaml_file_path)
     begin
-      return YAML.safe_load(File.read(yaml_file_path))
+      return YAML.safe_load(File.read(yaml_file_path)) || {}
     rescue =&gt; e
       puts "Error loading options from YAML: #{e.message}"
     end
@@ -72,9 +72,11 @@ def set_default_options
     'disable_extra_rules' =&gt; false,
     'no_density' =&gt; true,
     'density_only' =&gt; false,
+    'density_sanity' =&gt; false,
     'antenna' =&gt; false,
     'antenna_only' =&gt; false,
     'no_offgrid' =&gt; false,
+    'no_angle' =&gt; false,
     'no_recommended' =&gt; false,
   }
 end
@@ -146,7 +148,7 @@ cmd_opts = [
   "--density_thr=#{options['density_thr']}"
 ]
 
-%w[no_feol no_beol disable_extra_rules no_density density_only antenna antenna_only no_offgrid no_recommended].each do |flag|
+%w[no_feol no_beol disable_extra_rules no_density density_only density_sanity antenna antenna_only no_offgrid no_angle no_recommended].each do |flag|
   cmd_opts &lt;&lt; "--#{flag}" if options[flag]
 end
 
@@ -213,7 +215,7 @@ end
 @title_font.setPointSize(14)
 @title_font.setBold(true)
 @title_label.setFont(@title_font)
-@title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
+@title_label.setStyleSheet("margin-left: 10px;")
 @header_layout.addWidget(@title_label)
 @header_layout.addStretch
 @main_layout.addLayout(@header_layout)
@@ -221,7 +223,7 @@ end
 # Log output area
 @log_output = RBA::QTextEdit.new
 @log_output.setReadOnly(true)
-@log_output.setStyleSheet("background-color: #f4f4f4; font-family: monospace;")
+@log_output.setStyleSheet("font-family: monospace;")
 @main_layout.addWidget(@log_output)
 
 # Close button

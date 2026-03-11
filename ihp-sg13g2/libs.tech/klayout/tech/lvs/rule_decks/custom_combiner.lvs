@@ -40,6 +40,8 @@ module DeviceCombinerMethods
 
   # A helper function to check whether two device connected in parallel
   def supp_parallel(a, b, net1, net2)
+    return false unless PARALLEL_RES
+    return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
     a_net1 = a.net_for_terminal(net1)
     a_net2 = a.net_for_terminal(net2)
     b_net1 = b.net_for_terminal(net1)
@@ -55,6 +57,8 @@ module DeviceCombinerMethods
 
   # A helper function to check whether two device connected in series
   def supp_series(a, b, net1, net2)
+    return false unless SERIES_RES
+    return false unless %w[w ps b m].all? { |param| same_parameter(a, b, param) }
     a_net1 = a.net_for_terminal(net1)
     a_net2 = a.net_for_terminal(net2)
     b_net1 = b.net_for_terminal(net1)
@@ -62,28 +66,20 @@ module DeviceCombinerMethods
 
     return false unless a_net1 && b_net1 && a_net2 && b_net2
 
-    series_con_a1 = a_net1.expanded_name == b_net1.expanded_name || a_net1.expanded_name == b_net2.expanded_name
-    series_con_a2 = a_net2.expanded_name == b_net1.expanded_name || a_net2.expanded_name == b_net2.expanded_name
-    series_con = series_con_a1 || series_con_a2
+    # Series merge requires exactly one shared node between the two devices.
+    # This avoids collapsing true parallel resistors when PARALLEL_RES is disabled.
+    shared = []
+    shared << [0, 0, b_net2] if a_net1.expanded_name == b_net1.expanded_name
+    shared << [0, 1, b_net1] if a_net1.expanded_name == b_net2.expanded_name
+    shared << [1, 0, b_net2] if a_net2.expanded_name == b_net1.expanded_name
+    shared << [1, 1, b_net1] if a_net2.expanded_name == b_net2.expanded_name
 
-    # Reroute terminal connections based on cluster IDs
-    if series_con_a1
-      if a_net1.expanded_name == b_net1.expanded_name
-        a.connect_terminal(0, b_net2)
-      else
-        a.connect_terminal(0, b_net1)
-      end
-    end
+    return false unless shared.size == 1
 
-    if series_con_a2
-      if a_net2.expanded_name == b_net1.expanded_name
-        a.connect_terminal(1, b_net2)
-      else
-        a.connect_terminal(1, b_net1)
-      end
-    end
-
-    series_con
+    # Re-route the matched terminal in device A to the unmatched terminal in B.
+    a_term, _b_term, target_net = shared[0]
+    a.connect_terminal(a_term, target_net)
+    true
   end
 
   # A helper function to check whether two parameters have approximately the same value
@@ -97,11 +93,14 @@ class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
 
   # Method to check and perform device combination
   def combine_devices(a, b)
-    # Check if both devices have the same net
+    # Require top/bottom net equality for all MIM devices.
+    # For rfcmim, also require the same substrate terminal (`mim_sub`).
     return false unless same_net(a, b, 'mim_top') && same_net(a, b, 'mim_btm')
+    return false if a.device_class.name.downcase.include?('rfcmim') && !same_net(a, b, 'mim_sub')
 
     # Check if parameters are the same
     return false unless same_parameter(a, b, 'w') && same_parameter(a, b, 'l')
+    return false if a.device_class.name.downcase.include?('rfcmim') && !same_parameter(a, b, 'wfeed')
 
     # Combine by summing up 'm' parameter
     a.set_parameter('m', a.parameter('m') + b.parameter('m'))
@@ -110,8 +109,8 @@ class MIMCAPNDeviceCombiner < RBA::GenericDeviceCombiner
     b.disconnect_terminal('mim_top')
     b.disconnect_terminal('mim_btm')
 
-    # Disconnect mim_sub terminal if present and model name includes 'rfcmim'
-    b.disconnect_terminal('mim_sub') if b.name.downcase.include?('rfcmim')
+    # Disconnect substrate terminal only for rfcmim devices.
+    b.disconnect_terminal('mim_sub') if b.device_class.name.downcase.include?('rfcmim')
 
     true
   end
@@ -142,25 +141,29 @@ end
 class BJTDeviceCombiner < RBA::GenericDeviceCombiner
   include DeviceCombinerMethods
 
-  # Method to check and perform device combination
+# Method to check and perform device combination
   def combine_devices(a, b)
     bjt3_nets = %w[C B E]
     bjt4_nets = %w[C B E S]
 
-    # Determine the correct nets based on device type (assuming PNP or NPN)
-    bjt_nets = a.device_class.name.downcase.include?('pnp') ? bjt3_nets : bjt4_nets
+    is_pnp = a.device_class.name.downcase.include?('pnp')
+
+    # Determine the correct nets based on device type
+    bjt_nets = is_pnp ? bjt3_nets : bjt4_nets
 
     # Check if terminals have the same net
     return false unless bjt_nets.all? { |net| same_net(a, b, net) }
 
-    # Check if parameters are the same
-    return false unless %w[AE PE].all? { |param| same_parameter(a, b, param) }
+    # Check if exact parameters are the same (Skip Nx for PNP)
+    params_to_check = is_pnp ? %w[A P] : %w[we le]
+    params_to_check << 'Nx' unless is_pnp
+    
+    return false unless params_to_check.all? { |param| same_parameter(a, b, param) }
 
     # Combine parameters
     a.set_parameter('m', a.parameter('m') + b.parameter('m'))
-    a.set_parameter('NE', a.parameter('NE') + b.parameter('NE'))
 
-    # Disconnect the second device and let the system clean it up
+    # Disconnect the second device
     bjt_nets.each { |term| b.disconnect_terminal(term) }
 
     true
@@ -174,17 +177,20 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
   def combine_devices(a, b)
     res_nets = [0, 1] # Using id instead of names
 
+    # 3-terminal resistors are combined only when substrate nets match.
+    model = a.device_class.name
+    sub_term = "#{model}_sub"
+    if !a.device_class.terminal_id(sub_term).nil?
+      return false unless same_net(a, b, sub_term)
+    end
+
     # Check if same parameters
 
     # Check if terminals series or parallel (With same params)
     if supp_parallel(a, b, 0, 1)
-      return false unless PARALLEL_RES
-      return false unless %w[w l ps b].all? { |param| same_parameter(a, b, param) }
 
       a.set_parameter('m', a.parameter('m') + b.parameter('m'))
     elsif supp_series(a, b, 0, 1)
-      return false unless SERIES_RES
-      return false unless %w[w ps b m].all? { |param| same_parameter(a, b, param) }
 
       a.set_parameter('l', a.parameter('l') + b.parameter('l'))
     else
@@ -193,6 +199,27 @@ class RESDeviceCombiner < RBA::GenericDeviceCombiner
 
     # Disconnect the second device and let the system clean it up
     res_nets.each { |term| b.disconnect_terminal(term) }
+    # Disconnect substrate terminal when present.
+    b.disconnect_terminal(sub_term) if !b.device_class.terminal_id(sub_term).nil?
+
+    true
+  end
+end
+
+class TapDeviceCombiner < RBA::GenericDeviceCombiner
+  include DeviceCombinerMethods
+
+  # Combine only in parallel with preserved terminal polarity:
+  # TIE->TIE and WELL->WELL. No serial combination for taps.
+  def combine_devices(a, b)
+    return false unless PARALLEL_RES
+    return false unless same_net(a, b, 'TIE') && same_net(a, b, 'WELL')
+
+    a.set_parameter('A', a.parameter('A') + b.parameter('A'))
+    a.set_parameter('P', a.parameter('P') + b.parameter('P'))
+
+    b.disconnect_terminal('TIE')
+    b.disconnect_terminal('WELL')
 
     true
   end

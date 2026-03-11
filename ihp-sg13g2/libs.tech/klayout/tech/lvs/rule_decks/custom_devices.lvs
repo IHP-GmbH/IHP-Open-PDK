@@ -50,7 +50,7 @@ end
 class DeviceCustomRes < RBA::DeviceClassResistor
   include DeviceClassMethods
 
-  def initialize(name, num)
+  def initialize(name, num, sub_en = 0)
     # clear terminals and parameters of resistor class
     clear_parameters
     clear_terminals
@@ -64,36 +64,7 @@ class DeviceCustomRes < RBA::DeviceClassResistor
       self.combiner =nil
     end
 
-    add_terminals(name, num, 0)
-  end
-end
-
-# BJT-3term device calss
-class CustomBJT3 < RBA::DeviceClassBJT3Transistor
-
-  def initialize
-    super
-    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
-    self.combiner = BJTDeviceCombiner.new
-
-    enable_parameter('AE', true)
-    enable_parameter('PE', true)
-    enable_parameter('NE', true)
-  end
-end
-
-# BJT-4term device calss
-class CustomBJT4 < RBA::DeviceClassBJT4Transistor
-  include DeviceClassMethods
-
-  def initialize
-    super
-    add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
-    self.combiner = BJTDeviceCombiner.new
-
-    enable_parameter('AE', true)
-    enable_parameter('PE', true)
-    enable_parameter('NE', true)
+    add_terminals(name, num, sub_en)
   end
 end
 
@@ -127,13 +98,28 @@ end
 class DeviceCustomVaractor < RBA::DeviceClassCapacitorWithBulk
   include DeviceClassMethods
 
-  def initialize(name, num)
-    # clear terminals and parameters of resistor class
+  def initialize(_name, _num)
+    super()
+    # clear terminals and parameters of varactor class
     clear_parameters
     clear_terminals
+    clear_equivalent_terminal_ids
 
     add_parameters('w', 'l')
-    add_terminals(name, num, 1)
+    add_parameter(RBA::DeviceParameterDefinition.new('Nx', 'multiplier', 1, true))
+
+    g1 = add_terminal(RBA::DeviceTerminalDefinition.new('G1'))
+    g1.name = 'G1'
+    w = add_terminal(RBA::DeviceTerminalDefinition.new('W'))
+    w.name = 'W'
+    g2 = add_terminal(RBA::DeviceTerminalDefinition.new('G2'))
+    g2.name = 'G2'
+    sub = add_terminal(RBA::DeviceTerminalDefinition.new('SUB'))
+    sub.name = 'SUB'
+
+    self.combiner = nil
+    self.supports_serial_combination = false
+    self.supports_parallel_combination = false
   end
 end
 
@@ -181,10 +167,24 @@ class CustomSchottky < RBA::DeviceClassBJT3Transistor
 end
 
 # Taps device class
-class CustomTap < RBA::DeviceClassDiode
+class CustomTap < RBA::DeviceClassResistor
   def initialize
     super
+    clear_terminals
     clear_parameters
+    clear_equivalent_terminal_ids
+
+    # Keep taps visible as resistor-class devices in LVS DB, but
+    # preserve terminal polarity (TIE/WELL). Allow parallel-only reduction
+    # using tap-specific combiner; disallow serial reduction.
+    self.combiner = TapDeviceCombiner.new
+    self.supports_serial_combination = false
+    self.supports_parallel_combination = true
+
+    tie = add_terminal(RBA::DeviceTerminalDefinition.new('TIE'))
+    tie.name = 'TIE'
+    well = add_terminal(RBA::DeviceTerminalDefinition.new('WELL'))
+    well.name = 'WELL'
     add_parameter(RBA::DeviceParameterDefinition.new('A', 'Area', 0, true))
     add_parameter(RBA::DeviceParameterDefinition.new('P', 'Perimeter', 0, true))
     enable_parameter('A', true)
@@ -223,3 +223,11 @@ end
 #========= CUSTOM MIM-EXTRACTOR =========
 
 # %include custom_mim_extractor.lvs
+
+#========= CUSTOM BJT-EXTRACTOR =========
+
+# %include custom_bjt_extractor.lvs
+
+#======= CUSTOM ISOLBOX-EXTRACTOR =======
+
+# %include custom_isolbox_extractor.lvs

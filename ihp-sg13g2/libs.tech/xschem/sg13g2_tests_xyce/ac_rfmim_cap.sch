@@ -112,8 +112,8 @@ C {simulator_commands_shown.sym} 1380 -850 0 0 {name=Libs_Xyce
 simulator=xyce
 only_toplevel=false 
 value="tcleval(
-.lib $::SG13G2_MODELS_XYCE/cornerCAP.lib cap_typ
-.lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
+.lib $::MODELS_XYCE/cornerCAP.lib cap_typ
+.lib $::MODELS_XYCE/cornerRES.lib res_typ
 )"}
 C {simulator_commands_shown.sym} 1370 -470 0 0 {name=Libs_Ngspice
 simulator=ngspice

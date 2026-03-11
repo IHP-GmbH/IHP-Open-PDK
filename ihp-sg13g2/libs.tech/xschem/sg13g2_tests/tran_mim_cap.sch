@@ -95,7 +95,7 @@ C {devices/lab_pin.sym} 300 -460 0 1 {name=p15 lab=REF}
 C {devices/code_shown.sym} 0 -110 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerCAP.lib cap_typ
+.lib $::MODELS_NGSPICE/cornerCAP.lib cap_typ
 "}
 C {devices/launcher.sym} 780 -450 0 0 {name=h5
 descr="load waves" 

@@ -123,7 +123,7 @@ C {devices/vsource.sym} 80 -290 0 0 {name=V1 value="dc 0 ac 1 portnum 1 z0 50"}
 C {devices/code_shown.sym} 30 -140 0 0 {name=MODEL only_toplevel=true
 format="tcleval( @value )"
 value="
-.lib $::SG13G2_MODELS/cornerCAP.lib cap_typ
+.lib $::MODELS_NGSPICE/cornerCAP.lib cap_typ
 "}
 C {devices/gnd.sym} 370 -230 0 0 {name=l3 lab=GND}
 C {devices/gnd.sym} 80 -230 0 0 {name=l4 lab=GND}
