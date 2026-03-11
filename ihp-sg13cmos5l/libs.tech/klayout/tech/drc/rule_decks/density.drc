@@ -16,11 +16,10 @@
 # limitations under the License.
 #=========================================================================================
 #
-# Modified for IHP-SG13CMOS5L
+# IHP-SG13CMOS5L Density DRC
 # Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
-# - TopMetal1 (layer 126) is the top routing layer
-# - Removed Metal5 (layer 67), Via4 (layer 66), TopMetal2 (layer 134), TopVia2 (layer 133)
-# - Includes TM1.c, TM1.d density rules for TopMetal1
+# - Removed Metal5 (layer 67), TopMetal2 (layer 134) density sections
+# - TopMetal1 density checked via TM1.c/TM1.d rules
 #
 #=========================================================================================
 
@@ -31,6 +30,7 @@ require 'time'
 require 'logger'
 require 'json'
 require 'pathname'
+require 'etc'
 
 exec_start_time = Time.now
 
@@ -47,6 +47,9 @@ file_logger.formatter = formatter
 # Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
+
+# Don't buffer stdout
+$stdout.sync = true
 
 # MultiLogger class to broadcast to multiple loggers
 class MultiLogger
@@ -89,12 +92,12 @@ logger.info('Loading database to memory is complete.')
 
 if $report
   logger.info("IHP-SG13CMOS5L Klayout DRC Density runset output at: #{$report}")
-  report('Density DRC Run Report at', $report)
+  report_channel = report('Density DRC Run Report at', $report)
 else
   layout_dir = Pathname.new(RBA::CellView.active.filename).parent.realpath
   report_path = layout_dir.join('sg13cmos5l_drc_density.lyrdb').to_s
   logger.info("IHP-SG13CMOS5L Klayout DRC Density runset output at default location: #{report_path}")
-  report('Density DRC Run Report at', report_path)
+  report_channel = report('Density DRC Run Report at', report_path)
 end
 
 #================================================
@@ -107,17 +110,24 @@ def bool_check?(obj)
   obj.to_s.downcase == 'true'
 end
 
-# threads
-threads($thr.to_i)
-logger.info("Klayout will use #{$thr} thread(s)")
+# Thread count configuration.
+$threads = ($threads || Etc.nprocessors).to_i
+threads($threads)
+logger.info("Configured KLayout worker thread(s): #{$threads}.")
 
 # Enable deep mode for reading layers and processing general derivations
+$run_mode = 'deep'
 deep
 logger.info('Deep mode enabled: reading layers and preparing general derivations.')
 
 # Precheck DRC
 PRECHECK_DRC = bool_check?($precheck_drc)
 logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
+
+# Optional sanity markers for boundary-shape consistency checks.
+# Default is disabled to keep legacy density runs unchanged unless requested.
+SANITY_DENSITY_RULES = bool_check?($density_sanity)
+logger.info("Density sanity checks enabled: #{SANITY_DENSITY_RULES}")
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
@@ -199,6 +209,8 @@ metal4_slit = get_polygons(50, 24)
 count = metal4_slit.count
 logger.info("metal4_slit has #{count} polygons")
 
+# Metal5 (67) and TopMetal2 (134) are forbidden layers in CMOS5L
+
 topmetal1_drw = get_polygons(126, 0)
 count = topmetal1_drw.count
 logger.info("topmetal1_drw has #{count} polygons")
@@ -211,11 +223,17 @@ topmetal1_slit = get_polygons(126, 24)
 count = topmetal1_slit.count
 logger.info("topmetal1_slit has #{count} polygons")
 
-# Metal5 and TopMetal2 layers removed for CMOS5L (layers 67, 134)
-
 lbe_drw = get_polygons(157, 0)
 count = lbe_drw.count
 logger.info("lbe_drw has #{count} polygons")
+
+prboundary_drw = get_polygons(189, 0)
+prboundary_count = prboundary_drw.count
+logger.info("prboundary_drw has #{prboundary_count} polygons")
+
+edgeseal_bound = get_polygons(39, 4)
+edgeseal_count = edgeseal_bound.count
+logger.info("edgeseal_bound has #{edgeseal_count} polygons")
 
 #================================================
 # -------------------- UTILS --------------------
@@ -223,6 +241,10 @@ logger.info("lbe_drw has #{count} polygons")
 
 # Method to get DRC values from JSON files
 def get_drc_values(logger)
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  $drc_json_default = $drc_json_default || File.expand_path(File.join(script_dir, 'sg13cmos5l_tech_default.json'))
+  $drc_json = $drc_json || File.expand_path(File.join(script_dir, '../../../python/sg13cmos5l_pycell_lib/sg13cmos5l_tech_mod.json'))
+
   tech_rules = {}
   if $drc_json && $drc_json != $drc_json_default
     begin
@@ -232,6 +254,7 @@ def get_drc_values(logger)
       logger.info("Loaded TECH DRC rules values from #{$drc_json}")
     rescue StandardError => e
       logger.error("Error reading TECH DRC rules from #{$drc_json}: #{e.message}")
+      raise "Error reading TECH DRC rules from #{$drc_json}: #{e.message}"
     end
   end
 
@@ -242,10 +265,11 @@ def get_drc_values(logger)
     logger.info("Loaded default DRC rules values from #{$drc_json_default}")
   rescue StandardError => e
     logger.error("Error reading default DRC rules from #{$drc_json_default}: #{e.message}")
-    return {}
+    raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
   end
 
-  merged_rules = tech_rules.merge(default_rules)
+  # Defaults are the baseline; process-specific TECH values must override them when provided.
+  merged_rules = default_rules.merge(tech_rules)
 
   # Report any fallback rules used
   missing_keys = default_rules.keys - tech_rules.keys
@@ -257,8 +281,199 @@ def get_drc_values(logger)
   merged_rules
 end
 
+# Find a report category by name or create it when missing.
+def find_or_create_rdb_category(rdb, category_name, category_description)
+  category = nil
+  rdb.each_category do |cat|
+    if cat.name == category_name
+      category = cat
+      break
+    end
+  end
+
+  if category.nil?
+    category = rdb.create_category(category_name)
+  end
+
+  category.description = category_description
+  category
+end
+
+# Emit local-density violation windows directly to the report database and
+# attach detailed per-window metrics as an additional text value per marker.
+def output_local_density_violations(report_channel, logger, rule_name, rule_description, violating_windows, material_layer, chip_layer, limit_ratio, mode)
+  violation_markers = violating_windows.count
+  return if violation_markers.zero?
+
+  rdb = report_channel.rdb
+  cell = report_channel.cell
+  category = find_or_create_rdb_category(rdb, rule_name, rule_description)
+  engine = violating_windows.instance_variable_get(:@engine)
+
+  seen_windows = {}
+  written_windows = 0
+
+  violating_windows.each do |window_polygon|
+    ibox = window_polygon.bbox.to_itype(engine.dbu)
+    window_key = "#{ibox.left}:#{ibox.bottom}:#{ibox.right}:#{ibox.top}"
+    next if seen_windows[window_key]
+
+    seen_windows[window_key] = true
+
+    # Rebuild this violating window as a layer and clip it to chip boundary.
+    window_layer = DRC::DRCLayer::new(engine, RBA::Region::new(window_polygon.to_itype(engine.dbu)))
+    window_inside_chip = window_layer.and(chip_layer)
+    window_area = window_inside_chip.area
+    next if window_area <= 0.0
+
+    material_area = material_layer.and(window_inside_chip).area
+    ratio = material_area / window_area
+
+    ratio_gap =
+      if mode == :min
+        [limit_ratio - ratio, 0.0].max
+      else
+        [ratio - limit_ratio, 0.0].max
+      end
+
+    area_gap = ratio_gap * window_area
+    direction = (mode == :min ? 'below' : 'above')
+
+    x1 = ibox.left * engine.dbu
+    y1 = ibox.bottom * engine.dbu
+    x2 = ibox.right * engine.dbu
+    y2 = ibox.top * engine.dbu
+
+    mode_label = (mode == :min ? 'min' : 'max')
+    detail_lines = [
+      'Local Density Window Violation',
+      format('window_bbox_um    : (%<x1>.3f,%<y1>.3f) - (%<x2>.3f,%<y2>.3f)', x1: x1, y1: y1, x2: x2, y2: y2),
+      format('window_area_um2   : %<w_area>.3f', w_area: window_area),
+      format('layer_area_um2    : %<m_area>.3f', m_area: material_area),
+      format('ratio_percent     : %<ratio>.3f', ratio: ratio * 100.0),
+      format('limit_percent     : %<limit>.3f (%<mode_label>s)', limit: limit_ratio * 100.0, mode_label: mode_label),
+      format('gap_percent       : %<gap>.3f (%<dir>s limit)', gap: ratio_gap * 100.0, dir: direction),
+      format('area_gap_um2      : %<a_gap>.3f', a_gap: area_gap)
+    ]
+
+    item = rdb.create_item(cell, category)
+    item.add_value(RBA::RdbItemValue::new(window_polygon))
+    detail_lines.each { |line| item.add_value(RBA::RdbItemValue::new(line)) }
+
+    written_windows += 1
+  end
+end
+
+# Emit global-density violation marker and attach detailed metrics as
+# multiline text value in the report database.
+def output_global_density_violation(report_channel, logger, rule_name, rule_description, chip_bbox, layer_area, chip_area, ratio, limit_ratio, mode)
+  ratio_gap =
+    if mode == :min
+      [limit_ratio - ratio, 0.0].max
+    else
+      [ratio - limit_ratio, 0.0].max
+    end
+
+  area_gap = ratio_gap * chip_area
+  direction = (mode == :min ? 'below' : 'above')
+  mode_label = (mode == :min ? 'min' : 'max')
+
+  x1 = chip_bbox.left
+  y1 = chip_bbox.bottom
+  x2 = chip_bbox.right
+  y2 = chip_bbox.top
+
+  chip_polygon = RBA::DPolygon::new([
+    RBA::DPoint::new(x1, y1),
+    RBA::DPoint::new(x1, y2),
+    RBA::DPoint::new(x2, y2),
+    RBA::DPoint::new(x2, y1)
+  ])
+
+  detail_lines = [
+    'Global Density Violation',
+    format('chip_bbox_um      : (%<x1>.3f,%<y1>.3f) - (%<x2>.3f,%<y2>.3f)', x1: x1, y1: y1, x2: x2, y2: y2),
+    format('chip_area_um2     : %<chip_area>.3f', chip_area: chip_area),
+    format('layer_area_um2    : %<layer_area>.3f', layer_area: layer_area),
+    format('ratio_percent     : %<ratio>.3f', ratio: ratio * 100.0),
+    format('limit_percent     : %<limit>.3f (%<mode_label>s)', limit: limit_ratio * 100.0, mode_label: mode_label),
+    format('gap_percent       : %<gap>.3f (%<dir>s limit)', gap: ratio_gap * 100.0, dir: direction),
+    format('area_gap_um2      : %<a_gap>.3f', a_gap: area_gap)
+  ]
+
+  rdb = report_channel.rdb
+  cell = report_channel.cell
+  category = find_or_create_rdb_category(rdb, rule_name, rule_description)
+  item = rdb.create_item(cell, category)
+  item.add_value(RBA::RdbItemValue::new(chip_polygon))
+  detail_lines.each { |line| item.add_value(RBA::RdbItemValue::new(line)) }
+end
+
+# Format ratio values as percent text with fixed precision.
+def format_percent(value, digits = 2)
+  format("%.#{digits}f", value * 100.0)
+end
+
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
+
+# Local-density helper with "backup" edge windows.
+class DRC::DRCLayer
+  def with_density_backup(range, tile_size_arg, tile_step_arg, tile_boundary_arg, bbox)
+    merged_layer = is_merged? ? self : merged
+    boundary_layer = DRC::DRCLayer::new(@engine, RBA::Region::new(bbox.to_itype(@engine.dbu)))
+
+    tile_width = tile_size_arg.get[0]
+    tile_height = tile_size_arg.get[1]
+    tile_step_x = tile_step_arg.get[0]
+    tile_step_y = tile_step_arg.get[1]
+
+    base_origin_x = bbox.left + (bbox.width >= tile_width ? (tile_width - tile_step_x) / 2 : 0)
+    base_origin_y = bbox.bottom + (bbox.height >= tile_height ? (tile_height - tile_step_y) / 2 : 0)
+    base_tile_origin = DRC::DRCTileOrigin::new(base_origin_x, base_origin_y)
+
+    tile_count_x = [1 + ((bbox.width - tile_width) / tile_step_x).floor, 1].max
+    tile_count_y = [1 + ((bbox.height - tile_height) / tile_step_y).floor, 1].max
+    base_tile_count = DRC::DRCTileCount::new(tile_count_x, tile_count_y)
+
+    result = merged_layer.with_density(range, tile_size_arg, tile_step_arg,
+                                        base_tile_origin, base_tile_count,
+                                        tile_boundary_arg)
+
+    need_top_row = bbox.height > tile_height + (tile_count_y - 1) * tile_step_y
+    need_right_column = bbox.width > tile_width + (tile_count_x - 1) * tile_step_x
+
+    top_origin_y = base_origin_y + [bbox.height - tile_height, 0].max
+    right_origin_x = base_origin_x + [bbox.width - tile_width, 0].max
+
+    if need_top_row
+      top_tile_origin = DRC::DRCTileOrigin::new(base_origin_x, top_origin_y)
+      top_tile_count = DRC::DRCTileCount::new([2, tile_count_x].max, 1)
+      result += merged_layer.with_density(range, tile_size_arg, tile_step_arg,
+                                          top_tile_origin, top_tile_count,
+                                          tile_boundary_arg)
+    end
+
+    if need_right_column
+      right_tile_origin = DRC::DRCTileOrigin::new(right_origin_x, base_origin_y)
+      right_tile_count = DRC::DRCTileCount::new(1, [2, tile_count_y].max)
+      result += merged_layer.with_density(range, tile_size_arg, tile_step_arg,
+                                          right_tile_origin, right_tile_count,
+                                          tile_boundary_arg)
+    end
+
+    if (need_top_row && bbox.width > tile_width) || (need_right_column && bbox.height > tile_height)
+      corner_tile_origin = DRC::DRCTileOrigin::new(right_origin_x, top_origin_y)
+      corner_tile_count = DRC::DRCTileCount::new(1, 2)
+      result += merged_layer.with_density(range, tile_size_arg, tile_step_arg,
+                                          corner_tile_origin, corner_tile_count,
+                                          tile_boundary_arg)
+    end
+
+    result.raw.select_inside(boundary_layer)
+    result
+  end
+end
 
 #================================================
 #-------------- COMMON DERIVATIONS --------------
@@ -266,58 +481,66 @@ drc_rules = get_drc_values(logger)
 
 # === LAYOUT EXTENT ===
 CHIP = extent.sized(0.0)
-chip_bbox = CHIP.bbox
 
-# Use prBoundary for chip area when available (3-tier fallback).
-# extent.sized(0.0) returns the bounding box of ALL shapes in the layout,
-# which can be much larger than the actual design area when shapes exist
-# outside the design boundary (labels, alignment marks, etc.).
-#
-# Fallback order:
-#   1. prBoundary (189/0) - official boundary layer per layer map
-#   2. EdgeSeal.boundary (39/4) - common workaround when 189/0 not drawn
-#   3. Layout extent - last resort
-prboundary_189 = get_polygons(189, 0)
-prboundary_189_count = prboundary_189.count
-logger.info("prBoundary (189/0) has #{prboundary_189_count} polygons")
+# Boundary sanity checks to avoid ambiguous chip-area extraction for density.
+if SANITY_DENSITY_RULES
+  if prboundary_count > 1
+    logger.warn("Sanity check: found #{prboundary_count} prBoundary polygons on layer 189/0. Density area may be ambiguous.")
+    prboundary_drw.output('DEN.BND.1',
+                          "Sanity check: expected a single prBoundary (189/0), found #{prboundary_count}.")
+  end
 
-edgeseal_boundary = get_polygons(39, 4)
-edgeseal_boundary_count = edgeseal_boundary.count
-logger.info("EdgeSeal.boundary (39/4) has #{edgeseal_boundary_count} polygons")
+  if edgeseal_count > 1
+    logger.warn("Sanity check: found #{edgeseal_count} EdgeSeal.boundary polygons on layer 39/4. Density area may be ambiguous.")
+    edgeseal_bound.output('DEN.BND.2',
+                          "Sanity check: expected a single EdgeSeal.boundary (39/4), found #{edgeseal_count}.")
+  end
 
-if prboundary_189_count > 0
-  chip_area = prboundary_189.area
-  chip_boundary_bbox = prboundary_189.bbox
-  chip_boundary_region = prboundary_189
-  logger.info("Using prBoundary (189/0) for chip area: #{chip_area} um^2.")
-  edgeseal_boundary.forget
-elsif edgeseal_boundary_count > 0
-  chip_area = edgeseal_boundary.area
-  chip_boundary_bbox = edgeseal_boundary.bbox
-  chip_boundary_region = edgeseal_boundary
-  logger.info("Using EdgeSeal.boundary (39/4) for chip area: #{chip_area} um^2.")
-  prboundary_189.forget
+  if prboundary_count > 0 && edgeseal_count > 0
+    pr_area = prboundary_drw.area
+    edgeseal_area = edgeseal_bound.area
+    ref_area = [pr_area.abs, edgeseal_area.abs].max
+    area_delta_ratio = ref_area.zero? ? 0.0 : (pr_area - edgeseal_area).abs / ref_area
+
+    logger.warn("Sanity check: both prBoundary (189/0) and EdgeSeal.boundary (39/4) are present. prBoundary takes precedence for density area.")
+    if area_delta_ratio > 0.01
+      CHIP.output('DEN.BND.3',
+                  "Sanity check: both boundary layers exist and differ in area by #{format_percent(area_delta_ratio)}%. prBoundary is used for density.")
+    end
+  end
 else
-  chip_area = CHIP.area
-  chip_boundary_bbox = chip_bbox
-  chip_boundary_region = CHIP
-  logger.info("No boundary layer found. Using layout extent for chip area: #{chip_area} um^2.")
-  prboundary_189.forget
-  edgeseal_boundary.forget
+  logger.info('Density sanity markers are disabled (set -rd density_sanity=true to enable).')
 end
+
+# Chip area selection priority: prBoundary > EdgeSeal.boundary > full layout extent.
+if prboundary_count > 0
+  chip_for_density = prboundary_drw
+  chip_source = 'prboundary'
+  chip_area = chip_for_density.area
+  logger.info("Using prBoundary (189/0) for chip area: #{chip_area} um^2.")
+else
+  if edgeseal_count > 0
+    chip_for_density = edgeseal_bound
+    chip_source = 'edgeseal'
+    chip_area = chip_for_density.area
+    logger.info("Using EdgeSeal.boundary (39/4) for chip area: #{chip_area} um^2.")
+  else
+    chip_for_density = CHIP
+    chip_source = 'extent'
+    chip_area = CHIP.area
+    logger.info("No prBoundary found. Using layout extent for chip area: #{chip_area} um^2.")
+  end
+end
+chip_bbox = chip_for_density.bbox
+logger.info("Using bbox #{chip_bbox.to_s} for density window origin.")
 
 extent_area = CHIP.area
 if chip_area < extent_area * 0.99
   logger.warn("Layout extent (#{extent_area} um^2) > chip boundary (#{chip_area} um^2). Shapes exist outside boundary.")
 end
 
-# Calculate chip dimensions for windowed density checks
-# Note: bbox returns DBox in micrometers, not database units
-chip_width = chip_boundary_bbox.width
-chip_height = chip_boundary_bbox.height
-logger.info("Chip dimensions: #{chip_width.round(1)} x #{chip_height.round(1)} um")
-
-tiles_boundary = tile_boundary(chip_boundary_region)
+logger.info("Total area of the design is #{chip_area} um^2.")
+density_tile_boundary = tile_boundary(chip_for_density)
 
 # Density derivations
 logger.info('Starting density IHP-SG13CMOS5L derivations.')
@@ -342,10 +565,8 @@ metal2_filler.forget
 metal3_filler.forget
 metal4_filler.forget
 topmetal1_filler.forget
-# Metal5 and TopMetal2 filler forget calls removed for CMOS5L
 
 if PRECHECK_DRC
-  # Forget unused layers to free memory
   metal1_drw.forget
   metal1_slit.forget
   metal2_drw.forget
@@ -356,7 +577,6 @@ if PRECHECK_DRC
   metal4_slit.forget
   topmetal1_drw.forget
   topmetal1_slit.forget
-  # Metal5 and TopMetal2 drw/slit forget calls removed for CMOS5L
 end
 
 #===================================================================================
@@ -364,11 +584,6 @@ end
 #===================================================================================
 
 logger.info('Starting IHP-SG13CMOS5L DENSITY DRC rules.')
-
-# Enable tiling mode for rule execution
-tiles(500.um)
-tile_borders(nil)
-logger.info('Tiling mode enabled: executing rules with chip tiling applied.')
 
 #===================================================
 # --------------------- ActFil ---------------------
@@ -382,68 +597,78 @@ act_dens_ratio = act_area / chip_area
 logger.info('Executing rule AFil.g')
 afil_g_val = drc_rules['AFil_g'].to_f
 if act_dens_ratio < afil_g_val
-  CHIP.output('AFil.g',
-              "5.6. AFil.g: Min. global Activ density [%]: #{afil_g_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'AFil.g',
+                                  "5.6. AFil.g: Min. global Activ density [%]: #{format_percent(afil_g_val)}.",
+                                  chip_bbox,
+                                  act_area,
+                                  chip_area,
+                                  act_dens_ratio,
+                                  afil_g_val,
+                                  :min)
 end
 
 # Rule AFil.g1: Max. global Activ density [%]= 55.0.
 logger.info('Executing rule AFil.g1')
 afil_g1_val = drc_rules['AFil_g1'].to_f
 if act_dens_ratio > afil_g1_val
-  CHIP.output('AFil.g1',
-              "5.6. AFil.g1: Max. global Activ density [%]: #{afil_g1_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'AFil.g1',
+                                  "5.6. AFil.g1: Max. global Activ density [%]: #{format_percent(afil_g1_val)}.",
+                                  chip_bbox,
+                                  act_area,
+                                  chip_area,
+                                  act_dens_ratio,
+                                  afil_g1_val,
+                                  :max)
 end
 
 # ActFil window Variables
-# Dynamic tile size: use minimum of nominal tile size and chip dimension.
-# This ensures windowed density checks work on small chips without false positives.
-afil_g_w_nominal = drc_rules['AFil_g_w'].to_f
-chip_min_dim = [chip_width, chip_height].min
-afil_g_w_effective = [afil_g_w_nominal, chip_min_dim].min
-act_size = afil_g_w_effective.um
+afil_g_w = drc_rules['AFil_g_w'].to_f
+act_size = afil_g_w.um
 act_step = 0.5 * act_size
-act_org_x = chip_boundary_bbox.left + act_step / 2
-act_org_y = chip_boundary_bbox.bottom + act_step / 2
 act_tile_size = tile_size(act_size)
 act_tile_step = tile_step(act_step)
-act_tile_origin = tile_origin(act_org_x, act_org_y)
-
-if afil_g_w_effective < afil_g_w_nominal
-  logger.info("AFil windowed density: chip (#{chip_width.round(1)} x #{chip_height.round(1)} um) < nominal tile (#{afil_g_w_nominal} um)")
-  logger.info("  Using adjusted tile size: #{afil_g_w_effective.round(1)} x #{afil_g_w_effective.round(1)} um")
-end
 
 # Rule AFil.g2: Min. Activ coverage ratio for any 800 x 800 um2 chip area [%]= 25.00.
 logger.info('Executing rule AFil.g2')
 afil_g2_val = drc_rules['AFil_g2'].to_f
-afilg2_min = activ.with_density(0.0..afil_g2_val,
-                                act_tile_size,
-                                act_tile_step,
-                                tiles_boundary,
-                                act_tile_origin,
-                                padding_ignore)
-# Filter markers to chip boundary to avoid false positives from partial edge tiles
-afilg2_min_filtered = afilg2_min.and(chip_boundary_region)
-afilg2_min_filtered.output('AFil.g2',
-                  "5.6. AFil.g2: Min. Activ coverage ratio for any #{afil_g_w_effective.round(1)} x #{afil_g_w_effective.round(1)} um2 chip area [%]: #{afil_g2_val * 100}.")
+afilg2_min = activ.with_density_backup(0.0..afil_g2_val,
+                                       act_tile_size,
+                                       act_tile_step,
+                                       density_tile_boundary,
+                                       chip_bbox)
+output_local_density_violations(report_channel,
+                                logger,
+                                'AFil.g2',
+                                "5.6. AFil.g2: Min. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} um2 chip area [%]: #{format_percent(afil_g2_val)}.",
+                                afilg2_min,
+                                activ,
+                                chip_for_density,
+                                afil_g2_val,
+                                :min)
 afilg2_min.forget
-afilg2_min_filtered.forget
 
 # Rule AFil.g3: Max. Activ coverage ratio for any 800 x 800 um2 chip area [%]= 65.00.
 logger.info('Executing rule AFil.g3')
 afil_g3_val = drc_rules['AFil_g3'].to_f
-afilg3_max = activ.with_density(afil_g3_val..1.0,
-                                act_tile_size,
-                                act_tile_step,
-                                tiles_boundary,
-                                act_tile_origin,
-                                padding_ignore)
-# Filter markers to chip boundary
-afilg3_max_filtered = afilg3_max.and(chip_boundary_region)
-afilg3_max_filtered.output('AFil.g3',
-                  "5.6. AFil.g3: Max. Activ coverage ratio for any #{afil_g_w_effective.round(1)} x #{afil_g_w_effective.round(1)} um2 chip area [%]: #{afil_g3_val * 100}.")
+afilg3_max = activ.with_density_backup(afil_g3_val..1.0,
+                                       act_tile_size,
+                                       act_tile_step,
+                                       density_tile_boundary,
+                                       chip_bbox)
+output_local_density_violations(report_channel,
+                                logger,
+                                'AFil.g3',
+                                "5.6. AFil.g3: Max. Activ coverage ratio for any #{afil_g_w} x #{afil_g_w} um2 chip area [%]: #{format_percent(afil_g3_val)}.",
+                                afilg3_max,
+                                activ,
+                                chip_for_density,
+                                afil_g3_val,
+                                :max)
 afilg3_max.forget
-afilg3_max_filtered.forget
 activ.forget
 
 #==================================================
@@ -458,8 +683,16 @@ poly_dens_ratio = poly_area / chip_area
 logger.info('Executing rule GFil.g')
 gfil_g_val = drc_rules['GFil_g'].to_f
 if poly_dens_ratio < gfil_g_val
-  CHIP.output('GFil.g',
-              "5.9. GFil.g: Min. global GatPoly density [%]: #{gfil_g_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'GFil.g',
+                                  "5.9. GFil.g: Min. global GatPoly density [%]: #{format_percent(gfil_g_val)}.",
+                                  chip_bbox,
+                                  poly_area,
+                                  chip_area,
+                                  poly_dens_ratio,
+                                  gfil_g_val,
+                                  :min)
 end
 poly.forget
 
@@ -477,15 +710,31 @@ m1_k_val = drc_rules['M1_k'].to_f
 # Rule Mn.j: Min. global Metaln density [%]= 35.0.
 logger.info('Executing rule M1.j')
 if m1_dens_ratio < m1_j_val
-  CHIP.output('M1.j',
-              "5.9. M1.j: Min. global Metal1 density [%]: #{m1_j_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'M1.j',
+                                  "5.16. M1.j: Min. global Metal1 density [%]: #{format_percent(m1_j_val)}.",
+                                  chip_bbox,
+                                  m1_area,
+                                  chip_area,
+                                  m1_dens_ratio,
+                                  m1_j_val,
+                                  :min)
 end
 
 # Rule Mn.k: Max. global Metaln density [%]= 60.0.
 logger.info('Executing rule M1.k')
 if m1_dens_ratio > m1_k_val
-  CHIP.output('M1.k',
-              "5.9. M1.k: Max. global Metal1 density [%]: #{m1_k_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'M1.k',
+                                  "5.16. M1.k: Max. global Metal1 density [%]: #{format_percent(m1_k_val)}.",
+                                  chip_bbox,
+                                  m1_area,
+                                  chip_area,
+                                  m1_dens_ratio,
+                                  m1_k_val,
+                                  :max)
 end
 
 #=================================================
@@ -501,28 +750,46 @@ m3_dens_ratio = m3_area / chip_area
 logger.info('Computing metal4 area and density...')
 m4_area = metal4.area
 m4_dens_ratio = m4_area / chip_area
-# Metal5 removed for CMOS5L - TopMetal1 density handled separately with TM1.c/TM1.d rules
+# Metal5 removed for CMOS5L
 
 dens_ratios = [m2_dens_ratio, m3_dens_ratio, m4_dens_ratio]
+dens_areas = [m2_area, m3_area, m4_area]
 metal_start_index = 2
 mn_j_val = drc_rules['Mn_j'].to_f
 mn_k_val = drc_rules['Mn_k'].to_f
 
 dens_ratios.each_with_index do |ratio, index|
   met_no = index + metal_start_index
+  met_area = dens_areas[index]
 
   # Rule Mn.j: Min. global Metaln density [%]= 35.0.
   logger.info("Executing rule M#{met_no}.j")
   if ratio < mn_j_val
-    CHIP.output("M#{met_no}.j",
-                "5.9. M#{met_no}.j: Min. global Metal#{met_no} density [%]: #{mn_j_val * 100}.")
+    output_global_density_violation(report_channel,
+                                    logger,
+                                    "M#{met_no}.j",
+                                    "5.17. M#{met_no}.j: Min. global Metal#{met_no} density [%]: #{format_percent(mn_j_val)}.",
+                                    chip_bbox,
+                                    met_area,
+                                    chip_area,
+                                    ratio,
+                                    mn_j_val,
+                                    :min)
   end
 
   # Rule Mn.k: Max. global Metaln density [%]= 60.0.
   logger.info("Executing rule M#{met_no}.k")
   if ratio > mn_k_val
-    CHIP.output("M#{met_no}.k",
-                "5.9. M#{met_no}.k: Max. global Metal#{met_no} density [%]: #{mn_k_val * 100}.")
+    output_global_density_violation(report_channel,
+                                    logger,
+                                    "M#{met_no}.k",
+                                    "5.17. M#{met_no}.k: Max. global Metal#{met_no} density [%]: #{format_percent(mn_k_val)}.",
+                                    chip_bbox,
+                                    met_area,
+                                    chip_area,
+                                    ratio,
+                                    mn_k_val,
+                                    :max)
   end
 end
 
@@ -531,61 +798,55 @@ end
 #=================================================
 
 # Metals Variables
-# Dynamic tile size: use minimum of nominal tile size and chip dimension.
-mfil_h_w_nominal = drc_rules['MFil_h_w'].to_f
-mfil_h_w_effective = [mfil_h_w_nominal, chip_min_dim].min
-met_size = mfil_h_w_effective.um
+mfil_h_w = drc_rules['MFil_h_w'].to_f
+met_size = mfil_h_w.um
 met_step = 0.5 * met_size
-met_org_x = chip_boundary_bbox.left + met_step / 2
-met_org_y = chip_boundary_bbox.bottom + met_step / 2
 met_tile_size = tile_size(met_size)
 met_tile_step = tile_step(met_step)
-met_tile_origin = tile_origin(met_org_x, met_org_y)
 
 mets_lay = [metal1, metal2, metal3, metal4]
 metal_start_index = 1
-# Metal5 removed - MFil rules only apply to thin metals M1-M4
 mfil_h_val = drc_rules['MFil_h'].to_f
 mfil_k_val = drc_rules['MFil_k'].to_f
-
-if mfil_h_w_effective < mfil_h_w_nominal
-  logger.info("MFil windowed density: chip (#{chip_width.round(1)} x #{chip_height.round(1)} um) < nominal tile (#{mfil_h_w_nominal} um)")
-  logger.info("  Using adjusted tile size: #{mfil_h_w_effective.round(1)} x #{mfil_h_w_effective.round(1)} um")
-end
 
 mets_lay.each_with_index do |met_lay, index|
   metalfiller_no = index + metal_start_index
 
   # Rule MFil.h: Min. Metal(n) and Metal(n):filler coverage ratio for any 800 x 800 um2 chip area [%]= 25.0.
   logger.info("Executing rule M#{metalfiller_no}Fil.h")
-  mfilh_min = met_lay.with_density(0.0..mfil_h_val,
-                                   met_tile_size,
-                                   met_tile_step,
-                                   tiles_boundary,
-                                   met_tile_origin,
-                                   padding_ignore)
-  # Filter markers to chip boundary to avoid false positives from partial edge tiles
-  mfilh_min_filtered = mfilh_min.and(chip_boundary_region)
-  mfilh_min_filtered.output("M#{metalfiller_no}Fil.h",
-                   "5.6. M#{metalfiller_no}Fil.h: Min. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler \
-                   coverage ratio for any #{mfil_h_w_effective.round(1)} x #{mfil_h_w_effective.round(1)} um2 chip area [%]: #{mfil_h_val * 100}")
+  mfilh_min = met_lay.with_density_backup(0.0..mfil_h_val,
+                                          met_tile_size,
+                                          met_tile_step,
+                                          density_tile_boundary,
+                                          chip_bbox)
+  output_local_density_violations(report_channel,
+                                  logger,
+                                  "M#{metalfiller_no}Fil.h",
+                                  "5.18. M#{metalfiller_no}Fil.h: Min. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} um2 chip area [%]: #{format_percent(mfil_h_val)}",
+                                  mfilh_min,
+                                  met_lay,
+                                  chip_for_density,
+                                  mfil_h_val,
+                                  :min)
   mfilh_min.forget
-  mfilh_min_filtered.forget
 
   # Rule MFil.k: Max. Metal(n) and Metal(n):filler coverage ratio for any 800 x 800 um2 chip area [%]= 75.0.
   logger.info("Executing rule M#{metalfiller_no}Fil.k")
-  mfilk_max = met_lay.with_density(mfil_k_val..1.0,
-                                   met_tile_size,
-                                   met_tile_step,
-                                   tiles_boundary,
-                                   met_tile_origin,
-                                   padding_ignore)
-  # Filter markers to chip boundary
-  mfilk_max_filtered = mfilk_max.and(chip_boundary_region)
-  mfilk_max_filtered.output("M#{metalfiller_no}Fil.k",
-                   "5.6. M#{metalfiller_no}Fil.k: Max. Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w_effective.round(1)} x #{mfil_h_w_effective.round(1)} um2 chip area [%]: #{mfil_k_val * 100}.")
+  mfilk_max = met_lay.with_density_backup(mfil_k_val..1.0,
+                                          met_tile_size,
+                                          met_tile_step,
+                                          density_tile_boundary,
+                                          chip_bbox)
+  output_local_density_violations(report_channel,
+                                  logger,
+                                  "M#{metalfiller_no}Fil.k",
+                                  "5.18. M#{metalfiller_no}Fil.k: Max. Metal#{metalfiller_no} and Metal#{metalfiller_no}:filler coverage ratio for any #{mfil_h_w} x #{mfil_h_w} um2 chip area [%]: #{format_percent(mfil_k_val)}.",
+                                  mfilk_max,
+                                  met_lay,
+                                  chip_for_density,
+                                  mfil_k_val,
+                                  :max)
   mfilk_max.forget
-  mfilk_max_filtered.forget
 end
 metal1.forget
 metal2.forget
@@ -605,16 +866,36 @@ tm1_dens_ratio = tm1_area / chip_area
 logger.info('Executing rule TM1.c')
 tm1_c_val = drc_rules['TM1_c'].to_f
 if tm1_dens_ratio < tm1_c_val
-  CHIP.output('TM1.c', "5.22. TM1.c: Min. global TopMetal1 density [%]: #{tm1_c_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'TM1.c',
+                                  "5.22. TM1.c: Min. global TopMetal1 density [%]: #{format_percent(tm1_c_val)}.",
+                                  chip_bbox,
+                                  tm1_area,
+                                  chip_area,
+                                  tm1_dens_ratio,
+                                  tm1_c_val,
+                                  :min)
 end
 
 # Rule TM1.d: Max. global TopMetal1 density [%]= 70.0.
 logger.info('Executing rule TM1.d')
 tm1_d_val = drc_rules['TM1_d'].to_f
-CHIP.output('TM1.d', "5.22. TM1.d: Max. global TopMetal1 density [%]: #{tm1_d_val * 100}") if tm1_dens_ratio > tm1_d_val
+if tm1_dens_ratio > tm1_d_val
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'TM1.d',
+                                  "5.22. TM1.d: Max. global TopMetal1 density [%]: #{format_percent(tm1_d_val)}",
+                                  chip_bbox,
+                                  tm1_area,
+                                  chip_area,
+                                  tm1_dens_ratio,
+                                  tm1_d_val,
+                                  :max)
+end
 topmetal1.forget
 
-# TopMetal2 density rules removed for CMOS5L (TM2.c, TM2.d)
+# TopMetal2 density rules removed for CMOS5L
 
 #================================================
 # --------------------- LBE ---------------------
@@ -629,8 +910,16 @@ lbe_dens_ratio = lbe_area / chip_area
 logger.info('Executing rule LBE.i')
 lbe_i_val = drc_rules['LBE_i'].to_f
 if lbe_dens_ratio > lbe_i_val
-  CHIP.output('LBE.i',
-              "5.22. LBE.i: Max. global LBE density [%]: #{lbe_i_val * 100}.")
+  output_global_density_violation(report_channel,
+                                  logger,
+                                  'LBE.i',
+                                  "9.1. LBE.i: Max. global LBE density [%]: #{format_percent(lbe_i_val)}.",
+                                  chip_bbox,
+                                  lbe_area,
+                                  chip_area,
+                                  lbe_dens_ratio,
+                                  lbe_i_val,
+                                  :max)
 end
 lbe_drw.forget
 
@@ -639,7 +928,7 @@ lbe_drw.forget
 #================================================
 
 unless PRECHECK_DRC
-  # layer lists - Metal5 removed, TopMetal1 added for CMOS5L
+  # layer lists - CMOS5L: M1-M4 + TM1 (no Metal5, no TopMetal2)
   metals_slit_lay = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, topmetal1_slit]
   metals_lay = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, topmetal1_drw]
   metals_names = %w[metal1 metal2 metal3 metal4 topmetal1]
@@ -658,7 +947,7 @@ unless PRECHECK_DRC
     connect(slt_i_l2, slt_i_l1)
     slt_i_l3 = antenna_check(slt_i_l2, slt_i_l1, slt_i_inverse)
     slt_i_l3.output("Slt.i_#{met_abbrev}",
-                    "Min. #{met_name}:slit density for any Metal plate bigger than 35um x 35um [%] is #{slt_i_val * 100}.")
+                    "Min. #{met_name}:slit density for any Metal plate bigger than 35um x 35um [%] is #{format_percent(slt_i_val)}.")
     slt_i_l1.forget
     slt_i_l2.forget
     slt_i_l3.forget
@@ -674,7 +963,6 @@ unless PRECHECK_DRC
   metal4_slit.forget
   topmetal1_drw.forget
   topmetal1_slit.forget
-  # Metal5 and TopMetal2 drw/slit forget calls removed for CMOS5L
 end
 
 #================================================

@@ -16,10 +16,9 @@
 # limitations under the License.
 #=========================================================================================
 #
-# Modified for IHP-SG13CMOS5L
-# - CMOS5L uses M1-M4-TM1 metal stack (no Metal5, Via4, TopVia2, TopMetal2)
-# - Metal5 (67/0), Via4 (66/0), TopVia2 (133/0), TopMetal2 (134/0) are forbidden layers
-# - Per Section 3.2 of SG13CMOS5L_os_layout_rules.pdf
+# IHP-SG13CMOS5L Antenna DRC
+# Metal stack: M1 -> Via1 -> M2 -> Via2 -> M3 -> Via3 -> M4 -> TopVia1 -> TopMetal1
+# - Metal5, Via4, TopVia2, TopMetal2 are forbidden layers per Section 3.2
 #
 #=========================================================================================
 
@@ -30,6 +29,7 @@ require 'time'
 require 'logger'
 require 'json'
 require 'pathname'
+require 'etc'
 
 exec_start_time = Time.now
 
@@ -46,6 +46,9 @@ file_logger.formatter = formatter
 # Create stdout logger
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
+
+# Don't buffer stdout
+$stdout.sync = true
 
 # MultiLogger class to broadcast to multiple loggers
 class MultiLogger
@@ -116,11 +119,13 @@ def setup_run_mode(run_mode)
   end
 end
 
-# threads
-threads($thr.to_i)
-logger.info("Klayout will use #{$thr} thread(s)")
+# Threads
+$threads = ($threads || Etc.nprocessors).to_i
+threads($threads)
+logger.info("KLayout will use #{$threads} thread(s) in tiling mode.")
 
 # Run mode
+$run_mode = $run_mode || 'deep'
 setup_run_mode($run_mode)
 logger.info("#{$run_mode} mode is enabled for antenna table.")
 
@@ -196,6 +201,11 @@ count = nwell_drw.count
 logger.info("nwell_drw has #{count} polygons")
 polygons_count += count
 
+nbulay_drw = get_polygons(32, 0)
+count = nbulay_drw.count
+logger.info("nbulay_drw has #{count} polygons")
+polygons_count += count
+
 pwell_block = get_polygons(46, 21)
 count = pwell_block.count
 logger.info("pwell_block has #{count} polygons")
@@ -212,7 +222,6 @@ logger.info("metal4_drw has #{count} polygons")
 polygons_count += count
 
 # Via4 (66/0) and Metal5 (67/0) are forbidden layers in CMOS5L
-# Per Section 3.2 of SG13CMOS5L_os_layout_rules.pdf
 
 topvia1_drw = get_polygons(125, 0)
 count = topvia1_drw.count
@@ -234,7 +243,12 @@ count = recog_esd.count
 logger.info("recog_esd has #{count} polygons")
 polygons_count += count
 
-# TopVia/TopMetal layers removed for CMOS5L (layers 125, 126, 133, 134)
+text_drw = labels(63, 0)
+count = text_drw.count
+logger.info("text_drw has #{count} polygons")
+polygons_count += count
+
+# TopVia2/TopMetal2 layers removed for CMOS5L (layers 133, 134)
 
 logger.info("Total no. of polygons in the design is #{polygons_count}")
 
@@ -244,6 +258,10 @@ logger.info("Total no. of polygons in the design is #{polygons_count}")
 
 # Method to get DRC values from JSON files
 def get_drc_values(logger)
+  script_dir = File.expand_path(File.dirname(__FILE__))
+  $drc_json_default = $drc_json_default || File.expand_path(File.join(script_dir, 'sg13cmos5l_tech_default.json'))
+  $drc_json = $drc_json || File.expand_path(File.join(script_dir, '../../../python/sg13cmos5l_pycell_lib/sg13cmos5l_tech_mod.json'))
+
   tech_rules = {}
   if $drc_json && $drc_json != $drc_json_default
     begin
@@ -253,6 +271,7 @@ def get_drc_values(logger)
       logger.info("Loaded TECH DRC rules values from #{$drc_json}")
     rescue StandardError => e
       logger.error("Error reading TECH DRC rules from #{$drc_json}: #{e.message}")
+      raise "Error reading TECH DRC rules from #{$drc_json}: #{e.message}"
     end
   end
 
@@ -263,10 +282,11 @@ def get_drc_values(logger)
     logger.info("Loaded default DRC rules values from #{$drc_json_default}")
   rescue StandardError => e
     logger.error("Error reading default DRC rules from #{$drc_json_default}: #{e.message}")
-    return {}
+    raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
   end
 
-  merged_rules = tech_rules.merge(default_rules)
+  # Defaults are the baseline; process-specific TECH values override when provided.
+  merged_rules = default_rules.merge(tech_rules)
 
   # Report any fallback rules used
   missing_keys = default_rules.keys - tech_rules.keys
@@ -280,6 +300,23 @@ end
 
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
+
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c
+    else
+      Regexp.escape(c)
+    end
+  end.join
+
+  pattern
+end
 
 #================================================
 #-------------- COMMON DERIVATIONS --------------
@@ -308,6 +345,18 @@ pactiv_con = activ_drw.not(gatpoly_drw).and(psd_drw)
 dantenna = nactiv_con.and(recog_diode).not(nwell_drw)
 dpantenna = pactiv_con.and(recog_diode).and(nwell_drw)
 diode = nactiv_con.join(pactiv_con)
+
+# isolbox derivations for Ant.h
+# In CMOS5L, nbulay_drw is forbidden (empty), so isolbox will be empty.
+# Keeping derivations for structural alignment with G2.
+nact_nwell = nactiv_con.and(nwell_drw.join(pwell_block))
+schottky_nbl1 = nbulay_drw.and(recog_diode).and(nwell_drw).and(nsd_block)
+isolbox_1_a = nbulay_drw.not_outside(recog_diode).not_outside(nact_nwell)
+isolbox_1_b = recog_diode.not_outside(nbulay_drw).not_outside(nact_nwell)
+isolbox_1 = isolbox_1_a.join(isolbox_1_b)
+isolbox_2 = isolbox_1.not_interacting(schottky_nbl1)
+isolbox_patt = glob_to_case_insensitive_glob("isolbox")
+isolbox = isolbox_2.interacting(text_drw.texts(isolbox_patt))
 
 #================================================
 #----------------- MAIN RUNSET ------------------
@@ -353,7 +402,6 @@ ant_c_errors.output('Ant.c', "7.1 Ant.c: Max. ratio of Cont area to connected Ga
 logger.info('Starting cumulative antenna ratio calculations')
 
 # Define the sequence of layers with metadata (M1-M4-TM1 stack for CMOS5L)
-# Metal5 (67/0) and Via4 (66/0) are forbidden layers per Section 3.2
 layers = [
   [:metal1_drw,    'm1_ratio',  'm'],
   [:via1_drw,      'v1_ratio',  'v'],
@@ -402,16 +450,12 @@ diode_presence.forget
 # -------------- Ant.b/e -------------
 # ====================================
 
-# Ant.b: Max. ratio of cumulative metal area (from Metal1 to TopMetal1) to connected Gate area (without protection diode)
-# Ant.e: Max. ratio of cumulative metal area (from Metal1 to TopMetal1) to connected Gate area (with protection diode)
 logger.info('Executing rules Ant.b and Ant.e')
 
-# Get the Ant.b/e ratio from the JSON rules
 ant_b_ratio = drc_rules['Ant_b'].to_f
 ant_e_ratio = drc_rules['Ant_e'].to_f
 
-# Define the cumulative steps (M1-M4-TM1 stack for CMOS5L)
-# Metal5 is a forbidden layer per Section 3.2
+# Define the cumulative steps (M1-M4-TM1 for CMOS5L)
 steps = [
   { met_name: 'Metal1',    ratio: "m1_ratio" },
   { met_name: 'Metal2',    ratio: "sum_m1_m2",  add: "m2_ratio" },
@@ -425,7 +469,6 @@ steps.each_with_index do |step, idx|
   met_name  = step[:met_name]
   ratio = step[:ratio]
 
-  # Add cumulative expression if defined
   if step[:add]
     prev_ratio = steps[idx - 1][:ratio]
     logger.info("Evaluating cumulative ratio after #{met_name}")
@@ -453,17 +496,12 @@ end
 # -------------- Ant.d/f -------------
 # ====================================
 
-# Ant.d: Max. ratio of cumulative via area (from Via1 to TopVia1) to connected Gate area (without protection diode)
-# Ant.f: Max. ratio of cumulative via area (from Via1 to TopVia1) to connected Gate area (with protection diode)
-
 logger.info('Executing rules Ant.d and Ant.f')
 
-# Get the Ant.d/f ratio from the JSON rules
 ant_d_ratio = drc_rules['Ant_d'].to_f
 ant_f_ratio = drc_rules['Ant_f'].to_f
 
 # Define the cumulative steps for vias (Via1-Via3, TopVia1 for CMOS5L)
-# Via4 is a forbidden layer per Section 3.2
 via_steps = [
   { via_name: 'Via1',    ratio: "sum_v1",      add: "v1_ratio", first: true },
   { via_name: 'Via2',    ratio: "sum_v1_v2",   add: "v2_ratio" },
@@ -476,7 +514,6 @@ via_steps.each_with_index do |step, idx|
   via_name  = step[:via_name]
   ratio = step[:ratio]
 
-  # Build cumulative ratio
   if step[:first]
     logger.info("Evaluating cumulative ratio after #{via_name}")
     ar_all_layers.evaluate(
@@ -523,7 +560,7 @@ ant_g.forget
 
 # Rule Ant.h: dantenna in NWell not allowed
 logger.info('Executing rule Ant.h')
-ant_h_errors = nactiv_con.and(recog_diode).not(psd_drw).not(recog_esd).and(nwell_drw)
+ant_h_errors = nactiv_con.and(recog_diode).not(recog_esd).not_interacting(isolbox).and(nwell_drw)
 ant_h_errors.output('Ant.h', '7.1. Ant.h: dantenna in NWell not allowed.')
 ant_h_errors.forget
 

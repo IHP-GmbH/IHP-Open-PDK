@@ -45,6 +45,9 @@ file_logger.formatter = formatter
 stdout_logger = Logger.new($stdout)
 stdout_logger.formatter = formatter
 
+# Don't buffer stdout
+$stdout.sync = true
+
 # MultiLogger class to broadcast to multiple loggers
 class MultiLogger
   def initialize(*targets)
@@ -141,6 +144,10 @@ logger.info("BEOL enabled: #{BEOL}")
 OFFGRID = !bool_check?($no_offgrid)
 logger.info("OFFGRID enabled: #{OFFGRID}")
 
+# ANGLE
+ANGLE = !bool_check?($no_angle)
+logger.info("ANGLE enabled: #{ANGLE}")
+
 # PIN
 PIN = !bool_check?($no_pin)
 logger.info("PIN enabled: #{PIN}")
@@ -158,8 +165,8 @@ PRECHECK_DRC = bool_check?($precheck_drc)
 logger.info("PreCheck DRC enabled: #{PRECHECK_DRC}")
 
 # Connectivity rules (CMOS5L: no nBuLay - forbidden layer)
-conn_tables = %w[main nwell]
-CONNECTIVITY_RULES = TABLES.any?{|x| conn_tables.include?(x)}
+conn_tables = %w[nwell]
+CONNECTIVITY_RULES = FEOL || TABLES.any?{|x| conn_tables.include?(x)}
 logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}.")
 
 #================================================
@@ -281,7 +288,7 @@ if TABLES.any?{|x| pact_fet_tables.include?(x)}
   pact_fet = pactiv.and(nwell_drw)
 end
 
-nact_fet_tables = %w[main pwellblock gatpoly latchup nwell]
+nact_fet_tables = %w[main pwellblock gatpoly latchup nwell cont]
 if TABLES.any?{|x| nact_fet_tables.include?(x)}
   logger.info('Starting nact FET derivations')
   nact_fet = nactiv.and(pwell)
@@ -444,13 +451,12 @@ logger.info('Running all FORBIDDEN rules') if FORBIDDEN
 # REMOVED: rule_decks/beol/6_9_solderbump.drc (requires TopMetal2)
 # REMOVED: rule_decks/beol/6_11_mim.drc (MIM capacitor)
 
-# Note: The following BEOL files need modification (Session 3):
-# - rule_decks/beol/5_17_metaln.drc (remove M5 from array)
-# - rule_decks/beol/5_20_vian.drc (remove V4 from array)
-# - rule_decks/density.drc (update M5 density rules to TM1)
-
 # PIN Rules
 # %include rule_decks/pin/7_4_pin.drc
+
+# Geometry Checks
+# %include rule_decks/geometry/3_1_offgrid.drc
+# %include rule_decks/geometry/3_2_angle.drc
 
 # FORBIDDEN Patterns
 # %include rule_decks/forbidden/3_2_forbidden.drc

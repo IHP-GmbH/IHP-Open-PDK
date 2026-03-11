@@ -1,0 +1,246 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+#
+# IHP-SG13CMOS5L adapted angle checks (only CMOS5L layers)
+#
+#=========================================================================================
+
+if TABLES.include?('angle') || (TABLES.include?('main') && ANGLE)
+    #================================================
+    #--------------- ANGLE CHECKS -------------------
+    #================================================
+
+    logger.info('Starting 3.2. angle table')
+
+    ACUTE_LIMIT_DEG = 87.0
+
+    # Layers explicitly constrained to orthogonal edges only.
+    # CMOS5L: removed via4_drw, vmim_drw, topvia2_drw (forbidden/absent)
+    ORTHO_ONLY_LAYERS = {
+        "cont_drw"    => cont_drw,
+        "via1_drw"    => via1_drw,
+        "via2_drw"    => via2_drw,
+        "via3_drw"    => via3_drw,
+        "topvia1_drw" => topvia1_drw
+    }.freeze
+
+    # Layers explicitly constrained to orthogonal + 45-degree edges.
+    # CMOS5L: removed metal5_drw, topmetal2_drw (forbidden)
+    ORTHO_45_LAYERS = {
+        "gatpoly_drw"   => gatpoly_drw,
+        "activ_drw"     => activ_drw,
+        "metal1_drw"    => metal1_drw,
+        "metal2_drw"    => metal2_drw,
+        "metal3_drw"    => metal3_drw,
+        "metal4_drw"    => metal4_drw,
+        "topmetal1_drw" => topmetal1_drw
+    }.freeze
+
+    # Acute-angle checks apply on the same scope as offgrid (CMOS5L layers only).
+    ACUTE_SCOPE_LAYERS = {
+        # ACTIV
+        "activ_drw"    => activ_drw,
+        "activ_pin"    => activ_pin,
+        "activ_mask"   => activ_mask,
+        "activ_filler" => activ_filler,
+        "activ_nofill" => activ_nofill,
+        "activ_opc"    => activ_opc,
+        "activ_iopc"   => activ_iopc,
+        "activ_noqrc"  => activ_noqrc,
+
+        # GATPOLY
+        "gatpoly_drw"    => gatpoly_drw,
+        "gatpoly_pin"    => gatpoly_pin,
+        "gatpoly_filler" => gatpoly_filler,
+        "gatpoly_nofill" => gatpoly_nofill,
+        "gatpoly_opc"    => gatpoly_opc,
+        "gatpoly_iopc"   => gatpoly_iopc,
+        "gatpoly_noqrc"  => gatpoly_noqrc,
+
+        # CONT / NSD
+        "cont_drw"  => cont_drw,
+        "cont_opc"  => cont_opc,
+        "nsd_drw"   => nsd_drw,
+        "nsd_block" => nsd_block,
+
+        # METAL1
+        "metal1_drw"     => metal1_drw,
+        "metal1_pin"     => metal1_pin,
+        "metal1_mask"    => metal1_mask,
+        "metal1_filler"  => metal1_filler,
+        "metal1_nofill"  => metal1_nofill,
+        "metal1_slit"    => metal1_slit,
+        "metal1_opc"     => metal1_opc,
+        "metal1_noqrc"   => metal1_noqrc,
+        "metal1_res"     => metal1_res,
+        "metal1_iprobe"  => metal1_iprobe,
+        "metal1_diffprb" => metal1_diffprb,
+
+        # PASSIV
+        "passiv_drw"    => passiv_drw,
+        "passiv_pin"    => passiv_pin,
+        "passiv_pillar" => passiv_pillar,
+        "passiv_sbump"  => passiv_sbump,
+        "passiv_pdl"    => passiv_pdl,
+
+        # METAL2
+        "metal2_drw"     => metal2_drw,
+        "metal2_pin"     => metal2_pin,
+        "metal2_mask"    => metal2_mask,
+        "metal2_filler"  => metal2_filler,
+        "metal2_nofill"  => metal2_nofill,
+        "metal2_slit"    => metal2_slit,
+        "metal2_opc"     => metal2_opc,
+        "metal2_noqrc"   => metal2_noqrc,
+        "metal2_res"     => metal2_res,
+        "metal2_iprobe"  => metal2_iprobe,
+        "metal2_diffprb" => metal2_diffprb,
+
+        # PSD / VIA1
+        "psd_drw"  => psd_drw,
+        "via1_drw" => via1_drw,
+
+        # SALBLOCK / VIA2
+        "salblock_drw" => salblock_drw,
+        "via2_drw"     => via2_drw,
+
+        # METAL3
+        "metal3_drw"     => metal3_drw,
+        "metal3_pin"     => metal3_pin,
+        "metal3_mask"    => metal3_mask,
+        "metal3_filler"  => metal3_filler,
+        "metal3_nofill"  => metal3_nofill,
+        "metal3_slit"    => metal3_slit,
+        "metal3_opc"     => metal3_opc,
+        "metal3_noqrc"   => metal3_noqrc,
+        "metal3_res"     => metal3_res,
+        "metal3_iprobe"  => metal3_iprobe,
+        "metal3_diffprb" => metal3_diffprb,
+
+        # WELLS
+        "nwell_drw"   => nwell_drw,
+        "nwell_pin"   => nwell_pin,
+        "pwell_drw"   => pwell_drw,
+        "pwell_pin"   => pwell_pin,
+        "pwell_block" => pwell_block,
+
+        # SUBSTRATE / VIA3
+        "substrate_drw" => substrate_drw,
+        "via3_drw"      => via3_drw,
+
+        # METAL4
+        "metal4_drw"     => metal4_drw,
+        "metal4_pin"     => metal4_pin,
+        "metal4_mask"    => metal4_mask,
+        "metal4_filler"  => metal4_filler,
+        "metal4_nofill"  => metal4_nofill,
+        "metal4_slit"    => metal4_slit,
+        "metal4_opc"     => metal4_opc,
+        "metal4_noqrc"   => metal4_noqrc,
+        "metal4_res"     => metal4_res,
+        "metal4_iprobe"  => metal4_iprobe,
+        "metal4_diffprb" => metal4_diffprb,
+
+        # TOPVIA1 / TOPMETAL1
+        "topvia1_drw"      => topvia1_drw,
+        "topmetal1_drw"    => topmetal1_drw,
+        "topmetal1_pin"    => topmetal1_pin,
+        "topmetal1_mask"   => topmetal1_mask,
+        "topmetal1_filler" => topmetal1_filler,
+        "topmetal1_nofill" => topmetal1_nofill,
+        "topmetal1_slit"   => topmetal1_slit,
+        "topmetal1_noqrc"  => topmetal1_noqrc,
+        "topmetal1_res"    => topmetal1_res,
+        "topmetal1_iprobe" => topmetal1_iprobe,
+        "topmetal1_diffprb" => topmetal1_diffprb,
+
+        # OTHER CMOS5L LAYERS
+        "thickgateox_drw" => thickgateox_drw,
+        "polyres_drw"     => polyres_drw,
+        "polyres_pin"     => polyres_pin,
+        "antmetal1_drw"   => antmetal1_drw,
+        "thinfilmres_drw" => thinfilmres_drw,
+        "lbe_drw"         => lbe_drw,
+        "prboundary_drw"  => prboundary_drw
+    }.freeze
+
+    def non_circular_polys(layer_polys, circle_cache)
+        return nil if layer_polys.nil?
+
+        circles = circle_cache[layer_polys.object_id]
+        unless circles
+            circles = get_circle(layer_polys)
+            circle_cache[layer_polys.object_id] = circles
+        end
+
+        layer_polys.not(circles)
+    end
+
+    def acute_angle_check(layer_polys, base_name, acute_limit_deg, circle_cache)
+        return if layer_polys.nil?
+
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        acute_corners = non_circular.with_angle(0.0, acute_limit_deg)
+        acute_corners.output(
+            "#{base_name}_Acute",
+            "3.2 #{base_name}_Acute: acute corner angle below #{acute_limit_deg} degree is not allowed."
+        )
+    end
+
+    def orthogonal_edge_angle_check(layer_polys, base_name, circle_cache)
+        return if layer_polys.nil?
+
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        invalid_edges = non_circular.edges.without_angle(0, absolute).without_angle(90, absolute)
+        invalid_edges.output(
+            "#{base_name}_Angle90",
+            "3.2 #{base_name}_Angle90: only orthogonal edges (0/90 degree) are allowed."
+        )
+    end
+
+    def orthogonal_45_edge_angle_check(layer_polys, base_name, circle_cache)
+        return if layer_polys.nil?
+
+        non_circular = non_circular_polys(layer_polys, circle_cache)
+        invalid_edges = non_circular.edges.without_angle(0, absolute).without_angle(45, absolute).without_angle(90, absolute)
+        invalid_edges.output(
+            "#{base_name}_Angle45",
+            "3.2 #{base_name}_Angle45: only 0/45/90 degree edges are allowed."
+        )
+    end
+
+    circle_cache = {}
+
+    # 1) Global acute-angle checks.
+    ACUTE_SCOPE_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Acute")
+        acute_angle_check(layer_polys, name, ACUTE_LIMIT_DEG, circle_cache)
+    end
+
+    # 2) Edge-angle restrictions for orthogonal-only layers.
+    ORTHO_ONLY_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Angle90")
+        orthogonal_edge_angle_check(layer_polys, name, circle_cache)
+    end
+
+    # 3) Edge-angle restrictions for 0/45/90 layers.
+    ORTHO_45_LAYERS.each do |name, layer_polys|
+        logger.info("Executing rule #{name}_Angle45")
+        orthogonal_45_edge_angle_check(layer_polys, name, circle_cache)
+    end
+end
