@@ -1,0 +1,605 @@
+* SP01 - TEST
+
+.subckt sg13_lv_nmos s g d b params: l=0.13e-6 w=0.15e-6
+Mtrans s g d b sg13_lv_nmos l=l w=w
+.ends sg13_lv_nmos
+
+.subckt sg13_lv_pmos s g d b params: l=0.13e-6 w=0.15e-6
+Mtrans s g d b sg13_lv_pmos l=l w=w
+.ends sg13_lv_pmos
+
+.subckt inv_x0 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xpmos vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+.ends inv_x0
+
+.subckt nand2_x0 vdd vss nq i0 i1
+Xi0_nmos vss i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 nq vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi1_nmos _net0 i1 nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos nq i1 vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+.ends nand2_x0
+
+.subckt SP6TNonOverlapClock_8S1R vss vdd clk firststage[0] firststage[1] firststage[2] firststage[3] firststage[4] firststage[5] firststage[6] firststage[7] firststage[8] secondstage[0] secondstage[1] secondstage[2] secondstage[3] secondstage[4] secondstage[5] secondstage[6] secondstage[7] secondstage[8]
+Xclkinv vdd vss clk clk_n inv_x0
+Xfirstnand2 vdd vss firststage[0] clk secondstage[8] nand2_x0
+Xfirststage[0] vdd vss firststage[0] firststage[1] inv_x0
+Xfirststage[1] vdd vss firststage[1] firststage[2] inv_x0
+Xfirststage[2] vdd vss firststage[2] firststage[3] inv_x0
+Xfirststage[3] vdd vss firststage[3] firststage[4] inv_x0
+Xfirststage[4] vdd vss firststage[4] firststage[5] inv_x0
+Xfirststage[5] vdd vss firststage[5] firststage[6] inv_x0
+Xfirststage[6] vdd vss firststage[6] firststage[7] inv_x0
+Xfirststage[7] vdd vss firststage[7] firststage[8] inv_x0
+Xsecondnand2 vdd vss secondstage[0] clk_n firststage[8] nand2_x0
+Xsecondstage[0] vdd vss secondstage[0] secondstage[1] inv_x0
+Xsecondstage[1] vdd vss secondstage[1] secondstage[2] inv_x0
+Xsecondstage[2] vdd vss secondstage[2] secondstage[3] inv_x0
+Xsecondstage[3] vdd vss secondstage[3] secondstage[4] inv_x0
+Xsecondstage[4] vdd vss secondstage[4] secondstage[5] inv_x0
+Xsecondstage[5] vdd vss secondstage[5] secondstage[6] inv_x0
+Xsecondstage[6] vdd vss secondstage[6] secondstage[7] inv_x0
+Xsecondstage[7] vdd vss secondstage[7] secondstage[8] inv_x0
+.ends SP6TNonOverlapClock_8S1R
+
+.subckt buf_x1 vdd vss i q
+Xstage0_nmos _i_n i vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xstage0_pmos _i_n i vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xnmos vss _i_n q vss sg13_lv_nmos l=1.3e-07 w=1.07e-06
+Xpmos vdd _i_n q vdd sg13_lv_pmos l=1.3e-07 w=1.06e-06
+.ends buf_x1
+
+.subckt inv_x1 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=1.3e-07 w=1.46e-06
+Xpmos vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=1.45e-06
+.ends inv_x1
+
+.subckt SP6TClockGenerator_8S1R vss vdd clk decodeclk columnclk precharge_n wl_en we_en
+Xnonovl vss vdd clk firststage[0] firststage[1] firststage[2] firststage[3] firststage[4] firststage[5] firststage[6] firstpulse firststage[8] secondstage[0] secondstage[1] secondstage[2] secondstage[3] secondstage[4] secondstage[5] secondstage[6] secondpulse secondstage[8] SP6TNonOverlapClock_8S1R
+Xdecodeclkbuf vdd vss clk decodeclk buf_x1
+Xprechargeinv vdd vss secondpulse precharge_n inv_x1
+Xwlenbuf vdd vss firstpulse wl_en buf_x1
+Xcolumnclkbuf vdd vss clk columnclk buf_x1
+Xweenbuf vdd vss firstpulse we_en buf_x1
+.ends SP6TClockGenerator_8S1R
+
+.subckt SP6TDec_dff_x1 vdd vss i clk q
+Xclk_nmos _clk_n clk vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_pmos _clk_n clk vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xclk_n_nmos0 vss _clk_n _clk_buf vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos0 vdd _clk_n _clk_buf vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xi_nmos _u i vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi_pmos _u i vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xu_nmos vss _u _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xu_pmos vdd _u _net1 vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xclk_n_nmos1 _net0 _clk_n _dff_m vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_buf_pmos0 _net1 _clk_buf _dff_m vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xclk_buf_nmos0 _dff_m _clk_buf _net2 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos1 _dff_m _clk_n _net3 vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xy_nmos _net2 _y vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xy_pmos _net3 _y vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xdff_m_nmos vss _dff_m _y vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xdff_m_pmos vdd _dff_m _y vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xclk_buf_nmos1 _y _clk_buf _dff_s vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos2 _y _clk_n _dff_s vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xclk_n_nmos2 _dff_s _clk_n _net4 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_buf_pmos1 _dff_s _clk_buf _net5 vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xq_nmos _net4 q vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xq_pmos _net5 q vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xdff_s_nmos vss _dff_s q vss sg13_lv_nmos l=1.3e-07 w=2.17e-06
+Xdff_s_pmos vdd _dff_s q vdd sg13_lv_pmos l=1.3e-07 w=3.77e-06
+.ends SP6TDec_dff_x1
+
+.subckt SP6TDec_inv_x1 vdd vss i nq
+Xnmos vss i nq vss sg13_lv_nmos l=1.3e-07 w=2.8e-06
+Xpmos vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=4.4e-06
+.ends SP6TDec_inv_x1
+
+.subckt SP6TDec_nand2_x0 vdd vss nq i0 i1
+Xi0_nmos vss i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 nq vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xi1_nmos _net0 i1 nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos nq i1 vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+.ends SP6TDec_nand2_x0
+
+.subckt SP6TDec_inv_x2 vdd vss i nq
+Xnmos[0] vss i nq vss sg13_lv_nmos l=1.3e-07 w=2.8e-06
+Xpmos[0] vdd i nq vdd sg13_lv_pmos l=1.3e-07 w=4.4e-06
+Xnmos[1] nq i vss vss sg13_lv_nmos l=1.3e-07 w=2.8e-06
+Xpmos[1] nq i vdd vdd sg13_lv_pmos l=1.3e-07 w=4.4e-06
+.ends SP6TDec_inv_x2
+
+.subckt SP6TLatchedDecoder_2A2R vss vdd clk a[0] a[1] line[0] line[1] line[2] line[3]
+Xaff[0] vdd vss a[0] clk aint[0] SP6TDec_dff_x1
+Xaff[1] vdd vss a[1] clk aint[1] SP6TDec_dff_x1
+Xainv[0] vdd vss aint[0] aint_n[0] SP6TDec_inv_x1
+Xainv[1] vdd vss aint[1] aint_n[1] SP6TDec_inv_x1
+Xlinenand[0] vdd vss line_n[0] aint_n[0] aint_n[1] SP6TDec_nand2_x0
+Xlinenand[1] vdd vss line_n[1] aint[0] aint_n[1] SP6TDec_nand2_x0
+Xlinenand[2] vdd vss line_n[2] aint_n[0] aint[1] SP6TDec_nand2_x0
+Xlinenand[3] vdd vss line_n[3] aint[0] aint[1] SP6TDec_nand2_x0
+Xlineinv[0] vdd vss line_n[0] line[0] SP6TDec_inv_x2
+Xlineinv[1] vdd vss line_n[1] line[1] SP6TDec_inv_x2
+Xlineinv[2] vdd vss line_n[2] line[2] SP6TDec_inv_x2
+Xlineinv[3] vdd vss line_n[3] line[3] SP6TDec_inv_x2
+.ends SP6TLatchedDecoder_2A2R
+
+.subckt SP6TDec_and3_x1 vdd vss q i0 i1 i2
+Xi0_nmos nq i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos nq i0 vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xi1_nmos _net0 i1 _net1 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos vdd i1 nq vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xi2_nmos _net1 i2 vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi2_pmos nq i2 vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xn_pd vss nq q vss sg13_lv_nmos l=1.3e-07 w=2.8e-06
+Xq_pu vdd nq q vdd sg13_lv_pmos l=1.3e-07 w=4.4e-06
+.ends SP6TDec_and3_x1
+
+.subckt SP6TDec_and2_x1 vdd vss q i0 i1
+Xi0_nmos nq i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 nq vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xi1_nmos _net0 i1 vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos nq i1 vdd vdd sg13_lv_pmos l=1.3e-07 w=1.2e-06
+Xn_pd vss nq q vss sg13_lv_nmos l=1.3e-07 w=2.8e-06
+Xq_pu vdd nq q vdd sg13_lv_pmos l=1.3e-07 w=4.4e-06
+.ends SP6TDec_and2_x1
+
+.subckt SP6TRowPredecoders_3_2B vss vdd clk a[0] a[1] a[2] a[3] a[4] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[0] page[1] page[2] page[3]
+Xaff[0] vdd vss a[0] clk aint[0] SP6TDec_dff_x1
+Xaff[1] vdd vss a[1] clk aint[1] SP6TDec_dff_x1
+Xaff[2] vdd vss a[2] clk aint[2] SP6TDec_dff_x1
+Xaff[3] vdd vss a[3] clk aint[3] SP6TDec_dff_x1
+Xaff[4] vdd vss a[4] clk aint[4] SP6TDec_dff_x1
+Xainv[0] vdd vss aint[0] aint_n[0] SP6TDec_inv_x1
+Xainv[1] vdd vss aint[1] aint_n[1] SP6TDec_inv_x1
+Xainv[2] vdd vss aint[2] aint_n[2] SP6TDec_inv_x1
+Xainv[3] vdd vss aint[3] aint_n[3] SP6TDec_inv_x1
+Xainv[4] vdd vss aint[4] aint_n[4] SP6TDec_inv_x1
+Xpd[0]and[0] vdd vss pd[0][0] aint_n[0] aint_n[1] aint_n[2] SP6TDec_and3_x1
+Xpd[0]and[1] vdd vss pd[0][1] aint[0] aint_n[1] aint_n[2] SP6TDec_and3_x1
+Xpd[0]and[2] vdd vss pd[0][2] aint_n[0] aint[1] aint_n[2] SP6TDec_and3_x1
+Xpd[0]and[3] vdd vss pd[0][3] aint[0] aint[1] aint_n[2] SP6TDec_and3_x1
+Xpd[0]and[4] vdd vss pd[0][4] aint_n[0] aint_n[1] aint[2] SP6TDec_and3_x1
+Xpd[0]and[5] vdd vss pd[0][5] aint[0] aint_n[1] aint[2] SP6TDec_and3_x1
+Xpd[0]and[6] vdd vss pd[0][6] aint_n[0] aint[1] aint[2] SP6TDec_and3_x1
+Xpd[0]and[7] vdd vss pd[0][7] aint[0] aint[1] aint[2] SP6TDec_and3_x1
+Xpage_and[0] vdd vss page[0] aint_n[3] aint_n[4] SP6TDec_and2_x1
+Xpage_and[1] vdd vss page[1] aint[3] aint_n[4] SP6TDec_and2_x1
+Xpage_and[2] vdd vss page[2] aint_n[3] aint[4] SP6TDec_and2_x1
+Xpage_and[3] vdd vss page[3] aint[3] aint[4] SP6TDec_and2_x1
+.ends SP6TRowPredecoders_3_2B
+
+.subckt SP6TRowDecoderNand3X2 vss vdd pd[0][0] pd[0][1] page wl_en wl_n[0] wl_n[1]
+Xnmos[0] wl_n[0] wl_en int[0] vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xnmos[1] int[0] pd[0][0] int[1] vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xnmos[2] int[1] page vss vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xnmos[3] vss page int[2] vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xnmos[4] int[2] pd[0][1] int[3] vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xnmos[5] int[3] wl_en wl_n[1] vss sg13_lv_nmos l=1.3e-07 w=4.9e-07
+Xpmos[0] wl_n[0] wl_en vdd vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+Xpmos[1] vdd pd[0][0] wl_n[0] vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+Xpmos[2] wl_n[0] page vdd vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+Xpmos[3] vdd page wl_n[1] vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+Xpmos[4] wl_n[1] pd[0][1] vdd vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+Xpmos[5] vdd wl_en wl_n[1] vdd sg13_lv_pmos l=1.3e-07 w=4.9e-07
+.ends SP6TRowDecoderNand3X2
+
+.subckt SP6TWLDrive_26LN100WN26LP200WP vss substrate vdd nwell wl_n wl_drive
+Xnmos1 vss wl_n wl_drive substrate sg13_lv_nmos l=1.3e-07 w=5e-07
+Xnmos2 wl_drive wl_n vss substrate sg13_lv_nmos l=1.3e-07 w=5e-07
+Xpmos1 vdd wl_n wl_drive nwell sg13_lv_pmos l=1.3e-07 w=1e-06
+Xpmos2 wl_drive wl_n vdd nwell sg13_lv_pmos l=1.3e-07 w=1e-06
+.ends SP6TWLDrive_26LN100WN26LP200WP
+
+.subckt SP6TRowDecoderDriverPage_2PD8R vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page wl_en
+Xnand3[0] vss vdd pd[0][0] pd[0][1] page wl_en wl_n[0] wl_n[1] SP6TRowDecoderNand3X2
+Xnand3[1] vss vdd pd[0][2] pd[0][3] page wl_en wl_n[2] wl_n[3] SP6TRowDecoderNand3X2
+Xnand3[2] vss vdd pd[0][4] pd[0][5] page wl_en wl_n[4] wl_n[5] SP6TRowDecoderNand3X2
+Xnand3[3] vss vdd pd[0][6] pd[0][7] page wl_en wl_n[6] wl_n[7] SP6TRowDecoderNand3X2
+Xdrive[0] vss vss vdd vdd wl_n[0] wl[0] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[1] vss vss vdd vdd wl_n[1] wl[1] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[2] vss vss vdd vdd wl_n[2] wl[2] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[3] vss vss vdd vdd wl_n[3] wl[3] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[4] vss vss vdd vdd wl_n[4] wl[4] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[5] vss vss vdd vdd wl_n[5] wl[5] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[6] vss vss vdd vdd wl_n[6] wl[6] SP6TWLDrive_26LN100WN26LP200WP
+Xdrive[7] vss vss vdd vdd wl_n[7] wl[7] SP6TWLDrive_26LN100WN26LP200WP
+.ends SP6TRowDecoderDriverPage_2PD8R
+
+.subckt SP6TRowDecoderBulkConn vdd vss
+.ends SP6TRowDecoderBulkConn
+
+.subckt SP6TRowDecoder_3_2B vss vdd a[0] a[1] a[2] a[3] a[4] clk wl_en wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31]
+Xpredec vss vdd clk a[0] a[1] a[2] a[3] a[4] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[0] page[1] page[2] page[3] SP6TRowPredecoders_3_2B
+Xpage[0] vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[0] wl_en SP6TRowDecoderDriverPage_2PD8R
+Xpage[1] vss vdd wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[1] wl_en SP6TRowDecoderDriverPage_2PD8R
+Xpage[2] vss vdd wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[2] wl_en SP6TRowDecoderDriverPage_2PD8R
+Xpage[3] vss vdd wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] pd[0][0] pd[0][1] pd[0][2] pd[0][3] pd[0][4] pd[0][5] pd[0][6] pd[0][7] page[3] wl_en SP6TRowDecoderDriverPage_2PD8R
+Xbulkcon[0] vdd vss SP6TRowDecoderBulkConn
+Xbulkcon[1] vdd vss SP6TRowDecoderBulkConn
+Xbulkcon[2] vdd vss SP6TRowDecoderBulkConn
+.ends SP6TRowDecoder_3_2B
+
+.subckt SP6TRowPeriphery_3_2_2 vss vdd clk a[0] a[1] a[2] a[3] a[4] a[5] a[6] wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] mux[0] mux[1] mux[2] mux[3] columnclk precharge_n we_en
+Xclkgen vss vdd clk decodeclk columnclk precharge_n wl_en we_en SP6TClockGenerator_8S1R
+Xcoldec vss vdd decodeclk a[0] a[1] mux[0] mux[1] mux[2] mux[3] SP6TLatchedDecoder_2A2R
+Xrowdec vss vdd a[2] a[3] a[4] a[5] a[6] decodeclk wl_en wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] SP6TRowDecoder_3_2B
+.ends SP6TRowPeriphery_3_2_2
+
+.subckt SP6TCell vss substrate vdd nwell wl bl bl_n
+Xpu1 vdd bit_n bit nwell sg13_lv_pmos l=1.3e-07 w=1.5e-07
+Xpd1 bit bit_n vss substrate sg13_lv_nmos l=1.3e-07 w=2e-07
+Xpu2 vdd bit bit_n nwell sg13_lv_pmos l=1.3e-07 w=1.5e-07
+Xpd2 bit_n bit vss substrate sg13_lv_nmos l=1.3e-07 w=2e-07
+Xpg1 bit wl bl substrate sg13_lv_nmos l=1.3e-07 w=2e-07
+Xpg2 bit_n wl bl_n substrate sg13_lv_nmos l=1.3e-07 w=2e-07
+.ends SP6TCell
+
+.subckt SP6TArray_2X1 vss substrate vdd nwell wl[0] wl[1] bl[0] bl_n[0]
+Xinst0x0 vss substrate vdd nwell wl[0] bl[0] bl_n[0] SP6TCell
+Xinst1x0 vss substrate vdd nwell wl[1] bl[0] bl_n[0] SP6TCell
+.ends SP6TArray_2X1
+
+.subckt SP6TArray_2X2 vss substrate vdd nwell wl[0] wl[1] bl[0] bl_n[0] bl[1] bl_n[1]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] bl[0] bl_n[0] SP6TArray_2X1
+Xinst0x1 vss substrate vdd nwell wl[0] wl[1] bl[1] bl_n[1] SP6TArray_2X1
+.ends SP6TArray_2X2
+
+.subckt SP6TArray_4X2 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] bl[0] bl_n[0] bl[1] bl_n[1]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] bl[0] bl_n[0] bl[1] bl_n[1] SP6TArray_2X2
+Xinst1x0 vss substrate vdd nwell wl[2] wl[3] bl[0] bl_n[0] bl[1] bl_n[1] SP6TArray_2X2
+.ends SP6TArray_4X2
+
+.subckt SP6TArray_4X4 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] bl[0] bl_n[0] bl[1] bl_n[1] SP6TArray_4X2
+Xinst0x1 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] bl[2] bl_n[2] bl[3] bl_n[3] SP6TArray_4X2
+.ends SP6TArray_4X4
+
+.subckt SP6TArray_8X4 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] SP6TArray_4X4
+Xinst1x0 vss substrate vdd nwell wl[4] wl[5] wl[6] wl[7] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] SP6TArray_4X4
+.ends SP6TArray_8X4
+
+.subckt SP6TArray_8X8 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] SP6TArray_8X4
+Xinst0x1 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TArray_8X4
+.ends SP6TArray_8X8
+
+.subckt SP6TArray_16X8 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TArray_8X8
+Xinst1x0 vss substrate vdd nwell wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TArray_8X8
+.ends SP6TArray_16X8
+
+.subckt SP6TArray_16X16 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TArray_16X8
+Xinst0x1 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] SP6TArray_16X8
+.ends SP6TArray_16X16
+
+.subckt SP6TArray_16X32 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31]
+Xinst0x0 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] SP6TArray_16X16
+Xinst0x1 vss substrate vdd nwell wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TArray_16X16
+.ends SP6TArray_16X32
+
+.subckt SP6TBulkConn vdd vss bl bl_n
+.ends SP6TBulkConn
+
+.subckt SP6TBulkConnRow_2 vss vdd bl[0] bl_n[0] bl[1] bl_n[1]
+Xinst0 vdd vss bl[0] bl_n[0] SP6TBulkConn
+Xinst1 vdd vss bl[1] bl_n[1] SP6TBulkConn
+.ends SP6TBulkConnRow_2
+
+.subckt SP6TBulkConnRow_4 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3]
+Xinst0 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] SP6TBulkConnRow_2
+Xinst1 vss vdd bl[2] bl_n[2] bl[3] bl_n[3] SP6TBulkConnRow_2
+.ends SP6TBulkConnRow_4
+
+.subckt SP6TBulkConnRow_8 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7]
+Xinst0 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] SP6TBulkConnRow_4
+Xinst1 vss vdd bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TBulkConnRow_4
+.ends SP6TBulkConnRow_8
+
+.subckt SP6TBulkConnRow_16 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15]
+Xinst0 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] SP6TBulkConnRow_8
+Xinst1 vss vdd bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] SP6TBulkConnRow_8
+.ends SP6TBulkConnRow_16
+
+.subckt SP6TBulkConnRow_32 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31]
+Xinst0 vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] SP6TBulkConnRow_16
+Xinst1 vss vdd bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TBulkConnRow_16
+.ends SP6TBulkConnRow_32
+
+.subckt SP6TArray_32X32BC vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31]
+Xinst0x0 vss vss vdd vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TArray_16X32
+Xinst1x0 vss vss vdd vdd wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TArray_16X32
+Xbcrow vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TBulkConnRow_32
+Xbottombcrow vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TBulkConnRow_32
+Xtopbcrow vss vdd bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TBulkConnRow_32
+.ends SP6TArray_32X32BC
+
+.subckt SP6TPrecharge vdd nwell bl bl_n precharge_n
+Xpc1 vdd precharge_n bl nwell sg13_lv_pmos l=1.3e-07 w=5e-07
+Xpc2 bl precharge_n bl_n nwell sg13_lv_pmos l=1.3e-07 w=5e-07
+Xpc3 bl_n precharge_n vdd nwell sg13_lv_pmos l=1.3e-07 w=5e-07
+.ends SP6TPrecharge
+
+.subckt SP6TColMux_4C26L699W bl[0] bl_n[0] mux[0] bl[1] bl_n[1] mux[1] bl[2] bl_n[2] mux[2] bl[3] bl_n[3] mux[3] vss muxbl muxbl_n
+Xpgbl0 muxbl mux[0] bl[0] vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbln0 bl_n[0] mux[0] muxbl_n vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbl1 bl[1] mux[1] muxbl vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbln1 muxbl_n mux[1] bl_n[1] vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbl2 muxbl mux[2] bl[2] vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbln2 bl_n[2] mux[2] muxbl_n vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbl3 bl[3] mux[3] muxbl vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+Xpgbln3 muxbl_n mux[3] bl_n[3] vss sg13_lv_nmos l=1.3e-07 w=3.5e-06
+.ends SP6TColMux_4C26L699W
+
+.subckt nsnrlatch_x1 vdd vss nset nrst q nq
+Xnset_nmos q nset _net0 vss sg13_lv_nmos l=1.3e-07 w=1.31e-06
+Xnset_pmos vdd nset q vdd sg13_lv_pmos l=1.3e-07 w=1.3e-06
+Xnq_nmos _net0 nq vss vss sg13_lv_nmos l=1.3e-07 w=1.31e-06
+Xnq_pmos q nq vdd vdd sg13_lv_pmos l=1.3e-07 w=1.3e-06
+Xq_nmos vss q _net1 vss sg13_lv_nmos l=1.3e-07 w=1.31e-06
+Xq_pmos vdd q nq vdd sg13_lv_pmos l=1.3e-07 w=1.3e-06
+Xnrst_nmos _net1 nrst nq vss sg13_lv_nmos l=1.3e-07 w=1.31e-06
+Xnrst_pmos nq nrst vdd vdd sg13_lv_pmos l=1.3e-07 w=1.3e-06
+.ends nsnrlatch_x1
+
+.subckt dff_x1 vdd vss i clk q
+Xclk_nmos _clk_n clk vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_pmos _clk_n clk vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xclk_n_nmos0 vss _clk_n _clk_buf vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos0 vdd _clk_n _clk_buf vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi_nmos _u i vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi_pmos _u i vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xu_nmos vss _u _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xu_pmos vdd _u _net1 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xclk_n_nmos1 _net0 _clk_n _dff_m vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_buf_pmos0 _net1 _clk_buf _dff_m vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xclk_buf_nmos0 _dff_m _clk_buf _net2 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos1 _dff_m _clk_n _net3 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xy_nmos _net2 _y vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xy_pmos _net3 _y vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xdff_m_nmos vss _dff_m _y vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xdff_m_pmos vdd _dff_m _y vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xclk_buf_nmos1 _y _clk_buf _dff_s vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_n_pmos2 _y _clk_n _dff_s vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xclk_n_nmos2 _dff_s _clk_n _net4 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xclk_buf_pmos1 _dff_s _clk_buf _net5 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xq_nmos _net4 q vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xq_pmos _net5 q vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xdff_s_nmos vss _dff_s q vss sg13_lv_nmos l=1.3e-07 w=8.3e-07
+Xdff_s_pmos vdd _dff_s q vdd sg13_lv_pmos l=1.3e-07 w=8.2e-07
+.ends dff_x1
+
+.subckt nor2_x0 vdd vss nq i0 i1
+Xi0_nmos vss i0 nq vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 _net0 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi1_nmos nq i1 vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos _net0 i1 nq vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+.ends nor2_x0
+
+.subckt SP6TReadWrite_4M vss vdd d q bl bl_n clk we_n
+Xsenseamp vdd vss bl_n bl q noconn nsnrlatch_x1
+Xd_ff vdd vss d clk d_l dff_x1
+Xd_inv vdd vss d_l d_n inv_x0
+Xnora vdd vss bl_pd_g d_l we_n nor2_x0
+Xnorb vdd vss bln_pd_g d_n we_n nor2_x0
+Xbl_pd bl bl_pd_g vss vss sg13_lv_nmos l=1.3e-07 w=1.9e-06
+Xbln_pd vss bln_pd_g bl_n vss sg13_lv_nmos l=1.3e-07 w=1.9e-06
+.ends SP6TReadWrite_4M
+
+.subckt buf_x2 vdd vss i q
+Xstage0_nmos _i_n i vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xstage0_pmos _i_n i vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xnmos[0] vss _i_n q vss sg13_lv_nmos l=1.3e-07 w=1.07e-06
+Xpmos[0] vdd _i_n q vdd sg13_lv_pmos l=1.3e-07 w=1.06e-06
+Xnmos[1] q _i_n vss vss sg13_lv_nmos l=1.3e-07 w=1.07e-06
+Xpmos[1] q _i_n vdd vdd sg13_lv_pmos l=1.3e-07 w=1.06e-06
+.ends buf_x2
+
+.subckt SP6TClockWE vss vdd clkup clkdown we we_en we_n
+Xclkbuf vdd vss clkup clkdown buf_x2
+Xweff vdd vss we clkdown we_l dff_x1
+Xwenand vdd vss we_n we_l we_en nand2_x0
+.ends SP6TClockWE
+
+.subckt SP6TColumnPeriphery_8B4M vss vdd nwell clk precharge_n we we_en q[0] d[0] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] q[1] d[1] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] q[2] d[2] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] q[3] d[3] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] q[4] d[4] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] q[5] d[5] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] q[6] d[6] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] q[7] d[7] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] mux[0] mux[1] mux[2] mux[3]
+Xprecharge[0] vdd nwell bl[0] bl_n[0] precharge_n SP6TPrecharge
+Xprecharge[1] vdd nwell bl[1] bl_n[1] precharge_n SP6TPrecharge
+Xprecharge[2] vdd nwell bl[2] bl_n[2] precharge_n SP6TPrecharge
+Xprecharge[3] vdd nwell bl[3] bl_n[3] precharge_n SP6TPrecharge
+Xprecharge[4] vdd nwell bl[4] bl_n[4] precharge_n SP6TPrecharge
+Xprecharge[5] vdd nwell bl[5] bl_n[5] precharge_n SP6TPrecharge
+Xprecharge[6] vdd nwell bl[6] bl_n[6] precharge_n SP6TPrecharge
+Xprecharge[7] vdd nwell bl[7] bl_n[7] precharge_n SP6TPrecharge
+Xprecharge[8] vdd nwell bl[8] bl_n[8] precharge_n SP6TPrecharge
+Xprecharge[9] vdd nwell bl[9] bl_n[9] precharge_n SP6TPrecharge
+Xprecharge[10] vdd nwell bl[10] bl_n[10] precharge_n SP6TPrecharge
+Xprecharge[11] vdd nwell bl[11] bl_n[11] precharge_n SP6TPrecharge
+Xprecharge[12] vdd nwell bl[12] bl_n[12] precharge_n SP6TPrecharge
+Xprecharge[13] vdd nwell bl[13] bl_n[13] precharge_n SP6TPrecharge
+Xprecharge[14] vdd nwell bl[14] bl_n[14] precharge_n SP6TPrecharge
+Xprecharge[15] vdd nwell bl[15] bl_n[15] precharge_n SP6TPrecharge
+Xprecharge[16] vdd nwell bl[16] bl_n[16] precharge_n SP6TPrecharge
+Xprecharge[17] vdd nwell bl[17] bl_n[17] precharge_n SP6TPrecharge
+Xprecharge[18] vdd nwell bl[18] bl_n[18] precharge_n SP6TPrecharge
+Xprecharge[19] vdd nwell bl[19] bl_n[19] precharge_n SP6TPrecharge
+Xprecharge[20] vdd nwell bl[20] bl_n[20] precharge_n SP6TPrecharge
+Xprecharge[21] vdd nwell bl[21] bl_n[21] precharge_n SP6TPrecharge
+Xprecharge[22] vdd nwell bl[22] bl_n[22] precharge_n SP6TPrecharge
+Xprecharge[23] vdd nwell bl[23] bl_n[23] precharge_n SP6TPrecharge
+Xprecharge[24] vdd nwell bl[24] bl_n[24] precharge_n SP6TPrecharge
+Xprecharge[25] vdd nwell bl[25] bl_n[25] precharge_n SP6TPrecharge
+Xprecharge[26] vdd nwell bl[26] bl_n[26] precharge_n SP6TPrecharge
+Xprecharge[27] vdd nwell bl[27] bl_n[27] precharge_n SP6TPrecharge
+Xprecharge[28] vdd nwell bl[28] bl_n[28] precharge_n SP6TPrecharge
+Xprecharge[29] vdd nwell bl[29] bl_n[29] precharge_n SP6TPrecharge
+Xprecharge[30] vdd nwell bl[30] bl_n[30] precharge_n SP6TPrecharge
+Xprecharge[31] vdd nwell bl[31] bl_n[31] precharge_n SP6TPrecharge
+Xcolmux[0] bl[0] bl_n[0] mux[0] bl[1] bl_n[1] mux[1] bl[2] bl_n[2] mux[2] bl[3] bl_n[3] mux[3] vss muxbl[0] muxbl_n[0] SP6TColMux_4C26L699W
+Xcolmux[1] bl[4] bl_n[4] mux[0] bl[5] bl_n[5] mux[1] bl[6] bl_n[6] mux[2] bl[7] bl_n[7] mux[3] vss muxbl[1] muxbl_n[1] SP6TColMux_4C26L699W
+Xcolmux[2] bl[8] bl_n[8] mux[0] bl[9] bl_n[9] mux[1] bl[10] bl_n[10] mux[2] bl[11] bl_n[11] mux[3] vss muxbl[2] muxbl_n[2] SP6TColMux_4C26L699W
+Xcolmux[3] bl[12] bl_n[12] mux[0] bl[13] bl_n[13] mux[1] bl[14] bl_n[14] mux[2] bl[15] bl_n[15] mux[3] vss muxbl[3] muxbl_n[3] SP6TColMux_4C26L699W
+Xcolmux[4] bl[16] bl_n[16] mux[0] bl[17] bl_n[17] mux[1] bl[18] bl_n[18] mux[2] bl[19] bl_n[19] mux[3] vss muxbl[4] muxbl_n[4] SP6TColMux_4C26L699W
+Xcolmux[5] bl[20] bl_n[20] mux[0] bl[21] bl_n[21] mux[1] bl[22] bl_n[22] mux[2] bl[23] bl_n[23] mux[3] vss muxbl[5] muxbl_n[5] SP6TColMux_4C26L699W
+Xcolmux[6] bl[24] bl_n[24] mux[0] bl[25] bl_n[25] mux[1] bl[26] bl_n[26] mux[2] bl[27] bl_n[27] mux[3] vss muxbl[6] muxbl_n[6] SP6TColMux_4C26L699W
+Xcolmux[7] bl[28] bl_n[28] mux[0] bl[29] bl_n[29] mux[1] bl[30] bl_n[30] mux[2] bl[31] bl_n[31] mux[3] vss muxbl[7] muxbl_n[7] SP6TColMux_4C26L699W
+Xrw[0] vss vdd d[0] q[0] muxbl[0] muxbl_n[0] intclk we_n SP6TReadWrite_4M
+Xrw[1] vss vdd d[1] q[1] muxbl[1] muxbl_n[1] intclk we_n SP6TReadWrite_4M
+Xrw[2] vss vdd d[2] q[2] muxbl[2] muxbl_n[2] intclk we_n SP6TReadWrite_4M
+Xrw[3] vss vdd d[3] q[3] muxbl[3] muxbl_n[3] intclk we_n SP6TReadWrite_4M
+Xrw[4] vss vdd d[4] q[4] muxbl[4] muxbl_n[4] intclk we_n SP6TReadWrite_4M
+Xrw[5] vss vdd d[5] q[5] muxbl[5] muxbl_n[5] intclk we_n SP6TReadWrite_4M
+Xrw[6] vss vdd d[6] q[6] muxbl[6] muxbl_n[6] intclk we_n SP6TReadWrite_4M
+Xrw[7] vss vdd d[7] q[7] muxbl[7] muxbl_n[7] intclk we_n SP6TReadWrite_4M
+Xclkwe vss vdd clk intclk we we_en we_n SP6TClockWE
+.ends SP6TColumnPeriphery_8B4M
+
+.subckt SP6TColumn_32R8B4M vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] q[0] d[0] q[1] d[1] q[2] d[2] q[3] d[3] q[4] d[4] q[5] d[5] q[6] d[6] q[7] d[7] we clk we_en precharge_n mux[0] mux[1] mux[2] mux[3]
+Xarray vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] SP6TArray_32X32BC
+Xperiph vss vdd vdd clk precharge_n we we_en q[0] d[0] bl[0] bl_n[0] bl[1] bl_n[1] bl[2] bl_n[2] bl[3] bl_n[3] q[1] d[1] bl[4] bl_n[4] bl[5] bl_n[5] bl[6] bl_n[6] bl[7] bl_n[7] q[2] d[2] bl[8] bl_n[8] bl[9] bl_n[9] bl[10] bl_n[10] bl[11] bl_n[11] q[3] d[3] bl[12] bl_n[12] bl[13] bl_n[13] bl[14] bl_n[14] bl[15] bl_n[15] q[4] d[4] bl[16] bl_n[16] bl[17] bl_n[17] bl[18] bl_n[18] bl[19] bl_n[19] q[5] d[5] bl[20] bl_n[20] bl[21] bl_n[21] bl[22] bl_n[22] bl[23] bl_n[23] q[6] d[6] bl[24] bl_n[24] bl[25] bl_n[25] bl[26] bl_n[26] bl[27] bl_n[27] q[7] d[7] bl[28] bl_n[28] bl[29] bl_n[29] bl[30] bl_n[30] bl[31] bl_n[31] mux[0] mux[1] mux[2] mux[3] SP6TColumnPeriphery_8B4M
+.ends SP6TColumn_32R8B4M
+
+.subckt SP6TColumnBlock_32R8B4M1W vss vdd clk precharge_n we_en wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] mux[0] mux[1] mux[2] mux[3] we[0] q[0] d[0] q[1] d[1] q[2] d[2] q[3] d[3] q[4] d[4] q[5] d[5] q[6] d[6] q[7] d[7]
+Xcolumn[0] vss vdd wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] q[0] d[0] q[1] d[1] q[2] d[2] q[3] d[3] q[4] d[4] q[5] d[5] q[6] d[6] q[7] d[7] we[0] clk we_en precharge_n mux[0] mux[1] mux[2] mux[3] SP6TColumn_32R8B4M
+.ends SP6TColumnBlock_32R8B4M1W
+
+.subckt SP6TBlock_128x8_322A1WE clk a[0] a[1] a[2] a[3] a[4] a[5] a[6] vss vdd q[0] q[1] q[2] q[3] q[4] q[5] q[6] q[7] d[0] d[1] d[2] d[3] d[4] d[5] d[6] d[7] we[0]
+Xrowperiph vss vdd clk a[0] a[1] a[2] a[3] a[4] a[5] a[6] wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] mux[0] mux[1] mux[2] mux[3] columnclk precharge_n we_en SP6TRowPeriphery_3_2_2
+Xcolumnblock vss vdd columnclk precharge_n we_en wl[0] wl[1] wl[2] wl[3] wl[4] wl[5] wl[6] wl[7] wl[8] wl[9] wl[10] wl[11] wl[12] wl[13] wl[14] wl[15] wl[16] wl[17] wl[18] wl[19] wl[20] wl[21] wl[22] wl[23] wl[24] wl[25] wl[26] wl[27] wl[28] wl[29] wl[30] wl[31] mux[0] mux[1] mux[2] mux[3] we[0] q[0] d[0] q[1] d[1] q[2] d[2] q[3] d[3] q[4] d[4] q[5] d[5] q[6] d[6] q[7] d[7] SP6TColumnBlock_32R8B4M1W
+.ends SP6TBlock_128x8_322A1WE
+
+.subckt SP6TTimingIn_7SF vss vdd sr_in sr_out sr_shift sr_latch i[6] i[5] i[4] i[3] i[2] i[1] i[0]
+Xshiftff[6] vdd vss sr_in sr_shift i_s[6] dff_x1
+Xshiftff[5] vdd vss i_s[6] sr_shift i_s[5] dff_x1
+Xshiftff[4] vdd vss i_s[5] sr_shift i_s[4] dff_x1
+Xshiftff[3] vdd vss i_s[4] sr_shift i_s[3] dff_x1
+Xshiftff[2] vdd vss i_s[3] sr_shift i_s[2] dff_x1
+Xshiftff[1] vdd vss i_s[2] sr_shift i_s[1] dff_x1
+Xshiftff[0] vdd vss i_s[1] sr_shift sr_out dff_x1
+Xlatchff[6] vdd vss i_s[6] sr_latch i[6] dff_x1
+Xlatchff[5] vdd vss i_s[5] sr_latch i[5] dff_x1
+Xlatchff[4] vdd vss i_s[4] sr_latch i[4] dff_x1
+Xlatchff[3] vdd vss i_s[3] sr_latch i[3] dff_x1
+Xlatchff[2] vdd vss i_s[2] sr_latch i[2] dff_x1
+Xlatchff[1] vdd vss i_s[1] sr_latch i[1] dff_x1
+Xlatchff[0] vdd vss sr_out sr_latch i[0] dff_x1
+.ends SP6TTimingIn_7SF
+
+.subckt mux2_x1 vdd vss i0 i1 cmd q
+Xcmd_inv_nmos cmd_n cmd vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xcmd_inv_pmos cmd_n cmd vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi0_nmos vss i0 _net0 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi0_pmos vdd i0 _net1 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xcmd_n_npass _net0 cmd_n _q_n vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xcmd_ppass _net1 cmd _q_n vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xcmd_npass _q_n cmd _net2 vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xcmd_n_ppass _q_n cmd_n _net3 vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xi1_nmos _net2 i1 vss vss sg13_lv_nmos l=1.3e-07 w=7.8e-07
+Xi1_pmos _net3 i1 vdd vdd sg13_lv_pmos l=1.3e-07 w=7.8e-07
+Xq_n_inv_nmos vss _q_n q vss sg13_lv_nmos l=1.3e-07 w=1.07e-06
+Xq_n_inv_pmos vdd _q_n q vdd sg13_lv_pmos l=1.3e-07 w=1.06e-06
+.ends mux2_x1
+
+.subckt SP6TTimingOut_2SL vss vdd sr_in sr_out sr_shift sr_latch l2s o[0] o[1]
+Xshiftff[0] vdd vss o_m[0] sr_shift o_s[0] dff_x1
+Xshiftff[1] vdd vss o_m[1] sr_shift sr_out dff_x1
+Xlatchff[0] vdd vss o[0] sr_latch o_l[0] dff_x1
+Xlatchff[1] vdd vss o[1] sr_latch o_l[1] dff_x1
+Xmux[0] vdd vss sr_in o_l[0] l2s o_m[0] mux2_x1
+Xmux[1] vdd vss o_s[0] o_l[1] l2s o_m[1] mux2_x1
+.ends SP6TTimingOut_2SL
+
+.subckt SP6TTimingIn_9SL vss vdd sr_in sr_out sr_shift sr_latch i[0] i[1] i[2] i[3] i[4] i[5] i[6] i[7] i[8]
+Xshiftff[0] vdd vss sr_in sr_shift i_s[0] dff_x1
+Xshiftff[1] vdd vss i_s[0] sr_shift i_s[1] dff_x1
+Xshiftff[2] vdd vss i_s[1] sr_shift i_s[2] dff_x1
+Xshiftff[3] vdd vss i_s[2] sr_shift i_s[3] dff_x1
+Xshiftff[4] vdd vss i_s[3] sr_shift i_s[4] dff_x1
+Xshiftff[5] vdd vss i_s[4] sr_shift i_s[5] dff_x1
+Xshiftff[6] vdd vss i_s[5] sr_shift i_s[6] dff_x1
+Xshiftff[7] vdd vss i_s[6] sr_shift i_s[7] dff_x1
+Xshiftff[8] vdd vss i_s[7] sr_shift sr_out dff_x1
+Xlatchff[0] vdd vss i_s[0] sr_latch i[0] dff_x1
+Xlatchff[1] vdd vss i_s[1] sr_latch i[1] dff_x1
+Xlatchff[2] vdd vss i_s[2] sr_latch i[2] dff_x1
+Xlatchff[3] vdd vss i_s[3] sr_latch i[3] dff_x1
+Xlatchff[4] vdd vss i_s[4] sr_latch i[4] dff_x1
+Xlatchff[5] vdd vss i_s[5] sr_latch i[5] dff_x1
+Xlatchff[6] vdd vss i_s[6] sr_latch i[6] dff_x1
+Xlatchff[7] vdd vss i_s[7] sr_latch i[7] dff_x1
+Xlatchff[8] vdd vss sr_out sr_latch i[8] dff_x1
+.ends SP6TTimingIn_9SL
+
+.subckt SP6TTimingOut_8SL vss vdd sr_in sr_out sr_shift sr_latch l2s o[0] o[1] o[2] o[3] o[4] o[5] o[6] o[7]
+Xshiftff[0] vdd vss o_m[0] sr_shift o_s[0] dff_x1
+Xshiftff[1] vdd vss o_m[1] sr_shift o_s[1] dff_x1
+Xshiftff[2] vdd vss o_m[2] sr_shift o_s[2] dff_x1
+Xshiftff[3] vdd vss o_m[3] sr_shift o_s[3] dff_x1
+Xshiftff[4] vdd vss o_m[4] sr_shift o_s[4] dff_x1
+Xshiftff[5] vdd vss o_m[5] sr_shift o_s[5] dff_x1
+Xshiftff[6] vdd vss o_m[6] sr_shift o_s[6] dff_x1
+Xshiftff[7] vdd vss o_m[7] sr_shift sr_out dff_x1
+Xlatchff[0] vdd vss o[0] sr_latch o_l[0] dff_x1
+Xlatchff[1] vdd vss o[1] sr_latch o_l[1] dff_x1
+Xlatchff[2] vdd vss o[2] sr_latch o_l[2] dff_x1
+Xlatchff[3] vdd vss o[3] sr_latch o_l[3] dff_x1
+Xlatchff[4] vdd vss o[4] sr_latch o_l[4] dff_x1
+Xlatchff[5] vdd vss o[5] sr_latch o_l[5] dff_x1
+Xlatchff[6] vdd vss o[6] sr_latch o_l[6] dff_x1
+Xlatchff[7] vdd vss o[7] sr_latch o_l[7] dff_x1
+Xmux[0] vdd vss sr_in o_l[0] l2s o_m[0] mux2_x1
+Xmux[1] vdd vss o_s[0] o_l[1] l2s o_m[1] mux2_x1
+Xmux[2] vdd vss o_s[1] o_l[2] l2s o_m[2] mux2_x1
+Xmux[3] vdd vss o_s[2] o_l[3] l2s o_m[3] mux2_x1
+Xmux[4] vdd vss o_s[3] o_l[4] l2s o_m[4] mux2_x1
+Xmux[5] vdd vss o_s[4] o_l[5] l2s o_m[5] mux2_x1
+Xmux[6] vdd vss o_s[5] o_l[6] l2s o_m[6] mux2_x1
+Xmux[7] vdd vss o_s[6] o_l[7] l2s o_m[7] mux2_x1
+.ends SP6TTimingOut_8SL
+
+.subckt fill_w2 vdd vss
+.ends fill_w2
+
+.subckt SP6TBlock_128x8_322A1WE_Test vss vdd_block vdd_periph clk in_shift in_latch in_srin in_srout out_shift out_latch out_l2s out_srin out_srout
+Xblock clk a[0] a[1] a[2] a[3] a[4] a[5] a[6] vss vdd_block q[0] q[1] q[2] q[3] q[4] q[5] q[6] q[7] d[0] d[1] d[2] d[3] d[4] d[5] d[6] d[7] we[0] SP6TBlock_128x8_322A1WE
+Xasr vss vdd_periph in_srin in_srconn[0] in_shift in_latch a[6] a[5] a[4] a[3] a[2] a[1] a[0] SP6TTimingIn_7SF
+Xclksr vss vdd_periph out_srin out_srconn[0] out_shift clk out_l2s in_latch out_latch SP6TTimingOut_2SL
+Xdwesr[0] vss vdd_periph in_srconn[0] in_srout in_shift in_latch d[0] d[1] d[2] d[3] d[4] d[5] d[6] d[7] we[0] SP6TTimingIn_9SL
+Xqsr[0] vss vdd_periph out_srconn[0] out_srout out_shift out_latch out_l2s q[0] q[1] q[2] q[3] q[4] q[5] q[6] q[7] SP6TTimingOut_8SL
+Xfill[0] vdd_periph vss fill_w2
+Xfill[1] vdd_periph vss fill_w2
+Xfill[2] vdd_periph vss fill_w2
+Xfill[3] vdd_periph vss fill_w2
+.ends SP6TBlock_128x8_322A1WE_Test
+
+.subckt BondPad PAD
+.ends BondPad
+
+.subckt PadFrame_SP01 PAD0x0 PAD0x1 PAD0x2 PAD0x3 PAD0x4 PAD0x5 PAD0x6 PAD0x7 PAD0x8 PAD0x9 PAD1x0 PAD1x1 PAD1x2 PAD1x3 PAD1x4 PAD1x5 PAD1x6 PAD1x7 PAD1x8 PAD1x9
+XPAD0x0 PAD0x0 BondPad
+XPAD0x1 PAD0x1 BondPad
+XPAD0x2 PAD0x2 BondPad
+XPAD0x3 PAD0x3 BondPad
+XPAD0x4 PAD0x4 BondPad
+XPAD0x5 PAD0x5 BondPad
+XPAD0x6 PAD0x6 BondPad
+XPAD0x7 PAD0x7 BondPad
+XPAD0x8 PAD0x8 BondPad
+XPAD0x9 PAD0x9 BondPad
+XPAD1x0 PAD1x0 BondPad
+XPAD1x1 PAD1x1 BondPad
+XPAD1x2 PAD1x2 BondPad
+XPAD1x3 PAD1x3 BondPad
+XPAD1x4 PAD1x4 BondPad
+XPAD1x5 PAD1x5 BondPad
+XPAD1x6 PAD1x6 BondPad
+XPAD1x7 PAD1x7 BondPad
+XPAD1x8 PAD1x8 BondPad
+XPAD1x9 PAD1x9 BondPad
+.ends PadFrame_SP01
+
+.subckt SP01 vss vdd_periph vdd_block in_srout out_srout clk out_latch out_shift out_l2s out_srin in_shift in_srin in_latch
+Xtestblock vss vdd_block vdd_periph clk in_shift in_latch in_srin in_srout out_shift out_latch out_l2s out_srin out_srout SP6TBlock_128x8_322A1WE_Test
+Xpadframe vdd_block vss clk out_shift out_srin in_srin in_latch noconn noconn noconn vdd_periph in_srout out_srout out_latch out_l2s in_shift noconn noconn noconn noconn PadFrame_SP01
+.ends SP01

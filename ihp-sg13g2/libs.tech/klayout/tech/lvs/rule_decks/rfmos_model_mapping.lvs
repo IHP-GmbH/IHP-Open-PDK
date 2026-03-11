@@ -1,0 +1,124 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+# Add rfmode parameter when a MOS class does not provide it yet.
+ensure_rfmode_parameter = lambda do |device_class|
+  next if device_class.nil? || device_class.has_parameter?('rfmode')
+  device_class.add_parameter(RBA::DeviceParameterDefinition.new('rfmode', 'rf mode', 0, true))
+end
+
+# Build a name->class lookup from classes that are already attached to devices.
+# This avoids creating duplicate class definitions with the same name.
+build_device_class_index = lambda do |target_netlist|
+  class_index = {}
+
+  target_netlist.each_circuit do |circuit|
+    circuit.each_device do |device|
+      klass = device.device_class
+      next if klass.nil?
+
+      class_index[klass.name.to_s.downcase] ||= klass
+    end
+  end
+
+  class_index
+end
+
+# Map RF MOS models to base MOS models in a netlist:
+# - RF models (rfnmos/rfpmos...) are mapped to base MOS classes (sg13_lv_nmos/sg13_lv_pmos...).
+# - rfmode is set to 1 for RF devices
+apply_rfmos_model_mapping = lambda do |target_netlist, label|
+  logger.info("[#{label}] Apply RF MOS model mapping and rfmode parameter.")
+
+  class_index = build_device_class_index.call(target_netlist)
+
+  # Lookup base classes from the index first, then from netlist DB, and create only when missing.
+  find_or_create_base_class = lambda do |base_name|
+    device_class = class_index[base_name]
+    device_class ||= target_netlist.device_class_by_name(base_name)
+
+    if device_class.nil?
+      device_class = RBA::DeviceClassMOS4Transistor.new
+      device_class.name = base_name
+      target_netlist.add(device_class)
+    end
+
+    ensure_rfmode_parameter.call(device_class)
+    class_index[base_name] = device_class
+    device_class
+  end
+
+  target_netlist.each_circuit do |circuit|
+    devices_to_remove = []
+    devices_to_process = []
+
+    # Snapshot first so newly created migrated devices are not revisited in the same pass.
+    circuit.each_device { |device| devices_to_process << device }
+    devices_to_process.each do |device|
+      source_class = device.device_class
+      source_model = source_class.name.to_s.downcase
+
+      # If this is already a base MOS model, only force rfmode to 0/1 and keep class/name.
+      if RF_TO_BASE_MOS_MODEL.value?(source_model)
+        ensure_rfmode_parameter.call(source_class)
+        source_rfmode = nil
+        if source_class.has_parameter?('rfmode')
+          source_rfmode_param_id = source_class.parameter_id('rfmode')
+          source_rfmode = device.parameter(source_rfmode_param_id) unless source_rfmode_param_id.nil?
+        end
+        device.set_parameter('rfmode', RFMODE_TO_BINARY.call(source_rfmode) || 0)
+        next
+      end
+
+      # If this is not an RF MOS alias, no migration is needed.
+      base_name = RF_TO_BASE_MOS_MODEL[source_model]
+      next if base_name.nil?
+
+      # Create migrated device with base class and copy all connectivity/geometry parameters.
+      target_class = find_or_create_base_class.call(base_name)
+      migrated = circuit.create_device(target_class, device.name)
+
+      %w[D G S B].each do |term_name|
+        source_term_id = source_class.terminal_id(term_name)
+        target_term_id = target_class.terminal_id(term_name)
+        net = device.net_for_terminal(source_term_id)
+        migrated.connect_terminal(target_term_id, net) unless net.nil?
+      end
+
+      %w[L W AS AD PS PD].each do |param_name|
+        source_param_id = source_class.parameter_id(param_name)
+        target_param_id = target_class.parameter_id(param_name)
+        next if source_param_id.nil? || target_param_id.nil?
+
+        migrated.set_parameter(param_name, device.parameter(source_param_id))
+      end
+
+      migrated.set_parameter('rfmode', 1)
+      devices_to_remove << device
+    end
+
+    devices_to_remove.each { |device| circuit.remove_device(device) }
+  end
+
+  target_netlist.purge_devices
+  target_netlist.purge
+end
+
+# Apply mapping on layout side before align/compare.
+apply_rfmos_model_mapping.call(netlist, 'layout_netlist')

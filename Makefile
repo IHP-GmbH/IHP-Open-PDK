@@ -89,6 +89,14 @@ test-LVS-cells: env
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-cells
 
 #=================================
+# -------- test-SVS-cell ---------
+#=================================
+
+test-SVS-cell: env
+	@. $(VENV_RUN_COMMAND); echo "Running Klayout-SVS for SG13G2 cell"
+	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-SVS-cell
+
+#=================================
 # -------- test-LVS-switch -------
 #=================================
 

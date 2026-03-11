@@ -44,8 +44,8 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Set up layers and register device class for extraction.
     define_layers
     # Register device class for extraction.
-    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
-      @reg_dev = DeviceCustomRes.new(name, @num)
+    if RES_DEV.include?(name.downcase)
+      @reg_dev = DeviceCustomRes.new(name, @num, 1)
     elsif name.downcase.include?('varicap')
       @reg_dev = DeviceCustomVaractor.new(name, @num)
     elsif name.downcase.start_with?('ind')
@@ -78,7 +78,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     conn.connect(meas_mk, dev_mk)
 
     # Sub connection for some devices
-    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+    if RES_DEV.include?(name.downcase) || name.downcase.start_with?('ind') || name.downcase.include?('varicap')
       sub_mk = layers[4]
       conn.connect(sub_mk, dev_mk)
     end
@@ -93,14 +93,25 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     #   layer_geometry (Array): Array of layer geometries.
     dev, ports, meas_mk, dev_mk, sub_mk = layer_geometry
 
-    dev_mk.merged.each do |region|
-      if ports.size != @num
+    varicap = name.downcase.include?('varicap')
+    mk_regions = varicap ? meas_mk.merged : dev_mk.merged
+
+    mk_regions.each do |region|
+      region_sel = RBA::Region.new(region)
+      marker_scope = varicap ? dev_mk.interacting(region_sel) : region_sel
+      region_ports = ports.interacting(region_sel)
+      region_sub_mk = sub_mk.nil? ? nil : sub_mk.interacting(marker_scope)
+
+      if region_ports.size != @num
         $logger.info("#{@name} device terminals (#{@num}) don't touch device marker correctly")
-        $logger.info("No. of ports exist for #{@name} is #{ports.size}, should be #{@num}")
+        $logger.info("No. of ports exist for #{@name} is #{region_ports.size}, should be #{@num}")
       else
         device = create_device
-        set_device_parameters(device, region, dev, ports, meas_mk, dev_mk)
-        define_and_sort_terminals(device, ports, sub_mk)
+        local_dev = varicap ? dev.interacting(region_sel) : dev
+        local_meas_mk = varicap ? meas_mk.interacting(region_sel) : meas_mk
+        local_dev_mk = varicap ? marker_scope : dev_mk
+        set_device_parameters(device, region, local_dev, region_ports, local_meas_mk, local_dev_mk)
+        define_and_sort_terminals(device, region_ports, region_sub_mk, local_dev)
       end
     end
   end
@@ -114,7 +125,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     define_layer('meas_mk', 'Measuring parameters marker')
     define_layer('dev_mk', 'Device Marker')
     # Define sub layer for some devices
-    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+    if RES_DEV.include?(name.downcase) || name.downcase.start_with?('ind') || name.downcase.include?('varicap')
       define_layer('sub_mk', 'Substrate Marker')
     end
   end
@@ -133,7 +144,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # Returns:
     #   None
 
-    if RES_DEV.any? { |res| name.downcase.start_with?(res) }
+    if RES_DEV.include?(name.downcase)
       width, length, poly_sp, bends = calc_res_params(dev, ports, meas_mk)
       device.set_parameter('w', width * $unit)
       device.set_parameter('l', length * $unit)
@@ -141,9 +152,10 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('b', bends)
 
     elsif name.downcase.include?('varicap')
-      width, length = calc_varicap_params(dev, ports, meas_mk, dev_mk)
+      width, length, nx = calc_varicap_params(dev, ports, meas_mk, dev_mk)
       device.set_parameter('w', width * $unit)
       device.set_parameter('l', length * $unit)
+      device.set_parameter('Nx', nx)
 
     elsif name.downcase.start_with?('ind')
       width, space, diameter, no_turns = calc_ind_params(dev, ports, meas_mk, dev_mk, region)
@@ -188,11 +200,15 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     width_edges = dev.edges.not_interacting(meas_mk.edges)
     length, width = get_min_max_length(width_edges)
 
+    # Nx from edges: Nx = (edges + 2) / 8 (6->1, 14->2, 22->3).
+    nx = (width_edges.count + 2) / 8
+
     # Default values
     width ||= 0
     length ||= 0
+    nx ||= 1
 
-    [width, length]
+    [width, length, nx]
   end
 
   def calc_ind_params(dev, ports, meas_mk, dev_mk, region)
@@ -246,7 +262,7 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     [width, space, diameter, no_turns]
   end
 
-  def define_and_sort_terminals(device, ports, sub_mk)
+  def define_and_sort_terminals(device, ports, sub_mk, core_region = nil)
     # Define and sort terminals based on location.
     #
     # Args:
@@ -274,14 +290,53 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     # If none of the substrings match, sorted_ports remains the result of sort_polygons(ports)
     sorted_ports ||= sort_polygons(ports)
 
+    if name.downcase.include?('varicap')
+      # Varicap terminals are fixed: G1, W, G2, SUB
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      end
+
+      varicap_ports = []
+      ports.merged.each { |p| varicap_ports << p }
+
+      if varicap_ports.size != 3
+        $logger.info("Varicap terminals for #{@name} are invalid (ports=#{varicap_ports.size})")
+        return nil
+      end
+
+      core_sel = core_region || RBA::Region.new
+      overlaps = varicap_ports.map { |p| RBA::Region.new(p).and(core_sel).area }
+      w_idx = overlaps.each_with_index.min[1]
+      w_port = varicap_ports[w_idx]
+      poly_ports = varicap_ports.each_with_index.reject { |_, idx| idx == w_idx }.map(&:first)
+      sorted_poly = poly_ports.sort_by { |poly| [poly.bbox.center.x, poly.bbox.center.y] }
+
+      define_terminal(device, @reg_dev.terminal_id('SUB'), 4, sub_mk[0])
+      define_terminal(device, @reg_dev.terminal_id('G1'), 1, sorted_poly[0])
+      define_terminal(device, @reg_dev.terminal_id('W'), 1, w_port)
+      define_terminal(device, @reg_dev.terminal_id('G2'), 1, sorted_poly[1])
+      return nil
+    end
+
     # Define sub if exist (should be defined before other terminals)
-    if name.downcase.start_with?('ind') || name.downcase.include?('varicap')
+    if name.downcase.start_with?('ind')
       if sub_mk.is_empty?
         $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
         return nil
       else
         define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0])
       end
+    end
+
+    # Poly resistors are 3-terminal devices: two ports + substrate.
+    if RES_DEV.include?(name.downcase)
+      if sub_mk.is_empty?
+        $logger.info("Sub terminal for #{@name} device doesn't exist, please recheck")
+        return nil
+      end
+
+      define_terminal(device, @reg_dev.terminal_id("#{name}_sub"), 4, sub_mk[0])
     end
 
     # Defination main terminals
@@ -403,4 +458,3 @@ class GeneralNTerminalExtractor < RBA::GenericDeviceExtractor
     lengths.minmax
   end
 end
-

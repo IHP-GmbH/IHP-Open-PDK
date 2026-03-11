@@ -70,9 +70,9 @@ logger.info("Ruby Version for klayout: #{RUBY_VERSION}")
 
 if $input
   if $topcell
-    source($input, $topcell)
+    src = source($input, $topcell)
   else
-    source($input)
+    src = source($input)
   end
 end
 
@@ -87,6 +87,12 @@ else
   logger.info("SG13G2 Klayout LVS runset output at default location: #{source.cell_name}.lvsdb")
   report_lvs($report_path)
 end
+
+#================================================
+#---------------- SRAM SUPPORT ------------------
+#================================================
+
+# %include rule_decks/sram_integration.lvs
 
 #================================================
 #------------------ SWITCHES --------------------
@@ -117,10 +123,25 @@ NET_ONLY = bool_check?($net_only)
 
 logger.info("Selected NET_ONLY option: #{NET_ONLY}")
 
-# ALLOW_UNMATCHED_PORTS
-ALLOW_UNMATCHED_PORTS = bool_check?($allow_unmatched_ports)
+# LAYOUT_NETLIST
+LAYOUT_NETLIST_PATH = ($layout_netlist || '').to_s.strip
+LAYOUT_NETLIST = !LAYOUT_NETLIST_PATH.empty?
 
-logger.info("Selected ALLOW_UNMATCHED_PORTS option: #{ALLOW_UNMATCHED_PORTS}")
+logger.info("Selected LAYOUT_NETLIST option: #{LAYOUT_NETLIST ? LAYOUT_NETLIST_PATH : '(none)'}")
+
+# IGNORE_TOP_PORTS_MISMATCH
+floating_bulk_sram_top = src && floating_bulk_sram_cell?(src.cell_name)
+IGNORE_TOP_PORTS_MISMATCH = bool_check?($ignore_top_ports_mismatch) || floating_bulk_sram_top
+
+logger.info("Selected IGNORE_TOP_PORTS_MISMATCH option: #{IGNORE_TOP_PORTS_MISMATCH}")
+if floating_bulk_sram_top && !bool_check?($ignore_top_ports_mismatch)
+  logger.info("Floating-bulk SRAM top cell '#{src.cell_name}' detected: enabling IGNORE_TOP_PORTS_MISMATCH.")
+end
+
+# IMPLICIT_NETS
+IMPLICIT_NETS = ($implicit_nets || '').to_s.strip
+
+logger.info("Selected IMPLICIT_NETS option: #{IMPLICIT_NETS.empty? ? '(none)' : IMPLICIT_NETS}")
 
 # TOP_LVL_PINS
 TOP_LVL_PINS = bool_check?($top_lvl_pins)
@@ -157,14 +178,6 @@ PARALLEL_RES = !bool_check?($no_parallel_res)
 
 logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
 
-#=== PRINT DETAILS ===
-logger.info("Verbose mode: #{$verbose}")
-if $verbose == 'true'
-  verbose(true)
-else
-  verbose(false)
-end
-
 # === RUN MODE ===
 case $run_mode
 when 'deep'
@@ -178,6 +191,27 @@ else
 end
 
 # === Tech Switches ===
+
+#==================================================
+# --------------- IMPLICIT CONNECTIONS -------------
+#==================================================
+# KLayout LVS docs:
+# https://www.klayout.de/doc/manual/lvs.html
+# "connect_implicit" creates a virtual combined physical net
+# that is matched against the corresponding logical net name.
+if !IMPLICIT_NETS.empty?
+  nets_to_connect = IMPLICIT_NETS.split(',').map(&:strip).reject(&:empty?)
+  if nets_to_connect.empty?
+    logger.info('WARNING : IMPLICIT_NETS was set but no valid entries were found after parsing.')
+  else
+    logger.info(
+      "Applying implicit connections (case-sensitive, pattern supported) for nets: #{nets_to_connect.join(', ')}"
+    )
+    nets_to_connect.each do |net_pattern|
+      connect_implicit(net_pattern)
+    end
+  end
+end
 
 #================================================
 # --------------- CUSTOM CLASSES ----------------
@@ -223,11 +257,8 @@ else
   logger.info("SG13G2 Klayout LVS extracted netlist file at: #{source.cell_name}_extracted.cir")
 end
 
-#================================================
-#------------- LAYERS DEFINITIONS ---------------
-#================================================
-
-# %include rule_decks/layers_definitions.lvs
+logger.info('Applying SRAM integration support.')
+apply_sram_integration
 
 #================================================================
 #------------------------- MAIN RUNSET --------------------------
@@ -235,137 +266,165 @@ end
 
 logger.info('Starting SG13G2 LVS runset')
 
-#================================================
-#------------- LAYERS DERIVATIONS ---------------
-#================================================
+if LAYOUT_NETLIST
+  logger.info('LAYOUT_NETLIST enabled: skipping derivations/connectivity/extraction and loading layout netlist from file.')
+  unless File.file?(LAYOUT_NETLIST_PATH)
+    error("LAYOUT_NETLIST file does not exist: #{LAYOUT_NETLIST_PATH}")
+  end
 
-logger.info('Starting base layers derivations')
+  begin
+    netlist.read(LAYOUT_NETLIST_PATH, reader)
+    logger.info("Layout-side netlist file: #{LAYOUT_NETLIST_PATH}")
+  rescue StandardError => e
+    error("Failed to read LAYOUT_NETLIST '#{LAYOUT_NETLIST_PATH}': #{e.message}")
+  end
+else
+  #================================================
+  #------------- LAYERS DEFINITIONS ---------------
+  #================================================
 
-#==================================
-# ------ GENERAL DERIVATIONS ------
-#==================================
+  # %include rule_decks/layers_definitions.lvs
 
-# %include rule_decks/general_derivations.lvs
+  #================================================
+  #------------- LAYERS DERIVATIONS ---------------
+  #================================================
 
-#==================================
-# ------ MOSFET DERIVATIONS -------
-#==================================
+  logger.info('Starting base layers derivations')
 
-# %include rule_decks/mos_derivations.lvs
+  #==================================
+  # ------ GENERAL DERIVATIONS ------
+  #==================================
 
-#==================================
-# ----- RF-MOSFET DERIVATIONS -----
-#==================================
+  # %include rule_decks/general_derivations.lvs
 
-# %include rule_decks/rfmos_derivations.lvs
+  #==================================
+  # ------ MOSFET DERIVATIONS -------
+  #==================================
 
-#================================
-# ------ BJT DERIVATIONS --------
-#================================
+  # %include rule_decks/mos_derivations.lvs
 
-# %include rule_decks/bjt_derivations.lvs
+  #==================================
+  # ----- RF-MOSFET DERIVATIONS -----
+  #==================================
 
-#================================
-# ----- DIODE DERIVATIONS -------
-#================================
+  # %include rule_decks/rfmos_derivations.lvs
 
-# %include rule_decks/diode_derivations.lvs
+  #================================
+  # ------ BJT DERIVATIONS --------
+  #================================
 
-#================================
-# ---- RESISTOR DERIVATIONS -----
-#================================
+  # %include rule_decks/bjt_derivations.lvs
 
-# %include rule_decks/res_derivations.lvs
+  #================================
+  # ----- DIODE DERIVATIONS -------
+  #================================
 
-#==================================
-# -------- CAP DERIVATIONS --------
-#==================================
+  # %include rule_decks/diode_derivations.lvs
 
-# %include rule_decks/cap_derivations.lvs
+  #================================
+  # ---- RESISTOR DERIVATIONS -----
+  #================================
 
-#================================
-# ------ ESD DERIVATIONS --------
-#================================
+  # %include rule_decks/res_derivations.lvs
 
-# %include rule_decks/esd_derivations.lvs
+  #==================================
+  # -------- CAP DERIVATIONS --------
+  #==================================
 
-#=================================
-# ----- Inductor DERIVATIONS -----
-#=================================
+  # %include rule_decks/cap_derivations.lvs
 
-# %include rule_decks/ind_derivations.lvs
+  #================================
+  # ------ ESD DERIVATIONS --------
+  #================================
 
-#================================
-# ------ Taps DERIVATIONS -------
-#================================
+  # %include rule_decks/esd_derivations.lvs
 
-# %include rule_decks/tap_derivations.lvs
+  #=================================
+  # ----- Inductor DERIVATIONS -----
+  #=================================
 
-#================================================
-#------------ DEVICES CONNECTIVITY --------------
-#================================================
+  # %include rule_decks/ind_derivations.lvs
 
-# %include rule_decks/devices_connections.lvs
+  #================================
+  # ------ Taps DERIVATIONS -------
+  #================================
 
-#================================================
-#------------- DEVICES EXTRACTION ---------------
-#================================================
+  # %include rule_decks/tap_derivations.lvs
 
-logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
+  #================================================
+  #------------ DEVICES CONNECTIVITY --------------
+  #================================================
 
-#================================
-# ----- MOSFET EXTRACTION -------
-#================================
+  # %include rule_decks/devices_connections.lvs
 
-# %include rule_decks/mos_extraction.lvs
+  #================================================
+  #------------- DEVICES EXTRACTION ---------------
+  #================================================
 
-#================================
-# ---- RF-MOSFET EXTRACTION -----
-#================================
+  logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 
-# %include rule_decks/rfmos_extraction.lvs
+  #================================
+  # ----- MOSFET EXTRACTION -------
+  #================================
 
-#================================
-# ------- BJT EXTRACTION --------
-#================================
+  cheat(SRAM_SHAREDSD_CELLS) {
 
-# %include rule_decks/bjt_extraction.lvs
+  # %include rule_decks/mos_extraction.lvs
 
-#================================
-# ------ DIODE EXTRACTION -------
-#================================
+  }
 
-# %include rule_decks/diode_extraction.lvs
+  #================================
+  # ---- RF-MOSFET EXTRACTION -----
+  #================================
 
-#================================
-# ---- RESISTOR EXTRACTIONS -----
-#================================
+  # %include rule_decks/rfmos_extraction.lvs
 
-# %include rule_decks/res_extraction.lvs
+  #================================
+  # ------- BJT EXTRACTION --------
+  #================================
 
-#==================================
-# --------- CAP EXTRACTION --------
-#==================================
+  # %include rule_decks/bjt_extraction.lvs
 
-# %include rule_decks/cap_extraction.lvs
+  #================================
+  # ------ DIODE EXTRACTION -------
+  #================================
 
-#================================
-# ------- ESD EXTRACTION --------
-#================================
+  # %include rule_decks/diode_extraction.lvs
 
-# %include rule_decks/esd_extraction.lvs
+  #================================
+  # ---- RESISTOR EXTRACTIONS -----
+  #================================
 
-#=================================
-# ----- Inductor EXTRACTIONS -----
-#=================================
+  # %include rule_decks/res_extraction.lvs
 
-# %include rule_decks/ind_extraction.lvs
+  #==================================
+  # --------- CAP EXTRACTION --------
+  #==================================
 
-#================================
-# ------- Taps EXTRACTIONS ------
-#================================
+  # %include rule_decks/cap_extraction.lvs
 
-# %include rule_decks/tap_extraction.lvs
+  #================================
+  # ------- ESD EXTRACTION --------
+  #================================
+
+  # %include rule_decks/esd_extraction.lvs
+
+  #=================================
+  # ----- Inductor EXTRACTIONS -----
+  #=================================
+
+  # %include rule_decks/ind_extraction.lvs
+
+  #================================
+  # ------- Taps EXTRACTIONS ------
+  #================================
+
+  # %include rule_decks/tap_extraction.lvs
+end
+
+# RF MOS model mapping
+logger.info('Starting SG13G2 LVS RF MOS Model Mapping')
+# %include rule_decks/rfmos_model_mapping.lvs
 
 #==================================================
 # ------------ COMPARISON PREPARATIONS ------------
@@ -373,61 +432,80 @@ logger.info('Starting SG13G2 LVS DEVICES EXTRACTION')
 
 logger.info('Starting SG13G2 LVS Options Preparations')
 
-# === Extract Netlist Only ===
-netlist if NET_ONLY
-return if NET_ONLY
-
-# === Aligns the extracted netlist vs. the schematic ===
-logger.info('Starting SG13G2 LVS Alignment')
-align
-
-#=== NETLIST OPTIONS ===
-logger.info('Starting SG13G2 LVS Simplification')
-# SIMPLIFY
-netlist.simplify if SIMPLIFY
-schematic.simplify if SIMPLIFY
-
-# TOP_LVL_PINS
-netlist.make_top_level_pins if TOP_LVL_PINS
-schematic.make_top_level_pins if TOP_LVL_PINS
-
-# COMBINE_DEVICES
-netlist.combine_devices if COMBINE_DEVICES
-schematic.combine_devices if COMBINE_DEVICES
-
-# PURGE
-netlist.purge if PURGE
-schematic.purge if PURGE
-
-# PURGE_NETS
-netlist.purge_nets if PURGE_NETS
-schematic.purge_nets if PURGE_NETS
-
-#=== IGNORE EXTREME VALUES ===
-max_res(1e9)
-min_caps(1e-18)
-
-# === COMPARISON === 
-if ALLOW_UNMATCHED_PORTS 
-  logger.info('Starting SG13G2 LVS Comparison')
-  success = compare
-else
-  logger.info('Starting SG13G2 LVS Comparison with flag_missing_ports')
-  success = compare && flag_missing_ports
+log_option_action = lambda do |label, option_name, enabled|
+  state = enabled ? 'ENABLED' : 'SKIPPED'
+  logger.info("[#{label}] #{option_name}: #{state}")
 end
 
-#================================================
-#------------- COMPARISON RESULTS ---------------
-#================================================
+apply_netlist_options = lambda do |target_netlist, label|
+  log_option_action.call(label, 'simplify', SIMPLIFY)
+  target_netlist.simplify if SIMPLIFY
 
-if ! success
-  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-  logger.error("ERROR : Netlists don't match")
-  logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  log_option_action.call(label, 'make_top_level_pins', TOP_LVL_PINS)
+  target_netlist.make_top_level_pins if TOP_LVL_PINS
+
+  log_option_action.call(label, 'combine_devices', COMBINE_DEVICES)
+  target_netlist.combine_devices if COMBINE_DEVICES
+
+  log_option_action.call(label, 'purge', PURGE)
+  target_netlist.purge if PURGE
+
+  log_option_action.call(label, 'purge_nets', PURGE_NETS)
+  target_netlist.purge_nets if PURGE_NETS
+end
+
+if NET_ONLY
+  logger.info('NET_ONLY enabled: apply extraction netlist options and skip comparison.')
+  if LAYOUT_NETLIST
+    logger.info('SG13G2 LVS flow: layout_netlist input -> option preparation -> write netlist -> exit.')
+  else
+    logger.info('SG13G2 LVS flow: extraction -> option preparation -> write netlist -> exit.')
+  end
+  logger.info('Starting SG13G2 LVS Simplification')
+  apply_netlist_options.call(netlist, 'layout_netlist')
+  netlist
 else
-  logger.info('==========================================')
-  logger.info('INFO : Congratulations! Netlists match.')
-  logger.info('==========================================')
+  if LAYOUT_NETLIST
+    logger.info('SG13G2 LVS flow: layout_netlist input -> alignment -> option preparation -> comparison.')
+  else
+    logger.info('SG13G2 LVS flow: extraction -> alignment -> option preparation -> comparison.')
+  end
+  # === Aligns the extracted netlist vs. the schematic ===
+  logger.info('Starting SG13G2 LVS Alignment')
+  align
+
+  #=== NETLIST OPTIONS ===
+  logger.info('Starting SG13G2 LVS Simplification')
+  apply_netlist_options.call(netlist, 'layout_netlist')
+  apply_netlist_options.call(schematic, 'schematic_netlist')
+
+  #=== IGNORE EXTREME VALUES ===
+  max_res(1e9)
+  min_caps(1e-18)
+
+  # === COMPARISON ===
+  if IGNORE_TOP_PORTS_MISMATCH
+    logger.info('Starting SG13G2 LVS Comparison')
+    success = compare
+  else
+    logger.info('Starting SG13G2 LVS Comparison in strict port mode.')
+    logger.info('flag_missing_ports enabled: missing/mislabeled top-level ports are treated as errors.')
+    success = compare && flag_missing_ports
+  end
+
+  #================================================
+  #------------- COMPARISON RESULTS ---------------
+  #================================================
+
+  if ! success
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    logger.error("ERROR : Netlists don't match")
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  else
+    logger.info('==========================================')
+    logger.info('INFO : Congratulations! Netlists match.')
+    logger.info('==========================================')
+  end
 end
 
 exec_end_time = Time.now

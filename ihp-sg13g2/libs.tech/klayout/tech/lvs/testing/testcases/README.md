@@ -9,10 +9,10 @@ Folder Structure
 
 ```text
 📁 testcases
- ┣ 📜README.md                       This file to document the unit tests.
+ ┣ 📜README.md                       This file documents the testcases directory.
  ┣ 📁 unit                           Contains the unit test structures per device.
    ┣ 📁<device_group>_devices        Contains all LVS testcases for each group.
     ┣ 📁layout                       Layout gds file for each device.
     ┣ 📁netlist                      Spice netlist file for each device.
- ┣ 📁 extraction_checking            Contains a small test case to be used for testing the LVS switches.
+ ┣ 📁 extraction_checking            Small testcase used to validate extraction/LVS switch behavior.
  ```
