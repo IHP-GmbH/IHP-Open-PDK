@@ -25,8 +25,8 @@
 #
 # Reference: SG13CMOS5L_os_layout_rules.pdf Section 3.2
 #
-# If forbidden layers are found, LVS will report an error and the
-# extracted netlist may be incorrect.
+# If forbidden layers are found, LVS will abort with an error.
+# Designs with forbidden layers are invalid for CMOS5L.
 #================================================
 
 logger.info('Starting CMOS5L Forbidden Layer Check')
@@ -88,10 +88,8 @@ else
   logger.error('')
   logger.error('These layers are prohibited in CMOS5L designs per Section 3.2')
   logger.error('of SG13CMOS5L_os_layout_rules.pdf')
-  logger.error('')
-  logger.error('LVS extraction will continue but results may be INCORRECT.')
-  logger.error('Please remove these layers from your design.')
   logger.error('=' * 70)
+  raise "CMOS5L forbidden layers detected: #{forbidden_found.join('; ')}"
 end
 
-logger.info('CMOS5L Forbidden Layer Check completed')
+logger.info('CMOS5L Forbidden Layer Check: PASSED')

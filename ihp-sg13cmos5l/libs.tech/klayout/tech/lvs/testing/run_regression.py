@@ -476,6 +476,21 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     logging.info("Total table gds files found: {}".format(len(tc_df)))
     logging.info("Found testcases: \n" + str(tc_df))
 
+    # Filter out excluded device testcases before execution.
+    # These testcases contain forbidden layers (nBuLay, MIM, etc.) that cause
+    # the CMOS5L forbidden layer check to abort LVS.
+    tc_before = len(tc_df)
+    tc_df = tc_df[~tc_df["device_name"].isin(excluded_devices)]
+    tc_excluded = tc_before - len(tc_df)
+    if tc_excluded > 0:
+        logging.info(
+            "Excluded {} testcases with forbidden layers: {}".format(
+                tc_excluded,
+                [d for d in excluded_devices if d not in tc_df["device_name"].values],
+            )
+        )
+    logging.info("Testcases after filtering: {}".format(len(tc_df)))
+
     # Run all test cases.
     results_df = run_all_test_cases(tc_df, lvs_dir, output_path, cpu_count)
     logging.info("Testcases found results: \n" + str(results_df))

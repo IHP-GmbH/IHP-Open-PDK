@@ -129,7 +129,7 @@ def evaluate_run_outcome(layout_log_path, effective_net_only, layout_netlist_pat
         return "Comparison mode: PASS (netlists match)."
     if "ERROR : Netlists don't match" in content:
         return "Comparison mode: FAIL (netlists do not match)."
-    return "Comparison mode: completed (no explicit PASS/FAIL signature found)."
+    return "Comparison mode: completed (no match/mismatch verdict found)."
 
 
 def collect_layout_log_signals(layout_log_path, limit=5):
@@ -165,7 +165,7 @@ def _summary_status_from_outcome(outcome_text):
         return "FAIL"
     if "NET_ONLY" in outcome:
         return "NET_ONLY"
-    return "UNKNOWN"
+    return "FAIL"
 
 
 def _truncate_text(value, max_len):
