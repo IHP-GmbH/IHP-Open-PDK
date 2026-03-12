@@ -1,11 +1,3 @@
-# Symbolic link generation
-
-Each directory contains a `*.txt` file, which denominates 
-files which should be linked with the orginal SG13G2 file. 
-These files are used by `$PDK_ROOT` install script to generate 
-the symbolic links.
-
-The files, which are specific to the PDK are maintained separately. 
 
 
 # Naming conventions
