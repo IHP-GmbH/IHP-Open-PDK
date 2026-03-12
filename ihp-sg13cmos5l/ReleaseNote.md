@@ -1,6 +1,6 @@
 # Release Notes
 
-## v0.1.0
+## v0.2.0
 
 ## Summary
 - Added and aligned DRC rule decks and QA coverage with SG13G2 updates, including maximal rules and standalone deck support.
