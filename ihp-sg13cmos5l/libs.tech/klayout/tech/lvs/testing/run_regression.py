@@ -422,17 +422,16 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
     # Reference: SG13CMOS5L_os_layout_rules.pdf Section 3.2 - nBuLay (32/0) is forbidden
     #
-    # nBuLay usage in LVS derivations (general_derivations.lvs):
-    #   nwell_iso = nwell_drw.and(nbulay_drw)
+    # nBuLay (32/0) is allowed in CMOS5L for iNMOS and ESD devices.
+    # CMOS5L-specific derivations in bjt_derivations.lvs and esd_derivations.lvs
+    # handle devices without nBuLay isolation.
     #
-    # Devices using nwell_iso (and thus nBuLay):
-    #   - S-Varicap: varicap_core = ngate_hv_base.and(nwell_iso)
-    #   - idiodevdd: nw_idiode = nwell_iso.interacting(pwell_block)
-    #   - idiodevss: uses nbulay_drw directly
-    #   - nmoscl: uses nbulay_drw directly
-    #   - schottky: uses nwell_iso
+    # Devices still excluded:
+    #   - schottky: requires nwell_iso (BiCMOS only)
+    #   - idiodevdd/vss isolated: require nwell_iso + nbulay_drw directly
+    #   - S-Varicap G2 testcase: has nBuLay shapes (forbidden in CMOS5L GDS)
     excluded_devices = [
-        # Schottky diode - requires nBuLay via nwell_iso
+        # Schottky diode - requires nBuLay via nwell_iso (BiCMOS only)
         "schottky_nbl1",
         # Metal5/TopMetal2 resistors - forbidden metal layers
         "res_metal5",
@@ -440,18 +439,14 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         # MIM capacitors - MIM layer (36/0) is forbidden
         "cap_cmim",
         "rfcmim",
-        # S-Varicap - requires nBuLay via nwell_iso (testcase has nBuLay shapes)
+        # S-Varicap G2 testcase - GDS contains nBuLay shapes
         "sg13_hv_svaricap",
-        # ESD devices using nBuLay - forbidden layer per Section 3.2
-        # idiodevdd uses nw_idiode which derives from nwell_iso (requires nBuLay)
+        # Isolated ESD diodes - require nwell_iso (nwell_drw.and(nbulay_drw))
         "idiodevdd_2kv",
         "idiodevdd_4kv",
-        # idiodevss uses .and(nbulay_drw) directly in derivation
+        # idiodevss isolated - uses .and(nbulay_drw) directly
         "idiodevss_2kv",
         "idiodevss_4kv",
-        # nmoscl uses .and(nbulay_drw) directly in derivation
-        "nmoscl_2",
-        "nmoscl_4",
         # isolbox - isolation box requires nBuLay-based isolation layers
         "isolbox",
     ]
