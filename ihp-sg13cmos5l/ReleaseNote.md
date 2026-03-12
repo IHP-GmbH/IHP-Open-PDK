@@ -6,6 +6,7 @@
 - Added and aligned DRC rule decks and QA coverage with SG13G2 updates, including maximal rules and standalone deck support.
 - Expanded Magic and Netgen support, updated tech files, and improved SRAM and latchup rule handling.
 - Improved LibreLane integration, CI workflows, and RTL-to-GDS validation setup.
+- Added LVS infrastructure and rule support alongside DRC updates.
 - Added xschem support and updated ngspice/xyce integration for CMOS5L symbols and launchers.
 - Updated IO/standard cell libraries, symbols, and layout layers for CMOS5L compatibility.
 - Fixed various LVS/DRC issues, layer exclusions, and documentation cleanups.
@@ -14,6 +15,7 @@
 - DRC: aligned rules with G2, added maximal rules, fixed density and windowed checks, and expanded test coverage.
 - Magic/Netgen: updated tech files, added SRAM support, and improved rule handling and version requirements.
 - LibreLane/CI: integrated LibreLane flow, adjusted CI commands, and improved custom PDK workflows.
+- LVS: added infrastructure, forbidden layer detection, and device exclusions.
 - xschem/ngspice/xyce: added xschem symbols, fixed launcher support, and improved simulator integration.
 - Libraries: updated IO/standard cell assets, symbols, LEF/GDS, and layer mappings for CMOS5L.
 
