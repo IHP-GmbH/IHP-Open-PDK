@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 T {Low voltage
 CMOS devices} 40 -1690 0 0 0.6 0.6 {}
@@ -13,7 +14,7 @@ T {Diodes} 40 -1280 0 0 0.6 0.6 {}
 T {Polysilicon
 resistors} 40 -1170 0 0 0.6 0.6 {}
 T {Tap devices} 40 -1010 0 0 0.6 0.6 {}
-T {SVaricap} 40 -860 0 0 0.6 0.6 {}
+T {pnpMPA} 40 -860 0 0 0.6 0.6 {}
 T {Bondpad} 40 -740 0 0 0.6 0.6 {}
 C {sg13g2_pr/sg13_lv_nmos.sym} 380 -1640 0 0 {name=M5
 l=0.13u
@@ -162,7 +163,6 @@ w=0.78e-6
 l=0.78e-6
 }
 C {sg13g2_pr/sub.sym} 680 -990 0 0 {name=l1 lab=sub!}
-C {sg13g2_pr/sg13_svaricap.sym} 400 -840 0 0 {name=C3 model=sg13_hv_svaricap W=7.0e-6 L=0.3e-6 Nx=1 spiceprefix=X}
 C {sg13g2_pr/bondpad.sym} 400 -710 0 0 {name=X1
 model=bondpad
 spiceprefix=X
@@ -171,3 +171,10 @@ shape=0
 padtype=0
 }
 C {title-3.sym} 0 0 0 0 {name=l2 author="IHP Open PDK Authors 2025" title="Device gallery" rev=1.0 lock=true}
+C {sg13cmos5l_pr/pnpMPA.sym} 400 -850 0 0 {name=Q1
+model=pnpMPA
+spiceprefix=X
+w=1.0e-6
+l=2.0e-6
+m=1
+}
