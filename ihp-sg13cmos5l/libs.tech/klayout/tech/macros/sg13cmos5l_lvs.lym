@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+-->
+<klayout-macro>
+ <description>Run Klayout LVS</description>
+ <version>0.2</version>
+ <category>lvs</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>Run Klayout LVS</group-name>
+ <menu-path>sg13cmos5l_menu&gt;end("SG13CMOS5L PDK").end</menu-path>
+ <interpreter>ruby</interpreter>
+ <dsl-interpreter-name/>
+ <text>
+require 'yaml'
+require 'open3'
+require 'pathname'
+require 'thread'
+require 'fileutils'
+require 'shellwords'
+require 'rubygems'
+include RBA
+
+$python_pid = nil
+
+DEFAULT_OPTIONS = {
+  'netlist' => '',
+  'layout_netlist' => '',
+  'top_cell' => '',
+  'run_mode' => 'flat',
+  'run_dir' => '',
+  'no_net_names' => false,
+  'spice_comments' => false,
+  'net_only' => false,
+  'no_simplify' => false,
+  'no_series_res' => false,
+  'no_parallel_res' => false,
+  'combine_devices' => false,
+  'top_lvl_pins' => false,
+  'ignore_top_ports_mismatch' => false,
+  'purge' => false,
+  'purge_nets' => false,
+  'implicit_nets' => '',
+}.freeze
+
+
+def load_options(yaml_file_path)
+  return DEFAULT_OPTIONS.dup unless File.exist?(yaml_file_path)
+
+  begin
+    loaded = YAML.safe_load(File.read(yaml_file_path))
+    loaded = {} unless loaded.is_a?(Hash)
+    DEFAULT_OPTIONS.merge(loaded)
+  rescue => e
+    puts "Error loading options from YAML: #{e.message}"
+    DEFAULT_OPTIONS.dup
+  end
+end
+
+
+def option_enabled?(options, key)
+  val = options[key]
+  return true if val == true
+  return false if val == false
+  val.to_s.strip.downcase == 'true'
+end
+
+
+def cleanup_lvs_process
+  return if $python_pid.nil?
+
+  begin
+    Process.kill('TERM', $python_pid)
+    puts "Killed subprocess with PID #{$python_pid}"
+  rescue Errno::ESRCH
+    puts 'Subprocess already terminated.'
+  rescue => e
+    puts "Warning: Failed to kill subprocess: #{e.message}"
+  ensure
+    $python_pid = nil
+  end
+end
+
+
+klayout_v, _ = Open3.capture2('klayout -b -v')
+klayout_v = klayout_v.to_s.strip
+if klayout_v.empty?
+  raise StandardError, 'KLayout is not found. Please make sure KLayout is installed.'
+end
+
+version_str = klayout_v.split.last.to_s
+detected = Gem::Version.new(version_str)
+required = Gem::Version.new('0.30.2')
+if required > detected
+  puts 'Using this KLayout version has not been assessed. Limits are unknown.'
+  raise StandardError, "Prerequisites at a minimum: KLayout #{required}"
+end
+puts "Your KLayout version is: #{klayout_v}"
+
+macro_dir = File.dirname(File.expand_path(__FILE__))
+project_root = File.expand_path('..', macro_dir)
+run_script = File.join(project_root, 'lvs', 'run_lvs.py')
+
+unless File.exist?(run_script)
+  raise StandardError, "Could not find run_lvs.py at #{run_script}"
+end
+
+yaml_file = File.join(ENV['HOME'], '.ihp_pdk', 'ihp_sg13cmos5l_lvs_options.yml')
+options = load_options(yaml_file)
+
+layout_netlist_path = options['layout_netlist'].to_s.strip
+active_cellview = RBA::CellView.active
+has_layout = !(active_cellview.nil? || active_cellview.filename.to_s.strip.empty?)
+
+layout_path = nil
+active_cell_name = ''
+cell_names = []
+
+if has_layout
+  layout_path = Pathname.new(active_cellview.filename).to_s
+  layout = active_cellview.layout
+  active_cell_name = active_cellview.cell.name.to_s
+  layout.each_cell do |cell|
+    cell_names &lt;&lt; cell.name
+  end
+elsif layout_netlist_path.empty?
+  raise StandardError, 'No active layout file is available. Open a layout or set Layout Netlist Path in LVS options.'
+else
+  puts 'No active layout file detected. Running with provided layout netlist input.'
+end
+
+run_mode = options['run_mode'].to_s.strip
+run_mode = 'flat' if run_mode.empty?
+
+top_cell = options['top_cell'].to_s.strip
+if has_layout and (top_cell.empty? || !cell_names.include?(top_cell))
+  top_cell = active_cell_name
+end
+
+run_dir = options['run_dir'].to_s.strip
+if run_dir.empty?
+  safe_top = top_cell.to_s.strip.empty? ? 'TOP' : top_cell.gsub(/[^A-Za-z0-9_.-]/, '_')
+  timestamp = Time.now.strftime('%Y_%m_%d_%H_%M_%S')
+  run_dir = File.expand_path("lvs_run_#{safe_top}_#{timestamp}")
+else
+  run_dir = File.expand_path(run_dir)
+end
+
+cmd_opts = []
+cmd_opts &lt;&lt; "--layout=#{Shellwords.escape(layout_path)}" if layout_path and !layout_path.empty?
+cmd_opts &lt;&lt; "--topcell=#{Shellwords.escape(top_cell)}" unless top_cell.empty?
+cmd_opts &lt;&lt; "--run_mode=#{Shellwords.escape(run_mode)}"
+cmd_opts &lt;&lt; "--run_dir=#{Shellwords.escape(run_dir)}"
+
+netlist_path = options['netlist'].to_s.strip
+cmd_opts &lt;&lt; "--netlist=#{Shellwords.escape(netlist_path)}" unless netlist_path.empty?
+cmd_opts &lt;&lt; "--layout_netlist=#{Shellwords.escape(layout_netlist_path)}" unless layout_netlist_path.empty?
+
+%w[
+  no_net_names
+  spice_comments
+  net_only
+  no_simplify
+  no_series_res
+  no_parallel_res
+  combine_devices
+  top_lvl_pins
+  ignore_top_ports_mismatch
+  purge
+  purge_nets
+].each do |flag|
+  cmd_opts &lt;&lt; "--#{flag}" if option_enabled?(options, flag)
+end
+
+implicit_nets = options['implicit_nets'].to_s.strip
+unless implicit_nets.empty?
+  cmd_opts &lt;&lt; "--implicit_nets=#{Shellwords.escape(implicit_nets)}"
+end
+
+cmd = "nohup python3 -u #{Shellwords.escape(run_script)} #{cmd_opts.join(' ')}"
+puts "Running KLayout LVS with command:\n#{cmd}"
+
+lines_queue = Queue.new
+stdin, stdout_err, wait_thr = Open3.popen2e(cmd)
+$python_pid = wait_thr.pid
+
+lvs_thread = Thread.new do
+  stdout_err.each do |line|
+    lines_queue &lt;&lt; line.chomp
+  end
+  wait_thr.value
+end
+
+app_window = RBA::Application.instance.main_window
+
+# Ensure cleanup is always triggered when the log window closes.
+class CustomDialog &lt; RBA::QDialog
+  def closeEvent(event)
+    cleanup_lvs_process
+    super(event)
+  end
+end
+
+dlg = CustomDialog.new(app_window)
+dlg.windowTitle = 'LVS Run Logs'
+dlg.resize(1000, 780)
+
+main_layout = RBA::QVBoxLayout.new(dlg)
+
+header_layout = RBA::QHBoxLayout.new
+logo_path = File.join(File.dirname(__FILE__), 'ihp_logo.png')
+if File.exist?(logo_path)
+  logo_label = RBA::QLabel.new
+  logo_pixmap = RBA::QPixmap.new(logo_path)
+  logo_label.setPixmap(logo_pixmap.scaled(40, 40))
+  header_layout.addWidget(logo_label)
+end
+
+title_label = RBA::QLabel.new('SG13CMOS5L LVS - Logs')
+title_font = RBA::QFont.new
+title_font.setPointSize(14)
+title_font.setBold(true)
+title_label.setFont(title_font)
+title_label.setStyleSheet('margin-left: 10px;')
+header_layout.addWidget(title_label)
+header_layout.addStretch
+main_layout.addLayout(header_layout)
+
+log_output = RBA::QTextEdit.new
+log_output.setReadOnly(true)
+log_output.setStyleSheet('font-family: monospace;')
+main_layout.addWidget(log_output)
+
+button_layout = RBA::QHBoxLayout.new
+button_layout.addStretch
+close_button = RBA::QPushButton.new('Close')
+close_button.clicked.connect(Proc.new { dlg.close })
+button_layout.addWidget(close_button)
+main_layout.addLayout(button_layout)
+
+dlg.show
+
+timer = RBA::QTimer.new
+timer.setInterval(100)
+
+timer.timeout.connect(Proc.new {
+  until lines_queue.empty?
+    line = lines_queue.pop
+    log_output.append(line)
+    puts line
+  end
+
+  next if lvs_thread.alive?
+
+  timer.stop
+  status = wait_thr.value
+  exit_code = status.exitstatus
+
+  if exit_code == 0
+    log_output.append('LVS run finished successfully.')
+  else
+    log_output.append("LVS run finished with non-zero exit code: #{exit_code}")
+  end
+
+  result_db = Dir.glob(File.join(run_dir, '*.lvsdb')).max_by { |f| File.mtime(f) }
+
+  if result_db and File.exist?(result_db)
+    begin
+      main_window = RBA::MainWindow.instance
+      if main_window and main_window.current_view
+        lv = main_window.current_view
+        cv_index = lv.active_cellview_index
+        lvsdb = RBA::LayoutVsSchematic.new
+        lvsdb.read(result_db)
+        lvsdb_index = lv.add_lvsdb(lvsdb)
+        lv.show_lvsdb(lvsdb_index, cv_index)
+        puts "Loaded LVS results DB: #{result_db}"
+      else
+        puts 'Warning: No active layout view found to show LVS database.'
+      end
+    rescue => e
+      puts "Error while opening LVS database: #{e.message}"
+    end
+  else
+    puts "No .lvsdb file found in #{run_dir}."
+  end
+
+  cleanup_lvs_process
+	})
+
+timer.start
+
+</text>
+</klayout-macro>

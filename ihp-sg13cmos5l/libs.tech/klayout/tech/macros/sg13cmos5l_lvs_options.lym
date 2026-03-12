@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 #==========================================================================
-# Copyright 2024 IHP PDK Authors
+# Copyright 2026 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 -->
 <klayout-macro>
  <description>SG13CMOS5L LVS Options</description>
- <version>0.1</version>
+ <version>0.3</version>
  <category>lvs</category>
  <prolog/>
  <epilog/>
@@ -34,289 +34,96 @@
  <interpreter>ruby</interpreter>
  <dsl-interpreter-name/>
  <text>
- module SG13G2LVSOptions
+module SG13CMOS5LLVSOptions
   require 'yaml'
   require 'open3'
   require 'fileutils'
+  require 'rubygems'
   include RBA
 
-  # Main function to manage LVS options
-  def self.main
+  DEFAULT_OPTIONS = {
+    'netlist' => '',
+    'layout_netlist' => '',
+    'top_cell' => '',
+    'run_mode' => 'flat',
+    'run_dir' => '',
+    'no_net_names' => false,
+    'spice_comments' => false,
+    'net_only' => false,
+    'no_simplify' => false,
+    'no_series_res' => false,
+    'no_parallel_res' => false,
+    'combine_devices' => false,
+    'top_lvl_pins' => false,
+    'ignore_top_ports_mismatch' => false,
+    'purge' => false,
+    'purge_nets' => false,
+    'implicit_nets' => '',
+  }.freeze
 
-    # check klayout version
+  @widgets = {}
+
+  def self.main
+    @widgets = {}
+    check_klayout_version
+
+    yaml_file_path = File.join(ENV['HOME'], '.ihp_pdk', 'ihp_sg13cmos5l_lvs_options.yml')
+    options = load_options(yaml_file_path)
+
+    dialog = create_options_dialog(options, yaml_file_path)
+
+    if dialog.exec == 1
+      update_options_from_dialog(options)
+      if save_options(yaml_file_path, options)
+        puts '✅ --- LVS Options saved successfully. --- ✅'
+      else
+        puts '❌ --- Failed to save LVS options. --- ❌'
+      end
+    end
+  end
+
+  def self.check_klayout_version
     klayout_v, _ = Open3.capture2('klayout -b -v')
-    klayout_v = klayout_v.split("\n")[0]
-    klayout_v_list = []
+    klayout_v = klayout_v.to_s.strip
 
     if klayout_v.empty?
-      raise StandardError, "KLayout is not found. Please make sure KLayout is installed."
-    else
-      klayout_v_arr = klayout_v.split(" ")[-1].scan(/[^.]+/)
-      klayout_v_list = klayout_v_arr.map { |ele| ele.to_i }
+      raise StandardError, 'KLayout is not found. Please make sure KLayout is installed.'
     end
 
-    if klayout_v_list.size &lt; 1 || klayout_v_list.size &gt; 3
-      raise StandardError, "Was not able to get KLayout version properly."
-    elsif klayout_v_list.size &gt;= 2 || klayout_v_list.size &lt;= 3
-      if klayout_v_list[1] &lt; 30
-        puts "Using this KLayout version has not been assessed. Limits are unknown."
-        raise StandardError, "Prerequisites at a minimum: KLayout 0.30.2"
-      elsif klayout_v_list[1] &lt; 31
-        if klayout_v_list[2] &lt; 2
-          puts "Using this KLayout version has not been assessed. Limits are unknown."
-          raise StandardError, "Prerequisites at a minimum: KLayout 0.30.2"
-        end
-      end
+    version_str = klayout_v.split.last.to_s
+    detected = Gem::Version.new(version_str)
+    required = Gem::Version.new('0.30.2')
+
+    if required > detected
+      puts 'Using this KLayout version has not been assessed. Limits are unknown.'
+      raise StandardError, "Prerequisites at a minimum: KLayout #{required}"
     end
 
     puts "Your KLayout version is: #{klayout_v}"
-
-    # Construct the absolute path to the YAML file
-    yaml_file_path = File.join(ENV["HOME"], ".ihp_pdk", "ihp_sg13cmos5l_lvs_options.yml")
-
-    # Load options from YAML file
-    options = load_options(yaml_file_path)
-
-    # Create a dialog box for selecting options
-    dialog = create_options_dialog(options, yaml_file_path)
-  
-    # Show the dialog box and handle user input
-    if dialog.exec == 1 #RBA::QDialog::Accepted
-      # Get values from the dialog box
-      update_options_from_dialog(options, dialog)
-
-      # Save options to YAML file
-      if save_options(yaml_file_path, options)
-        puts "✅ --- LVS Options saved successfully. --- ✅"
-      else
-        puts "❌ --- Failed to save LVS options. --- ❌"
-      end
-    end
   end
 
-  # Load LVS options from a YAML file
-  #
-  # yaml_file_path - The path to the YAML file
-  #
-  # Returns a hash containing the loaded options
   def self.load_options(yaml_file_path)
-    options = {}
-    if File.exist?(yaml_file_path)
-      begin
-        options = YAML.safe_load(File.read(yaml_file_path))
-      rescue => e
-        puts "Error loading options from YAML file: #{e.message}"
-      end
-    else
-      puts "YAML file not found at #{yaml_file_path}. Using default options."
-      options = set_default_options(yaml_file_path)
+    return set_default_options(yaml_file_path) unless File.exist?(yaml_file_path)
+
+    begin
+      loaded = YAML.safe_load(File.read(yaml_file_path))
+      loaded = {} unless loaded.is_a?(Hash)
+      DEFAULT_OPTIONS.merge(loaded)
+    rescue Psych::SyntaxError => e
+      puts "YAML syntax error: #{e.message}"
+      set_default_options(yaml_file_path)
+    rescue => e
+      puts "Error loading options: #{e.message}"
+      DEFAULT_OPTIONS.dup
     end
-    options
   end
 
-  # Set default LVS options and save them to a YAML file
-  #
-  # yaml_file_path - The path to the YAML file
-  #
-  # Returns a hash containing the default options
   def self.set_default_options(yaml_file_path)
-    default_options = {
-      'netlist' => '',
-      'top_cell' => '',
-      'run_mode' => 'flat',
-      'no_net_names' => false,
-      'spice_comments' => false,
-      'net_only' => false,
-      'no_simplify' => false,
-      'no_series_res' => false,
-      'no_parallel_res' => false,
-      'combine_devices' => false,
-      'top_lvl_pins' => false,
-      'purge' => false,
-      'purge_nets' => false,
-      'verbose' => false,
-    }
-    save_options(yaml_file_path, default_options)
-    default_options
+    defaults = DEFAULT_OPTIONS.dup
+    save_options(yaml_file_path, defaults)
+    defaults
   end
 
-  # Get all names for top cells with the active cell as the first element
-  #
-  # Returns a list containing all top cell names with the active cell as the first element
-  def self.get_top_cell_names
-    cells = []
-    layout = RBA::Layout.new
-    layout.read(Pathname.new(RBA::CellView.active.filename))
-
-    active_cellview = RBA::CellView.active
-    active_cell_name = active_cellview.cell.name
-
-    layout.each_cell do |cell|
-      cells.push(cell.name)
-    end
-
-    # Remove the active cell name from the list if it exists and add it to the front
-    cells.delete(active_cell_name)
-    cells.unshift(active_cell_name)
-
-    cells
-  end
-
-  # Create a dialog box for selecting LVS options
-  #
-  # options        - A hash containing the current options
-  # yaml_file_path - The path to the YAML file
-  #
-  # Returns a QDialog instance representing the options dialog
-  def self.create_options_dialog(options, yaml_file_path)
-    dialog = RBA::QDialog.new
-    dialog.windowTitle = "LVS Options"
-
-    layout = RBA::QFormLayout.new(dialog)
-    
-    layout.addRow('Netlist Path:', create_file_input(options['netlist'], dialog))
-    layout.addRow('Top Cell', create_combo_box(options['top_cell'], get_top_cell_names))
-    layout.addRow('Run Mode:', create_combo_box(options['run_mode'], ['deep', 'flat']))
-    layout.addRow('', create_check_box('No Net Names', options['no_net_names']))
-    layout.addRow('', create_check_box('Spice Comments', options['spice_comments']))
-    layout.addRow('', create_check_box('Netlist Only', options['net_only']))
-    layout.addRow('', create_check_box('No Simplify', options['no_simplify']))
-    layout.addRow('', create_check_box('No Series Resistance', options['no_series_res']))
-    layout.addRow('', create_check_box('No Parallel Resistance', options['no_parallel_res']))
-    layout.addRow('', create_check_box('Combine Devices', options['combine_devices']))
-    layout.addRow('', create_check_box('Top Level Pins', options['top_lvl_pins']))
-    layout.addRow('', create_check_box('Allow Unmatched Ports', options['allow_unmatched_ports']))
-    layout.addRow('', create_check_box('Purge', options['purge']))
-    layout.addRow('', create_check_box('Purge Nets', options['purge_nets']))
-    layout.addRow('', create_check_box('Verbose', options['verbose']))
-
-    layout.addRow('', create_buttons(dialog, yaml_file_path))
-
-    dialog
-  end
-
-  # Create a line edit widget
-  #
-  # text - The initial text for the line edit
-  #
-  # Returns a QLineEdit instance
-  def self.create_line_edit(text)
-    line_edit = RBA::QLineEdit.new
-    line_edit.text = text
-    line_edit
-  end
- 
-  # Create a combo box widget
-  #
-  # current_index - The index of the currently selected item
-  # items         - An array containing the items for the combo box
-  #
-  # Returns a QComboBox instance
-  def self.create_combo_box(current_index, items)
-    combo_box = RBA::QComboBox.new
-    items.each { |item| combo_box.addItem(item) }
-    combo_box.currentIndex = items.index(current_index)
-    combo_box
-  end
- 
-  # Create a file input widget
-  #
-  # text   - The initial text for the file input
-  # parent - The parent widget for the file input
-  #
-  # Returns a QWidget instance containing the file input
-  def self.create_file_input(text, parent)
-    file_input = RBA::QLineEdit.new
-    file_input.text = text
-  
-    browse_button = RBA::QPushButton.new('Browse')
-    browse_button.clicked.connect(Proc.new {
-      file_filter = 'CDL Files (*.cdl);;SPICE Files (*.spice);;Circuit Files (*.cir)'
-      netlist_path = RBA::FileDialog.get_open_file_name('Select File', '.', file_filter)
-      file_input.text = netlist_path.to_s
-    })
-
-    container = RBA::QWidget.new
-    layout = RBA::QHBoxLayout.new(container)
-    layout.addWidget(file_input)
-    layout.addWidget(browse_button)
-    
-    container
-  end
-
-  # Create a check box widget
-  #
-  # text    - The text for the check box
-  # checked - A boolean indicating whether the check box is checked
-  #
-  # Returns a QCheckBox instance
-  def self.create_check_box(text, checked)
-    check_box = RBA::QCheckBox.new(text)
-    check_box.checked = checked
-    check_box
-  end
- 
-  # Create buttons for the options dialog
-  #
-  # dialog        - The options dialog
-  # yaml_file_path - The path to the YAML file
-  #
-  # Returns a QWidget instance containing the buttons
-  def self.create_buttons(dialog, yaml_file_path)
-    container = RBA::QWidget.new
-    layout = RBA::QHBoxLayout.new(container)
-  
-    ok_button = RBA::QPushButton.new('OK')
-    ok_button.clicked.connect(Proc.new { dialog.accept })
-
-    reset_button = RBA::QPushButton.new('Reset')
-    reset_button.clicked.connect(Proc.new { 
-      if set_default_options(yaml_file_path)
-        dialog.reject
-      else
-        puts "Failed to reset options."
-      end
-    })
-
-    cancel_button = RBA::QPushButton.new('Cancel')
-    cancel_button.clicked.connect(Proc.new { dialog.reject })
-  
-    layout.addWidget(ok_button)
-    layout.addWidget(reset_button)
-    layout.addWidget(cancel_button)
-  
-    container
-  end
-  
-  # Update options hash from the dialog
-  #
-  # options - The options hash to be updated
-  # dialog  - The dialog containing the updated options
-  def self.update_options_from_dialog(options, dialog)
-
-    options['netlist'] = dialog.layout.itemAt(1).widget.layout.itemAt(0).widget.text
-    options['top_cell'] = dialog.layout.itemAt(3).widget.currentText
-    options['run_mode'] = dialog.layout.itemAt(5).widget.currentText
-    options['no_net_names'] = dialog.layout.itemAt(6).widget.checked
-    options['spice_comments'] = dialog.layout.itemAt(7).widget.checked
-    options['net_only'] = dialog.layout.itemAt(8).widget.checked
-    options['no_simplify'] = dialog.layout.itemAt(9).widget.checked
-    options['no_series_res'] = dialog.layout.itemAt(10).widget.checked
-    options['no_parallel_res'] = dialog.layout.itemAt(11).widget.checked
-    options['combine_devices'] = dialog.layout.itemAt(12).widget.checked
-    options['top_lvl_pins'] = dialog.layout.itemAt(13).widget.checked
-    options['allow_unmatched_ports'] = dialog.layout.itemAt(14).widget.checked
-    options['purge'] = dialog.layout.itemAt(15).widget.checked
-    options['purge_nets'] = dialog.layout.itemAt(16).widget.checked
-    options['verbose'] = dialog.layout.itemAt(17).widget.checked
-  end
-
-  # Save options to a YAML file
-  #
-  # yaml_file_path - The path to the YAML file
-  # options        - The options hash to be saved
-  #
-  # Returns true if successful, false otherwise
   def self.save_options(yaml_file_path, options)
     begin
       dir = File.dirname(yaml_file_path)
@@ -328,9 +135,513 @@
       false
     end
   end
+
+  def self.get_top_cell_names
+    active_cellview = RBA::CellView.active
+    return ['TOP'] if active_cellview.nil? || active_cellview.cell.nil?
+
+    layout = active_cellview.layout
+    active_cell_name = active_cellview.cell.name
+
+    cells = []
+    layout.each_cell do |cell|
+      cells.push(cell.name)
+    end
+
+    cells.delete(active_cell_name)
+    cells.unshift(active_cell_name)
+    cells
+  end
+
+  def self.get_active_cell_name
+    active_cellview = RBA::CellView.active
+    return 'TOP' if active_cellview.nil? || active_cellview.cell.nil?
+
+    active_cellview.cell.name
+  end
+
+  def self.create_options_dialog(options, yaml_file_path)
+    dialog = RBA::QDialog.new
+    dialog.windowTitle = 'SG13CMOS5L LVS Options'
+    dialog.minimumSize = RBA::QSize.new(820, 650)
+
+    main_layout = RBA::QVBoxLayout.new(dialog)
+    main_layout.setSpacing(12)
+    main_layout.setContentsMargins(14, 14, 14, 14)
+
+    header_layout = RBA::QHBoxLayout.new
+    header_layout.setContentsMargins(8, 2, 8, 2)
+
+    image_label = RBA::QLabel.new
+    image_path = "#{__dir__}/ihp_logo.png"
+    if File.exist?(image_path)
+      pixmap = RBA::QPixmap.new(image_path)
+      image_label.setPixmap(pixmap.scaled(150, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation))
+      image_label.setMinimumWidth(165)
+      image_label.setAlignment(Qt::AlignCenter)
+    else
+      image_label.setText('[Logo Missing]')
+      image_label.setStyleSheet('color: red; font-weight: bold;')
+    end
+
+    title_box = RBA::QWidget.new
+    title_box_layout = RBA::QVBoxLayout.new(title_box)
+    title_box_layout.setContentsMargins(14, 4, 8, 4)
+    title_box_layout.setSpacing(4)
+
+    title_label = RBA::QLabel.new('SG13CMOS5L LVS Run Configuration')
+    title_label.setObjectName('titleLabel')
+    subtitle_label = RBA::QLabel.new('Configure extraction and comparison behavior for LVS runs.')
+    subtitle_label.setObjectName('subtitleLabel')
+    title_box_layout.addWidget(title_label)
+    title_box_layout.addWidget(subtitle_label)
+
+    header_layout.addWidget(image_label)
+    header_layout.addWidget(title_box)
+    header_layout.addStretch
+    main_layout.addLayout(header_layout)
+
+    # Keep GUI default aligned with active view, while still allowing override.
+    @widgets[:top_cell] = create_combo_box(get_active_cell_name, get_top_cell_names)
+    @widgets[:run_mode] = create_combo_box(options['run_mode'], ['flat', 'deep'])
+    @widgets[:top_cell].setToolTip('Top layout cell used as the root of extraction/comparison.')
+    @widgets[:run_mode].setToolTip('flat: flattened extraction, deep: hierarchical extraction.')
+    @widgets[:netlist] = create_file_input(
+      options['netlist'],
+      placeholder: 'Optional in extraction-only mode',
+      input_tooltip: 'Path to schematic CDL/SPICE netlist used in comparison mode. Ignored in extraction-only mode.',
+      browse_tooltip: 'Browse to select a schematic netlist file',
+      dialog_title: 'Select Schematic Netlist'
+    )
+    @widgets[:layout_netlist] = create_file_input(
+      options['layout_netlist'],
+      placeholder: 'Optional path to pre-extracted layout netlist (SVS mode)',
+      input_tooltip: 'Path to layout-side CDL/SPICE netlist. When set, extraction is skipped and this file is used.',
+      browse_tooltip: 'Browse to select a layout netlist file',
+      dialog_title: 'Select Layout Netlist'
+    )
+    @widgets[:net_only] = create_check_box(
+      'Extraction Only (Netlist Only)',
+      options['net_only'],
+      'Extract netlist from layout only and skip schematic comparison.'
+    )
+    @widgets[:run_dir] = create_dir_input(options['run_dir'])
+    @widgets[:run_dir][:input].setToolTip(
+      'Output folder for LVS artifacts. Leave empty to auto-create a timestamped run directory.'
+    )
+
+    @widgets[:ignore_top_ports_mismatch] = create_check_box(
+      'Ignore Top-Port Mismatches',
+      options['ignore_top_ports_mismatch'],
+      'Do not fail comparison when top-level ports differ (CLI: --ignore_top_ports_mismatch).'
+    )
+    @widgets[:top_lvl_pins] = create_check_box(
+      'Top Level Pins',
+      options['top_lvl_pins'],
+      'Generate top-level pins in both netlists.'
+    )
+    @widgets[:no_simplify] = create_check_box(
+      'Disable Simplify',
+      options['no_simplify'],
+      'Disable netlist simplification on both sides.'
+    )
+    @widgets[:no_net_names] = create_check_box(
+      'No Net Names',
+      options['no_net_names'],
+      'Use numeric net IDs in extracted netlist.'
+    )
+    @widgets[:spice_comments] = create_check_box(
+      'Spice Comments',
+      options['spice_comments'],
+      'Emit detailed comments in extracted netlist.'
+    )
+    @widgets[:no_series_res] = create_check_box(
+      'Disable Series Res Merge',
+      options['no_series_res'],
+      'Prevent series resistor simplification.'
+    )
+    @widgets[:no_parallel_res] = create_check_box(
+      'Disable Parallel Res Merge',
+      options['no_parallel_res'],
+      'Prevent parallel resistor simplification.'
+    )
+    @widgets[:combine_devices] = create_check_box(
+      'Combine Devices',
+      options['combine_devices'],
+      'Enable generic device combination.'
+    )
+    @widgets[:purge] = create_check_box(
+      'Purge',
+      options['purge'],
+      'Purge unused nets and devices.'
+    )
+    @widgets[:purge_nets] = create_check_box(
+      'Purge Nets',
+      options['purge_nets'],
+      'Purge floating nets.'
+    )
+    @widgets[:net_only].setToolTip(
+      'When enabled, schematic netlist is ignored and only extracted netlist is generated.'
+    )
+
+    basic_content = RBA::QWidget.new
+    basic_layout = RBA::QVBoxLayout.new(basic_content)
+    basic_layout.setSpacing(12)
+    basic_layout.setContentsMargins(8, 8, 8, 8)
+
+    basic_inputs_group = RBA::QGroupBox.new('Run Configuration')
+    basic_inputs_layout = RBA::QFormLayout.new(basic_inputs_group)
+    basic_inputs_layout.setSpacing(10)
+    basic_inputs_layout.addRow('Top Cell:', @widgets[:top_cell])
+    basic_inputs_layout.addRow('Run Mode:', @widgets[:run_mode])
+    basic_inputs_layout.addRow('Netlist Path:', @widgets[:netlist][:container])
+    basic_inputs_layout.addRow('Layout Netlist Path:', @widgets[:layout_netlist][:container])
+    basic_inputs_layout.addRow('', @widgets[:net_only])
+    basic_inputs_layout.addRow('', @widgets[:ignore_top_ports_mismatch])
+    basic_layout.addWidget(basic_inputs_group)
+
+    basic_tips_group = RBA::QGroupBox.new('Quick Tips')
+    basic_tips_layout = RBA::QVBoxLayout.new(basic_tips_group)
+    basic_tips_layout.setSpacing(6)
+    tips_text = [
+      "Tip: 'Ignore Top-Port Mismatches' (--ignore_top_ports_mismatch) is for block-level LVS only; avoid it for top-level signoff.",
+      "Tip: If netlist path is empty and extraction-only is disabled, the run auto-switches to extraction-only.",
+      "Tip: If layout netlist path is set, extraction is skipped and the provided file is used as layout-side input."
+    ]
+    tips_text.each do |txt|
+      tip_label = RBA::QLabel.new("• #{txt}")
+      tip_label.setWordWrap(true)
+      tip_label.setStyleSheet('font-size: 12px; color: #334155;')
+      basic_tips_layout.addWidget(tip_label)
+    end
+    basic_layout.addWidget(basic_tips_group)
+    basic_layout.addStretch
+
+    basic_tab = RBA::QScrollArea.new
+    basic_tab.setWidgetResizable(true)
+    basic_tab.setStyleSheet('QScrollArea { border: none; background: transparent; }')
+    basic_content._unmanage
+    basic_tab.setWidget(basic_content)
+
+    advanced_content = RBA::QWidget.new
+    advanced_layout = RBA::QVBoxLayout.new(advanced_content)
+    advanced_layout.setSpacing(12)
+    advanced_layout.setContentsMargins(8, 8, 8, 8)
+
+    scroll_tip = RBA::QLabel.new('Tip: Scroll down to view all advanced options.')
+    scroll_tip.setStyleSheet('font-size: 12px; color: #475569; font-style: italic;')
+    scroll_tip.setToolTip('Use mouse wheel or trackpad to scroll this tab.')
+    advanced_layout.addWidget(scroll_tip)
+
+    runtime_group = RBA::QGroupBox.new('Runtime')
+    runtime_layout = RBA::QFormLayout.new(runtime_group)
+    runtime_layout.setSpacing(10)
+    runtime_layout.addRow('Output Run Directory:', @widgets[:run_dir][:container])
+
+    comparison_group = RBA::QGroupBox.new('Comparison Options')
+    comparison_layout = RBA::QFormLayout.new(comparison_group)
+    comparison_layout.setSpacing(8)
+    @widgets[:implicit_nets_adv] = create_line_edit(
+      options['implicit_nets'],
+      'Comma-separated net names or patterns, e.g. VDD,VSS,*'
+    )
+    @widgets[:implicit_nets_adv].setToolTip(
+      'Case-sensitive implicit net patterns. Use only when some nets are intentionally connected at higher hierarchy.'
+    )
+    comparison_layout.addRow('Implicit Nets:', @widgets[:implicit_nets_adv])
+
+    netlist_ops_group = RBA::QGroupBox.new('Netlist Formatting')
+    netlist_ops_layout = RBA::QFormLayout.new(netlist_ops_group)
+    netlist_ops_layout.setSpacing(8)
+    netlist_ops_layout.addRow('', @widgets[:no_net_names])
+    netlist_ops_layout.addRow('', @widgets[:spice_comments])
+    netlist_ops_layout.addRow('', @widgets[:top_lvl_pins])
+
+    simplification_group = RBA::QGroupBox.new('Simplification and Reduction')
+    simplification_layout = RBA::QFormLayout.new(simplification_group)
+    simplification_layout.setSpacing(8)
+    simplification_layout.addRow('', @widgets[:no_simplify])
+    simplification_layout.addRow('', @widgets[:no_series_res])
+    simplification_layout.addRow('', @widgets[:no_parallel_res])
+    simplification_layout.addRow('', @widgets[:combine_devices])
+    simplification_layout.addRow('', @widgets[:purge])
+    simplification_layout.addRow('', @widgets[:purge_nets])
+
+    advanced_layout.addWidget(runtime_group)
+    advanced_layout.addWidget(comparison_group)
+    advanced_layout.addWidget(netlist_ops_group)
+    advanced_layout.addWidget(simplification_group)
+    advanced_layout.addStretch
+
+    advanced_tab = RBA::QScrollArea.new
+    advanced_tab.setWidgetResizable(true)
+    advanced_tab.setStyleSheet('QScrollArea { border: none; background: transparent; }')
+    advanced_content._unmanage
+    advanced_tab.setWidget(advanced_content)
+
+    tabs = RBA::QTabWidget.new(dialog)
+    tabs.setDocumentMode(true)
+    tabs.addTab(basic_tab, 'Basic Settings')
+    tabs.addTab(advanced_tab, 'Advanced Settings')
+    main_layout.addWidget(tabs)
+
+    buttons_layout = RBA::QHBoxLayout.new
+    buttons_layout.addStretch
+    buttons_layout.addWidget(create_buttons(dialog, yaml_file_path))
+    main_layout.addLayout(buttons_layout)
+
+    dialog.setStyleSheet(
+      "QDialog {\n" \
+      "  background-color: #f4f7fb;\n" \
+      "  border-radius: 12px;\n" \
+      "}\n" \
+      "QWidget {\n" \
+      "  color: #1f2937;\n" \
+      "}\n" \
+      "QLabel#titleLabel {\n" \
+      "  font-size: 24px;\n" \
+      "  font-weight: 700;\n" \
+      "  color: #0f2740;\n" \
+      "}\n" \
+      "QLabel#subtitleLabel {\n" \
+      "  font-size: 13px;\n" \
+      "  color: #4b5d72;\n" \
+      "}\n" \
+      "QTabWidget::tab-bar {\n" \
+      "  left: 6px;\n" \
+      "}\n" \
+      "QTabWidget::pane {\n" \
+      "  border: 1px solid #c8d5e6;\n" \
+      "  border-radius: 10px;\n" \
+      "  background: #ffffff;\n" \
+      "  padding: 10px;\n" \
+      "}\n" \
+      "QTabBar::tab {\n" \
+      "  background: #e6eef9;\n" \
+      "  color: #24415e;\n" \
+      "  min-width: 130px;\n" \
+      "  padding: 8px 14px;\n" \
+      "  border: 1px solid #c8d5e6;\n" \
+      "  border-bottom: none;\n" \
+      "  border-top-left-radius: 8px;\n" \
+      "  border-top-right-radius: 8px;\n" \
+      "  margin-right: 4px;\n" \
+      "}\n" \
+      "QTabBar::tab:selected {\n" \
+      "  background: #0b63ce;\n" \
+      "  color: #ffffff;\n" \
+      "}\n" \
+      "QTabBar::tab:hover:!selected {\n" \
+      "  background: #d9e8fb;\n" \
+      "}\n" \
+      "QLabel {\n" \
+      "  font-size: 14px;\n" \
+      "}\n" \
+      "QComboBox, QLineEdit, QSpinBox {\n" \
+      "  background: #ffffff;\n" \
+      "  border: 1px solid #c5d3e1;\n" \
+      "  border-radius: 6px;\n" \
+      "  padding: 6px 8px;\n" \
+      "  font-size: 14px;\n" \
+      "}\n" \
+      "QComboBox:focus, QLineEdit:focus, QSpinBox:focus {\n" \
+      "  border: 1px solid #0b63ce;\n" \
+      "}\n" \
+      "QGroupBox {\n" \
+      "  font-size: 13px;\n" \
+      "  font-weight: bold;\n" \
+      "  color: #1c3b5c;\n" \
+      "  border: 1px solid #d5dfeb;\n" \
+      "  border-radius: 8px;\n" \
+      "  margin-top: 10px;\n" \
+      "  padding: 14px;\n" \
+      "  background: #fbfdff;\n" \
+      "}\n" \
+      "QGroupBox::title {\n" \
+      "  subcontrol-origin: margin;\n" \
+      "  left: 10px;\n" \
+      "  padding: 0 6px;\n" \
+      "}\n" \
+      "QCheckBox {\n" \
+      "  font-size: 13px;\n" \
+      "}\n" \
+      "QPushButton {\n" \
+      "  padding: 7px 14px;\n" \
+      "  font-size: 14px;\n" \
+      "  border-radius: 5px;\n" \
+      "}\n"
+    )
+
+    dialog
+  end
+
+  def self.create_combo_box(current_value, items)
+    combo = RBA::QComboBox.new
+    if items.nil? || items.empty?
+      combo.addItem('')
+      index = 0
+    else
+      items.each { |item| combo.addItem(item) }
+      index = items.index(current_value)
+      index = 0 if index.nil?
+    end
+    combo.currentIndex = index
+    combo.setToolTip('Select one option from the list')
+    combo.setMinimumHeight(30)
+    combo
+  end
+
+  def self.create_line_edit(text, placeholder = '')
+    line_edit = RBA::QLineEdit.new
+    line_edit.text = text.to_s
+    line_edit.setPlaceholderText(placeholder)
+    line_edit.setMinimumHeight(30)
+    line_edit.setToolTip(placeholder) unless placeholder.to_s.empty?
+    line_edit
+  end
+
+  def self.create_file_input(text, placeholder:, input_tooltip:, browse_tooltip:, dialog_title:)
+    input = RBA::QLineEdit.new
+    input.text = text.to_s
+    input.setPlaceholderText(placeholder)
+    input.setMinimumHeight(35)
+    input.setToolTip(input_tooltip)
+
+    browse_button = RBA::QPushButton.new('Browse')
+    browse_button.setCursor(RBA::QCursor.new(RBA::Qt::PointingHandCursor))
+    browse_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 6px 16px; " \
+      "  font-size: 16px; " \
+      "  border-radius: 4px; " \
+      "  background-color: #2e86de; " \
+      "  color: white; " \
+      "  border: none; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #1e70bf; " \
+      "} " \
+      "QPushButton:pressed { " \
+      "  background-color: #155a9c; " \
+      "}"
+    )
+    browse_button.setToolTip(browse_tooltip)
+    browse_button.clicked.connect(Proc.new {
+      file_filter = 'CDL/SPICE (*.cdl *.spice *.cir);;All Files (*)'
+      selected = RBA::FileDialog.get_open_file_name(dialog_title, '.', file_filter)
+      input.text = selected.to_s
+    })
+
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+    layout.addWidget(input)
+    layout.addWidget(browse_button)
+
+    { container: container, input: input, browse: browse_button }
+  end
+
+  def self.create_dir_input(text)
+    input = RBA::QLineEdit.new
+    input.text = text.to_s
+    input.setPlaceholderText('Optional - defaults to timestamped run dir')
+    input.setMinimumHeight(35)
+    input.setToolTip(
+      'Directory where logs, extracted netlist, and result database are written.'
+    )
+
+    browse_button = RBA::QPushButton.new('Browse')
+    browse_button.setCursor(RBA::QCursor.new(RBA::Qt::PointingHandCursor))
+    browse_button.setStyleSheet(
+      "QPushButton { " \
+      "  padding: 6px 16px; " \
+      "  font-size: 16px; " \
+      "  border-radius: 4px; " \
+      "  background-color: #2e86de; " \
+      "  color: white; " \
+      "  border: none; " \
+      "} " \
+      "QPushButton:hover { " \
+      "  background-color: #1e70bf; " \
+      "} " \
+      "QPushButton:pressed { " \
+      "  background-color: #155a9c; " \
+      "}"
+    )
+    browse_button.setToolTip('Browse to select an output run directory')
+    browse_button.clicked.connect(Proc.new {
+      selected = RBA::FileDialog.get_existing_dir('Select Directory', '.')
+      input.text = selected.to_s
+    })
+
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+    layout.addWidget(input)
+    layout.addWidget(browse_button)
+
+    { container: container, input: input, browse: browse_button }
+  end
+
+  def self.create_check_box(text, checked, tooltip)
+    check_box = RBA::QCheckBox.new(text)
+    check_box.checked = checked ? true : false
+    check_box.setStyleSheet('color: #0054b3; font-weight: bold;')
+    check_box.setToolTip(tooltip)
+    check_box
+  end
+
+  def self.create_buttons(dialog, yaml_file_path)
+    container = RBA::QWidget.new
+    layout = RBA::QHBoxLayout.new(container)
+
+    ok_button = RBA::QPushButton.new('OK')
+    ok_button.setStyleSheet('QPushButton { background-color: #2e7d32; color: white; }')
+    ok_button.clicked.connect(Proc.new { dialog.accept })
+
+    reset_button = RBA::QPushButton.new('Reset')
+    reset_button.setStyleSheet('QPushButton { background-color: #ef6c00; color: white; }')
+    reset_button.clicked.connect(Proc.new {
+      if set_default_options(yaml_file_path)
+        puts 'Options were reset to defaults.'
+        dialog.reject
+      else
+        puts 'Failed to reset options.'
+      end
+    })
+
+    cancel_button = RBA::QPushButton.new('Cancel')
+    cancel_button.clicked.connect(Proc.new { dialog.reject })
+
+    layout.addWidget(ok_button)
+    layout.addWidget(reset_button)
+    layout.addWidget(cancel_button)
+
+    container
+  end
+
+  def self.update_options_from_dialog(options)
+    options['top_cell'] = @widgets[:top_cell].currentText.to_s
+    options['run_mode'] = @widgets[:run_mode].currentText.to_s
+    options['netlist'] = @widgets[:netlist][:input].text.to_s
+    options['layout_netlist'] = @widgets[:layout_netlist][:input].text.to_s
+    options['run_dir'] = @widgets[:run_dir][:input].text.to_s
+
+    options['net_only'] = @widgets[:net_only].checked
+    options['ignore_top_ports_mismatch'] = @widgets[:ignore_top_ports_mismatch].checked
+    options['top_lvl_pins'] = @widgets[:top_lvl_pins].checked
+    options['no_simplify'] = @widgets[:no_simplify].checked
+
+    options['implicit_nets'] = @widgets[:implicit_nets_adv].text.to_s
+    options['no_net_names'] = @widgets[:no_net_names].checked
+    options['spice_comments'] = @widgets[:spice_comments].checked
+    options['no_series_res'] = @widgets[:no_series_res].checked
+    options['no_parallel_res'] = @widgets[:no_parallel_res].checked
+    options['combine_devices'] = @widgets[:combine_devices].checked
+    options['purge'] = @widgets[:purge].checked
+    options['purge_nets'] = @widgets[:purge_nets].checked
+  end
 end
 
-SG13G2LVSOptions.main
+SG13CMOS5LLVSOptions.main
 
 </text>
 </klayout-macro>
