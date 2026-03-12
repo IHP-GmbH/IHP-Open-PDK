@@ -73,8 +73,7 @@ if TABLES.include?('sealring') || BEOL
 
   # Rule Seal.l : No structures outside sealring boundary allowed
   logger.info('Executing rule Seal.l')
-  script_dir = File.expand_path(File.dirname(__FILE__))
-  layers_def_path = File.join(script_dir, '../layers_def.drc')
+  layers_def_path = File.join(File.dirname($drc_json_default), 'layers_def.drc')
   seal_l_l1 = edgeseal_bound.interacting(CHIP)
   seal_l = sructures_outside(layers_def_path, binding, seal_l_l1) unless seal_l_l1.is_empty?
   seal_l_l1.forget

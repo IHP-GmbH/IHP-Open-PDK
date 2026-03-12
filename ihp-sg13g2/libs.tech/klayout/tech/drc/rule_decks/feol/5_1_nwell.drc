@@ -188,9 +188,9 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.f: Min. NWell space to substrate tie in P+Activ not inside ThickGateOx is 0.24 um
     logger.info('Executing rule NW.f')
     nw_f_value = drc_rules['NW_f'].to_f
-    nw_f_svaricap_edges = pact_pwell_lv.edges.coincident(svaricap.edges).outside_part(pact_pwell_lv)
-    nw_f_exclude = pact_pwell_lv.interacting(nw_f_svaricap_edges)
-    nw_f_l = nwell_drw.separation(pact_pwell_lv.not(nw_f_exclude), nw_f_value.um, euclidian)
+    nw_f_svaricap_edges = pact_pwell_lv.ext_coincident_edges(svaricap, outside: true)
+    nw_f_exclude = pact_pwell_lv.ext_with_coincident_edges(nw_f_svaricap_edges)
+    nw_f_l = nwell_drw.ext_separation(pact_pwell_lv.ext_not(nw_f_exclude), nw_f_value.um)
     nw_f_l.output('NW.f',
                   "5.1.NW.f : Min. NWell space to substrate tie in P+Activ not inside ThickGateOx is #{nw_f_value} um")
     nw_f_svaricap_edges.forget
