@@ -24,10 +24,11 @@ JSON_PARAMS = DRC_BASE / "sg13g2_tech_default.json"
 
 FEOL_DIR = DRC_BASE / "feol"
 BEOL_DIR = DRC_BASE / "beol"
+OFFGRID_DIR = DRC_BASE / "offgrid"
+PIN_DIR = DRC_BASE / "pin"
 
 ANTENNA_DRC = DRC_BASE / "antenna.drc"
 DENSITY_DRC = DRC_BASE / "density.drc"
-PIN_DRC = DRC_BASE / "pin" / "7_4_pin.drc"
 FORBIDDEN_DRC = DRC_BASE / "forbidden" / "3_2_forbidden.drc"
 
 OUTPUT_FILE = SCRIPT_DIR / "audit_inventory.md"
@@ -156,7 +157,7 @@ def extract_maximal_rules():
 def extract_modular_rules():
     """Extract rules from all modular files (feol/, beol/, antenna, density, pin, forbidden)."""
     all_rules = {}  # rule_id -> (file, lineno)
-    search_dirs = [FEOL_DIR, BEOL_DIR]
+    search_dirs = [FEOL_DIR, BEOL_DIR, OFFGRID_DIR, PIN_DIR]
 
     for d in search_dirs:
         if not d.exists():
@@ -165,14 +166,19 @@ def extract_modular_rules():
             rules = extract_rules_from_file(drc_file)
             relpath = drc_file.relative_to(DRC_BASE)
             for rule_id, lineno in rules.items():
+                # Skip Ruby interpolation templates (e.g., "Slt.a.#{met_abbrev}")
+                if "#{" in rule_id:
+                    continue
                 all_rules[rule_id] = (str(relpath), lineno)
 
     # Standalone modular files
-    for standalone in [ANTENNA_DRC, DENSITY_DRC, PIN_DRC, FORBIDDEN_DRC]:
+    for standalone in [ANTENNA_DRC, DENSITY_DRC, FORBIDDEN_DRC]:
         if standalone.exists():
             rules = extract_rules_from_file(standalone)
             relpath = standalone.relative_to(DRC_BASE)
             for rule_id, lineno in rules.items():
+                if "#{" in rule_id:
+                    continue
                 all_rules[rule_id] = (str(relpath), lineno)
 
     return all_rules
@@ -331,10 +337,80 @@ def get_antenna_rule_ids():
     return all_ant
 
 
-# ── Maximal template expansion ────────────────────────────────────────────
-# The maximal file has some explicit per-layer rules (M2.c, M3.c, etc.)
-# that are already captured in .output() calls. No extra expansion needed.
-# But the Slt.* and MFil.* rules ARE explicit per-layer in maximal.
+# ── Modular template expansion ────────────────────────────────────────────
+# Many modular files use Ruby loops to generate per-layer/per-metal rule IDs
+# at runtime. The static regex extraction can't resolve these, so we expand
+# them explicitly based on the known loop patterns.
+
+
+def expand_modular_templates():
+    """Expand all template-loop-generated rule IDs from modular files.
+
+    Returns a dict {rule_id: (source_file, 0)} for all dynamically
+    generated rule IDs.
+    """
+    expanded = {}
+
+    # ── beol/5_17_metaln.drc: M{2-5}.{a,b,c,c1,d,e,f,g,i} ──
+    for met in range(2, 6):
+        for suffix in ['a', 'b', 'c', 'c1', 'd', 'e', 'f', 'g', 'i']:
+            expanded[f"M{met}.{suffix}"] = ("beol/5_17_metaln.drc", 0)
+
+    # ── beol/5_20_vian.drc: V{2-4}.{a,b,b1,c,c1} ──
+    for via in range(2, 5):
+        for suffix in ['a', 'b', 'b1', 'c', 'c1']:
+            expanded[f"V{via}.{suffix}"] = ("beol/5_20_vian.drc", 0)
+
+    # ── beol/5_18_metalnfiller.drc: M{1-5}Fil.{c,a1,a2,b,d} ──
+    for met in range(1, 6):
+        for suffix in ['c', 'a1', 'a2', 'b', 'd']:
+            expanded[f"M{met}Fil.{suffix}"] = ("beol/5_18_metalnfiller.drc", 0)
+
+    # ── beol/7_3_metalslits.drc ──
+    metals_abbrev = ['M1', 'M2', 'M3', 'M4', 'M5', 'TM1', 'TM2']
+    # Per-metal rules: Slt.{a,b,c,e,f}
+    for met in metals_abbrev:
+        for rule in ['a', 'b', 'c', 'e', 'f']:
+            expanded[f"Slt.{rule}.{met}"] = ("beol/7_3_metalslits.drc", 0)
+    # Slt.g: only M5 and TM1
+    for met in ['M5', 'TM1']:
+        expanded[f"Slt.g.{met}"] = ("beol/7_3_metalslits.drc", 0)
+    # Slt.h*: M1->h1, M2-M5->h2.Mx, TM1->h3, TM2->h4
+    expanded["Slt.h1"] = ("beol/7_3_metalslits.drc", 0)
+    for met in ['M2', 'M3', 'M4', 'M5']:
+        expanded[f"Slt.h2.{met}"] = ("beol/7_3_metalslits.drc", 0)
+    expanded["Slt.h3"] = ("beol/7_3_metalslits.drc", 0)
+    expanded["Slt.h4"] = ("beol/7_3_metalslits.drc", 0)
+    # Slt.e1_* per metal
+    for met in metals_abbrev:
+        expanded[f"Slt.e1_{met}"] = ("beol/7_3_metalslits.drc", 0)
+
+    # ── beol/6_10_sealring.drc ──
+    seal_a_names = ['Activ', 'pSD', 'Metal1', 'Metal2', 'Metal3',
+                    'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']
+    for name in seal_a_names:
+        expanded[f"Seal.a_{name}"] = ("beol/6_10_sealring.drc", 0)
+    seal_b_names = ['metal1', 'metal2', 'metal3', 'metal4', 'metal5',
+                    'topmetal1', 'topmetal2', 'activ', 'psd']
+    for name in seal_b_names:
+        expanded[f"Seal.b_{name}"] = ("beol/6_10_sealring.drc", 0)
+    for via in ['Via1', 'Via2', 'Via3', 'Via4']:
+        expanded[f"Seal.c1.{via}"] = ("beol/6_10_sealring.drc", 0)
+    seal_cv = ['Cont', 'Via1', 'Via2', 'Via3', 'Via4', 'TopVia1', 'TopVia2']
+    for name in seal_cv:
+        expanded[f"Seal.d.{name}"] = ("beol/6_10_sealring.drc", 0)
+    for name in seal_a_names:
+        expanded[f"Seal.f.{name}"] = ("beol/6_10_sealring.drc", 0)
+
+    # ── beol/6_9_pad.drc: Pad.fR_{M1-TM2} ──
+    for met in metals_abbrev:
+        expanded[f"Pad.fR_{met}"] = ("beol/6_9_pad.drc", 0)
+
+    # ── pin/7_4_pin.drc: Pin.{rule} ──
+    for rule in ['a', 'b', 'e', 'f_M2', 'f_M3', 'f_M4', 'f_M5', 'g', 'h']:
+        expanded[f"Pin.{rule}"] = ("pin/7_4_pin.drc", 0)
+
+    return expanded
 
 
 # ── Main ──────────────────────────────────────────────────────────────────
@@ -352,13 +428,15 @@ def main():
     modular_rules = extract_modular_rules()
     print(f"  Found {len(modular_rules)} rules across modular files")
 
-    print("\n[3/5] Expanding template rules (density, antenna)...")
+    print("\n[3/6] Expanding template rules (density, antenna, modular loops)...")
     density_rules = get_density_rule_ids()
     antenna_rules = get_antenna_rule_ids()
+    modular_templates = expand_modular_templates()
     print(f"  Density rules: {len(density_rules)}")
     print(f"  Antenna rules: {len(antenna_rules)}")
+    print(f"  Modular template rules: {len(modular_templates)}")
 
-    print("\n[4/5] Loading JSON parameters...")
+    print("\n[4/6] Loading JSON parameters...")
     json_keys = load_json_params()
     print(f"  Found {len(json_keys)} parameter keys")
 
@@ -368,19 +446,23 @@ def main():
     all_rule_ids.update(maximal_rules.keys())
     all_rule_ids.update(modular_rules.keys())
 
-    # Merge density and antenna into modular_rules for tracking
+    # Merge density, antenna, and modular templates into modular_rules
     for rid in density_rules:
         if rid not in modular_rules:
             modular_rules[rid] = ("density.drc", density_rules[rid])
     for rid in antenna_rules:
         if rid not in modular_rules:
             modular_rules[rid] = ("antenna.drc", antenna_rules[rid])
+    for rid, (src, lineno) in modular_templates.items():
+        if rid not in modular_rules:
+            modular_rules[rid] = (src, lineno)
 
     all_rule_ids.update(density_rules.keys())
     all_rule_ids.update(antenna_rules.keys())
+    all_rule_ids.update(modular_templates.keys())
 
     # 3. Classify each rule
-    print("\n[5/5] Classifying rules and generating inventory...")
+    print("\n[5/6] Classifying rules and generating inventory...")
 
     # Group by target file
     by_target = defaultdict(list)

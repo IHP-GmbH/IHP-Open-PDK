@@ -25,35 +25,35 @@ if TABLES.include?('metalslits') || BEOL
 
   # Metal slits derivations
 
-  # Pad derivation (dfpad inside Passiv inside TopMetal2)
-  pad_slt = passiv_drw.and(dfpad_drw).and(topmetal2_drw)
+  # Pad derivation (dfpad shapes overlapping Passiv)
+  pad_slt = dfpad_drw.not_outside(passiv_drw)
 
   # Slit layers (raw from GDS)
   metals_slit_lays = [metal1_slit, metal2_slit, metal3_slit, metal4_slit, metal5_slit,
                       topmetal1_slit, topmetal2_slit]
 
   # Slit-not-pad layers
-  metals_slit_not_pad = metals_slit_lays.map { |s| s.not(pad_slt) }
+  metals_slit_not_pad = metals_slit_lays.map { |s| s.ext_not(pad_slt) }
 
   # Metal drawing layers
   metals_drw = [metal1_drw, metal2_drw, metal3_drw, metal4_drw, metal5_drw,
                 topmetal1_drw, topmetal2_drw]
 
   # Recognition + dfpad exclusion regions
-  dfpad_all = dfpad_drw.join(dfpad_pillar).join(dfpad_sbump)
-  recog_or_dfpad_all = recog_drw.join(dfpad_all)
-  recog_or_mim_or_dfpad_all = mim_drw.join(recog_drw).join(dfpad_all)
+  dfpad_all = dfpad_drw.ext_or(dfpad_pillar, dfpad_sbump)
+  recog_or_dfpad_all = recog_drw.ext_or(dfpad_all)
+  recog_or_mim_or_dfpad_all = mim_drw.ext_or(recog_drw, dfpad_all)
 
   # sltc layers (metal excluding recognition/dfpad/MIM regions, for Slt.c check)
   # M1-M4, TM2 use recog_or_dfpad_all; M5, TM1 also exclude MIM
   sltc_lays = [
-    metal1_drw.not(recog_or_dfpad_all),        # M1
-    metal2_drw.not(recog_or_dfpad_all),        # M2
-    metal3_drw.not(recog_or_dfpad_all),        # M3
-    metal4_drw.not(recog_or_dfpad_all),        # M4
-    metal5_drw.not(recog_or_mim_or_dfpad_all), # M5
-    topmetal1_drw.not(recog_or_mim_or_dfpad_all), # TM1
-    topmetal2_drw.not(recog_or_dfpad_all)      # TM2
+    metal1_drw.ext_not(recog_or_dfpad_all),        # M1
+    metal2_drw.ext_not(recog_or_dfpad_all),        # M2
+    metal3_drw.ext_not(recog_or_dfpad_all),        # M3
+    metal4_drw.ext_not(recog_or_dfpad_all),        # M4
+    metal5_drw.ext_not(recog_or_mim_or_dfpad_all), # M5
+    topmetal1_drw.ext_not(recog_or_mim_or_dfpad_all), # TM1
+    topmetal2_drw.ext_not(recog_or_dfpad_all)      # TM2
   ]
 
   metals_abbrev = %w[M1 M2 M3 M4 M5 TM1 TM2]
@@ -88,25 +88,25 @@ if TABLES.include?('metalslits') || BEOL
 
       # Rule Slt.a: Min. slit width
       logger.info("Executing rule Slt.a.#{met_abbrev}")
-      slt_a_l = met_slit_np.width(slt_a_value.um, euclidian)
+      slt_a_l = met_slit_np.ext_width(slt_a_value.um)
       slt_a_l.output("Slt.a.#{met_abbrev}",
                      "7.3. Slt.a.#{met_abbrev} : Min. #{met_abbrev}:slit width is #{slt_a_value} um")
       slt_a_l.forget
 
       # Rule Slt.b: Max. slit width
       logger.info("Executing rule Slt.b.#{met_abbrev}")
-      slt_b_long = met_slit_np.edges.with_length(slt_b_value.um + 0.001.um, nil)
-      slt_b_l = met_slit.interacting(slt_b_long)
+      slt_b_tmp = met_slit_np.ext_with_length([['>', slt_b_value.um]])
+      slt_b_l = met_slit.ext_with_coincident_edges(slt_b_tmp)
       slt_b_l.output("Slt.b.#{met_abbrev}",
                      "7.3. Slt.b.#{met_abbrev} : Max. #{met_abbrev}:slit width is #{slt_b_value} um")
       slt_b_l.forget
-      slt_b_long.forget
+      slt_b_tmp.forget
 
       # Rule Slt.c: Max. metal width without requiring a slit
       logger.info("Executing rule Slt.c.#{met_abbrev}")
-      met_no_slit = sltc.not(met_slit)
-      slt_c_l1 = met_no_slit.sized(-3.um).sized(-12.um)
-      slt_c_l = slt_c_l1.sized(15.um)
+      met_no_slit = sltc.ext_not(met_slit)
+      slt_c_l1 = met_no_slit.sized(-3.um, acute_limit).sized(-12.um, acute_limit)
+      slt_c_l = slt_c_l1.sized(15.um, acute_limit)
       slt_c_l.output("Slt.c.#{met_abbrev}",
                      "7.3. Slt.c.#{met_abbrev} : Max. #{met_abbrev} width without requiring a slit is #{slt_c_value} um")
       slt_c_l.forget
@@ -115,14 +115,14 @@ if TABLES.include?('metalslits') || BEOL
 
       # Rule Slt.e: No slits required on pads
       logger.info("Executing rule Slt.e.#{met_abbrev}")
-      slt_e_l = met_slit.and(pad_slt)
+      slt_e_l = met_slit.ext_and(pad_slt)
       slt_e_l.output("Slt.e.#{met_abbrev}",
                      "7.3. Slt.e.#{met_abbrev} : No slits required on pads")
       slt_e_l.forget
 
       # Rule Slt.f: Min. metal enclosure of slit
       logger.info("Executing rule Slt.f.#{met_abbrev}")
-      slt_f_l = met_slit_np.enclosed(met_drw, slt_f_value.um, euclidian)
+      slt_f_l = met_slit_np.ext_enclosed(met_drw, slt_f_value.um)
       slt_f_l.output("Slt.f.#{met_abbrev}",
                      "7.3. Slt.f.#{met_abbrev} : Min. #{met_abbrev} enclosure of #{met_abbrev}:slit is #{slt_f_value} um")
       slt_f_l.forget
@@ -130,9 +130,28 @@ if TABLES.include?('metalslits') || BEOL
       # Rule Slt.g: Min. slit space to MIM (only M5 and TM1)
       if met_abbrev == 'M5' || met_abbrev == 'TM1'
         logger.info("Executing rule Slt.g.#{met_abbrev}")
-        slt_g_l = met_slit_np.separation(mim_drw, slt_g_value.um, euclidian)
+        # Complex Slt.g logic matching maximal deck:
+        # 1. ext_separation for non-coincident edges
+        slt_g_tmp1 = met_slit.ext_separation(mim_drw, slt_g_value.um,
+                                              consider_intersecting_edges: false,
+                                              consider_touch_points: false, polygon_output: true)
+        # 2. Find MIM edges coincident with slit (outside edges only)
+        slt_g_tmp2 = mim_drw.ext_coincident_edges(met_slit, outside: true, consider_touch_points: true)
+        # 3. Find slit shapes that have coincident edges with step 2 result
+        slt_g_tmp3 = met_slit.ext_with_coincident_edges(slt_g_tmp2)
+        # 4. Combine separation errors + coincident edge shapes
+        slt_g_tmp4 = slt_g_tmp1 + slt_g_tmp3
+        # 5. Also include slit/MIM overlap regions
+        slt_g_tmp5 = met_slit.ext_and(mim_drw)
+        # 6. Final combined result
+        slt_g_l = slt_g_tmp4 + slt_g_tmp5
         slt_g_l.output("Slt.g.#{met_abbrev}",
                        "7.3. Slt.g.#{met_abbrev} : Min. #{met_abbrev}:slit space to MIM is #{slt_g_value} um")
+        slt_g_tmp1.forget
+        slt_g_tmp2.forget
+        slt_g_tmp3.forget
+        slt_g_tmp4.forget
+        slt_g_tmp5.forget
         slt_g_l.forget
       end
 
@@ -145,7 +164,7 @@ if TABLES.include?('metalslits') || BEOL
       when 'M1'
         logger.info('Executing rule Slt.h1')
         [cont_drw, via1_drw].each do |via_lay|
-          slt_h1_l = met_slit_np.separation(via_lay, slt_h1_value.um, euclidian)
+          slt_h1_l = met_slit_np.ext_separation(via_lay, slt_h1_value.um)
           slt_h1_l.output('Slt.h1',
                          "7.3. Slt.h1 : Min. Metal1:slit space to Cont and Via1 is #{slt_h1_value} um")
           slt_h1_l.forget
@@ -153,21 +172,21 @@ if TABLES.include?('metalslits') || BEOL
       when 'M2', 'M3', 'M4', 'M5'
         logger.info("Executing rule Slt.h2.#{met_abbrev}")
         [via_below, via_above].compact.each do |via_lay|
-          slt_h2_l = met_slit_np.separation(via_lay, slt_h2_value.um, euclidian)
+          slt_h2_l = met_slit_np.ext_separation(via_lay, slt_h2_value.um)
           slt_h2_l.output("Slt.h2.#{met_abbrev}",
                          "7.3. Slt.h2.#{met_abbrev} : Min. #{met_abbrev}:slit space to vias is #{slt_h2_value} um")
           slt_h2_l.forget
         end
       when 'TM1'
         logger.info('Executing rule Slt.h3')
-        slt_h3_l = met_slit_np.separation(topvia1_drw, slt_h3_value.um, euclidian)
+        slt_h3_l = met_slit_np.ext_separation(topvia1_drw, slt_h3_value.um)
         slt_h3_l.output('Slt.h3',
                        "7.3. Slt.h3 : Min. TopMetal1:slit space to TopVia1 is #{slt_h3_value} um")
         slt_h3_l.forget
       when 'TM2'
         logger.info('Executing rule Slt.h4')
         # Slt.h4 uses same value as Slt.h3 (1.0 um) - hardcoded in maximal
-        slt_h4_l = met_slit_np.separation(topvia2_drw, 1.0.um, euclidian)
+        slt_h4_l = met_slit_np.ext_separation(topvia2_drw, 1.0.um)
         slt_h4_l.output('Slt.h4',
                        '7.3. Slt.h4 : Min. TopMetal2:slit space to TopVia2 is 1.00 um')
         slt_h4_l.forget

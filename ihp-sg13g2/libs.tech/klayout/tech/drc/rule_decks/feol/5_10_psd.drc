@@ -73,14 +73,14 @@ if TABLES.include?('psd') || FEOL
     # Rule pSD.d: Min. pSD space to unrelated N+Activ in PWell is 0.18 um
     logger.info('Executing rule pSD.d')
     psd_d_value = drc_rules['pSD_d'].to_f
-    psd_d_l = psd_drw.separation(nactiv_pwell, psd_d_value.um, euclidian)
+    psd_d_l = psd_drw.ext_separation(nactiv_pwell, psd_d_value.um, consider_intersecting_edges: false)
     psd_d_l.output('pSD.d', "5.10. pSD.d Min. pSD space to unrelated N+Activ in PWell is #{psd_d_value} um")
     psd_d_l.forget
 
     # Rule pSD.d1: Min. pSD space to N+Activ in NWell is 0.03 um
     logger.info('Executing rule pSD.d1')
     psd_d1_value = drc_rules['pSD_d1'].to_f
-    psd_d1_l = psd_drw.separation(nactiv_nwell, psd_d1_value.um, euclidian)
+    psd_d1_l = psd_drw.ext_separation(nactiv_nwell, psd_d1_value.um, consider_intersecting_edges: false)
     psd_d1_l.output('pSD.d1', "5.10. pSD.d1 Min. pSD space to N+Activ in NWell is #{psd_d1_value} um")
     psd_d1_l.forget
 

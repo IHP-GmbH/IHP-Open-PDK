@@ -47,7 +47,7 @@ if TABLES.include?('thickgateox') || FEOL
     logger.info('Executing rule TGO.c')
     tgo_c_value = drc_rules['TGO_c'].to_f
     tgo_gate = activ_drw.and(gatpoly_drw)
-    tgoc_l1 = tgo_gate.enclosed(thickgateox_drw, tgo_c_value.um, projection)
+    tgoc_l1 = tgo_gate.enclosed(thickgateox_drw, tgo_c_value.um, projection).polygons
     tgoc_l2 = tgoc_l1.and(activ_drw)
     tgoc_l2.output('TGO.c',
                    "5.7. TGO.c : Min. ThickGateOx extension over GatPoly over Activ: #{tgo_c_value} µm")

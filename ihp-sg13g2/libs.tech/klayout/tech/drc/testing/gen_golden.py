@@ -473,6 +473,11 @@ def run_test_case(
     output_loc = run_dir / table_name / cell_name
     pattern_log = output_loc / f"{pattern_name}_drc.log"
 
+    # Force default DRC JSON so goldens reflect the baseline rule values that
+    # the maximal deck hardcodes. Without this, the orchestrator picks
+    # sg13g2_tech_mod.json (with post-#900 precedence) whose values diverge.
+    default_json = drc_dir / "rule_decks" / "sg13g2_tech_default.json"
+
     # command to run drc
     call_str = (
         f"python3 {drc_dir}/run_drc.py "
@@ -480,6 +485,7 @@ def run_test_case(
         f"{switches} "
         f"--table={table_name} "
         f"--topcell={cell_name} "
+        f"--drc_json={default_json} "
         f"--run_dir={output_loc} "
         f"--run_mode=flat "
         f"--no_density "

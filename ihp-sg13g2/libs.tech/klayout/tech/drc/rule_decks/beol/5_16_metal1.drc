@@ -51,9 +51,13 @@ if TABLES.include?('metal1') || BEOL
     # and for the other sides rule M1.c can be applied.
     logger.info('Executing rule M1.c1')
     m1_c1_value = drc_rules['M1_c1'].to_f
-    m1_c1_cont = cont_drw.not(sram_drw).not(edgeseal_drw)
-    m1_c1_metal = metal1_drw.not(edgeseal_drw)
-    m1_c1_l = m1_c1_cont.enclosed(m1_c1_metal, m1_c1_value.um, projection)
+    m1_c1_cont = cont_drw.ext_not(sram_drw).ext_outside(edgeseal_drw)
+    m1_c1_metal = metal1_drw.ext_outside(edgeseal_drw)
+    m1_c1_l = m1_c1_cont.drc(if_any(
+        !rectangles,
+        primary - secondary(m1_c1_metal),
+        (enclosed(m1_c1_metal, projection, whole_edges, one_side_allowed,
+                  two_opposite_sides_allowed) < m1_c1_value.um)))
     m1_c1_l.output('M1.c1',
                   "5.16. M1.c1: Min. Metal1 endcap enclosure of Cont: #{m1_c1_value} µm")
     m1_c1_cont.forget

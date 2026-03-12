@@ -16,6 +16,8 @@
 
 import argparse
 import os
+import re
+import tempfile
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import logging
@@ -531,6 +533,42 @@ def build_switches_string(sws: dict) -> str:
     return " ".join(f"-rd {k}='{v}'" for k, v in sws.items())
 
 
+_INCLUDE_RE = re.compile(r"^#!include\s+(.+)$", re.MULTILINE)
+
+
+def preprocess_drc(drc_file: str, run_dir: Path) -> str:
+    """Resolve ``#!include`` directives in a DRC file.
+
+    Reads the DRC file, replaces each ``#!include <relative_path>`` line with
+    the contents of the referenced file (resolved relative to the DRC file's
+    directory), and writes the result to a temporary file in *run_dir*.
+
+    Returns the path to the preprocessed file.  If the file contains no
+    ``#!include`` directives the original path is returned unchanged.
+    """
+    drc_path = Path(drc_file)
+    content = drc_path.read_text(encoding="utf-8")
+
+    if not _INCLUDE_RE.search(content):
+        return str(drc_path)
+
+    base_dir = drc_path.parent
+
+    def _resolve(match):
+        rel_path = match.group(1).strip()
+        inc_path = base_dir / rel_path
+        if inc_path.is_file():
+            return inc_path.read_text(encoding="utf-8")
+        logging.warning(f"Include file not found: {inc_path}")
+        return match.group(0)
+
+    processed = _INCLUDE_RE.sub(_resolve, content)
+
+    out_path = run_dir / f"_preprocessed_{drc_path.name}"
+    out_path.write_text(processed, encoding="utf-8")
+    return str(out_path)
+
+
 def run_check(
     drc_file: str,
     drc_tables: List[str],
@@ -576,7 +614,8 @@ def run_check(
     sws_str = build_switches_string(new_sws)
     sws_str += f" -rd tables=\"{' '.join(drc_tables)}\""
 
-    run_cmd = f"klayout -b -r '{drc_file}' {sws_str}"
+    resolved_drc = preprocess_drc(drc_file, run_dir)
+    run_cmd = f"klayout -b -r '{resolved_drc}' {sws_str}"
     check_call(run_cmd, shell=True)
 
     return str(report_path)

@@ -75,10 +75,19 @@ if TABLES.include?('gatpoly') || FEOL
     # Rule Gat.a4: Min. GatPoly width for channel length of 3.3 V PFET is 0.40 um
     logger.info('Executing rule Gat.a4')
     gat_a4_value = drc_rules['Gat_a4'].to_f
-    pgate_hv = pgate.and(thickgateox_drw)
-    gat_a4 = pgate_hv.edges.inside_part(activ_drw).width(gat_a4_value.um, euclidian)
+    # Derive pmosHV matching maximal: PGate = Gate.ext_outside(NGate), then NOT_OUTSIDE ThickGateOx
+    gat_a4_gate = activ_drw.and(gatpoly_drw)
+    gat_a4_ngate = gat_a4_gate.not_outside(nactiv)
+    gat_a4_pgate = gat_a4_gate.ext_outside(gat_a4_ngate)
+    pmos_hv = gat_a4_pgate.not_outside(thickgateox_drw)
+    gat_a4_b = activ_drw.ext_not(pmos_hv).ext_interacting(pmos_hv).ext_space(gat_a4_value.um, metric: projection, consider_touch_points: false, polygon_output: true)
+    gat_a4 = gat_a4_b.ext_and(activ_drw)
     gat_a4.output('Gat.a4', "5.8. Gat.a4 Min. GatPoly width for channel length of 3.3V PFET is #{gat_a4_value} um")
-    pgate_hv.forget
+    gat_a4_gate.forget
+    gat_a4_ngate.forget
+    gat_a4_pgate.forget
+    pmos_hv.forget
+    gat_a4_b.forget
     gat_a4.forget
 
     # Rule Gat.b1: Min. space between unrelated 3.3 V GatPoly over Activ regions is 0.25 um

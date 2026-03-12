@@ -51,7 +51,7 @@ if TABLES.include?('activfiller') || FEOL
   # Rule AFil.b: Min. Activ:filler space is 0.42 um
   logger.info('Executing rule AFil.b')
   afil_b_value = drc_rules['AFil_b'].to_f
-  afil_b = activ_filler.space(afil_b_value.um, euclidian)
+  afil_b = activ_filler.ext_space(afil_b_value.um)
   afil_b.output('AFil.b', "5.6. AFil.b Min. Activ:filler space is #{afil_b_value} um")
   afil_b.forget
 
@@ -95,10 +95,9 @@ if TABLES.include?('activfiller') || FEOL
     # Rule AFil.i: Min. Activ:filler space to edges of PWell:block is 1.50 um
     logger.info('Executing rule AFil.i')
     afil_i_value = drc_rules['AFil_i'].to_f
-    afil_i_outside = activ_filler.outside(pwell_block)
-    afil_i = afil_i_outside.sep(pwell_block, afil_i_value.um, euclidian)
+    afil_i = activ_filler.ext_outside(pwell_block).ext_separation(pwell_block, afil_i_value.um,
+                                                                   min_angle: 90, max_angle: 180, include_min_angle: false)
     afil_i.output('AFil.i', "5.6. AFil.i Min. Activ:filler space to edges of PWell:block is #{afil_i_value} um")
-    afil_i_outside.forget
     afil_i.forget
 
     # Rule AFil.j: Min. nSD:block and SalBlock enclosure of Activ:filler inside PWell:block is 0.25 um

@@ -63,15 +63,15 @@ if TABLES.include?('vian') || BEOL
     vn_a_sz = drc_rules['Vn_a'].to_f
     vn_b_arr = drc_rules['Vn_b'].to_f
     # Detect arrays: merge vias with half-b1 sizing, then filter by array size
-    vnb1_via_noseal = via_lay.not(edgeseal_drw)
-    vnb1_merged = vnb1_via_noseal.sized((vn_b1_value * 0.5).um).sized(-(vn_b1_value * 0.5).um)
+    vnb1_via_noseal = via_lay.ext_not(edgeseal_drw)
+    vnb1_merged = vnb1_via_noseal.sized((vn_b1_value * 0.5).um, acute_limit).sized(-(vn_b1_value * 0.5).um, acute_limit)
     vnb1_array_size = (vn_b1_nr + 1) * vn_a_sz + vn_b1_nr * vn_b_arr - 0.05
-    vnb1_arrays = vnb1_merged.sized(-(vnb1_array_size * 0.5).um).sized((vnb1_array_size * 0.5).um)
+    vnb1_arrays = vnb1_merged.sized(-(vnb1_array_size * 0.5).um, acute_limit).sized((vnb1_array_size * 0.5).um, acute_limit)
     vnb1_in = vnb1_via_noseal.inside(vnb1_arrays)
-    vnb1_big = vnb1_in.sized(0.143.um).sized(-0.143.um)
-    vnb1_err1 = vnb1_big.not(vnb1_in)
-    vnb1_err2 = vnb1_err1.not(vnb1_err1.rectangles)
-    vnb1_l = vnb1_err2.join(vnb1_in.interacting(vnb1_err2))
+    vnb1_big = vnb1_in.sized(0.143.um, acute_limit).sized(-0.143.um, acute_limit)
+    vnb1_err1 = vnb1_big.ext_not(vnb1_in)
+    vnb1_err2 = vnb1_err1.ext_not(vnb1_err1.ext_rectangles)
+    vnb1_l = vnb1_err2.ext_or(vnb1_in.ext_touching(vnb1_err2))
     vnb1_l.output("V#{via_no}.b1",
                   "5.20. V#{via_no}.b1: Min. Via#{via_no} space in array > #{vn_b1_nr}x#{vn_b1_nr}: #{vn_b1_value} µm")
     vnb1_via_noseal.forget
@@ -96,13 +96,22 @@ if TABLES.include?('vian') || BEOL
     # and for the other sides rule Vn.c can be applied.
     logger.info("Executing rule V#{via_no}.c1")
     vn_c1_value = drc_rules['Vn_c1'].to_f
-    vn_c1_via = via_lay.not(sram_drw).not(edgeseal_drw)
-    vn_c1_metal = metal_lay.not(edgeseal_drw)
-    vn_c1_l = vn_c1_via.enclosed(vn_c1_metal, vn_c1_value.um, projection)
+    vn_c_value_c1 = drc_rules['Vn_c'].to_f
+    vn_a_value_c1 = drc_rules['Vn_a'].to_f
+    vn_c1_via = via_lay.ext_not(sram_drw).ext_outside(edgeseal_drw)
+    vn_c1_metal = metal_lay.ext_outside(edgeseal_drw)
+    vn_c1_sq = vn_c1_via.ext_rectangles(false, false, [['==', vn_a_value_c1.um]], [['==', vn_a_value_c1.um]], nil)
+    vn_c1_l = vn_c1_sq.drc(if_any(
+        !rectangles,
+        primary - secondary(vn_c1_metal),
+        (if_any(enclosed(vn_c1_metal) < vn_c_value_c1.um,
+                enclosed(vn_c1_metal, projection, whole_edges, one_side_allowed,
+                         two_opposite_sides_allowed) < vn_c1_value.um))))
     vn_c1_l.output("V#{via_no}.c1",
                   "5.20. V#{via_no}.c1: Min. Metal#{via_no} endcap enclosure of Via#{via_no}: #{vn_c1_value} µm")
     vn_c1_via.forget
     vn_c1_metal.forget
+    vn_c1_sq.forget
     vn_c1_l.forget
   end
 end

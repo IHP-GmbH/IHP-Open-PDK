@@ -75,7 +75,7 @@ if TABLES.include?('mim') || BEOL
     # Rule MIM.g: Max. MIM area per MIM device (um2) is 5625.00 um2
     logger.info('Executing rule MIM.g')
     mim_g_value = drc_rules['Mim_g'].to_f
-    mim_g = mim_drw.with_area(mim_g_value.um, nil)
+    mim_g = mim_drw.ext_with_area([[">", mim_g_value.um2]])
     mim_g.output('MIM.g', "6.11. MIM.g : Max. MIM area per MIM device is #{mim_g_value} um2")
     mim_g.forget
 

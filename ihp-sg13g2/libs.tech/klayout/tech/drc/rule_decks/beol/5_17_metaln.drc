@@ -56,12 +56,10 @@ if TABLES.include?('metaln') || BEOL
     # Rule Mn.c: Min. Metal(n) enclosure of Via(n-1) is 0.005 um
     logger.info("Executing rule M#{met_no}.c")
     mn_c_value = drc_rules['Mn_c'].to_f
-    mn_c_via = via_lay.not(edgeseal_drw)
-    mn_c_met = met_lay.not(edgeseal_drw)
-    mn_c_l = mn_c_via.enclosed(mn_c_met, mn_c_value.um, euclidian)
+    mn_c_met = met_lay.ext_outside(edgeseal_drw)
+    mn_c_l = via_lay.ext_outside(edgeseal_drw).ext_enclosed(mn_c_met, mn_c_value.um, max_angle: 180)
     mn_c_l.output("M#{met_no}.c",
                  "5.17. M#{met_no}.c: Min. Metal#{met_no} enclosure of Via#{met_no - 1}: #{mn_c_value} µm")
-    mn_c_via.forget
     mn_c_met.forget
     mn_c_l.forget
 
@@ -69,11 +67,14 @@ if TABLES.include?('metaln') || BEOL
     # For vias at metal corners at least one side must be treated as an endcap
     # and for the other sides rule Mn.c can be applied.
     logger.info("Executing rule M#{met_no}.c1")
-    # No JSON key for Mn_c1; value 0.05 is constant across M2-M5 (per maximal deck)
-    mn_c1_value = 0.05
-    mn_c1_via = via_lay.not(sram_drw).not(edgeseal_drw)
-    mn_c1_met = met_lay.not(edgeseal_drw)
-    mn_c1_l = mn_c1_via.enclosed(mn_c1_met, mn_c1_value.um, projection)
+    mn_c1_value = drc_rules['Mn_c1'].to_f
+    mn_c1_via = via_lay.ext_not(sram_drw).ext_outside(edgeseal_drw)
+    mn_c1_met = met_lay.ext_outside(edgeseal_drw)
+    mn_c1_l = mn_c1_via.drc(if_any(
+        !rectangles,
+        primary - secondary(mn_c1_met),
+        (enclosed(mn_c1_met, projection, whole_edges, one_side_allowed,
+                  two_opposite_sides_allowed) < mn_c1_value.um)))
     mn_c1_l.output("M#{met_no}.c1",
                   "5.17. M#{met_no}.c1: Min. Metal#{met_no} endcap enclosure of Via#{met_no - 1}: #{mn_c1_value} µm")
     mn_c1_via.forget

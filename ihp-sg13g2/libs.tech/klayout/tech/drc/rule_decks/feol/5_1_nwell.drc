@@ -141,7 +141,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.d: Min. NWell space to external N+Activ not inside ThickGateOx is 0.31 um
     logger.info('Executing rule NW.d')
     nw_d_value = drc_rules['NW_d'].to_f
-    nw_d_l = nwell_nsram.separation(nact_lv, nw_d_value.um, euclidian)
+    nw_d_l = nwell_nsram.separation(nact_lv, nw_d_value.um, euclidian, angle_limit(180), without_touching_corners)
     nw_d_l.output('NW.d',
                   "5.1.NW.d : Min. NWell space to external N+Activ not inside ThickGateOx is #{nw_d_value} um")
     nw_d_l.forget
