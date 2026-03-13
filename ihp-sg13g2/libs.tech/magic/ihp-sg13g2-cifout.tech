@@ -1200,6 +1200,11 @@ style drc
  templayer latchup_error butted_tap
 	and-not tap_far_from_contact
 
+ templayer scr_tap_area hvnmosesd
+	# Locate the well area in the middle of the scr1 device
+	grow 1380
+	and nwell
+
  templayer tap_contact_halo
 	# bloat-all (psc,nsc,ptapc,ntapc,hvpsc,hvnsc,hvptapc,hvntapc,sealc)/a \
 	#	(allnactivetap,allpactivetap)/a 6000
@@ -1211,6 +1216,8 @@ style drc
 	endrepeat
 	grow 120
 	and (allnactivetap,allpactivetap)/a
+	# ignore the area inside the scr1 macro (exempted from rule)
+	or scr_tap_area
 
  templayer tap_far_from_tap_contact psd,nsd,ptap,ntap,hvpsd,hvnsd,hvptap,hvntap
 	and-not tap_contact_halo
