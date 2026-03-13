@@ -18,15 +18,15 @@
 """Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS device regression.
 
 SG13CMOS5L supports CMOS-only devices with M1-M4-TM1 metal stack.
-Supported: MOS, RES, DIODE, ESD (diodevdd/vss only), TAP
-Excluded: RFMOS, BJT, IND, CAP, MIM capacitors
+Supported: MOS, RES, DIODE, ESD (diodevdd/vss, nmoscl), TAP, BJT (pnpMPA)
+Excluded: RFMOS, IND, CAP, MIM capacitors
 
 Note on nBuLay (32/0) - FORBIDDEN per Layout Rules Section 3.2:
   The following devices use nBuLay (via nwell_iso derivation) and are excluded:
   - All "idiode" ESD devices (idiodevdd_*, idiodevss_*)
-  - nmoscl_* ESD devices
   - sg13_hv_svaricap (S-Varicap)
   - schottky_nbl1
+  nmoscl_2/4 have been adapted to work without nBuLay isolation.
 """
 
 from subprocess import check_call
@@ -415,21 +415,17 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     """
 
     # CMOS5L-compatible device groups only
-    # Excluded from G2: RFMOS, BJT, IND, CAP
-    # CAP excluded because S-Varicap uses nBuLay (see note in docstring)
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP"]
+    # Excluded from G2: RFMOS, IND
+    # CAP: S-Varicap requires cap_derivations.lvs adaptation (nwell_iso -> nwell_drw)
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT"]
 
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
-    # Reference: SG13CMOS5L_os_layout_rules.pdf Section 3.2 - nBuLay (32/0) is forbidden
+    # Reference: SG13CMOS5L_os_layout_rules.pdf - nBuLay (32/0) is forbidden
     #
-    # nBuLay (32/0) is allowed in CMOS5L for iNMOS and ESD devices.
-    # CMOS5L-specific derivations in bjt_derivations.lvs and esd_derivations.lvs
-    # handle devices without nBuLay isolation.
-    #
-    # Devices still excluded:
+    # Excluded devices:
     #   - schottky: requires nwell_iso (BiCMOS only)
     #   - idiodevdd/vss isolated: require nwell_iso + nbulay_drw directly
-    #   - S-Varicap G2 testcase: has nBuLay shapes (forbidden in CMOS5L GDS)
+    #   - S-Varicap: requires nwell_iso (cap_derivations.lvs not adapted yet)
     excluded_devices = [
         # Schottky diode - requires nBuLay via nwell_iso (BiCMOS only)
         "schottky_nbl1",
@@ -439,8 +435,14 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         # MIM capacitors - MIM layer (36/0) is forbidden
         "cap_cmim",
         "rfcmim",
-        # S-Varicap G2 testcase - GDS contains nBuLay shapes
+        # S-Varicap G2 testcase - requires nwell_iso
         "sg13_hv_svaricap",
+        # S-Varicap CMOS5L testcase - cap_derivations.lvs not adapted yet (nwell_iso)
+        "svaricap_cmos5l",
+        # NPN HBT devices - require forbidden HBT layers (BiWind, TRANS, etc.)
+        "npn13G2",
+        "npn13G2l",
+        "npn13G2v",
         # Isolated ESD diodes - require nwell_iso (nwell_drw.and(nbulay_drw))
         "idiodevdd_2kv",
         "idiodevdd_4kv",
