@@ -61,26 +61,26 @@ if TABLES.include?('nwell') || FEOL
     pact_pwell_hv_digi = pact_pwell_hv.not_outside(digibnd_hole)
     pact_pwell_hv_ana = pact_pwell_hv.not(pact_pwell_hv_digi)
 
-    # SVaricap device recognition
-    svaricap_gate_0 = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
-    svaricap_text = activ_drw.not_outside(svaricap_gate_0).interacting(text_drw.texts("SVaricap"))
-    svaricap = nwell_drw.not_outside(svaricap_text)
+    # SVaricap device recognition (nwell-local, does not overwrite global svaricap)
+    nw_svaricap_gate = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
+    nw_svaricap_text = activ_drw.not_outside(nw_svaricap_gate).interacting(text_drw.texts("SVaricap"))
+    nw_svaricap = nwell_drw.not_outside(nw_svaricap_text)
 
-    # Schottky device recognition
-    schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
-    schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
-    schottky_nbl1_nw = nwell_drw.interacting(nwell_drw.holes.merge.covering(schottky_nbl_rec))
-    schottky_nbl1 = schottky_nbl1_nw.sized(1.36.um)
+    # Schottky device recognition (nwell-local, does not overwrite global schottky_nbl1)
+    nw_schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+    nw_schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(nw_schottky_nbl_mk)
+    nw_schottky_nbl1_nw = nwell_drw.interacting(nwell_drw.holes.merge.covering(nw_schottky_nbl_rec))
+    nw_schottky_nbl1 = nw_schottky_nbl1_nw.sized(1.36.um)
 
-    schottky_nw1_rect = nwell_drw.not_outside(nsd_block).not_interacting(schottky_nbl_rec).and(recog_diode)
-    schottky_nw1 = schottky_nw1_rect.sized(1.36.um).and(thickgateox_drw).interacting(text_drw.texts("schottky_nw1"))
+    nw_schottky_nw1_rect = nwell_drw.not_outside(nsd_block).not_interacting(nw_schottky_nbl_rec).and(recog_diode)
+    nw_schottky_nw1 = nw_schottky_nw1_rect.sized(1.36.um).and(thickgateox_drw).interacting(text_drw.texts("schottky_nw1"))
 
-    # SCR1 recognition
-    scr1 = recog_esd.interacting(text_drw.texts("scr1"))
+    # SCR1 recognition (nwell-local)
+    nw_scr1 = recog_esd.interacting(text_drw.texts("scr1"))
 
-    # Combined exclusion regions
-    svaricap_or_schottky_nbl1 = svaricap.join(schottky_nbl1)
-    schottky_nbl1_or_schottky_nw1 = schottky_nbl1.join(schottky_nw1)
+    # Combined exclusion regions (nwell-local)
+    nw_svaricap_or_schottky_nbl1 = nw_svaricap.join(nw_schottky_nbl1)
+    nw_schottky_nbl1_or_schottky_nw1 = nw_schottky_nbl1.join(nw_schottky_nw1)
 
     # Rule NW.a: Min. NWell width is 0.62 um
     logger.info('Executing rule NW.a')
@@ -116,7 +116,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.c: Min. NWell enclosure of P+Activ not inside ThickGateOx is 0.31 um
     logger.info('Executing rule NW.c')
     nw_c_value = drc_rules['NW_c'].to_f
-    lnw_c = pact_lv.not(pact_lv.interacting(svaricap))
+    lnw_c = pact_lv.not(pact_lv.interacting(nw_svaricap))
     nw_c_l = lnw_c.enclosed(nwell_nsram, nw_c_value.um, euclidian)
     nw_c_l.output('NW.c',
                   "5.1.NW.c : Min. NWell enclosure of P+Activ not inside ThickGateOx is #{nw_c_value} um")
@@ -126,14 +126,14 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.c1: Min. NWell enclosure of P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.c1')
     nw_c1_value = drc_rules['NW_c1'].to_f
-    nw_c1_l = pact_hv_ana.outside(svaricap_or_schottky_nbl1).enclosed(nwell_drw, nw_c1_value.um, euclidian)
+    nw_c1_l = pact_hv_ana.outside(nw_svaricap_or_schottky_nbl1).enclosed(nwell_drw, nw_c1_value.um, euclidian)
     nw_c1_l.output('NW.c1',
                    "5.1.NW.c1 : Min. NWell enclosure of P+Activ inside ThickGateOx is #{nw_c1_value} um")
     nw_c1_l.forget
 
     # Rule NW.c1.dig: Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um
     logger.info('Executing rule NW.c1.dig')
-    nw_c1_dig_l = pact_hv_digi.outside(svaricap_or_schottky_nbl1).enclosed(nwell_drw, 0.31.um, euclidian)
+    nw_c1_dig_l = pact_hv_digi.outside(nw_svaricap_or_schottky_nbl1).enclosed(nwell_drw, 0.31.um, euclidian)
     nw_c1_dig_l.output('NW.c1.dig',
                        '5.1.NW.c1.dig : Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um')
     nw_c1_dig_l.forget
@@ -164,7 +164,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.e: Min. NWell enclosure of NWell tie in N+Activ not inside ThickGateOx is 0.24 um
     logger.info('Executing rule NW.e')
     nw_e_value = drc_rules['NW_e'].to_f
-    nw_outdev = nact_nwell_hv_ana.outside(svaricap.join(schottky_nbl1_or_schottky_nw1))
+    nw_outdev = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1_or_schottky_nw1))
     nw_e_l = nact_nwell_lv.not(nw_outdev).enclosed(nwell_drw, nw_e_value.um, euclidian)
     nw_e_l.output('NW.e',
                   "5.1.NW.e : Min. NWell enclosure of NWell tie in N+Activ not inside ThickGateOx is #{nw_e_value} um")
@@ -173,7 +173,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.e1: Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.e1')
     nw_e1_value = drc_rules['NW_e1'].to_f
-    nw_e1_l = nact_nwell_hv_ana.outside(svaricap.join(schottky_nbl1.join(schottky_nw1.join(scr1)))).enclosed(nwell_drw, nw_e1_value.um, euclidian)
+    nw_e1_l = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1.join(nw_schottky_nw1.join(nw_scr1)))).enclosed(nwell_drw, nw_e1_value.um, euclidian)
     nw_e1_l.output('NW.e1',
                    "5.1.NW.e1 : Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is #{nw_e1_value} um")
     nw_e1_l.forget
@@ -188,7 +188,7 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.f: Min. NWell space to substrate tie in P+Activ not inside ThickGateOx is 0.24 um
     logger.info('Executing rule NW.f')
     nw_f_value = drc_rules['NW_f'].to_f
-    nw_f_svaricap_edges = pact_pwell_lv.ext_coincident_edges(svaricap, outside: true)
+    nw_f_svaricap_edges = pact_pwell_lv.ext_coincident_edges(nw_svaricap, outside: true)
     nw_f_exclude = pact_pwell_lv.ext_with_coincident_edges(nw_f_svaricap_edges)
     nw_f_l = nwell_drw.ext_separation(pact_pwell_lv.ext_not(nw_f_exclude), nw_f_value.um)
     nw_f_l.output('NW.f',
@@ -200,14 +200,14 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.f1: Min. NWell space to substrate tie in P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.f1')
     nw_f1_value = drc_rules['NW_f1'].to_f
-    nw_f1_l = nwell_drw.not(svaricap).sep(pact_pwell_hv_ana, nw_f1_value.um, euclidian)
+    nw_f1_l = nwell_drw.not(nw_svaricap).sep(pact_pwell_hv_ana, nw_f1_value.um, euclidian)
     nw_f1_l.output('NW.f1',
                    "5.1.NW.f1 : Min. NWell space to substrate tie in P+Activ inside ThickGateOx is #{nw_f1_value} um")
     nw_f1_l.forget
 
     # Rule NW.f1.dig: Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd is 0.24 um
     logger.info('Executing rule NW.f1.dig')
-    nw_f1_dig_l = nwell_drw.not(svaricap).sep(pact_pwell_hv_digi, 0.24.um, euclidian)
+    nw_f1_dig_l = nwell_drw.not(nw_svaricap).sep(pact_pwell_hv_digi, 0.24.um, euclidian)
     nw_f1_dig_l.output('NW.f1.dig',
                        '5.1.NW.f1.dig : Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd is 0.24 um')
     nw_f1_dig_l.forget
@@ -236,18 +236,18 @@ if TABLES.include?('nwell') || FEOL
     nact_nwell_hv_ana.forget
     pact_pwell_hv_digi.forget
     pact_pwell_hv_ana.forget
-    svaricap_gate_0.forget
-    svaricap_text.forget
-    svaricap.forget
-    schottky_nbl_mk.forget
-    schottky_nbl_rec.forget
-    schottky_nbl1_nw.forget
-    schottky_nbl1.forget
-    schottky_nw1_rect.forget
-    schottky_nw1.forget
-    scr1.forget
-    svaricap_or_schottky_nbl1.forget
-    schottky_nbl1_or_schottky_nw1.forget
+    nw_svaricap_gate.forget
+    nw_svaricap_text.forget
+    nw_svaricap.forget
+    nw_schottky_nbl_mk.forget
+    nw_schottky_nbl_rec.forget
+    nw_schottky_nbl1_nw.forget
+    nw_schottky_nbl1.forget
+    nw_schottky_nw1_rect.forget
+    nw_schottky_nw1.forget
+    nw_scr1.forget
+    nw_svaricap_or_schottky_nbl1.forget
+    nw_schottky_nbl1_or_schottky_nw1.forget
     nw_outdev.forget
   end
 end

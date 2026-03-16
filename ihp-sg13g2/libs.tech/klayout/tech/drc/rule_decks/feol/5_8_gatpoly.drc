@@ -123,18 +123,18 @@ if TABLES.include?('gatpoly') || FEOL
     # Rule Gat.f: 45-degree and 90-degree angles for GatPoly on Activ area are not allowed
     logger.info('Executing rule Gat.f')
     gate = activ_drw.and(gatpoly_drw)
-    # SVaricap device recognition (inline derivation)
-    svaricap_gate_0 = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
-    svaricap_text = activ_drw.not_outside(svaricap_gate_0).interacting(text_drw.texts('SVaricap'))
-    svaricap = nwell_drw.not_outside(svaricap_text)
-    gate_no_svaricap = gate.not(svaricap)
+    # SVaricap device recognition (gatpoly-local, does not overwrite global svaricap)
+    gat_svaricap_gate = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
+    gat_svaricap_text = activ_drw.not_outside(gat_svaricap_gate).interacting(text_drw.texts('SVaricap'))
+    gat_svaricap = nwell_drw.not_outside(gat_svaricap_text)
+    gate_no_svaricap = gate.not(gat_svaricap)
     gat_f = gate_no_svaricap.non_rectangles
     gat_f.output('Gat.f',
                  '5.8. Gat.f 45-degree and 90-degree angles for GatPoly on Activ area are not allowed')
     gate.forget
-    svaricap_gate_0.forget
-    svaricap_text.forget
-    svaricap.forget
+    gat_svaricap_gate.forget
+    gat_svaricap_text.forget
+    gat_svaricap.forget
     gate_no_svaricap.forget
     gat_f.forget
 

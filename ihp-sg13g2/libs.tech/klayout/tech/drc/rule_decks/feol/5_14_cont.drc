@@ -46,16 +46,17 @@ if TABLES.include?('cont') || FEOL
 
   unless PRECHECK_DRC
     # Rule Cnt.b1: Min. Cont space in a contact array of more than 4 rows and more than 4 columns is 0.20 um
+    # Aligned with maximal: acute_limit on sized, ext_not/ext_rectangles (avoids crash)
     logger.info('Executing rule Cnt.b1')
     cnt_b1_value = drc_rules['Cnt_b1'].to_f
     cnt_b1_nr = drc_rules['Cnt_b1_nr'].to_i
     cnt_b1_pitch = (cnt_b1_nr * cnt_a_value + (cnt_b1_nr - 1) * cnt_b_value) / 2.0
-    cnt_b1_l1 = cont_sq.sized((cnt_b1_value * 0.5).um).sized(-(cnt_b1_value * 0.5).um)
-    cnt_b1_large = cnt_b1_l1.sized(-(cnt_b1_pitch - 0.001).um).sized((cnt_b1_pitch - 0.001).um)
+    cnt_b1_l1 = cont_sq.sized((cnt_b1_value * 0.5).um, acute_limit).sized(-(cnt_b1_value * 0.5).um, acute_limit)
+    cnt_b1_large = cnt_b1_l1.sized(-(cnt_b1_pitch - 0.005).um, acute_limit).sized((cnt_b1_pitch - 0.005).um, acute_limit)
     cnt_b1_inside = cont_sq.inside(cnt_b1_large)
-    cnt_b1_merged = cnt_b1_inside.sized((cnt_b1_value / 2.0 - 0.001).um).sized(-(cnt_b1_value / 2.0 - 0.001).um)
-    cnt_b1_bad = cnt_b1_merged.not(cnt_b1_inside)
-    cnt_b1_l = cnt_b1_bad.not_rectangles
+    cnt_b1_merged = cnt_b1_inside.sized((cnt_b1_value / 2.0 - 0.005).um, acute_limit).sized(-(cnt_b1_value / 2.0 - 0.005).um, acute_limit)
+    cnt_b1_bad = cnt_b1_merged.ext_not(cnt_b1_inside)
+    cnt_b1_l = cnt_b1_bad.ext_rectangles(inverted: true)
     cnt_b1_l.output('Cnt.b1',
                      "5.14. Cnt.b1 Min. Cont space in a contact array of more than #{cnt_b1_nr} rows and more than #{cnt_b1_nr} columns is #{cnt_b1_value} um")
     cnt_b1_l1.forget

@@ -99,19 +99,16 @@ if TABLES.include?('psd') || FEOL
     psd_e_l4.forget
 
     # Rule pSD.f: Min. Activ extension over pSD at one position when forming abutted NWell tie is 0.30 um
+    # Aligned with maximal: ext_coincident_part + ext_overlap (avoids .edges.coincident crash)
     logger.info('Executing rule pSD.f')
     psd_f_value = drc_rules['pSD_f'].to_f
-    psd_f_abutted = nactiv_nwell.interacting(pactiv_nwell)
-    psd_f_coincident = psd_f_abutted.edges.coincident(pactiv_nwell.edges)
-    psd_f_outside = psd_f_abutted.edges.not(psd_f_coincident)
-    psd_f_bad = psd_f_outside.with_length(nil, psd_f_value.um)
-    psd_f_good = psd_f_abutted.interacting(psd_f_outside.with_length(psd_f_value.um, nil))
-    psd_f_l = psd_f_abutted.not_interacting(psd_f_good)
+    psd_f_abutted = nactiv_nwell.ext_interacting(pactiv_nwell)
+    psd_f_bad = psd_f_abutted.ext_coincident_part(pactiv_nwell, outside: true).ext_overlap(nactiv_nwell, psd_f_value.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    psd_f_good = psd_f_abutted.ext_not(psd_f_bad)
+    psd_f_l = psd_f_abutted.ext_outside(psd_f_good)
     psd_f_l.output('pSD.f',
                     "5.10. pSD.f Min. Activ extension over pSD at one position when forming abutted NWell tie is #{psd_f_value} um")
     psd_f_abutted.forget
-    psd_f_coincident.forget
-    psd_f_outside.forget
     psd_f_bad.forget
     psd_f_good.forget
     psd_f_l.forget
