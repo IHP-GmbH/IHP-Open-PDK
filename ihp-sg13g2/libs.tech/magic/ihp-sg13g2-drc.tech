@@ -71,18 +71,28 @@ drc
  # block should be merged automatically during GDS generation.
  spacing allnwell allnwell 620 touching_ok "N-well spacing < %d (NW.b)"
 
+ exemption SRAMID
  # Use edge4way rule to exclude butting tap in SVaricap
  edge4way (*pdiff,*pdiode,pfet)/a ~(*pdiff,*pdiode,pfet,pvar)/a 310 \
 	allnwell ~(*pdiff,*pdiode,pfet)/a 310 \
 	"N-well overlap of P-Diffusion < %d (NW.c)"
- surround *hvpdiff,hvpfet,hvpfetesd allnwell 620 absence_illegal \
-	"N-well overlap of HV P-Diffusion < %d (NW.c1)"
  spacing *ndiff,*ndiode,nfet allnwell 310 touching_illegal \
 	"N-Diffusion spacing to N-well < %d (NW.d)"
+
+ exception SRAMID
+ surround *pdiff,pfet allnwell 270 absence_illegal \
+	"N-well overlap of HV P-Diffusion in SRAM < %d (NW.c exception)"
+ spacing *ndiff,nfet allnwell 270 touching_illegal \
+	"N-Diffusion spacing to N-well in SRAM < %d (NW.d exception)"
+ exception none
+
+ surround *hvpdiff,hvpfet,hvpfetesd allnwell 620 absence_illegal \
+	"N-well overlap of HV P-Diffusion < %d (NW.c1)"
  spacing *hvndiff,hvnfet allnwell 620 touching_illegal \
 	"HV N-Diffusion spacing to N-well < %d (NW.d1)"
  surround *nsd,*ntap allnwell 240 absence_illegal \
 	"N-well overlap of N-tap < %d (NW.e)"
+
  # Use an edge4way rule to exclude butting tap in SVaricap
  edge4way (*psd,*ptap)/a ~(*psd,*ptap,pvar)/a 240 ~(allnwell)/w \
 	~(*psd,*ptap,pvar)/a 240 "P-tap spacing to N-well < %d (NW.f)"
@@ -226,7 +236,14 @@ drc
 
  rect_only allnfets,allpfets,pvar "No bends in transistors (Gat.f)"
 
+ exemption SRAMID
  overhang *poly allfetsstd 180 "Poly overhang of transistor < %d (Gat.c)"
+ exception SRAMID
+ overhang *poly pfet 130 \
+	"Poly overhang of P-transistor in SRAM < %d (Gat.c SRAM exception)"
+ overhang *poly nfet 170 \
+	"Poly overhang of N-transistor in SRAM < %d (Gat.c SRAM exception)"
+ exception none
 
  angles allpoly 45 "Only 45 degree angles permitted on poly (x.2)"
 
@@ -302,12 +319,28 @@ drc
  spacing (hvndc,hvnsc,hvpdc,hvpsc)/a *poly,allfets 110 touching_illegal \
 	"Diffusion contact spacing to poly < %d (Cnt.f)"
 
+ exemption SRAMID
  surround ndc/a *ndiff,nfet 70 absence_illegal \
 	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
  surround pdc/a *pdiff,pfet 70 absence_illegal \
 	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
  surround nsc/a *nsd,*ntap 70 absence_illegal \
 	"N-diffusion overlap of N-diffusion contact < %d (Cnt.c)"
+ exception SRAMID
+ surround ndc/a *ndiff,nfet 20 absence_illegal \
+	"N-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ surround pdc/a *pdiff,pfet 20 absence_illegal \
+	"P-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ surround nsc/a *nsd,*ntap 20 absence_illegal \
+	"N-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ surround ndc/a *ndiff,nfet 70 directional \
+	"N-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ surround pdc/a *pdiff,pfet 70 directional \
+	"P-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ surround nsc/a *nsd,*ntap 70 directional \
+	"N-diffusion overlap of contact in SRAM < %d (Cnt.c SRAM exception)"
+ exception none
+
  surround psc/a *psd,*ptap 70 absence_illegal \
 	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
  surround ndic/a *ndi 70 absence_illegal \
