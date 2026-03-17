@@ -29,6 +29,14 @@ if TABLES.include?('schottkydiode') || FEOL
     schottky_nsd_block = nsd_block.and(schottky_nbl1)
     schottky_salblock = salblock_drw.and(schottky_nbl1)
 
+    # Rule Sdiod.a: Min. and max. PWell:block enclosure of ContBar is 0.25 um
+    logger.info('Executing rule Sdiod.a')
+    schottky_pwb = pwell_block.and(schottky_nbl1)
+    sdiod_a_l = schottky_contbar.ext_enclosed(schottky_pwb, 0.25.um)
+    sdiod_a_l.output('Sdiod.a', '6.7. Sdiod.a : Min. and max. PWell:block enclosure of ContBar = 0.25 um')
+    schottky_pwb.forget
+    sdiod_a_l.forget
+
     # Rule Sdiod.b: Min. and max. nSD:block enclosure of ContBar is 0.40 um
     logger.info('Executing rule Sdiod.b')
     sdiod_b_value = drc_rules['Sdiod_b'].to_f
