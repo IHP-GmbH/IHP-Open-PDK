@@ -44,10 +44,10 @@ if TABLES.include?('salblock') || FEOL
     # Rule Sal.c: Min. SalBlock extension over Activ or GatPoly is 0.20 um
     logger.info('Executing rule Sal.c')
     sal_c_value = drc_rules['Sal_c'].to_f
-    sal_c_l1 = gatpoly_res.enclosed(salblock_drw, sal_c_value.um, euclidian)
+    sal_c_l1 = gatpoly_res.ext_enclosed(salblock_drw, sal_c_value.um)
     sal_c_l1.output('Sal.c', "5.12. Sal.c : Min. SalBlock extension over Activ or GatPoly: #{sal_c_value} um")
     sal_c_l1.forget
-    sal_c_l2 = activ_drw.enclosed(salblock_drw, sal_c_value.um, euclidian)
+    sal_c_l2 = activ_drw.ext_enclosed(salblock_drw, sal_c_value.um)
     sal_c_l2.output('Sal.c', "5.12. Sal.c : Min. SalBlock extension over Activ or GatPoly: #{sal_c_value} um")
     sal_c_l2.forget
 

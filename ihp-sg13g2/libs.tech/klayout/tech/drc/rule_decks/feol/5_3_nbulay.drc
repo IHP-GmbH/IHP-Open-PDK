@@ -47,7 +47,9 @@ if TABLES.include?('nbulay') || FEOL
     # Rule NBLB.c: Min. nBuLay enclosure of nBuLay:block is 1.00 um
     logger.info('Executing rule NBLB.c')
     nblb_c_value = drc_rules['NBLB_c'].to_f
-    nblb_c_l = nbulay_drw.enclosing(nbulay_block, nblb_c_value.um, euclidian)
+    nblb_c_l = nbulay_block.ext_enclosed(nbulay_drw, nblb_c_value.um,
+                                        consider_touch_points: false,
+                                        polygon_output: true)
     nblb_c_l.output('NBLB.c', "5.3.NBLB.c : Min. nBuLay enclosure of nBuLay:block is #{nblb_c_value} um")
     nblb_c_l.forget
 

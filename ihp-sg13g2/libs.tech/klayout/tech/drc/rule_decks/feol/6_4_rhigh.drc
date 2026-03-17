@@ -59,7 +59,7 @@ if TABLES.include?('rhigh') || FEOL
     # Rule Rhi.c: Min. pSD and nSD enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rhi.c')
     rhi_c_value = drc_rules['Rhi_c'].to_f
-    rhi_c_l = gp_rhigh_extended.enclosed(psd_nsd, rhi_c_value.um, euclidian)
+    rhi_c_l = gp_rhigh_extended.ext_enclosed(psd_nsd, rhi_c_value.um)
     rhi_c_l.output('Rhi.c', "6.4. Rhi.c : Min. pSD and nSD enclosure of GatPoly: #{rhi_c_value} um")
     rhi_c_l.forget
 
@@ -73,7 +73,9 @@ if TABLES.include?('rhigh') || FEOL
     # Rule Rhi.e: Min. EXTBlock enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rhi.e')
     rhi_e_value = drc_rules['Rhi_e'].to_f
-    rhi_e_l = gp_rhigh_extended.enclosed(extblock_drw, rhi_e_value.um, euclidian)
+    rhi_e_l = gp_rhigh_extended.ext_enclosed(extblock_drw, rhi_e_value.um,
+                                             consider_intersecting_edges: false,
+                                             consider_touch_points: false)
     rhi_e_l.output('Rhi.e', "6.4. Rhi.e : Min. EXTBlock enclosure of GatPoly: #{rhi_e_value} um")
     rhi_e_l.forget
 

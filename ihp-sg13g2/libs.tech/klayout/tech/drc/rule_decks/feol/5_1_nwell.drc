@@ -117,7 +117,7 @@ if TABLES.include?('nwell') || FEOL
     logger.info('Executing rule NW.c')
     nw_c_value = drc_rules['NW_c'].to_f
     lnw_c = pact_lv.not(pact_lv.interacting(nw_svaricap))
-    nw_c_l = lnw_c.enclosed(nwell_nsram, nw_c_value.um, euclidian)
+    nw_c_l = lnw_c.ext_enclosed(nwell_nsram, nw_c_value.um, consider_overlaps_as_errors: true)
     nw_c_l.output('NW.c',
                   "5.1.NW.c : Min. NWell enclosure of P+Activ not inside ThickGateOx is #{nw_c_value} um")
     lnw_c.forget
@@ -126,14 +126,14 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.c1: Min. NWell enclosure of P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.c1')
     nw_c1_value = drc_rules['NW_c1'].to_f
-    nw_c1_l = pact_hv_ana.outside(nw_svaricap_or_schottky_nbl1).enclosed(nwell_drw, nw_c1_value.um, euclidian)
+    nw_c1_l = pact_hv_ana.outside(nw_svaricap_or_schottky_nbl1).ext_enclosed(nwell_drw, nw_c1_value.um, consider_overlaps_as_errors: true)
     nw_c1_l.output('NW.c1',
                    "5.1.NW.c1 : Min. NWell enclosure of P+Activ inside ThickGateOx is #{nw_c1_value} um")
     nw_c1_l.forget
 
     # Rule NW.c1.dig: Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um
     logger.info('Executing rule NW.c1.dig')
-    nw_c1_dig_l = pact_hv_digi.outside(nw_svaricap_or_schottky_nbl1).enclosed(nwell_drw, 0.31.um, euclidian)
+    nw_c1_dig_l = pact_hv_digi.outside(nw_svaricap_or_schottky_nbl1).ext_enclosed(nwell_drw, 0.31.um, consider_overlaps_as_errors: true)
     nw_c1_dig_l.output('NW.c1.dig',
                        '5.1.NW.c1.dig : Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um')
     nw_c1_dig_l.forget
@@ -165,7 +165,7 @@ if TABLES.include?('nwell') || FEOL
     logger.info('Executing rule NW.e')
     nw_e_value = drc_rules['NW_e'].to_f
     nw_outdev = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1_or_schottky_nw1))
-    nw_e_l = nact_nwell_lv.not(nw_outdev).enclosed(nwell_drw, nw_e_value.um, euclidian)
+    nw_e_l = nact_nwell_lv.not(nw_outdev).ext_enclosed(nwell_drw, nw_e_value.um, consider_overlaps_as_errors: true)
     nw_e_l.output('NW.e',
                   "5.1.NW.e : Min. NWell enclosure of NWell tie in N+Activ not inside ThickGateOx is #{nw_e_value} um")
     nw_e_l.forget
@@ -173,14 +173,14 @@ if TABLES.include?('nwell') || FEOL
     # Rule NW.e1: Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.e1')
     nw_e1_value = drc_rules['NW_e1'].to_f
-    nw_e1_l = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1.join(nw_schottky_nw1.join(nw_scr1)))).enclosed(nwell_drw, nw_e1_value.um, euclidian)
+    nw_e1_l = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1.join(nw_schottky_nw1.join(nw_scr1)))).ext_enclosed(nwell_drw, nw_e1_value.um, consider_overlaps_as_errors: true)
     nw_e1_l.output('NW.e1',
                    "5.1.NW.e1 : Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is #{nw_e1_value} um")
     nw_e1_l.forget
 
     # Rule NW.e1.dig: Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx inside DigiBnd is 0.24 um
     logger.info('Executing rule NW.e1.dig')
-    nw_e1_dig_l = nact_nwell_hv_digi.enclosed(nwell_drw, 0.24.um, euclidian)
+    nw_e1_dig_l = nact_nwell_hv_digi.ext_enclosed(nwell_drw, 0.24.um, consider_overlaps_as_errors: true)
     nw_e1_dig_l.output('NW.e1.dig',
                        '5.1.NW.e1.dig : Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx inside DigiBnd is 0.24 um')
     nw_e1_dig_l.forget

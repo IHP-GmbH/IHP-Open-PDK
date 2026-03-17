@@ -28,7 +28,7 @@ if TABLES.include?('thickgateox') || FEOL
   # Rule TGO.a: Min. ThickGateOx extension over Activ is 0.27µm
   logger.info('Executing rule TGO.a')
   tgo_a_value = drc_rules['TGO_a'].to_f
-  tgoa_l1 = activ_drw.enclosed(thickgateox_drw, tgo_a_value.um, euclidian)
+  tgoa_l1 = activ_drw.ext_enclosed(thickgateox_drw, tgo_a_value.um)
   tgoa_l1.output('TGO.a', "5.7. TGO.a : Min. ThickGateOx extension over Activ: #{tgo_a_value} µm")
   tgoa_l1.forget
 
@@ -47,7 +47,7 @@ if TABLES.include?('thickgateox') || FEOL
     logger.info('Executing rule TGO.c')
     tgo_c_value = drc_rules['TGO_c'].to_f
     tgo_gate = activ_drw.and(gatpoly_drw)
-    tgoc_l1 = tgo_gate.enclosed(thickgateox_drw, tgo_c_value.um, projection).polygons
+    tgoc_l1 = tgo_gate.ext_enclosed(thickgateox_drw, tgo_c_value.um, include_min_angle: false, polygon_output: true)
     tgoc_l2 = tgoc_l1.and(activ_drw)
     tgoc_l2.output('TGO.c',
                    "5.7. TGO.c : Min. ThickGateOx extension over GatPoly over Activ: #{tgo_c_value} µm")

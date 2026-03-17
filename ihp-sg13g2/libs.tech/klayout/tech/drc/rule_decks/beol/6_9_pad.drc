@@ -116,7 +116,7 @@ if TABLES.include?('pad') || BEOL
     logger.info('Executing rule Pad.gR')
     pad_gr_value = drc_rules['Pad_gR'].to_f
     pad_gr_l1 = metal5_drw.and(dfpad_drw)
-    pad_gr_l = topvia2_drw.enclosed(pad_gr_l1, pad_gr_value.um, euclidian).polygons
+    pad_gr_l = topvia2_drw.ext_enclosed(pad_gr_l1, pad_gr_value.um, polygon_output: true)
     pad_gr_l.output('Pad.gR',
                     "6.9. Pad.gR : Min. recommended TopMetal1 (within dfpad) enclosure of TopVia2 is #{pad_gr_value} um")
     pad_gr_l1.forget

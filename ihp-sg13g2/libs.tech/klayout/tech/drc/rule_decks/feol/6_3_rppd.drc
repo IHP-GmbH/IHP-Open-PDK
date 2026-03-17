@@ -48,7 +48,7 @@ if TABLES.include?('rppd') || FEOL
     # Rule Rppd.b: Min. pSD enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rppd.b')
     rppd_b_value = drc_rules['Rppd_b'].to_f
-    rppd_b_l = rppd_all.enclosed(psd_drw, rppd_b_value.um, euclidian)
+    rppd_b_l = rppd_all.ext_enclosed(psd_drw, rppd_b_value.um)
     rppd_b_l.output('Rppd.b', "6.3. Rppd.b : Min. pSD enclosure of GatPoly: #{rppd_b_value} um")
     rppd_b_l.forget
 
@@ -62,7 +62,9 @@ if TABLES.include?('rppd') || FEOL
     # Rule Rppd.d: Min. EXTBlock enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rppd.d')
     rppd_d_value = drc_rules['Rppd_d'].to_f
-    rppd_d_l = gp_rppd_extended.enclosed(extblock_drw, rppd_d_value.um, euclidian)
+    rppd_d_l = gp_rppd_extended.ext_enclosed(extblock_drw, rppd_d_value.um,
+                                             consider_intersecting_edges: false,
+                                             consider_touch_points: false)
     rppd_d_l.output('Rppd.d', "6.3. Rppd.d : Min. EXTBlock enclosure of GatPoly: #{rppd_d_value} um")
     rppd_d_l.forget
 

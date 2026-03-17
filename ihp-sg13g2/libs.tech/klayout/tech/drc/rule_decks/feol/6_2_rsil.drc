@@ -52,7 +52,11 @@ if TABLES.include?('rsil') || FEOL
 
     # Rule Rsil.c: Min. RES extension over GatPoly is 0.00 um
     logger.info('Executing rule Rsil.c')
-    rsil_c_l = rsil_gatpoly.not_inside(res_drw)
+    rsil_c_l = rsil_gatpoly.ext_enclosed(res_drw, 1.0.um,
+                                         consider_intersecting_edges: false,
+                                         consider_touch_points: false,
+                                         polygon_output: true)
+    rsil_c_l = rsil_c_l.ext_outside(cont_drw)
     rsil_c_l.output('Rsil.c', '6.2. Rsil.c : Min. RES extension over GatPoly: 0.00 um')
     rsil_c_l.forget
 
@@ -66,7 +70,7 @@ if TABLES.include?('rsil') || FEOL
     # Rule Rsil.e: Min. EXTBlock enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rsil.e')
     rsil_e_value = drc_rules['Rsil_e'].to_f
-    rsil_e_l = gp_rsil_extended.enclosed(extblock_drw, rsil_e_value.um, euclidian)
+    rsil_e_l = gp_rsil_extended.ext_enclosed(extblock_drw, rsil_e_value.um)
     rsil_e_l.output('Rsil.e', "6.2. Rsil.e : Min. EXTBlock enclosure of GatPoly: #{rsil_e_value} um")
     rsil_e_l.forget
 

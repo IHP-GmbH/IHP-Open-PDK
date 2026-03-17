@@ -56,7 +56,7 @@ if TABLES.include?('psd') || FEOL
     logger.info('Executing rule pSD.c')
     psd_c_value = drc_rules['pSD_c'].to_f
     psd_c_l1 = activ_drw.and(nwell_drw)
-    psd_c_l = psd_c_l1.enclosed(psd_drw, psd_c_value.um, euclidian)
+    psd_c_l = psd_c_l1.ext_enclosed(psd_drw, psd_c_value.um)
     psd_c_l.output('pSD.c', "5.10. pSD.c Min. pSD enclosure of P+Activ in NWell is #{psd_c_value} um")
     psd_c_l1.forget
     psd_c_l.forget
@@ -133,7 +133,7 @@ if TABLES.include?('psd') || FEOL
     logger.info('Executing rule pSD.i')
     psd_i_value = drc_rules['pSD_i'].to_f
     psd_i_l1 = pgate_local.not(sram_drw)
-    psd_i_l = psd_i_l1.enclosed(psd_not_sram, psd_i_value.um, euclidian)
+    psd_i_l = psd_i_l1.ext_enclosed(psd_not_sram, psd_i_value.um)
     psd_i_l.output('pSD.i', "5.10. pSD.i Min. pSD enclosure of PFET gate not inside ThickGateOx is #{psd_i_value} um")
     psd_i_l1.forget
     psd_i_l.forget
@@ -143,7 +143,7 @@ if TABLES.include?('psd') || FEOL
     psd_i1_value = drc_rules['pSD_i1'].to_f
     psdhv_not_sram = psd_not_sram.inside(thickgateox_drw)
     psd_i1_l1 = pgate_local.not(sram_drw)
-    psd_i1_l = psd_i1_l1.enclosed(psdhv_not_sram, psd_i1_value.um, euclidian)
+    psd_i1_l = psd_i1_l1.ext_enclosed(psdhv_not_sram, psd_i1_value.um)
     psd_i1_l.output('pSD.i1', "5.10. pSD.i1 Min. pSD enclosure of PFET gate inside ThickGateOx is #{psd_i1_value} um")
     psdhv_not_sram.forget
     psd_i1_l1.forget
@@ -206,7 +206,7 @@ if TABLES.include?('psd') || FEOL
     nsd_derived = nsd_drw.join(activ_drw.not(nsd_or_nsdblock))
     rppd_0 = gatpoly_res.and(psd_drw).and(salblock_drw.not(recog_esd.join(nsd_block)))
     rppd_all = rppd_0.not_interacting(activ_drw.join(nsd_derived))
-    psd_n_l = rppd_all.enclosed(psd_drw, psd_n_value.um, euclidian)
+    psd_n_l = rppd_all.ext_enclosed(psd_drw, psd_n_value.um)
     psd_n_l.output('pSD.n', "5.10. pSD.n Min. pSD enclosure of p-type poly resistors is #{psd_n_value} um")
     nsd_derived.forget
     rppd_0.forget

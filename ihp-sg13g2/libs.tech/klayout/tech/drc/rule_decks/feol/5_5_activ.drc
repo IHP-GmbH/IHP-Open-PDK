@@ -44,7 +44,7 @@ if TABLES.include?('activ') || FEOL
     logger.info('Executing rule Act.c')
     act_c_value = drc_rules['Act_c'].to_f
     act_nsram = activ_drw.not(sram_drw)
-    actc_l1 = gatpoly_drw.enclosed(act_nsram, act_c_value.um, projection)
+    actc_l1 = gatpoly_drw.ext_enclosed(act_nsram, act_c_value.um)
     actc_l1.output('Act.c', "5.5. Act.c : Min. Activ drain/source extension: #{act_c_value} µm")
     act_nsram.forget
     actc_l1.forget

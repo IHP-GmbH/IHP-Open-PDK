@@ -80,14 +80,14 @@ if TABLES.include?('contbar') || FEOL
     # Rule CntB.c: Min. Activ enclosure of ContBar is 0.07 um
     logger.info('Executing rule CntB.c')
     cntb_c_value = drc_rules['CntB_c'].to_f
-    cntb_c_l = contbar.outside(trans_drw).enclosed(activ_drw, cntb_c_value.um, euclidian)
+    cntb_c_l = contbar.outside(trans_drw).ext_enclosed(activ_drw, cntb_c_value.um, consider_overlaps_as_errors: true)
     cntb_c_l.output('CntB.c', "5.15. CntB.c Min. Activ enclosure of ContBar is #{cntb_c_value} um")
     cntb_c_l.forget
 
     # Rule CntB.d: Min. GatPoly enclosure of ContBar is 0.07 um
     logger.info('Executing rule CntB.d')
     cntb_d_value = drc_rules['CntB_d'].to_f
-    cntb_d_l = contbar.enclosed(gatpoly_drw, cntb_d_value.um, euclidian)
+    cntb_d_l = contbar.ext_enclosed(gatpoly_drw, cntb_d_value.um, consider_overlaps_as_errors: true)
     cntb_d_l.output('CntB.d', "5.15. CntB.d Min. GatPoly enclosure of ContBar is #{cntb_d_value} um")
     cntb_d_l.forget
 
@@ -123,7 +123,7 @@ if TABLES.include?('contbar') || FEOL
     # Rule CntB.g2: Min. pSD overlap of ContBar on pSD-Activ is 0.09 um
     logger.info('Executing rule CntB.g2')
     cntb_g2_value = drc_rules['CntB_g2'].to_f
-    cntb_g2_l = contbar_pact.enclosed(psd_drw, cntb_g2_value.um, euclidian)
+    cntb_g2_l = contbar_pact.ext_enclosed(psd_drw, cntb_g2_value.um)
     cntb_g2_l.output('CntB.g2', "5.15. CntB.g2 Min. pSD overlap of ContBar on pSD-Activ is #{cntb_g2_value} um")
     cntb_g2_l.forget
 

@@ -182,7 +182,9 @@ if TABLES.include?('sealring') || BEOL
     seal_cv_names.zip(seal_cv_lays).each do |cv_name, cv_lay|
       logger.info("Executing rule Seal.d.#{cv_name}")
       seal_d_l1 = cv_lay.and(edgeseal_drw)
-      seal_d_l2 = seal_d_l1.enclosed(act_edgeseal, seal_d_value.um, euclidian).polygons
+      seal_d_l2 = seal_d_l1.ext_enclosed(act_edgeseal, seal_d_value.um,
+                                        consider_touch_points: false,
+                                        polygon_output: true)
       seal_d_l3 = seal_d_l1.not(act_edgeseal)
       seal_d_l = seal_d_l2.join(seal_d_l3)
       seal_d_l.output("Seal.d.#{cv_name}",
