@@ -46,10 +46,16 @@ proc sg13cmos5l::bipolar_convert {parameters} {
 		 dict set pdkparams nx $value
 	    }
 	    we {
-		 dict set pdkparams w $value
+		# Convert value to microns
+		set value [magic::spice2float $value]
+		set value [expr $value * 1e6]
+		dict set pdkparams w $value
 	    }
 	    le {
-		 dict set pdkparams l $value
+		# Convert value to microns
+		set value [magic::spice2float $value]
+		set value [expr $value * 1e6]
+		dict set pdkparams l $value
 	    }
 	    default {
 		# Allow unrecognized parameters to be passed unmodified

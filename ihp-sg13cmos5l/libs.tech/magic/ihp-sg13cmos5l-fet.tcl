@@ -22,7 +22,7 @@
 #    w       = Gate width
 #    l       = Gate length
 #    m	     = Multiplier
-#    nf	     = Number of fingers
+#    ng	     = Number of fingers
 #    diffcov = Diffusion contact coverage
 #    polycov = Poly contact coverage
 #    topc    = Top gate contact
@@ -42,7 +42,7 @@
 #----------------------------------------------------------------
 
 proc sg13cmos5l::sg13_lv_pmos_defaults {} {
-    return {w 0.6 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.6 l 0.13 m 1 ng 1 diffcov 100 polycov 100 \
 		guard 0 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sg13_lv_pmos sg13_hv_pmos} \
@@ -52,7 +52,7 @@ proc sg13cmos5l::sg13_lv_pmos_defaults {} {
 }
 
 proc sg13cmos5l::sg13_hv_pmos_defaults {} {
-    return {w 1.0 l 0.4 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 1.0 l 0.4 m 1 ng 1 diffcov 100 polycov 100 \
 		guard 0 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.4 wmin 0.15 \
 		class mosfet compatible {sg13_lv_pmos sg13_hv_pmos} \
@@ -67,7 +67,7 @@ proc sg13cmos5l::sg13_hv_pmos_defaults {} {
 # while non-RF devices do not.
 
 proc sg13cmos5l::sg13_lv_rfpmos_defaults {} {
-    return {w 0.6 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.6 l 0.13 m 1 ng 1 diffcov 100 polycov 100 \
 		glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sg13_lv_rfpmos sg13_hv_rfpmos} \
@@ -77,7 +77,7 @@ proc sg13cmos5l::sg13_lv_rfpmos_defaults {} {
 }
 
 proc sg13cmos5l::sg13_hv_rfpmos_defaults {} {
-    return {w 1.0 l 0.4 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 1.0 l 0.4 m 1 ng 1 diffcov 100 polycov 100 \
 		glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		poverlap 0 doverlap 1 lmin 0.4 wmin 0.15 \
 		class mosfet compatible {sg13_lv_rfpmos sg13_hv_rfpmos} \
@@ -92,7 +92,7 @@ proc sg13cmos5l::sg13_hv_rfpmos_defaults {} {
 #----------------------------------------------------------------
 
 proc sg13cmos5l::sg13_lv_nmos_defaults {} {
-    return {w 0.6 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.6 l 0.13 m 1 ng 1 diffcov 100 polycov 100 \
 		guard 0 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos} \
@@ -102,7 +102,7 @@ proc sg13cmos5l::sg13_lv_nmos_defaults {} {
 }
 
 proc sg13cmos5l::sg13_hv_nmos_defaults {} {
-    return {w 1.0 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 1.0 l 0.45 m 1 ng 1 diffcov 100 polycov 100 \
 		guard 0 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
 		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos} \
@@ -114,7 +114,7 @@ proc sg13cmos5l::sg13_hv_nmos_defaults {} {
 # RF devices (see comments above for pmos)
 
 proc sg13cmos5l::sg13_lv_rfnmos_defaults {} {
-    return {w 0.6 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 0.6 l 0.13 m 1 ng 1 diffcov 100 polycov 100 \
 		glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
 		class mosfet compatible {sg13_lv_rfnmos sg13_hv_rfnmos} \
@@ -124,7 +124,7 @@ proc sg13cmos5l::sg13_lv_rfnmos_defaults {} {
 }
 
 proc sg13cmos5l::sg13_hv_rfnmos_defaults {} {
-    return {w 1.0 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
+    return {w 1.0 l 0.45 m 1 ng 1 diffcov 100 polycov 100 \
 		glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
 		class mosfet compatible {sg13_lv_rfnmos sg13_hv_rfnmos} \
@@ -145,14 +145,14 @@ proc sg13cmos5l::mos_convert {parameters} {
 	    w {
 		# Length and width are converted to units of microns
 		set value [magic::spice2float $value]
-		# set value [expr $value * 1e6]
+		set value [expr $value * 1e6]
 		set value [magic::3digitpastdecimal $value]
 		dict set pdkparams [string tolower $key] $value
 	    }
 	    m {
 		dict set pdkparams [string tolower $key] $value
 	    }
-	    nf {
+	    ng {
 		# Adjustment ot W will be handled below
 		dict set pdkparams [string tolower $key] $value
 	    }
@@ -163,16 +163,16 @@ proc sg13cmos5l::mos_convert {parameters} {
 	}
     }
 
-    # Magic does not understand "nf" as a parameter, but expands to
-    # "nf" number of devices connected horizontally.  The "w" value
-    # must be divided down accordingly, as the "nf" parameter implies
-    # that the total width "w" is divided into "nf" fingers.
+    # Magic does not understand "ng" as a parameter, but expands to
+    # "ng" number of devices connected horizontally.  The "w" value
+    # must be divided down accordingly, as the "ng" parameter implies
+    # that the total width "w" is divided into "ng" fingers.
 
     catch {
 	set w [dict get $pdkparams w]
-	set nf [dict get $pdkparams nf]
-	if {$nf > 1} {
-	    dict set pdkparams w [expr $w / $nf]
+	set ng [dict get $pdkparams ng]
+	if {$ng > 1} {
+	    dict set pdkparams w [expr $w / $ng]
 	}
     }
 
@@ -218,13 +218,13 @@ proc sg13cmos5l::sg13_lv_rfpmos_convert {parameters} {
 #----------------------------------------------------------------
 
 proc sg13cmos5l::mos_dialog {device parameters} {
-    # Editable fields:      w, l, nf, m, diffcov, polycov
+    # Editable fields:      w, l, ng, m, diffcov, polycov
     # Checked fields:  topc, botc
     # For specific devices, gate type is a selection list
 
     magic::add_entry w "Width (um)" $parameters
     magic::add_entry l "Length (um)" $parameters
-    magic::add_entry nf "Fingers" $parameters
+    magic::add_entry ng "Fingers" $parameters
     magic::add_entry m "M" $parameters
 
     if {[dict exists $parameters compatible]} {
@@ -913,7 +913,7 @@ proc sg13cmos5l::mos_draw {parameters} {
     # If number of fingers is 1 then conn_gates has no meaning and
     # should be set to zero, except for RF devices where the gate
     # should be wide.
-    if {($nf == 1) && ($is_rf == 0)} {
+    if {($ng == 1) && ($is_rf == 0)} {
 	set conn_gates 0
     }
 
@@ -1000,7 +1000,7 @@ proc sg13cmos5l::mos_draw {parameters} {
     }
 
     # Determine core width and height
-    set corex [+ [* [- $nf 1] $dx] $fw]
+    set corex [+ [* [- $ng 1] $dx] $fw]
     set corey [+ [* [- $m 1] $dy] $fh]
     set corellx [/ [+ [- $corex $fw] $lw] 2.0]
     set corelly [/ [+ [- $corey $fh] $lh] 2.0]
@@ -1095,7 +1095,7 @@ proc sg13cmos5l::mos_draw {parameters} {
     pushbox
     box move w ${corellx}um
     box move s ${corelly}um
-    for {set xp 0} {$xp < $nf} {incr xp} {
+    for {set xp 0} {$xp < $ng} {incr xp} {
 	dict set parameters evens $evens
 	set evens [- 1 $evens]
         pushbox
@@ -1113,7 +1113,7 @@ proc sg13cmos5l::mos_draw {parameters} {
         for {set yp 0} {$yp < $m} {incr yp} {
 	    # Apply rules for source/drain/gate port labeling
 	    if {$doports && ($m == 1)} {
-		if {$nf == 1} {
+		if {$ng == 1} {
 		    dict set parameters drain D
 		    dict set parameters source S
 		    dict set parameters gate G
@@ -1123,7 +1123,7 @@ proc sg13cmos5l::mos_draw {parameters} {
 		    } else {
 			dict set parameters drain D$xp
 		    }
-		    if {$doverlap  && ($evens == 0) && ($xp < $nf-1)} {
+		    if {$doverlap  && ($evens == 0) && ($xp < $ng-1)} {
 			dict set parameters source ""
 		    } else {
 			dict set parameters source S$xp
@@ -1135,7 +1135,7 @@ proc sg13cmos5l::mos_draw {parameters} {
 		    }
 		}
 	    } elseif {$doports} {
-		if {$nf == 1} {
+		if {$ng == 1} {
 		    dict set parameters drain D$yp
 		    dict set parameters source S$yp
 		    if {($poverlap || $gate_ring) && ($yp == 0)} {
@@ -1151,7 +1151,7 @@ proc sg13cmos5l::mos_draw {parameters} {
 		    } else {
 			dict set parameters drain D${xp}_$yp
 		    }
-		    if {$doverlap && ($evens == 0) && ($xp < $nf-1)} {
+		    if {$doverlap && ($evens == 0) && ($xp < $ng-1)} {
 			dict set parameters source ""
 		    } else {
 			dict set parameters source S${xp}_$yp
@@ -1373,10 +1373,10 @@ proc sg13cmos5l::mos_check {device parameters} {
     set w [magic::spice2float $w] 
     set w [magic::3digitpastdecimal $w]
 
-    # nf, m must be integer
-    if {![string is int $nf]} {
-	puts stderr "NF must be an integer!"
-        dict set parameters nf 1
+    # ng, m must be integer
+    if {![string is int $ng]} {
+	puts stderr "NG must be an integer!"
+        dict set parameters ng 1
     }
     if {![string is int $m]} {
 	puts stderr "M must be an integer!"
@@ -1402,9 +1402,9 @@ proc sg13cmos5l::mos_check {device parameters} {
 	puts stderr "Mos width must be >= $wmin um"
         dict set parameters w $wmin
     } 
-    if {$nf < 1} {
-	puts stderr "NF must be >= 1"
-        dict set parameters nf 1
+    if {$ng < 1} {
+	puts stderr "NG must be >= 1"
+        dict set parameters ng 1
     } 
     if {$m < 1} {
 	puts stderr "M must be >= 1"
@@ -1486,15 +1486,15 @@ proc sg13cmos5l::mos_check {device parameters} {
     set clearance 1.0
 
     set origm $m
-    set orignf $nf
+    set origng $ng
     while true {
        set yext [expr ($w + $clearance) * $m + $clearance]
-       set xext [expr ($l + $clearance) * $nf + $clearance]
+       set xext [expr ($l + $clearance) * $ng + $clearance]
        if {[expr min($xext, $yext)] > 30.0} {
           if {$yext > 30.0 && $m > 1} {
 	     incr m -1
-	  } elseif {$xext > 30.0 && $nf > 1} {
-	     incr nf -1
+	  } elseif {$xext > 30.0 && $ng > 1} {
+	     incr ng -1
 	  } elseif {$yext > 30.0} {
 	     set w 29
 	     puts -nonewline stderr "Transistor width must be < 29 um"
@@ -1514,9 +1514,9 @@ proc sg13cmos5l::mos_check {device parameters} {
        puts stderr "Warning: M may need to be reduced to prevent tap distance violation"
        # dict set parameters m $m
     }
-    if {$nf != $orignf} {
+    if {$ng != $origng} {
        puts stderr "Warning: Fingers may need to be reduced to prevent tap distance violation"
-       # dict set parameters nf $nf
+       # dict set parameters ng $ng
     }
 
     catch {set magic::minfo_val ""}

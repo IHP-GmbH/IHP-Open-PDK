@@ -75,6 +75,9 @@
 # ptap1		(p-tap contact, treated as resistor device, L and W)
 # ntap1		(n-tap contact, treated as resistor device, L and W)
 
+# Note:  Capacitors are implemented as metal fingered devices that
+# extract as an ideal (non-modeled) component.
+
 if {[catch {set TECHPATH $env(PDK_ROOT)}]} {
     set TECHPATH /usr/share/pdk
 }
@@ -179,6 +182,10 @@ proc sg13cmos5l::addtechmenu {framename} {
 	    "magic::gencell sg13cmos5l::pnpMPA" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
+   magic::add_toolkit_command $layoutframe "Capacitor" \
+	    "magic::gencell sg13cmos5l::capacitor" pdk1
+   magic::add_toolkit_separator	$layoutframe pdk1
+
    magic::add_toolkit_command $layoutframe "poly resistor - 7 Ohm/sq" \
 	    "magic::gencell sg13cmos5l::rsil" pdk1
    magic::add_toolkit_command $layoutframe "poly resistor - 260 Ohm/sq" \
@@ -261,6 +268,7 @@ source ${script_path}/ihp-sg13cmos5l-fet.tcl	;# MOSFETs
 source ${script_path}/ihp-sg13cmos5l-res.tcl	;# Resistors
 source ${script_path}/ihp-sg13cmos5l-bjt.tcl	;# Bipolar transistors
 source ${script_path}/ihp-sg13cmos5l-dio.tcl	;# Diodes
+source ${script_path}/ihp-sg13cmos5l-cap.tcl	;# Capacitor
 source ${script_path}/ihp-sg13cmos5l-fix.tcl	;# ESD, clamps, SCR
 source ${script_path}/ihp-sg13cmos5l-var.tcl	;# Varactor
 source ${script_path}/ihp-sg13cmos5l-ind.tcl	;# Inductors

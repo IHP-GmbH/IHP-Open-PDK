@@ -29,8 +29,18 @@ proc sg13cmos5l::bondpad_convert {parameters} {
     dict for {key value} $parameters {
 	switch -nocase $key {
 	    size {
+                set value [magic::spice2float $value]
+                set value [expr $value * 1e6]
+                set value [magic::3digitpastdecimal $value]
+
 		dict set pdkparams width $value
 		dict set pdkparams height $value
+	    }
+	    shape {
+		# To be completed; model is currently incomplete
+	    }
+	    padtype {
+		# To be completed; model is currently incomplete
 	    }
 	    default {
 		# Allow unrecognized parameters to be passed unmodified
