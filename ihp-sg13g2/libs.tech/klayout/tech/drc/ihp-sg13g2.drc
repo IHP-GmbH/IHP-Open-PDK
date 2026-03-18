@@ -282,14 +282,14 @@ if TABLES.any?{|x| nact_pact_tables.include?(x)}
 end
 
 # p activ
-pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup nwell nbulay schottkydiode contbar via1]
+pact_pact_tables = %w[main pwellblock gatpoly cont npnsubstratetie latchup nwell nbulay schottkydiode contbar via1 psd nmosi]
 if TABLES.any?{|x| pact_pact_tables.include?(x)}
   logger.info('Starting p-Activ derivations')
   pactiv  = activ_drw.and(psd_drw)
 end
 
 # p tap
-ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode contbar via1]
+ptap_tables = %w[main pwellblock npnsubstratetie latchup nwell nbulay schottkydiode contbar via1 psd nmosi]
 if TABLES.any?{|x| ptap_tables.include?(x)}
   logger.info('Starting ptap derivations')
   ptap = pactiv.and(pwell)
@@ -344,7 +344,7 @@ if TABLES.any?{|x| pad_tables.include?(x)}
 end
 
 # schottky_nbl derivations
-schottky_tables = %w[main schottkydiode pwellblock contbar]
+schottky_tables = %w[main schottkydiode pwellblock contbar psd nmosi]
 if TABLES.any?{|x| schottky_tables.include?(x)}
   logger.info('Starting schottky_nbl general derivations')
   schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
@@ -362,7 +362,7 @@ if TABLES.any?{|x| schottky_tables.include?(x)}
 end
 
 # SVaricap derivations
-svaricap_tables = %w[main cont nbulay nwell]
+svaricap_tables = %w[main cont nbulay nwell psd gatpoly]
 if TABLES.any?{|x| svaricap_tables.include?(x)}
   logger.info('Starting SVaricap general derivations')
   svaricap_gate = gatpoly_drw.and(nwell_drw).and(nbulay_drw)
@@ -373,7 +373,7 @@ if TABLES.any?{|x| svaricap_tables.include?(x)}
 end
 
 # HBT derivations
-npn_tables = %w[main npnsubstratetie contbar via1]
+npn_tables = %w[main npnsubstratetie contbar via1 psd]
 if TABLES.any?{|x| npn_tables.include?(x)}
   logger.info('Starting HBT general derivations')
   sg13g2_patt  = glob_to_case_insensitive_glob("npn13G2")
@@ -383,6 +383,51 @@ if TABLES.any?{|x| npn_tables.include?(x)}
   npn13g2 = npn_mk.interacting(text_drw.texts(sg13g2_patt)).covering(emwind_drw.and(activ_mask).and(nsd_block))
   npn13g2l = npn_mk.interacting(text_drw.texts(sg13g2l_patt)).covering(emwind_drw.and(activ_drw))
   npn13g2v = npn_mk.interacting(text_drw.texts(sg13g2v_patt)).covering(emwihv_drw.and(activ_drw))
+
+  # trans_bip: union of all bipolar transistor TRANS regions (used by nSDB.e exclusion)
+  trans_bip = trans_drw.interacting(text_drw.texts(sg13g2_patt)) \
+    .join(trans_drw.interacting(text_drw.texts(sg13g2l_patt))) \
+    .join(trans_drw.interacting(text_drw.texts(sg13g2v_patt)))
+end
+
+# ESD device derivations
+esd_tables = %w[main gatpoly nmosi]
+if TABLES.any?{|x| esd_tables.include?(x)}
+  logger.info('Starting ESD device derivations')
+  scr1 = recog_esd.interacting(text_drw.texts('scr1'))
+  nmoscl_2 = recog_esd.interacting(text_drw.texts('nmoscl_2'))
+  nmoscl_4 = recog_esd.interacting(text_drw.texts('nmoscl_4'))
+  nmoscl = nmoscl_2.join(nmoscl_4)
+  nmoscl_2.forget
+  nmoscl_4.forget
+end
+
+# Compound device exclusion derivations
+devexcl_tables = %w[main nmosi psd]
+if TABLES.any?{|x| devexcl_tables.include?(x)}
+  logger.info('Starting compound device exclusion derivations')
+  scr1_or_schottky_nbl1 = schottky_nbl1.join(scr1) if defined?(scr1) && defined?(schottky_nbl1)
+
+  # dschottky: general Schottky diode region (used by nSDB.e exclusion)
+  if defined?(schottky_nbl1)
+    dschottky_1 = activ_drw.and(nsd_block).and(nbulay_drw)
+    dschottky_2 = dschottky_1.sized(1.12.um, acute_limit)
+    dschottky_3 = dschottky_2.and(pwell_block)
+    dpin_0 = baspoly_drw.and(activ_drw).and(biwind_drw).and(nsd_block)
+    dpin_1 = dpin_0.sized(1.12.um, acute_limit)
+    dpin = dpin_1.and(pwell_block)
+    dschottky = dschottky_3.not(dpin)
+    dschottky_1.forget
+    dschottky_2.forget
+    dschottky_3.forget
+    dpin_0.forget
+    dpin_1.forget
+    dpin.forget
+
+    # nsdb_exlcDev: device exclusion for nSDB.e rule
+    nsdb_exlcDev = dschottky.join(schottky_nbl1).join(schottky_nw1)
+    nsdb_exlcDev = nsdb_exlcDev.join(trans_bip) if defined?(trans_bip)
+  end
 end
 
 # DRC tolerance value

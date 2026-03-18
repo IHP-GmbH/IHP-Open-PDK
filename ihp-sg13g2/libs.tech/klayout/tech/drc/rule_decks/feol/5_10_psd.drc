@@ -56,9 +56,11 @@ if TABLES.include?('psd') || FEOL
     logger.info('Executing rule pSD.c')
     psd_c_value = drc_rules['pSD_c'].to_f
     psd_c_l1 = activ_drw.and(nwell_drw)
-    psd_c_l = psd_c_l1.ext_enclosed(psd_drw, psd_c_value.um)
+    psd_c_psd = psd_drw.not(svaricap)
+    psd_c_l = psd_c_l1.ext_enclosed(psd_c_psd, psd_c_value.um)
     psd_c_l.output('pSD.c', "5.10. pSD.c Min. pSD enclosure of P+Activ in NWell is #{psd_c_value} um")
     psd_c_l1.forget
+    psd_c_psd.forget
     psd_c_l.forget
 
     # Rule pSD.c1: Min. pSD enclosure of P+Activ in PWell is 0.03 um
@@ -88,7 +90,7 @@ if TABLES.include?('psd') || FEOL
     logger.info('Executing rule pSD.e')
     psd_e_value = drc_rules['pSD_e'].to_f
     psd_e_l1 = activ_drw.not(sram_drw).not_inside(psd_drw).interacting(psd_drw)
-    psd_e_l2 = psd_e_l1.and(psd_drw)
+    psd_e_l2 = psd_e_l1.and(psd_drw).not(svaricap)
     psd_e_l3 = psd_e_l2.width(psd_e_value.um, projection)
     psd_e_l4 = psd_e_l3.polygons.covering(psd_e_l2)
     psd_e_l4.output('pSD.e',
@@ -152,7 +154,7 @@ if TABLES.include?('psd') || FEOL
     # Rule pSD.j: Min. pSD space to NFET gate not inside ThickGateOx is 0.30 um
     logger.info('Executing rule pSD.j')
     psd_j_value = drc_rules['pSD_j'].to_f
-    ngate_not_sram = ngate_local.not(sram_drw)
+    ngate_not_sram = ngate_local.not(sram_drw).not(svaricap)
     psd_j_l = psd_not_sram.separation(ngate_not_sram, psd_j_value.um, euclidian)
     psd_j_l.output('pSD.j', "5.10. pSD.j Min. pSD space to NFET gate not inside ThickGateOx is #{psd_j_value} um")
     ngate_not_sram.forget
@@ -161,7 +163,7 @@ if TABLES.include?('psd') || FEOL
     # Rule pSD.j1: Min. pSD space to NFET gate inside ThickGateOx is 0.40 um
     logger.info('Executing rule pSD.j1')
     psd_j1_value = drc_rules['pSD_j1'].to_f
-    ngate_hv = ngate_local.inside(thickgateox_drw)
+    ngate_hv = ngate_local.not(svaricap).inside(thickgateox_drw)
     psd_j1_l = psd_not_sram.separation(ngate_hv, psd_j1_value.um, euclidian)
     psd_j1_l.output('pSD.j1', "5.10. pSD.j1 Min. pSD space to NFET gate inside ThickGateOx is #{psd_j1_value} um")
     ngate_hv.forget
@@ -238,7 +240,7 @@ if TABLES.include?('psd') || FEOL
 
     # Rule nSDB.e: nSD:block and Cont do not overlap
     logger.info('Executing rule nSDB.e')
-    nsdb_e_l = cont_drw.not(edgeseal_drw).and(nsd_block)
+    nsdb_e_l = cont_drw.not(nsdb_exlcDev).and(nsd_block)
     nsdb_e_l.output('nSDB.e', '5.10. nSDB.e nSD:block and Cont do not overlap')
     nsdb_e_l.forget
   end

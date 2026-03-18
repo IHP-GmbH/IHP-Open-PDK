@@ -67,9 +67,15 @@ if TABLES.include?('gatpoly') || FEOL
     logger.info('Executing rule Gat.a3')
     gat_a3_value = drc_rules['Gat_a3'].to_f
     ngate_hv = ngate.and(thickgateox_drw)
-    gat_a3 = ngate_hv.edges.inside_part(activ_drw).width(gat_a3_value.um, euclidian)
+    gat_a3_excl = nmoscl.join(scr1)
+    gat_a3_edges = ngate_hv.edges.inside_part(activ_drw)
+    gat_a3_raw = gat_a3_edges.width(gat_a3_value.um, euclidian)
+    gat_a3 = gat_a3_raw.polygons.not(gat_a3_excl)
     gat_a3.output('Gat.a3', "5.8. Gat.a3 Min. GatPoly width for channel length of 3.3V NFET is #{gat_a3_value} um")
     ngate_hv.forget
+    gat_a3_excl.forget
+    gat_a3_edges.forget
+    gat_a3_raw.forget
     gat_a3.forget
 
     # Rule Gat.a4: Min. GatPoly width for channel length of 3.3 V PFET is 0.40 um
@@ -123,18 +129,11 @@ if TABLES.include?('gatpoly') || FEOL
     # Rule Gat.f: 45-degree and 90-degree angles for GatPoly on Activ area are not allowed
     logger.info('Executing rule Gat.f')
     gate = activ_drw.and(gatpoly_drw)
-    # SVaricap device recognition (gatpoly-local, does not overwrite global svaricap)
-    gat_svaricap_gate = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
-    gat_svaricap_text = activ_drw.not_outside(gat_svaricap_gate).interacting(text_drw.texts('SVaricap'))
-    gat_svaricap = nwell_drw.not_outside(gat_svaricap_text)
-    gate_no_svaricap = gate.not(gat_svaricap)
-    gat_f = gate_no_svaricap.non_rectangles
+    gate_no_svaricap = gate.not(svaricap)
+    gat_f = gate_no_svaricap.ext_rectangles(inverted: true)
     gat_f.output('Gat.f',
                  '5.8. Gat.f 45-degree and 90-degree angles for GatPoly on Activ area are not allowed')
     gate.forget
-    gat_svaricap_gate.forget
-    gat_svaricap_text.forget
-    gat_svaricap.forget
     gate_no_svaricap.forget
     gat_f.forget
 
