@@ -20,6 +20,7 @@
 
 suspendall
 tech unlock *
+set curunits [units]
 units internal
 load diodevss_2kv -silent
 box values 0 0 0 0
@@ -494,6 +495,12 @@ label diodevss_2kv FreeSans 600 90 0 0 c comment
 select area label
 setlabel sticky true
 select clear
+property gencell diodevss_2kv
+property library sg13cmos5l
+if {[info var parameters] == "parameters"} {
+    property parameters $parameters
+}
 view
+units {*}$curunits
 tech revert
 resumeall

@@ -1143,6 +1143,11 @@ setlabel sticky true
 box values 290 3402 290 3402
 label sub! FreeSans 200 0 0 0 c psd
 select clear
+property gencell nmoscl_2
+property library sg13cmos5l
+if {[info var parameters] == "parameters"} {
+    property parameters $parameters
+}
 view
 units {*}$curunits
 tech revert

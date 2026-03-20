@@ -20,6 +20,7 @@
 
 suspendall
 tech unlock *
+set curunits [units]
 units internal
 load diodevdd_4kv -silent
 box values 0 0 0 0
@@ -582,6 +583,12 @@ label diodevdd_4kv FreeSans 600 90 0 0 c comment
 select area label
 setlabel sticky true
 select clear
+property gencell diodevdd_4kv
+property library sg13cmos5l
+if {[info var parameters] == "parameters"} {
+    property parameters $parameters
+}
 view
+units {*}$curunits
 tech revert
 resumeall

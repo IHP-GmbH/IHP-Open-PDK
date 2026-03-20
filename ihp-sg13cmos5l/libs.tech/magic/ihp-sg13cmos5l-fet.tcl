@@ -137,7 +137,7 @@ proc sg13cmos5l::sg13_hv_rfnmos_defaults {} {
 # mos: Conversion from SPICE netlist parameters to toolkit
 #----------------------------------------------------------------
 
-proc sg13cmos5l::mos_convert {parameters} {
+proc sg13cmos5l::mos_convert {device parameters} {
     set pdkparams [dict create]
     dict for {key value} $parameters {
 	switch -nocase $key {
@@ -155,6 +155,19 @@ proc sg13cmos5l::mos_convert {parameters} {
 	    ng {
 		# Adjustment ot W will be handled below
 		dict set pdkparams [string tolower $key] $value
+	    }
+	    rfmode {
+		dict set pdkparams is_rf 1
+		dict set pdkparams guard 1
+		dict set pdkparams gate_ring 1
+
+		# Change the device name from, e.g., pmos to rfpmos
+		set devlist [split $device "_"]
+		set np [- [llength $devlist] 1]
+		set devroot [lindex $devlist $np]
+		set newdevlist [lreplace $devlist $np $np rf$devroot]
+		set newdev [join $newdevlist "_"]
+		dict set pdkparams gencell $newdev
 	    }
 	    default {
 		# Allow unrecognized parameters to be passed unmodified
@@ -182,35 +195,35 @@ proc sg13cmos5l::mos_convert {parameters} {
 #----------------------------------------------------------------
 
 proc sg13cmos5l::sg13_hv_nmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_hv_nmos $parameters]
 }
 
 proc sg13cmos5l::sg13_lv_nmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_lv_nmos $parameters]
 }
 
 proc sg13cmos5l::sg13_hv_pmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_hv_pmos $parameters]
 }
 
 proc sg13cmos5l::sg13_lv_pmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_lv_pmos $parameters]
 }
 
 proc sg13cmos5l::sg13_hv_rfnmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_hv_rfnmos $parameters]
 }
 
 proc sg13cmos5l::sg13_lv_rfnmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_lv_rfnmos $parameters]
 }
 
 proc sg13cmos5l::sg13_hv_rfpmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_hv_rfpmos $parameters]
 }
 
 proc sg13cmos5l::sg13_lv_rfpmos_convert {parameters} {
-    return [sg13cmos5l::mos_convert $parameters]
+    return [sg13cmos5l::mos_convert sg13_lv_rfpmos $parameters]
 }
 
 #----------------------------------------------------------------
@@ -1196,6 +1209,12 @@ proc sg13cmos5l::mos_draw {parameters} {
     }
     popbox
     popbox
+
+    if {$is_rf == 1} {
+	# Put a gate attribute label on the gate with the parameter to output
+	box size 0 0
+	label rfmode=1^ c $gate_type
+    }
 
     units {*}$curunits
     tech revert

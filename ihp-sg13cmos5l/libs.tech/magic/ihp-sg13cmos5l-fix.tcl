@@ -207,7 +207,7 @@ proc sg13cmos5l::nmoscl_4_dialog {parameters} {
 # Fixed devices:  Generate the devices
 #----------------------------------------------------------------
 
-proc sg13cmos5l::diodevdd_2kv_generate {} {
+proc sg13cmos5l::diodevdd_2kv_generate {parameters} {
     if {[cellname list exists diodevdd_2kv]} {return}
     suspendall
 
@@ -233,7 +233,7 @@ proc sg13cmos5l::diodevdd_2kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13cmos5l::diodevdd_4kv_generate {} {
+proc sg13cmos5l::diodevdd_4kv_generate {parameters} {
     if {[cellname list exists diodevdd_4kv]} {return}
     suspendall
 
@@ -259,7 +259,7 @@ proc sg13cmos5l::diodevdd_4kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13cmos5l::diodevss_2kv_generate {} {
+proc sg13cmos5l::diodevss_2kv_generate {parameters} {
     if {[cellname list exists diodevss_2kv]} {return}
     suspendall
 
@@ -285,7 +285,7 @@ proc sg13cmos5l::diodevss_2kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13cmos5l::diodevss_4kv_generate {} {
+proc sg13cmos5l::diodevss_4kv_generate {parameters} {
     if {[cellname list exists diodevss_4kv]} {return}
     suspendall
 
@@ -311,7 +311,7 @@ proc sg13cmos5l::diodevss_4kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13cmos5l::nmoscl_2_generate {} {
+proc sg13cmos5l::nmoscl_2_generate {parameters} {
     if {[cellname list exists nmoscl_2]} {return}
     suspendall
 
@@ -337,7 +337,7 @@ proc sg13cmos5l::nmoscl_2_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13cmos5l::nmoscl_4_generate {} {
+proc sg13cmos5l::nmoscl_4_generate {parameters} {
     if {[cellname list exists nmoscl_4]} {return}
     suspendall
 
@@ -399,32 +399,44 @@ proc sg13cmos5l::fixed_draw {devname parameters} {
 #----------------------------------------------------------------
 
 proc sg13cmos5l::diodevdd_2kv_draw {parameters} {
-    if {[cellname list exists diodevdd_2kv] == 0} {sg13cmos5l::diodevdd_2kv_generate}
+    if {[cellname list exists diodevdd_2kv] == 0} {
+	sg13cmos5l::diodevdd_2kv_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw diodevdd_2kv $parameters]
 }
 
 proc sg13cmos5l::diodevdd_4kv_draw {parameters} {
-    if {[cellname list exists diodevdd_4kv] == 0} {sg13cmos5l::diodevdd_4kv_generate}
+    if {[cellname list exists diodevdd_4kv] == 0} {
+	sg13cmos5l::diodevdd_4kv_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw diodevdd_4kv $parameters]
 }
 
 proc sg13cmos5l::diodevss_2kv_draw {parameters} {
-    if {[cellname list exists diodevss_2kv] == 0} {sg13cmos5l::diodevss_2kv_generate}
+    if {[cellname list exists diodevss_2kv] == 0} {
+	sg13cmos5l::diodevss_2kv_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw diodevss_2kv $parameters]
 }
 
 proc sg13cmos5l::diodevss_4kv_draw {parameters} {
-    if {[cellname list exists diodevss_4kv] == 0} {sg13cmos5l::diodevss_4kv_generate}
+    if {[cellname list exists diodevss_4kv] == 0} {
+	sg13cmos5l::diodevss_4kv_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw diodevss_4kv $parameters]
 }
 
 proc sg13cmos5l::nmoscl_2_draw {parameters} {
-    if {[cellname list exists nmoscl_2] == 0} {sg13cmos5l::nmoscl_2_generate}
+    if {[cellname list exists nmoscl_2] == 0} {
+	sg13cmos5l::nmoscl_2_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw nmoscl_2 $parameters]
 }
 
 proc sg13cmos5l::nmoscl_4_draw {parameters} {
-    if {[cellname list exists nmoscl_4] == 0} {sg13cmos5l::nmoscl_4_generate}
+    if {[cellname list exists nmoscl_4] == 0} {
+	sg13cmos5l::nmoscl_4_generate $parameters
+    }
     return [sg13cmos5l::fixed_draw nmoscl_4 $parameters]
 }
 
