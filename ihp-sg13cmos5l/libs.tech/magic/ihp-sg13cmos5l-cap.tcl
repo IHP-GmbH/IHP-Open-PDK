@@ -35,7 +35,7 @@
 
 proc sg13cmos5l::capacitor_defaults {} {
     return {w 2.00 l 2.00 value 9.28 class capacitor \
-		mmin metal1 mmax metal4 square 1 subblock 0 \
+		mmin 1 mmax 4 square 1 subblock 0 \
 		lmin 2.00 wmin 2.00 lmax 100.0 wmax 100.0}
 }
 
@@ -51,13 +51,9 @@ proc sg13cmos5l::cap_recalc {field parameters} {
         set $key [dict get $parameters $key]
     }
 
-    set metallist {metal1 metal2 metal3 metal4}
-    set mminidx [lsearch $metallist $mmin]
-    set mmaxidx [lsearch $metallist $mmax]
-
     set areacap 0.55
-    if {$mminidx == 0} {set areacap 0.67}
-    for {set i [expr {$mminidx + 1}]} {$i <= $mmaxidx} {incr i} {
+    if {$mmin == 1} {set areacap 0.67}
+    for {set i [expr {$mmin + 1}]} {$i <= $mmax} {incr i} {
 	set areacap [expr {$areacap + 0.55}]
     }
 
@@ -98,8 +94,8 @@ proc sg13cmos5l::cap_recalc {field parameters} {
 #----------------------------------------------------------------
 #  w        Width of drawn cap
 #  l        Length of drawn cap
-#  mmin	    Metal stack lowest metal
-#  mmax	    Metal stack highest metal
+#  mmin	    Metal stack lowest metal index
+#  mmax	    Metal stack highest metal index
 #  value    Default cap value
 #  square   Make square capacitor
 #  subblock Put PWELLBLK under device
@@ -158,23 +154,20 @@ proc sg13cmos5l::cap_dialog {device parameters} {
     # Editable fields:      w, l, nx, ny, val
     # Checked fields:  	    square, dummy
 
-    magic::add_entry value "Estimated value (fF)" $parameters
+    magic::add_entry val "Estimated value (fF)" $parameters
     magic::add_entry l "Length (um)" $parameters
     magic::add_entry w "Width (um)" $parameters
-
-    set sellist {metal1 metal2 metal3 metal4}
-    magic::add_selectlist mmin "Bottom metal" $sellist $parameters metal1
-    set sellist {metal1 metal2 metal3 metal4}
-    magic::add_selectlist mmax "Top metal" $sellist $parameters metal4
+    magic::add_entry mmin "Bottom metal" $parameters
+    magic::add_entry mmax "Top metal" $parameters
 
     if {[dict exists $parameters square]} {
 	magic::add_checkbox square "Square capacitor" $parameters
     }
     if {[dict exists $parameters subblock]} {
-	magic::add_checkbox subblock "Add substrate block" $parameters
+	magic::add_checkbox square "Add substrate block" $parameters
     }
 
-    magic::add_dependency sg13cmos5l::cap_recalc $device sg13cmos5l l w mmin mmax value
+    magic::add_dependency sg13cmos5l::cap_recalc $device sg13cmos5l l w mmin mmax val
 }
 
 proc sg13cmos5l::capacitor_dialog {parameters} {
@@ -203,34 +196,20 @@ proc sg13cmos5l::cap_check {devname parameters} {
 
     set value   [magic::spice2float $value]
 
-    set metallist {metal1 metal2 metal3 metal4}
-    set mminidx [lsearch $metallist $mmin]
-    set mmaxidx [lsearch $metallist $mmax]
-
-    if {$value <= 0.0} {
-	puts stderr "Capacitor value must be strictly positive!"
-	# User entered a bad value;  Recalculate a sane value from W
-	set parameters [sg13cmos5l::cap_recalc w $parameters]
+    if {$mmin < 1} {
+	puts stderr "Capacitor lowest metal must be >= 1"
+	dict set parameters mmin 1
+	set mmin 1
     }
-    if {$mminidx < 0} {
-	puts stderr "Invalid capacitor bottom metal selection!"
-	set mminidx 0
-	dict set parameters mmin metal1
+    if {$mmax > 4} {
+	puts stderr "Capacitor highest metal must be >= 4"
+	dict set parameters mmax 4
+	set mmax 4
     }
-    if {$mmaxidx < 0} {
-	puts stderr "Invalid capacitor top metal selection!"
-	set mmaxidx 3
-	dict set parameters mmax metal4
-    }
-    if {$mminidx > $mmaxidx} {
+    if {$mmin > $mmax} {
 	puts stderr "Capacitor highest metal must be >= lowest metal"
-	if {$mmaxidx == 3} {
-	    set mminidx [- $mmaxidx 1]
-	} else {
-	    set mmaxidx [+ $mminidx 1]
-	}
-	dict set parameters mmax [lindex $metallist $mmaxidx]
-	dict set parameters mmin [lindex $metallist $mminidx]
+	dict set parameters mmax $mmin
+	set mmax $mmin
     }
 
     if {$w < $wmin} {
@@ -319,19 +298,14 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
     #	 on the top and left sides to accomodate the via4 contact.
 
     # Parameters:
-    # mminidx:  Bottom metal (1 to 4)
-    # mmaxidx:  Top metal (1 to 4)
+    # mmin:     Bottom metal (1 to 5)
+    # mmax:     Top metal (1 to 5)
     # w:        Width of capacitor layout
     # l:        Length (height) of capacitor layout
     # subblock: Add PWELLBLK under the device (disallows devices under the cap)
 
-    # Add 1 to the list index so that the value is equal to the metal number
-    set metallist {metal1 metal2 metal3 metal4}
-    set mminidx [+ [lsearch $metallist $mmin] 1]
-    set mmaxidx [+ [lsearch $metallist $mmax] 1]
-
     set orient 0
-    for {set m $mminidx} {$m <= $mmaxidx} {incr m} {
+    for {set m $mmin} {$m <= $mmax} {incr m} {
 	set metal m$m
 	set mw [tech drc width $metal]
 	set ms [tech drc spacing $metal]
@@ -378,7 +352,7 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
 	# of orientation.
 	if {$m == 1} {
 	    set edgeb $mw	;# default is metal width only if no metal 2
-	    if {$mmaxidx >= 2} {
+	    if {$mmax >= 2} {
 		# Edge must be wide enough for a contact + metal 1 surround
 		set edgeb [+ $viaw [* 2 $viabe]]
 	    }
@@ -387,7 +361,7 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
 	    set edgel $edgeb
 	} elseif {$m == 2} {
 	    set edgeb $viaw	;# default is metal width only if no metal 1
-	    if {$mminidx == 1} {
+	    if {$mmin == 1} {
 		set edgeb [+ $mw $viabe1]	;# because via1 is offset by $viabe
 	    }
 	    set edget $edgeb
@@ -451,7 +425,7 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
 	# Paint the contacts based on the values for the metal on *top* of
 	# the contact.
 
-	if {$m > $mminidx} {
+	if {$m > $mmin} {
 	    # Get the maximum value of the edge widths for both the top metal
 	    # and the bottom metal of the contact.
 	    set maxedgel [max $edgel $lastedgel]
@@ -647,10 +621,10 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
     # On the top metal, make labels for terminals c1 (left) and c2 (top)
     box size 0 0
     box position 0.01 [/ $l 2.0]
-    label c1 c m$mmaxidx
+    label c1 c m$mmax
     port make
     box position [/ $w 2.0] [- $l 0.01]
-    label c2 c m$mmaxidx
+    label c2 c m$mmax
     port make
 
     # Extract the layout parasitic

@@ -53,6 +53,13 @@ proc sg13cmos5l::diode_convert {parameters} {
 		set value [magic::3digitpastdecimal $value]
 		dict set pdkparams [string tolower $key] $value
 	    }
+	    area {
+		# area also converted to units of microns
+		set value [magic::spice2float $value]
+		set value [expr $value * 1e12]
+		set value [magic::3digitpastdecimal $value]
+		dict set pdkparams [string tolower $key] $value
+	    }
 	    m {
                 # Convert m to ny
 		dict set pdkparams ny $value

@@ -43,18 +43,20 @@ proc sg13cmos5l::bipolar_convert {parameters} {
     dict for {key value} $parameters {
 	switch -nocase $key {
 	    m {
-		 dict set pdkparams nx $value
+		dict set pdkparams nx $value
 	    }
 	    we {
 		# Convert value to microns
 		set value [magic::spice2float $value]
 		set value [expr $value * 1e6]
+		set value [magic::3digitpastdecimal $value]
 		dict set pdkparams w $value
 	    }
 	    le {
 		# Convert value to microns
 		set value [magic::spice2float $value]
 		set value [expr $value * 1e6]
+		set value [magic::3digitpastdecimal $value]
 		dict set pdkparams l $value
 	    }
 	    default {
