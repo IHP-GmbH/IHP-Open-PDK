@@ -9,8 +9,8 @@
 # 2. VIA_M1_* cells are ambiguous to magic.
 # 3. VIA_M2_* and RSC_* cells have ContBar vias in different alignments,
 #    which interferes with magic's check for bad via overlaps.
-# 4. _CELL_CORNER has NWELL that does not extend under diffusion,
-#    causing magic to misinterpret the layer.
+# 4. _CELL_CORNER and _BITKIT_CORNER have NWELL that does not extend under
+#    diffusion, causing magic to misinterpret the layer.
 
 gds flatglob lvsres_*
 gds flatglob *_CELL_SUB
@@ -18,3 +18,4 @@ gds flatglob VIA_M1_*
 gds flatglob VIA_M2_*
 gds flatglob RSC_*
 gds flatglob *_CELL_CORNER
+gds flatglob *_BITKIT_CORNER
