@@ -164,7 +164,7 @@ proc sg13cmos5l::cap_dialog {device parameters} {
 	magic::add_checkbox square "Square capacitor" $parameters
     }
     if {[dict exists $parameters subblock]} {
-	magic::add_checkbox square "Add substrate block" $parameters
+	magic::add_checkbox subblock "Add substrate block" $parameters
     }
 
     magic::add_dependency sg13cmos5l::cap_recalc $device sg13cmos5l l w mmin mmax val
