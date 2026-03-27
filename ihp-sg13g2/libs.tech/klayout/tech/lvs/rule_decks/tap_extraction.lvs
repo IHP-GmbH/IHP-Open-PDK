@@ -31,11 +31,16 @@ logger.info('Extracting ntap1 device')
 #   - N => ntap1_well (nwell body)
 # This preserves PDK terminal order in the written netlist as "TIE WELL".
 # See: https://www.klayout.de/doc/manual/lvs_device_extractors.html#h2-117
-extract_devices(diode('ntap1', CustomTap), { 'P' => ntap1_tie, 'N' => ntap1_well })
+cheat("*") {
+  extract_devices(diode('ntap1', CustomTap), { 'P' => ntap1_tie, 'N' => ntap1_well })
+}
 
 # ptap1
 logger.info('Extracting ptap1 device')
 # ptap1 follows the same P/N region mapping rule:
 #   - P => ptap1_tie (tie contact)
 #   - N => ptap1_sub (substrate/body region)
-extract_devices(diode('ptap1', CustomTap), { 'P' => ptap1_tie, 'N' => ptap1_sub })
+cheat("*") {
+  extract_devices(diode('ptap1', CustomTap), { 'P' => ptap1_tie, 'N' => ptap1_sub })
+}
+
