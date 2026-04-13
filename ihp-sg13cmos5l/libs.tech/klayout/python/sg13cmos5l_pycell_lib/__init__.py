@@ -154,7 +154,8 @@ if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
 class PyCellLib(pya.Library):
     def __init__(self):
         self.description = "IHP SG13CMOS5L Pcells"
-
+        self.technology = 'sg13cmos5l'
+        
         tech = Tech.get('SG13_dev')
 
         processNames = []
