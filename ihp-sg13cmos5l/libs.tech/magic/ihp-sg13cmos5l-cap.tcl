@@ -154,7 +154,7 @@ proc sg13cmos5l::cap_dialog {device parameters} {
     # Editable fields:      w, l, nx, ny, val
     # Checked fields:  	    square, dummy
 
-    magic::add_entry val "Estimated value (fF)" $parameters
+    magic::add_entry value "Estimated value (fF)" $parameters
     magic::add_entry l "Length (um)" $parameters
     magic::add_entry w "Width (um)" $parameters
     magic::add_entry mmin "Bottom metal" $parameters
@@ -167,7 +167,7 @@ proc sg13cmos5l::cap_dialog {device parameters} {
 	magic::add_checkbox subblock "Add substrate block" $parameters
     }
 
-    magic::add_dependency sg13cmos5l::cap_recalc $device sg13cmos5l l w mmin mmax val
+    magic::add_dependency sg13cmos5l::cap_recalc $device sg13cmos5l l w mmin mmax value
 }
 
 proc sg13cmos5l::capacitor_dialog {parameters} {
@@ -196,13 +196,36 @@ proc sg13cmos5l::cap_check {devname parameters} {
 
     set value   [magic::spice2float $value]
 
+    if {$value <= 0.0} {
+	puts stderr "Capacitor value must be strictly positive!"
+	# User entered a bad value;  Recalculate a sane value from W
+	set parameters [sg13cmos5l::cap_recalc w $parameters]
+    }
+    if {$mmin != [int $mmin]} {
+	puts stderr "Capacitor lowest metal value must be an integer"
+	dict set parameters mmin [int $mmin]
+	set mmin [int $mmin]
+    }
+    if {$mmax != [int $mmax]} {
+	puts stderr "Capacitor highest metal value must be an integer"
+	dict set parameters mmax [int $mmax]
+	set mmax [int $mmax]
+    }
     if {$mmin < 1} {
 	puts stderr "Capacitor lowest metal must be >= 1"
 	dict set parameters mmin 1
 	set mmin 1
     }
+    if {$mmin > 4} {
+	puts stderr "Capacitor lowest metal must be <= 4"
+	# Also set mmax, avoids secondary error below.
+	dict set parameters mmin 4
+	dict set parameters mmax 4
+	set mmin 4
+	set mmax 4
+    }
     if {$mmax > 4} {
-	puts stderr "Capacitor highest metal must be >= 4"
+	puts stderr "Capacitor highest metal must be <= 4"
 	dict set parameters mmax 4
 	set mmax 4
     }
