@@ -31,9 +31,9 @@ proc sg13cmos5l::via_dialog {parameters} {
     #	cuts can be lists if metaltop - metalbot > 1
     #	orientation can be a list if non-default
 
-    set sellist {metal1 metal2 metal3 metal4 metal5 metal6}
+    set sellist {metal1 metal2 metal3 metal4}
     magic::add_selectlist metalbot "Bottom metal" $sellist $parameters metal1
-    set sellist {metal2 metal3 metal4 metal5 metal6 metal7}
+    set sellist {metal2 metal3 metal4 metal5}
     magic::add_selectlist metaltop "Top metal" $sellist $parameters metal2
 
     # NOTE: Need to implement custom per-layer orientation
