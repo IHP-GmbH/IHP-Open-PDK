@@ -2021,23 +2021,15 @@ paint metal3
 box values -42 -604 12940 -24
 paint metal3
 box values 192 3822 192 3822
-label VDD FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label VDD FreeSans 200 0 0 0 c -metal2
 box values 290 3402 290 3402
-label sub! FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label sub! FreeSans 200 0 0 0 c -metal1
 box values 259 -150 259 -150
-label VSS FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label VSS FreeSans 200 0 0 0 c -metal2
 box values 5826 1640 5826 1640
-label nmoscl_4 FreeSans 1000 0 0 0 c comment
-select area label
-setlabel sticky true
+label nmoscl_4 FreeSans 1000 0 0 0 c -comment
 box values 290 3402 290 3402
-label sub! FreeSans 200 0 0 0 c psd
+label sub! FreeSans 200 0 0 0 c -psd
 select clear
 property gencell nmoscl_4
 property library sg13cmos5l

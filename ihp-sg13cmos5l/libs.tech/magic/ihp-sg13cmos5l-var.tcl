@@ -399,6 +399,14 @@ proc sg13cmos5l::var_draw {parameters} {
     paint nsd
     box grow c 0.24um
     paint nwell
+
+    # Add "SVaricap" text for device recognition
+    pushbox
+    box size 0 0
+    box move ne 0.24um
+    box move n 0.36um
+    label SVaricap e -comment
+    popbox
     popbox
 
     pushbox

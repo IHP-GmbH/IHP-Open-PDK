@@ -1125,23 +1125,15 @@ paint metal3
 box values -42 -604 6556 -24
 paint metal3
 box values 318 3852 318 3852
-label VDD FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label VDD FreeSans 200 0 0 0 c -metal2
 box values 290 3402 290 3402
-label sub! FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label sub! FreeSans 200 0 0 0 c -metal1
 box values 362 -249 362 -249
-label VSS FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label VSS FreeSans 200 0 0 0 c -metal2
 box values 3451 1676 3451 1676
-label nmoscl_2 FreeSans 1000 0 0 0 c comment
-select area label
-setlabel sticky true
+label nmoscl_2 FreeSans 1000 0 0 0 c -comment
 box values 290 3402 290 3402
-label sub! FreeSans 200 0 0 0 c psd
+label sub! FreeSans 200 0 0 0 c -psd
 select clear
 property gencell nmoscl_2
 property library sg13cmos5l

@@ -1,4 +1,4 @@
-########################################################################
+#######################################################################
 #
 # Copyright 2026 IHP PDK Authors
 #
@@ -286,7 +286,7 @@ style  sg13cmos5l variants ()
  copyup nsubcheck
 
  templayer ntaparea nsdarea
- and DNWELL
+ tagged well DIFF
  and-not vararea
  and-not DIGITALID
 
@@ -310,6 +310,7 @@ style  sg13cmos5l variants ()
  copyup psubcheck
 
  templayer ptaparea psdarea
+ tagged sub! DIFF
  and SUBCUT,ptapcheck
  and-not DIGITALID
  copyup ptapcheck
@@ -352,7 +353,15 @@ style  sg13cmos5l variants ()
  and THKOX,hvcheck
  copyup hvnsubcheck
 
+ templayer hvntaparea hvnsdarea
+ tagged well DIFF
+ and-not DIGITALID
+
+ layer hvntap hvntaparea
+ labels DIFF
+
  layer hvnsd hvnsdarea
+ and-not havntaparea
  labels DIFF
 
  # Copy nsub areas up for contact checks
@@ -367,7 +376,15 @@ style  sg13cmos5l variants ()
  and-not vararea
  copyup hvpsubcheck
 
+ templayer hvptaparea hvpsdarea
+ tagged sub! DIFF
+ and-not DIGITALID
+
+ layer hvptap hvptaparea
+ labels DIFF
+
  layer hvpsd hvpsdarea
+ and-not hvptaparea
  labels DIFF
 
  # Copy psub, hvpsub, and ptap areas up for contact checks
@@ -454,8 +471,7 @@ style  sg13cmos5l variants ()
  and-not THKOX,hvcheck
 
  templayer ntapcbase nscbase
- and DNWELL
- and-not DIGITALID
+ and ntaparea
 
  layer nsc nscbase
  and-not ntapcbase
@@ -528,8 +544,7 @@ style  sg13cmos5l variants ()
  and-not THKOX,hvcheck
 
  templayer ptapcbase pscbase
- and SUBCUT
- and-not DIGITALID
+ and ptaparea
 
  layer psc pscbase
  and-not EDGESEAL
@@ -638,13 +653,25 @@ style  sg13cmos5l variants ()
  and NWELL,nwelcheck
  and THKOX,hvcheck
 
+ templayer hvntapbase hvnscbase
+ and hvntaparea
+
  layer hvnsc hvnscbase
+ and-not hvntapbase
  grow 85
  shrink 85
  shrink 85
  grow 85
  or hvnscbase
  and-not hvntapbase
+ labels CONT
+
+ layer hvntapc hvntapbase
+ grow 85
+ shrink 85
+ shrink 85
+ grow 85
+ or hvntapbase
  labels CONT
 
  templayer hvpdcbase CONT
@@ -690,8 +717,7 @@ style  sg13cmos5l variants ()
  and THKOX,hvcheck
 
  templayer hvptapcbase hvpscbase
- and SUBCUT
- and-not DIGITALID
+ and hvptaparea
 
  layer hvpsc hvpscbase
  and-not hvptapcbase
