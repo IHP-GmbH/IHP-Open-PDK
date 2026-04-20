@@ -406,10 +406,10 @@ end
 devexcl_tables = %w[main nmosi psd]
 if TABLES.any?{|x| devexcl_tables.include?(x)}
   logger.info('Starting compound device exclusion derivations')
-  scr1_or_schottky_nbl1 = schottky_nbl1.join(scr1) if defined?(scr1) && defined?(schottky_nbl1)
+  scr1_or_schottky_nbl1 = schottky_nbl1.join(scr1) if scr1 && schottky_nbl1
 
   # dschottky: general Schottky diode region (used by nSDB.e exclusion)
-  if defined?(schottky_nbl1)
+  if schottky_nbl1
     dschottky_1 = activ_drw.and(nsd_block).and(nbulay_drw)
     dschottky_2 = dschottky_1.sized(1.12.um, acute_limit)
     dschottky_3 = dschottky_2.and(pwell_block)
@@ -426,7 +426,7 @@ if TABLES.any?{|x| devexcl_tables.include?(x)}
 
     # nsdb_exlcDev: device exclusion for nSDB.e rule
     nsdb_exlcDev = dschottky.join(schottky_nbl1).join(schottky_nw1)
-    nsdb_exlcDev = nsdb_exlcDev.join(trans_bip) if defined?(trans_bip)
+    nsdb_exlcDev = nsdb_exlcDev.join(trans_bip) if trans_bip
   end
 end
 
