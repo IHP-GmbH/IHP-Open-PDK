@@ -255,18 +255,17 @@ paint metal3
 box values 540 38 1532 57
 paint metal3
 box values 1036 534 1036 534
-label B FreeSans 1000 0 0 0 c space
-select area label
-setlabel sticky true
+label B FreeSans 1000 0 0 0 c -metal2
 box values -1036 4466 -1036 4466
-label A FreeSans 1000 0 0 0 c space
-select area label
-setlabel sticky true
+label A FreeSans 1000 0 0 0 c -metal2
 box values -1470 -418 -1470 -418
-label scr1 FreeSans 500 0 0 0 ne space
-select area label
-setlabel sticky true
+label scr1 FreeSans 500 0 0 0 ne -comment
 select clear
+property gencell scr1
+property library sg13g2
+if {[info var parameters] == "parameters"} {
+    property parameters $parameters
+}
 view
 units {*}$curunits
 tech revert

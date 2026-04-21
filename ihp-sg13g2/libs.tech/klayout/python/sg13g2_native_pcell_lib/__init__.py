@@ -23,9 +23,9 @@ from .via_pcell import ViaPCell
 class SG13G2_ViaLib(pya.Library):
     def __init__(self):
         self.description = "SG13G2 Native PCells"
+        self.technology = 'sg13g2'
         self.layout().register_pcell("Via", ViaPCell())
         self.register("SG13_native_pcell_lib")
-        self.technology = 'sg13g2'
 
 
 SG13G2_ViaLib()

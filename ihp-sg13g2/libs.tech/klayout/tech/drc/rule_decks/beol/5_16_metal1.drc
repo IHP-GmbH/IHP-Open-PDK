@@ -32,11 +32,11 @@ if TABLES.include?('metal1') || BEOL
   m1_a_l.output('M1.a', "5.16. M1.a: Min. Metal1 width: #{m1_a_value} μm.")
   m1_a_l.forget
 
-  # Rule M1.b: Min. Metal1 space or notch is 0.18µm
+  # Rule M1.b: Min. Metal1 (drawing + filler) space or notch is 0.18µm
   logger.info('Executing rule M1.b')
   m1_b_value = drc_rules['M1_b'].to_f
-  m1_b_l = metal1_drw.space(m1_b_value.um, euclidian)
-  m1_b_l.output('M1.b', "5.16. M1.b: Min. Metal1 space or notch: #{m1_b_value}μm.")
+  m1_b_l = metal1_drw.join(metal1_filler).space(m1_b_value.um, euclidian)
+  m1_b_l.output('M1.b', "5.16. M1.b: Min. Metal1 (drawing + filler) space or notch: #{m1_b_value} μm.")
   m1_b_l.forget
 
   unless PRECHECK_DRC

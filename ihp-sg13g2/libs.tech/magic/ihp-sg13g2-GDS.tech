@@ -827,12 +827,23 @@ style patternfill variants (),(tiled)
 	and-not	well_shrink
 
 #------------------------------------------------------------------------
+# A similar guard band is needed around PWELLBLK, at 1.5um distance
+# Rule AFil.i
+#------------------------------------------------------------------------
+
+ templayer	pwblk_shrink PWELLBLK
+	shrink  1500
+
+ templayer	pwblk_guardband PWELLBLK
+	grow	1500
+	and-not	pwblk_shrink
+
+#------------------------------------------------------------------------
 # Diffusion filler keep-out areas
 # Spacing to diffusion:  0.42um (AFil.c1)
 # Spacing to poly and contact: 1.10um (AFil.c)
 # Space to NPN bipolar: 1um (AFil.e)
 #
-# To do:  Ensure spacing to pwell-block (Afil.i)
 # Note: Fill patterns inside pwell-block are not automatically
 # generated but can be manually drawn.
 #------------------------------------------------------------------------
@@ -844,14 +855,16 @@ style patternfill variants (),(tiled)
 	or	ALLDIFF,DIFFFILL,DIFFBLOCK
 
  templayer      obstruct_poly ALLDIFF,DIFFFILL
-	grow	100
-	or	BIPOLARID
-	grow	580
-	or	ALLPOLY,POLYFILL,POLYBLOCK
+	or	ALLPOLY,POLYBLOCK
+	or	BIPOLARID,SBLK,NSDBLOCK,PSD
+	grow	300
+	or	POLYFILL
+	grow	380
 
- templayer	obstruct_diffpoly obstruct_diff,obstruct_poly
+ templayer	obstruct_diffpoly obstruct_poly,obstruct_diff
 	grow	420
 	or	well_guardband
+	or	pwblk_guardband
 
 #---------------------------------------------------
 # DIFF and POLY fill
@@ -881,16 +894,18 @@ style patternfill variants (),(tiled)
 	grow	580
 	or	ALLDIFF,DIFFFILL,DIFFBLOCK,difffill_coarse
 
- templayer      obstruct_poly_medium ALLDIFF,DIFFILL,PSD
+ templayer      obstruct_poly_medium ALLDIFF,DIFFFILL
 	or	difffill_coarse
-	grow	100
-	or	BIPOLARID
-	grow	580
-	or	ALLPOLY,POLYFILL,POLYBLOCK,polyfill_coarse
+	or	ALLPOLY,POLYBLOCK
+	or	BIPOLARID,SBLK,NSDBLOCK,PSD
+	grow	300
+	or	POLYFILL,polyfill_coarse
+	grow	380
 
  templayer      obstruct_diffpoly_medium obstruct_diff_medium,obstruct_poly_medium
 	grow	420
 	or	well_guardband
+	or	pwblk_guardband
 
  templayer	diffpolyfill_medium topbox
         slots   0 2400 1200 0 2400 1200 750 0
@@ -913,17 +928,18 @@ style patternfill variants (),(tiled)
 	or	ALLDIFF,DIFFFILL,DIFFBLOCK
 	or	difffill_coarse,difffill_medium
 
- templayer      obstruct_poly_fine ALLDIFF,DIFFFILL,PSD
+ templayer      obstruct_poly_fine ALLDIFF,DIFFFILL
 	or	difffill_coarse,difffill_medium
-	grow	100
-	or	BIPOLARID
-	grow	580
-	or	ALLPOLY,POLYFILL,POLYBLOCK
-	or	polyfill_coarse,polyfill_medium
+	or	ALLPOLY,POLYBLOCK
+	or	BIPOLARID,SBLK,NSDBLOCK,PSD
+	grow	300
+	or	POLYFILL,polyfill_coarse,polyfill_medium
+	grow	380
 
  templayer      obstruct_diffpoly_fine obstruct_diff_fine,obstruct_poly_fine
 	grow	420
 	or	well_guardband
+	or	pwblk_guardband
 
  templayer	diffpolyfill_fine topbox
         slots   0 1400 1200 0 1100 1200 360 0

@@ -66,13 +66,21 @@ proc sg13g2::bipolar_convert {parameters} {
     dict for {key value} $parameters {
 	switch -nocase $key {
 	    m {
-		 dict set pdkparams nx $value
+		dict set pdkparams nx $value
 	    }
 	    we {
-		 dict set pdkparams w $value
+		# Convert value to microns
+		set value [magic::spice2float $value]
+		set value [expr $value * 1e6]
+		set value [magic::3digitpastdecimal $value]
+		dict set pdkparams w $value
 	    }
 	    le {
-		 dict set pdkparams l $value
+		# Convert value to microns
+		set value [magic::spice2float $value]
+		set value [expr $value * 1e6]
+		set value [magic::3digitpastdecimal $value]
+		dict set pdkparams l $value
 	    }
 	    default {
 		# Allow unrecognized parameters to be passed unmodified
@@ -243,10 +251,7 @@ proc sg13g2::npn13g2_base_generate {} {
     # Cell has a text label at the bottom;  force it to attach to "comment"
     box position 0 -2.3um
     box size 0 0
-    label npn13G2 c space
-    select area label
-    setlabel sticky 1
-    setlabel layer comment
+    label npn13G2 c +comment
     
     # Return to our regularly scheduled program
     load $curcell
@@ -605,13 +610,10 @@ proc sg13g2::npn13g2l_draw {parameters} {
 	port make
 
 	sg13g2::setbox $ebox
-	label E c m2
-	port make
 	# This port crosses vias, so make it sticky and make sure it
 	# is on metal 2.
-	select area label
-	setlabel sticky 1
-	setlabel layer m2
+	label E c +m2
+	port make
     }
 
     popbox
@@ -855,13 +857,10 @@ proc sg13g2::npn13g2v_draw {parameters} {
 
 	# Emitter
 	sg13g2::setbox $ebox
-	label E c m2
-	port make
 	# This port crosses vias, so make it sticky and make sure it
 	# is on metal 2.
-	select area label
-	setlabel sticky 1
-	setlabel layer m2
+	label E c +m2
+	port make
     }
 
     popbox
@@ -898,7 +897,19 @@ proc sg13g2::pnpMPA_draw {parameters} {
 	    bulk		"C" \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
+    set result [sg13g2::diode_draw $drawdict]
+
+    # Add the "pnpMPA" device name as a label on comment (LVS text)
+    pushbox
+    box values 0 0 0 0
+    set w [dict get $parameters w]
+    set hw [/ $w 2.0]
+    box move e ${hw}um
+    box move e 1.22um
+    label pnpMPA c -comment
+    popbox
+
+    return result
 }
 
 #----------------------------------------------------------------
