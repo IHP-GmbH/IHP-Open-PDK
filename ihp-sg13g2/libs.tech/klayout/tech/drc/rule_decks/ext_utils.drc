@@ -880,7 +880,7 @@ class DRC::DRCLayer
             edge_layer = self.dup
         end
         constraint.each do |expression|
-            if expression[0] == ">"
+            if expression[0] == ">"  # 1.dbu = 1nm, the minimum grid increment
                 edge_layer = edge_layer.with_length((expression[1] + 1.dbu), nil)
             elsif expression[0] == "<"
                 edge_layer = edge_layer.with_length(nil, expression[1])
