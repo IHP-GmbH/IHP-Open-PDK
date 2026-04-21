@@ -881,7 +881,7 @@ class DRC::DRCLayer
         end
         constraint.each do |expression|
             if expression[0] == ">"
-                edge_layer = edge_layer.with_length((expression[1] + 1), nil)
+                edge_layer = edge_layer.with_length((expression[1] + 1.dbu), nil)
             elsif expression[0] == "<"
                 edge_layer = edge_layer.with_length(nil, expression[1])
             elsif expression[0] == "=="
@@ -891,7 +891,7 @@ class DRC::DRCLayer
             elsif expression[0] == ">="
                 edge_layer = edge_layer.with_length(expression[1], nil)
             elsif expression[0] == "<="
-                edge_layer = edge_layer.with_length(nil, (expression[1] + 1))
+                edge_layer = edge_layer.with_length(nil, (expression[1] + 1.dbu))
             else
                 raise "invalid expression"
             end

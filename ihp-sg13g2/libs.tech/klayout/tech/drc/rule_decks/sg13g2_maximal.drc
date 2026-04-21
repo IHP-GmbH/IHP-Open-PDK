@@ -1012,7 +1012,7 @@ class DRC::DRCLayer
         end
         constraint.each do |expression|
             if expression[0] == ">"
-                edge_layer = edge_layer.with_length((expression[1] + 1), nil)
+                edge_layer = edge_layer.with_length((expression[1] + 1.dbu), nil)
             elsif expression[0] == "<"
                 edge_layer = edge_layer.with_length(nil, expression[1])
             elsif expression[0] == "=="
@@ -1022,7 +1022,7 @@ class DRC::DRCLayer
             elsif expression[0] == ">="
                 edge_layer = edge_layer.with_length(expression[1], nil)
             elsif expression[0] == "<="
-                edge_layer = edge_layer.with_length(nil, (expression[1] + 1))
+                edge_layer = edge_layer.with_length(nil, (expression[1] + 1.dbu))
             else
                 raise "invalid expression"
             end
@@ -1490,6 +1490,7 @@ NWell_pin = source.polygons("31/2")
 nBuLay = source.polygons("32/0")
 nBuLay_block = source.polygons("32/21")
 EmWind = source.polygons("33/0")
+EmWiHv = source.polygons("156/0")
 DeepCo = source.polygons("35/0")
 MIM = source.polygons("36/0")
 EdgeSeal = source.polygons("39/0")
@@ -1795,7 +1796,7 @@ subst_tie_npn = pSD.ext_touching(subst_tie_hole_w_npn).ext_touching(TRANS)
 emit_npn13G2 = EmWind.inside(transG2)
 emit_npn13G2L = EmWind.inside(transG2L)
 trans_bip = transG2.ext_or(transG2C, transG2L, transG2V)
-emit_npn13G2V = EmWind.inside(transG2V)
+emit_npn13G2V = EmWiHv.inside(transG2V)
 nBuLayGen_nBuLay = nBuLay.ext_or(nBuLayGen)
 schottky_nbl_rec = isoPWell.not_outside(SalBlock).not_outside(nSD_block).not_outside(Recog_diode).not_outside(ThickGateOx)
 ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp3 = ThickGateOx.ext_with_coincident_edges(ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2)
