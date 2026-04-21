@@ -55,9 +55,11 @@ if TABLES.include?('rppd') || FEOL
     # Rule Rppd.c: Min. and max. SalBlock space to Cont is 0.20 um
     logger.info('Executing rule Rppd.c')
     rppd_c_value = drc_rules['Rppd_c'].to_f
-    rppd_c_l = rppd_cont.separation(salblock_rppd, rppd_c_value.um, euclidian)
-    rppd_c_l.output('Rppd.c', "6.3. Rppd.c : Min. and max. SalBlock space to Cont: #{rppd_c_value} um")
-    rppd_c_l.forget
+    rppd_c_ext = salblock_rppd.ext_extended(rppd_c_value.um, rppd_c_value.um)
+    [rppd_cont.ext_separation(salblock_rppd, rppd_c_value.um),
+     rppd_cont.ext_interacting(rppd_c_ext, inverted: true)
+    ].each { |r| r.output('Rppd.c', "6.3. Rppd.c : Min. and max. SalBlock space to Cont: #{rppd_c_value} um") }
+    rppd_c_ext.forget
 
     # Rule Rppd.d: Min. EXTBlock enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rppd.d')

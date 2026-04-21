@@ -52,7 +52,7 @@ if TABLES.include?('rhigh') || FEOL
 
     # Rule Rhi.b: pSD and nSD must be identical within Rhigh resistor
     logger.info('Executing rule Rhi.b')
-    rhi_b_l = psd_nsd_mismatch.and(rhigh_recog)
+    rhi_b_l = psd_nsd_mismatch.and(rhigh_recog.sized(1.dbu)).merged
     rhi_b_l.output('Rhi.b', '6.4. Rhi.b : pSD and nSD are identical (nSD:drawing only permitted within Rhigh resistors)')
     rhi_b_l.forget
 
@@ -66,9 +66,11 @@ if TABLES.include?('rhigh') || FEOL
     # Rule Rhi.d: Min. and max. SalBlock space to Cont is 0.20 um
     logger.info('Executing rule Rhi.d')
     rhi_d_value = drc_rules['Rhi_d'].to_f
-    rhi_d_l = rhigh_cont.separation(salblock_rhigh, rhi_d_value.um, euclidian)
-    rhi_d_l.output('Rhi.d', "6.4. Rhi.d : Min. and max. SalBlock space to Cont: #{rhi_d_value} um")
-    rhi_d_l.forget
+    rhi_d_ext = salblock_rhigh.ext_extended(rhi_d_value.um, rhi_d_value.um)
+    [rhigh_cont.ext_separation(salblock_rhigh, rhi_d_value.um),
+     rhigh_cont.ext_interacting(rhi_d_ext, inverted: true)
+    ].each { |r| r.output('Rhi.d', "6.4. Rhi.d : Min. and max. SalBlock space to Cont: #{rhi_d_value} um") }
+    rhi_d_ext.forget
 
     # Rule Rhi.e: Min. EXTBlock enclosure of GatPoly is 0.18 um
     logger.info('Executing rule Rhi.e')
