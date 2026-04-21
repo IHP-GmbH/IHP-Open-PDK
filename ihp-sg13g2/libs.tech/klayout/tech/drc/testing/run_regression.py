@@ -78,6 +78,9 @@ RULES_VAR = {
     ),
     "met_name": ("Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"),
     "via_name": ("Via1", "Via2", "Via3", "Via4", "TopVia1", "TopVia2"),
+    "seal_a_name": ("Activ", "pSD", "Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"),
+    "cv_name": ("Cont", "Via1", "Via2", "Via3", "Via4", "TopVia1", "TopVia2"),
+    "sf_name": ("Activ", "pSD", "Metal1", "Metal2", "Metal3", "Metal4", "Metal5", "TopMetal1", "TopMetal2"),
 }
 
 
