@@ -240,10 +240,6 @@ class pmos(DloGen):
             nwell_offset = max(0, GridFix((contActMin-w)/2+0.5*self.grid))
             dbCreateRect(self, well_layer, Box(xdiff_beg-nwell_pActiv_over, ydiff_beg-nwell_pActiv_over+diffoffset-nwell_offset, xdiff_end+nwell_pActiv_over, ydiff_end+nwell_pActiv_over+diffoffset+nwell_offset))
 
-        # B-Pin
-        MkPin(self, 'B', 4, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec), Layer('Substrate', 'drawing'))
-
         # draw Thick Gate Oxide
         if hv :
             dbCreateRect(self, Layer('ThickGateOx', 'drawing'), Box(xdiff_beg-thGateOxAct, ydiff_beg-gatpoly_Activ_over-thGateOxGat, xdiff_end+thGateOxAct, ydiff_end+gatpoly_Activ_over+thGateOxGat))
-
