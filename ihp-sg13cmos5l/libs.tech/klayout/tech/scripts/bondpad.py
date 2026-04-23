@@ -141,7 +141,7 @@ def generate_bondpad(diameter: float, shape: str, output: str,
     layout = klayout.db.Layout(True)
     layout.dbu = 0.001
 
-    lib = pya.Library.library_by_name(LIB)
+    lib = pya.Library.library_by_name(LIB, 'sg13cmos5l')
     pcell_decl = lib.layout().pcell_declaration(PCELL)
 
     cell_name = pathlib.Path(output).resolve().name.split('.')[0]
