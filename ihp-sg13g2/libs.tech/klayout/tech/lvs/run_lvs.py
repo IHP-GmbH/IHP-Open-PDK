@@ -483,6 +483,7 @@ def generate_klayout_switches(
         "run_mode": run_mode,
         "no_net_names": "true" if args.no_net_names else "false",
         "spice_comments": "true" if args.spice_comments else "false",
+        "tap_ap_compare": "true" if args.tap_ap_compare else "false",
         "net_only": "true" if effective_net_only else "false",
         "top_lvl_pins": "true" if args.top_lvl_pins else "false",
         "no_simplify": "true" if args.no_simplify else "false",
@@ -736,7 +737,7 @@ if __name__ == "__main__":
     run_lvs.py [--layout=<layout_path>]
                [--netlist=<netlist_path>] [--layout_netlist=<layout_netlist_path>] [--run_dir=<run_dir_path>]
                [--topcell=<topcell_name>] [--run_mode=<run_mode>]
-               [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
+               [--no_net_names] [--spice_comments] [--tap_ap_compare] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
                [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
                [--implicit_nets=<nets>]
@@ -783,6 +784,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--no_net_names", action="store_true", help="Omit net names in extracted netlist.")
     parser.add_argument("--spice_comments", action="store_true", help="Include comments in extracted netlist.")
+    parser.add_argument(
+        "--tap_ap_compare",
+        action="store_true",
+        help="Enable A/P parameter comparison for tap devices (ntap1/ptap1). [default: disabled]",
+    )
     parser.add_argument("--net_only", action="store_true", help="Generate extracted netlist only (skip comparison).")
     parser.add_argument("--no_simplify", action="store_true", help="Disable simplify on layout/schematic netlists.")
     parser.add_argument("--no_series_res", action="store_true", help="Disable resistor series simplification.")
