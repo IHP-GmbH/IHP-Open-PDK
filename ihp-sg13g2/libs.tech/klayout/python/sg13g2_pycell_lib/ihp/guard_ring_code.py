@@ -65,13 +65,26 @@ def generate_guard_ring(dlo_gen: DloGen,
 
     #*************************************************************************
     #*
+    #* Tech Layer Stack capabilities
+    #*
+    #*************************************************************************
+
+    # NOTE: in SG13G2_CMOS5L, this file is reused (symlinked)
+    #       that simplified process does not have nBuLay
+    nbulay_available = techparams['techName'] == 'SG13G2' # and not 'SG13G2_CMOS5L'
+
+    #*************************************************************************
+    #*
     #* Layer Definitions
     #*
     #*************************************************************************
 
     sub = Layer('Substrate', 'drawing')
     nwell = Layer('NWell', 'drawing')
-    nbulay = Layer('nBuLay', 'drawing')
+    
+    if nbulay_available:
+        nbulay = Layer('nBuLay', 'drawing')
+      
     activ = Layer('Activ', 'drawing')
     psd = Layer('pSD', 'drawing')
     cont = Layer('Cont', 'drawing')
@@ -91,7 +104,10 @@ def generate_guard_ring(dlo_gen: DloGen,
     ndiff_over = techparams['NW_e']     # Minimum NWell enclosure of NWell tie
                                         # surrounded entirely by NWell in N+Activ1
     pdiffx_over = techparams['pSD_c1']  # pSD enc. of p+Activ in pWell
-    nbulay_min_w = techparams['NBL_a']  # Min nBulLay width
+    
+    if nbulay_available:
+        nbulay_min_w = techparams['NBL_a']  # Min nBulLay width
+    
     min_metal1_width = techparams['M1_a']  # Min Metal1 Width
     min_metal1_cont_encl = techparams['M1_c1']  # Min. Metal1 endcap enclosure of Cont
 
@@ -106,7 +122,8 @@ def generate_guard_ring(dlo_gen: DloGen,
     wguard_met1 = wguard_active
     # wguard_met1 = max(cont_size, min_metal1_width) + 2 * min_metal1_cont_encl  # metal1 guardring width
 
-    nbulay_over = (nbulay_min_w - wguard_active) / 2.0
+    if nbulay_available:
+        nbulay_over = (nbulay_min_w - wguard_active) / 2.0
 
     # guardring
     xl = -w / 2.0 + x_center
@@ -199,16 +216,21 @@ def generate_guard_ring(dlo_gen: DloGen,
         ]
         dbLayerOrList(lyr, mlist)
 
-    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float,over: float):
+    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float, over: float):
         box = Box(xl - over, yb - over, xr + over, yt + over)
         dbCreateRect(dlo_gen, lyr, box)
 
     draw_contacted_ring(xl, yb, xr, yt, wguard_met1)
 
     if guard_ring_type == 'nwell':
-        draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over))
-        draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
-        draw_ring(nbulay, xl, yb, xr, yt, wguard_active, nbulay_over)
+        if nbulay_available:
+            draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over))
+            draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
+            draw_ring(nbulay, xl, yb, xr, yt, wguard_active, nbulay_over)
+        else:
+            draw_well_box(nwell, xl, yb, xr, yt, ndiff_over)
+            draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
+
     # elif guard_ring_type == 'dnwell':
     #     draw_well_box(nwell, xl, yb, xr, yt, wguard, nbulay_over)
     #     draw_well_box(nbulay, xl, yb, xr, yt, wguard, nbulay_over)
