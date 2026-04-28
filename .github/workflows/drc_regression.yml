@@ -127,14 +127,24 @@ jobs:
           || true
 
   drc_regression_cells:
+    name: "DRC cells (${{ matrix.lib }})"
     runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        lib:
+          - sg13g2_io
+          - sg13g2_pr
+          - sg13g2_stdcell
+          - sg13g2_sram
     steps:
-      - name: 🧾 Checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: 💾 Restore KLayout .deb from cache
+      - name: Restore KLayout .deb from cache
         id: cache-klayout
         uses: actions/cache@v4
         with:
@@ -142,17 +152,34 @@ jobs:
           key: klayout-deb-cache-ubuntu-0_30_3
           restore-keys: |
             klayout-deb-cache-
-      - name: 🔽 Download KLayout .deb if not cached
+
+      - name: Download KLayout .deb if not cached
         if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
           echo "Downloading KLayout .deb..."
           curl -L --retry 5 --retry-delay 5 --retry-all-errors \
             -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
-      - name: ⚙️ Install KLayout
+
+      - name: Install KLayout
         run: |
           sudo apt update -qq -y
           sudo apt install ./klayout-0_30_3.deb
-          echo "✅ KLayout version:"
           klayout -v
-      - name: 🧪 Run DRC Regression for SG13G2 Cells
-        run: make test-DRC-cells
+
+      - name: Run DRC cells regression for ${{ matrix.lib }}
+        run: |
+          make env
+          . actions_venv/bin/activate
+          python3 ihp-sg13g2/libs.tech/klayout/tech/drc/testing/run_regression_cells.py \
+            --lib=${{ matrix.lib }}
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drc-cells-${{ matrix.lib }}
+          path: |
+            drc_cells_*/all_test_cases_results.csv
+            drc_cells_*/*.log
+          if-no-files-found: warn
+          retention-days: 14
