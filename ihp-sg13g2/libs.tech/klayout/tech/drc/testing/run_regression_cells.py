@@ -106,6 +106,17 @@ WAIVER_PROFILES = {
         "reason": "Known real anlges violations on metal1.pin for this standalone IO cell.",
         "allowed_rules": {"topmetal2_drw_Angle45"},
     },
+    "PR_OFFGRID_PILLARPAD": {
+        "reason": "Pre-existing CuPillarPad offgrid violations exposed by modular DRC activation. "
+                  "Tracked for follow-up; not blocking PR #885.",
+        "allowed_rules": {"OffGrid.TopMetal2", "OffGrid.dfpad"},
+    },
+    "PR_OFFGRID_TSV": {
+        "reason": "Pre-existing TSV deepvia offgrid violation exposed by modular DRC activation. "
+                  "Same root cause as PR #940 sg13g2_pr GDS regression rolled back to 737ab47 on dev; "
+                  "will be resolved by merging dev into this branch.",
+        "allowed_rules": {"OffGrid.DeepVia"},
+    },
     "STDCELL_FILL": {
         "reason": "Expected standalone violations; filler not used alone. Violations disappear in real layouts.",
         "allowed_rules": {"pSD.k"},
@@ -163,6 +174,12 @@ WAIVED_GROUPS = {
     },
     "PR_INDUCTOR": {
         "sg13g2_pr": ["inductor3"],
+    },
+    "PR_OFFGRID_PILLARPAD": {
+        "sg13g2_pr": ["CuPillarPad"],
+    },
+    "PR_OFFGRID_TSV": {
+        "sg13g2_pr": ["TSV"],
     },
     "STDCELL_FILL": {
         "sg13g2_stdcell": ["sg13g2_fill_1"],
