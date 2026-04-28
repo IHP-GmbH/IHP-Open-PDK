@@ -1,0 +1,81 @@
+{
+    "_": "########################################################################",
+
+    "_": "Copyright 2026 IHP PDK Authors",
+    "_": "Licensed under the Apache License, Version 2.0 (the \"License\")",
+    "_": "you may not use this file except in compliance with the License.",
+    "_": "You may obtain a copy of the License at",
+
+    "_":    "https://www.apache.org/licenses/LICENSE-2.0",
+
+    "_": "Unless required by applicable law or agreed to in writing, software",
+    "_": "distributed under the License is distributed on an \"AS IS\" BASIS,",
+    "_": "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+    "_": "See the License for the specific language governing permissions and",
+    "_": "limitations under the License.",
+
+    "_": "########################################################################",
+
+    "moduleList": [
+        "parameters.tcl",
+        "util.tcl",
+        "cap_cb.tcl",
+        "diode_cb.tcl",
+        "bondpad_cb.tcl",
+        "inductor_cb.tcl",
+        "isolbox_cb.tcl"
+    ],
+    "callbackDefinition": {
+        "callbackList": [
+            {
+                "devices": ["cmim"],
+                "callbacks": [
+                    {
+                        "callback": "CbCap",
+                        "pcellParameters": ["C", "w", "l"]
+                    }
+                ]
+            },
+            {
+                "devices": ["rfcmim"],
+                "callbacks": [
+                    {
+                        "callback": "CbCap",
+                        "pcellParameters": ["C", "w", "l"]
+                    }
+                ]
+            },
+            {
+                "devices": ["SVaricap"],
+                "callbacks": [
+                    {
+                        "callback": "CbSVaricap_wl",
+                        "pcellParameters": ["w", "l"]
+                    }
+                ]
+            },
+            {
+                "devices": ["dantenna"],
+                "callbacks": [
+                    {
+                        "callback": "CbDiode",
+                        "pcellParameters": ["w", "l", "a"]
+                    }
+                ]
+            },
+            {
+                "devices": ["bondpad"],
+                "callbacks": [
+                    {
+                        "callback": "CbBondpad",
+                        "pcellParameters": ["topMetal", "bottomMetal"]
+                    },
+                    {
+                        "callback": "bondpad_cb",
+                        "pcellParameters": ["hwquota", "diameter", "padType", "passEncl", "FlipChip"]
+                    }
+                ]
+            }
+        ]
+    }
+}

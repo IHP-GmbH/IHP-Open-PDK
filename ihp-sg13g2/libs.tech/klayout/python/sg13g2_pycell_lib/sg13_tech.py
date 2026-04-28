@@ -36,15 +36,18 @@ class SG13_Tech(TechImpl):
 
         techFilePath = os.path.join(os.path.dirname(__file__), jsonTechFile)
 
-        with open(techFilePath, "r") as tech_file:
-            jsData = json.load(tech_file)
-            self._techParams = jsData["techParams"]
+        try:
+            with open(techFilePath, "r") as tech_file:
+                jsData = json.load(tech_file)
+                self._techParams = jsData["techParams"]
 
-            layers = jsData["Layers"]
-            self._layers = {}
-            for key, value in layers.items():
-                layer, dataType = value.split(',')
-                self._layers[key] = (int(layer.strip()), int(dataType.strip()))
+                layers = jsData["Layers"]
+                self._layers = {}
+                for key, value in layers.items():
+                    layer, dataType = value.split(',')
+                    self._layers[key] = (int(layer.strip()), int(dataType.strip()))
+        except Exception as exc:
+            raise Exception(f"Invalid Json syntax: '{exc}' in {techFilePath}")
 
         lypFilePath = ''
 

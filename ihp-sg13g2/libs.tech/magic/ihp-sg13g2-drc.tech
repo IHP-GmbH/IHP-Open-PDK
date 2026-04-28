@@ -33,16 +33,20 @@ drc
 #-----------------------------
 
  width dnwell 1000 "Deep N-well width < %d (NBL.a)"
- spacing dnwell dnwell 1500 touching_ok "Deep N-well spacing, same net < %d (NBL.b)"
- # spacing dnwell dnwell 3200 touching_illegal "Deep N-well spacing, different net < %d (NBL.c)"
+ spacing dnwell dnwell 1500 touching_ok \
+	"Deep N-well spacing, same net < %d (NBL.b)"
+ # spacing dnwell dnwell 3200 touching_illegal \
+ #	"Deep N-well spacing, different net < %d (NBL.c)"
  spacing dnwell allnwell 2200 surround_ok \
 	"Deep N-well spacing to N-well < %d (NBL.d)"
- spacing dnwell allnactive 1000 surround_ok "Deep N-well spacing to N-diffusion < %d (NBL.e)"
- spacing dnwell allpactive 500 surround_ok "Deep N-well spacing to P-diffusion < %d (NBL.f)"
+ spacing dnwell allnactive 1000 surround_ok \
+	"Deep N-well spacing to N-diffusion < %d (NBL.e)"
+ spacing dnwell allpactive 500 surround_ok \
+	"Deep N-well spacing to P-diffusion < %d (NBL.f)"
 
  # NOTE: Nwell > 3um has generated dnwell implant and must be considered here.
- # Also:  Illustration shows pwell:block regions connected to a deep nwell as being considered part
- # of the nwell for the purpose of checking DRC rules.
+ # Also:  Illustration shows pwell:block regions connected to a deep nwell as
+ # being considered part of the nwell for the purpose of checking DRC rules.
 
  variants (full)
  cifmaxwidth dwell_overlap_of_active 0 bend_illegal \
@@ -113,7 +117,7 @@ drc
 #-----------------------------
  width pblock 620 "PWell block width < %d (PWB.a)"
  spacing pblock pblock 620 touching_ok "PWell block spacing < %d (PWB.a)"
- spacing nwell pblock 620 touching_ok \
+ spacing nwell,isolbox pblock 620 touching_ok \
 	"PWell block spacing to NWell < %d (PWB.c)"
  spacing pblock *ndiff,nfet 310 touching_illegal \
 	"PWell block spacing to N-diffusion < %d (PWB.e)"
@@ -171,7 +175,7 @@ drc
 	"Diff fill spacing to Poly < %d (AFil.c)"
  spacing difffill ndc,pdc,nsc,psc,ndic,pdic,hvndc,hvpdc,hvnsc,hvpsc \
 	 1100 touching_illegal "Diff fill spacing to Contact < %d (AFil.c)"
- spacing difffill nwell 1000 surround_ok \
+ spacing difffill nwell,isolbox 1000 surround_ok \
 	"Diff fill spacing to Nwell < %d (AFil.d)"
  spacing difffill dnwell 1000 touching_illegal \
 	"Diff fill spacing to Deep nwell < %d (AFil.d)"
@@ -260,11 +264,11 @@ drc
  # To do:  add spacing requirements to devices with P+, N+-block, and SBLK
  spacing polyfill alldiff,*poly 1100 touching_illegal \
 	"Poly fill spacing to Poly and Diffusion < %d (GFil.d)"
- spacing polyfill nwell 1100 surround_ok \
+ spacing polyfill nwell,isolbox 1100 surround_ok \
  	"Poly fill spacing to Nwell < %d (GFil.e)"
  spacing polyfill dnwell 1100 surround_ok \
 	"Poly fill spacing to Deep nwell < %d (GFil.e)"
- surround polyfill nwell 1100 absence_ok \
+ surround polyfill nwell,isolbox 1100 absence_ok \
  	"Poly fill spacing to Nwell < %d (GFil.e)"
  surround polyfill dnwell 1100 absence_ok \
 	"Poly fill spacing to Deep nwell < %d (GFil.e)"

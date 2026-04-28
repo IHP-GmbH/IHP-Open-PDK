@@ -86,6 +86,10 @@ style  sg13g2 variants ()
  labels NWELL
  labels WELLPIN port
 
+ # N-wells which are tagged with "isolbox" are recast as type isolbox
+ layer isolbox
+ tagged isolbox NWELL
+
  templayer nwellarea NWELL
  and-not pnp
  copyup nwelcheck
@@ -452,7 +456,7 @@ style  sg13g2 variants ()
  copyup nsubcheck
 
  templayer ntaparea nsdarea
- and DNWELL
+ tagged well DIFF
  and-not vararea
  and-not DIGITALID
 
@@ -476,6 +480,7 @@ style  sg13g2 variants ()
  copyup psubcheck
 
  templayer ptaparea psdarea
+ tagged sub! DIFF
  and SUBCUT,ptapcheck
  and-not DIGITALID
  copyup ptapcheck
@@ -519,7 +524,7 @@ style  sg13g2 variants ()
  copyup hvnsubcheck
 
  templayer hvntaparea hvnsdarea
- and DNWELL
+ tagged well DIFF
  and-not DIGITALID
 
  layer hvntap hvntaparea
@@ -542,7 +547,7 @@ style  sg13g2 variants ()
  copyup hvpsubcheck
 
  templayer hvptaparea hvpsdarea
- and DNWELL
+ tagged sub! DIFF
  and-not DIGITALID
 
  layer hvptap hvptaparea
@@ -638,8 +643,7 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
 
  templayer ntapcbase nscbase
- and DNWELL
- and-not DIGITALID
+ and ntaparea
 
  layer nsc nscbase
  and-not ntapcbase
@@ -712,8 +716,7 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
 
  templayer ptapcbase pscbase
- and SUBCUT
- and-not DIGITALID
+ and ptaparea
 
  layer psc pscbase
  and-not EDGESEAL
@@ -823,8 +826,7 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
 
  templayer hvntapbase hvnscbase
- and DNWELL
- and-not DIGITALID
+ and hvntaparea
 
  layer hvnsc hvnscbase
  and-not hvntapbase
@@ -887,8 +889,7 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
 
  templayer hvptapcbase hvpscbase
- and SUBCUT
- and-not DIGITALID
+ and hvptaparea
 
  layer hvpsc hvpscbase
  and-not hvptapcbase

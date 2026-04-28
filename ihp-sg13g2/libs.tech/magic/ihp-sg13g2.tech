@@ -50,6 +50,7 @@ end
 # dantenna			ndiode		ndiff to psub diode (marked device)
 # dpantenna			pdiode		pdiff to nwell diode (marked device)
 # schottky			schottky	Schottky diode
+# isolbox			isolbox		parasitic diode model of deep nwell
 #
 # ptap1						substrate tie resistance
 # ntap1						well tie resistance
@@ -113,6 +114,7 @@ types
  -well obswell
   well pbase,npn
   well nbase,pnp
+  well isolbox
 
 # Transistors
   active nmos,ntransistor,nfet
@@ -303,8 +305,8 @@ end
 
 aliases
 
-  allwellplane     nwell,pwell,pblock,obswell,pbase,nbase
-  allnwell	   nwell,obswell,pnp
+  allwellplane     nwell,pwell,pblock,obswell,pbase,nbase,isolbox
+  allnwell	   nwell,obswell,pnp,isolbox
 
   allnfets	   nfet,hvnfet,hvnfetesd
   allpfets	   pfet,hvpfet,hvpfetesd
@@ -390,6 +392,7 @@ styles
   dnwell    cwell
   digisub   subcircuit
   nwell     nwell
+  isolbox   nwell	substrate_field_implant
   pwell	    pwell
   pblock    hvpdiff_mask
   ndiff     ndiffusion
@@ -587,6 +590,7 @@ compose
   # nwell when painting pblock, even though overlap is
   # technically allowed according to the documentation.
   paint  nwell  pblock  nwell
+  paint  isolbox pblock isolbox
 
 end
 
@@ -595,7 +599,8 @@ end
 #-----------------------------------------------------------------------
 
 connect
-  *nwell,*nsd,*ntap,*hvnsd,*hvntap,dnwell,pnp *nwell,*nsd,*ntap,*hvnsd,*hvntap,dnwell,pnp
+  *nwell,*nsd,*ntap,*hvnsd,*hvntap,dnwell,pnp,isolbox \
+	 *nwell,*nsd,*ntap,*hvnsd,*hvntap,dnwell,pnp,isolbox
   pwell,*psd,*ptap,*hvpsd,*hvptap,digisub pwell,*psd,*ptap,*hvpsd,*hvptap,digisub
   # Note:  This connects butting taps even without a metal strap.
   *nsd,*hvnsd	*pdiff,*hvpdiff
@@ -758,6 +763,7 @@ plot
      draw digisub no_color_at_all
      draw pblock  no_color_at_all
      draw nwell cwell
+     draw isolbox cwell
 end
 
 #-----------------------------------------------------------------------

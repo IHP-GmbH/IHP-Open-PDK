@@ -16,10 +16,6 @@
 #
 ########################################################################
 
-import pya
-import os
-import sys
-
 from cni.tech import Tech
 from cni.dlo import PCellWrapper
 

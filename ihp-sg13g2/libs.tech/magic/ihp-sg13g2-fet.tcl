@@ -874,7 +874,7 @@ proc sg13g2::mos_device {parameters} {
 # MOSFET: Draw the tiled device
 #----------------------------------------------------------------
 
-proc sg13g2::mos_draw {parameters} {
+proc sg13g2::mos_draw {lvsname parameters} {
     tech unlock *
     set curunits [units]
     units internal
@@ -1090,6 +1090,18 @@ proc sg13g2::mos_draw {parameters} {
 	if {$doports} {dict set parameters bulk B}
 	# Draw the guard ring first, as MOS well may interact with guard ring substrate
 	sg13g2::guard_ring $gx $gy $parameters
+
+	# For RF devices, add the device name on the guard ring, on the comment
+	# (a.k.a. LVS text) layer
+
+	if {(${is_rf} != 0) && (${lvsname} != "none")} {
+	    pushbox
+	    box size 0 0
+	    set hgy [/ $gy 2.0]
+	    box position 0 ${hgy}um
+	    label $lvsname c -comment
+	    popbox
+	}
     }
 
     pushbox
@@ -1236,7 +1248,7 @@ proc sg13g2::sg13_lv_nmos_draw {parameters} {
 	    sub_type		psub \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw none $drawdict]
 }
 
 #-------------------
@@ -1256,7 +1268,7 @@ proc sg13g2::sg13_lv_pmos_draw {parameters} {
 	    dev_sub_type	nwell \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw none $drawdict]
 }
 
 #-------------------
@@ -1278,7 +1290,7 @@ proc sg13g2::sg13_hv_pmos_draw {parameters} {
 	    guard_sub_surround	0.62 \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw none $drawdict]
 }
 
 #-------------------
@@ -1297,7 +1309,7 @@ proc sg13g2::sg13_hv_nmos_draw {parameters} {
 	    sub_type		psub \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw none $drawdict]
 }
 
 #----------------------------------------------------------------
@@ -1318,7 +1330,7 @@ proc sg13g2::sg13_lv_rfnmos_draw {parameters} {
 	    sub_type		psub \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw rfnmos $drawdict]
 }
 
 
@@ -1336,7 +1348,7 @@ proc sg13g2::sg13_lv_rfpmos_draw {parameters} {
 	    dev_sub_type	nwell \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw rfpmos $drawdict]
 }
 
 
@@ -1353,7 +1365,7 @@ proc sg13g2::sg13_hv_rfnmos_draw {parameters} {
 	    sub_type		psub \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw rfnmosHV $drawdict]
 }
 
 
@@ -1372,7 +1384,7 @@ proc sg13g2::sg13_hv_rfpmos_draw {parameters} {
 	    guard_sub_surround	0.62 \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
+    return [sg13g2::mos_draw rfpmosHV $drawdict]
 }
 
 #----------------------------------------------------------------

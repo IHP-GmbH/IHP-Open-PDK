@@ -1,0 +1,219 @@
+﻿
+======================================================================================
+======================================================================================
+                      Silicon Integration Initiative (Si2)
+                    Compact Model Coalition In-Code Statement
+
+  Software is distributed as is, completely without warranty or service support. The
+  Commissariat a l'energie atomique et aux energies alternatives (CEA), NXP
+  Semiconductors, and Delft University of Technology, along with their employees are
+  not liable for the condition or performance of the software.
+
+  NXP Semiconductors, Delft University of Technology, and CEA own the copyright and
+  grant users a perpetual, irrevocable, worldwide, non-exclusive, royalty-free license
+  with respect to the software as set forth below.
+  
+  NXP Semiconductors, Delft University of Technology, and CEA hereby disclaim all
+  implied warranties.
+
+  NXP Semiconductors, Delft University of Technology, and CEA grant the users the right
+  to modify, copy, and redistribute the software and documentation, both within the
+  user's organization and externally, subject to the following restrictions:
+  
+    1. The users agree not to charge for the NXP Semiconductors, Delft University of
+       Technology, and CEA-developed code itself but may charge for additions,
+       extensions, or support.
+
+    2. In any product based on the software, the users agree to acknowledge NXP
+       Semiconductors, Delft University of Technology, and CEA that developed the
+       software. This acknowledgement shall appear in the product documentation.
+
+    3. Redistributions to others of source code and documentation must retain the
+       copyright notice, disclaimer, and list of conditions.
+
+    4. Redistributions to others in binary form must reproduce the copyright notice,
+       disclaimer, and list of conditions in the documentation and/or other materials
+       provided with the distribution.
+
+  CMC In-Code Statement Revision: 103.8.2 (PSP), 2022/06/21
+                                  200.6.2 (JUNCAP), 2021/04/21
+
+======================================================================================
+======================================================================================
+
+  Authors: G.D.J. Smit, A.J. Scholten, and D.B.M. Klaassen (NXP Semiconductors)
+           O. Rozeau, S. Martinie and T. Poiroux (CEA-Leti)
+
+  Former contributers:
+           G. Gildenblat, W. Yao, Z. Zhu, X. Li and W. Wu (Arizona State University)
+           R. van Langevelde (Philips Research)
+           R. van der Toorn (Delft University of Technology)
+           J.C. Barbé (CEA-Leti)
+
+  The most recent version of the model code, the documentation, and contact
+  information can be found on:
+
+       http://www.cea.fr/cea-tech/leti/pspsupport
+       
+======================================================================================
+======================================================================================
+
+This package consists of the following files:
+
+     - releasenotesPSP103.txt         This file
+
+     - psp103.va                      Main file for PSP model
+     - psp103t.va                     Main file for PSP model with self heating
+     - psp103_nqs.va                  Main file for PSP model with NQS-effects
+     - juncap200.va                   Main file for JUNCAP2 stand-alone model
+
+     - Common103_macrodefs.include    Common macro definitions
+     - PSP103_macrodefs.include       Macro definitions for PSP
+     - PSP103_module.include          Actual model code for intrinsic MOS model
+     - PSP103_parlist.include         Model parameter list for PSP model
+     - PSP103_scaling.include         Geometry scaling equations for PSP model
+     - PSP103_nqs_macrodefs.include   All macro definitions for PSP-NQS
+     - JUNCAP200_macrodefs.include    Macro definitions for JUNCAP2 model
+     - JUNCAP200_parlist.include      JUNCAP2 parameter list
+     - JUNCAP200_varlist.include      JUNCAP2 variable declarations
+     - JUNCAP200_InitModel.include    JUNCAP2 model initialization code
+
+======================================================================================
+======================================================================================
+
+Usage
+-----
+
+Depending which model one wants to use, one should compile one of the four .va-files
+(psp103.va, psp103t.va, psp103_nqs.va, and juncap200.va). The module names are
+"PSP103VA", "PSP103TVA", and "PSPNQS103VA" (for QS, self heating, and NQS,
+respectively), and "JUNCAP200" for the JUNCAP2-model.
+
+
+======================================================================================
+======================================================================================
+
+Release notes vA-code of PSP 103.8.2 (June 2022)
+---------------------------------------------------------
+
+Changes include:
+    -  Addition of a switch SWFIX for backward compatibility.
+    -  PSP027: modified forward body bias limitation in surface potential equation for improved convergence.
+    -  PSP041: non-reciprocity in Cgb/Cbg at nonzero CTG and CTB parameters.
+    -  Bug fix on OP calculation (ids_i) Igcd is replaced by Igcs.
+    -  Bug fix on inner fringe capacitances reciprocity in accumulation regime when FCINRACC=0.
+    -  Fix on the used functions for OP-variables declaration.
+    -  Modifications of "if" conditions for the calculations of c_igid and fknee variables.
+
+- PSP103_module.include:
+    -  Lines 418, 496 to 502 and 504: OPP function is replaced by OPD function
+    -  Lines 440 to 442, 457 to 459, 463 to 465 and 470 & 471 : OPP function is replaced by OPM function
+    -  Line 1274 to 1278: introduction of PSP027 modification on edge transistor using SWFIX parameter.
+    -  Line 1448: bug fix on inner fringe capacitances reciprocity in accumulation regime when FCINRACC=0.
+    -  Line 1811: modification of "if" conditions for the calculation of c_igid variable.
+    -  Line 1967: bug fix on OP calculation (ids_i) Igcd is replaced by Igcs.
+    -  Line 2125: modification of "if" conditions for the calculation of fknee variable.
+
+- PSP103_macrodefs.include:
+    -  Line 467 to 471: introduction of PSP027 modification using SWFIX parameter.
+    -  Line 507 to 513: introduction of PSP041 modification using SWFIX parameter.
+
+- PSP103_parlist.include:
+    -  Line 49: addition of SWFIX parameter (Flag for the fixes introduced in PSP103.8.2)
+
+
+PSP 103.8.2 is backwards compatible with the previous version, PSP 103.8.1
+
+======================================================================================
+======================================================================================
+
+Release notes vA-code of JUNCAP 200.6.2 (April 2021)
+---------------------------------------------------------
+
+No modifications on JUNCAP 200.6.2
+
+=====================================================================================
+======================================================================================
+The authors want to thank Laurent Lemaitre and Colin McAndrew (Freescale)
+for their help with ADMS and the implementation of the model code. Geoffrey
+Coram (Analog Devices) is acknowledged for input concerning the Verilog-A
+implementation of the model.
+
+=====================================================================================
+=====================================================================================
+=====================================================================================
+=====================================================================================
+
+---------------------------------------------------------
+Vampyre output on psp103.va (similar for psp103_nqs and psp103t.va)
+---------------------------------------------------------
+
+Reading psp103.va
+Reading discipline.h
+STYLE in file discipline.h, line 1: MS-DOS file format (\r\n)
+Reading Common103_macrodefs.include
+Reading JUNCAP200_macrodefs.include
+Reading PSP103_macrodefs.include
+Reading PSP103_module.include
+Reading PSP103_parlist.include
+Reading JUNCAP200_parlist.include
+Reading JUNCAP200_varlist.include
+Reading JUNCAP200_InitModel.include
+Reading PSP103_scaling.include
+STYLE in file psp103.va, line 46: Port names should be lowercase ('s' not 'S')
+STYLE in file psp103.va, line 46: Port names should be lowercase ('b' not 'B')
+STYLE in file psp103.va, line 46: Port names should be lowercase ('d' not 'D')
+STYLE in file psp103.va, line 46: Port names should be lowercase ('g' not 'G')
+WARNING in file PSP103_parlist.include, line 879: Parameter 'WMIN' was never used
+WARNING in file PSP103_parlist.include, line 880: Parameter 'WMAX' was never used
+WARNING in file PSP103_parlist.include, line 31: Parameter 'LEVEL' was never used
+WARNING in file PSP103_parlist.include, line 877: Parameter 'LMIN' was never used
+WARNING in file PSP103_parlist.include, line 878: Parameter 'LMAX' was never used
+STYLE in file psp103.va, line 50: Parameters should be declared in lowercase
+WARNING in file psp103.va, line 50: Operating-point variable 'rg' differs only in case from parameter 'RG'
+WARNING in file psp103.va, line 50: Variable 'initial_instance.JUNCAPexpressInit.qjunsti' was never used
+WARNING in file psp103.va, line 50: Variable 'initial_instance.JUNCAPexpressInit.qjunbot' was never used
+WARNING in file psp103.va, line 50: Variable 'initial_instance.JUNCAPexpressInit.qjungat' was never used
+
+Module: PSP103VA
+
+Instance parameters (33)
+
+Model parameters (849)
+
+Operating-point variables (236)
+
+=====================================================================================
+=====================================================================================
+
+---------------------------------------------------------
+Vampyre output on juncap200.va
+---------------------------------------------------------
+
+Reading juncap200.va
+Reading discipline.h
+STYLE in file discipline.h, line 1: MS-DOS file format (\r\n)
+Reading Common103_macrodefs.include
+Reading JUNCAP200_macrodefs.include
+Reading JUNCAP200_parlist.include
+Reading JUNCAP200_varlist.include
+Reading JUNCAP200_InitModel.include
+STYLE in file juncap200.va, line 46: Port names should be lowercase ('a' not 'A')
+STYLE in file juncap200.va, line 46: Port names should be lowercase ('k' not 'K')
+WARNING in file juncap200.va, line 57: Parameter 'LEVEL' was never used
+STYLE in file juncap200.va, line 299: Parameters should be declared in lowercase
+WARNING in file juncap200.va, line 299: Variable 'initial_instance.JUNCAPexpressInit.qjunbot' was never used
+WARNING in file juncap200.va, line 299: Variable 'initial_instance.JUNCAPexpressInit.qjungat' was never used
+WARNING in file juncap200.va, line 299: Variable 'initial_instance.JUNCAPexpressInit.qjunsti' was never used
+
+Module: JUNCAP200
+
+Instance parameters (7):
+    AB, CFACTOR, IFACTOR, LG, LS, MULT, TRISE
+
+Model parameters (52)
+
+Operating-point variables (19):
+    cj, cjbot, cjgat, cjosbot, cjosgat, cjossti, cjsti, idsatsbot,
+    idsatsgat, idsatssti, ij, ijbot, ijgat, ijsti, si, vak, vbisbot,
+    vbisgat, vbissti

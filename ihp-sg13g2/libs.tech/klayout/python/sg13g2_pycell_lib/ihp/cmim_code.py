@@ -59,6 +59,7 @@ class cmim(DloGen):
         # process parameter values entered by user
         self.w = Numeric(params['w']) * 1e6
         self.l = Numeric(params['l']) * 1e6
+        self.C = eng_string(CbCapCalc('C', 0, params['l'], params['w'], 'cmim'))
 
     def genLayout(self):
         self.grid = self.tech.getGridResolution()
@@ -81,7 +82,14 @@ class cmim(DloGen):
         self.topMetal= Rect(Layer('TopMetal1'), topMetalBBox)
 
         self.createPins()
-
+        
+        # now draw the label
+        labeltext = 'c='+self.C
+        labell = min(self.l, self.w)/10.0
+        labelpos = Point(self.w/2, self.l/2)
+        dbCreateLabel(self, Layer('TEXT'), labelpos, labeltext, 'lowerCenter', 'R90', Font.EURO_STYLE, labell)
+        dbCreateLabel(self, Layer('TEXT'), labelpos, 'cmim', 'upperCenter', 'R90', Font.EURO_STYLE, labell)
+        
     def createPins(self):
         self.addPin('PLUS', 'PLUS', self.topMetal.getBBox(), Layer('TopMetal1','pin'))
         self.addPin('MINUS', 'MINUS', self.bottomMetal.getBBox(), Layer('Metal5','pin'))

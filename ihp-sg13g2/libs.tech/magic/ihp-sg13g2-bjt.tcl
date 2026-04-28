@@ -897,7 +897,19 @@ proc sg13g2::pnpMPA_draw {parameters} {
 	    bulk		"C" \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::diode_draw $drawdict]
+    set result [sg13g2::diode_draw $drawdict]
+
+    # Add the "pnpMPA" device name as a label on comment (LVS text)
+    pushbox
+    box values 0 0 0 0
+    set w [dict get $parameters w]
+    set hw [/ $w 2.0]
+    box move e ${hw}um
+    box move e 1.22um
+    label pnpMPA c -comment
+    popbox
+
+    return result
 }
 
 #----------------------------------------------------------------

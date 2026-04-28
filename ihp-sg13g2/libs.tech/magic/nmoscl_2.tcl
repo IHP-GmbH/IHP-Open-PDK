@@ -1135,7 +1135,7 @@ label VSS FreeSans 200 0 0 0 c -metal2
 box values 3451 1676 3451 1676
 label nmoscl_2 FreeSans 1000 0 0 0 c -comment
 box values 290 3402 290 3402
-label sub! FreeSans 200 0 0 0 c -dnwell
+label sub! FreeSans 200 0 0 0 c -psd
 select clear
 property gencell nmoscl_2
 property library sg13g2
