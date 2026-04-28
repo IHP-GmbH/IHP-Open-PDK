@@ -37,7 +37,7 @@ def generate_sealring(width: float, heigth: float, input: str | None, output: st
     if input:
         layout.read(input)
 
-    lib = pya.Library.library_by_name(LIB)
+    lib = pya.Library.library_by_name(LIB, 'sg13g2')
     if lib is None:
         raise RuntimeError(
             "Could not find the 'SG13_dev' PCell library in the current KLayout environment.\n"
