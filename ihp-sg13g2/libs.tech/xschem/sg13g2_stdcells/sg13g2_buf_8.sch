@@ -1,0 +1,46 @@
+v {xschem version=3.4.7 file_version=1.2}
+G {}
+K {}
+V {}
+S {}
+E {}
+N -230 120 -230 60 {}
+N -230 -200 10 -200 {}
+N 10 30 10 -200 {}
+N 50 120 50 60 {}
+N -230 120 -170 120 {}
+N -510 120 -230 120 {}
+N 50 30 110 30 {}
+N -170 -520 50 -520 {}
+N -170 -430 -170 -520 {}
+N 10 -200 10 -430 {}
+N -230 -460 -230 -520 {}
+N -230 30 -170 30 {}
+N -230 -430 -170 -430 {}
+N -170 120 -170 30 {}
+N -500 -520 -230 -520 {}
+N -320 -200 -270 -200 {}
+N -230 -520 -170 -520 {}
+N 50 -430 110 -430 {}
+N 50 -460 50 -520 {}
+N -230 -200 -230 -400 {}
+N -270 30 -270 -200 {}
+N -270 -200 -270 -430 {}
+N 50 -200 50 -400 {}
+N 50 0 50 -200 {}
+N 50 -200 90 -200 {}
+N 50 120 110 120 {}
+N 110 -430 110 -520 {}
+N -230 0 -230 -200 {}
+N 50 -520 110 -520 {}
+N -170 120 50 120 {}
+N 110 120 110 30 {}
+C {devices/ipin.sym} -320 -200 0 0 {name=p1 lab=A}
+C {devices/opin.sym} 90 -200 0 0 {name=p2 lab=X}
+C {devices/iopin.sym} -500 -520 2 0 {name=p3 lab=VDD}
+C {devices/iopin.sym} -510 120 2 0 {name=p4 lab=VSS}
+C {sg13_lv_nmos.sym} -250 30 0 0 {name=M1 w=2.22u l=130.00n ng=3 m=1 model=sg13_lv_nmos}
+C {sg13_lv_nmos.sym} 30 30 0 0 {name=M2 w=5.92u l=130.00n ng=8 m=1 model=sg13_lv_nmos}
+C {sg13_lv_pmos.sym} -250 -430 0 0 {name=M3 w=3.36u l=130.00n ng=3 m=1 model=sg13_lv_pmos}
+C {sg13_lv_pmos.sym} 30 -430 0 0 {name=M4 w=8.96u l=130.00n ng=8 m=1 model=sg13_lv_pmos}
+C {devices/title-3.sym} -1450 680 0 0 {name=l1 author="IHP PDK AUTHORS"}
