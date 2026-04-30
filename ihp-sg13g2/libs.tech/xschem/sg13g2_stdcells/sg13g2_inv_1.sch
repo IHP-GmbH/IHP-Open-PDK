@@ -1,56 +1,29 @@
-v {xschem version=3.4.6 file_version=1.2
-* Copyright 2025 IHP PDK Authors
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-}
+v {xschem version=3.4.7 file_version=1.2}
 G {}
 K {}
 V {}
 S {}
 E {}
-N 40 -0 40 20 {lab=Y}
-N 40 -0 80 -0 {lab=Y}
-N 40 -20 40 -0 {lab=Y}
-N -40 0 0 0 {lab=A}
-N 0 0 0 50 {lab=A}
-N 40 -100 40 -80 {lab=VDD}
-N 50 -100 50 -50 {lab=VDD}
-N 50 50 50 100 {lab=VSS}
-N 40 80 40 100 {lab=VSS}
-N 40 -100 50 -100 {lab=VDD}
-N 40 -50 50 -50 {lab=VDD}
-N 0 -50 0 0 {lab=A}
-N 40 50 50 50 {lab=VSS}
-N 40 100 50 100 {lab=VSS}
-N -70 -100 40 -100 {lab=VDD}
-N -70 100 40 100 {lab=VSS}
-C {sg13g2_pr/sg13_lv_nmos.sym} 20 50 0 0 {name=MN0
-l=130.00n
-w=740.00n
-ng=1
-m=1
-model=sg13_lv_nmos
-spiceprefix=X
-}
-C {sg13g2_pr/sg13_lv_pmos.sym} 20 -50 0 0 {name=MP0
-l=130.00n
-w=1.12u
-ng=1
-m=1
-model=sg13_lv_pmos
-spiceprefix=X
-}
-C {opin.sym} 80 0 0 0 {name=p1 lab=Y}
-C {ipin.sym} -40 0 0 0 {name=p2 lab=A}
-C {iopin.sym} -70 -100 0 1 {name=p3 lab=VDD}
-C {iopin.sym} -70 100 0 1 {name=p4 lab=VSS}
+N 20 -150 20 -170 {}
+N 20 -400 60 -400 {}
+N 20 -230 20 -400 {}
+N -80 -400 -20 -400 {}
+N -20 -200 -20 -400 {}
+N 20 -600 40 -600 {}
+N 20 -630 20 -650 {}
+N -20 -400 -20 -600 {}
+N 20 -400 20 -570 {}
+N 20 -650 40 -650 {}
+N 40 -600 40 -650 {}
+N 20 -200 40 -200 {}
+N -106 -650 20 -650 {}
+N 40 -150 40 -200 {}
+N -106 -150 20 -150 {}
+N 20 -150 40 -150 {}
+C {devices/opin.sym} 60 -400 0 0 {name=p1 lab=Y}
+C {devices/ipin.sym} -80 -400 0 0 {name=p2 lab=A}
+C {devices/iopin.sym} -106 -650 2 0 {name=p3 lab=VDD}
+C {devices/iopin.sym} -106 -150 2 0 {name=p4 lab=VSS}
+C {sg13_lv_nmos.sym} 0 -200 0 0 {name=M1 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
+C {sg13_lv_pmos.sym} 0 -600 0 0 {name=M2 w=1.12u l=130.00n ng=1 m=1 model=sg13_lv_pmos}
+C {devices/title-3.sym} -1270 480 0 0 {name=l1 author="IHP PDK AUTHORS"}
