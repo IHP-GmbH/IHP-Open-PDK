@@ -83,6 +83,7 @@ set ::env(PAD_CDLS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/cdl/sg13g2_
 ## magic setup
 set ::env(MAGICRC) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/magic/ihp-sg13g2.magicrc"
 set ::env(MAGIC_TECH) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/magic/ihp-sg13g2.tech"
+set ::env(MAGIC_FILLER_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/magic/generate_fill.py"
 
 # Klayout setup
 set ::env(KLAYOUT_TECH) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg13g2.lyt"

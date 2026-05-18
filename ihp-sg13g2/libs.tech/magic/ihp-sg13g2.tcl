@@ -187,7 +187,7 @@ proc sg13g2::addtechmenu {framename} {
    magic::add_toolkit_command $layoutframe "p-diode" \
 	    "magic::gencell sg13g2::dpantenna" pdk1
    magic::add_toolkit_command $layoutframe "schottky" \
-	    "magic::gencell sg13g2::schottky_nbl1" pdk1
+	    "magic::gencell sg13g2::schottky" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
    magic::add_toolkit_command $layoutframe "NPN" \

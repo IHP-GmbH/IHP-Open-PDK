@@ -105,7 +105,6 @@ l=0.5e-6
 model=rsil
 body=sub!
 spiceprefix=X
-b=0
 m=1
 }
 C {sg13g2_pr/rhigh.sym} 940 50 0 0 {name=R3

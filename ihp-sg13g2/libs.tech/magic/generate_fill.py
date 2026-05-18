@@ -32,10 +32,12 @@ import multiprocessing
 
 def usage():
     print("Usage:")
-    print("generate_fill.py <layout_name> [-keep] [-test] [-dist]")
+    print("generate_fill.py <layout_name> [<output_name>] [-keep] [-test] [-dist]")
     print("")
     print("where:")
     print("    <layout_name> is the path to the GDS file to be filled.")
+    print("    <output_name> is the optional name of the filled GDS.  If not specified")
+    print("    then it defaults to <layout_name_root>_fill_pattern.gds.gz")
     print("")
     print("  If '-keep' is specified, then keep the generation script.")
     print("  If '-test' is specified, then create but do not run the generation script.")
@@ -47,7 +49,7 @@ def makegds(file, techfile):
     # script to load a .mag file of one flattened square area of the layout,
     # and run the fill generator to produce a .gds file output from it.
 
-    layoutpath = os.path.split(file)[0]
+    layout_path = os.path.split(file)[0]
     filename = os.path.split(file)[1]
 
     myenv = os.environ.copy()
@@ -58,14 +60,14 @@ def makegds(file, techfile):
 		'-dnull',
 		'-noconsole',
 		'-T', techfile,
-		layoutpath + '/generate_fill_dist.tcl',
+		layout_path + '/generate_fill_dist.tcl',
 		filename]
 
     mproc = subprocess.run(magic_run_opts,
 		stdin = subprocess.DEVNULL,
 		stdout = subprocess.PIPE,
 		stderr = subprocess.PIPE,
-		cwd = layoutpath,
+		cwd = layout_path,
 		env = myenv,
 		universal_newlines = True)
     if mproc.stdout:
@@ -95,10 +97,14 @@ if __name__ == '__main__':
         else:
             arguments.append(option)
 
-    if len(arguments) != 1:
+    if len(arguments) == 2:
+        outfilename = arguments[1]
+    elif len(arguments) != 1:
         print("Wrong number of arguments given to generate_fill.py.")
         usage()
         sys.exit(1)
+    else:
+        outfilename = None
 
     # Process options
 
@@ -127,10 +133,16 @@ if __name__ == '__main__':
     user_project_path = arguments[0]
 
     if os.path.split(user_project_path)[0] == '':
-        layoutpath = os.getcwd()
+        layout_path = os.getcwd()
     else:
-        layoutpath = os.getcwd() + '/' + os.path.split(user_project_path)[0]
-    
+        layout_path = os.getcwd() + '/' + os.path.split(user_project_path)[0]
+
+    # If the layout path doesn't seem to be in the path of the current
+    # working directory, then assume that it points directly to the layout.
+
+    if not os.path.exists(layout_path):
+        layout_path = os.path.split(user_project_path)[0]
+
     # Use os.extsep, not os.path.splitext(), because gzipped files have
     # multiple periods (e.g., "layout.gds.gz")
 
@@ -163,6 +175,14 @@ if __name__ == '__main__':
         print('Error:  Project "' + user_project_path + '" does not exist or is not readable.')
         sys.exit(1)
 
+    # If an output file was specified, check if it specifies a path.
+    # If not, then assume that the path is the same as the input file,
+    # not that it is the cwd.
+
+    if outfilename:
+        if os.path.split(outfilename)[0] == '':
+            outfilename = layout_path + '/' + outfilename
+
     # The path where the fill generation script resides should be the same
     # path where the magic startup script resides, for the same PDK
     scriptpath = os.path.dirname(os.path.realpath(__file__))
@@ -184,17 +204,10 @@ if __name__ == '__main__':
         print('Unknown path to magic IHP tech file.  Please set $PDK_ROOT')
         sys.exit(1)
 
-    if os.path.isdir(layoutpath + '/gds'):
-        gdspath = layoutpath + '/gds'
-    elif os.path.isdir(layoutpath + '/../gds'):
-        gdspath = layoutpath + '/../gds'
-    else:
-        gdspath = layoutpath
-    
     project_file = os.path.split(user_project_path)[1]
     project = project_file.split(os.extsep, 1)[0]
     
-    ofile = open(layoutpath + '/generate_fill.tcl', 'w') 
+    ofile = open(layout_path + '/generate_fill.tcl', 'w') 
 	
     print('#!/usr/bin/env wish', file=ofile)
     print('drc off', file=ofile)
@@ -361,7 +374,7 @@ if __name__ == '__main__':
         print('quit -noprompt', file=ofile)
         ofile.close()
 
-        with open(layoutpath + '/generate_fill_dist.tcl', 'w') as ofile:
+        with open(layout_path + '/generate_fill_dist.tcl', 'w') as ofile:
             print('#!/usr/bin/env wish', file=ofile)
             print('drc off', file=ofile)
             print('tech unlock *', file=ofile)
@@ -374,7 +387,7 @@ if __name__ == '__main__':
             print('gds write [file root $filename].gds', file=ofile)
             print('quit -noprompt', file=ofile)
 
-        ofile = open(layoutpath + '/generate_fill_final.tcl', 'w')
+        ofile = open(layout_path + '/generate_fill_final.tcl', 'w')
         print('#!/usr/bin/env wish', file=ofile)
         print('drc off', file=ofile)
         print('tech unlock *', file=ofile)
@@ -424,8 +437,16 @@ if __name__ == '__main__':
 
     print('cif *hier write disable', file=ofile)
     print('cif *array write disable', file=ofile)
-    print('gds compress 9', file=ofile)
-    print('gds write ' + gdspath + '/' + project + '_fill_pattern.gds.gz', file=ofile)
+
+    if not outfilename:
+        print('gds compress 9', file=ofile)
+        print('gds write ' + layout_path + '/' + project + '_fill_pattern.gds.gz', file=ofile)
+    elif os.path.splitext(outfilename)[1] == '.gz':
+        print('gds compress 9', file=ofile)
+        print('gds write ' + outfilename, file=ofile)
+    else:
+        print('gds write ' + outfilename, file=ofile)
+       
     print('set endtime [orig_clock format [orig_clock seconds] -format "%D %T"]', file=ofile)
     print('puts stdout "Ended: $endtime"', file=ofile)
     print('quit -noprompt', file=ofile)
@@ -445,7 +466,7 @@ if __name__ == '__main__':
 		'-dnull',
 		'-noconsole',
 		'-T', techfile_path,
-		layoutpath + '/generate_fill.tcl']
+		layout_path + '/generate_fill.tcl']
 
         if debugmode:
             print('Running: ' + ' '.join(magic_run_opts))
@@ -454,7 +475,7 @@ if __name__ == '__main__':
 		stdin = subprocess.DEVNULL,
 		stdout = subprocess.PIPE,
 		stderr = subprocess.PIPE,
-		cwd = layoutpath,
+		cwd = layout_path,
 		env = myenv,
 		universal_newlines = True)
 
@@ -472,7 +493,7 @@ if __name__ == '__main__':
             # If using distributed mode, then run magic on each of the generated
             # layout files
             pool = multiprocessing.Pool()
-            magfiles = glob.glob(layoutpath + '/' + project + '_fill_pattern_*.mag')
+            magfiles = glob.glob(layout_path + '/' + project + '_fill_pattern_*.mag')
             # NOTE:  Adding 'x' to the end of each filename, or else magic will
             # try to read it from the command line as well as passing it as an
             # argument to the script.  We only want it passed as an argument.
@@ -490,13 +511,13 @@ if __name__ == '__main__':
 			'-dnull',
 			'-noconsole',
 			'-T', techfile_path,
-			layoutpath + '/generate_fill_final.tcl']
+			layout_path + '/generate_fill_final.tcl']
 
             mproc = subprocess.run(magic_run_opts,
 			stdin = subprocess.DEVNULL,
 			stdout = subprocess.PIPE,
 			stderr = subprocess.PIPE,
-			cwd = layoutpath,
+			cwd = layout_path,
 			env = myenv,
 			universal_newlines = True)
             if mproc.stdout:
@@ -511,20 +532,20 @@ if __name__ == '__main__':
 
     if not keepmode:
         # Remove fill generation script
-        os.remove(layoutpath + '/generate_fill.tcl')
+        os.remove(layout_path + '/generate_fill.tcl')
         # Remove all individual fill tiles, leaving only the composite GDS.
-        filelist = os.listdir(layoutpath)
+        filelist = os.listdir(layout_path)
         for file in filelist:
-            if os.path.splitext(layoutpath + '/' + file)[1] == '.gds':
+            if os.path.splitext(layout_path + '/' + file)[1] == '.gds':
                 if file.startswith(project + '_fill_pattern_'):
-                    os.remove(layoutpath + '/' + file)
+                    os.remove(layout_path + '/' + file)
 
         if distmode:
-            os.remove(layoutpath + '/generate_fill_dist.tcl')
-            os.remove(layoutpath + '/generate_fill_final.tcl')
-            os.remove(layoutpath + '/fill_gen_info.txt')
+            os.remove(layout_path + '/generate_fill_dist.tcl')
+            os.remove(layout_path + '/generate_fill_final.tcl')
+            os.remove(layout_path + '/fill_gen_info.txt')
             if testmode:
-                magfiles = glob.glob(layoutpath + '/' + project + '_fill_pattern_*.mag')
+                magfiles = glob.glob(layout_path + '/' + project + '_fill_pattern_*.mag')
                 for file in magfiles:
                     os.remove(file)
 

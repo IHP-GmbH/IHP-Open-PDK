@@ -32,11 +32,11 @@ if TABLES.include?('gatpoly') || FEOL
   gata_l1.output('Gat.a', "5.8. Gat.a : Min. GatPoly width: #{gat_a_value} µm")
   gata_l1.forget
 
-  # Rule Gat.b: Min. GatPoly space or notch is 0.18µm.
+  # Rule Gat.b: Min. GatPoly (drawing + filler) space or notch is 0.18µm.
   logger.info('Executing rule Gat.b')
   gat_b_value = drc_rules['Gat_b'].to_f
-  gatb_l1 = gatpoly_drw.space(gat_b_value.um, euclidian)
-  gatb_l1.output('Gat.b', "5.8. Gat.b :Min. GatPoly space or notch: #{gat_b_value} µm.")
+  gatb_l1 = gatpoly_drw.join(gatpoly_filler).space(gat_b_value.um, euclidian)
+  gatb_l1.output('Gat.b', "5.8. Gat.b : Min. GatPoly (drawing + filler) space or notch: #{gat_b_value} µm.")
   gatb_l1.forget
 
   # Rule Gat.d: Min. GatPoly space to Activ is 0.07µm.

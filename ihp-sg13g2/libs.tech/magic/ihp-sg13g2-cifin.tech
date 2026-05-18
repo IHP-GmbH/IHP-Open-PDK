@@ -32,7 +32,6 @@ style  sg13g2 variants ()
  # May need to handle these layers---ignoring during tech file development
  ignore CAPID
  ignore PADPIN
- ignore SRAMID
  ignore DEEPNBLK
  ignore EMITPOLY
  ignore RFMEMS
@@ -86,6 +85,10 @@ style  sg13g2 variants ()
  and-not pnparea
  labels NWELL
  labels WELLPIN port
+
+ # N-wells which are tagged with "isolbox" are recast as type isolbox
+ layer isolbox
+ tagged isolbox NWELL
 
  templayer nwellarea NWELL
  and-not pnp
@@ -452,8 +455,9 @@ style  sg13g2 variants ()
  and-not PSD
  copyup nsubcheck
 
- templayer ntaparea nsdarea
- and DNWELL
+ templayer ntaparea
+ tagged well DIFF
+ and nsdarea
  and-not vararea
  and-not DIGITALID
 
@@ -476,7 +480,9 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
  copyup psubcheck
 
- templayer ptaparea psdarea
+ templayer ptaparea
+ tagged sub! DIFF
+ and psdarea
  and SUBCUT,ptapcheck
  and-not DIGITALID
  copyup ptapcheck
@@ -519,8 +525,9 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
  copyup hvnsubcheck
 
- templayer hvntaparea hvnsdarea
- and DNWELL
+ templayer hvntaparea
+ tagged well DIFF
+ and hvnsdarea
  and-not DIGITALID
 
  layer hvntap hvntaparea
@@ -542,8 +549,9 @@ style  sg13g2 variants ()
  and-not vararea
  copyup hvpsubcheck
 
- templayer hvptaparea hvpsdarea
- and DNWELL
+ templayer hvptaparea
+ tagged sub! DIFF
+ and hvpsdarea
  and-not DIGITALID
 
  layer hvptap hvptaparea
@@ -592,6 +600,10 @@ style  sg13g2 variants ()
  and NSD
  labels POLYRES
 
+ # Find SRAMID areas and mark them with SRAMID mask hints
+ templayer sramarea SRAMID
+ mask-hints SRAMID
+
  # Find CONTBAR areas (other than pbc, sdic, or sealc)
  # and mark them with CONT mask hints.
  templayer contbar CONT
@@ -635,8 +647,7 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
 
  templayer ntapcbase nscbase
- and DNWELL
- and-not DIGITALID
+ and ntaparea
 
  layer nsc nscbase
  and-not ntapcbase
@@ -709,8 +720,7 @@ style  sg13g2 variants ()
  and-not THKOX,hvcheck
 
  templayer ptapcbase pscbase
- and SUBCUT
- and-not DIGITALID
+ and ptaparea
 
  layer psc pscbase
  and-not EDGESEAL
@@ -820,8 +830,7 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
 
  templayer hvntapbase hvnscbase
- and DNWELL
- and-not DIGITALID
+ and hvntaparea
 
  layer hvnsc hvnscbase
  and-not hvntapbase
@@ -884,8 +893,7 @@ style  sg13g2 variants ()
  and THKOX,hvcheck
 
  templayer hvptapcbase hvpscbase
- and SUBCUT
- and-not DIGITALID
+ and hvptaparea
 
  layer hvpsc hvpscbase
  and-not hvptapcbase
@@ -1299,42 +1307,36 @@ style  sg13g2 variants ()
  layer fillblock FILLBLOCK
  labels FILLBLOCK
 
-# Use the obstruction types for fill block on individual layers
- layer obsactive FILLOBSDIFF
- and-not DIFF
- labels FILLOBSDIFF
+# Use mask hints only for fill block on individual layers, so that
+# the fill blockage does not require additional planes or interfere
+# with mask layers on the same plane.
 
- layer obspoly FILLOBSPOLY
- and-not POLY
- labels FILLOBSPOLY
+ templayer diffblock DIFFBLOCK
+ mask-hints DIFFBLOCK
 
- layer obsm1 FILLOBSM1
- and-not MET1
- labels FILLOBSM1
+ templayer polyblock POLYBLOCK
+ mask-hints POLYBLOCK
 
- layer obsm2 FILLOBSM2
- and-not MET2
- labels FILLOBSM2
+ templayer met1block MET1BLOCK
+ mask-hints MET1BLOCK
 
- layer obsm3 FILLOBSM3
- and-not MET3
- labels FILLOBSM3
+ templayer met2block MET2BLOCK
+ mask-hints MET2BLOCK
 
- layer obsm4 FILLOBSM4
- and-not MET4
- labels FILLOBSM4
+ templayer met3block MET3BLOCK
+ mask-hints MET3BLOCK
 
- layer obsm5 FILLOBSM5
- and-not MET5
- labels FILLOBSM5
+ templayer met4block MET4BLOCK
+ mask-hints MET4BLOCK
 
- layer obsm6 FILLOBSM6
- and-not MET6
- labels FILLOBSM6
+ templayer met5block MET5BLOCK
+ mask-hints MET5BLOCK
 
- layer obsm7 FILLOBSM7
- and-not MET7
- labels FILLOBSM7
+ templayer met6block MET6BLOCK
+ mask-hints MET6BLOCK
+
+ templayer met7block MET7BLOCK
+ mask-hints MET7BLOCK
 
  # MOS Varactor
  layer var vararea
@@ -1484,15 +1486,15 @@ style  sg13g2 variants ()
 
  calma MIM 36 0
 
- calma FILLOBSDIFF  1  23
- calma FILLOBSPOLY  5  23
- calma FILLOBSM1   8  23
- calma FILLOBSM2  10 23
- calma FILLOBSM3  30 23
- calma FILLOBSM4  50 23
- calma FILLOBSM5  67 23
- calma FILLOBSM6  126 23
- calma FILLOBSM7  134 23
+ calma DIFFBLOCK  1  23
+ calma POLYBLOCK  5  23
+ calma MET1BLOCK  8  23
+ calma MET2BLOCK  10 23
+ calma MET3BLOCK  30 23
+ calma MET4BLOCK  50 23
+ calma MET5BLOCK  67 23
+ calma MET6BLOCK  126 23
+ calma MET7BLOCK  134 23
  calma FILLBLOCK  160 0
 
  calma DIFFFILL	  1  22

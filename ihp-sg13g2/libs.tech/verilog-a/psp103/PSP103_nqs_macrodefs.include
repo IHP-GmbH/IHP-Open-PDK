@@ -6,19 +6,17 @@
 //
 //  (c) Copyright notice
 //
-//  Copyright 2004-2017 NXP Semiconductors, 2015-2017 Commissariat a l’energie atomique
-//  et aux energies alternatives (CEA), 2012-2015 Delft University of Technology and 
-//  2004-2011 Arizona State University Licensed under the Educational Community License,
-//  Version 2.0 (the "License"); you may not use this file except in compliance with the
-//  License. You may obtain a copy of the License at
-//  http://opensource.org/licenses/ECL-2.0
-//  Unless required by applicable law or agreed to in writing, software distributed under
-//  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-//  ANY KIND, either express or implied. See the License for the specific language
-//  governing permissions and limitations under the License.
+//  Since 2015 until today, PSP has been co-developed by NXP Semiconductors and
+//  CEA-Leti. For this part of the model, each claim undivided ownership and copyrights
+//  Since 2012 until 2015, PSP has been co-developed by NXP Semiconductors and
+//  Delft University of Technology. For this part of the model, each claim undivided
+//  ownership and copyrights
+//  Until and including 2011, PSP has been co-developed by NXP Semiconductors and
+//  Arizona State University. For this part of the model, NXP Semiconductors claims
+//  undivided ownership and copyrights.
 //
 //
-//  Version: 103.6.0 (PSP), 200.5.0 (JUNCAP), December 2017
+//  Version: 103.8.2 (PSP), 200.6.2 (JUNCAP), June 2022
 //
 //======================================================================================
 //======================================================================================
@@ -34,92 +32,552 @@
 
 // Function to calculate bulk charge from surface potential
 `define PhiToQb(phi,Qb_tmp) \
-if (abs(phi) <= margin_ac) \
-        Qb_tmp     = -0.70710678 * phi * Gf_ac * (1.0 - `oneSixth * phi * (1.0 - `oneSixth * phi)); \
-else begin \
+    if (abs(phi) <= margin_ac) \
+        Qb_tmp      = -0.70710678 * phi * Gf_ac * (1.0 - `oneSixth * phi * (1.0 - `oneSixth * phi)); \
+    else begin \
         `expl((-phi), temp) \
-        Qb_tmp     =  Gf_ac * sqrt(temp + phi - 1.0); \
+        Qb_tmp      =  Gf_ac * sqrt(temp + phi - 1.0); \
         if (phi > margin_ac) \
-                Qb_tmp     = -Qb_tmp; \
-end
+            Qb_tmp      = -Qb_tmp; \
+    end
 
 // Function used in fq-macro
 `define PhiTod2Qis(xphi,d2Qis) \
-if (abs(xphi) <= margin_ac) begin \
-        Qb_tmp     = -0.70710678 * xphi * Gf_ac * (1.0 - `oneSixth * xphi * (1.0 - `oneSixth * xphi)); \
-        dQbs       = -0.70710678 * Gf_ac * (1.0 - `oneThird * xphi * (1.0 - 0.25 * xphi)); \
-        d2Qis      = -0.235702 * Gf_ac * (1.0 - 0.5 * xphi); \
-end else begin \
+    if (abs(xphi) <= margin_ac) begin \
+        Qb_tmp      = -0.70710678 * xphi * Gf_ac * (1.0 - `oneSixth * xphi * (1.0 - `oneSixth * xphi)); \
+        dQbs        = -0.70710678 * Gf_ac * (1.0 - `oneThird * xphi * (1.0 - 0.25 * xphi)); \
+        d2Qis       = -0.235702 * Gf_ac * (1.0 - 0.5 * xphi); \
+    end else begin \
         `expl((-xphi),temp) \
-        Qb_tmp     =  Gf_ac * sqrt(temp + xphi - 1.0); \
+        Qb_tmp      =  Gf_ac * sqrt(temp + xphi - 1.0); \
         if (xphi > margin_ac) \
-                Qb_tmp     = -Qb_tmp; \
-        dQbs       =  0.5 * Gf_ac * Gf_ac * (1.0 - temp) / Qb_tmp; \
-        d2Qis      = (dQbs * dQbs - 0.5 * Gf_ac * Gf_ac) / Qb_tmp + dQbs; \
-end
+            Qb_tmp     = -Qb_tmp; \
+        dQbs        =  0.5 * Gf_ac * Gf_ac * (1.0 - temp) / Qb_tmp; \
+        d2Qis       =  (dQbs * dQbs - 0.5 * Gf_ac * Gf_ac) / Qb_tmp + dQbs; \
+    end
 
 
 // Function used in QiToPhi
 `define sps(sp, xg) \
-if (abs(xg) <= marginp) begin \
-        sp         = xg / a_factrp; \
-end else begin \
+    if (abs(xg) <= marginp) begin \
+        sp          = xg / a_factrp; \
+    end else begin \
         if (xg < -marginp) begin \
-                NQS_yg     =  -xg; \
-                NQS_z      =  1.25 * NQS_yg / a_factrp; \
-                NQS_eta    =  (NQS_z + 10.0 - sqrt((NQS_z - 6.0) * (NQS_z - 6.0) + 64.0)) * 0.5; \
-                NQS_a      =  (NQS_yg - NQS_eta) * (NQS_yg - NQS_eta) + Gp2 * (NQS_eta + 1.0); \
-                NQS_c      =  2.0 * (NQS_yg - NQS_eta) - Gp2; \
-                NQS_tau    =  ln(NQS_a / Gp2) - NQS_eta; \
-                `sigma(NQS_a, NQS_c, NQS_tau, NQS_eta, NQS_y0) \
-                `expl(NQS_y0, NQS_D0) \
-                NQS_xi     =  1.0 - Gp2 * NQS_D0 * 0.5;  \
-                NQS_p      =  2.0 * (NQS_yg - NQS_y0) + Gp2 * (NQS_D0 - 1.0); \
-                NQS_q      =  (NQS_yg - NQS_y0) * (NQS_yg - NQS_y0) + Gp2 * (NQS_y0 + 1.0 - NQS_D0); \
-                NQS_temp   =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
-                NQS_w      =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
-                sp         =  -(NQS_y0 + NQS_w); \
+            NQS_yg      =  -xg; \
+            NQS_z       =  1.25 * NQS_yg / a_factrp; \
+            NQS_eta     =  (NQS_z + 10.0 - sqrt((NQS_z - 6.0) * (NQS_z - 6.0) + 64.0)) * 0.5; \
+            NQS_a       =  (NQS_yg - NQS_eta) * (NQS_yg - NQS_eta) + Gp2 * (NQS_eta + 1.0); \
+            NQS_c       =  2.0 * (NQS_yg - NQS_eta) - Gp2; \
+            NQS_tau     =  ln(NQS_a / Gp2) - NQS_eta; \
+            `sigma(NQS_a, NQS_c, NQS_tau, NQS_eta, NQS_y0) \
+            `expl(NQS_y0, NQS_D0) \
+            NQS_xi      =  1.0 - Gp2 * NQS_D0 * 0.5;  \
+            NQS_p       =  2.0 * (NQS_yg - NQS_y0) + Gp2 * (NQS_D0 - 1.0); \
+            NQS_q       =  (NQS_yg - NQS_y0) * (NQS_yg - NQS_y0) + Gp2 * (NQS_y0 + 1.0 - NQS_D0); \
+            NQS_temp    =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
+            NQS_w       =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
+            sp          =  -(NQS_y0 + NQS_w); \
         end else begin \
-                NQS_xg1    =  1.0 / ( 1.25 + 7.32464877560822e-01 * Gp); \
-                NQS_A_fac  =  (1.25 * a_factrp * NQS_xg1 - 1.0) * NQS_xg1; \
-                NQS_xbar   =  xg / a_factrp * (1.0 + NQS_A_fac * xg); \
-                `expl(-NQS_xbar, NQS_temp)   \
-                NQS_w      =  1.0 - NQS_temp; \
-                NQS_x0     =  xg + Gp2 * 0.5 - Gp * sqrt(xg + Gp2 * 0.25 - NQS_w); \
-                `expl((-NQS_x0), NQS_D0) \
-                NQS_xi     =  1.0 - Gp2 * 0.5 * NQS_D0; \
-                NQS_p      =  2.0 * (xg - NQS_x0) + Gp2 * (1.0 - NQS_D0); \
-                NQS_q      =  (xg - NQS_x0) * (xg - NQS_x0) - Gp2 * (NQS_x0 - 1.0 + NQS_D0); \
-                NQS_temp   =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
-                NQS_u      =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
-                sp         =  NQS_x0 + NQS_u; \
+            NQS_xg1     =  1.0 / ( 1.25 + 7.32464877560822e-01 * Gp); \
+            NQS_A_fac   =  (1.25 * a_factrp * NQS_xg1 - 1.0) * NQS_xg1; \
+            NQS_xbar    =  xg / a_factrp * (1.0 + NQS_A_fac * xg); \
+            `expl(-NQS_xbar, NQS_temp)   \
+            NQS_w       =  1.0 - NQS_temp; \
+            NQS_x0      =  xg + Gp2 * 0.5 - Gp * sqrt(xg + Gp2 * 0.25 - NQS_w); \
+            `expl((-NQS_x0), NQS_D0) \
+            NQS_xi      =  1.0 - Gp2 * 0.5 * NQS_D0; \
+            NQS_p       =  2.0 * (xg - NQS_x0) + Gp2 * (1.0 - NQS_D0); \
+            NQS_q       =  (xg - NQS_x0) * (xg - NQS_x0) - Gp2 * (NQS_x0 - 1.0 + NQS_D0); \
+            NQS_temp    =  NQS_p * NQS_p - 4.0 * NQS_xi * NQS_q; \
+            NQS_u       =  2.0 * NQS_q / (NQS_p + sqrt(NQS_temp)); \
+            sp          =  NQS_x0 + NQS_u; \
         end \
-end
+    end
 
 
 // Function to calculate surface potential from inversion charge
 `define QiToPhi(Qi,xg,xphi) \
-        temp       =  Qi / pd + xg; \
-        `sps(xphi,temp)
+    temp        =  Qi / pd + xg; \
+    `sps(xphi,temp)
 
 // Calculation of fk
 `define fq(Qi,xg,dQy,d2Qy,fk) \
-        `QiToPhi(Qi, xg, xphi) \
-        `PhiTod2Qis(xphi, d2Qis) \
-        dQis       =  pd - dQbs; \
-        dQis_1     =  1.0 / dQis; \
-        fQi        =  Qi * dQis_1 - 1.0; \
-        dfQi       =  (1.0 - Qi * d2Qis * dQis_1 * dQis_1) * dQis_1; \
-        fk0        =  dfQi * dQy * dQy + fQi * d2Qy; \
-        dpsy2      =  dQy * dQy * dQis_1 * dQis_1; \
-        zsat_nqs   =  thesat2 * dpsy2; \
-        if (CHNL_TYPE == `PMOS) \
-                zsat_nqs   =  zsat_nqs / (1.0 + thesat1_ac * dps_ac); \
-        temp       =  sqrt(1.0 + 2.0 * zsat_nqs); \
-        Fvsat      =  2.0 / (1.0 + temp); \
-        temp1      =  d2Qy - dpsy2 * d2Qis; \
-        fk         =  Fvsat * (fk0 - zsat_nqs * fQi * temp1 * Fvsat / temp);
+    `QiToPhi(Qi, xg, xphi) \
+    `PhiTod2Qis(xphi, d2Qis) \
+    dQis        =  pd - dQbs; \
+    dQis_1      =  1.0 / dQis; \
+    fQi         =  Qi * dQis_1 - 1.0; \
+    dfQi        =  (1.0 - Qi * d2Qis * dQis_1 * dQis_1) * dQis_1; \
+    fk0         =  dfQi * dQy * dQy + fQi * d2Qy; \
+    dpsy2       =  dQy * dQy * dQis_1 * dQis_1; \
+    zsat_nqs    =  thesat2 * dpsy2; \
+    if (CHNL_TYPE == `PMOS) \
+        zsat_nqs    =  zsat_nqs / (1.0 + thesat1_ac * dps_ac); \
+    temp        =  sqrt(1.0 + 2.0 * zsat_nqs); \
+    Fvsat       =  2.0 / (1.0 + temp); \
+    temp1       =  d2Qy - dpsy2 * d2Qis; \
+    fk          =  Fvsat * (fk0 - zsat_nqs * fQi * temp1 * Fvsat / temp);
 
 // Interpolation of surface potential along channel
 `define Phiy(y) \
-        x_m_ac + H_ac * (1.0 - sqrt(1.0 - 2.0 * dps_ac / H_ac * ((y) - ym))) * inv_phit1
+    x_m_ac + H_ac * (1.0 - sqrt(1.0 - 2.0 * dps_ac / H_ac * ((y) - ym))) * inv_phit1
+
+//  Computing initial (dc) values for internal nodes (from PSP103_InitNQS.include in previous versions)
+`define InitNQS \
+    \
+    Qp1_0       =  0.0; \
+    Qp2_0       =  0.0; \
+    Qp3_0       =  0.0; \
+    Qp4_0       =  0.0; \
+    Qp5_0       =  0.0; \
+    Qp6_0       =  0.0; \
+    Qp7_0       =  0.0; \
+    Qp8_0       =  0.0; \
+    Qp9_0       =  0.0; \
+    fk1         =  0.0; \
+    fk2         =  0.0; \
+    fk3         =  0.0; \
+    fk4         =  0.0; \
+    fk5         =  0.0; \
+    fk6         =  0.0; \
+    fk7         =  0.0; \
+    fk8         =  0.0; \
+    fk9         =  0.0; \
+    if (SWNQS_i != 0) begin \
+        dQis        =  0.0; \
+        dQy         =  0.0; \
+        dfQi        =  0.0; \
+        fQi         =  0.0; \
+        d2Qy        =  0.0; \
+        Qp1         =  0.0; \
+        Qp2         =  0.0; \
+        Qp3         =  0.0; \
+        Qp4         =  0.0; \
+        Qp5         =  0.0; \
+        Qp6         =  0.0; \
+        Qp7         =  0.0; \
+        Qp8         =  0.0; \
+        Qp9         =  0.0; \
+        phi_p1      =  0.0; \
+        phi_p2      =  0.0; \
+        phi_p3      =  0.0; \
+        phi_p4      =  0.0; \
+        phi_p5      =  0.0; \
+        phi_p6      =  0.0; \
+        phi_p7      =  0.0; \
+        phi_p8      =  0.0; \
+        phi_p9      =  0.0; \
+        \
+        /*  Setting initial values for charge along the channel from interpolated DC-solution */ \
+        if (xg_ac > 0.0) begin \
+            if (SWNQS_i == 1) begin \
+                phi_p1      = `Phiy(0.5); \
+                `PhiToQb(phi_p1,Qb_tmp) \
+                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp; \
+                \
+            end else if (SWNQS_i == 2) begin \
+                phi_p1      = `Phiy(`oneThird); \
+                `PhiToQb(phi_p1,Qb_tmp) \
+                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp; \
+                \
+                phi_p2      = `Phiy(`twoThirds); \
+                `PhiToQb(phi_p2,Qb_tmp) \
+                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp; \
+                \
+                if (sigVds < 0) begin \
+                    `swap(Qp1_0, Qp2_0) \
+                end \
+                \
+            end else if (SWNQS_i == 3) begin \
+                phi_p1      = `Phiy(0.25); \
+                `PhiToQb(phi_p1,Qb_tmp) \
+                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp; \
+                \
+                phi_p2      = `Phiy(0.5); \
+                `PhiToQb(phi_p2,Qb_tmp) \
+                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp; \
+                \
+                phi_p3      = `Phiy(0.75); \
+                `PhiToQb(phi_p3,Qb_tmp) \
+                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp; \
+                \
+                if (sigVds < 0) begin \
+                    `swap(Qp1_0, Qp3_0) \
+                end \
+                \
+            end else if (SWNQS_i == 5) begin \
+                phi_p1      = `Phiy(`oneSixth); \
+                `PhiToQb(phi_p1,Qb_tmp) \
+                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp; \
+                \
+                phi_p2      = `Phiy(`oneThird); \
+                `PhiToQb(phi_p2,Qb_tmp) \
+                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp; \
+                \
+                phi_p3      = `Phiy(0.5); \
+                `PhiToQb(phi_p3,Qb_tmp) \
+                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp; \
+                \
+                phi_p4      = `Phiy(`twoThirds); \
+                `PhiToQb(phi_p4,Qb_tmp) \
+                Qp4_0       = -pd * (xg_ac - phi_p4) - Qb_tmp; \
+                \
+                phi_p5      = `Phiy(0.8333333333333333); \
+                `PhiToQb(phi_p5,Qb_tmp) \
+                Qp5_0       = -pd * (xg_ac - phi_p5) - Qb_tmp; \
+                \
+                if (sigVds < 0.0) begin \
+                    `swap(Qp1_0, Qp5_0) \
+                    `swap(Qp2_0, Qp4_0) \
+                end \
+                \
+            end else if (SWNQS_i == 9) begin \
+                phi_p1      = `Phiy(0.1); \
+                `PhiToQb(phi_p1,Qb_tmp) \
+                Qp1_0       = -pd * (xg_ac - phi_p1) - Qb_tmp; \
+                \
+                phi_p2      = `Phiy(0.2); \
+                `PhiToQb(phi_p2,Qb_tmp) \
+                Qp2_0       = -pd * (xg_ac - phi_p2) - Qb_tmp; \
+                \
+                phi_p3      = `Phiy(0.3); \
+                `PhiToQb(phi_p3,Qb_tmp) \
+                Qp3_0       = -pd * (xg_ac - phi_p3) - Qb_tmp; \
+                \
+                phi_p4      = `Phiy(0.4); \
+                `PhiToQb(phi_p4,Qb_tmp) \
+                Qp4_0       = -pd * (xg_ac - phi_p4) - Qb_tmp; \
+                \
+                phi_p5      = `Phiy(0.5); \
+                `PhiToQb(phi_p5,Qb_tmp) \
+                Qp5_0       = -pd * (xg_ac - phi_p5) - Qb_tmp; \
+                \
+                phi_p6      = `Phiy(0.6); \
+                `PhiToQb(phi_p6,Qb_tmp) \
+                Qp6_0       = -pd * (xg_ac - phi_p6) - Qb_tmp; \
+                \
+                phi_p7      = `Phiy(0.7); \
+                `PhiToQb(phi_p7,Qb_tmp) \
+                Qp7_0       = -pd * (xg_ac - phi_p7) - Qb_tmp; \
+                \
+                phi_p8      = `Phiy(0.8); \
+                `PhiToQb(phi_p8,Qb_tmp) \
+                Qp8_0       = -pd * (xg_ac - phi_p8) - Qb_tmp; \
+                \
+                phi_p9      = `Phiy(0.9); \
+                `PhiToQb(phi_p9,Qb_tmp) \
+                Qp9_0       = -pd * (xg_ac - phi_p9) - Qb_tmp; \
+                \
+                if (sigVds < 0.0) begin \
+                    `swap(Qp1_0, Qp9_0) \
+                    `swap(Qp2_0, Qp8_0) \
+                    `swap(Qp3_0, Qp7_0) \
+                    `swap(Qp4_0, Qp6_0) \
+                end \
+            end \
+        end /* (x_g >0.0) */ \
+    end /* (SWNQS_i != 0) */ \
+    \
+    x_sp        =  0.0; \
+    x_dp        =  0.0; \
+    Qp0         =  0.0; \
+    QpN         =  0.0; \
+    if (SWNQS_i != 0) begin \
+        x_sp        =  x_m_ac - sigVds * 0.5 * dps_ac * inv_phit1; \
+        x_dp        =  x_m_ac + sigVds * 0.5 * dps_ac * inv_phit1; \
+        Qp0         =  0.0; \
+        QpN         =  0.0; \
+        if (x_sp > 0.0) begin \
+            `PhiToQb(x_sp, QbSIGN) \
+            Qp0         =  -pd * (xg_ac - x_sp) - QbSIGN; \
+        end \
+        if (x_dp > 0.0) begin \
+            `PhiToQb(x_dp, QbSIGN) \
+            QpN         =  -pd * (xg_ac - x_dp) - QbSIGN; \
+        end \
+    end
+
+//  Calculate NQS-charge contributions (from PSP103_ChargesNQS.include in previous versions)
+`define CalcChargesNQS \
+    \
+    Qp1          =  vnorm * V(SPLINE1); \
+    Qp2          =  vnorm * V(SPLINE2); \
+    Qp3          =  vnorm * V(SPLINE3); \
+    Qp4          =  vnorm * V(SPLINE4); \
+    Qp5          =  vnorm * V(SPLINE5); \
+    Qp6          =  vnorm * V(SPLINE6); \
+    Qp7          =  vnorm * V(SPLINE7); \
+    Qp8          =  vnorm * V(SPLINE8); \
+    Qp9          =  vnorm * V(SPLINE9); \
+    \
+    Tnorm        =  0.0; \
+    \
+    if (SWNQS_i != 0) begin \
+        /* Dimension and mobility information is included in Tnorm */ \
+        Tnorm        =  MUNQS_i * phit1 * BET_i / (COX_qm * Gmob_dL_ac); \
+        thesat2      =  thesat1_ac * thesat1_ac * phit1 * phit1; \
+        \
+        if (SWNQS_i == 1) begin \
+            dQy          =  QpN - Qp0; \
+            d2Qy         =  6.0 * (Qp0 + QpN) - 12.0 * Qp1; \
+        end else if (SWNQS_i == 2) begin \
+            dQy          =  (-7.0 * Qp0 - 3.0 * Qp1 + 12.0 * Qp2 - 2.0 * QpN) / 5.0; \
+            d2Qy         = -18.0 / 5.0 * (-4.0 * Qp0 + 9.0 * Qp1 - 6.0 * Qp2 + QpN); \
+        end else if (SWNQS_i == 3) begin \
+            dQy          =  (-13.0 * Qp0 - 6.0 * Qp1 + 24.0 * Qp2 - 6.0 * Qp3 + QpN) / 7.0; \
+            d2Qy         =  (180.0 * Qp0 - 408.0 * Qp1 + 288.0 * Qp2 - 72.0 * Qp3 + 12.0 * QpN) / 7.0; \
+        end else if (SWNQS_i == 5) begin \
+            dQy          =  (-181.0 * Qp0 - 84.0 * Qp1 + 24.0 * Qp4 - 6.0 * Qp5 - 90.0 * Qp3 + QpN \
+            + 336.0 * Qp2) / 65.0; \
+            d2Qy         =  (432.0 * Qp4 - 108.0 * Qp5 - 1620.0 * Qp3 + 18.0 * QpN + 3762.0 * Qp0 \
+            - 8532.0 * Qp1 + 6048.0 * Qp2) / 65.0; \
+        end else if (SWNQS_i == 9) begin \
+            dQy          =  (1680.0 * Qp6 + 23400.0 * Qp4 + 5.0 * QpN - 87330.0 * Qp3 + 120.0 * Qp8 \
+            - 450.0 * Qp7 - 81480.0 * Qp1 + 325920.0 * Qp2 \
+            - 175565.0 * Qp0 - 30.0 * Qp9) / 37829.0 - 30.0 / 181.0 * Qp5; \
+            d2Qy         =  (-13500.0 * Qp7 + 702000.0 * Qp4 - 2619900 * Qp3 - 13793100.0 * Qp1 \
+            + 9777600.0 * Qp2 + 6081750.0 * Qp0 + 150.0 * QpN + 3600.0 * Qp8 \
+            - 900.0 * Qp9 + 50400.0 * Qp6) / 37829.0 - 900.0 / 181.0 * Qp5; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp1, xg_ac, dQy, d2Qy, fk1) \
+    end else begin \
+        thesat2      =  0.0; \
+    end \
+    \
+    if (SWNQS_i >= 2) begin \
+        if (SWNQS_i == 2) begin \
+            dQy          =  (2.0 * Qp0 - 12.0 * Qp1 + 3.0 * Qp2 + 7.0 * QpN) / 5.0; \
+            d2Qy         =  -18.0 / 5.0 * (-4.0 * QpN + 9.0 * Qp2 - 6.0 * Qp1 + Qp0); \
+        end else if (SWNQS_i == 3) begin \
+            dQy          =  0.5 * Qp0 - 3.0 * Qp1 + 3.0 * Qp3 - 0.5 * QpN; \
+            d2Qy         =  (-48.0 * Qp0 + 288.0 * Qp1 - 480.0 * Qp2 + 288.0 * Qp3 - 48.0 * QpN) / 7.0; \
+        end else if (SWNQS_i == 5) begin \
+            dQy          =  (-291.0 * Qp1 - 6.0 * Qp2 - 84.0 * Qp4 + 21.0 * Qp5) / 65.0 \
+            + (630.0 * Qp3 - 7.0 * QpN + 97.0 * Qp0) / 130.0; \
+            d2Qy         =  (-1728.0 * Qp4 + 432.0 * Qp5 + 6480.0 * Qp3 - 72.0 * QpN - 1008.0 * Qp0 \
+            + 6048.0 * Qp1 - 10152.0 * Qp2) / 65.0; \
+        end else if (SWNQS_i == 9) begin \
+            dQy          =  (-5880.0 * Qp6 - 81900.0 * Qp4 + 305655.0 * Qp3 - 420.0 * Qp8 \
+            + 105.0 * Qp9 - 282255.0 * Qp1 + 1575.0 * Qp7 - 5850.0 * Qp2) / 37829.0 \
+            + 105.0 / 181.0 * Qp5 + (94085.0 * Qp0 - 35.0 * QpN) / 75658.0; \
+            d2Qy         =  (9777600.0 * Qp1 + 54000.0 * Qp7 - 2808000.0 * Qp4 + 10479600.0 * Qp3 \
+            - 16413000.0 * Qp2 - 1629600.0 * Qp0 - 600.0 * QpN - 14400.0 * Qp8 \
+            + 3600.0 * Qp9 - 201600.0 * Qp6) / 37829.0 + 3600.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp2, xg_ac, dQy, d2Qy, fk2) \
+    end \
+    \
+    if (SWNQS_i >= 3) begin \
+        if (SWNQS_i == 3) begin \
+            dQy          =  (13.0 * QpN + 6.0 * Qp3 - 24.0 * Qp2 + 6.0 * Qp1 - Qp0) / 7.0; \
+            d2Qy         =  (180.0 * QpN - 408.0 * Qp3 + 288.0 * Qp2 - 72.0 * Qp1 + 12.0 * Qp0) / 7.0; \
+        end else if (SWNQS_i == 5) begin \
+            dQy          =  (QpN - 6.0 * Qp5 + 24.0 * Qp4 - 24.0 * Qp2 + 6.0 * Qp1 - Qp0) / 5.0; \
+            d2Qy         =  (1296.0 * (Qp4 + Qp2) - 324.0 * (Qp5 + Qp1) - 2052.0 * Qp3 \
+            + 54.0 * (QpN + Qp0)) / 13.0; \
+        end else if (SWNQS_i == 9) begin \
+            dQy          =  (21840.0 * Qp6 + 304200.0 * Qp4 + 65.0 * QpN - 420.0 * Qp3 + 1560.0 * Qp8 \
+            - 12605.0 * Qp0 - 390.0 * Qp9 + 75630.0 * Qp1 - 5850.0 * Qp7 \
+            - 302520.0 * Qp2) / 37829.0 - 390.0 / 181.0 * Qp5; \
+            d2Qy         =  (-2619900.0 * Qp1 - 202500.0 * Qp7 + 10530000.0 * Qp4 - 16601100.0 * Qp3 \
+            + 10479600.0 * Qp2 + 436650.0 * Qp0 + 2250.0 * QpN + 54000.0 * Qp8 \
+            - 13500.0 * Qp9 + 756000.0 * Qp6) / 37829.0 - 13500.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp3, xg_ac, dQy, d2Qy, fk3) \
+    end \
+    \
+    if (SWNQS_i >= 4) begin \
+        if (SWNQS_i == 5) begin \
+            dQy          =  (-630.0 * Qp3 + 12.0 * Qp4 + 582.0 * Qp5 - 97.0 * QpN + 7.0 * Qp0 \
+            - 42.0 * Qp1 + 168.0 * Qp2) / 130.0; \
+            d2Qy         =  (-10152.0 * Qp4 + 6048.0 * Qp5 + 6480.0 * Qp3 - 1008.0 * QpN \
+            - 72.0 * Qp0 + 432.0 * Qp1 - 1728.0 * Qp2) / 65.0; \
+        end else if (SWNQS_i == 9) begin \
+            dQy          =  (-81480.0 * Qp6 - 30.0 * Qp4 - 303975.0 * Qp3 - 5820.0 * Qp8 \
+            + 1455.0 * Qp9 - 20265.0 * Qp1 + 21825.0 * Qp7 + 81060.0 * Qp2) / 37829.0 \
+            - 485.0 / 75658.0 * QpN + 1455.0 * Qp5 / 181.0 + 6755.0 * Qp0 / 75658.0; \
+            d2Qy         =  (702000.0 * Qp1 + 756000.0 * Qp7 - 16614600.0 * Qp4 + 10530000.0 * Qp3 \
+            - 2808000.0 * Qp2 - 117000.0 * Qp0 - 8400.0 * QpN - 201600.0 * Qp8 \
+            + 50400.0 * Qp9 - 2822400.0 * Qp6) / 37829.0 + 50400.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp4, xg_ac, dQy, d2Qy, fk4) \
+    end \
+    \
+    if (SWNQS_i >= 5) begin \
+        if (SWNQS_i == 5) begin \
+            dQy          =  (-336.0 * Qp4 + 84.0 * Qp5 + 90.0 * Qp3 + 181.0 * QpN - Qp0 + 6.0 * Qp1 \
+            - 24.0 * Qp2) / 65.0; \
+            d2Qy         =  (18.0 * Qp0 + 3762.0 * QpN + 6048.0 * Qp4 + 432.0 * Qp2 - 1620.0 * Qp3 \
+            - 108.0 * Qp1 - 8532.0 * Qp5) / 65.0; \
+        end else if (SWNQS_i == 9) begin \
+            dQy          =  (1680.0 * (Qp6 - Qp4) + 5.0 * (QpN - Qp0) + 450.0 * (Qp3 - Qp7) \
+            + 120.0 * (Qp8 - Qp2) - 30.0 * (Qp9 - Qp1)) / 209.0; \
+            d2Qy         =  (-900.0 * (Qp1 + Qp9) - 13500.0 * (Qp7 + Qp3) - 79500.0 * Qp5 \
+            + 50400.0 * (Qp4 + Qp6) + 3600.0 * (Qp2 + Qp8) + 150.0 * (Qp0 + QpN)) / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp5, xg_ac, dQy, d2Qy, fk5) \
+    end \
+    \
+    if (SWNQS_i >= 6) begin \
+        if (SWNQS_i == 9) begin \
+            dQy          =  (30.0 * Qp6 + 81480.0 * Qp4 - 21825.0 * Qp3 - 81060.0 * Qp8 + 20265.0 * Qp9 \
+            - 1455.0 * Qp1 + 303975.0 * Qp7 + 5820.0 * Qp2) / 37829.0 \
+            -(6755.0 * QpN - 485.0 * Qp0) / 75658.0 - 1455.0 / 181.0 * Qp5; \
+            d2Qy         =  (50400.0 * Qp1 + 10530000.0 * Qp7 - 2822400.0 * Qp4 + 756000.0 * Qp3 \
+            - 201600.0 * Qp2 - 8400.0 * Qp0 - 117000.0 * QpN - 2808000.0 * Qp8 \
+            + 702000.0 * Qp9 - 16614600.0 * Qp6) / 37829.0 + 50400.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp6, xg_ac, dQy, d2Qy, fk6) \
+    end \
+    \
+    if (SWNQS_i >= 7) begin \
+        if (SWNQS_i == 9) begin \
+            dQy          =  (-304200.0 * Qp6 - 21840.0 * Qp4 + 12605.0 * QpN + 5850.0 * Qp3 \
+            + 302520.0 * Qp8 - 65.0 * Qp0 - 75630.0 * Qp9 + 390.0 * Qp1 + 420.0 * Qp7 \
+            - 1560.0 * Qp2) / 37829.0 + 390.0 / 181.0 * Qp5; \
+            d2Qy         =  (-13500.0 * Qp1 - 16601100.0 * Qp7 + 756000.0 * Qp4 - 202500.0 * Qp3 \
+            + 54000.0 * Qp2 + 2250.0 * Qp0 + 436650.0 * QpN + 10479600.0 * Qp8 \
+            - 2619900.0 * Qp9 + 10530000.0 * Qp6) / 37829.0 - 13500.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp7, xg_ac, dQy, d2Qy, fk7) \
+    end \
+    \
+    if (SWNQS_i >= 8) begin \
+        if (SWNQS_i == 9) begin \
+            dQy          =  (81900.0 * Qp6 + 5880.0 * Qp4 - 1575.0 * Qp3 + 5850.0 * Qp8 + 282255.0 * Qp9 \
+            - 105.0 * Qp1 - 305655.0 * Qp7 + 420.0 * Qp2) / 37829.0 + (35.0 * Qp0 \
+            - 94085.0 * QpN) / 75658.0 - 105.0 / 181.0 * Qp5; \
+            d2Qy         =  (3600.0 * Qp1 + 10479600.0 * Qp7 - 201600.0 * Qp4 + 54000.0 * Qp3 \
+            - 14400.0 * Qp2 - 600.0 * Qp0 - 1629600.0 * QpN - 16413000.0 * Qp8 \
+            + 9777600.0 * Qp9 - 2808000.0 * Qp6) / 37829.0 + 3600.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp8, xg_ac, dQy, d2Qy, fk8) \
+    end \
+    \
+    if (SWNQS_i >= 9) begin \
+        if (SWNQS_i == 9) begin \
+            dQy          =  (-23400.0 * Qp6 - 1680.0 * Qp4 + 175565.0 * QpN + 450.0 * Qp3 \
+            - 325920.0 * Qp8 - 5.0 * Qp0 + 81480.0 * Qp9 + 30.0 * Qp1 \
+            + 87330.0 * Qp7 - 120.0 * Qp2) / 37829.0 + 30.0 * Qp5 / 181.0; \
+            d2Qy         =  (-900.0 * Qp1 - 2619900.0 * Qp7 + 50400.0 * Qp4 - 13500.0 * Qp3 \
+            + 3600.0 * Qp2 + 150.0 * Qp0 + 6081750.0 * QpN + 9777600.0 * Qp8 \
+            - 13793100.0 * Qp9 + 702000.0 * Qp6) / 37829.0 - 900.0 * Qp5 / 181.0; \
+        end else begin \
+            dQy          =  0.0; \
+            d2Qy         =  0.0; \
+        end \
+        `fq(Qp9, xg_ac, dQy, d2Qy, fk9) \
+    end \
+    \
+    /*  Terminal charges for NQS */ \
+    QS_NQS       =  0.0; \
+    QD_NQS       =  0.0; \
+    QG_NQS       =  0.0; \
+    if (SWNQS_i != 0) begin \
+        if (SWNQS_i == 1) begin \
+            QS_NQS       =  (17.0 * Qp0 + 30.0 * Qp1 + QpN) / 96.0; \
+            QD_NQS       =  (Qp0 + 30.0 * Qp1 + 17.0 * QpN) / 96.0; \
+            `QiToPhi(Qp1,xg_ac, temp1) \
+            QG_NQS       =  xg_ac - (x_sp + 4.0 * temp1 + x_dp) * `oneSixth; \
+        end else if (SWNQS_i == 2) begin \
+            QS_NQS       =  (11.0 * Qp0 + 24.0 * Qp1 + 9.0 * Qp2 + QpN) / 90.0; \
+            QD_NQS       =  (11.0 * QpN + 24.0 * Qp2 + 9.0 * Qp1 + Qp0) / 90.0; \
+            `QiToPhi(Qp1, xg_ac, temp1) \
+            `QiToPhi(Qp2, xg_ac, temp2) \
+            QG_NQS       =  xg_ac - (x_sp + 3.0 * (temp1 + temp2) + x_dp) * 0.125; \
+        end else if (SWNQS_i == 3) begin \
+            QS_NQS       =  (251.0 * Qp0 + 594.0 * Qp1 + 312.0 * Qp2 + 174.0 * Qp3 + 13.0 * QpN) / 2688.0; \
+            QD_NQS       =  (251.0 * QpN + 594.0 * Qp3 + 312.0 * Qp2 + 174.0 * Qp1 + 13.0 * Qp0) / 2688.0; \
+            `QiToPhi(Qp1, xg_ac, temp1) \
+            `QiToPhi(Qp2, xg_ac, temp2) \
+            `QiToPhi(Qp3, xg_ac, temp3) \
+            QG_NQS       =  xg_ac - (x_sp + 4.0 * temp1 + 2.0 * temp2 + 4.0 * temp3 + x_dp) / 12.0; \
+        end else if (SWNQS_i == 5) begin \
+            QS_NQS       =  (1187.0 * Qp0 + 43.0 * QpN) / 18720.0 + (503.0 * Qp1 + 172.0 * Qp4 \
+            + 87.0 * Qp5 + 265.0 * Qp3 + 328.0 * Qp2) / 3120.0; \
+            QD_NQS       =  (1187.0 * QpN + 43.0 * Qp0) / 18720.0 + (503.0 * Qp5 + 172.0 * Qp2 \
+            + 87.0 * Qp1 + 265.0 * Qp3 + 328.0 * Qp4) / 3120.0; \
+            `QiToPhi(Qp1, xg_ac, temp1) \
+            `QiToPhi(Qp2, xg_ac, temp2) \
+            `QiToPhi(Qp3, xg_ac, temp3) \
+            `QiToPhi(Qp4, xg_ac, temp4) \
+            `QiToPhi(Qp5, xg_ac, temp5) \
+            QG_NQS       =  xg_ac - (x_sp + 4.0 * (temp1 + temp3 + temp5) + 2.0 * (temp2 + temp4) + x_dp) / 18.0; \
+        end else if (SWNQS_i == 9) begin \
+            QS_NQS       =  (75653.0 * Qp8 + 225999.0 * Qp4) / 3782900.0 + (151321.0 * Qp9 \
+            + 454023.0 * Qp7 + 1073767.0 * Qp3 + 1564569.0 * Qp1) / 15131600.0 \
+            + 75623.0 * Qp6 / 1891450.0 + 145.0 * Qp5 / 2896.0 + 72263.0 * Qp2 / 945725.0 \
+            + (3504517.0 * Qp0 + 75653.0 * QpN) / 90789600.0; \
+            QD_NQS       =  (75653.0 * Qp2 + 225999.0 * Qp6) / 3782900.0 + (151321.0 * Qp1 \
+            + 454023.0 * Qp3 + 1073767.0 * Qp7 + 1564569.0 * Qp9) / 15131600.0 \
+            + 75623.0 * Qp4 / 1891450.0 + 145.0 * Qp5 / 2896.0 + 72263.0 * Qp8 / 945725.0 \
+            + (3504517.0 * QpN + 75653.0 * Qp0) / 90789600.0; \
+            `QiToPhi(Qp1, xg_ac, temp1) \
+            `QiToPhi(Qp2, xg_ac, temp2) \
+            `QiToPhi(Qp3, xg_ac, temp3) \
+            `QiToPhi(Qp4, xg_ac, temp4) \
+            `QiToPhi(Qp5, xg_ac, temp5) \
+            `QiToPhi(Qp6, xg_ac, temp6) \
+            `QiToPhi(Qp7, xg_ac, temp7) \
+            `QiToPhi(Qp8, xg_ac, temp8) \
+            `QiToPhi(Qp9, xg_ac, temp9) \
+            QG_NQS       =  xg_ac - (x_sp + 4.0 * (temp1 + temp3 + temp5 + temp7 + temp9) \
+            + 2.0 * (temp2 + temp4 + temp6 + temp8) + x_dp) / 30.0; \
+        end \
+        QG_NQS      =  pd * QG_NQS; \
+        \
+        if (sigVds > 0) begin \
+            Qs          =  COX_qm * phit1 * QS_NQS; \
+            Qd          =  COX_qm * phit1 * QD_NQS; \
+        end else begin \
+            Qs          =  COX_qm * phit1 * QD_NQS; \
+            Qd          =  COX_qm * phit1 * QS_NQS; \
+        end \
+        Qg          =  COX_qm * phit1 * QG_NQS; \
+        Qb          = -Qg - Qs - Qd; \
+    end \
+    \
+    /* Update internal nodes */ \
+    V(RES1)     <+  vnorm_inv * I(RES1) * r_nqs; \
+    V(SPLINE1)  <+  vnorm_inv * idt(-Tnorm * fk1, Qp1_0); \
+    V(RES2)     <+  vnorm_inv * I(RES2) * r_nqs; \
+    V(SPLINE2)  <+  vnorm_inv * idt(-Tnorm * fk2, Qp2_0); \
+    V(RES3)     <+  vnorm_inv * I(RES3) * r_nqs; \
+    V(SPLINE3)  <+  vnorm_inv * idt(-Tnorm * fk3, Qp3_0); \
+    V(RES4)     <+  vnorm_inv * I(RES4) * r_nqs; \
+    V(SPLINE4)  <+  vnorm_inv * idt(-Tnorm * fk4, Qp4_0); \
+    V(RES5)     <+  vnorm_inv * I(RES5) * r_nqs; \
+    V(SPLINE5)  <+  vnorm_inv * idt(-Tnorm * fk5, Qp5_0); \
+    V(RES6)     <+  vnorm_inv * I(RES6) * r_nqs; \
+    V(SPLINE6)  <+  vnorm_inv * idt(-Tnorm * fk6, Qp6_0); \
+    V(RES7)     <+  vnorm_inv * I(RES7) * r_nqs; \
+    V(SPLINE7)  <+  vnorm_inv * idt(-Tnorm * fk7, Qp7_0); \
+    V(RES8)     <+  vnorm_inv * I(RES8) * r_nqs; \
+    V(SPLINE8)  <+  vnorm_inv * idt(-Tnorm * fk8, Qp8_0); \
+    V(RES9)     <+  vnorm_inv * I(RES9) * r_nqs; \
+    V(SPLINE9)  <+  vnorm_inv * idt(-Tnorm * fk9, Qp9_0);
+

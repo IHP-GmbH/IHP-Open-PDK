@@ -83,7 +83,7 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
         print(f' - {key}: {value}')
 
     # Get PCell Library
-    lib = pya.Library.library_by_name(lib_name)
+    lib = pya.Library.library_by_name(lib_name, 'sg13g2')
 
     if not lib:
         print(f'Error: Library not found {lib_name}')

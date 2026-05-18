@@ -206,7 +206,8 @@ def get_drc_values(logger)
     raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
   end
 
-  merged_rules = tech_rules.merge(default_rules)
+  # Defaults are the baseline; process-specific TECH values must override them when provided.
+  merged_rules = default_rules.merge(tech_rules)
 
   # Report any fallback rules used
   missing_keys = default_rules.keys - tech_rules.keys
@@ -342,12 +343,21 @@ if TABLES.any?{|x| pad_tables.include?(x)}
 end
 
 # schottky_nbl derivations
-schottky_tables = %w[main schottkydiode pwellblock]
+schottky_tables = %w[main schottkydiode pwellblock contbar]
 if TABLES.any?{|x| schottky_tables.include?(x)}
   logger.info('Starting schottky_nbl general derivations')
   schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
   schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(schottky_nbl_mk)
   schottky_nbl1 = ptap.holes.covering(schottky_nbl_rec)
+
+  # schottky_nw1: NWell-based Schottky diode recognition
+  schottky_nw1_patt = glob_to_case_insensitive_glob("schottky_nw1")
+  schottky_nw1_rect = nwell_drw.not_outside(nsd_block).not_interacting(schottky_nbl_rec).and(recog_diode)
+  schottky_nw1_sized = schottky_nw1_rect.sized(1.36.um).and(thickgateox_drw)
+  schottky_nw1 = schottky_nw1_sized.interacting(text_drw.texts(schottky_nw1_patt))
+  schottky_nbl1_or_schottky_nw1 = schottky_nbl1.join(schottky_nw1)
+  schottky_nw1_rect.forget
+  schottky_nw1_sized.forget
 end
 
 # SVaricap derivations

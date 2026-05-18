@@ -135,6 +135,9 @@ proc sg13g2::ind_device {parameters} {
     box values 0 0 0 0
     pushbox
 
+    # Inductor label is in the center
+    label inductor$positions c -comment
+
     # Draw the keep-out area (inductor ID layer).  This area is also used
     # for pwell block.
     set kwidth [+ $odiam 60.0]

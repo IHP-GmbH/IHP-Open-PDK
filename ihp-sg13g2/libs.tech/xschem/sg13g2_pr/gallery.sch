@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 T {HBT Devices} 30 -1720 0 0 0.6 0.6 {}
 T {HBT Devices w/  
@@ -127,14 +128,6 @@ spiceprefix=X
 b=0
 m=1
 }
-C {sg13g2_pr/rsil.sym} 710 -950 0 0 {name=R5
-w=0.5e-6
-l=0.5e-6
-model=rsil
-spiceprefix=X
-b=0
-m=1
-}
 C {sg13g2_pr/sg13_hv_nmos.sym} 380 -1330 0 0 {name=M1
 l=0.45u
 w=0.3u
@@ -241,4 +234,13 @@ model=schottky_nbl1
 Nx=1
 Ny=1
 spiceprefix=X
+}
+C {sg13g2_pr/rsil.sym} 710 -950 0 0 {name=R5
+w=0.5e-6
+l=0.5e-6
+model=rsil
+body=sub!
+spiceprefix=X
+m=1
+value="expr_eng(  ( 9.0e-6 / @w + 7.0 * ( @l ) / ( @w + 1.0e-8 ) ) / @m  )"
 }

@@ -1,0 +1,850 @@
+//======================================================================================
+//======================================================================================
+// Filename: PSP103_scaling.include
+//======================================================================================
+//======================================================================================
+//
+//  (c) Copyright notice
+//
+//  Since 2015 until today, PSP has been co-developed by NXP Semiconductors and
+//  CEA-Leti. For this part of the model, each claim undivided ownership and copyrights
+//  Since 2012 until 2015, PSP has been co-developed by NXP Semiconductors and
+//  Delft University of Technology. For this part of the model, each claim undivided
+//  ownership and copyrights
+//  Until and including 2011, PSP has been co-developed by NXP Semiconductors and
+//  Arizona State University. For this part of the model, NXP Semiconductors claims
+//  undivided ownership and copyrights.
+//
+//
+//  Version: 103.8.2 (PSP), 200.6.2 (JUNCAP), June 2022
+//
+//======================================================================================
+//======================================================================================
+//
+// Further information can be found in the file releasenotesPSP103.txt
+//
+
+// ******************************* Transistor geometry *******************************
+iL           = `LEN / L_i;
+iW           = `WEN / W_i;
+delLPS       =  LVARO * (1.0 + LVARL * iL) * (1.0 + LVARW * iW);
+delWOD       =  WVARO * (1.0 + WVARL * iL) * (1.0 + WVARW * iW);
+if (SWGEO == 2) begin
+    delLPS       =  LVARO * (1.0 + LVARL * iL);
+    delWOD       =  WVARO * (1.0 + WVARW * iW);
+end
+LE           = `CLIP_LOW(L_i + delLPS - 2.0 * LAP, 1.0e-9);
+WE           = `CLIP_LOW(W_i + delWOD - 2.0 * WOT, 1.0e-9);
+LEcv         = `CLIP_LOW(L_i + delLPS - 2.0 * LAP + DLQ, 1.0e-9);
+WEcv         = `CLIP_LOW(W_i + delWOD - 2.0 * WOT + DWQ, 1.0e-9);
+Lcv          = `CLIP_LOW(L_i + delLPS + DLQ, 1.0e-9);
+Wcv          = `CLIP_LOW(W_i + delWOD + DWQ, 1.0e-9);
+iLE          = `LEN / LE;
+iWE          = `WEN / WE;
+
+// ******************************* Geometry for multi-finger devices *******************************
+L_f          = `CLIP_LOW(L_i + delLPS, 1.0e-9);
+L_slif       = `CLIP_LOW(L_f + DLSIL, 1.0e-9);
+W_f          = `CLIP_LOW(W_i + delWOD, 1.0e-9);
+XGWE         = `CLIP_LOW(XGW_i - 0.5 * delWOD, 1.0e-9);
+
+// ******************************* Local model parameters *******************************
+
+//  Process parameters
+VFB_p        =  VFB;
+STVFB_p      =  STVFB;
+ST2VFB_p     =  ST2VFB;
+TOX_p        =  TOX;
+EPSROX_p     =  EPSROX;
+NEFF_p       =  NEFF;
+FACNEFFAC_p  =  FACNEFFAC;
+GFACNUD_p    =  GFACNUD;
+VSBNUD_p     =  VSBNUD;
+DVSBNUD_p    =  DVSBNUD;
+VNSUB_p      =  VNSUB;
+NSLP_p       =  NSLP;
+DNSUB_p      =  DNSUB;
+DPHIB_p      =  DPHIB;
+DELVTAC_p    =  DELVTAC;
+NP_p         =  NP;
+TOXOV_p      =  TOXOV;
+TOXOVD_p     =  TOXOVD;
+NOV_p        =  NOV;
+NOVD_p       =  NOVD;
+
+//  Interface states parameters
+CT_p         =  CT;
+CTG_p        =  CTG;
+CTB_p        =  CTB;
+STCT_p       =  STCT;
+
+//  Subthreshold slope parameters of short channel transistor
+PSCE_p       =  PSCE;
+PSCED_p      =  PSCED;
+PSCEB_p      =  PSCEB;
+
+//  DIBL parameters
+CF_p         =  CF;
+`DefACparam(CFAC_p, CF, CFAC)
+CFD_p        =  CFD;
+CFB_p        =  CFB;
+
+//  Mobility parameters
+BETN_p       =  BETN;
+STBET_p      =  STBET;
+MUE_p        =  MUE;
+STMUE_p      =  STMUE;
+THEMU_p      =  THEMU;
+STTHEMU_p    =  STTHEMU;
+CS_p         =  CS;
+STCS_p       =  STCS;
+THECS_p      =  THECS;
+STTHECS_p    =  STTHECS;
+XCOR_p       =  XCOR;
+STXCOR_p     =  STXCOR;
+FETA_p       =  FETA;
+
+//  Intrinsic series resistance parameters
+RS_p         =  RS;
+STRS_p       =  STRS;
+RSB_p        =  RSB;
+RSG_p        =  RSG;
+
+//  Saturation voltage parameters
+THESAT_p     =  THESAT;
+`DefACparam(THESATAC_p, THESAT, THESATAC)
+STTHESAT_p   =  STTHESAT;
+THESATB_p    =  THESATB;
+THESATG_p    =  THESATG;
+
+//  Saturation voltage parameters
+AX_p         =  AX;
+`DefACparam(AXAC_p, AX, AXAC)
+
+//  Channel length modulation parameters
+ALP_p        =  ALP;
+`DefACparam(ALPAC_p, ALP, ALPAC)
+ALP1_p       =  ALP1;
+ALP2_p       =  ALP2;
+VP_p         =  VP;
+
+//  Impact ionization parameters
+A1_p         =  A1;
+A2_p         =  A2;
+STA2_p       =  STA2;
+A3_p         =  A3;
+A4_p         =  A4;
+
+//  Gate current parameters
+GCO_p        =  GCO;
+IGINV_p      =  IGINV;
+IGOV_p       =  IGOV;
+IGOVD_p      =  IGOVD;
+STIG_p       =  STIG;
+GC2_p        =  GC2;
+GC3_p        =  GC3;
+GC2OV_p      =  GC2OV;
+GC3OV_p      =  GC3OV;
+CHIB_p       =  CHIB;
+
+//  Gate-induced drain leakage parameters
+AGIDL_p      =  AGIDL;
+AGIDLD_p     =  AGIDLD;
+BGIDL_p      =  BGIDL;
+BGIDLD_p     =  BGIDLD;
+STBGIDL_p    =  STBGIDL;
+STBGIDLD_p   =  STBGIDLD;
+CGIDL_p      =  CGIDL;
+CGIDLD_p     =  CGIDLD;
+
+//  Charge model parameters
+COX_p        =  COX;
+CGOV_p       =  CGOV;
+CGOVD_p      =  CGOVD;
+FCGOVACC_p   =  FCGOVACC;
+FCGOVACCD_p  =  FCGOVACCD;
+CGOVACCG_p   =  CGOVACCG;
+CGBOV_p      =  CGBOV;
+CINR_p       =  CINR;
+CINRD_p      =  CINRD;
+DVFBINR_p    =  DVFBINR;
+FCINRDEP_p   =  FCINRDEP;
+FCINRACC_p   =  FCINRACC;
+AXINR_p      =  AXINR;
+CFR_p        =  CFR;
+CFRD_p       =  CFRD;
+
+//  Noise model parameters
+FNT_p        =  FNT;
+FNTEXC_p     =  FNTEXC;
+NFA_p        =  NFA;
+NFB_p        =  NFB;
+NFC_p        =  NFC;
+EF_p         =  EF;
+
+//  Edge transistor parameters
+VFBEDGE_p    =  VFBEDGE;
+STVFBEDGE_p  =  STVFBEDGE;
+DPHIBEDGE_p  =  DPHIBEDGE;
+NEFFEDGE_p   =  NEFFEDGE;
+CTEDGE_p     =  CTEDGE;
+BETNEDGE_p   =  BETNEDGE;
+STBETEDGE_p  =  STBETEDGE;
+PSCEEDGE_p   =  PSCEEDGE;
+PSCEBEDGE_p  =  PSCEBEDGE;
+PSCEDEDGE_p  =  PSCEDEDGE;
+CFEDGE_p     =  CFEDGE;
+CFDEDGE_p    =  CFDEDGE;
+CFBEDGE_p    =  CFBEDGE;
+FNTEDGE_p    =  FNTEDGE;
+NFAEDGE_p    =  NFAEDGE;
+NFBEDGE_p    =  NFBEDGE;
+NFCEDGE_p    =  NFCEDGE;
+EFEDGE_p     =  EFEDGE;
+
+//  Parasitic resistance parameters
+RG_p         =  RG;
+RSE_p        =  RSE;
+RDE_p        =  RDE;
+RWELL_p      =  RWELL;
+RBULK_p      =  RBULK;
+RJUNS_p      =  RJUNS;
+RJUND_p      =  RJUND;
+
+//  SHE parameters
+`ifdef SelfHeating
+    RTH_p        =  RTH;
+    CTH_p        =  CTH;
+    STRTH_p      =  STRTH;
+`endif // SelfHeating
+
+//  NQS parameters
+`ifdef NQSmodel
+    MUNQS_p      =  MUNQS;
+`endif // NQSmodel
+
+// ******************************* Global model parameters ******************************
+if (SWGEO == 1) begin
+
+    //  Process parameters
+    VFB_p        =  VFBO + VFBL * iLE + VFBW * iWE + VFBLW * iLE * iWE;
+    STVFB_p      =  STVFBO + STVFBL * iLE + STVFBW * iWE + STVFBLW * iLE * iWE;
+    ST2VFB_p     =  ST2VFBO;
+    TOX_p        =  TOXO;
+    EPSROX_p     =  EPSROXO;
+    NSUB0e       =  NSUBO * `MAX(( 1.0 + NSUBW * iWE * ln( 1.0 + WE / WSEG )), 1.0e-03);
+    NPCKe        =  NPCK * `MAX(( 1.0 + NPCKW * iWE * ln( 1.0 + WE / WSEGP )), 1.0e-03);
+    LPCKe        =  LPCK * `MAX(( 1.0 + LPCKW * iWE * ln( 1.0 + WE / WSEGP )), 1.0e-03);
+    if (LE > (2.0 * LPCKe)) begin
+        AA           =  7.5e10;
+        BB           =  sqrt(NSUB0e + 0.5 * NPCKe) - sqrt(NSUB0e);
+        NSUB         =  sqrt(NSUB0e) + AA * ln(1.0 + 2.0 * LPCKe / LE * (exp(BB / AA) - 1.0));
+        NSUB         =  NSUB * NSUB;
+    end else begin
+        if (LE >= LPCKe) begin
+            NSUB          =  NSUB0e + NPCKe * LPCKe / LE;
+        end else begin // LE < LPCK
+            NSUB          =  NSUB0e + NPCKe * (2.0 - LE / LPCKe);
+        end
+    end
+    NEFF_p       =  NSUB * (1.0 - FOL1 * iLE - FOL2 * iLE * iLE);
+    FACNEFFAC_p  =  FACNEFFACO + FACNEFFACL * iLE + FACNEFFACW * iWE + FACNEFFACLW * iLE * iWE;
+    GFACNUD_p    =  GFACNUDO + GFACNUDL * pow(iLE, GFACNUDLEXP) + GFACNUDW * iWE + GFACNUDLW * iLE * iWE;
+    VSBNUD_p     =  VSBNUDO;
+    DVSBNUD_p    =  DVSBNUDO;
+    VNSUB_p      =  VNSUBO;
+    NSLP_p       =  NSLPO;
+    DNSUB_p      =  DNSUBO;
+    DPHIB_p      =  DPHIBO + DPHIBL * pow(iLE, DPHIBLEXP) + DPHIBW * iWE + DPHIBLW * iLE * iWE;
+    DELVTAC_p    =  DELVTACO + DELVTACL * pow(iLE, DELVTACLEXP) + DELVTACW * iWE + DELVTACLW * iLE * iWE;
+    NP_p         =  NPO * `MAX(1.0e-6, (1.0 + NPL * iLE));
+    TOXOV_p      =  TOXOVO;
+    TOXOVD_p     =  TOXOVDO;
+    NOV_p        =  NOVO;
+    NOVD_p       =  NOVDO;
+
+    //  Interface states parameters
+    CT_p         =  (CTO + CTL * pow(iLE, CTLEXP)) * (1.0 + CTW * iWE) * (1.0 + CTLW * iLE * iWE);
+    CTG_p        =  CTGO;
+    CTB_p        =  CTBO;
+    STCT_p       =  STCTO;
+
+    //  DIBL parameters
+    CF_p         =  CFL * pow(iLE, CFLEXP) * (1.0 + CFW * iWE);
+    CFAC_p       =  CFACL_i * pow(iLE, CFACLEXP_i) * (1.0 + CFACW_i * iWE);
+    CFD_p        =  CFDO;
+    CFB_p        =  CFBO;
+
+    //  Subthreshold slope parameters of short channel transistor
+    PSCE_p       =  PSCEL * pow(iLE, PSCELEXP) * (1.0 + PSCEW * iWE);
+    PSCED_p      =  PSCEDO;
+    PSCEB_p      =  PSCEBO;
+
+    //  Mobility parameters
+    FBET1e       =  FBET1 * (1.0 + FBET1W * iWE);
+    LP1e         =  LP1 * `MAX(1.0 + LP1W * iWE, 1.0e-03);
+    GPE          =  1.0 + FBET1e * LP1e / LE * (1.0 - exp(-LE / LP1e)) + FBET2 * LP2 / LE * (1.0 - exp(-LE / LP2));
+    GPE          = `MAX(GPE, 1.0e-15);
+    GWE          =  1.0 + BETW1 * iWE + BETW2 * iWE * ln(1.0 + WE / WBET);
+    BETN_p       =  UO * WE / (GPE * LE) * GWE;
+    STBET_p      =  STBETO + STBETL * iLE + STBETW * iWE + STBETLW * iLE * iWE;
+    MUE_p        =  MUEO * (1.0 + MUEW * iWE);
+    STMUE_p      =  STMUEO;
+    THEMU_p      =  THEMUO;
+    STTHEMU_p    =  STTHEMUO;
+    CS_p         =  (CSO + CSL * pow(iLE, CSLEXP)) * (1.0 + CSW * iWE) * (1.0 + CSLW * iLE * iWE);
+    STCS_p       =  STCSO;
+    THECS_p      =  THECSO;
+    STTHECS_p    =  STTHECSO;
+    XCOR_p       =  XCORO * (1.0 + XCORL * iLE) * (1.0 + XCORW * iWE) * (1.0 + XCORLW * iLE * iWE);
+    STXCOR_p     =  STXCORO;
+    FETA_p       =  FETAO;
+
+    //  Intrinsic series resistance parameters
+    RS_p         =  RSW1 * iWE * (1.0 + RSW2 * iWE);
+    STRS_p       =  STRSO;
+    RSB_p        =  RSBO;
+    RSG_p        =  RSGO;
+
+    //  Velocity saturation parameters
+    THESAT_p     =  (THESATO + THESATL * GWE / GPE * pow(iLE, THESATLEXP)) * (1.0 + THESATW * iWE) * (1.0 + THESATLW * iLE * iWE);
+    THESATAC_p   =  (THESATACO_i + THESATACL_i * GWE / GPE * pow(iLE, THESATACLEXP_i)) * (1.0 + THESATACW_i * iWE) * (1.0 + THESATACLW_i * iLE * iWE);
+    STTHESAT_p   =  STTHESATO + STTHESATL * iLE + STTHESATW * iWE + STTHESATLW * iLE * iWE;
+    THESATB_p    =  THESATBO;
+    THESATG_p    =  THESATGO;
+
+    //  Saturation voltage parameters
+    AX_p         =  AXO / (1.0 + AXL * iLE);
+    AXAC_p       =  AXACO_i / (1.0 + AXACL_i * iLE);
+
+    //  Channel length modulation parameters
+    ALP_p        =  ALPL * pow(iLE, ALPLEXP) * (1.0 + ALPW * iWE);
+    ALPAC_p      =  ALPACL_i * pow(iLE, ALPACLEXP_i) * (1.0 + ALPACW_i * iWE);
+    tmpx         =  pow(iLE, ALP1LEXP);
+    ALP1_p       =  ALP1L1 * tmpx * (1.0 + ALP1W * iWE) / (1.0 + ALP1L2 * iLE * tmpx);
+    tmpx         =  pow(iLE, ALP2LEXP);
+    ALP2_p       =  ALP2L1 * tmpx * (1.0 + ALP2W * iWE) / (1.0 + ALP2L2 * iLE * tmpx);
+    VP_p         =  VPO;
+
+    //  Impact ionization parameters
+    A1_p         =  A1O * (1.0 + A1L * iLE) * (1.0 + A1W * iWE);
+    A2_p         =  A2O;
+    STA2_p       =  STA2O;
+    A3_p         =  A3O * (1.0 + A3L * iLE) * (1.0 + A3W * iWE);
+    A4_p         =  A4O * (1.0 + A4L * iLE) * (1.0 + A4W * iWE);
+
+    //  Gate current parameters
+    GCO_p        =  GCOO;
+    IGINV_p      =  IGINVLW / (iWE * iLE);
+    IGOV_p       =  IGOVW * LOV / (`LEN * iWE);
+    IGOVD_p      =  IGOVDW * LOVD / (`LEN * iWE);
+    STIG_p       =  STIGO;
+    GC2_p        =  GC2O;
+    GC3_p        =  GC3O;
+    GC2OV_p      =  GC2OVO;
+    GC3OV_p      =  GC3OVO;
+    CHIB_p       =  CHIBO;
+
+    //  Gate-induced drain leakage parameters
+    AGIDL_p      =  AGIDLW * LOV / (`LEN * iWE);
+    AGIDLD_p     =  AGIDLDW * LOVD / (`LEN * iWE);
+    BGIDL_p      =  BGIDLO;
+    BGIDLD_p     =  BGIDLDO;
+    STBGIDL_p    =  STBGIDLO;
+    STBGIDLD_p   =  STBGIDLDO;
+    CGIDL_p      =  CGIDLO;
+    CGIDLD_p     =  CGIDLDO;
+
+    //  Charge model parameters
+    COX_p        = `EPSO * EPSROXO * WEcv * LEcv / TOXO;
+    CGOV_p       = `EPSO * EPSROXO * WEcv * LOV / TOXOVO;
+    CGOVD_p      = `EPSO * EPSROXO * WEcv * LOVD / TOXOVDO;
+    FCGOVACC_p   =  FCGOVACCO;
+    FCGOVACCD_p  =  FCGOVACCDO;
+    CGOVACCG_p   =  CGOVACCGO;
+    CGBOV_p      =  CGBOVL * Lcv / `LEN;
+    CINR_p       =  CINRW * WEcv / `WEN;
+    CINRD_p      =  CINRDW * WEcv / `WEN;
+    DVFBINR_p    =  DVFBINRO;
+    FCINRDEP_p   =  FCINRDEPO;
+    FCINRACC_p   =  FCINRACCO;
+    AXINR_p      =  AXINRO;
+    CFR_p        =  CFRW * Wcv / `WEN;
+    CFRD_p       =  CFRDW * Wcv / `WEN;
+
+    // Noise model parameters
+    temp0        =  1.0 - 2.0 * LINTNOI * iLE / `LEN;
+    Lnoi         = `MAX(temp0, 1.0e-3);
+    Lred         =  1.0 / pow(Lnoi, ALPNOI);
+    FNT_p        =  FNTO;
+    FNTEXC_p     =  FNTEXCL * BETN_p * BETN_p * iWE * iWE;
+    NFA_p        =  Lred * iWE * iLE * NFALW;
+    NFB_p        =  Lred * iWE * iLE * NFBLW;
+    NFC_p        =  Lred * iWE * iLE * NFCLW;
+    EF_p         =  EFO;
+
+    //  Edge transistors parameters
+    WE_edge      =  2.0 * WEDGE + WEDGEW * WE;
+    iWE_edge     = `WEN / WE_edge;
+    VFBEDGE_p    =  VFBEDGEO;
+    STVFBEDGE_p  =  STVFBEDGEO + STVFBEDGEL * iLE + STVFBEDGEW * iWE + STVFBEDGELW * iLE * iWE;
+    DPHIBEDGE_p  =  DPHIBEDGEO + DPHIBEDGEL * pow(iLE, DPHIBEDGELEXP) + DPHIBEDGEW * iWE + DPHIBEDGELW * iLE * iWE;
+    NEFFEDGE_p   =  NSUBEDGEO * (1.0 + NSUBEDGEL * pow(iLE, NSUBEDGELEXP)) * ( 1.0 + NSUBEDGEW * iWE) * ( 1.0 + NSUBEDGELW * iLE * iWE);
+    CTEDGE_p     =  CTEDGEO + CTEDGEL * pow(iLE, CTEDGELEXP);
+    GPE_edge     =  1.0 + FBETEDGE * LPEDGE / LE * (1.0 - exp(-LE / LPEDGE));
+    GPE_edge     = `MAX(GPE_edge, 1.0e-15);
+    BETNEDGE_p   =  UO * WE_edge / (GPE_edge * LE) * (1.0 + BETEDGEW * iWE);
+    STBETEDGE_p  =  STBETEDGEO + STBETEDGEL * iLE + STBETEDGEW * iWE + STBETEDGELW * iLE * iWE;
+    PSCEEDGE_p   =  PSCEEDGEL * pow(iLE, PSCEEDGELEXP) * (1.0 + PSCEEDGEW * iWE);
+    PSCEBEDGE_p  =  PSCEBEDGEO;
+    PSCEDEDGE_p  =  PSCEDEDGEO;
+    CFEDGE_p     =  CFEDGEL * pow(iLE, CFEDGELEXP) * (1.0 + CFEDGEW * iWE);
+    CFDEDGE_p    =  CFDEDGEO;
+    CFBEDGE_p    =  CFBEDGEO;
+    FNTEDGE_p    =  FNTEDGEO;
+    NFAEDGE_p    =  iWE_edge * iLE * NFAEDGELW;
+    NFBEDGE_p    =  iWE_edge * iLE * NFBEDGELW;
+    NFCEDGE_p    =  iWE_edge * iLE * NFCEDGELW;
+    EFEDGE_p     =  EFEDGEO;
+end
+
+// Well proximity effect parameters
+KVTHOWE      =  KVTHOWEO + KVTHOWEL * iLE + KVTHOWEW * iWE + KVTHOWELW * iLE * iWE;
+KUOWE        =  KUOWEO + KUOWEL * iLE + KUOWEW * iWE + KUOWELW * iLE * iWE;
+
+// ****************************** Binning model parameters ******************************
+if (SWGEO == 2) begin
+
+    //  Auxiliary variables
+    iLEWE        =  iLE * iWE;
+    iiLE         =  LE / `LEN;
+    iiWE         =  WE / `WEN;
+    iiLEWE       =  iiLE * iiWE;
+    iiiLEWE      =  iiWE / iiLE;
+
+    //  Auxiliary variables for COX only
+    iiLEcv       =  LEcv / `LEN;
+    iiWEcv       =  WEcv / `WEN;
+    iiLEWEcv     =  iiLEcv * iiWEcv;
+
+    //  Auxiliary variables for CGOV only
+    iLEcv        = `LEN / LEcv;
+    iiiLEWEcv    =  iiWEcv / iiLEcv;
+
+    //  Auxiliary variables for CGBOV only
+    iiLcv        =  Lcv / `LEN;
+    iiWcv        =  Wcv / `WEN;
+    iiLWcv       =  iiLcv * iiWcv;
+
+    //  Auxiliary variables for CFR only
+    iLcv         =  `LEN / Lcv;
+    iiiLWcv      =   iiWcv / iiLcv;
+
+    //  Process parameters
+    VFB_p        =  POVFB + iLE * PLVFB + iWE * PWVFB + iLEWE * PLWVFB;
+    STVFB_p      =  POSTVFB + iLE * PLSTVFB + iWE * PWSTVFB + iLEWE * PLWSTVFB;
+    ST2VFB_p     =  POST2VFB;
+    TOX_p        =  POTOX;
+    EPSROX_p     =  POEPSROX;
+    NEFF_p       =  PONEFF + iLE * PLNEFF + iWE * PWNEFF + iLEWE * PLWNEFF;
+    FACNEFFAC_p  =  POFACNEFFAC + iLE * PLFACNEFFAC + iWE * PWFACNEFFAC + iLEWE * PLWFACNEFFAC;
+    GFACNUD_p    =  POGFACNUD + PLGFACNUD * iLE + PWGFACNUD * iWE + PLWGFACNUD * iLE * iWE;
+    VSBNUD_p     =  POVSBNUD;
+    DVSBNUD_p    =  PODVSBNUD;
+    VNSUB_p      =  POVNSUB;
+    NSLP_p       =  PONSLP;
+    DNSUB_p      =  PODNSUB;
+    DPHIB_p      =  PODPHIB + iLE * PLDPHIB + iWE * PWDPHIB + iLEWE * PLWDPHIB;
+    DELVTAC_p    =  PODELVTAC + iLE * PLDELVTAC + iWE * PWDELVTAC + iLEWE * PLWDELVTAC;
+    NP_p         =  PONP + iLE * PLNP + iWE * PWNP + iLEWE * PLWNP;
+    TOXOV_p      =  POTOXOV;
+    TOXOVD_p     =  POTOXOVD;
+    NOV_p        =  PONOV + iLE * PLNOV + iWE * PWNOV + iLEWE * PLWNOV;
+    NOVD_p       =  PONOVD + iLE * PLNOVD + iWE * PWNOVD + iLEWE * PLWNOVD;
+
+    //  Interface states parameters
+    CT_p         =  POCT + iLE * PLCT + iWE * PWCT + iLEWE * PLWCT;
+    CTG_p        =  POCTG;
+    CTB_p        =  POCTB;
+    STCT_p       =  POSTCT;
+
+    //  DIBL parameters
+    CF_p         =  POCF + iLE * PLCF + iWE * PWCF + iLEWE * PLWCF;
+    CFAC_p       =  POCFAC_i + iLE * PLCFAC_i + iWE * PWCFAC_i + iLEWE * PLWCFAC_i;
+    CFD_p        =  POCFD;
+    CFB_p        =  POCFB;
+
+    //  Subthreshold slope parameters of short channel transistor
+    PSCE_p       =  POPSCE + iLE * PLPSCE + iWE * PWPSCE + iLEWE * PLWPSCE;
+    PSCEB_p      =  POPSCEB;
+    PSCED_p      =  POPSCED;
+
+    //  Mobility parameters
+    BETN_p       =  iiWE * iLE * (POBETN + iLE * PLBETN + iWE * PWBETN + iLEWE * PLWBETN);
+    STBET_p      =  POSTBET + iLE * PLSTBET + iWE * PWSTBET + iLEWE * PLWSTBET;
+    MUE_p        =  POMUE + iLE * PLMUE + iWE * PWMUE + iLEWE * PLWMUE;
+    STMUE_p      =  POSTMUE;
+    THEMU_p      =  POTHEMU;
+    STTHEMU_p    =  POSTTHEMU;
+    CS_p         =  POCS + iLE * PLCS + iWE * PWCS + iLEWE * PLWCS;
+    STCS_p       =  POSTCS;
+    THECS_p      =  POTHECS;
+    STTHECS_p    =  POSTTHECS;
+    XCOR_p       =  POXCOR + iLE * PLXCOR + iWE * PWXCOR + iLEWE * PLWXCOR;
+    STXCOR_p     =  POSTXCOR;
+    FETA_p       =  POFETA;
+
+    //  Intrinsic series resistance parameters
+    RS_p         =  PORS + iLE * PLRS + iWE * PWRS + iLEWE * PLWRS;
+    STRS_p       =  POSTRS;
+    RSB_p        =  PORSB;
+    RSG_p        =  PORSG;
+
+    //  Velocity saturation parameters
+    THESAT_p     =  POTHESAT + iLE * PLTHESAT + iWE * PWTHESAT + iLEWE * PLWTHESAT;
+    THESATAC_p   =  POTHESATAC_i + iLE * PLTHESATAC_i + iWE * PWTHESATAC_i + iLEWE * PLWTHESATAC_i;
+    STTHESAT_p   =  POSTTHESAT + iLE * PLSTTHESAT + iWE * PWSTTHESAT + iLEWE * PLWSTTHESAT;
+    THESATB_p    =  POTHESATB + iLE * PLTHESATB + iWE * PWTHESATB + iLEWE * PLWTHESATB;
+    THESATG_p    =  POTHESATG + iLE * PLTHESATG + iWE * PWTHESATG + iLEWE * PLWTHESATG;
+
+    //  Saturation voltage parameters
+    AX_p         =  POAX + iLE * PLAX + iWE * PWAX + iLEWE * PLWAX;
+    AXAC_p       =  POAXAC_i + iLE * PLAXAC_i + iWE * PWAXAC_i + iLEWE * PLWAXAC_i;
+
+    //  Channel length modulation parameters
+    ALP_p        =  POALP + iLE * PLALP + iWE * PWALP + iLEWE * PLWALP;
+    ALPAC_p      =  POALPAC_i + iLE * PLALPAC_i + iWE * PWALPAC_i + iLEWE * PLWALPAC_i;
+    ALP1_p       =  POALP1 + iLE * PLALP1 + iWE * PWALP1 + iLEWE * PLWALP1;
+    ALP2_p       =  POALP2 + iLE * PLALP2 + iWE * PWALP2 + iLEWE * PLWALP2;
+    VP_p         =  POVP;
+
+    //  Impact ionization parameters
+    A1_p         =  POA1 + iLE * PLA1 + iWE * PWA1 + iLEWE * PLWA1;
+    A2_p         =  POA2;
+    STA2_p       =  POSTA2;
+    A3_p         =  POA3 + iLE * PLA3 + iWE * PWA3 + iLEWE * PLWA3;
+    A4_p         =  POA4 + iLE * PLA4 + iWE * PWA4 + iLEWE * PLWA4;
+    GCO_p        =  POGCO;
+
+    //  Gate current parameters
+    IGINV_p      =  POIGINV + iiLE * PLIGINV + iiWE * PWIGINV + iiLEWE * PLWIGINV;
+    IGOV_p       =  POIGOV + iLE * PLIGOV + iiWE * PWIGOV + iiiLEWE * PLWIGOV;
+    IGOVD_p      =  POIGOVD + iLE * PLIGOVD + iiWE * PWIGOVD + iiiLEWE * PLWIGOVD;
+    STIG_p       =  POSTIG;
+    GC2_p        =  POGC2;
+    GC3_p        =  POGC3;
+    GC2OV_p      =  POGC2OV;
+    GC3OV_p      =  POGC3OV;
+    CHIB_p       =  POCHIB;
+
+    //  Gate-induced drain leakage parameters
+    AGIDL_p      =  POAGIDL + iLE * PLAGIDL + iiWE * PWAGIDL + iiiLEWE * PLWAGIDL;
+    AGIDLD_p     =  POAGIDLD + iLE * PLAGIDLD + iiWE * PWAGIDLD + iiiLEWE * PLWAGIDLD;
+    BGIDL_p      =  POBGIDL;
+    BGIDLD_p     =  POBGIDLD;
+    STBGIDL_p    =  POSTBGIDL;
+    STBGIDLD_p   =  POSTBGIDLD;
+    CGIDL_p      =  POCGIDL;
+    CGIDLD_p     =  POCGIDLD;
+
+    // Charge model parameters
+    COX_p        =  POCOX + iiLEcv * PLCOX + iiWEcv * PWCOX + iiLEWEcv * PLWCOX;
+    CGOV_p       =  POCGOV + iLEcv * PLCGOV + iiWEcv * PWCGOV + iiiLEWEcv * PLWCGOV;
+    CGOVD_p      =  POCGOVD + iLEcv * PLCGOVD + iiWEcv * PWCGOVD + iiiLEWEcv * PLWCGOVD;
+    FCGOVACC_p   =  POFCGOVACC;
+    FCGOVACCD_p  =  POFCGOVACCD;
+    CGOVACCG_p   =  POCGOVACCG;
+    CGBOV_p      =  POCGBOV + iiLcv * PLCGBOV + iiWcv * PWCGBOV + iiLWcv * PLWCGBOV;
+    CINR_p       =  POCINR + iLEcv * PLCINR + iiWEcv * PWCINR + iiiLEWEcv * PLWCINR;
+    CINRD_p      =  POCINRD + iLEcv * PLCINRD + iiWEcv * PWCINRD + iiiLEWEcv * PLWCINRD;
+    DVFBINR_p    =  PODVFBINR;
+    FCINRDEP_p   =  POFCINRDEP;
+    FCINRACC_p   =  POFCINRACC;
+    AXINR_p      =  POAXINR;
+    CFR_p        =  POCFR + iLcv * PLCFR + iiWcv * PWCFR + iiiLWcv * PLWCFR;
+    CFRD_p       =  POCFRD + iLcv * PLCFRD + iiWcv * PWCFRD + iiiLWcv * PLWCFRD;
+
+    //  Noise model parameters
+    FNT_p        =  POFNT;
+    FNTEXC_p     =  iLE * iLE * (POFNTEXC + iLE * PLFNTEXC + iWE * PWFNTEXC + iLEWE * PLWFNTEXC);
+    NFA_p        =  PONFA + iLE * PLNFA + iWE * PWNFA + iLEWE * PLWNFA;
+    NFB_p        =  PONFB + iLE * PLNFB + iWE * PWNFB + iLEWE * PLWNFB;
+    NFC_p        =  PONFC + iLE * PLNFC + iWE * PWNFC + iLEWE * PLWNFC;
+    EF_p         =  POEF;
+
+    //  Edge transistor parameters
+    VFBEDGE_p    =  POVFBEDGE;
+    STVFBEDGE_p  =  POSTVFBEDGE + iLE * PLSTVFBEDGE + iWE * PWSTVFBEDGE + iLEWE * PLWSTVFBEDGE;
+    DPHIBEDGE_p  =  PODPHIBEDGE + iLE * PLDPHIBEDGE + iWE * PWDPHIBEDGE + iLEWE * PLWDPHIBEDGE;
+    NEFFEDGE_p   =  PONEFFEDGE + iLE * PLNEFFEDGE + iWE * PWNEFFEDGE + iLEWE * PLWNEFFEDGE;
+    CTEDGE_p     =  POCTEDGE + iLE * PLCTEDGE + iWE * PWCTEDGE + iLEWE * PLWCTEDGE;
+    BETNEDGE_p   =  iLE * (POBETNEDGE + iLE * PLBETNEDGE + iWE * PWBETNEDGE + iLEWE * PLWBETNEDGE);
+    STBETEDGE_p  =  POSTBETEDGE + iLE * PLSTBETEDGE + iWE * PWSTBETEDGE + iLEWE * PLWSTBETEDGE;
+    PSCEEDGE_p   =  POPSCEEDGE + iLE * PLPSCEEDGE + iWE * PWPSCEEDGE + iLEWE * PLWPSCEEDGE;
+    PSCEBEDGE_p  =  POPSCEBEDGE;
+    PSCEDEDGE_p  =  POPSCEDEDGE;
+    CFEDGE_p     =  POCFEDGE + iLE * PLCFEDGE + iWE * PWCFEDGE + iLEWE * PLWCFEDGE;
+    CFDEDGE_p    =  POCFDEDGE;
+    CFBEDGE_p    =  POCFBEDGE;
+    FNTEDGE_p    =  POFNTEDGE;
+    NFAEDGE_p    =  PONFAEDGE + iLE * PLNFAEDGE + iWE * PWNFAEDGE + iLEWE * PLWNFAEDGE;
+    NFBEDGE_p    =  PONFBEDGE + iLE * PLNFBEDGE + iWE * PWNFBEDGE + iLEWE * PLWNFBEDGE;
+    NFCEDGE_p    =  PONFCEDGE + iLE * PLNFCEDGE + iWE * PWNFCEDGE + iLEWE * PLWNFCEDGE;
+    EFEDGE_p     =  POEFEDGE;
+
+    //  Well proximity effect parameters
+    KVTHOWE      =  POKVTHOWE + iLE * PLKVTHOWE + iWE * PWKVTHOWE + iLEWE * PLWKVTHOWE;
+    KUOWE        =  POKUOWE + iLE * PLKUOWE + iWE * PWKUOWE + iLEWE * PLWKUOWE;
+
+end
+
+if ((SWGEO == 1) || (SWGEO == 2)) begin
+
+    //  Parasitic resistance parameters
+    RG_p         =  RSHG * (`oneThird * W_f / NGCON_i + XGWE) / (NGCON_i * L_slif) + (RINT + RVPOLY) / (W_f * L_f) + NF_i * RGO;
+    RSH_i        = `CLIP_LOW(RSH, 0.0);
+    RSHD_i       = `CLIP_LOW(RSHD, 0.0);
+    if (SWJUNASYM == 0) begin
+        RSHD_i       =  RSH_i;
+    end
+    RSE_p        =  NRS * RSH_i;
+    RDE_p        =  NRD * RSHD_i;
+    RWELL_p      =  NF_i * RWELLO;
+    RBULK_p      =  NF_i * RBULKO;
+    RJUNS_p      =  NF_i * RJUNSO;
+    RJUND_p      =  NF_i * RJUNDO;
+
+    //  Self heating effect parameters
+    `ifdef SelfHeating
+        deltaRth     =  RTHW2 + WE / `WEN * (1.0 + RTHLW * LE / `LEN);
+        deltaRth     = `MAX(deltaRth, 1.0e-6);
+        RTH_p        =  RTHO + RTHW1 / deltaRth;
+        CTH_p        =  CTHO + CTHW1 * (CTHW2 + WE / `WEN * (1.0 + CTHLW * LE / `LEN));
+        STRTH_p      =  STRTHO;
+    `endif // SelfHeating
+
+    //  NQS parameters
+    `ifdef NQSmodel
+        MUNQS_p      =  MUNQSO;
+    `endif // NQSmodel
+
+    //  Mechanical stress model
+    tmpa         =  0.0;
+    tmpb         =  0.0;
+    loop         =  0.0;
+    if ((SA_i > 0.0) && (SB_i > 0.0) && ((NF_i == 1.0) || ((NF_i > 1.0) && (SD_i > 0.0)))) begin
+        while (loop < (NF_i - 0.5)) begin
+            tmpa         =  tmpa + 1.0 / (SA_i + 0.5 * L_i + loop * (SD_i + L_i));
+            tmpb         =  tmpb + 1.0 / (SB_i + 0.5 * L_i + loop * (SD_i + L_i));
+            loop         =  loop + 1.0;
+        end
+        Invsa        =  tmpa * invNF;
+        Invsb        =  tmpb * invNF;
+        Invsaref     =  1.0 / (SAREF + 0.5 * L_i);
+        Invsbref     =  1.0 / (SBREF + 0.5 * L_i);
+        Lx           = `MAX(L_i + delLPS, 1.0e-9);
+        Wx           = `MAX(W_i + delWOD + WLOD, 1.0e-9);
+        templ        =  1.0 / pow(Lx, LLODKUO);
+        tempw        =  1.0 / pow(Wx, WLODKUO);
+        Kstressu0    =  (1.0 + LKUO * templ + WKUO * tempw + PKUO * templ * tempw) * (1.0 + TKUO * (rTa - 1.0));
+        rhobeta      =  KUO * (Invsa + Invsb) / Kstressu0;
+        rhobetaref   =  KUO * (Invsaref + Invsbref) / Kstressu0;
+        templ        =  1.0 / pow(Lx, LLODVTH);
+        tempw        =  1.0 / pow(Wx, WLODVTH);
+        Kstressvth0  =  1.0 + LKVTHO * templ + WKVTHO * tempw + PKVTHO * templ * tempw;
+        temp0        =  Invsa + Invsb - Invsaref - Invsbref;
+        //  Parameter adaptations
+        temp00       =  (1.0 + rhobeta) / (1.0 + rhobetaref);
+        BETN_p       =  BETN_p * temp00;
+        THESAT_p     =  THESAT_p * temp00 * (1.0 + KVSAT * rhobetaref) / (1.0 + KVSAT * rhobeta);
+        THESATAC_p   =  THESATAC_p * temp00 * (1.0 + KVSATAC_i * rhobetaref) / (1.0 + KVSATAC_i * rhobeta);
+        BETNEDGE_p   =  BETNEDGE_p * temp00;
+        temp00       =  KVTHO * temp0 / Kstressvth0;
+        VFB_p        =  VFB_p + temp00;
+        VFBEDGE_p    =  VFBEDGE_p + temp00;
+        temp00       =  STETAO * temp0 / pow(Kstressvth0, LODETAO);
+        CF_p         =  CF_p + temp00;
+        CFAC_p       =  CFAC_p + temp00;
+        CFEDGE_p     =  CFEDGE_p + temp00;
+    end
+
+    // Well proximity effect equations
+    if ((SCA_i > 0.0) || (SCB_i > 0.0) || (SCC_i > 0.0) || (SC_i > 0.0)) begin
+        if ((SCA_i == 0.0) && (SCB_i == 0.0) && (SCC_i == 0.0)) begin
+            temp0        =  SC_i + W_i;
+            temp00       =  1.0 / SCREF;
+            SCA_i        =  SCREF * SCREF / (SC_i * temp0);
+            SCB_i        =  ((0.1 * SC_i + 0.01 * SCREF) * exp(-10.0 * SC_i * temp00) - (0.1 * temp0 + 0.01 * SCREF) * exp(-10.0 * temp0 * temp00)) / W_i;
+            SCC_i        =  ((0.05 * SC_i + 0.0025 * SCREF) * exp(-20.0 * SC_i * temp00) - (0.05 * temp0 + 0.0025 * SCREF) * exp(-20.0 * temp0 * temp00)) / W_i;
+        end
+        //  Parameter adaptations
+        temp0        =  SCA_i + WEB * SCB_i + WEC * SCC_i;
+        VFB_p        =  VFB_p + KVTHOWE * temp0;
+        BETN_p       =  BETN_p * (1.0 + KUOWE * temp0);
+        VFBEDGE_p    =  VFBEDGE_p + KVTHOWE * temp0;
+        BETNEDGE_p   =  BETNEDGE_p * (1.0 + KUOWE * temp0);
+    end
+end
+
+// ******************************* Internal parameters (including temperature scaling) *******************************
+VFB_i        =  VFB_p;
+STVFB_i      =  STVFB_p;
+ST2VFB_i     =  ST2VFB_p;
+TOX_i        = `CLIP_LOW(TOX_p, 1.0e-10);
+EPSROX_i     = `CLIP_LOW(EPSROX_p, 1.0);
+NEFF_i       = `CLIP_BOTH(NEFF_p, 1.0e20, 1.0e26);
+FACNEFFAC_i  = `CLIP_LOW(FACNEFFAC_p, 0.0);
+GFACNUD_i    = `CLIP_LOW(GFACNUD_p, 0.01);
+VSBNUD_i     = `CLIP_LOW(VSBNUD_p, 0.0);
+DVSBNUD_i    = `CLIP_LOW(DVSBNUD_p, 0.1);
+VNSUB_i      =  VNSUB_p;
+NSLP_i       = `CLIP_LOW(NSLP_p, 1.0e-3);
+DNSUB_i      = `CLIP_BOTH(DNSUB_p, 0.0, 1.0);
+DPHIB_i      =  DPHIB_p;
+DELVTAC_i    =  DELVTAC_p;
+NP_i         = `CLIP_LOW(NP_p, 0.0);
+TOXOV_i      = `CLIP_LOW(TOXOV_p, 1.0e-10);
+TOXOVD_i     = `CLIP_LOW(TOXOVD_p, 1.0e-10);
+NOV_i        = `CLIP_BOTH(NOV_p, 1.0e23, 1.0e27);
+NOVD_i       = `CLIP_BOTH(NOVD_p, 1.0e23, 1.0e27);
+CT_i         = `CLIP_LOW(CT_p, 0.0);
+CTG_i        = `CLIP_LOW(CTG_p, 0.0);
+CTB_i        =  CTB_p;
+STCT_i       =  STCT_p;
+CF_i         = `CLIP_LOW(CF_p, 0.0);
+CFAC_i       = `CLIP_LOW(CFAC_p, 0.0);
+CFD_i        = `CLIP_LOW(CFD_p, 0.0);
+CFB_i        = `CLIP_BOTH(CFB_p, 0.0, 1.0);
+PSCE_i       = `CLIP_LOW(PSCE_p, 0.0);
+PSCEB_i      = `CLIP_BOTH(PSCEB_p, 0.0, 1.0);
+PSCED_i      = `CLIP_LOW(PSCED_p, 0.0);
+BETN_i       = `CLIP_LOW(BETN_p, 0.0);
+STBET_i      =  STBET_p;
+MUE_i        = `CLIP_LOW(MUE_p, 0.0);
+STMUE_i      =  STMUE_p;
+THEMU_i      = `CLIP_LOW(THEMU_p, 0.0);
+STTHEMU_i    =  STTHEMU_p;
+CS_i         = `CLIP_LOW(CS_p,  0.0);
+STCS_i       =  STCS_p;
+THECS_i      = `CLIP_LOW(THECS_p, 0.0);
+STTHECS_i    =  STTHECS_p;
+XCOR_i       = `CLIP_LOW(XCOR_p, 0.0);
+STXCOR_i     =  STXCOR_p;
+FETA_i       = `CLIP_LOW(FETA_p, 0.0);
+RS_i         = `CLIP_LOW(RS_p, 0.0);
+STRS_i       =  STRS_p;
+RSB_i        = `CLIP_BOTH(RSB_p, -0.5, 1.0);
+RSG_i        = `CLIP_LOW(RSG_p, -0.5);
+THESAT_i     = `CLIP_LOW(THESAT_p, 0.0);
+THESATAC_i   = `CLIP_LOW(THESATAC_p, 0.0);
+STTHESAT_i   =  STTHESAT_p;
+THESATB_i    = `CLIP_BOTH(THESATB_p, -0.5, 1.0);
+THESATG_i    = `CLIP_LOW(THESATG_p, -0.5);
+AX_i         = `CLIP_LOW(AX_p, 2.0);
+AXAC_i       = `CLIP_LOW(AXAC_p, 2.0);
+ALP_i        = `CLIP_LOW(ALP_p, 0.0);
+ALPAC_i      = `CLIP_LOW(ALPAC_p, 0.0);
+ALP1_i       = `CLIP_LOW(ALP1_p, 0.0);
+ALP2_i       = `CLIP_LOW(ALP2_p, 0.0);
+VP_i         = `CLIP_LOW(VP_p, 1.0e-10);
+A1_i         = `CLIP_LOW(A1_p, 0.0);
+A2_i         = `CLIP_LOW(A2_p, 0.0);
+STA2_i       =  STA2_p;
+A3_i         = `CLIP_LOW(A3_p, 0.0);
+A4_i         = `CLIP_LOW(A4_p, 0.0);
+GCO_i        = `CLIP_BOTH(GCO_p, -10.0, 10.0);
+IGINV_i      = `CLIP_LOW(IGINV_p, 0.0);
+IGOV_i       = `CLIP_LOW(IGOV_p, 0.0);
+IGOVD_i      = `CLIP_LOW(IGOVD_p, 0.0);
+STIG_i       =  STIG_p;
+GC2_i        = `CLIP_BOTH(GC2_p, 0.0, 10.0);
+GC3_i        = `CLIP_BOTH(GC3_p, -10.0, 10.0);
+GC2OV_i      =  GC2_i;
+GC3OV_i      =  GC3_i;
+if (SWIGATE == 2) begin
+    GC2OV_i      =  `CLIP_BOTH(GC2OV_p, 0.0, 10.0);
+    GC3OV_i      =  `CLIP_BOTH(GC3OV_p, -10.0, 10.0);
+end
+CHIB_i       = `CLIP_LOW(CHIB_p, 1.0);
+AGIDL_i      = `CLIP_LOW(AGIDL_p, 0.0);
+AGIDLD_i     = `CLIP_LOW(AGIDLD_p, 0.0);
+BGIDL_i      = `CLIP_LOW(BGIDL_p, 0.0);
+BGIDLD_i     = `CLIP_LOW(BGIDLD_p, 0.0);
+STBGIDL_i    =  STBGIDL_p;
+STBGIDLD_i   =  STBGIDLD_p;
+CGIDL_i      =  CGIDL_p;
+CGIDLD_i     =  CGIDLD_p;
+COX_i        = `CLIP_LOW(COX_p, 0.0);
+CGOV_i       = `CLIP_LOW(CGOV_p, 0.0);
+CGOVD_i      = `CLIP_LOW(CGOVD_p, 0.0);
+FCGOVACC_i   = `CLIP_BOTH(FCGOVACC_p, 0.0, 1.0);
+FCGOVACCD_i  = `CLIP_BOTH(FCGOVACCD_p, 0.0, 1.0);
+CGOVACCG_i   = `CLIP_BOTH(CGOVACCG_p, 0.1, 1.0);
+CGBOV_i      = `CLIP_LOW(CGBOV_p, 0.0);
+CINR_i       = `CLIP_LOW(CINR_p, 0.0);
+CINRD_i      = `CLIP_LOW(CINRD_p, 0.0);
+DVFBINR_i    =  DVFBINR_p;
+FCINRDEP_i   = `CLIP_BOTH(FCINRDEP_p, 0.0, 1.0);
+FCINRACC_i   = `CLIP_BOTH(FCINRACC_p, 0.0, 1.0);
+AXINR_i      = `CLIP_BOTH(AXINR_p, 1.0e-2, 1.0);
+CFR_i        = `CLIP_LOW(CFR_p, 0.0);
+CFRD_i       = `CLIP_LOW(CFRD_p, 0.0);
+FNT_i        = `CLIP_LOW(FNT_p, 0.0);
+FNTEXC_i     = `CLIP_LOW(FNTEXC_p, 0.0);
+NFA_i        = `CLIP_LOW(NFA_p, 0.0);
+NFB_i        = `CLIP_LOW(NFB_p, 0.0);
+NFC_i        = `CLIP_LOW(NFC_p, 0.0);
+EF_i         = `CLIP_LOW(EF_p,  0.0);
+VFBEDGE_i    =  VFBEDGE_p;
+STVFBEDGE_i  =  STVFBEDGE_p;
+DPHIBEDGE_i  =  DPHIBEDGE_p;
+NEFFEDGE_i   = `CLIP_BOTH(NEFFEDGE_p, 1.0e20, 1.0e26);
+CTEDGE_i     = `CLIP_LOW(CTEDGE_p, 0.0);
+BETNEDGE_i   = `CLIP_LOW(BETNEDGE_p, 0.0);
+STBETEDGE_i  =  STBETEDGE_p;
+PSCEEDGE_i   = `CLIP_LOW(PSCEEDGE_p, 0.0);
+PSCEBEDGE_i  = `CLIP_BOTH(PSCEBEDGE_p, 0.0, 1.0);
+PSCEDEDGE_i  = `CLIP_LOW(PSCEDEDGE_p, 0.0);
+CFEDGE_i     = `CLIP_LOW(CFEDGE_p, 0.0);
+CFDEDGE_i    = `CLIP_LOW(CFDEDGE_p, 0.0);
+CFBEDGE_i    = `CLIP_BOTH(CFBEDGE_p, 0.0, 1.0);
+FNTEDGE_i    = `CLIP_LOW(FNTEDGE_p, 0.0);
+NFAEDGE_i    = `CLIP_LOW(NFAEDGE_p, 0.0);
+NFBEDGE_i    = `CLIP_LOW(NFBEDGE_p, 0.0);
+NFCEDGE_i    = `CLIP_LOW(NFCEDGE_p, 0.0);
+EFEDGE_i     = `CLIP_LOW(EFEDGE_p,  0.0);
+RG_i         = `CLIP_LOW(RG_p, 0.0);
+RSE_i        = `CLIP_LOW(RSE_p, 0.0);
+RDE_i        = `CLIP_LOW(RDE_p, 0.0);
+RBULK_i      = `CLIP_LOW(RBULK_p, 0.0);
+RJUNS_i      = `CLIP_LOW(RJUNS_p, 0.0);
+RJUND_i      = `CLIP_LOW(RJUND_p, 0.0);
+RWELL_i      = `CLIP_LOW(RWELL_p, 0.0);
+`ifdef SelfHeating
+    RTH_i        = `CLIP_LOW(RTH_p, 1.0e-4);
+    CTH_i        = `CLIP_LOW(CTH_p, 0.0);
+    STRTH_i      =  STRTH_p;
+`endif // SelfHeating
+MULT_i       = `CLIP_LOW(MULT * NF_i, 0.0); // Note: NF_i is set to 1 for local model
+FACTUO_i     =  FACTUO;
+DELVTO_i     =  DELVTO;
+FACTUOEDGE_i =  FACTUOEDGE;
+DELVTOEDGE_i =  DELVTOEDGE;
+`ifdef NQSmodel
+    MUNQS_i      = `CLIP_LOW(MUNQS_p, 0.0);
+`endif // NQSmodel
+
+// Ignore drain-side values in case of symmetric junctions
+if (SWJUNASYM == 0) begin
+    TOXOVD_i      =  TOXOV_i;
+    NOVD_i        =  NOV_i;
+    AGIDLD_i      =  AGIDL_i;
+    BGIDLD_i      =  BGIDL_i;
+    STBGIDLD_i    =  STBGIDL_i;
+    CGIDLD_i      =  CGIDL_i;
+    IGOVD_i       =  IGOV_i;
+    CGOVD_i       =  CGOV_i;
+    FCGOVACCD_i   =  FCGOVACC_i;
+    CINRD_i       =  CINR_i;
+    CFRD_i        =  CFR_i;
+end

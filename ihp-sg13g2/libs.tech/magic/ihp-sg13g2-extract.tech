@@ -1177,7 +1177,9 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
  # Diodes
  device csubcircuit dpantenna *pdiode nwell w=w l=l
  device dsubcircuit dantenna *ndiode pwell,space/w w=w l=l
- device subcircuit schottky *schottky *hvnsd nwell error w=w l=l
+ device subcircuit schottky_nbl1 *schottky *hvnsd,*hvntap pwell,space/w error w=w l=l
+ # "isolbox" is a deep nwell structure that extracts as a parasitic diode device
+ device msubcircuit isolbox isolbox pwell space/w error w=w l=l
 
  # Resistors (3-terminal devices)
 
@@ -1244,7 +1246,7 @@ variants (lvs)
  # Diodes
  device pdiode dpantenna *pdiode nwell w=w l=l a=a p=p
  device ndiode dantenna *ndiode pwell,space/w w=w l=l a=a p=p
- device pdiode schottky *schottky *hvnsd pwell error w=w l=l a=a p=p
+ device pdiode schottky_nbl1 *schottky *hvnsd,*hvntap pwell,space/w error w=w l=l a=a p=p
 
  # Resistors
  device resistor $[rmod_rsil] nres *poly nwell,pwell,space/w $SUB s=$SUB r=

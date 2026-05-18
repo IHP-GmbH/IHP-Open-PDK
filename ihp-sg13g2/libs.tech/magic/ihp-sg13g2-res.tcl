@@ -213,7 +213,7 @@ proc sg13g2::res_convert {parameters} {
 	    w {
 		# Length and width are converted to units of microns
 		set value [magic::spice2float $value]
-		# set value [expr $value * 1e6]
+		set value [expr $value * 1e6]
 		set value [magic::3digitpastdecimal $value]
 		dict set pdkparams [string tolower $key] $value
 	    }

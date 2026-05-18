@@ -25,13 +25,13 @@ if TABLES.include?('metaln') || BEOL
 
   # Metaln derivations
 
-  # Metals/Vias lists
+  # Metals/Vias/Fillers lists
   mets_lay = [metal2_drw, metal3_drw, metal4_drw, metal5_drw]
+  mets_filler_lay = [metal2_filler, metal3_filler, metal4_filler, metal5_filler]
   vias_lay = [via1_drw, via2_drw, via3_drw, via4_drw]
   metal_start_index = 2
 
-  mets_lay.each_with_index do |met_lay, index|
-    via_lay = vias_lay[index]
+  mets_lay.zip(mets_filler_lay, vias_lay).each_with_index do |(met_lay, met_filler_lay, via_lay), index|
     met_no = index + metal_start_index
 
     # Rule Mn.a: Min. Metaln width is 0.20µm
@@ -41,11 +41,11 @@ if TABLES.include?('metaln') || BEOL
     mn_a_l.output("M#{met_no}.a", "5.17. M#{met_no}.a: Min. Metal#{met_no} width: #{mn_a_value} μm.")
     mn_a_l.forget
 
-    # Rule Mn.b: Min. Metaln space or notch is 0.21µm
+    # Rule Mn.b: Min. Metaln (drawing + filler) space or notch is 0.21µm
     logger.info("Executing rule M#{met_no}.b")
     mn_b_value = drc_rules['Mn_b'].to_f
-    mn_b_l = met_lay.space(mn_b_value.um, euclidian)
-    mn_b_l.output("M#{met_no}.b", "5.17. M#{met_no}.b: Min. Metal#{met_no} space or notch: #{mn_b_value} μm.")
+    mn_b_l = met_lay.join(met_filler_lay).space(mn_b_value.um, euclidian)
+    mn_b_l.output("M#{met_no}.b", "5.17. M#{met_no}.b: Min. Metal#{met_no} (drawing + filler) space or notch: #{mn_b_value} μm.")
     mn_b_l.forget
 
     next if PRECHECK_DRC

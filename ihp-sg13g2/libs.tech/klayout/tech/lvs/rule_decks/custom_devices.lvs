@@ -58,6 +58,15 @@ class DeviceCustomRes < RBA::DeviceClassResistor
     add_parameters('w', 'l', 'ps', 'b')
     add_parameter(RBA::DeviceParameterDefinition.new('m', 'multiplier', 1, true))
 
+    # For rsil, do not include bend count (b) in LVS parameter comparison.
+    if name.to_s.downcase == 'rsil'
+      equal_res_parameters = RBA::EqualDeviceParameters::new(parameter_id('w'), 0.0, 0.0)
+      equal_res_parameters += RBA::EqualDeviceParameters::new(parameter_id('l'), 0.0, 0.0)
+      equal_res_parameters += RBA::EqualDeviceParameters::new(parameter_id('ps'), 0.0, 0.0)
+      equal_res_parameters += RBA::EqualDeviceParameters::new(parameter_id('m'), 0.0, 0.0)
+      self.equal_parameters = equal_res_parameters
+    end
+
     if SERIES_RES || PARALLEL_RES
       self.combiner = RESDeviceCombiner.new
     else
