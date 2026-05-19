@@ -62,8 +62,8 @@ N 1360 -280 1360 -360 {}
 N 1510 -280 1510 -360 {}
 N 1660 -280 1680 -280 {}
 C {devices/ipin.sym} 1410 -680 0 0 {name=p1 lab=B}
-C {devices/iopin.sym} 1254 -840 2 0 {name=p2 lab=VDD}
-C {devices/iopin.sym} 1250 -280 2 0 {name=p3 lab=VSS}
+C {devices/lab_pin.sym} 1254 -840 0 0 {name=p2 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} 1250 -280 0 0 {name=p3 sig_type=std_logic lab=VSS}
 C {devices/opin.sym} 1760 -520 0 0 {name=p4 lab=Y}
 C {devices/ipin.sym} 1270 -780 0 0 {name=p5 lab=A}
 C {devices/ipin.sym} 1580 -580 0 0 {name=p6 lab=C}

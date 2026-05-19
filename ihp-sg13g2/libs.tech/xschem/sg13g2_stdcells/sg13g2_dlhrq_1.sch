@@ -179,8 +179,8 @@ C {devices/ipin.sym} -260 -2220 0 0 {name=p1 lab=D}
 C {devices/ipin.sym} -510 -2210 2 1 {name=p2 lab=GATE}
 C {devices/ipin.sym} 470 -2060 0 0 {name=p3 lab=RESET_B}
 C {devices/opin.sym} 780 -2250 2 1 {name=p4 lab=Q}
-C {devices/iopin.sym} -570 -2590 2 0 {name=p5 lab=VDD}
-C {devices/iopin.sym} -580 -1880 2 0 {name=p6 lab=VSS}
+C {devices/lab_pin.sym} -570 -2590 0 0 {name=p5 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -580 -1880 0 0 {name=p6 sig_type=std_logic lab=VSS}
 C {sg13_lv_nmos.sym} -460 -2040 0 0 {name=M1 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
 C {sg13_lv_nmos.sym} -350 -2040 0 0 {name=M2 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
 C {sg13_lv_nmos.sym} -220 -2040 0 0 {name=M3 w=550.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}

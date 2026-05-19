@@ -52,8 +52,8 @@ N 1150 -110 1150 -80 {lab=Y}
 N 1150 -50 1170 -50 {lab=VSS}
 N 960 -330 1150 -330 {lab=VDD}
 C {lab_wire.sym} 880 -50 0 0 {name=l2 sig_type=std_logic lab=A}
-C {devices/iopin.sym} 650 -330 2 0 {name=p1 lab=VDD}
-C {devices/iopin.sym} 650 190 2 0 {name=p2 lab=VSS}
+C {devices/lab_pin.sym} 650 -330 0 0 {name=p1 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} 650 190 0 0 {name=p2 sig_type=std_logic lab=VSS}
 C {devices/ipin.sym} 850 -50 0 0 {name=p3 lab=A}
 C {devices/ipin.sym} 850 90 0 0 {name=p4 lab=B}
 C {devices/opin.sym} 1260 -110 0 0 {name=p5 lab=Y}

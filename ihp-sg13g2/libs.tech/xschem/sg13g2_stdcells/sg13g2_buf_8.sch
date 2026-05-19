@@ -52,8 +52,8 @@ N -170 120 50 120 {}
 N 110 120 110 30 {}
 C {devices/ipin.sym} -320 -200 0 0 {name=p1 lab=A}
 C {devices/opin.sym} 90 -200 0 0 {name=p2 lab=X}
-C {devices/iopin.sym} -500 -520 2 0 {name=p3 lab=VDD}
-C {devices/iopin.sym} -510 120 2 0 {name=p4 lab=VSS}
+C {devices/lab_pin.sym} -500 -520 0 0 {name=p3 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -510 120 0 0 {name=p4 sig_type=std_logic lab=VSS}
 C {sg13_lv_nmos.sym} -250 30 0 0 {name=M1 w=2.22u l=130.00n ng=3 m=1 model=sg13_lv_nmos}
 C {sg13_lv_nmos.sym} 30 30 0 0 {name=M2 w=5.92u l=130.00n ng=8 m=1 model=sg13_lv_nmos}
 C {sg13_lv_pmos.sym} -250 -430 0 0 {name=M3 w=3.36u l=130.00n ng=3 m=1 model=sg13_lv_pmos}

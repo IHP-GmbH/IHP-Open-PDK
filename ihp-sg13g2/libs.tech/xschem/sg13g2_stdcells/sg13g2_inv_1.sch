@@ -37,8 +37,8 @@ N -106 -150 20 -150 {}
 N 20 -150 40 -150 {}
 C {devices/opin.sym} 60 -400 0 0 {name=p1 lab=Y}
 C {devices/ipin.sym} -80 -400 0 0 {name=p2 lab=A}
-C {devices/iopin.sym} -106 -650 2 0 {name=p3 lab=VDD}
-C {devices/iopin.sym} -106 -150 2 0 {name=p4 lab=VSS}
+C {devices/lab_pin.sym} -106 -650 0 0 {name=p3 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -106 -150 0 0 {name=p4 sig_type=std_logic lab=VSS}
 C {sg13_lv_nmos.sym} 0 -200 0 0 {name=M1 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
 C {sg13_lv_pmos.sym} 0 -600 0 0 {name=M2 w=1.12u l=130.00n ng=1 m=1 model=sg13_lv_pmos}
 C {devices/title-3.sym} -1270 480 0 0 {name=l1 author="IHP PDK AUTHORS"}

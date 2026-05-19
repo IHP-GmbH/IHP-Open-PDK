@@ -1,19 +1,4 @@
 v {xschem version=3.4.8RC file_version=1.3}
-* Copyright 2023 IHP PDK Authors
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-}
-
 G {}
 K {}
 V {}
@@ -27,9 +12,9 @@ N -150 -30 -150 0 {lab=A}
 N -270 -120 -150 -120 {lab=VDD}
 N -150 120 -150 150 {lab=VSS}
 C {devices/ipin.sym} -190 0 0 0 {name=p1 lab=A}
-C {devices/iopin.sym} -270 -120 2 0 {name=p2 lab=VDD}
-C {devices/iopin.sym} -150 150 1 0 {name=p3 lab=VSS}
-C {devices/title-3.sym} -1180 960 0 0 {name=l1 author="IHP PDK AUTHORS"}
+C {devices/lab_pin.sym} -270 -120 0 0 {name=p2 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -150 150 0 0 {name=p3 sig_type=std_logic lab=VSS}
+C {devices/title-3.sym} -940 1150 0 0 {name=l1 author="IHP PDK AUTHORS"}
 C {dantenna.sym} -150 90 0 0 {name=D1
 model=dantenna
 l=0.78u

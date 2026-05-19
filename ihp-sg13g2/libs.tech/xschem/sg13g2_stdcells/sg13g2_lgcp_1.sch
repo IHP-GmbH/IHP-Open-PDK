@@ -180,8 +180,8 @@ C {lab_wire.sym} -610 -1060 0 0 {name=l12 sig_type=std_logic lab=CLK}
 C {devices/opin.sym} 990 -990 0 0 {name=p1 lab=GCLK}
 C {devices/ipin.sym} -190 -970 0 0 {name=p2 lab=GATE}
 C {devices/ipin.sym} -630 -1060 0 0 {name=p3 lab=CLK}
-C {devices/iopin.sym} -660 -1330 2 0 {name=p4 lab=VDD}
-C {devices/iopin.sym} -670 -770 2 0 {name=p5 lab=VSS}
+C {devices/lab_pin.sym} -660 -1330 0 0 {name=p4 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -670 -770 0 0 {name=p5 sig_type=std_logic lab=VSS}
 C {sg13_lv_nmos.sym} -570 -850 0 0 {name=M1 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
 C {sg13_lv_nmos.sym} -340 -850 0 0 {name=M2 w=740.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}
 C {sg13_lv_nmos.sym} -90 -900 0 0 {name=M3 w=640.00n l=130.00n ng=1 m=1 model=sg13_lv_nmos}

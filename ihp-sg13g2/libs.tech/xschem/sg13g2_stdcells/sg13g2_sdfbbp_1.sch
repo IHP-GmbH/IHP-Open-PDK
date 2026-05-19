@@ -393,8 +393,8 @@ C {lab_wire.sym} 640 -3150 0 0 {name=l31 sig_type=std_logic lab=Db}
 C {devices/opin.sym} 2000 -2940 2 1 {name=p1 lab=Q_N}
 C {devices/opin.sym} 2280 -3130 0 0 {name=p2 lab=Q}
 C {devices/ipin.sym} 330 -3160 0 0 {name=p3 lab=SCD}
-C {devices/iopin.sym} -230 -3460 2 0 {name=p4 lab=VDD}
-C {devices/iopin.sym} -240 -2740 2 0 {name=p5 lab=VSS}
+C {devices/lab_pin.sym} -230 -3460 0 0 {name=p4 sig_type=std_logic lab=VDD}
+C {devices/lab_pin.sym} -240 -2740 0 0 {name=p5 sig_type=std_logic lab=VSS}
 C {devices/ipin.sym} 1690 -2850 2 1 {name=p6 lab=SET_B}
 C {devices/ipin.sym} -210 -3080 0 0 {name=p7 lab=SCE}
 C {devices/ipin.sym} -80 -3170 0 0 {name=p8 lab=RESET_B}
