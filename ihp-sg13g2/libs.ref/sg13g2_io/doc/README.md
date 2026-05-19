@@ -24,3 +24,21 @@ It also contains externally contributed files:
 * cdl/sg13g2_io.cdl: CDL netlist
 * verilog/sg13g2_io.v: Verilog netlist
 * lib/sg13g2_io_*.lib: Liberty files with timing
+
+19.05.2026  I/O Update 2 resolved issues:
+==========================================================================================
+	  - VIH/VIL input threshold parameters are fixed to be in spec.
+	  - Receiver (input): Delay ballance is fixed.
+	  - Issue #401. Analog Pad current capability is improved.
+	  - Issue #385. M2 connections in ground pads are improved.
+	  - Issue #419. Antenna diode structures were added to core inputs (layout fix).
+	  - Isssue #835. Layout of edges of cells is aligned to provide abuttment without DRC errors.
+	  - Issue #676. Re-CZ is done. New look-up tabes with increased loads are used. Fillers and corner are added in Liberty and verilog model.
+	  - Issue #909. Contacts are added in Filler200 cell.
+	  - Celllist id updated: subblocks are not library cells.
+	  - "Galery" top assambly is removed from GDS 2 layout view.
+	  - OA database update: schematics, symbols, pin order, CDF term-order properties. Pin direction is updated to correspond verilog model.
+	  - CDL netlist is regenerated and renamed to sg13g2_io.spice.
+	  - SPICE netlist is regenerated.
+	  - LEF is synchronized with open source library. Pin direction in LEF is fixed.
+	   
