@@ -535,6 +535,7 @@ def run_test_case(
         "--no_density",
         "--disable_extra_rules",
         "--mp=1",
+        "--density_thr=1",
     ]
 
     logger_prefix = f"[{lib}/{cell_name}]"
