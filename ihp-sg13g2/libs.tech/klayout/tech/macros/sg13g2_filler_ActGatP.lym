@@ -182,7 +182,9 @@
   PWell_block_cpy_in.size(-sep, -sep, "square_limit")
   AFil_i = PWell_block_cpy_out - PWell_block_cpy_in
 
-  exclLayAct = AFil_c | AFil_c1 | AFil_e | AFil_d | AFil_i | Activ_nofill
+  AFil_nf = Activ_nofill.dup
+  AFil_nf.size(0.42, 0.42, "square_limit")
+  exclLayAct = AFil_c | AFil_c1 | AFil_e | AFil_d | AFil_i | AFil_nf
 
   ##########################################################################
   # CREATE GatPoly FILLER
@@ -221,7 +223,9 @@
   NWell_gp_cpy2.size(-sep, -sep, "square_limit")
   GFil_e = NWell_gp_cpy - NWell_gp_cpy2
 
-  exclLayGatP = GFil_c | GFil_d | GFil_f | GFil_e | GatPoly_nofill
+  GFil_nf = GatPoly_nofill.dup
+  GFil_nf.size(1.1, 1.1, "square_limit")
+  exclLayGatP = GFil_c | GFil_d | GFil_f | GFil_e | GFil_nf
 
   ActoutGatP = exclLayGatP - exclLayAct
   GatPoutAct = exclLayAct - exclLayGatP
