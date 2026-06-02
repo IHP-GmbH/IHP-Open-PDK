@@ -1,0 +1,85 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('nmosi') || FEOL
+  #==============================================
+  #------------- 5.11. NMOS-Iso ----------------
+  #==============================================
+
+  logger.info('Starting 5.11. NMOS-Iso table')
+
+  unless PRECHECK_DRC
+    # nmosi derivations
+    nwell_or_pwb = nwell_drw.join(pwell_block)
+    iso_pwell_act = activ_drw.and(nbulay_drw).not(nwell_or_pwb)
+    nwell_nbulay = nwell_drw.and(nbulay_drw)
+    nsdb_iso_pwell_act = nsd_block.not_outside(iso_pwell_act)
+    salb_iso_pwell_act = salblock_drw.not_outside(iso_pwell_act)
+
+    # Rule nmosi.b: Min. nBuLay enclosure of Iso-PWell-Activ is 1.24 um
+    logger.info('Executing rule nmosi.b')
+    nmosi_b_value = drc_rules['nmosi_b'].to_f
+    nmosi_b_ipa = iso_pwell_act.not(schottky_nbl1)
+    nmosi_b_l = nmosi_b_ipa.ext_enclosed(nbulay_drw, nmosi_b_value.um)
+    nmosi_b_l.output('nmosi.b', "5.11. nmosi.b : Min. nBuLay enclosure of Iso-PWell-Activ: #{nmosi_b_value} um")
+    nmosi_b_ipa.forget
+    nmosi_b_l.forget
+
+    # Rule nmosi.c: Min. NWell space to Iso-PWell-Activ is 0.39 um
+    logger.info('Executing rule nmosi.c')
+    nmosi_c_value = drc_rules['nmosi_c'].to_f
+    nmosi_c_ipa = iso_pwell_act.not(scr1_or_schottky_nbl1)
+    nmosi_c_l = nmosi_c_ipa.ext_separation(nwell_drw.with_holes, nmosi_c_value.um, max_angle: 180)
+    nmosi_c_l.output('nmosi.c', "5.11. nmosi.c : Min. NWell space to Iso-PWell-Activ: #{nmosi_c_value} um")
+    nmosi_c_ipa.forget
+    nmosi_c_l.forget
+
+    # Rule nmosi.d: Min. NWell-nBuLay width forming unbroken ring around Iso-PWell-Activ is 0.62 um
+    logger.info('Executing rule nmosi.d')
+    nmosi_d_value = drc_rules['nmosi_d'].to_f
+    nmosi_d_l = nwell_nbulay.width(nmosi_d_value.um, euclidian)
+    nmosi_d_l.output('nmosi.d', "5.11. nmosi.d : Min. NWell-nBuLay width: #{nmosi_d_value} um")
+    nmosi_d_l.forget
+
+    # Rule nmosi.f: Min. nSD:block width to separate ptap in nmosi is 0.62 um
+    logger.info('Executing rule nmosi.f')
+    nmosi_f_value = drc_rules['nmosi_f'].to_f
+    nmosi_f_l = nsdb_iso_pwell_act.width(nmosi_f_value.um, euclidian)
+    nmosi_f_l.output('nmosi.f', "5.11. nmosi.f : Min. nSD:block width to separate ptap in nmosi: #{nmosi_f_value} um")
+    nmosi_f_l.forget
+
+    # Rule nmosi.g: Min. SalBlock overlap of nSD:block over Activ is 0.15 um
+    # Aligned with maximal: ext_enclosed (avoids .enclosed crash)
+    logger.info('Executing rule nmosi.g')
+    nmosi_g_value = drc_rules['nmosi_g'].to_f
+    nmosi_g_salb = salb_iso_pwell_act.not(scr1_or_schottky_nbl1)
+    nmosi_g_x1 = nsdb_iso_pwell_act.ext_enclosed(nmosi_g_salb, nmosi_g_value.um, polygon_output: true)
+    nmosi_g_l = nmosi_g_x1.ext_and(activ_drw)
+    nmosi_g_l.output('nmosi.g', "5.11. nmosi.g : Min. SalBlock overlap of nSD:block over Activ: #{nmosi_g_value} um")
+    nmosi_g_salb.forget
+    nmosi_g_x1.forget
+    nmosi_g_l.forget
+
+    # Cleanup
+    nwell_or_pwb.forget
+    iso_pwell_act.forget
+    nwell_nbulay.forget
+    nsdb_iso_pwell_act.forget
+    salb_iso_pwell_act.forget
+  end
+end

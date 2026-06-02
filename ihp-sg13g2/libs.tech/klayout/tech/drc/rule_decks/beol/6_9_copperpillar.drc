@@ -54,6 +54,15 @@ if TABLES.include?('copperpillar') || BEOL
   padc_c_l2.forget
   padc_c.forget
 
+  # Rule Padc.d: Min. CuPillarPad space to EdgeSeal is 30.00 um
+  logger.info('Executing rule Padc.d')
+  padc_d_value = 30.0
+  padc_d_l1 = activ_drw.and(edgeseal_drw).not(recog_drw)
+  padc_d = cu_pillarpad.sep(padc_d_l1, padc_d_value.um, euclidian)
+  padc_d.output('Padc.d', "6.9. Padc.d : Min. CuPillarPad space to EdgeSeal is #{padc_d_value} um")
+  padc_d_l1.forget
+  padc_d.forget
+
   # Rule Padc.f: Allowed passivation opening shape Circle
   logger.info('Executing rule Padb.f')
   padc_f_l1 = get_circle(cu_pillarpad)

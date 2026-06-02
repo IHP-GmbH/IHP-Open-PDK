@@ -24,8 +24,45 @@ if TABLES.include?('psd') || FEOL
   logger.info('Starting 5.10 pSD table')
 
   # pSD derivations
+  nsd_or_nsdblock = psd_drw.join(nsd_block)
+  nactiv_local = activ_drw.not(nsd_or_nsdblock)
+  pactiv_local = activ_drw.and(psd_drw)
+  gate_local = activ_drw.and(gatpoly_drw)
+  nactiv_nwell = nactiv_local.and(nwell_drw)
+  nactiv_pwell = nactiv_local.not(nwell_drw)
+  pactiv_nwell = pactiv_local.and(nwell_drw)
+  pactiv_pwell = pactiv_local.not(nwell_drw)
+  ngate_local = gate_local.and(nactiv_local)
+  pgate_local = gate_local.not(ngate_local)
+  psd_not_sram = psd_drw.not(sram_drw)
+  gatpoly_res = gatpoly_drw.join(polyres_drw)
+
+  # Rule pSD.a: Min. pSD width is 0.31 um
+  logger.info('Executing rule pSD.a')
+  psd_a_value = drc_rules['pSD_a'].to_f
+  psd_a_l = psd_drw.width(psd_a_value.um, euclidian)
+  psd_a_l.output('pSD.a', "5.10. pSD.a Min. pSD width is #{psd_a_value} um")
+  psd_a_l.forget
+
+  # Rule pSD.b: Min. pSD space or notch is 0.31 um
+  logger.info('Executing rule pSD.b')
+  psd_b_value = drc_rules['pSD_b'].to_f
+  psd_b_l = psd_drw.space(psd_b_value.um, euclidian)
+  psd_b_l.output('pSD.b', "5.10. pSD.b Min. pSD space or notch is #{psd_b_value} um")
+  psd_b_l.forget
 
   unless PRECHECK_DRC
+    # Rule pSD.c: Min. pSD enclosure of P+Activ in NWell is 0.18 um
+    logger.info('Executing rule pSD.c')
+    psd_c_value = drc_rules['pSD_c'].to_f
+    psd_c_l1 = activ_drw.and(nwell_drw)
+    psd_c_psd = psd_drw.not(svaricap)
+    psd_c_l = psd_c_l1.ext_enclosed(psd_c_psd, psd_c_value.um)
+    psd_c_l.output('pSD.c', "5.10. pSD.c Min. pSD enclosure of P+Activ in NWell is #{psd_c_value} um")
+    psd_c_l1.forget
+    psd_c_psd.forget
+    psd_c_l.forget
+
     # Rule pSD.c1: Min. pSD enclosure of P+Activ in PWell is 0.03 um
     logger.info('Executing rule pSD.c1')
     psd_c1_value = drc_rules['pSD_c1'].to_f
@@ -34,5 +71,191 @@ if TABLES.include?('psd') || FEOL
     psd_c1_l.output('pSD.c1', "5.10. pSD.c1 Min. pSD enclosure of P+Activ in PWell is #{psd_c1_value} um")
     psd_c1_l1.forget
     psd_c1_l.forget
+
+    # Rule pSD.d: Min. pSD space to unrelated N+Activ in PWell is 0.18 um
+    logger.info('Executing rule pSD.d')
+    psd_d_value = drc_rules['pSD_d'].to_f
+    psd_d_l = psd_drw.ext_separation(nactiv_pwell, psd_d_value.um, consider_intersecting_edges: false)
+    psd_d_l.output('pSD.d', "5.10. pSD.d Min. pSD space to unrelated N+Activ in PWell is #{psd_d_value} um")
+    psd_d_l.forget
+
+    # Rule pSD.d1: Min. pSD space to N+Activ in NWell is 0.03 um
+    logger.info('Executing rule pSD.d1')
+    psd_d1_value = drc_rules['pSD_d1'].to_f
+    psd_d1_l = psd_drw.ext_separation(nactiv_nwell, psd_d1_value.um, consider_intersecting_edges: false)
+    psd_d1_l.output('pSD.d1', "5.10. pSD.d1 Min. pSD space to N+Activ in NWell is #{psd_d1_value} um")
+    psd_d1_l.forget
+
+    # Rule pSD.e: Min. pSD overlap of Activ at one position when forming abutted substrate tie is 0.30 um
+    logger.info('Executing rule pSD.e')
+    psd_e_value = drc_rules['pSD_e'].to_f
+    psd_e_l1 = activ_drw.not(sram_drw).not_inside(psd_drw).interacting(psd_drw)
+    psd_e_l2 = psd_e_l1.and(psd_drw).not(svaricap)
+    psd_e_l3 = psd_e_l2.width(psd_e_value.um, projection)
+    psd_e_l4 = psd_e_l3.polygons.covering(psd_e_l2)
+    psd_e_l4.output('pSD.e',
+                     "5.10. pSD.e Min. pSD overlap of Activ at one position when forming abutted substrate tie is #{psd_e_value} um")
+    psd_e_l1.forget
+    psd_e_l2.forget
+    psd_e_l3.forget
+    psd_e_l4.forget
+
+    # Rule pSD.f: Min. Activ extension over pSD at one position when forming abutted NWell tie is 0.30 um
+    # Aligned with maximal: ext_coincident_part + ext_overlap (avoids .edges.coincident crash)
+    logger.info('Executing rule pSD.f')
+    psd_f_value = drc_rules['pSD_f'].to_f
+    psd_f_abutted = nactiv_nwell.ext_interacting(pactiv_nwell)
+    psd_f_bad = psd_f_abutted.ext_coincident_part(pactiv_nwell, outside: true).ext_overlap(nactiv_nwell, psd_f_value.um, metric: projection, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
+    psd_f_good = psd_f_abutted.ext_not(psd_f_bad)
+    psd_f_l = psd_f_abutted.ext_outside(psd_f_good)
+    psd_f_l.output('pSD.f',
+                    "5.10. pSD.f Min. Activ extension over pSD at one position when forming abutted NWell tie is #{psd_f_value} um")
+    psd_f_abutted.forget
+    psd_f_bad.forget
+    psd_f_good.forget
+    psd_f_l.forget
+
+    # Rule pSD.g: Min. N+Activ or P+Activ area when forming abutted tie is 0.09 um2
+    logger.info('Executing rule pSD.g')
+    psd_g_value = drc_rules['pSD_g'].to_f
+    nactiv_nwell_not_gate = nactiv_nwell.not(gate_local)
+    pactiv_pwell_not_gate = pactiv_pwell.not(gate_local)
+    psd_g_n = nactiv_nwell_not_gate.not_interacting(gate_local).with_area(nil, psd_g_value.um2)
+    psd_g_n.output('pSD.g',
+                    "5.10. pSD.g Min. N+Activ or P+Activ area when forming abutted tie is #{psd_g_value} um2")
+    psd_g_p = pactiv_pwell_not_gate.not_interacting(gate_local).with_area(nil, psd_g_value.um2)
+    psd_g_p.output('pSD.g',
+                    "5.10. pSD.g Min. N+Activ or P+Activ area when forming abutted tie is #{psd_g_value} um2")
+    nactiv_nwell_not_gate.forget
+    pactiv_pwell_not_gate.forget
+    psd_g_n.forget
+    psd_g_p.forget
+
+    # Rule pSD.i: Min. pSD enclosure of PFET gate not inside ThickGateOx is 0.30 um
+    logger.info('Executing rule pSD.i')
+    psd_i_value = drc_rules['pSD_i'].to_f
+    psd_i_l1 = pgate_local.not(sram_drw)
+    psd_i_l = psd_i_l1.ext_enclosed(psd_not_sram, psd_i_value.um)
+    psd_i_l.output('pSD.i', "5.10. pSD.i Min. pSD enclosure of PFET gate not inside ThickGateOx is #{psd_i_value} um")
+    psd_i_l1.forget
+    psd_i_l.forget
+
+    # Rule pSD.i1: Min. pSD enclosure of PFET gate inside ThickGateOx is 0.40 um
+    logger.info('Executing rule pSD.i1')
+    psd_i1_value = drc_rules['pSD_i1'].to_f
+    psdhv_not_sram = psd_not_sram.inside(thickgateox_drw)
+    psd_i1_l1 = pgate_local.not(sram_drw)
+    psd_i1_l = psd_i1_l1.ext_enclosed(psdhv_not_sram, psd_i1_value.um)
+    psd_i1_l.output('pSD.i1', "5.10. pSD.i1 Min. pSD enclosure of PFET gate inside ThickGateOx is #{psd_i1_value} um")
+    psdhv_not_sram.forget
+    psd_i1_l1.forget
+    psd_i1_l.forget
+
+    # Rule pSD.j: Min. pSD space to NFET gate not inside ThickGateOx is 0.30 um
+    logger.info('Executing rule pSD.j')
+    psd_j_value = drc_rules['pSD_j'].to_f
+    ngate_not_sram = ngate_local.not(sram_drw).not(svaricap)
+    psd_j_l = psd_not_sram.separation(ngate_not_sram, psd_j_value.um, euclidian)
+    psd_j_l.output('pSD.j', "5.10. pSD.j Min. pSD space to NFET gate not inside ThickGateOx is #{psd_j_value} um")
+    ngate_not_sram.forget
+    psd_j_l.forget
+
+    # Rule pSD.j1: Min. pSD space to NFET gate inside ThickGateOx is 0.40 um
+    logger.info('Executing rule pSD.j1')
+    psd_j1_value = drc_rules['pSD_j1'].to_f
+    ngate_hv = ngate_local.not(svaricap).inside(thickgateox_drw)
+    psd_j1_l = psd_not_sram.separation(ngate_hv, psd_j1_value.um, euclidian)
+    psd_j1_l.output('pSD.j1', "5.10. pSD.j1 Min. pSD space to NFET gate inside ThickGateOx is #{psd_j1_value} um")
+    ngate_hv.forget
+    psd_j1_l.forget
+
+    # Rule pSD.k: Min. pSD area is 0.25 um2
+    logger.info('Executing rule pSD.k')
+    psd_k_value = drc_rules['pSD_k'].to_f
+    psd_k_l = psd_drw.with_area(nil, psd_k_value.um2)
+    psd_k_l.output('pSD.k', "5.10. pSD.k Min. pSD area is #{psd_k_value} um2")
+    psd_k_l.forget
+
+    # Rule pSD.l: Min. pSD enclosed area is 0.25 um2
+    logger.info('Executing rule pSD.l')
+    psd_l_value = drc_rules['pSD_l'].to_f
+    psd_l_holes = (psd_drw.holes - psd_drw.with_holes).without_holes
+    psd_l_enc = psd_l_holes.not(psd_drw)
+    psd_l_l = psd_l_enc.with_area(nil, psd_l_value.um2)
+    psd_l_l.output('pSD.l', "5.10. pSD.l Min. pSD enclosed area is #{psd_l_value} um2")
+    psd_l_holes.forget
+    psd_l_enc.forget
+    psd_l_l.forget
+
+    # Rule pSD.m: Min. pSD space to n-type poly resistors is 0.18 um
+    logger.info('Executing rule pSD.m')
+    psd_m_value = drc_rules['pSD_m'].to_f
+    salblock_not_nsdb_not_esd = salblock_drw.not(recog_esd.join(nsd_block))
+    rsil_all = gatpoly_res.and(res_drw).and(extblock_drw).not_interacting(salblock_drw)
+    rsil_not_nwell = rsil_all.not_interacting(nwell_drw).not_interacting(nbulay_drw)
+    gp_rsil_extended = gatpoly_res.covering(rsil_not_nwell)
+    psd_m_l = gp_rsil_extended.separation(psd_drw, psd_m_value.um, euclidian)
+    psd_m_l.output('pSD.m', "5.10. pSD.m Min. pSD space to n-type poly resistors is #{psd_m_value} um")
+    salblock_not_nsdb_not_esd.forget
+    rsil_all.forget
+    rsil_not_nwell.forget
+    gp_rsil_extended.forget
+    psd_m_l.forget
+
+    # Rule pSD.n: Min. pSD enclosure of p-type poly resistors is 0.18 um
+    logger.info('Executing rule pSD.n')
+    psd_n_value = drc_rules['pSD_n'].to_f
+    nsd_derived = nsd_drw.join(activ_drw.not(nsd_or_nsdblock))
+    rppd_0 = gatpoly_res.and(psd_drw).and(salblock_drw.not(recog_esd.join(nsd_block)))
+    rppd_all = rppd_0.not_interacting(activ_drw.join(nsd_derived))
+    psd_n_l = rppd_all.ext_enclosed(psd_drw, psd_n_value.um)
+    psd_n_l.output('pSD.n', "5.10. pSD.n Min. pSD enclosure of p-type poly resistors is #{psd_n_value} um")
+    nsd_derived.forget
+    rppd_0.forget
+    rppd_all.forget
+    psd_n_l.forget
+
+    # Rule nSDB.a: Min. nSD:block width is 0.31 um
+    logger.info('Executing rule nSDB.a')
+    nsdb_a_value = drc_rules['nSDB_a'].to_f
+    nsdb_a_l = nsd_block.width(nsdb_a_value.um, euclidian)
+    nsdb_a_l.output('nSDB.a', "5.10. nSDB.a Min. nSD:block width is #{nsdb_a_value} um")
+    nsdb_a_l.forget
+
+    # Rule nSDB.b: Min. nSD:block space or notch is 0.31 um
+    logger.info('Executing rule nSDB.b')
+    nsdb_b_value = drc_rules['nSDB_b'].to_f
+    nsdb_b_l = nsd_block.space(nsdb_b_value.um, euclidian)
+    nsdb_b_l.output('nSDB.b', "5.10. nSDB.b Min. nSD:block space or notch is #{nsdb_b_value} um")
+    nsdb_b_l.forget
+
+    # Rule nSDB.c: Min. nSD:block space to pSD is 0.31 um
+    logger.info('Executing rule nSDB.c')
+    nsdb_c_value = drc_rules['nSDB_c'].to_f
+    psd_not_nsdb = psd_drw.not_interacting(nsd_block)
+    nsdb_c_l = nsd_block.separation(psd_not_nsdb, nsdb_c_value.um, euclidian)
+    nsdb_c_l.output('nSDB.c', "5.10. nSDB.c Min. nSD:block space to pSD is #{nsdb_c_value} um")
+    psd_not_nsdb.forget
+    nsdb_c_l.forget
+
+    # Rule nSDB.e: nSD:block and Cont do not overlap
+    logger.info('Executing rule nSDB.e')
+    nsdb_e_l = cont_drw.not(nsdb_exlcDev).and(nsd_block)
+    nsdb_e_l.output('nSDB.e', '5.10. nSDB.e nSD:block and Cont do not overlap')
+    nsdb_e_l.forget
   end
+
+  # Cleanup local derivations
+  nsd_or_nsdblock.forget
+  nactiv_local.forget
+  pactiv_local.forget
+  gate_local.forget
+  nactiv_nwell.forget
+  nactiv_pwell.forget
+  pactiv_nwell.forget
+  pactiv_pwell.forget
+  ngate_local.forget
+  pgate_local.forget
+  psd_not_sram.forget
+  gatpoly_res.forget
 end

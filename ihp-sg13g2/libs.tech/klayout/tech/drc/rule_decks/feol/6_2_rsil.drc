@@ -1,0 +1,91 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('rsil') || FEOL
+  #==============================================
+  #-------------- 6.2. Rsil --------------------
+  #==============================================
+
+  logger.info('Starting 6.2. Rsil (silicided resistor) table')
+
+  unless PRECHECK_DRC
+    # Rsil derivations
+    # GatPoly+PolyRes combined layer
+    gatpoly_res = polyres_drw.join(gatpoly_drw)
+    # Rsil recognition: GatPoly/PolyRes AND RES AND EXTBlock, not interacting SalBlock
+    rsil_all = gatpoly_res.and(res_drw).and(extblock_drw).not_interacting(salblock_drw)
+    # Rsil not in NWell and not in nBuLay
+    rsil = rsil_all.not_interacting(nwell_drw).not_interacting(nbulay_drw)
+    # GatPoly within Rsil resistor body
+    rsil_gatpoly = gatpoly_res.not_outside(rsil_all)
+    # GatPoly extended for Rsil (covering Rsil recognition area)
+    gp_rsil_extended = gatpoly_res.covering(rsil)
+
+    # Rule Rsil.a: Min. GatPoly width is 0.50 um
+    logger.info('Executing rule Rsil.a')
+    rsil_a_value = drc_rules['Rsil_a'].to_f
+    rsil_a_l = rsil_all.width(rsil_a_value.um, euclidian)
+    rsil_a_l.output('Rsil.a', "6.2. Rsil.a : Min. GatPoly width: #{rsil_a_value} um")
+    rsil_a_l.forget
+
+    # Rule Rsil.b: Min. RES space to Cont is 0.12 um
+    logger.info('Executing rule Rsil.b')
+    rsil_b_value = drc_rules['Rsil_b'].to_f
+    rsil_b_l = res_drw.separation(cont_drw, rsil_b_value.um, euclidian)
+    rsil_b_l.output('Rsil.b', "6.2. Rsil.b : Min. RES space to Cont: #{rsil_b_value} um")
+    rsil_b_l.forget
+
+    # Rule Rsil.c: Min. RES extension over GatPoly is 0.00 um
+    logger.info('Executing rule Rsil.c')
+    rsil_c_l = rsil_gatpoly.ext_enclosed(res_drw, 1.0.um,
+                                         consider_intersecting_edges: false,
+                                         consider_touch_points: false,
+                                         polygon_output: true)
+    rsil_c_l = rsil_c_l.ext_outside(cont_drw)
+    rsil_c_l.output('Rsil.c', '6.2. Rsil.c : Min. RES extension over GatPoly: 0.00 um')
+    rsil_c_l.forget
+
+    # Rule Rsil.d: Min. pSD space to GatPoly is 0.18 um
+    logger.info('Executing rule Rsil.d')
+    rsil_d_value = drc_rules['Rsil_d'].to_f
+    rsil_d_l = gp_rsil_extended.separation(psd_drw, rsil_d_value.um, euclidian)
+    rsil_d_l.output('Rsil.d', "6.2. Rsil.d : Min. pSD space to GatPoly: #{rsil_d_value} um")
+    rsil_d_l.forget
+
+    # Rule Rsil.e: Min. EXTBlock enclosure of GatPoly is 0.18 um
+    logger.info('Executing rule Rsil.e')
+    rsil_e_value = drc_rules['Rsil_e'].to_f
+    rsil_e_l = gp_rsil_extended.ext_enclosed(extblock_drw, rsil_e_value.um)
+    rsil_e_l.output('Rsil.e', "6.2. Rsil.e : Min. EXTBlock enclosure of GatPoly: #{rsil_e_value} um")
+    rsil_e_l.forget
+
+    # Rule Rsil.f: Min. RES length is 0.50 um
+    logger.info('Executing rule Rsil.f')
+    rsil_f_value = drc_rules['Rsil_f'].to_f
+    rsil_f_l = res_drw.width(rsil_f_value.um, euclidian)
+    rsil_f_l.output('Rsil.f', "6.2. Rsil.f : Min. RES length: #{rsil_f_value} um")
+    rsil_f_l.forget
+
+    # Cleanup
+    gatpoly_res.forget
+    rsil_all.forget
+    rsil.forget
+    rsil_gatpoly.forget
+    gp_rsil_extended.forget
+  end
+end

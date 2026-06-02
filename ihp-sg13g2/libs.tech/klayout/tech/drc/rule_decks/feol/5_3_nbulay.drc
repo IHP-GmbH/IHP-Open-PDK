@@ -22,8 +22,47 @@ if TABLES.include?('nbulay') || FEOL
 
   logger.info('Starting 5.3 nBuLay table')
 
+  unless PRECHECK_DRC
+    # Rule NBL.a: Min. nBuLay width is 1.00 um
+    logger.info('Executing rule NBL.a')
+    nbl_a_value = drc_rules['NBL_a'].to_f
+    nbl_a_l = nbuLay_gen_nbulay.width(nbl_a_value.um, euclidian)
+    nbl_a_l.output('NBL.a', "5.3.NBL.a : Min. nBuLay width is #{nbl_a_value} um")
+    nbl_a_l.forget
+
+    # Rule NBLB.a: Min. nBuLay:block width is 1.50 um
+    logger.info('Executing rule NBLB.a')
+    nblb_a_value = drc_rules['NBLB_a'].to_f
+    nblb_a_l = nbulay_block.width(nblb_a_value.um, euclidian)
+    nblb_a_l.output('NBLB.a', "5.3.NBLB.a : Min. nBuLay:block width is #{nblb_a_value} um")
+    nblb_a_l.forget
+
+    # Rule NBLB.b: Min. nBuLay:block space or notch is 1.00 um
+    logger.info('Executing rule NBLB.b')
+    nblb_b_value = drc_rules['NBLB_b'].to_f
+    nblb_b_l = nbulay_block.space(nblb_b_value.um, euclidian)
+    nblb_b_l.output('NBLB.b', "5.3.NBLB.b : Min. nBuLay:block space or notch is #{nblb_b_value} um")
+    nblb_b_l.forget
+
+    # Rule NBLB.c: Min. nBuLay enclosure of nBuLay:block is 1.00 um
+    logger.info('Executing rule NBLB.c')
+    nblb_c_value = drc_rules['NBLB_c'].to_f
+    nblb_c_l = nbulay_block.ext_enclosed(nbulay_drw, nblb_c_value.um,
+                                        consider_touch_points: false,
+                                        polygon_output: true)
+    nblb_c_l.output('NBLB.c', "5.3.NBLB.c : Min. nBuLay enclosure of nBuLay:block is #{nblb_c_value} um")
+    nblb_c_l.forget
+
+    # Rule NBLB.d: Min. nBuLay:block space to unrelated nBuLay is 1.50 um
+    logger.info('Executing rule NBLB.d')
+    nblb_d_value = drc_rules['NBLB_d'].to_f
+    nblb_d_l = nbulay_block.sep(nbulay_drw, nblb_d_value.um, euclidian)
+    nblb_d_l.output('NBLB.d', "5.3.NBLB.d : Min. nBuLay:block space to unrelated nBuLay is #{nblb_d_value} um")
+    nblb_d_l.forget
+  end
+
   if !PRECHECK_DRC && CONNECTIVITY_RULES
-    # nBulay derivations
+    # nBulay connectivity derivations
     nbl_nets = nbuLay_gen_nbulay.nets
     nactiv_nets = nactiv.nets
     ptap_nets = ptap.nets

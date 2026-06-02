@@ -23,58 +23,231 @@ if TABLES.include?('nwell') || FEOL
 
   logger.info('Starting 5.1 NWell table')
 
-  # Nwell derivations
+  unless PRECHECK_DRC
+    # NWell derivations
+    nwell_nsram = nwell_drw.not(sram_drw)
+    x1 = nwell_drw.join(pwell_block)
 
-  if !PRECHECK_DRC && CONNECTIVITY_RULES
-    # Rule NW.b: Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is 0.62 um
-    logger.info('Executing rule NW.b')
-    nw_b_value = drc_rules['NW_b'].to_f
-    nw_b_l = nwell_nets.space(nw_b_value.um, props_eq)
-    nw_b_l.output('NW.b',
-                  "5.1.NW.b : Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is #{nw_b_value} um")
-    nw_b_l.forget
+    # N+Activ / P+Activ partitions
+    nact_nwell = nactiv.and(x1)
+    pact_nwell = pactiv.and(x1)
+    pact_pwell = pactiv.not(pact_nwell)
 
-    # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
-    logger.info('Executing rule NW.b1')
-    nw_b1_value = drc_rules['NW_b1'].to_f
-    nw_b1_pblk = pwell_block.interacting(nwell_drw)
-    nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne).polygons
-    nw_b1_l2 = nw_b1_pblk.sep(nwell_drw, nw_b1_value.um, without_touching_edges).polygons
-    nw_b1 = nw_b1_l1.join(nw_b1_l2).and(pwell)
-    nw_b1.output('NW.b1', "5.1.NW.b1 : Min. PWell width between NWell regions (different net)  is #{nw_b1_value} um")
-    nw_b1_l1.forget
-    nw_b1_l2.forget
-    nw_b1.forget
-    nw_b1_pblk.forget
+    # LV / HV splits (ThickGateOx boundary)
+    pact_lv = pactiv.not(thickgateox_drw)
+    pact_hv = pactiv.and(thickgateox_drw)
+    nact_lv = nactiv.not(thickgateox_drw)
+    nact_hv = nactiv.and(thickgateox_drw)
 
-  end
+    nact_nwell_lv = nact_nwell.not(thickgateox_drw)
+    nact_nwell_hv = nact_nwell.and(thickgateox_drw)
 
-  if !PRECHECK_DRC
-    # Shared base for NW.f1 variants: substrate tie in P+Activ inside ThickGateOx.
-    nw_f1_ptap_thickgateox = ptap.and(thickgateox_drw)
-    # Exclude SVaricap devices from the NWell side for both NW.f1 checks.
-    nw_f1_nwell = nwell_drw.not(svaricap)
+    pact_pwell_lv = pact_pwell.not(thickgateox_drw)
+    pact_pwell_hv = pact_pwell.and(thickgateox_drw)
+
+    # DigiBnd derivations for .dig rules
+    digibnd_ring = digibnd_drw.sized(0.01.um).not(digibnd_drw)
+    digibnd_hole = digibnd_drw.join(digibnd_ring.holes.merge)
+
+    nact_hv_digi = nact_hv.not_outside(digibnd_hole)
+    nact_hv_ana = nact_hv.not(nact_hv_digi)
+
+    pact_hv_digi = pact_hv.not_outside(digibnd_hole)
+    pact_hv_ana = pact_hv.not(pact_hv_digi)
+
+    nact_nwell_hv_digi = nact_nwell_hv.not_outside(digibnd_hole)
+    nact_nwell_hv_ana = nact_nwell_hv.not(nact_nwell_hv_digi)
+
+    pact_pwell_hv_digi = pact_pwell_hv.not_outside(digibnd_hole)
+    pact_pwell_hv_ana = pact_pwell_hv.not(pact_pwell_hv_digi)
+
+    # SVaricap device recognition (nwell-local, does not overwrite global svaricap)
+    nw_svaricap_gate = nact_fet.and(gatpoly_drw).not_outside(nwell_drw).not_outside(nbulay_drw)
+    nw_svaricap_text = activ_drw.not_outside(nw_svaricap_gate).interacting(text_drw.texts("SVaricap"))
+    nw_svaricap = nwell_drw.not_outside(nw_svaricap_text)
+
+    # Schottky device recognition (nwell-local, does not overwrite global schottky_nbl1)
+    nw_schottky_nbl_mk = recog_diode.and(thickgateox_drw).and(salblock_drw).and(nsd_block)
+    nw_schottky_nbl_rec = nbulay_drw.not(nwell_drw).not_outside(nw_schottky_nbl_mk)
+    nw_schottky_nbl1_nw = nwell_drw.interacting(nwell_drw.holes.merge.covering(nw_schottky_nbl_rec))
+    nw_schottky_nbl1 = nw_schottky_nbl1_nw.sized(1.36.um)
+
+    nw_schottky_nw1_rect = nwell_drw.not_outside(nsd_block).not_interacting(nw_schottky_nbl_rec).and(recog_diode)
+    nw_schottky_nw1 = nw_schottky_nw1_rect.sized(1.36.um).and(thickgateox_drw).interacting(text_drw.texts("schottky_nw1"))
+
+    # SCR1 recognition (nwell-local)
+    nw_scr1 = recog_esd.interacting(text_drw.texts("scr1"))
+
+    # Combined exclusion regions (nwell-local)
+    nw_svaricap_or_schottky_nbl1 = nw_svaricap.join(nw_schottky_nbl1)
+    nw_schottky_nbl1_or_schottky_nw1 = nw_schottky_nbl1.join(nw_schottky_nw1)
+
+    # Rule NW.a: Min. NWell width is 0.62 um
+    logger.info('Executing rule NW.a')
+    nw_a_value = drc_rules['NW_a'].to_f
+    nw_a_l = nwell_drw.width(nw_a_value.um, euclidian)
+    nw_a_l.output('NW.a',
+                  "5.1.NW.a : Min. NWell width is #{nw_a_value} um")
+    nw_a_l.forget
+
+    if CONNECTIVITY_RULES
+      # Rule NW.b: Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is 0.62 um
+      logger.info('Executing rule NW.b')
+      nw_b_value = drc_rules['NW_b'].to_f
+      nw_b_l = nwell_nets.space(nw_b_value.um, props_eq)
+      nw_b_l.output('NW.b',
+                    "5.1.NW.b : Min. NWell space or notch (same net). NWell regions separated by less than this value will be merged. is #{nw_b_value} um")
+      nw_b_l.forget
+
+      # Rule NW.b1: Min. PWell width between NWell regions (different net)  is 1.80 um
+      logger.info('Executing rule NW.b1')
+      nw_b1_value = drc_rules['NW_b1'].to_f
+      nw_b1_l1 = nwell_nets.space(nw_b1_value.um, props_ne)
+      nw_b1_l2 = pwell_block.interacting(nwell_drw)
+      nw_b1_l3 = nw_b1_l2.sep(nwell_drw, nw_b1_value.um, without_touching_edges)
+      nw_b1 = nw_b1_l1.join(nw_b1_l3)
+      nw_b1.output('NW.b1', "5.1.NW.b1 : Min. PWell width between NWell regions (different net)  is #{nw_b1_value} um")
+      nw_b1_l1.forget
+      nw_b1_l2.forget
+      nw_b1_l3.forget
+      nw_b1.forget
+    end
+
+    # Rule NW.c: Min. NWell enclosure of P+Activ not inside ThickGateOx is 0.31 um
+    logger.info('Executing rule NW.c')
+    nw_c_value = drc_rules['NW_c'].to_f
+    lnw_c = pact_lv.not(pact_lv.interacting(nw_svaricap))
+    nw_c_l = lnw_c.ext_enclosed(nwell_nsram, nw_c_value.um, consider_overlaps_as_errors: true)
+    nw_c_l.output('NW.c',
+                  "5.1.NW.c : Min. NWell enclosure of P+Activ not inside ThickGateOx is #{nw_c_value} um")
+    lnw_c.forget
+    nw_c_l.forget
+
+    # Rule NW.c1: Min. NWell enclosure of P+Activ inside ThickGateOx is 0.62 um
+    logger.info('Executing rule NW.c1')
+    nw_c1_value = drc_rules['NW_c1'].to_f
+    nw_c1_l = pact_hv_ana.outside(nw_svaricap_or_schottky_nbl1).ext_enclosed(nwell_drw, nw_c1_value.um, consider_overlaps_as_errors: true)
+    nw_c1_l.output('NW.c1',
+                   "5.1.NW.c1 : Min. NWell enclosure of P+Activ inside ThickGateOx is #{nw_c1_value} um")
+    nw_c1_l.forget
+
+    # Rule NW.c1.dig: Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um
+    logger.info('Executing rule NW.c1.dig')
+    nw_c1_dig_l = pact_hv_digi.outside(nw_svaricap_or_schottky_nbl1).ext_enclosed(nwell_drw, 0.31.um, consider_overlaps_as_errors: true)
+    nw_c1_dig_l.output('NW.c1.dig',
+                       '5.1.NW.c1.dig : Min. NWell enclosure of P+Activ inside ThickGateOx inside DigiBnd is 0.31 um')
+    nw_c1_dig_l.forget
+
+    # Rule NW.d: Min. NWell space to external N+Activ not inside ThickGateOx is 0.31 um
+    logger.info('Executing rule NW.d')
+    nw_d_value = drc_rules['NW_d'].to_f
+    nw_d_l = nwell_nsram.separation(nact_lv, nw_d_value.um, euclidian, angle_limit(180), without_touching_corners)
+    nw_d_l.output('NW.d',
+                  "5.1.NW.d : Min. NWell space to external N+Activ not inside ThickGateOx is #{nw_d_value} um")
+    nw_d_l.forget
+
+    # Rule NW.d1: Min. NWell space to external N+Activ inside ThickGateOx is 0.62 um
+    logger.info('Executing rule NW.d1')
+    nw_d1_value = drc_rules['NW_d1'].to_f
+    nw_d1_l = nwell_drw.separation(nact_hv_ana, nw_d1_value.um, euclidian)
+    nw_d1_l.output('NW.d1',
+                   "5.1.NW.d1 : Min. NWell space to external N+Activ inside ThickGateOx is #{nw_d1_value} um")
+    nw_d1_l.forget
+
+    # Rule NW.d1.dig: Min. NWell space to external N+Activ inside ThickGateOx inside DigiBnd is 0.31 um
+    logger.info('Executing rule NW.d1.dig')
+    nw_d1_dig_l = nwell_drw.separation(nact_hv_digi, 0.31.um, euclidian)
+    nw_d1_dig_l.output('NW.d1.dig',
+                       '5.1.NW.d1.dig : Min. NWell space to external N+Activ inside ThickGateOx inside DigiBnd is 0.31 um')
+    nw_d1_dig_l.forget
+
+    # Rule NW.e: Min. NWell enclosure of NWell tie in N+Activ not inside ThickGateOx is 0.24 um
+    logger.info('Executing rule NW.e')
+    nw_e_value = drc_rules['NW_e'].to_f
+    nw_outdev = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1_or_schottky_nw1))
+    nw_e_l = nact_nwell_lv.not(nw_outdev).ext_enclosed(nwell_drw, nw_e_value.um, consider_overlaps_as_errors: true)
+    nw_e_l.output('NW.e',
+                  "5.1.NW.e : Min. NWell enclosure of NWell tie in N+Activ not inside ThickGateOx is #{nw_e_value} um")
+    nw_e_l.forget
+
+    # Rule NW.e1: Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is 0.62 um
+    logger.info('Executing rule NW.e1')
+    nw_e1_value = drc_rules['NW_e1'].to_f
+    nw_e1_l = nact_nwell_hv_ana.outside(nw_svaricap.join(nw_schottky_nbl1.join(nw_schottky_nw1.join(nw_scr1)))).ext_enclosed(nwell_drw, nw_e1_value.um, consider_overlaps_as_errors: true)
+    nw_e1_l.output('NW.e1',
+                   "5.1.NW.e1 : Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx is #{nw_e1_value} um")
+    nw_e1_l.forget
+
+    # Rule NW.e1.dig: Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx inside DigiBnd is 0.24 um
+    logger.info('Executing rule NW.e1.dig')
+    nw_e1_dig_l = nact_nwell_hv_digi.ext_enclosed(nwell_drw, 0.24.um, consider_overlaps_as_errors: true)
+    nw_e1_dig_l.output('NW.e1.dig',
+                       '5.1.NW.e1.dig : Min. NWell enclosure of NWell tie in N+Activ inside ThickGateOx inside DigiBnd is 0.24 um')
+    nw_e1_dig_l.forget
+
+    # Rule NW.f: Min. NWell space to substrate tie in P+Activ not inside ThickGateOx is 0.24 um
+    logger.info('Executing rule NW.f')
+    nw_f_value = drc_rules['NW_f'].to_f
+    nw_f_svaricap_edges = pact_pwell_lv.ext_coincident_edges(nw_svaricap, outside: true)
+    nw_f_exclude = pact_pwell_lv.ext_with_coincident_edges(nw_f_svaricap_edges)
+    nw_f_l = nwell_drw.ext_separation(pact_pwell_lv.ext_not(nw_f_exclude), nw_f_value.um)
+    nw_f_l.output('NW.f',
+                  "5.1.NW.f : Min. NWell space to substrate tie in P+Activ not inside ThickGateOx is #{nw_f_value} um")
+    nw_f_svaricap_edges.forget
+    nw_f_exclude.forget
+    nw_f_l.forget
 
     # Rule NW.f1: Min. NWell space to substrate tie in P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.f1')
     nw_f1_value = drc_rules['NW_f1'].to_f
-    nw_f1_ptap = nw_f1_ptap_thickgateox.not(digibnd_drw)
-    nw_f1_l = nw_f1_nwell.sep(nw_f1_ptap, nw_f1_value.um, euclidian)
+    nw_f1_l = nwell_drw.not(nw_svaricap).sep(pact_pwell_hv_ana, nw_f1_value.um, euclidian)
     nw_f1_l.output('NW.f1',
-                   "5.1.NW.f1 : Min. NWell space to substrate tie in P+Activ inside ThickGateOx = #{nw_f1_value} um")
+                   "5.1.NW.f1 : Min. NWell space to substrate tie in P+Activ inside ThickGateOx is #{nw_f1_value} um")
     nw_f1_l.forget
-    nw_f1_ptap.forget
 
-    # Rule NW.f1.digibnd: Min. NWell space to substrate tie in P+Activ inside ThickGateOx (Inside DigiBnd) is 0.24 um
-    logger.info('Executing rule NW.f1.digibnd')
-    nw_f1_digibnd_value = drc_rules['NW_f1_digibnd'].to_f
-    nw_f1_digibnd_ptap = nw_f1_ptap_thickgateox.and(digibnd_drw)
-    nw_f1_digibnd_l = nw_f1_nwell.sep(nw_f1_digibnd_ptap, nw_f1_digibnd_value.um, euclidian)
-    nw_f1_digibnd_l.output('NW.f1.digibnd',
-                           "5.1.NW.f1.digibnd : Min. NWell space to substrate tie in P+Activ inside ThickGateOx (Inside DigiBnd) = #{nw_f1_digibnd_value} um")
-    nw_f1_digibnd_l.forget
-    nw_f1_digibnd_ptap.forget
-    nw_f1_nwell.forget
-    nw_f1_ptap_thickgateox.forget
+    # Rule NW.f1.dig: Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd is 0.24 um
+    logger.info('Executing rule NW.f1.dig')
+    nw_f1_dig_l = nwell_drw.not(nw_svaricap).sep(pact_pwell_hv_digi, 0.24.um, euclidian)
+    nw_f1_dig_l.output('NW.f1.dig',
+                       '5.1.NW.f1.dig : Min. NWell space to substrate tie in P+Activ inside ThickGateOx inside DigiBnd is 0.24 um')
+    nw_f1_dig_l.forget
+
+    # Cleanup derivations
+    nwell_nsram.forget
+    x1.forget
+    nact_nwell.forget
+    pact_nwell.forget
+    pact_pwell.forget
+    pact_lv.forget
+    pact_hv.forget
+    nact_lv.forget
+    nact_hv.forget
+    nact_nwell_lv.forget
+    nact_nwell_hv.forget
+    pact_pwell_lv.forget
+    pact_pwell_hv.forget
+    digibnd_ring.forget
+    digibnd_hole.forget
+    nact_hv_digi.forget
+    nact_hv_ana.forget
+    pact_hv_digi.forget
+    pact_hv_ana.forget
+    nact_nwell_hv_digi.forget
+    nact_nwell_hv_ana.forget
+    pact_pwell_hv_digi.forget
+    pact_pwell_hv_ana.forget
+    nw_svaricap_gate.forget
+    nw_svaricap_text.forget
+    nw_svaricap.forget
+    nw_schottky_nbl_mk.forget
+    nw_schottky_nbl_rec.forget
+    nw_schottky_nbl1_nw.forget
+    nw_schottky_nbl1.forget
+    nw_schottky_nw1_rect.forget
+    nw_schottky_nw1.forget
+    nw_scr1.forget
+    nw_svaricap_or_schottky_nbl1.forget
+    nw_schottky_nbl1_or_schottky_nw1.forget
+    nw_outdev.forget
   end
 end

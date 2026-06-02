@@ -40,7 +40,38 @@ if TABLES.include?('metal1') || BEOL
   m1_b_l.forget
 
   unless PRECHECK_DRC
-    # Rule M1.e: Min. space of Metal1 lines if, at least one line is wider 
+    # Rule M1.c: Min. Metal1 enclosure of Cont is 0.00 um
+    logger.info('Executing rule M1.c')
+    m1_c_l = cont_drw.not(sram_drw).not(metal1_drw)
+    m1_c_l.output('M1.c', '5.16. M1.c: Min. Metal1 enclosure of Cont = 0.00 µm')
+    m1_c_l.forget
+
+    # Rule M1.c1: Min. Metal1 endcap enclosure of Cont is 0.05 um
+    # For contacts at Metal1 corners at least one side must be treated as an endcap
+    # and for the other sides rule M1.c can be applied.
+    logger.info('Executing rule M1.c1')
+    m1_c1_value = drc_rules['M1_c1'].to_f
+    m1_c1_cont = cont_drw.ext_not(sram_drw).ext_outside(edgeseal_drw)
+    m1_c1_metal = metal1_drw.ext_outside(edgeseal_drw)
+    m1_c1_l = m1_c1_cont.drc(if_any(
+        !rectangles,
+        primary - secondary(m1_c1_metal),
+        (enclosed(m1_c1_metal, projection, whole_edges, one_side_allowed,
+                  two_opposite_sides_allowed) < m1_c1_value.um)))
+    m1_c1_l.output('M1.c1',
+                  "5.16. M1.c1: Min. Metal1 endcap enclosure of Cont: #{m1_c1_value} µm")
+    m1_c1_cont.forget
+    m1_c1_metal.forget
+    m1_c1_l.forget
+
+    # Rule M1.d: Min. Metal1 area is 0.09 µm²
+    logger.info('Executing rule M1.d')
+    m1_d_value = drc_rules['M1_d'].to_f
+    m1_d_l = metal1_drw.not(edgeseal_drw).with_area(nil, m1_d_value.um2)
+    m1_d_l.output('M1.d', "5.16. M1.d: Min. Metal1 area: #{m1_d_value} µm²")
+    m1_d_l.forget
+
+    # Rule M1.e: Min. space of Metal1 lines if, at least one line is wider
     # than 0.3 µm and the parallel run is more than 1.0 µm is 0.22 um
     logger.info('Executing rule M1.e')
     m1_e_value = drc_rules['M1_e'].to_f
@@ -90,4 +121,3 @@ if TABLES.include?('metal1') || BEOL
     m1_i_l.forget
   end
 end
-

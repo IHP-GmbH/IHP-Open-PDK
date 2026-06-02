@@ -45,6 +45,27 @@ if TABLES.include?('cont') || FEOL
   cnt_b_l.forget
 
   unless PRECHECK_DRC
+    # Rule Cnt.b1: Min. Cont space in a contact array of more than 4 rows and more than 4 columns is 0.20 um
+    # Aligned with maximal: acute_limit on sized, ext_not/ext_rectangles (avoids crash)
+    logger.info('Executing rule Cnt.b1')
+    cnt_b1_value = drc_rules['Cnt_b1'].to_f
+    cnt_b1_nr = drc_rules['Cnt_b1_nr'].to_i
+    cnt_b1_pitch = (cnt_b1_nr * cnt_a_value + (cnt_b1_nr - 1) * cnt_b_value) / 2.0
+    cnt_b1_l1 = cont_sq.sized((cnt_b1_value * 0.5).um, acute_limit).sized(-(cnt_b1_value * 0.5).um, acute_limit)
+    cnt_b1_large = cnt_b1_l1.sized(-(cnt_b1_pitch - 0.005).um, acute_limit).sized((cnt_b1_pitch - 0.005).um, acute_limit)
+    cnt_b1_inside = cont_sq.inside(cnt_b1_large)
+    cnt_b1_merged = cnt_b1_inside.sized((cnt_b1_value / 2.0 - 0.005).um, acute_limit).sized(-(cnt_b1_value / 2.0 - 0.005).um, acute_limit)
+    cnt_b1_bad = cnt_b1_merged.ext_not(cnt_b1_inside)
+    cnt_b1_l = cnt_b1_bad.ext_rectangles(inverted: true)
+    cnt_b1_l.output('Cnt.b1',
+                     "5.14. Cnt.b1 Min. Cont space in a contact array of more than #{cnt_b1_nr} rows and more than #{cnt_b1_nr} columns is #{cnt_b1_value} um")
+    cnt_b1_l1.forget
+    cnt_b1_large.forget
+    cnt_b1_inside.forget
+    cnt_b1_merged.forget
+    cnt_b1_bad.forget
+    cnt_b1_l.forget
+
     # Rule Cnt.c: Min. Activ enclosure of Cont is 0.07 um
     logger.info('Executing rule Cnt.c')
     cnt_c_value = drc_rules['Cnt_c'].to_f
@@ -53,6 +74,13 @@ if TABLES.include?('cont') || FEOL
     cnt_c_l.output('Cnt.c', "5.14. Cnt.c Min. Activ enclosure of Cont is #{cnt_c_value} um")
     cnt_c_l.forget
     cnt_c_act.forget
+
+    # Rule Cnt.c.Digi: Min. Activ enclosure of Cont inside DigiBnd is 0.05 um
+    logger.info('Executing rule Cnt.c.Digi')
+    cnt_c_digi_value = drc_rules['Cnt_c_digibnd'].to_f
+    cnt_c_digi_l1 = cont_sq.not(trans_drw).enclosed(activ_drw.and(digibnd_drw), cnt_c_digi_value.um, euclidian)
+    cnt_c_digi_l1.output('Cnt.c.Digi', "5.14. Cnt.c.Digi Min. Activ enclosure of Cont inside DigiBnd is #{cnt_c_digi_value} um")
+    cnt_c_digi_l1.forget
 
     # Rule Cnt.c.digibnd: Min. Activ enclosure of Cont (Inside DigiBnd) is 0.05 um
     logger.info('Executing rule Cnt.c.digibnd')
@@ -86,6 +114,25 @@ if TABLES.include?('cont') || FEOL
     cnt_e_l1.forget
     cnt_e_l.forget
 
+    # Rule Cnt.f: Min. Cont on Activ space to GatPoly is 0.11 um
+    logger.info('Executing rule Cnt.f')
+    cnt_f_value = drc_rules['Cnt_f'].to_f
+    cnt_f_l1 = cont_sq.and(activ_drw)
+    gp_not_sram = gatpoly_drw.not(sram_drw)
+    cnt_f_l = cnt_f_l1.separation(gp_not_sram, cnt_f_value.um, euclidian)
+    cnt_f_l.output('Cnt.f', "5.14. Cnt.f Min. Cont on Activ space to GatPoly is #{cnt_f_value} um")
+    cnt_f_l1.forget
+    gp_not_sram.forget
+    cnt_f_l.forget
+
+    # Rule Cnt.g: Cont must be within Activ or GatPoly
+    logger.info('Executing rule Cnt.g')
+    gp_or_act = gatpoly_drw.join(activ_drw)
+    cnt_g_l = cont_sq.not(gp_or_act).outside(trans_drw)
+    cnt_g_l.output('Cnt.g', '5.14. Cnt.g Cont must be within Activ or GatPoly')
+    gp_or_act.forget
+    cnt_g_l.forget
+
     # Rule Cnt.g1: Min. pSD space to Cont on nSD-Activ is 0.09 um
     logger.info('Executing rule Cnt.g1')
     cnt_g1_value = drc_rules['Cnt_g1'].to_f
@@ -103,5 +150,17 @@ if TABLES.include?('cont') || FEOL
     cnt_g2_l.output('Cnt.g2', "5.14. Cnt.g2 Min. pSD overlap of Cont on pSD-Activ is #{cnt_g2_value} um")
     cnt_g2_l1.forget
     cnt_g2_l.forget
+
+    # Rule Cnt.h: Cont must be covered with Metal1
+    logger.info('Executing rule Cnt.h')
+    cnt_h_l = cont_sq.not(metal1_drw)
+    cnt_h_l.output('Cnt.h', '5.14. Cnt.h Cont must be covered with Metal1')
+    cnt_h_l.forget
+
+    # Rule Cnt.j: Cont on GatPoly over Activ is not allowed
+    logger.info('Executing rule Cnt.j')
+    cnt_j_l = cont_sq.and(activ_drw.and(gatpoly_drw)).not(svaricap)
+    cnt_j_l.output('Cnt.j', '5.14. Cnt.j Cont on GatPoly over Activ is not allowed')
+    cnt_j_l.forget
   end
 end

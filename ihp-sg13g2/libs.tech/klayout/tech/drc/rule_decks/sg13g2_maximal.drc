@@ -1012,7 +1012,7 @@ class DRC::DRCLayer
         end
         constraint.each do |expression|
             if expression[0] == ">"
-                edge_layer = edge_layer.with_length((expression[1] + 1), nil)
+                edge_layer = edge_layer.with_length((expression[1] + 1.dbu), nil)
             elsif expression[0] == "<"
                 edge_layer = edge_layer.with_length(nil, expression[1])
             elsif expression[0] == "=="
@@ -1022,7 +1022,7 @@ class DRC::DRCLayer
             elsif expression[0] == ">="
                 edge_layer = edge_layer.with_length(expression[1], nil)
             elsif expression[0] == "<="
-                edge_layer = edge_layer.with_length(nil, (expression[1] + 1))
+                edge_layer = edge_layer.with_length(nil, (expression[1] + 1.dbu))
             else
                 raise "invalid expression"
             end
@@ -1490,6 +1490,7 @@ NWell_pin = source.polygons("31/2")
 nBuLay = source.polygons("32/0")
 nBuLay_block = source.polygons("32/21")
 EmWind = source.polygons("33/0")
+EmWiHv = source.polygons("156/0")
 DeepCo = source.polygons("35/0")
 MIM = source.polygons("36/0")
 EdgeSeal = source.polygons("39/0")
@@ -1626,7 +1627,7 @@ Metal5_slit_MIM_Slt_g_M5_sep_tmp5 = Metal5_slit.ext_and(MIM)
 scr1 = Recog_esd.ext_interacting_with_text(TEXT_0, "scr1")
 nmoscl_2 = Recog_esd.ext_interacting_with_text(TEXT_0, "nmoscl_2")
 nmoscl_4 = Recog_esd.ext_interacting_with_text(TEXT_0, "nmoscl_4")
-Rhigh_recognition_0 = EXTBlock.ext_and(pSD)
+Rhigh_recognition_0 = EXTBlock.interacting(pSD)
 TopVia1_edgC1_in = TopVia1.ext_and(EdgeSeal)
 TopVia1_edgC1_out = TopVia1.ext_not(EdgeSeal)
 TopMetal1_edgA1_in = TopMetal1.ext_and(EdgeSeal)
@@ -1667,7 +1668,7 @@ ContBar_Act_GP = ContBar.ext_and(Gate)
 ContBar_outside_TRANS = ContBar.ext_outside(TRANS)
 dschottky_1 = Activ_and_nSD_block.ext_and(nBuLay)
 dpin_0 = BasPoly.ext_and(Activ).ext_and(BiWind).ext_and(nSD_block)
-nSD_not_pSD = pSD_not_nSD.dup
+nSD_not_pSD = pSD.ext_not(nSD)
 subst_tie_hole_w_npn = subst_tie_hole.ext_interacting_with_text(TEXT_0, "npn*")
 pSDL_enc_area = subst_tie_hole.ext_not(pSD)
 Act_Nsram_or_Activ_mask = Act_Nsram.ext_or(Activ_mask)
@@ -1706,7 +1707,7 @@ Act_EdgeSeal_Via4_edgC1_in_enc_tmp2 = Via4_edgC1_in.ext_overlapping(Act_EdgeSeal
 cmim_a = MIM.not_outside(Metal5).not_outside(TopMetal1).not_outside(Vmim)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp3 = Metal5_slit.ext_with_coincident_edges(Metal5_slit_MIM_Slt_g_M5_sep_tmp2)
 nmoscl = nmoscl_2.ext_or(nmoscl_4)
-Rhigh_recognition_1 = Rhigh_recognition_0.ext_and(nSD)
+Rhigh_recognition_1 = Rhigh_recognition_0.interacting(nSD)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp = TopVia1_edgC1_in.ext_enclosed(Act_EdgeSeal, 1.3.um, consider_touch_points: false, polygon_output: true)
 Act_EdgeSeal_TopVia1_edgC1_in_enc_tmp2 = TopVia1_edgC1_in.ext_overlapping(Act_EdgeSeal)
 TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp3 = TopMetal1_slit.ext_with_coincident_edges(TopMetal1_slit_MIM_Slt_g_TM1_sep_tmp2)
@@ -1795,7 +1796,7 @@ subst_tie_npn = pSD.ext_touching(subst_tie_hole_w_npn).ext_touching(TRANS)
 emit_npn13G2 = EmWind.inside(transG2)
 emit_npn13G2L = EmWind.inside(transG2L)
 trans_bip = transG2.ext_or(transG2C, transG2L, transG2V)
-emit_npn13G2V = EmWind.inside(transG2V)
+emit_npn13G2V = EmWiHv.inside(transG2V)
 nBuLayGen_nBuLay = nBuLay.ext_or(nBuLayGen)
 schottky_nbl_rec = isoPWell.not_outside(SalBlock).not_outside(nSD_block).not_outside(Recog_diode).not_outside(ThickGateOx)
 ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp3 = ThickGateOx.ext_with_coincident_edges(ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2)

@@ -1,0 +1,105 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('rhigh') || FEOL
+  #==============================================
+  #-------------- 6.4. Rhigh -------------------
+  #==============================================
+
+  logger.info('Starting 6.4. Rhigh (high-R poly resistor) table')
+
+  unless PRECHECK_DRC
+    # Rhigh derivations
+    gatpoly_res = polyres_drw.join(gatpoly_drw)
+    salblock_no_nsdb_no_esd = salblock_drw.not(recog_esd).not(nsd_block)
+    nsd_drv = nsd_drw.join(activ_drw.not(psd_drw.join(nsd_block)))
+    psd_nsd = psd_drw.and(nsd_drv)
+    # Rhigh recognition: GatPoly/PolyRes AND pSD AND nSD AND SalBlock (no nSD_block, no ESD)
+    rhigh_a = gatpoly_res.and(psd_nsd).and(salblock_no_nsdb_no_esd)
+    # GatPoly covering Rhigh resistor
+    gp_rhigh_extended = gatpoly_res.covering(rhigh_a)
+    # SalBlock within Rhigh
+    salblock_rhigh = salblock_drw.and(rhigh_a)
+    # Cont within Rhigh EXTBlock area
+    rhigh_cont = extblock_drw.covering(rhigh_a).and(cont_drw)
+    # Rhigh recognition for pSD/nSD identity check
+    rhigh_recog = extblock_drw.interacting(psd_drw).interacting(nsd_drw).covering(gatpoly_drw)
+    psd_not_nsd = nsd_drw.not(psd_drw)
+    nsd_not_psd = psd_drw.not(nsd_drw)  # note: nSD is auto-generated as inverse of pSD
+    psd_nsd_mismatch = psd_not_nsd.join(nsd_not_psd)
+
+    # Rule Rhi.a: Min. GatPoly width is 0.50 um
+    logger.info('Executing rule Rhi.a')
+    rhi_a_value = drc_rules['Rhi_a'].to_f
+    rhi_a_l = rhigh_a.width(rhi_a_value.um, euclidian)
+    rhi_a_l.output('Rhi.a', "6.4. Rhi.a : Min. GatPoly width: #{rhi_a_value} um")
+    rhi_a_l.forget
+
+    # Rule Rhi.b: pSD and nSD must be identical within Rhigh resistor
+    logger.info('Executing rule Rhi.b')
+    rhi_b_l = psd_nsd_mismatch.and(rhigh_recog.sized(1.dbu)).merged
+    rhi_b_l.output('Rhi.b', '6.4. Rhi.b : pSD and nSD are identical (nSD:drawing only permitted within Rhigh resistors)')
+    rhi_b_l.forget
+
+    # Rule Rhi.c: Min. pSD and nSD enclosure of GatPoly is 0.18 um
+    logger.info('Executing rule Rhi.c')
+    rhi_c_value = drc_rules['Rhi_c'].to_f
+    rhi_c_l = gp_rhigh_extended.ext_enclosed(psd_nsd, rhi_c_value.um)
+    rhi_c_l.output('Rhi.c', "6.4. Rhi.c : Min. pSD and nSD enclosure of GatPoly: #{rhi_c_value} um")
+    rhi_c_l.forget
+
+    # Rule Rhi.d: Min. and max. SalBlock space to Cont is 0.20 um
+    logger.info('Executing rule Rhi.d')
+    rhi_d_value = drc_rules['Rhi_d'].to_f
+    rhi_d_ext = salblock_rhigh.ext_extended(rhi_d_value.um, rhi_d_value.um)
+    [rhigh_cont.ext_separation(salblock_rhigh, rhi_d_value.um),
+     rhigh_cont.ext_interacting(rhi_d_ext, inverted: true)
+    ].each { |r| r.output('Rhi.d', "6.4. Rhi.d : Min. and max. SalBlock space to Cont: #{rhi_d_value} um") }
+    rhi_d_ext.forget
+
+    # Rule Rhi.e: Min. EXTBlock enclosure of GatPoly is 0.18 um
+    logger.info('Executing rule Rhi.e')
+    rhi_e_value = drc_rules['Rhi_e'].to_f
+    rhi_e_l = gp_rhigh_extended.ext_enclosed(extblock_drw, rhi_e_value.um,
+                                             consider_intersecting_edges: false,
+                                             consider_touch_points: false)
+    rhi_e_l.output('Rhi.e', "6.4. Rhi.e : Min. EXTBlock enclosure of GatPoly: #{rhi_e_value} um")
+    rhi_e_l.forget
+
+    # Rule Rhi.f: Min. SalBlock length is 0.50 um
+    logger.info('Executing rule Rhi.f')
+    rhi_f_value = drc_rules['Rhi_f'].to_f
+    rhi_f_l = salblock_rhigh.width(rhi_f_value.um, euclidian)
+    rhi_f_l.output('Rhi.f', "6.4. Rhi.f : Min. SalBlock length: #{rhi_f_value} um")
+    rhi_f_l.forget
+
+    # Cleanup
+    gatpoly_res.forget
+    salblock_no_nsdb_no_esd.forget
+    nsd_drv.forget
+    psd_nsd.forget
+    rhigh_a.forget
+    gp_rhigh_extended.forget
+    salblock_rhigh.forget
+    rhigh_cont.forget
+    rhigh_recog.forget
+    psd_not_nsd.forget
+    nsd_not_psd.forget
+    psd_nsd_mismatch.forget
+  end
+end

@@ -1,0 +1,89 @@
+# frozen_string_literal: true
+
+#=========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#=========================================================================================
+
+if TABLES.include?('rppd') || FEOL
+  #==============================================
+  #-------------- 6.3. Rppd --------------------
+  #==============================================
+
+  logger.info('Starting 6.3. Rppd (P+ poly resistor) table')
+
+  unless PRECHECK_DRC
+    # Rppd derivations
+    gatpoly_res = polyres_drw.join(gatpoly_drw)
+    salblock_no_nsdb_no_esd = salblock_drw.not(recog_esd).not(nsd_block)
+    # Rppd recognition: GatPoly/PolyRes AND pSD AND SalBlock (no nSD_block, no ESD)
+    # and not interacting Activ or nSD-derived
+    nsd_drv = nsd_drw.join(activ_drw.not(psd_drw.join(nsd_block)))
+    rppd_all = gatpoly_res.and(psd_drw).and(salblock_no_nsdb_no_esd).not_interacting(activ_drw).not_interacting(nsd_drv)
+    # GatPoly covering Rppd resistor
+    gp_rppd_extended = gatpoly_res.covering(rppd_all)
+    # SalBlock within Rppd
+    salblock_rppd = salblock_drw.and(rppd_all)
+    # Cont within Rppd EXTBlock area
+    rppd_cont = extblock_drw.covering(rppd_all).and(cont_drw)
+
+    # Rule Rppd.a: Min. GatPoly width is 0.50 um
+    logger.info('Executing rule Rppd.a')
+    rppd_a_value = drc_rules['Rppd_a'].to_f
+    rppd_a_l = rppd_all.width(rppd_a_value.um, euclidian)
+    rppd_a_l.output('Rppd.a', "6.3. Rppd.a : Min. GatPoly width: #{rppd_a_value} um")
+    rppd_a_l.forget
+
+    # Rule Rppd.b: Min. pSD enclosure of GatPoly is 0.18 um
+    logger.info('Executing rule Rppd.b')
+    rppd_b_value = drc_rules['Rppd_b'].to_f
+    rppd_b_l = rppd_all.ext_enclosed(psd_drw, rppd_b_value.um)
+    rppd_b_l.output('Rppd.b', "6.3. Rppd.b : Min. pSD enclosure of GatPoly: #{rppd_b_value} um")
+    rppd_b_l.forget
+
+    # Rule Rppd.c: Min. and max. SalBlock space to Cont is 0.20 um
+    logger.info('Executing rule Rppd.c')
+    rppd_c_value = drc_rules['Rppd_c'].to_f
+    rppd_c_ext = salblock_rppd.ext_extended(rppd_c_value.um, rppd_c_value.um)
+    [rppd_cont.ext_separation(salblock_rppd, rppd_c_value.um),
+     rppd_cont.ext_interacting(rppd_c_ext, inverted: true)
+    ].each { |r| r.output('Rppd.c', "6.3. Rppd.c : Min. and max. SalBlock space to Cont: #{rppd_c_value} um") }
+    rppd_c_ext.forget
+
+    # Rule Rppd.d: Min. EXTBlock enclosure of GatPoly is 0.18 um
+    logger.info('Executing rule Rppd.d')
+    rppd_d_value = drc_rules['Rppd_d'].to_f
+    rppd_d_l = gp_rppd_extended.ext_enclosed(extblock_drw, rppd_d_value.um,
+                                             consider_intersecting_edges: false,
+                                             consider_touch_points: false)
+    rppd_d_l.output('Rppd.d', "6.3. Rppd.d : Min. EXTBlock enclosure of GatPoly: #{rppd_d_value} um")
+    rppd_d_l.forget
+
+    # Rule Rppd.e: Min. SalBlock length is 0.50 um
+    logger.info('Executing rule Rppd.e')
+    rppd_e_value = drc_rules['Rppd_e'].to_f
+    rppd_e_l = salblock_rppd.width(rppd_e_value.um, euclidian)
+    rppd_e_l.output('Rppd.e', "6.3. Rppd.e : Min. SalBlock length: #{rppd_e_value} um")
+    rppd_e_l.forget
+
+    # Cleanup
+    gatpoly_res.forget
+    salblock_no_nsdb_no_esd.forget
+    nsd_drv.forget
+    rppd_all.forget
+    gp_rppd_extended.forget
+    salblock_rppd.forget
+    rppd_cont.forget
+  end
+end

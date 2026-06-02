@@ -63,6 +63,80 @@ if TABLES.include?('gatpoly') || FEOL
     gat_a2.output('Gat.a2', "5.8. Gat.a2 Min. GatPoly width for channel length of 1.2V PFET is #{gat_a2_value} um")
     gat_a2.forget
 
+    # Rule Gat.a3: Min. GatPoly width for channel length of 3.3 V NFET is 0.45 um
+    logger.info('Executing rule Gat.a3')
+    gat_a3_value = drc_rules['Gat_a3'].to_f
+    ngate_hv = ngate.and(thickgateox_drw)
+    gat_a3_excl = nmoscl.join(scr1)
+    gat_a3_edges = ngate_hv.edges.inside_part(activ_drw)
+    gat_a3_raw = gat_a3_edges.width(gat_a3_value.um, euclidian)
+    gat_a3 = gat_a3_raw.polygons.not(gat_a3_excl)
+    gat_a3.output('Gat.a3', "5.8. Gat.a3 Min. GatPoly width for channel length of 3.3V NFET is #{gat_a3_value} um")
+    ngate_hv.forget
+    gat_a3_excl.forget
+    gat_a3_edges.forget
+    gat_a3_raw.forget
+    gat_a3.forget
+
+    # Rule Gat.a4: Min. GatPoly width for channel length of 3.3 V PFET is 0.40 um
+    logger.info('Executing rule Gat.a4')
+    gat_a4_value = drc_rules['Gat_a4'].to_f
+    # Derive pmosHV matching maximal: PGate = Gate.ext_outside(NGate), then NOT_OUTSIDE ThickGateOx
+    gat_a4_gate = activ_drw.and(gatpoly_drw)
+    gat_a4_ngate = gat_a4_gate.not_outside(nactiv)
+    gat_a4_pgate = gat_a4_gate.ext_outside(gat_a4_ngate)
+    pmos_hv = gat_a4_pgate.not_outside(thickgateox_drw)
+    gat_a4_b = activ_drw.ext_not(pmos_hv).ext_interacting(pmos_hv).ext_space(gat_a4_value.um, metric: projection, consider_touch_points: false, polygon_output: true)
+    gat_a4 = gat_a4_b.ext_and(activ_drw)
+    gat_a4.output('Gat.a4', "5.8. Gat.a4 Min. GatPoly width for channel length of 3.3V PFET is #{gat_a4_value} um")
+    gat_a4_gate.forget
+    gat_a4_ngate.forget
+    gat_a4_pgate.forget
+    pmos_hv.forget
+    gat_a4_b.forget
+    gat_a4.forget
+
+    # Rule Gat.b1: Min. space between unrelated 3.3 V GatPoly over Activ regions is 0.25 um
+    logger.info('Executing rule Gat.b1')
+    gat_b1_value = drc_rules['Gat_b1'].to_f
+    gate_hv = activ_drw.and(gatpoly_drw).and(thickgateox_drw)
+    gat_b1 = gate_hv.space(gat_b1_value.um, euclidian)
+    gat_b1.output('Gat.b1',
+                  "5.8. Gat.b1 Min. space between unrelated 3.3V GatPoly over Activ regions is #{gat_b1_value} um")
+    gate_hv.forget
+    gat_b1.forget
+
+    # Rule Gat.c: Min. GatPoly extension over Activ (end cap) is 0.18 um
+    logger.info('Executing rule Gat.c')
+    gat_c_value = drc_rules['Gat_c'].to_f
+    gp_nsram = gatpoly_drw.not(sram_drw)
+    gat_c_l1 = activ_drw.ext_enclosed(gp_nsram, gat_c_value.um)
+    gat_c_l1.output('Gat.c', "5.8. Gat.c Min. GatPoly extension over Activ (end cap) is #{gat_c_value} um")
+    gat_c_l1.forget
+    # Also flag GatPoly fully inside Activ (zero extension)
+    gat_c_l2 = gatpoly_drw.inside(activ_drw)
+    gat_c_l2.output('Gat.c', "5.8. Gat.c Min. GatPoly extension over Activ (end cap) is #{gat_c_value} um")
+    gp_nsram.forget
+    gat_c_l2.forget
+
+    # Rule Gat.e: Min. GatPoly area (µm²) is 0.09 um²
+    logger.info('Executing rule Gat.e')
+    gat_e_value = drc_rules['Gat_e'].to_f
+    gat_e = gatpoly_drw.with_area(nil, gat_e_value.um2)
+    gat_e.output('Gat.e', "5.8. Gat.e Min. GatPoly area is #{gat_e_value} µm²")
+    gat_e.forget
+
+    # Rule Gat.f: 45-degree and 90-degree angles for GatPoly on Activ area are not allowed
+    logger.info('Executing rule Gat.f')
+    gate = activ_drw.and(gatpoly_drw)
+    gate_no_svaricap = gate.not(svaricap)
+    gat_f = gate_no_svaricap.ext_rectangles(inverted: true)
+    gat_f.output('Gat.f',
+                 '5.8. Gat.f 45-degree and 90-degree angles for GatPoly on Activ area are not allowed')
+    gate.forget
+    gate_no_svaricap.forget
+    gat_f.forget
+
     # Rule Gat.g: Min. GatPoly width for 45-degree bent shapes if the bend GatPoly length is > 0.39 µm is 0.16 um
     logger.info('Executing rule Gat.g')
     gat_g_value = drc_rules['Gat_g'].to_f

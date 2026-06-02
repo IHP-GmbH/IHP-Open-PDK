@@ -34,6 +34,27 @@ if TABLES.include?('activfiller') || FEOL
     logger.info('Tiling mode is enabled for Activ:filler table.')
   end
 
+  # Rule AFil.a: Max. Activ:filler width is 5.00 um
+  logger.info('Executing rule AFil.a')
+  afil_a_value = drc_rules['AFil_a'].to_f
+  afil_a = activ_filler.sized((-afil_a_value / 2.0).um).sized((afil_a_value / 2.0).um)
+  afil_a.output('AFil.a', "5.6. AFil.a Max. Activ:filler width is #{afil_a_value} um")
+  afil_a.forget
+
+  # Rule AFil.a1: Min. Activ:filler width is 1.00 um
+  logger.info('Executing rule AFil.a1')
+  afil_a1_value = drc_rules['AFil_a1'].to_f
+  afil_a1 = activ_filler.width(afil_a1_value.um, euclidian)
+  afil_a1.output('AFil.a1', "5.6. AFil.a1 Min. Activ:filler width is #{afil_a1_value} um")
+  afil_a1.forget
+
+  # Rule AFil.b: Min. Activ:filler space is 0.42 um
+  logger.info('Executing rule AFil.b')
+  afil_b_value = drc_rules['AFil_b'].to_f
+  afil_b = activ_filler.ext_space(afil_b_value.um)
+  afil_b.output('AFil.b', "5.6. AFil.b Min. Activ:filler space is #{afil_b_value} um")
+  afil_b.forget
+
   # Rule AFil.c1: Min. Activ:filler space to Activ is 0.42 um
   logger.info('Executing rule AFil.c1')
   afil_c1_value = drc_rules['AFil_c1'].to_f
@@ -70,6 +91,14 @@ if TABLES.include?('activfiller') || FEOL
     afil_e = trans_drw.sep(activ_filler, afil_e_value.um, euclidian)
     afil_e.output('AFil.e', "5.6. AFil.e Min. Activ:filler space to TRANS is #{afil_e_value} um")
     afil_e.forget
+
+    # Rule AFil.i: Min. Activ:filler space to edges of PWell:block is 1.50 um
+    logger.info('Executing rule AFil.i')
+    afil_i_value = drc_rules['AFil_i'].to_f
+    afil_i = activ_filler.ext_outside(pwell_block).ext_separation(pwell_block, afil_i_value.um,
+                                                                   min_angle: 90, max_angle: 180, include_min_angle: false)
+    afil_i.output('AFil.i', "5.6. AFil.i Min. Activ:filler space to edges of PWell:block is #{afil_i_value} um")
+    afil_i.forget
 
     # Rule AFil.j: Min. nSD:block and SalBlock enclosure of Activ:filler inside PWell:block is 0.25 um
     logger.info('Executing rule AFil.j')

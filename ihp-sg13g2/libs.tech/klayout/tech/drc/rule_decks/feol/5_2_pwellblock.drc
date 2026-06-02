@@ -26,6 +26,36 @@ if TABLES.include?('pwellblock') || FEOL
   # Pwell:block derivations
 
   unless PRECHECK_DRC
+    # Rule PWB.a: Min. PWell:block width is 0.62 um
+    logger.info('Executing rule PWB.a')
+    pwb_a_value = drc_rules['PWB_a'].to_f
+    pwb_a_l = pwell_block.width(pwb_a_value.um, euclidian)
+    pwb_a_l.output('PWB.a',
+                   "5.2. PWB.a Min. PWell:block width is #{pwb_a_value} um")
+    pwb_a_l.forget
+
+    # Rule PWB.b: Min. PWell:block space or notch is 0.62 um
+    logger.info('Executing rule PWB.b')
+    pwb_b_value = drc_rules['PWB_b'].to_f
+    pwb_b_l = pwell_block.ext_space(pwb_b_value.um, consider_intersecting_edges: false, polygon_output: true)
+    pwb_b_l.output('PWB.b',
+                   "5.2. PWB.b Min. PWell:block space or notch is #{pwb_b_value} um")
+    pwb_b_l.forget
+
+    # Rule PWB.c: Min. PWell:block space to NWell is 0.62 um
+    logger.info('Executing rule PWB.c')
+    pwb_c_value = drc_rules['PWB_c'].to_f
+    # Related NWell: NWell shapes that interact with or are inside PWell:block
+    pwb_c_related_nwell = nwell_drw.not_inside(pwell_block).ext_interacting(pwell_block).ext_or(nwell_drw.inside(pwell_block))
+    # Unrelated NWell: NWell shapes with no spatial relation to PWell:block
+    pwb_c_unrelated_nwell = nwell_drw.ext_not(pwb_c_related_nwell)
+    pwb_c_l = pwb_c_unrelated_nwell.ext_separation(pwell_block, pwb_c_value.um, consider_touch_points: false, include_min_angle: false)
+    pwb_c_l.output('PWB.c',
+                   "5.2. PWB.c Min. PWell:block space to NWell is #{pwb_c_value} um")
+    pwb_c_related_nwell.forget
+    pwb_c_unrelated_nwell.forget
+    pwb_c_l.forget
+
     # Rule PWB.e: Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell is 0.31 um
     logger.info('Executing rule PWB.e')
     pwb_e_value = drc_rules['PWB_e'].to_f
