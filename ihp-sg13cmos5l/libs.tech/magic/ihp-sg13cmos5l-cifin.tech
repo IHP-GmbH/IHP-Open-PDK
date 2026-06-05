@@ -51,26 +51,20 @@ style  sg13cmos5l variants ()
  ignore MET4NORCX
  ignore MET5NORCX
 
-# Recast PNP area using BIPOLARID as an identifier.  This is valid
-# for SG13CMOS5L because there are no NPN SiGe bipolars in this
-# process variant.
- templayer pnparea DIFF
- and PSD
- and-not THKOX
- and-not SBLK
- and-not NSDBLOCK
- and-not DIODE
- and BIPOLARID
- grow 1050
- and NWELL
+ templayer pnpid NWELL
+ grow 500
+ tagged pnpMPA
+ shrink 500
 
- layer pnp pnparea
+ layer pnp pnpid
 
  layer nwell NWELL,WELLPIN
+ and-not pnpid
  labels NWELL
  labels WELLPIN port
 
  templayer nwellarea NWELL
+ and-not pnpid
  copyup nwelcheck
 
  # Copy nwell areas up for diffusion checks
@@ -226,7 +220,6 @@ style  sg13cmos5l variants ()
  and THKOX
  and-not isoarea
  and-not DIODE
- and-not BIPOLARID
  and-not POLY
  labels DIFF
 
@@ -234,7 +227,6 @@ style  sg13cmos5l variants ()
  and isoarea
  and SBLK
  and-not NWELL
- and-not BIPOLARID
  grow 200
  and DIFFMASK
  and PSD
@@ -285,8 +277,9 @@ style  sg13cmos5l variants ()
  and-not PSD
  copyup nsubcheck
 
- templayer ntaparea nsdarea
+ templayer ntaparea
  tagged well DIFF
+ and nsdarea
  and-not vararea
  and-not DIGITALID
 
@@ -309,8 +302,9 @@ style  sg13cmos5l variants ()
  and-not THKOX,hvcheck
  copyup psubcheck
 
- templayer ptaparea psdarea
+ templayer ptaparea
  tagged sub! DIFF
+ and psdarea
  and SUBCUT,ptapcheck
  and-not DIGITALID
  copyup ptapcheck
@@ -353,15 +347,16 @@ style  sg13cmos5l variants ()
  and THKOX,hvcheck
  copyup hvnsubcheck
 
- templayer hvntaparea hvnsdarea
+ templayer hvntaparea
  tagged well DIFF
+ and hvnsdarea
  and-not DIGITALID
 
  layer hvntap hvntaparea
  labels DIFF
 
  layer hvnsd hvnsdarea
- and-not havntaparea
+ and-not hvntaparea
  labels DIFF
 
  # Copy nsub areas up for contact checks
@@ -376,8 +371,9 @@ style  sg13cmos5l variants ()
  and-not vararea
  copyup hvpsubcheck
 
- templayer hvptaparea hvpsdarea
+ templayer hvptaparea
  tagged sub! DIFF
+ and hvpsdarea
  and-not DIGITALID
 
  layer hvptap hvptaparea
@@ -1058,34 +1054,30 @@ style  sg13cmos5l variants ()
  layer fillblock FILLBLOCK
  labels FILLBLOCK
 
-# Use the obstruction types for fill block on individual layers
- layer obsactive FILLOBSDIFF
- and-not DIFF
- labels FILLOBSDIFF
+# Use mask hints only for fill block on individual layers, so that
+# the fill blockage does not require additional planes or interfere
+# with mask layers on the same plane.
 
- layer obspoly FILLOBSPOLY
- and-not POLY
- labels FILLOBSPOLY
+ templayer diffblock DIFFBLOCK
+ mask-hints DIFFBLOCK
 
- layer obsm1 FILLOBSM1
- and-not MET1
- labels FILLOBSM1
+ templayer polyblock POLYBLOCK
+ mask-hints POLYBLOCK
 
- layer obsm2 FILLOBSM2
- and-not MET2
- labels FILLOBSM2
+ templayer met1block MET1BLOCK
+ mask-hints MET1BLOCK
 
- layer obsm3 FILLOBSM3
- and-not MET3
- labels FILLOBSM3
+ templayer met2block MET2BLOCK
+ mask-hints MET2BLOCK
 
- layer obsm4 FILLOBSM4
- and-not MET4
- labels FILLOBSM4
+ templayer met3block MET3BLOCK
+ mask-hints MET3BLOCK
 
- layer obsm5 FILLOBSM5
- and-not MET5
- labels FILLOBSM5
+ templayer met4block MET4BLOCK
+ mask-hints MET4BLOCK
+
+ templayer met5block MET5BLOCK
+ mask-hints MET5BLOCK
 
  # MOS Varactor
  layer var vararea
@@ -1135,7 +1127,6 @@ style  sg13cmos5l variants ()
  calma DIGITALID 16 0
  calma HEATRES 52 0
  calma HEATTRANS 51 0
- calma BIPOLARID 26 0
  calma PWELLBLK 46 21
  calma EDGESEAL 39 0
  calma IPROBE 8 33
@@ -1208,13 +1199,13 @@ style  sg13cmos5l variants ()
 
  calma LVSTEXT 63 0
 
- calma FILLOBSDIFF  1  23
- calma FILLOBSPOLY  5  23
- calma FILLOBSM1   8  23
- calma FILLOBSM2  10 23
- calma FILLOBSM3  30 23
- calma FILLOBSM4  50 23
- calma FILLOBSM5  126 23
+ calma DIFFBLOCK  1  23
+ calma POLYBLOCK  5  23
+ calma MET1BLOCK  8  23
+ calma MET2BLOCK  10 23
+ calma MET3BLOCK  30 23
+ calma MET4BLOCK  50 23
+ calma MET5BLOCK  126 23
  calma FILLBLOCK  160 0
 
  calma DIFFFILL	  1  22
