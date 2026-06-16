@@ -2,7 +2,7 @@
 Klayout's batch mode. For example:
 
 klayout -n sg13g2 -zz -r sealring.py \
-        -rd width=1300.0 -rd height=1300.0 -rd output=macros/sealring.gds.gz
+        -rd width=1300.0 -rd length=1300.0 -rd output=macros/sealring.gds.gz
 
 """
 # pylint: disable=import-error
@@ -15,14 +15,14 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'sealring'
 
-def generate_sealring(width: float, heigth: float, input: str | None, output: str, offset_x: float, offset_y: float):
+def generate_sealring(length: float, width: float, input: str | None, output: str, offset_x: float, offset_y: float):
     """Function to create a new layout, add the sealring PCell to sealring_top
     and save it somewhere on the filesystem.
 
-    :param width: Width (X-Axis) of the sealring.
+    :param length: Length (X-Axis) of the sealring.
+    :type length: float
+    :param width: Width (Y-Axis) of the sealring.
     :type width: float
-    :param height: Heigth (Y-Axis) of the sealring.
-    :type heigth: float
     :param output: Path and name of the file where the sealring should be written to.
     :type output: str
     :param offset_x: Translation in X direction in µm.
@@ -48,21 +48,21 @@ def generate_sealring(width: float, heigth: float, input: str | None, output: st
             "- Running KLayout with a version that supports Python PCells and properly loads them\n"
             "- Verifying that 'SG13_dev' appears in the Library Browser under PCells"
         )
-    
+
     pcell_decl = lib.layout().pcell_declaration(PCELL)
 
-    # Remove space around the sealring from width/height arguments.
+    # Remove space around the sealring from width/length arguments.
     params = pcell_decl.params_as_hash(pcell_decl.get_parameters())
     edge_box = float(re.sub('[a-zA-Z]+', '', params['edgeBox'].default))
     width = float(width) - edge_box * 2
-    heigth = float(heigth) - edge_box * 2
+    length = float(length) - edge_box * 2
 
     if input:
         top_cell = layout.top_cell()
     else:
         top_cell = layout.cell(layout.add_cell("sealring_top"))
 
-    pcell = layout.add_pcell_variant(lib, pcell_decl.id(), {'w': f'{width}u', 'l': f'{heigth}u'})
+    pcell = layout.add_pcell_variant(lib, pcell_decl.id(), {'w': f'{width}u', 'l': f'{length}u'})
     layout.cell(pcell)
 
     # Convert offset from µm to dbu
@@ -92,9 +92,9 @@ except NameError:
     sys.exit(1)
 
 try:
-    height
+    length
 except NameError:
-    print("Missing height argument. Please define '-rd height=<height>'")
+    print("Missing length argument. Please define '-rd length=<length>'")
     sys.exit(1)
 
 try:
@@ -121,4 +121,4 @@ try:
 except NameError:
     input = None
 
-generate_sealring(width, height, input, output, offset_x, offset_y)  # pylint: disable=undefined-variable
+generate_sealring(length, width, input, output, offset_x, offset_y)  # pylint: disable=undefined-variable
