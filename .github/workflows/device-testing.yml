@@ -1,0 +1,237 @@
+name: Device Testing (matrix)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NGSPICE_VERSION: "44.2"
+      NGSPICE_PREFIX: "${{ github.workspace }}/.cache/ngspice" # cache-friendly
+      OPENVAF_VERSION: "23_5_0"
+      OPENVAF_HOME: "${{ github.workspace }}/.cache/openvaf"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Python
+        id: py
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libx11-dev libxaw7-dev libxmu-dev libxpm-dev \
+            libreadline-dev libfftw3-dev \
+            bison flex libtool automake autoconf \
+            pkg-config git wget ca-certificates
+
+      - name: Restore ngspice cache
+        id: cache-ngspice
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NGSPICE_PREFIX }}
+          key: ngspice-${{ runner.os }}-${{ env.NGSPICE_VERSION }}
+
+      - name: Build & install ngspice (with OSDI)
+        if: ${{ ! (steps.cache-ngspice.outputs.cache-hit) }}
+        run: |
+          set -euxo pipefail
+          mkdir -p "${NGSPICE_PREFIX}"
+          cd /tmp
+          wget -O ngspice-${NGSPICE_VERSION}.tar.gz \
+            "https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/${NGSPICE_VERSION}/ngspice-${NGSPICE_VERSION}.tar.gz"
+          tar -xf ngspice-${NGSPICE_VERSION}.tar.gz
+          mkdir -p ngspice-${NGSPICE_VERSION}/build
+          cd ngspice-${NGSPICE_VERSION}/build
+          ../configure \
+            --prefix="${NGSPICE_PREFIX}" \
+            --enable-osdi \
+            --enable-xspice \
+            --with-readline=yes \
+            --disable-debug \
+            --with-x
+          make -j"$(nproc)"
+          make install
+
+      - name: Add ngspice to PATH
+        run: echo "${NGSPICE_PREFIX}/bin" >> "$GITHUB_PATH"
+
+      - name: Verify ngspice
+        run: |
+          which ngspice
+          ngspice -v
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ihp-sg13g2/libs.tech/ngspice/testing/devices/requirements.txt
+
+      - name: Setup PYTHONPATH
+        run: |
+          echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> $GITHUB_ENV
+
+      - name: Restore OpenVAF cache
+        id: cache-openvaf
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OPENVAF_HOME }}
+          key: openvaf-${{ runner.os }}-${{ env.OPENVAF_VERSION }}
+
+      - name: Download OpenVAF (if not cached)
+        if: ${{ ! (steps.cache-openvaf.outputs.cache-hit) }}
+        run: |
+          set -euxo pipefail
+          mkdir -p "${OPENVAF_HOME}"
+          cd "${OPENVAF_HOME}"
+          wget https://openva.fra1.cdn.digitaloceanspaces.com/openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz
+          tar -xzf openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz
+          rm -f openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz
+          chmod +x openvaf
+
+      - name: Add OpenVAF to PATH
+        run: echo "${OPENVAF_HOME}" >> "$GITHUB_PATH"
+
+      - name: Verify OpenVAF
+        run: |
+          which openvaf
+          openvaf --version
+
+      - name: Restore OSDI cache
+        id: cache-osdi
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi
+          key: osdi-${{ runner.os }}-${{ env.OPENVAF_VERSION }}-${{ hashFiles('ihp-sg13g2/libs.tech/verilog-a/**') }}
+
+      - name: Build OSDI files from Verilog-A (if cache miss)
+        if: ${{ ! (steps.cache-osdi.outputs.cache-hit) }}
+        run: |
+          set -euxo pipefail
+          cd ${{ github.workspace }}/ihp-sg13g2/libs.tech/verilog-a
+          chmod +x openvaf-compile-va.sh
+          ./openvaf-compile-va.sh
+
+      - name: Verify OSDI files were created
+        run: ls -la ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi/
+
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          [
+            nmos_lv,
+            pmos_lv,
+            nmos_hv,
+            pmos_hv,
+            pnp_mpa,
+            npn13g2,
+            npn13g2l,
+            npn13g2v,
+          ]
+    name: device=${{ matrix.case }}
+    env:
+      NGSPICE_VERSION: "44.2"
+      NGSPICE_PREFIX: "${{ github.workspace }}/.cache/ngspice"
+      OPENVAF_VERSION: "23_5_0"
+      OPENVAF_HOME: "${{ github.workspace }}/.cache/openvaf"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Python
+        id: py
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-v1
+
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-6 libxaw7 libxmu6 libxpm4 \
+            libreadline8 libfftw3-dev \
+            ca-certificates
+
+      - name: Restore ngspice cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NGSPICE_PREFIX }}
+          key: ngspice-${{ runner.os }}-${{ env.NGSPICE_VERSION }}
+
+      - name: Add ngspice to PATH
+        run: echo "${NGSPICE_PREFIX}/bin" >> "$GITHUB_PATH"
+
+      - name: Restore OpenVAF cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OPENVAF_HOME }}
+          key: openvaf-${{ runner.os }}-${{ env.OPENVAF_VERSION }}
+
+      - name: Add OpenVAF to PATH
+        run: echo "${OPENVAF_HOME}" >> "$GITHUB_PATH"
+
+      - name: Verify OpenVAF
+        run: |
+          which openvaf
+          openvaf --version
+
+      - name: Restore OSDI cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi
+          key: osdi-${{ runner.os }}-${{ env.OPENVAF_VERSION }}-${{ hashFiles('ihp-sg13g2/libs.tech/verilog-a/**') }}
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ihp-sg13g2/libs.tech/ngspice/testing/devices/requirements.txt
+
+      - name: Setup PYTHONPATH
+        run: |
+          echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> $GITHUB_ENV
+
+      - name: check toolchain
+        run: |
+          which ngspice
+          ngspice -v
+          ls -la ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi/
+
+      - name: Run param test for this device
+        working-directory: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices
+        run: |
+          # run only the single parametrized case as its own job
+          python -m pytest --tb=short -p no:capture \
+            'verification/test_devices.py::test_devices[${{ matrix.case }}]'
