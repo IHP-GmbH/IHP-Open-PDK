@@ -127,7 +127,7 @@ proc inductor_s {} {
 proc inductor_nr {} {
 
     set cellId [iPDK_getCurrentInst]
-    set cell   [iPDK_getInstCellName $cellId]
+    set cell [iPDK_getInstCellName $cellId]_
 
     set tmpnr [expr int([iPDK_getParamValue nr_r $cellId])]
 
@@ -155,7 +155,7 @@ proc inductor_nr {} {
     if {$tmpnr != "" && $tmpNrmax!="" && $tmpNrmax<$tmpnr} {
         hiGetAttention
         hiGetAttention
-        CbMessage "WARNING: wrong number of turns: using maximum number ${tmpNrmax}%L!!"
+        CbMessage "WARNING: wrong number of turns: using maximum number ${tmpNrmax}!!"
         iPDK_setParamValue nr_r $tmpNrmax $cellId
         set tmpnr $tmpNrmax
     }
@@ -216,7 +216,7 @@ proc inductor_d {} {
         hiGetAttention
         CbMessage "WARNING: wrong distance in the center of inductor: using the minimum distance ${tmpDminS}!!"
         iPDK_setParamValue d $tmpDminS $cellId
-        set tmpd $tmpDminS
+        set tmpd [Stof $tmpDminS]
     }
 
     if {$tmpd!="" && $tmpDmax!="" && $tmpDmax<$tmpd} {

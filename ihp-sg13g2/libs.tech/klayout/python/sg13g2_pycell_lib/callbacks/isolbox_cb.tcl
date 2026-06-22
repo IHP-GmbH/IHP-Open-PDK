@@ -144,7 +144,7 @@ proc isolbox_cb {arg} {
     set b 68.59
     set c 0.56491
 
-    switch arg {
+    switch $arg {
         Bv {
             set bv [Stof [iPDK_getParamValue Bv $cellId]]
             if {$bv <= 10.8} {
@@ -170,7 +170,7 @@ proc isolbox_cb {arg} {
                     set w 10
                     set bv [expr $a-$b*pow($c,$w)]
                     CbMessage "WARNING: Bv reset according to maximum PWellBlock width 10u"
-                    hiGetAttention(
+                    hiGetAttention
                     hiGetAttention
                     iPDK_setParamValue Bv [Ftos $bv 2] $cellId
                 }
@@ -179,8 +179,8 @@ proc isolbox_cb {arg} {
             iPDK_setParamValue pwell_w ${w}u $cellId
         }
         calculate {
-            set comp [iPDK_getParamValue compute $cellId]
-            if {$comp == "Bv"} {
+            set calc [iPDK_getParamValue calculate $cellId]
+            if {$calc == "Bv"} {
                 isolbox_cb pwell_w
             } else {
                 isolbox_cb Bv

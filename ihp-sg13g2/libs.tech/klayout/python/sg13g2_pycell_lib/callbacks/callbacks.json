@@ -28,20 +28,12 @@
     "callbackDefinition": {
         "callbackList": [
             {
-                "devices": ["cmim"],
+                "devices": ["cmim", "rfcmim"],
                 "callbacks": [
                     {
                         "callback": "CbCap",
-                        "pcellParameters": ["C", "w", "l"]
-                    }
-                ]
-            },
-            {
-                "devices": ["rfcmim"],
-                "callbacks": [
-                    {
-                        "callback": "CbCap",
-                        "pcellParameters": ["C", "w", "l"]
+                        "pcellParameters": ["C", "w", "l", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
@@ -50,16 +42,18 @@
                 "callbacks": [
                     {
                         "callback": "CbSVaricap_wl",
-                        "pcellParameters": ["w", "l"]
+                        "pcellParameters": ["w", "l"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
             {
-                "devices": ["dantenna"],
+                "devices": ["dantenna", "dpantenna"],
                 "callbacks": [
                     {
                         "callback": "CbDiode",
-                        "pcellParameters": ["w", "l", "a"]
+                        "pcellParameters": ["w", "l", "a", "p", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
@@ -68,11 +62,63 @@
                 "callbacks": [
                     {
                         "callback": "CbBondpad",
-                        "pcellParameters": ["topMetal", "bottomMetal"]
+                        "pcellParameters": ["topMetal", "bottomMetal"],
+                        "usePcellParameterAsArgument": "true"
                     },
                     {
                         "callback": "bondpad_cb",
-                        "pcellParameters": ["hwquota", "diameter", "padType", "passEncl", "FlipChip"]
+                        "pcellParameters": ["hwquota", "diameter", "padType", "passEncl", "FlipChip"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["inductor2", "inductor3"],
+                "callbacks": [
+                    {
+                        "callback": "inductor_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_s",
+                        "pcellParameters": ["s"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_nr",
+                        "pcellParameters": ["nr_r"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_d",
+                        "pcellParameters": ["d"],
+                        "usePcellParameterAsArgument": "false"
+                    }
+                ]
+            },
+            {
+                "devices": ["isolbox"],
+                "callbacks": [
+                    {
+                        "callback": "isol_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isol_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isol_well",
+                        "pcellParameters": ["wellwidth"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isolbox_cb",
+                        "pcellParameters": ["Bv", "calculate", "pwell_w"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             }
