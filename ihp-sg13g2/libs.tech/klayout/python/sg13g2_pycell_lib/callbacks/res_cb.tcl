@@ -1,3 +1,20 @@
+########################################################################
+#
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the GNU General Public License, Version 3.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.gnu.org/licenses/gpl-3.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
 
 #***********************************************************************************************************************
 # CbResCalc
@@ -8,13 +25,6 @@ proc CbResCalc {calc r l w b ps cell} {
     global SG13_EPSILON
     global SG13_TECHNOLOGY
     
-    set suffix ""
-    if {$SG13_TECHNOLOGY == "SG13G2"} {
-        set suffix "G2"
-    }
-    if {$SG13_TECHNOLOGY == "SG13D7"} {
-        set suffix "D7"
-    }
     
     set rspec  [Stof [techGetParam ${cell}_rspec ]]                       ;# specific body res. per sq. (float)
     set rkspec [Stof [techGetParam ${cell}_rkspec]]                       ;# res. per single contact (float)
@@ -35,7 +45,7 @@ proc CbResCalc {calc r l w b ps cell} {
     set b  [Stof $b ]
     set ps [Stof $ps]
 
-    if {[Less $w $minW 1u} {
+    if {[Less $w $minW 1u]} {
          set w $minW ;# avoid divide by zero errors in case of problems
     }
      
@@ -50,14 +60,14 @@ proc CbResCalc {calc r l w b ps cell} {
             set result [expr {$l/$weff*($b+1)*$rspec + (2.0/$kappa*$weff+$ps)*$b/$weff*$rspec + 2.0/$w*$rzspec}]
         }
         l {
-            set weff [expr {w+lwd}]
+            set weff [expr {$w+$lwd}]
             set result [expr {($weff*$r - $b*(2.0/$kappa*$weff+$ps)*$rspec - 2.0*$weff/$w*$rzspec )/($rspec*($b+1))*1e-6}] ;# in [um]
         }
         w {
             set tmp    [expr {$r-2*$b*$rspec/$kappa}]
             set p      [expr {($r*$lwd-$l*($b+1)*$rspec-(2*$lwd/$kappa+$ps)*$b*$rspec-2*$rzspec)/$tmp}]
             set q      [expr {-2*$lwd*$rzspec/$tmp}]
-            set w      [expr {-$p/2+sqrt($p*$p/4-$q}]
+            set w      [expr {-$p/2+sqrt($p*$p/4-$q)}]
             set result [expr {[Snap $w] * 1.0e-6}] ;# -> [m]
         }
     }
@@ -72,9 +82,19 @@ proc CbResCurrent {w cell} { ;# w must be float in [m], i is given as a string
 
     global SG13_LIBRARY
     global SG13_EPSILON
+    global SG13_TECHNOLOGY
+
+    set suffix ""
+    if {$SG13_TECHNOLOGY == "SG13G2"} {
+        set suffix "G2"
+    }
+    if {$SG13_TECHNOLOGY == "SG13D7"} {
+        set suffix "D7"
+    }
+
     
-    set ikspec [Stof [techGetParam  ${cell}_ikspec]]
-    set ipspec [Stof [techGetParam  ${cell}_ipspec]]
+    set ikspec [Stof [techGetParam  ${cell}${suffix}_ikspec]]
+    set ipspec [Stof [techGetParam  ${cell}${suffix}_ipspec]]
 
     set poly_over_cont [techGetParam  "Cnt_d"]   
     set cont_size      [techGetParam  "Cnt_a"] 
@@ -127,7 +147,10 @@ proc CbRes {param} {
     set w  [IsNumberString [iPDK_getParamValue w  $cellId]]
     set l  [IsNumberString [iPDK_getParamValue l  $cellId]]
     set ps [IsNumberString [iPDK_getParamValue ps $cellId]]
-    set b  [expr int([IsNumberString [iPDK_getParamValue b  $cellId]])]
+    set b  [IsNumberString [iPDK_getParamValue b $cellId]]
+    if {$b != ""} {
+        set b [expr int($b)]
+    }
     
     set rold  $r
     set wold  $w
@@ -161,12 +184,13 @@ proc CbRes {param} {
                 }
 
                 if {[Greater $l $maxL 1u]} {
-                    CbMessage "l too large"}
+                    CbMessage "l too large"
                     set l $maxL
                 }
                 iPDK_setParamValue l [Ftos $l 3] $cellId
             } else {
                 CbMessage "INFO: l contains an expression and/or design variable. Parameter check not executed!\n"
+            }
         }
         w {
             if {$w != 0} {
@@ -219,13 +243,7 @@ proc CbRes {param} {
     
     set calc [iPDK_getParamValue Calculate $cellId]
     
-    #puts $r
-    #puts $w
-    #puts $l
-    #puts $ps
-    #puts $b
-    
-    if {$r!=0 && $w!=0 && $l!=0 && $ps!=0 && $b!=0} {
+    if {$r!=0 && $w!=0 && $l!=0 && $ps!=0 && $b!=""} {
         # now recalculate other params
         switch $calc {
             R {

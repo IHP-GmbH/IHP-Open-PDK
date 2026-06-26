@@ -19,11 +19,13 @@
     "moduleList": [
         "parameters.tcl",
         "util.tcl",
+        "tech.tcl",
         "cap_cb.tcl",
         "diode_cb.tcl",
         "bondpad_cb.tcl",
         "inductor_cb.tcl",
-        "isolbox_cb.tcl"
+        "isolbox_cb.tcl",
+        "res_cb.tcl"
     ],
     "callbackDefinition": {
         "callbackList": [
@@ -118,6 +120,27 @@
                     {
                         "callback": "isolbox_cb",
                         "pcellParameters": ["Bv", "calculate", "pwell_w"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["rsil"],
+                "callbacks": [
+                    {
+                        "callback": "CbRes",
+                        "pcellParameters": ["R", "w", "l", "ps", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["rhigh", "rppd"],
+                "callbacks": [
+                    {
+                        "callback": "CbRes",
+                        "pcellParameters": ["R", "w", "l", "b", "ps", "Calculate", "Recommendation"],
+                        "parameterMappings": ["Recommendation➜Calculate"],
                         "usePcellParameterAsArgument": "true"
                     }
                 ]
