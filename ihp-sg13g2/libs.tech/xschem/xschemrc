@@ -483,10 +483,10 @@ proc stdcell_select_view_dialog {} {
         -variable ::stdcell_view \
         -value subcircuit
 
-    radiobutton .stdcell_view_dialog.pex \
-        -text "PEX schematic" \
+    radiobutton .stdcell_view_dialog.custom \
+        -text "Custom schematic" \
         -variable ::stdcell_view \
-        -value pex
+        -value custom
 
     radiobutton .stdcell_view_dialog.empty \
         -text "Empty schematic" \
@@ -495,7 +495,7 @@ proc stdcell_select_view_dialog {} {
         
      #   .stdcell_view_dialog.empty 
     pack .stdcell_view_dialog.subckt \
-         .stdcell_view_dialog.pex \
+         .stdcell_view_dialog.custom \
           .stdcell_view_dialog.empty \
         -side top \
         -anchor w \
@@ -528,8 +528,8 @@ proc hierarchy_config {symname} {
         xschem]]
 
     switch -- $stdcell_view {
-        pex {
-            set suffix "_pex"
+        custom {
+            set suffix "_custom"
         }
         empty {
             set suffix "_empty"
