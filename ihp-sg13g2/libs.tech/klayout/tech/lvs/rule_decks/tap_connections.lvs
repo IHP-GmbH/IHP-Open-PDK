@@ -30,3 +30,13 @@ connect(ntap1_well, nwell_drw)
 # ptap1
 connect(ptap1_tie, cont_drw)
 connect(ptap1_sub, pwell)
+
+# When tap extraction is disabled (see DISABLE_TAP_EXTRACTION in sg13g2.lvs), the
+# ntap1/ptap1 devices are not created. The n+/p+ tie is physically the same node as
+# its well/substrate, so merge them here. This keeps the well/substrate bulk connected
+# to the power nets through the tie contact, matching Magic+Netgen LVS (which does not
+# model taps as devices). See IHP-Open-PDK issue #955.
+if DISABLE_TAP_EXTRACTION
+  connect(ntap1_tie, ntap1_well)
+  connect(ptap1_tie, ptap1_sub)
+end
