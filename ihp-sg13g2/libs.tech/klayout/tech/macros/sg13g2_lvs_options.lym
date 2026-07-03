@@ -54,7 +54,7 @@ module SG13G2LVSOptions
     'no_series_res' => false,
     'no_parallel_res' => false,
     'combine_devices' => false,
-    'enable_tap_extraction' => false,
+    'disable_tap_extraction' => false,
     'top_lvl_pins' => false,
     'ignore_top_ports_mismatch' => false,
     'purge' => false,
@@ -271,11 +271,11 @@ module SG13G2LVSOptions
       options['combine_devices'],
       'Enable generic device combination.'
     )
-    @widgets[:enable_tap_extraction] = create_check_box(
-      'Enable ntap/ptap Extraction',
-      options['enable_tap_extraction'],
-      'Extract ntap1/ptap1 as devices (schematic must contain matching taps). ' \
-      'Disabled by default to align with Magic+Netgen LVS (CLI: --enable_tap_extraction).'
+    @widgets[:disable_tap_extraction] = create_check_box(
+      'Disable ntap/ptap Extraction',
+      options['disable_tap_extraction'],
+      'Skip ntap1/ptap1 device extraction so taps are not required in the schematic ' \
+      '(aligns with Magic+Netgen LVS). Extraction is enabled by default (CLI: --disable_tap_extraction).'
     )
     @widgets[:purge] = create_check_box(
       'Purge',
@@ -356,7 +356,6 @@ module SG13G2LVSOptions
       'Case-sensitive implicit net patterns. Use only when some nets are intentionally connected at higher hierarchy.'
     )
     comparison_layout.addRow('Implicit Nets:', @widgets[:implicit_nets_adv])
-    comparison_layout.addRow('', @widgets[:enable_tap_extraction])
 
     netlist_ops_group = RBA::QGroupBox.new('Netlist Formatting')
     netlist_ops_layout = RBA::QFormLayout.new(netlist_ops_group)
@@ -368,6 +367,7 @@ module SG13G2LVSOptions
     simplification_group = RBA::QGroupBox.new('Simplification and Reduction')
     simplification_layout = RBA::QFormLayout.new(simplification_group)
     simplification_layout.setSpacing(8)
+    simplification_layout.addRow('', @widgets[:disable_tap_extraction])
     simplification_layout.addRow('', @widgets[:no_simplify])
     simplification_layout.addRow('', @widgets[:no_series_res])
     simplification_layout.addRow('', @widgets[:no_parallel_res])
@@ -644,7 +644,7 @@ module SG13G2LVSOptions
     options['no_series_res'] = @widgets[:no_series_res].checked
     options['no_parallel_res'] = @widgets[:no_parallel_res].checked
     options['combine_devices'] = @widgets[:combine_devices].checked
-    options['enable_tap_extraction'] = @widgets[:enable_tap_extraction].checked
+    options['disable_tap_extraction'] = @widgets[:disable_tap_extraction].checked
     options['purge'] = @widgets[:purge].checked
     options['purge_nets'] = @widgets[:purge_nets].checked
   end

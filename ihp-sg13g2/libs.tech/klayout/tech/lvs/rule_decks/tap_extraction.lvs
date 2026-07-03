@@ -23,11 +23,12 @@
 
 logger.info('Starting Taps EXTRACTION')
 
-# ntap1/ptap1 device extraction is gated by ENABLE_TAP_EXTRACTION (see sg13g2.lvs).
-# When disabled (default), taps are not extracted as devices so the schematic does
-# not need to contain them, matching Magic+Netgen LVS behavior. The tap tie regions
-# are still connected to their well/substrate nets via tap_connections.lvs.
-if ENABLE_TAP_EXTRACTION
+# ntap1/ptap1 device extraction is gated by DISABLE_TAP_EXTRACTION (see sg13g2.lvs).
+# Extraction is enabled by default. When it is disabled, taps are not extracted as
+# devices so the schematic does not need to contain them, matching Magic+Netgen LVS
+# behavior. The tap tie regions are still connected to their well/substrate nets via
+# tap_connections.lvs.
+unless DISABLE_TAP_EXTRACTION
   # ntap1
   logger.info('Extracting ntap1 device')
   # ntap1 is extracted with the diode extractor because the geometry is a nested
@@ -49,5 +50,5 @@ if ENABLE_TAP_EXTRACTION
     extract_devices(diode('ptap1', CustomTap), { 'P' => ptap1_tie, 'N' => ptap1_sub })
   }
 else
-  logger.info('ENABLE_TAP_EXTRACTION is disabled: skipping ntap1/ptap1 device extraction.')
+  logger.info('DISABLE_TAP_EXTRACTION is enabled: skipping ntap1/ptap1 device extraction.')
 end
