@@ -457,6 +457,7 @@ if {[file exists ${PDK_ROOT}/ihp-sg13_modules]} {
 
 # stdcells schemtic view mode
 set stdcell_view "subcircuit"
+set stdcell_sym_type "subcircuit"
 
 proc stdcell_select_view_dialog {} {
     if {[winfo exists .stdcell_view_dialog]} {
@@ -489,14 +490,14 @@ proc stdcell_select_view_dialog {} {
         -value custom
 
     radiobutton .stdcell_view_dialog.empty \
-        -text "Empty schematic" \
+        -text "Primitive (no hierarchy)" \
         -variable ::stdcell_view \
         -value empty
         
      #   .stdcell_view_dialog.empty 
     pack .stdcell_view_dialog.subckt \
-         .stdcell_view_dialog.custom \
           .stdcell_view_dialog.empty \
+         .stdcell_view_dialog.custom \
         -side top \
         -anchor w \
         -padx 20 \
@@ -505,7 +506,15 @@ proc stdcell_select_view_dialog {} {
     button .stdcell_view_dialog.ok \
         -text "OK" \
         -command {
-            puts "stdcell_view set to: $::stdcell_view"
+            switch -- $::stdcell_view {
+                empty {
+                    set ::stdcell_sym_type "primitive"
+                }
+                default {
+                    set ::stdcell_sym_type "subcircuit"
+                }
+            }
+            puts "stdcell_view set to: $::stdcell_view, stdcell_sym_type=$::stdcell_sym_type"
             destroy .stdcell_view_dialog
         }
 
@@ -516,7 +525,8 @@ proc stdcell_select_view_dialog {} {
 
 proc hierarchy_config {symname} {
     global stdcell_view
-
+    global stdcell_sym_type
+    
     set cell [file rootname [file tail $symname]]
 
     set sch_dir [file normalize [file join \
@@ -531,9 +541,6 @@ proc hierarchy_config {symname} {
         custom {
             set suffix "_custom"
         }
-        empty {
-            set suffix "_empty"
-        }
         default {
             set suffix ""
         }
@@ -546,4 +553,9 @@ proc hierarchy_config {symname} {
     }
 
     return $sch
+}
+
+proc symtype {} {
+    global stdcell_sym_type
+    return $stdcell_sym_type
 }

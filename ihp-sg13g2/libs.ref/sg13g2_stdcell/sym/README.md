@@ -39,18 +39,18 @@ not resolve the intended standard-cell schematics for netlisting.**
 By default, each Xschem symbol descends into the corresponding standard-cell
 schematic, and the generated netlist includes that schematic.
 
-### Empty Schematic
+### Primitive (no hierarchy)
 
-To use a symbol without descending into its default schematic, provide an empty
-schematic named `<cell>_empty.sch` in
-`$PDK_ROOT/$PDK/libs.ref/sg13g2_stdcell/sch/xschem/`. In the empty schematic add the input and output port and connect them to `noconnect` element. This way prevents pin mischmatch during netlist generation.
+To use a symbol without descending into its schematic, switch the symbol type to
+`primitive`. This causes the netlister to emit the cell inline using the symbol's
+`format` string instead of a subcircuit call.
 
 Open the menu via `IHP -> Select stdcell hierarchy`. In the
-"Stdcell schematic view" dialog choose "Empty schematic" and press OK.
+"Stdcell schematic view" dialog choose "Primitive (no hierarchy)" and press OK.
 
-After this selection, Xschem uses `<cell>_empty.sch` for each standard cell when
-that file exists. If no matching empty schematic exists, Xschem falls back to
-the default schematic.
+No `_empty.sch` file is required or used in this mode. The symbol `type` is
+changed from `subcircuit` to `primitive`, so Xschem does not descend into any
+schematic during netlisting.
 
 When using this mode, the top-level design must provide the required subcircuit
 definition, typically through `.include`.
