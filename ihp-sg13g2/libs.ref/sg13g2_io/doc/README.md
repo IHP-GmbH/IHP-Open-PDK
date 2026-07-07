@@ -28,16 +28,16 @@ It also contains externally contributed files:
 18.06.2026  I/O Update 2 resolved issues:
 ==========================================================================================
 	  - VIH/VIL input threshold parameters are fixed (cdl and layout) to be in spec.
-	  - Receiver (input): Delay ballance is fixed (cdl and layout).
+	  - Receiver (input): Delay balance is fixed (cdl and layout).
 	  - Issue #401. Analog Pad current capability is improved.
 	  - Issue #385. M2 connections in ground pads are improved.
 	  - Issue #419. Antenna diode structures were added to core inputs (layout fix).
-	  - Isssue #835. Layout of edges of cells is aligned to provide abuttment without DRC errors.
-	  - Issue #676. Liberty models are updated. New look-up tabes with increased loads are used. Fillers and corner are added in Liberty and verilog model.
+	  - Issue #835. Layout of edges of cells is aligned to provide abutment without DRC errors.
+	  - Issue #676. Liberty models are updated. New look-up tables with increased loads are used. Fillers and corner are added in Liberty and verilog model.
 	  - Issue #909. Contacts are added in Filler200 cell.
 	  - Celllist is updated: subblocks are not library cells.
-	  - "sg13g2_Galery" top assambly is removed from GDS 2 layout view.
+	  - "sg13g2_Galery" top layout is removed from GDS 2 layout view.
 	  - CDL netlist is regenerated.
-	  - SPICE netlist is regenerated and renamed to sg13g2_io.spice to align the naming with sg13g2_stdcell library.
+	  - SPICE netlist is regenerated and renamed to "sg13g2_io.spice" to align the naming with sg13g2_stdcell library.
 	  - Pin direction in LEF is fixed.
 	   
