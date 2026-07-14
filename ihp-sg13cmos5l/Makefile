@@ -88,6 +88,14 @@ test-LVS-switch: env
 	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS switch test"
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-switch
 
+#=================================
+# ----- test-cap-mom-sweep -------
+#=================================
+
+test-cap-mom-sweep: env
+	@. $(VENV_RUN_COMMAND); echo "Running cap_mom PCell DRC+LVS sweep"
+	@. $(VENV_RUN_COMMAND); python3 libs.tech/klayout/sg13cmos5l_tests/cap_mom_sweep.py
+
 #==========================
 # --------- HELP ----------
 #==========================
@@ -102,5 +110,6 @@ help:
 	@echo "... test-LVS-<device>          (Run LVS for specific device group             )"
 	@echo "... test-LVS-cells             (Run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
+	@echo "... test-cap-mom-sweep         (Run cap_mom PCell DRC+LVS configuration sweep  )"
 
-.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch help
+.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-cap-mom-sweep help

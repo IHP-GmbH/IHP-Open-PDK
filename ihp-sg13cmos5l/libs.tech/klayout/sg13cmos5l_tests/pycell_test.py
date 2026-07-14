@@ -78,6 +78,10 @@ pcellPnpMPA = layout.create_cell("pnpMPA", "SG13_dev", {})
 # Sealring (M1-M4-TM1 only)
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 
+# MoM capacitor (M1-M4 thin-metal stack; both characterised feed versions)
+pcellCapMom = layout.create_cell("cap_mom", "SG13_dev", {"feed": "double"})
+pcellCapMomSame = layout.create_cell("cap_mom", "SG13_dev", {"feed": "same"})
+
 # Create top cell and place instances
 top = layout.create_cell("TOP")
 
@@ -116,6 +120,10 @@ top.insert(pya.DCellInstArray(pcellRfpmosHV, pya.DTrans(pya.DVector(30, 60))))
 top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(0, 80))))
 top.insert(pya.DCellInstArray(pcellNoFillerStack, pya.DTrans(pya.DVector(20, 80))))
 top.insert(pya.DCellInstArray(pcellPnpMPA, pya.DTrans(pya.DVector(40, 80))))
+
+# Row 9: MoM capacitors (opposite-side and single-side feed)
+top.insert(pya.DCellInstArray(pcellCapMom, pya.DTrans(pya.DVector(0, 95))))
+top.insert(pya.DCellInstArray(pcellCapMomSame, pya.DTrans(pya.DVector(10, 95))))
 
 # Large structures
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 0))))
