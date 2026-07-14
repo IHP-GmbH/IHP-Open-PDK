@@ -1,0 +1,121 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================================
+# ------------ CAP_MOM CUSTOM DEVICE ------------
+#================================================
+
+$logger = logger
+$unit = dbu
+
+# Extractor for cap_mom (metal-oxide-metal interdigitated finger) capacitor.
+# Recognizes the device by the recog_mom (Recog.mom, GDS 99/39) marker painted
+# by the PCell (see cap_mom_CONTRACT.md).
+#
+# Uses DeviceCustomMIM (defined in custom_mim_extractor.lvs, loaded via
+# custom_classes.lvs) for compatibility with the SPICE reader, which creates
+# DeviceCustomMIM for all non-varicap capacitor models. DeviceCustomMIM is a
+# DeviceClassCapacitor exposing terminals 'mim_top'/'mim_btm' and parameters
+# w and l.
+#
+# Terminal convention (cap_mom_CONTRACT.md: PLUS = pin 1, MINUS = pin 2):
+#   PLUS  -> mim_top : port on the lower/left side  (lower x-center, else lower y)
+#   MINUS -> mim_btm : port on the upper/right side (higher x-center, else higher y)
+#
+# Parameter/axis mapping (cap_mom_CONTRACT.md geometry):
+#   l MAPS TO X (finger length) -> read from marker bounding-box WIDTH
+#   w MAPS TO Y (row stacking)  -> read from marker bounding-box HEIGHT
+# This is the transpose of cap_mfringe, whose PCell draws w along X and l along Y.
+# Keep this in sync with the cap_mom PCell orientation.
+#
+# Capacitance value: consistent with cap_mfringe, the LVS extractor does NOT
+# compute C. LVS matches devices on the w/l parameters; the capacitance value
+# C_total = density[N]*active_area + Cfeed (cap_mom_CONTRACT.md) is supplied by
+# the SPICE model, not by extraction.
+class CapMomExtractor < RBA::GenericDeviceExtractor
+  def initialize(name)
+    self.name = name
+    @name = name
+  end
+
+  def setup
+    define_layers
+    @reg_dev = DeviceCustomMIM.new(@name)
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    core   = layers[0]  # recog_mom marker
+    ports  = layers[1]  # metal pin shapes within marker
+    dev_mk = layers[2]  # device marker (same as core)
+
+    conn = RBA::Connectivity.new
+    conn.connect(core, core)
+    conn.connect(core, dev_mk)
+    conn.connect(ports, dev_mk)
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    core, ports, dev_mk = layer_geometry
+
+    dev_mk.merged.each do |_region|
+      port_polygons = []
+      ports.each { |p| port_polygons << p }
+
+      if port_polygons.size < 2
+        $logger.info("cap_mom: expected 2 port regions, found #{port_polygons.size}")
+        next
+      end
+
+      device = create_device
+
+      # Measure L and W from the marker bounding box (cap_mom_CONTRACT.md axes):
+      #   l -> X extent (finger length), w -> Y extent (row stacking).
+      bbox = core.merged.bbox
+      device.set_parameter('l', bbox.width * $unit)
+      device.set_parameter('w', bbox.height * $unit)
+
+      # Assign terminals by position (PLUS = lower/left, MINUS = upper/right).
+      sorted = port_polygons.sort_by { |p| p.bbox.center.x }
+      plus_poly = sorted[0]
+      minus_poly = sorted[-1]
+
+      # If both have similar x-center, disambiguate by y (PLUS lower, MINUS upper).
+      if (plus_poly.bbox.center.x - minus_poly.bbox.center.x).abs < 100
+        sorted = port_polygons.sort_by { |p| p.bbox.center.y }
+        plus_poly = sorted[0]
+        minus_poly = sorted[-1]
+      end
+
+      # Both terminals sit on layer 1 (ports), which carries metal connectivity.
+      # DeviceCustomMIM terminal IDs: mim_top = PLUS (pin 1), mim_btm = MINUS (pin 2).
+      define_terminal(device, @reg_dev.terminal_id('mim_top'), 1, plus_poly)
+      define_terminal(device, @reg_dev.terminal_id('mim_btm'), 1, minus_poly)
+    end
+  end
+
+  private
+
+  def define_layers
+    define_layer('core', 'cap_mom recognition marker (Recog.mom, GDS 99/39)')
+    define_layer('ports', 'Terminal connection ports (metal pins PLUS/MINUS)')
+    define_layer('dev_mk', 'Device marker')
+  end
+end

@@ -68,6 +68,7 @@ moduleNames = [
         'rfpmosHV_code',       # Symlink - RF PMOS HV
         'NoFillerStack_code',  # Modified - No filler utility (M1-M4-TM1)
         'pnpMPA_code',         # Symlink - Parasitic PNP (tbd.3 - enabled for discussion)
+        'cap_mom_code',        # MoM capacitor (M1-M4 thin-metal stack)
 ]
 
 def getProcessNames():

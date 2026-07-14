@@ -1,0 +1,210 @@
+*******************************************************************************
+*                                                                             *
+* Copyright 2026 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+*******************************************************************************
+* Interdigitated metal-oxide-metal capacitor (cap_mom)
+*
+* Metal stack M1..M4 (cmos5l thin metals): interdigitated horizontal comb rows
+* on every used metal, all layers via-stacked into solid walls, adjacent rows
+* of opposite polarity.  length -> X (finger length), width -> Y (row count).
+*
+* Full RF equivalent circuit (V. Muehlhaus, "MOM model development notes v4",
+* IHP, 2022; PDF p12 + p9-23).  Series arm PLUS..MINUS plus a substrate shunt:
+*
+*   PLUS --(Lskin || Rskin)-- Cmain --(Lcore)-- (Rseries)-- MINUS
+*                                          |
+*                                         Cox           (shunt on MINUS-side node)
+*                                          |
+*                                     (Rsub || Csub)
+*                                          |
+*                                         gnd (0)
+*
+* Low-frequency capacitance:
+*   C_total = density[N] * active_area  +  Cfeed        [fF]
+*     Cfeed = cfeed_per_um[N] * feed_width   (feed=='same' only)
+*           = 0                              (feed=='double' | 'none')
+*
+* IMPORTANT MODELING NOTE (cmos5l, no dedicated silicon data):
+*   The characterization PDF describes a full M1..M5 thin-metal stack. cmos5l
+*   ships only M1..M4, physically identical to the characterized thin metals,
+*   so EVERY coefficient here is reused BY LAYER COUNT N = mmax-mmin+1 (and, for
+*   the oxide shunt, by bottom-metal identity). Each such reuse is an unmeasured
+*   cmos5l layer-count mapping and is flagged inline below. Treat as an early-
+*   design approximation; for production, extract the actual layout.
+*
+* Parameters:
+*   w        - capacitor width  [m]  (default 5 um)   MAPS TO Y (row stacking)
+*   l        - capacitor length [m]  (default 5 um)   MAPS TO X (finger length)
+*   mmin     - bottom metal index, 1=M1 .. 4=M4       (default 1)
+*   mmax     - top metal index,    1=M1 .. 4=M4       (default 4)
+*   feed     - feed style token: none | same | double (default double)
+*   subblock - 0|1 substrate-isolation block (layout/LVS only; see note)
+*
+* Terminals:
+*   PLUS  - plate 1 (pin 1)
+*   MINUS - plate 2 (pin 2)
+*
+* ngspice note: every computed .param is wrapped in { } . In the default hs/a
+* compatibility mode an unbraced .param expression with top-level operators is
+* silently truncated to its first term; braces (as in capacitors_mod.lib) force
+* full evaluation.
+*
+*******************************************************************************
+*
+*                PLUS
+*                |  MINUS
+*                |  |
+.subckt cap_mom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=4 feed=double subblock=0
+
+*------------------------------------------------------------------------------
+* feed selector.  ngspice cannot compare strings in .param/.if expressions, so
+* the feed tokens are declared as numeric parameters: a call written
+* 'feed=same' resolves the token 'same' to its numeric code (1) at expansion.
+* Keeps the string-style interface (symbol / LVS) while staying computable.
+*------------------------------------------------------------------------------
+.param none=0 same=1 double=2
+.param feedcode = {feed}
+.param issame   = {feedcode==1 ? 1 : 0}
+
+* subblock is a layout/LVS attribute (PWell.block isolation). No characterized
+* electrical effect is available, so it does not alter this model; the shunt is
+* tied to gnd regardless. Accepted here only for X-line interface parity.
+
+*------------------------------------------------------------------------------
+* unit scaling: w,l arrive in meters, model math uses micrometres (um)
+*------------------------------------------------------------------------------
+.param sf = 1e-6
+.param lu = {l/sf}
+.param wu = {w/sf}
+
+* layer count (cmos5l realistic: 3 or 4; 5 only for the sibling M1..M5 stack)
+* clamp layer count to >=1 so an inverted mmax<mmin netlist cannot yield a
+* negative Nlay (the PCell coerces mmax=mmin for the same case).
+.param Nlay_raw = {mmax - mmin + 1}
+.param Nlay = {Nlay_raw < 1 ? 1 : Nlay_raw}
+
+*------------------------------------------------------------------------------
+* unit-cell geometry (unit cell 0.84 x 0.89 um; 1 y-row consumed by the feed)
+*   active_x = floor(l/0.84) ; active_y = floor(w/0.89) - 1
+* guard degenerate sizes: force at least one active finger / row
+*------------------------------------------------------------------------------
+.param ax_raw   = {floor(lu/0.84)}
+.param ay_raw   = {floor(wu/0.89) - 1}
+.param active_x = {ax_raw < 1 ? 1 : ax_raw}
+.param active_y = {ay_raw < 1 ? 1 : ay_raw}
+.param active_area = {active_x * active_y * 0.84 * 0.89}
+.param feed_width  = {active_y * 0.89 + 0.64}
+
+*------------------------------------------------------------------------------
+* area capacitance density [fF/um^2] by layer count N
+* cmos5l layer-count mapping (unmeasured): PDF thin-metal densities reused by N.
+*   N<=2 -> 0.55 (extrapolated) ; N=3 -> 0.82 ; N=4 -> 1.09
+*------------------------------------------------------------------------------
+.param density = {Nlay<=2 ? 0.55 : (Nlay==3 ? 0.82 : 1.09)}
+
+* single-side feed cap per unit length [fF/um] by N
+* cmos5l layer-count mapping (unmeasured); N<=2 -> ~0.70 (extrapolated).
+.param cfeed_pu = {Nlay<=2 ? 0.70 : (Nlay==3 ? 0.97 : 1.28)}
+
+*------------------------------------------------------------------------------
+* main capacitance [F]:  C_total = density*active_area + Cfeed
+* Cfeed only for feed=='same' (opposite-side/none feed cap ~0).
+*------------------------------------------------------------------------------
+.param cfeed_fF = {issame * cfeed_pu * feed_width}
+.param cmain_fF = {density * active_area + cfeed_fF}
+.param cmain_v  = {cmain_fF * 1e-15}
+
+*------------------------------------------------------------------------------
+* series resistance [Ohm], l,w in um
+*   feed=='same'  : layer-independent
+*   feed!='same'  : opposite-side / no-feed, per-N
+* cmos5l layer-count mapping (unmeasured) for the per-N (feed!='same') set.
+* feed=='none' is not separately characterized; it reuses the 'double' set here
+* (flagged assumption: no-feed series R treated as the opposite-side value).
+*------------------------------------------------------------------------------
+.param rser_same   = {0.22 + 0.40*(lu/wu)}
+.param rser_double = {Nlay<=3 ? 0.10 + 0.31*(lu/wu) : (Nlay==4 ? 0.14 + 0.27*(lu/wu) : 0.15 + 0.26*(lu/wu))}
+.param rseries_raw = {issame ? rser_same : rser_double}
+.param rseries_v   = {rseries_raw > 1m ? rseries_raw : 1m}
+
+*------------------------------------------------------------------------------
+* core series inductance [H], common to all N (fit max err ~20% @ 50 GHz)
+*------------------------------------------------------------------------------
+.param lcore_raw = {(4.886 + 3.117*(lu/wu) + 0.510*lu - 2.526*sqrt(lu))*1e-12}
+.param lcore_v   = {lcore_raw > 1e-18 ? lcore_raw : 1e-18}
+
+*------------------------------------------------------------------------------
+* skin effect (PDF p12; refinement).
+*   Rskin = Rskin1 * lu                       [Ohm]
+*   Lskin = (Lskin_c + Lskin_s * lu) * 1e-12  [H]
+* ASSUMPTION / FLAG: the contract tabulates one Rskin1 and two inductance
+* numbers per N but names them (Lskin1, Lskin2) while the formula reads
+* Lskin0 + Lskin1*l; the standalone constant is not separately given. The two
+* tabulated pH values are interpreted here as (constant Lskin_c, slope Lskin_s).
+* All per-N skin coefficients are the cmos5l layer-count mapping (unmeasured).
+*------------------------------------------------------------------------------
+.param rskin1  = {Nlay<=3 ? 0.031   : 0.035}
+.param lskin_c = {Nlay<=3 ? 0.214   : 0.010}
+.param lskin_s = {Nlay<=3 ? 0.02256 : 0.0626}
+.param rskin_raw = {rskin1*lu}
+.param rskin_v   = {rskin_raw > 1m ? rskin_raw : 1m}
+.param lskin_v   = {(lskin_c + lskin_s*lu)*1e-12}
+
+*------------------------------------------------------------------------------
+* substrate shunt: Cox in series with (Rsub || Csub) to gnd.
+* Cox is set by bottom-metal proximity to substrate.
+* cmos5l layer-count mapping (unmeasured): the PDF M1..M5 shunt tables are
+* reused by bottom-metal identity / N.  mmin==1 => M1 nearest substrate uses the
+* PDF's M1-bottom (5L) Cox set; otherwise selected by N.
+*------------------------------------------------------------------------------
+.param cox0 = {mmin==1 ? 1.725    : (Nlay==4 ? 1.240    : 1.052)}
+.param cox1 = {mmin==1 ? 0.1192   : (Nlay==4 ? 0.1139   : 0.09867)}
+.param cox2 = {mmin==1 ? 0.019406 : (Nlay==4 ? 0.011417 : 0.011364)}
+.param cox_v = {(cox0 + cox1*(wu+lu) + cox2*wu*lu)*1e-15}
+
+* Rsub / Csub coefficients common to all N (cmos5l layer-count mapping, unmeasured)
+.param rsub0 = 3144
+.param rsub1 = -9.6942
+.param rsub2 = 0.0207848
+.param csub0 = 9.8833
+.param csub1 = 0.089195
+.param csub2 = 0.000675931
+.param rsub_raw = {rsub0 + rsub1*(wu+lu) + rsub2*wu*lu}
+.param rsub_v   = {rsub_raw > 10m ? rsub_raw : 10m}
+.param csub_v   = {(csub0 + csub1*(wu+lu) + csub2*wu*lu)*1e-15}
+
+*==============================================================================
+* netlist
+*   series arm : PLUS -(Lskin || Rskin)- Cmain -(Lcore)- (Rseries)- MINUS
+*   shunt      : from nl (MINUS-side internal node) Cox in series with (Rsub||Csub) to 0
+*==============================================================================
+Lskin  PLUS  nsk   l=lskin_v
+Rskin  PLUS  nsk   r=rskin_v
+Cmain  nsk   ncap  c=cmain_v
+Lcore  ncap  nl    l=lcore_v
+Rser   nl    MINUS r=rseries_v
+
+Cox    nl    nox   c=cox_v
+Rsub   nox   0     r=rsub_v
+Csub   nox   0     c=csub_v
+
+* weak DC path to gnd for BOTH ports (avoids a singular matrix when the caller
+* leaves either or both ports floating); 1T ohm, negligible at any frequency.
+Rleak  nl    0     r=1T
+RleakP PLUS  0     r=1T
+
+.ends cap_mom
