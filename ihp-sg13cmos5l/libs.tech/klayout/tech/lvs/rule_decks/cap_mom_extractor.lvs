@@ -61,26 +61,35 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
   end
 
   def get_connectivity(_layout, layers)
-    core   = layers[0]  # recog_mom marker
-    ports  = layers[1]  # metal pin shapes within marker
-    dev_mk = layers[2]  # device marker (same as core)
+    core   = layers[0]                          # recog_mom marker
+    m_ports = [layers[1], layers[2], layers[3], layers[4]]  # M1..M4 pin ports
+    dev_mk = layers[5]                          # device marker (same as core)
 
     conn = RBA::Connectivity.new
     conn.connect(core, core)
     conn.connect(core, dev_mk)
-    conn.connect(ports, dev_mk)
+    m_ports.each { |mp| conn.connect(mp, dev_mk) }
     conn
   end
 
   def extract_devices(layer_geometry)
-    core, ports, dev_mk = layer_geometry
+    core = layer_geometry[0]
+    # layer_geometry index == define_layer order: m1p=1, m2p=2, m3p=3, m4p=4.
+    metal_ports = { 1 => layer_geometry[1], 2 => layer_geometry[2],
+                    3 => layer_geometry[3], 4 => layer_geometry[4] }
+    dev_mk = layer_geometry[5]
 
     dev_mk.merged.each do |_region|
-      port_polygons = []
-      ports.each { |p| port_polygons << p }
+      # Collect each port polygon together with the layer index that carries its
+      # metal connectivity. 'double'/'none' put both pins on the top metal (same
+      # index); 'same' stacks them on adjacent metals (two indices).
+      ports = []
+      metal_ports.each do |lidx, reg|
+        reg.each { |p| ports << [p, lidx] }
+      end
 
-      if port_polygons.size < 2
-        $logger.info("cap_mom: expected 2 port regions, found #{port_polygons.size}")
+      if ports.size < 2
+        $logger.info("cap_mom: expected 2 port regions, found #{ports.size}")
         next
       end
 
@@ -92,22 +101,17 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('l', bbox.width * $unit)
       device.set_parameter('w', bbox.height * $unit)
 
-      # Assign terminals by position (PLUS = lower/left, MINUS = upper/right).
-      sorted = port_polygons.sort_by { |p| p.bbox.center.x }
-      plus_poly = sorted[0]
-      minus_poly = sorted[-1]
+      # Deterministic pick of two ports (by x, then y, then metal index). A MoM
+      # cap is symmetric, so the exact PLUS/MINUS mapping is not significant; what
+      # matters is that each terminal is defined on the layer that carries its own
+      # metal net, so 'same'-feed stacked pins stay on separate nets.
+      sorted = ports.sort_by { |poly, lidx| [poly.bbox.center.x, poly.bbox.center.y, lidx] }
+      a_poly, a_lidx = sorted[0]
+      b_poly, b_lidx = sorted[-1]
 
-      # If both have similar x-center, disambiguate by y (PLUS lower, MINUS upper).
-      if (plus_poly.bbox.center.x - minus_poly.bbox.center.x).abs < 100
-        sorted = port_polygons.sort_by { |p| p.bbox.center.y }
-        plus_poly = sorted[0]
-        minus_poly = sorted[-1]
-      end
-
-      # Both terminals sit on layer 1 (ports), which carries metal connectivity.
-      # DeviceCustomMIM terminal IDs: mim_top = PLUS (pin 1), mim_btm = MINUS (pin 2).
-      define_terminal(device, @reg_dev.terminal_id('mim_top'), 1, plus_poly)
-      define_terminal(device, @reg_dev.terminal_id('mim_btm'), 1, minus_poly)
+      # DeviceCustomMIM terminal IDs: mim_top = pin 1, mim_btm = pin 2.
+      define_terminal(device, @reg_dev.terminal_id('mim_top'), a_lidx, a_poly)
+      define_terminal(device, @reg_dev.terminal_id('mim_btm'), b_lidx, b_poly)
     end
   end
 
@@ -115,7 +119,10 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
 
   def define_layers
     define_layer('core', 'cap_mom recognition marker (Recog.mom, GDS 99/39)')
-    define_layer('ports', 'Terminal connection ports (metal pins PLUS/MINUS)')
+    define_layer('m1p', 'Metal1 pin ports within the marker')
+    define_layer('m2p', 'Metal2 pin ports within the marker')
+    define_layer('m3p', 'Metal3 pin ports within the marker')
+    define_layer('m4p', 'Metal4 pin ports within the marker')
     define_layer('dev_mk', 'Device marker')
   end
 end

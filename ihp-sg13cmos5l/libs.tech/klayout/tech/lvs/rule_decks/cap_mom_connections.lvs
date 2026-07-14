@@ -23,10 +23,13 @@
 
 logger.info('Starting CAP_MOM CONNECTIONS')
 
-# Connect cap_mom port regions through the thin-metal/via stack (M1-M4).
-# The ports (metal pin shapes) need connectivity to the metal drawing layers
-# for proper net tracing across the interdigitated finger stack.
-connect(cap_mom_ports, metal1_con)
-connect(cap_mom_ports, metal2_con)
-connect(cap_mom_ports, metal3_con)
-connect(cap_mom_ports, metal4_con)
+# Connect each metal's port pins ONLY to that same metal (per-layer). This keeps
+# the two 'same'-feed terminals apart: PLUS sits on the mmax metal and MINUS on
+# the mmax-1 metal stacked directly below it, so a merged 'connect ports to all
+# metals' would short them through the pin overlap. Each comb's full M1-M4 stack
+# is already tied together by the core via stacks, so per-layer pin connection is
+# sufficient for net tracing.
+connect(cap_mom_m1_ports, metal1_con)
+connect(cap_mom_m2_ports, metal2_con)
+connect(cap_mom_m3_ports, metal3_con)
+connect(cap_mom_m4_ports, metal4_con)

@@ -48,14 +48,14 @@ class cap_mom(DloGen):
     Feed variants (the two characterised versions are 'double' and 'same'):
       * 'double' : opposite-side feed. PLUS pad left (even rows), MINUS pad right
                    (odd rows). Cfeed ~ 0. This is the reference configuration.
-      * 'same'   : single-side feed. Two non-overlapping left rails: PLUS on the
-                   mmax metal (far), MINUS on the (mmax-1) metal (near). Even-row
-                   top-metal bars cross OVER the near rail on a different layer
-                   (no via) -> that controlled overlap is the feed capacitance
+      * 'same'   : single-side feed. Two STACKED left pads on the same footprint:
+                   PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
+                   below it, overlapping in x,y but with no via between them
+                   (separate nets). That plate overlap is the feed capacitance
                    Cfeed ~ (active_y*UC_Y + 0.64) * cfeed_per_um.
-                   Requires mmax > mmin (>=2 metals) for the near/far rails; a
-                   single-metal stack has no second layer for the crossover, so
-                   use 'double' when mmin == mmax.
+                   Requires mmax > mmin (>=2 metals) for the two stacked plates;
+                   a single-metal stack has no second layer, so use 'double'
+                   when mmin == mmax.
       * 'none'   : LAYOUT-ONLY bare array, no feed routing. The interdigitated
                    rows are NOT tied into two terminals (each finger pair is its
                    own net), so this is NOT a standalone 2-terminal device: it
@@ -94,20 +94,17 @@ class cap_mom(DloGen):
     FEED_EXT    = FEED_GAP + FEED_PAD_W     # 0.90
     LANDING_PAD = 0.31
 
-    # Same-side (single-side) feed: two NON-overlapping left rails.
-    #   PLUS rail on the top metal (far left), MINUS rail on the metal below it
-    #   (near left). Both terminals exit on the same side. The even-row (PLUS)
-    #   top-metal bars cross OVER the MINUS rail on a different layer with no via
-    #   -> that controlled overlap is exactly the single-side feed capacitance.
-    #   Pins are placed in single-metal zones so the LVS 'ports connect to all
-    #   metals' scheme cannot bridge the two nets (see cap_mom_extractor.lvs).
-    SAME_RAIL_W    = 0.60
-    SAME_MINUS_XHI = -0.30
-    SAME_MINUS_XLO = SAME_MINUS_XHI - SAME_RAIL_W    # -0.90  MINUS rail (sub metal)
-    SAME_RAIL_GAP  = 0.30
-    SAME_PLUS_XHI  = SAME_MINUS_XLO - SAME_RAIL_GAP  # -1.20
-    SAME_PLUS_XLO  = SAME_PLUS_XHI - SAME_RAIL_W     # -1.80  PLUS rail (top metal)
-    FEED_EXT_SAME  = -SAME_PLUS_XLO                  # 1.80   left extent of same feed
+    # Same-side (single-side) feed: two STACKED left pads.
+    #   PLUS pad on the top metal (mmax) and MINUS pad on the metal below it
+    #   (mmax-1), painted on the SAME footprint so they overlap in x,y but are
+    #   NOT connected (no via) -> that plate overlap is the single-side feed
+    #   capacitance. Even-row top-metal bars reach the PLUS pad; odd-row
+    #   sub-metal bars reach the MINUS pad. The PLUS/MINUS pins sit stacked at
+    #   the pad centre. LVS keeps them on separate nets by connecting each
+    #   metal's pins ONLY to its own metal (per-layer, cap_mom_connections.lvs).
+    SAME_PAD_GAP  = 0.30                        # gap from the core to the pad
+    SAME_PAD_W    = 0.90                        # pad width (X)
+    FEED_EXT_SAME = SAME_PAD_GAP + SAME_PAD_W   # 1.20  left extent of same feed
 
     # ---------------------------------------------------------------
     # Capacitance densities, indexed by LAYER COUNT N = mmax-mmin+1.
@@ -185,15 +182,15 @@ class cap_mom(DloGen):
             else:                               # MINUS -> RIGHT pad
                 return (-self.BAR_OVERHANG, dev_w + self.FEED_EXT)
         if self.feed == 'same':
-            # PLUS (even rows) reach the far top-metal rail; MINUS (odd rows)
-            # reach the near sub-metal rail. Only the carrying metal extends out;
-            # the rest of the row stack stays in the core (still one net through
-            # the core via stacks).
+            # PLUS (even rows) reach the top-metal pad; MINUS (odd rows) reach
+            # the sub-metal pad stacked directly below it. Only the carrying
+            # metal extends out to the pad; the rest of the row stack stays in
+            # the core (still one net through the core via stacks).
             sub = m_top - 1 if m_top > self.mmin else m_top
-            if (j % 2 == 0) and m == m_top:                 # PLUS -> far rail
-                return (self.SAME_PLUS_XLO, dev_w + self.BAR_OVERHANG)
-            if (j % 2 == 1) and m == sub:                   # MINUS -> near rail
-                return (self.SAME_MINUS_XLO, dev_w + self.BAR_OVERHANG)
+            if (j % 2 == 0) and m == m_top:                 # PLUS -> top pad
+                return (-self.FEED_EXT_SAME, dev_w + self.BAR_OVERHANG)
+            if (j % 2 == 1) and m == sub:                   # MINUS -> sub pad
+                return (-self.FEED_EXT_SAME, dev_w + self.BAR_OVERHANG)
             return (-self.BAR_OVERHANG, dev_w + self.BAR_OVERHANG)
         # feed == 'none'
         return (-self.BAR_OVERHANG, dev_w + self.BAR_OVERHANG)
@@ -264,19 +261,21 @@ class cap_mom(DloGen):
 
     def _draw_feed_same(self, m_bot, m_top, ny, dev_w,
                         metal_layers, via_layers):
-        # Two non-overlapping vertical left rails, each on its own metal:
-        #   PLUS rail on the top metal (far left), MINUS rail on the metal below.
-        # A rail contacts every bar of its polarity on the same metal (no vias
-        # needed): even-row top-metal bars reach the PLUS rail, odd-row sub-metal
-        # bars reach the MINUS rail. The rails extend past the array in Y so the
-        # PLUS/MINUS pins have room to sit fully on rail metal.
+        # Two STACKED vertical left pads on the SAME footprint:
+        #   PLUS pad on the top metal, MINUS pad on the metal below it. They
+        # overlap fully in x,y but carry no via between them (separate nets); the
+        # plate overlap is the single-side feed capacitance. Each pad contacts
+        # only the bars of its polarity on its own metal (even-row top-metal bars
+        # reach the PLUS pad, odd-row sub-metal bars reach the MINUS pad); the
+        # rest of each row's stack stays in the core. The pads extend past the
+        # array in Y so the stacked pins sit fully on pad metal.
         sub = m_top - 1 if m_top > m_bot else m_top
         y0 = -self.T_BAR
         y1 = ny * self.UC_Y + self.T_BAR
-        self._paint(metal_layers[m_top],
-                    self.SAME_PLUS_XLO, y0, self.SAME_PLUS_XHI, y1)
-        self._paint(metal_layers[sub],
-                    self.SAME_MINUS_XLO, y0, self.SAME_MINUS_XHI, y1)
+        x_lo = -self.FEED_EXT_SAME
+        x_hi = -self.SAME_PAD_GAP
+        self._paint(metal_layers[m_top], x_lo, y0, x_hi, y1)    # PLUS  (top metal)
+        self._paint(metal_layers[sub],   x_lo, y0, x_hi, y1)    # MINUS (sub metal)
         return y0, y1
 
     def _place_pins(self, m_top, dev_w, ny, feed_pad_yrange, metal_layers):
@@ -305,25 +304,20 @@ class cap_mom(DloGen):
             return
 
         if self.feed == 'same':
-            # PLUS pin on the top-metal rail at an even row (row 0); MINUS pin on
-            # the sub-metal rail at an odd row (row 1). Distinct metals AND
-            # distinct rails (non-overlapping X) put each pin in a single-metal
-            # zone, so the LVS 'ports connect to all metals' scheme keeps the two
-            # terminals on separate nets.
-            plus_cx = (self.SAME_PLUS_XLO + self.SAME_PLUS_XHI) / 2.0
-            minus_cx = (self.SAME_MINUS_XLO + self.SAME_MINUS_XHI) / 2.0
-            plus_cy = 0.0                       # row 0 (even -> PLUS)
-            minus_cy = self.UC_Y                # row 1 (odd  -> MINUS)
-            plus_box = Box(GridFix(plus_cx - pin_w / 2.0),
-                           GridFix(plus_cy - pin_h / 2.0),
-                           GridFix(plus_cx + pin_w / 2.0),
-                           GridFix(plus_cy + pin_h / 2.0))
-            MkPin(self, 'PLUS', 1, plus_box, top_metal_name)
-            minus_box = Box(GridFix(minus_cx - pin_w / 2.0),
-                            GridFix(minus_cy - pin_h / 2.0),
-                            GridFix(minus_cx + pin_w / 2.0),
-                            GridFix(minus_cy + pin_h / 2.0))
-            MkPin(self, 'MINUS', 2, minus_box, sub_metal_name)
+            # PLUS pin on the top-metal pad and MINUS pin on the sub-metal pad,
+            # STACKED at the same pad centre (they overlap in x,y on adjacent
+            # metals). LVS keeps them on separate nets because each metal's pins
+            # connect only to that metal (per-layer, cap_mom_connections.lvs); a
+            # symmetric cap is orientation/terminal-swap invariant, so the two
+            # terminals need not be told apart by position.
+            pad_cx = (-self.FEED_EXT_SAME + -self.SAME_PAD_GAP) / 2.0
+            pad_cy = (ny * self.UC_Y) / 2.0
+            pin_box = Box(GridFix(pad_cx - pin_w / 2.0),
+                          GridFix(pad_cy - pin_h / 2.0),
+                          GridFix(pad_cx + pin_w / 2.0),
+                          GridFix(pad_cy + pin_h / 2.0))
+            MkPin(self, 'PLUS', 1, pin_box, top_metal_name)
+            MkPin(self, 'MINUS', 2, pin_box, sub_metal_name)
             return
 
         # feed == 'none': pins inside the outer top-metal bars.
