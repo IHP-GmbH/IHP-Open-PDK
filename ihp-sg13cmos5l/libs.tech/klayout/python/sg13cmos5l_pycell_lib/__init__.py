@@ -25,6 +25,7 @@ from cni.dlo import PCellWrapper
 
 # Creates the SG13_dev technology
 from .sg13_tech import *
+from .sg13_tech_info import *
 
 from pypreprocessor.pypreprocessor import preprocessor as preProcessor
 
@@ -154,8 +155,8 @@ if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
 class PyCellLib(pya.Library):
     def __init__(self):
         self.description = "IHP SG13CMOS5L Pcells"
-        self.technology = 'sg13cmos5l'
-        
+        self.technology = SG13_Tech.TECH_NAME
+
         tech = Tech.get('SG13_dev')
 
         processNames = []
