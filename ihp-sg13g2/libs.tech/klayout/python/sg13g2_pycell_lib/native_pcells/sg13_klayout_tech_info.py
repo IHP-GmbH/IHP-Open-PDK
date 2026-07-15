@@ -23,9 +23,12 @@ from typing import *
 
 import pya
 
-from sg13g2_pycell_lib.sg13_tech_info import (
-    TechInfo, 
-    ViaInfo, 
+from ..sg13_tech import SG13_Tech
+
+from ..sg13_tech_info import (
+    TechInfoFactory,
+    TechInfo,
+    ViaInfo,
     LayerInfo,
 )
 
@@ -65,10 +68,8 @@ class KTechInfo:
         self.tech_info = tech_info
     
     @classmethod
-    def instance(cls) -> KTechInfo:
-        if not hasattr(cls, '_instance'):
-            cls._instance = KTechInfo(tech_info=TechInfo.instance())
-        return cls._instance
+    def instance_for_tech(cls, tech: Tech) -> KTechInfo:
+        return KTechInfo(tech_info=TechInfo.instance_for_tech(tech))
     
     @cached_property
     def klayout_via_types(self) -> List[pya.ViaType]:
@@ -82,3 +83,13 @@ class KTechInfo:
     def via_by_name(self, name: str) -> ViaInfo:
         return self.tech_info.via_by_name(name)
         
+
+class KTechInfoFactory:
+    @classmethod
+    def instance(cls) -> KTechInfo:
+        if not hasattr(cls, '_tech_info'):
+            tech = SG13_Tech()
+            tech_info = KTechInfo.instance_for_tech(tech)
+            cls._tech_info = tech_info
+            
+        return cls._tech_info

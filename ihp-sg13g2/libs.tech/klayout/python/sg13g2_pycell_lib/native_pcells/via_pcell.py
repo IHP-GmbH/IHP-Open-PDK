@@ -25,7 +25,8 @@ from typing import *
 
 import pya
 from .sg13_klayout_tech_info import (
-    KTechInfo, 
+    KTechInfoFactory,
+    KTechInfo,
     KViaInfo, 
     KLayerInfo,
 )
@@ -35,7 +36,7 @@ class ViaPCell(pya.PCellDeclarationHelper):
     def __init__(self):
         super().__init__()
 
-        self.tech_info = KTechInfo.instance()
+        self.tech_info = KTechInfoFactory.instance()
 
         # Endpoints
         self.param("via", self.TypeList, "Via", choices=self.tech_info.via_choices, default='SG13G2_VIA_M1_M2')
@@ -90,6 +91,8 @@ class ViaPCell(pya.PCellDeclarationHelper):
     def produce_impl(self):
         vias = [self.tech_info.via_by_name(self.via)]
 
+        print(f"vias {vias}")
+
         nx, ny = self.nx, self.ny
         
         for idx, via in enumerate(vias):
@@ -119,4 +122,6 @@ class ViaPCell(pya.PCellDeclarationHelper):
                 cx = x0 + ix * (v + sx)
                 for iy in range(ny):
                     cy = y0 + iy * (v + sy)
-                    scut.insert(pya.DBox(cx - 0.5*v, cy - 0.5*v, cx + 0.5*v, cy + 0.5*v))
+                    b = pya.DBox(cx - 0.5*v, cy - 0.5*v, cx + 0.5*v, cy + 0.5*v)
+                    print(f"insert box {b} on via layer")
+                    scut.insert(b)
