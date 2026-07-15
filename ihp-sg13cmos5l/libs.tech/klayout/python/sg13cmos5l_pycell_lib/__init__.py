@@ -26,6 +26,7 @@ from cni.dlo import PCellWrapper
 # Creates the SG13_dev technology
 from .sg13_tech import *
 from .sg13_tech_info import *
+from .native_pcells.via_pcell import ViaPCell
 
 from pypreprocessor.pypreprocessor import preprocessor as preProcessor
 
@@ -248,6 +249,15 @@ class PyCellLib(pya.Library):
 
         self.register("SG13_dev")
 
-# instantiate and register the library
-PyCellLib()
 
+class SG13G2_NativePCellLib(pya.Library):
+    def __init__(self):
+        self.description = "SG13G2 Native PCells"
+        self.technology = SG13_Tech.TECH_NAME
+        self.layout().register_pcell("Via", ViaPCell())
+        self.register("SG13_native_pcell_lib")
+
+
+# instantiate and register the libraries
+PyCellLib()
+SG13G2_NativePCellLib()
