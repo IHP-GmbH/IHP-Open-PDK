@@ -489,6 +489,7 @@ def generate_klayout_switches(
         "no_series_res": "true" if args.no_series_res else "false",
         "no_parallel_res": "true" if args.no_parallel_res else "false",
         "combine_devices": "true" if args.combine_devices else "false",
+        "disable_tap_extraction": "true" if args.disable_tap_extraction else "false",
         "purge": "true" if args.purge else "false",
         "purge_nets": "true" if args.purge_nets else "false",
         "topcell": get_run_top_cell_name(args, layout_path),
@@ -738,6 +739,7 @@ if __name__ == "__main__":
                [--topcell=<topcell_name>] [--run_mode=<run_mode>]
                [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+               [--disable_tap_extraction]
                [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
                [--implicit_nets=<nets>]
     """
@@ -788,6 +790,11 @@ if __name__ == "__main__":
     parser.add_argument("--no_series_res", action="store_true", help="Disable resistor series simplification.")
     parser.add_argument("--no_parallel_res", action="store_true", help="Disable resistor parallel simplification.")
     parser.add_argument("--combine_devices", action="store_true", help="Enable generic device combination.")
+    parser.add_argument(
+        "--disable_tap_extraction",
+        action="store_true",
+        help="Skip ntap1/ptap1 device extraction so taps are not required in the schematic (aligns with Magic+Netgen LVS). Extraction is enabled by default.",
+    )
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
