@@ -23,8 +23,11 @@ from typing import *
 
 import pya
 
+# NOTE: These imports are deliberatly relative, because this file is used
+#       in both technology stack variants (sg13cmos5L symlinks to this file).
+#       As the parent directory names are different (sg13g2_pycell_lib vs sg13cmos5l_pycell_lib),
+#       an absolute import is not possible.
 from ..sg13_tech import SG13_Tech
-
 from ..sg13_tech_info import (
     TechInfoFactory,
     TechInfo,
