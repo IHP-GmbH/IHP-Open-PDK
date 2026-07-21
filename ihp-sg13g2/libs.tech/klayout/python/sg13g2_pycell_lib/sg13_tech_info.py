@@ -411,7 +411,7 @@ class TechInfoFactory:
             cls._tech_info_by_tech_name = dict()
             
         tp = tech.getTechParams()
-        tech_name = tp['techName']
+        tech_name = tech.TECH_NAME
         tech_info = cls._tech_info_by_tech_name.get(tech_name, None)
         if not tech_info:
             #
