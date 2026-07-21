@@ -4,6 +4,7 @@
 # writes the .save instructions for given FET or BIP instance
 proc write_save_lines {type model schpath spiceprefix instname} {
   global sch_expand
+
   if {[regexp {[pn]mos} $type]} {
     set m n$model
     set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
@@ -39,7 +40,6 @@ proc write_save_lines {type model schpath spiceprefix instname} {
     append sch_expand(savelist) ".save $devpath\[cbep\]\n"
     append sch_expand(savelist) ".save $devpath\[cbcp\]\n"
   }
-  
 }
 ############ sch_expand
 # This proc traverses the hierarchy and prints all instances in design.
@@ -68,8 +68,8 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
   global nolist_libs sch_expand
 
   set schpath [string range [xschem get sch_path] $sch_expand(startpath) end]
-  set instances  [xschem get instances]
-  for {set i 0} { $i < $instances} { incr i} {
+  set instances [xschem get instances]
+  for {set i 0} {$i < $instances} {incr i} {
     set instname [xschem getprop instance $i name]
     # puts "hier_sch_expand: instname=$instname schpath=$schpath"
     set symbol [xschem getprop instance $i cell::name]
@@ -78,7 +78,9 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
     set abs_symbol [abs_sym_path $symbol]
     set type [xschem getprop symbol $symbol type]
 
-    if {$only_subckts && ($type ne {subcircuit})} { continue }
+    if {$only_subckts && ($type ne {subcircuit})} {
+      continue
+    }
     set skip 0
     foreach j $nolist_libs {
       if {[regexp $j $abs_symbol]} {
@@ -86,7 +88,9 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
         break
       }
     }
-    if {$skip} { continue }
+    if {$skip} {
+      continue
+    }
     if {$type ne {subcircuit} && ![regexp $pattern $symbol]} {
       continue
     }
@@ -95,17 +99,18 @@ proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}
  
     if {$type eq {subcircuit} && $all_hierarchy} {
       set ninst [lindex [split [xschem expandlabel $instname] { }] 1]
-      for {set n 1} {$n <= $ninst} { incr n} {
-        if {$n == 1} {
-          xschem select instance $i
-          set res [xschem descend $n 2]
-          # ensure previous descend was successful
-          if {$res} {
-            incr level
-          } else { ;# descended into a blank schematic. Go back.
-            xschem go_back 2
-            puts "Can not descend into $instname"
-            break
+        for {set n 1} {$n <= $ninst} {incr n} {
+          if {$n == 1} {
+            xschem select instance $i
+            set res [xschem descend $n 2]
+            # ensure previous descend was successful
+            if {$res} {
+              incr level
+            } else {
+              # descended into a blank schematic. Go back.
+              xschem go_back 2
+              puts "Can not descend into $instname"
+              break
           }
         }
         if {$n > 1} {
@@ -285,10 +290,11 @@ proc display_bip_params {instname} {
 
 
 # these commands are executed when xschem has completed initialization.
-# add a SKY130 menu entry
+# add an IHP menu entry
 proc menupdk {} {
   global has_x netlist_dir
-  if { [info exists has_x] } {
+
+  if {[info exists has_x]} {
     set topwin [xschem get top_path]
 
     # insert before the 'Netlist' menu
@@ -301,13 +307,14 @@ proc menupdk {} {
       write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
       textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
     }
+
     ## Create one entry
     $topwin.menubar.ihp add command -label {Add Ngspice models symbol} -command {
       xschem place_symbol devices/simulator_commands_shown.sym {
-name=Libs_Ngspice
-simulator=ngspice
-only_toplevel=false
-value="
+        name=Libs_Ngspice
+        simulator=ngspice
+        only_toplevel=false
+        value="
 .lib cornerMOSlv.lib mos_tt
 .lib cornerMOShv.lib mos_tt
 .lib cornerHBT.lib hbt_typ
@@ -320,10 +327,10 @@ value="
     ## Create one entry
     $topwin.menubar.ihp add command -label {Add Xyce models symbol} -command {
       xschem place_symbol devices/simulator_commands_shown.sym {
-name=Libs_Xyce
-simulator=xyce
-only_toplevel=false
-value="tcleval(
+        name=Libs_Xyce
+        simulator=xyce
+        only_toplevel=false
+        value="tcleval(
 .lib $::SG13G2_MODELS_XYCE/cornerMOSlv.lib mos_tt
 .lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
 .lib $::SG13G2_MODELS_XYCE/cornerHBT.lib hbt_typ
@@ -360,6 +367,14 @@ value="tcleval(
       }
       get_sel_inst_name
     }
+
+    ## Create one entry
+    $topwin.menubar.ihp add separator
+    
+    $topwin.menubar.ihp add command \
+    -label {Select stdcell hierarchy} \
+    -command stdcell_select_view_dialog
+
   }
 }
 

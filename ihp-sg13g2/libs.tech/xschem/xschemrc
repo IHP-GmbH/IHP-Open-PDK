@@ -388,7 +388,7 @@ set live_cursor2_backannotate 1
 ###########################################################################
 
 ## check if env var PDK_ROOT exists, and use it for building open_pdks paths
-if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
+if {[info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {}} {
   ## found variable, set tcl PDK_ROOT var
   if {![file isdir $env(PDK_ROOT)]} {
     puts stderr "Warning: PDK_ROOT environment variable is set but path not found on the system."
@@ -397,9 +397,12 @@ if { [info exists env(PDK_ROOT)] && $env(PDK_ROOT) ne {} } {
 } else {
   ## not existing or empty.
   puts stderr "Warning: PDK_ROOT env. var. not found or empty, trying to find an open_pdks install"
-  if {[file isdir /usr/share/pdk]} {set PDK_ROOT /usr/share/pdk
-  } elseif {[file isdir /usr/local/share/pdk]} {set PDK_ROOT /usr/local/share/pdk
-  } elseif {[file isdir $env(HOME)/share/pdk]} {set PDK_ROOT $env(HOME)/share/pdk
+  if {[file isdir /usr/share/pdk]} {
+    set PDK_ROOT /usr/share/pdk
+  } elseif {[file isdir /usr/local/share/pdk]} {
+    set PDK_ROOT /usr/local/share/pdk
+  } elseif {[file isdir $env(HOME)/share/pdk]} {
+    set PDK_ROOT $env(HOME)/share/pdk
   } else {
     puts stderr {No open_pdks installation found, set PDK_ROOT env. var. and restart xschem}
   }
@@ -426,26 +429,133 @@ if {[info exists PDK_ROOT]} {
 set XSCHEM_START_WINDOW ${PDK_ROOT}/${PDK}/libs.tech/xschem/start_page.sch
 append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem
 append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_pr
-append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_stdcells
+#append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.tech/xschem/sg13g2_stdcells
+append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/${PDK}/libs.ref/sg13g2_stdcell/sym/xschem
 
 # allow a user-specific path add-on (https://github.com/iic-jku/iic-osic-tools/issues/7)
-if { [info exists ::env(XSCHEM_USER_LIBRARY_PATH) ] } {
-    append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
+if {[info exists ::env(XSCHEM_USER_LIBRARY_PATH)]} {
+  append XSCHEM_LIBRARY_PATH :$env(XSCHEM_USER_LIBRARY_PATH)
 }
 
 # Source auxiliary xschem files
 if {[info exists PDK_ROOT]} {
   if {[info exists env(PDK)]} {
-    source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-drc
-    source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschem-menu
+    source ${PDK_ROOT}/${PDK}/libs.tech/xschem/xschem-drc
+    source ${PDK_ROOT}/${PDK}/libs.tech/xschem/xschem-menu
   }
 }
 
 # PDK modules
-if { [file exists ${PDK_ROOT}/ihp-sg13_modules] } {
+if {[file exists ${PDK_ROOT}/ihp-sg13_modules]} {
   foreach pdk_module [glob -nocomplain -type d -tails -directory ${PDK_ROOT}/ihp-sg13_modules *] {
-    if { [info exists pdk_module] } {
+    if {[info exists pdk_module]} {
       append XSCHEM_LIBRARY_PATH :${PDK_ROOT}/ihp-sg13_modules/$pdk_module/libs.tech/xschem/$pdk_module
     }
   }
+}
+
+
+# stdcells schemtic view mode
+set stdcell_view "subcircuit"
+set stdcell_sym_type "subcircuit"
+
+proc stdcell_select_view_dialog {} {
+    if {[winfo exists .stdcell_view_dialog]} {
+        raise .stdcell_view_dialog
+        focus .stdcell_view_dialog
+        return
+    }
+
+    toplevel .stdcell_view_dialog
+    wm title .stdcell_view_dialog "Stdcell schematic view"
+
+    label .stdcell_view_dialog.l \
+        -text "Select stdcell schematic:" \
+        -anchor w
+
+    pack .stdcell_view_dialog.l \
+        -side top \
+        -fill x \
+        -padx 10 \
+        -pady 8
+
+    radiobutton .stdcell_view_dialog.subckt \
+        -text "Subcircuit  schematic" \
+        -variable ::stdcell_view \
+        -value subcircuit
+
+    radiobutton .stdcell_view_dialog.custom \
+        -text "Custom schematic" \
+        -variable ::stdcell_view \
+        -value custom
+
+    radiobutton .stdcell_view_dialog.empty \
+        -text "Primitive (no hierarchy)" \
+        -variable ::stdcell_view \
+        -value empty
+        
+     #   .stdcell_view_dialog.empty 
+    pack .stdcell_view_dialog.subckt \
+          .stdcell_view_dialog.empty \
+         .stdcell_view_dialog.custom \
+        -side top \
+        -anchor w \
+        -padx 20 \
+        -pady 3
+
+    button .stdcell_view_dialog.ok \
+        -text "OK" \
+        -command {
+            switch -- $::stdcell_view {
+                empty {
+                    set ::stdcell_sym_type "primitive"
+                }
+                default {
+                    set ::stdcell_sym_type "subcircuit"
+                }
+            }
+            puts "stdcell_view set to: $::stdcell_view, stdcell_sym_type=$::stdcell_sym_type"
+            destroy .stdcell_view_dialog
+        }
+
+    pack .stdcell_view_dialog.ok \
+        -side top \
+        -pady 10
+}
+
+proc hierarchy_config {symname} {
+    global stdcell_view
+    global stdcell_sym_type
+    
+    set cell [file rootname [file tail $symname]]
+
+    set sch_dir [file normalize [file join \
+        $::PDK_ROOT \
+        $::PDK \
+        libs.ref \
+        sg13g2_stdcell \
+        sch\
+        xschem]]
+
+    switch -- $stdcell_view {
+        custom {
+            set suffix "_custom"
+        }
+        default {
+            set suffix ""
+        }
+    }
+
+    set sch [file join $sch_dir "${cell}${suffix}.sch"]
+    
+    if {![file exists $sch]} {
+        set sch [file join $sch_dir "${cell}.sch"]
+    }
+
+    return $sch
+}
+
+proc symtype {} {
+    global stdcell_sym_type
+    return $stdcell_sym_type
 }
