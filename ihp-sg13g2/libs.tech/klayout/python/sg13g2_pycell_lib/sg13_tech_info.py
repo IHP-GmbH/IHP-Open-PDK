@@ -179,9 +179,15 @@ class TechInfo:
         #
         # NOTE: depending on the PDK, this SG13_Tech could be sg13g2 or sg13cmos5l
         #
-        is_g2 = tech.TECH_NAME == 'sg13g2'
-        is_cmos5L = tech.TECH_NAME == 'sg13cmos5l'
-                
+        is_g2 = False
+        is_cmos5L = False
+        if tech.TECH_NAME == 'sg13g2':
+            is_g2 = True
+        elif tech.TECH_NAME == 'sg13cmos5l':
+            is_cmos5L = True
+        else:
+            raise NotImplementedError(f"unsupported tech {tech.TECH_NAME}")
+        
         tp = tech.getTechParams()
 
         layers = [
