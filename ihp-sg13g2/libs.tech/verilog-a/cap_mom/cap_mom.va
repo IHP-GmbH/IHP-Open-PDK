@@ -19,6 +19,15 @@
 //   an EM-fitted RF equivalent circuit for the interdigitated MoM capacitor on
 //   the thin-metal stack.  Full M1..M5 characterisation (g2 native).
 //
+// Fit validity (from the notes): the area/feed capacitance is the trustworthy
+//   quantity across the drawn size range.  The RF branches are characterised
+//   within a limited window only: the series-inductance fit is ~20% at 50 GHz,
+//   the substrate shunt (Cox, Rsub||Csub) is ~10% over 0..100 GHz.  Beyond that
+//   window the polynomials extrapolate (well behaved but unvalidated); in
+//   particular Rsub can go negative for very large devices and is clamped to a
+//   floor.  Corner/mismatch spread is not modelled (returns nominal); pending
+//   silicon.
+//
 // Interdigitated horizontal comb rows on every used metal, all layers
 // via-stacked into solid walls, adjacent rows of opposite polarity.
 //   length -> X (finger length), width -> Y (row count).
@@ -181,13 +190,20 @@ module cap_mom(PLUS, MINUS, SUB);
         Lskin   = (Lskin_c + Lskin_s * lu) * 1.0e-12;
 
         // ---- substrate shunt: Cox in series with (Rsub || Csub) -------------
-        //   Cox set by bottom-metal proximity to substrate:
-        //     mmin==1 (M1 bottom) : M1-bottom set
-        //     N==4                : M2-bottom set
-        //     else (N==3)         : M3-bottom set
+        //   Cox is the oxide capacitance from the BOTTOM MoM plate to the
+        //   substrate, so it scales with the bottom-metal distance and is keyed
+        //   by the bottom metal index (mmin).  The source notes (p22) index the
+        //   three Cox sets by layer count 3/4/5, but that sweep always kept the
+        //   top at M5, so "5 layers"=="M1 bottom", "4"=="M2", "3"=="M3".  Keying
+        //   on mmin reproduces the three characterised sets exactly for the full
+        //   M1..M5 stacks and stays physical for reduced-top stacks (e.g. M1..M4,
+        //   where the bottom is still M1 and Cox is the large M1-bottom value).
+        //     mmin==1 (M1 bottom) : 5-layer set
+        //     mmin==2 (M2 bottom) : 4-layer set
+        //     mmin>=3 (M3 bottom) : 3-layer set
         if (mmin == 1) begin
             cox0 = 1.725;   cox1 = 0.1192;  cox2 = 0.019406;
-        end else if (Nlay == 4) begin
+        end else if (mmin == 2) begin
             cox0 = 1.240;   cox1 = 0.1139;  cox2 = 0.011417;
         end else begin
             cox0 = 1.052;   cox1 = 0.09867; cox2 = 0.011364;
