@@ -40,6 +40,8 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 |cap_cmim           |Metal-Insulator-Metal capacitor                                                                                                            |
 |cap_cpara          |Parasitic capacitor symbol attached to a model (used only for parasitics extraction)                                                       |
 |cap_rfcmim         |Metal-Insulator-Metal capacitor model for RF                                                                                               |
+|moscap_n           |N-type MOS capacitor with G and SUB terminals and W-channel width and L-channel length parameters                                          |
+|moscap_p           |P-type MOS capacitor with G and NW terminals and W-channel width and L-channel length parameters                                           |
 |dantenna           |Antenna diode symbol. This diode is used to protect against low voltage. The anode of the diode should be connected to the ptap1 resistor. |
 |dpantenna          |Antenna diode symbol. This diode is used to protect against high voltage. The cathode of the diode should be connected to the ntap1 resistor.|
 |pnpMPA             |pnp HBT used for band-gap reference circuit                                                                                                |
