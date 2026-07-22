@@ -306,6 +306,36 @@ templates = [
     },
     {
         "regex": re.compile(
+            rf"^.*cap_mom(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+))(?=.*feed=(?P<feed>\w+)).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "cap_mom",
+        "params": [
+            {
+                "name": "w",
+                "type": "string",
+            },
+            {
+                "name": "l",
+                "type": "string",
+            },
+            {
+                "name": "mmin",
+                "type": "int",
+            },
+            {
+                "name": "mmax",
+                "type": "int",
+            },
+            {
+                "name": "feed",
+                "type": "string",
+            },
+        ],
+        "default_params": {"w": "5.0e-6", "l": "5.0e-6", "mmin": 1, "mmax": 5, "feed": "double"},
+    },
+    {
+        "regex": re.compile(
             rf"^.*cap_rfcmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*wfeed=(?P<wfeed>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",
