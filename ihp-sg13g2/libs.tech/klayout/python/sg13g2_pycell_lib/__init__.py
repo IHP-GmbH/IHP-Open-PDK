@@ -68,6 +68,8 @@ moduleNames = [
         'rfpmosHV_code',
         'NoFillerStack_code',
         'SVaricap_code',
+        'moscap_n_code',
+        'moscap_p_code',
         'pnpMPA_code',
         'isolbox_code',
         'schottky_code'
@@ -254,4 +256,3 @@ class PyCellLib(pya.Library):
 
 # instantiate and register the library
 PyCellLib()
-
