@@ -102,8 +102,11 @@
 *   active_x = floor(l/0.84) ; active_y = floor(w/0.89) - 1
 * guard degenerate sizes: force at least one active finger / row
 *------------------------------------------------------------------------------
-.param ax_raw   = {floor(lu/0.84)}
-.param ay_raw   = {floor(wu/0.89) - 1}
+* epsilon-before-floor snaps exact pitch multiples (l=k*0.84) to the
+* geometric count k on every toolchain, so this model, the PCell layout
+* and the C-label agree (see cap_mom_code.py / cap_mom.va; keep identical).
+.param ax_raw   = {floor(lu/0.84 + 1e-6)}
+.param ay_raw   = {floor(wu/0.89 + 1e-6) - 1}
 .param active_x = {ax_raw < 1 ? 1 : ax_raw}
 .param active_y = {ay_raw < 1 ? 1 : ay_raw}
 .param active_area = {active_x * active_y * 0.84 * 0.89}

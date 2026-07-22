@@ -336,8 +336,15 @@ class cap_mom(DloGen):
     # ---------------------------------------------------------------
     def genLayout(self):
         # Active unit-cell counts (PDF: length -> X, width -> Y).
-        nx_active = max(1, int(self.l_um // self.UC_X))
-        ny_active = max(1, int(self.w_um // self.UC_Y) - 1)
+        # A drawn dimension that is a non-integer exact multiple of the pitch
+        # (e.g. l=8.4um = 10*UC_X) can round-trip through *1e6 to one ULP below
+        # the integer, where a bare floor/`//` lands on k or k-1 depending on the
+        # toolchain. Snap to the pitch grid with a sub-grid epsilon before the
+        # floor so the layout, this C-label, and the simulation model agree on
+        # the geometric count k for every geometry. Keep this identical to the
+        # ngspice/Verilog-A model (floor(x/pitch + 1e-6)).
+        nx_active = max(1, int(self.l_um / self.UC_X + 1e-6))
+        ny_active = max(1, int(self.w_um / self.UC_Y + 1e-6) - 1)
         nx = nx_active
         ny = ny_active + 1
         dev_w = GridFix(nx * self.UC_X)     # X extent (finger length)
