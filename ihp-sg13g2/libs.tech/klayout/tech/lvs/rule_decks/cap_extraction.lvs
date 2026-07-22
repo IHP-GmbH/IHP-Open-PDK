@@ -53,3 +53,18 @@ extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
                   'dev_mk' => varicap_dev_mk,
                   'sub_mk' => ptap
                 })
+
+# === cap_mom ===
+# Marker/ports derived in cap_mom_derivations.lvs (CAP DERIVATIONS stage),
+# per-metal pin nets tied in cap_mom_connections.lvs. Kept in the CAP group so
+# the LVS device regression finds its cap_devices/ testcase (as for cap_cmim).
+logger.info('Extracting cap_mom device')
+extract_devices(CapMomExtractor.new('cap_mom'), {
+                  'core' => cap_mom_marker,
+                  'm1p' => cap_mom_m1_ports,
+                  'm2p' => cap_mom_m2_ports,
+                  'm3p' => cap_mom_m3_ports,
+                  'm4p' => cap_mom_m4_ports,
+                  'm5p' => cap_mom_m5_ports,
+                  'dev_mk' => cap_mom_dev_mk
+                })
