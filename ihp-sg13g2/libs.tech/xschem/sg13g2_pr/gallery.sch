@@ -244,3 +244,17 @@ spiceprefix=X
 m=1
 value="expr_eng(  ( 9.0e-6 / @w + 7.0 * ( @l ) / ( @w + 1.0e-8 ) ) / @m  )"
 }
+C {sg13g2_pr/moscap_n.sym} 720 -230 0 0 {name=C4
+l=1.0u
+w=1.0u
+m=1
+model=sg13_moscap_n
+spiceprefix=X
+}
+C {sg13g2_pr/moscap_p.sym} 860 -230 0 0 {name=C5
+l=1.0u
+w=1.0u
+m=1
+model=sg13_moscap_p
+spiceprefix=X
+}
