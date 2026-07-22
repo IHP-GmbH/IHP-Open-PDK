@@ -45,7 +45,12 @@ class cap_mom(DloGen):
       * Via stacks at every tooth/bar overlap, linking all layers of the same
         polarity column.
 
-    Feed variants (the two characterised versions are 'double' and 'same'):
+    Feed variants: cap_mom is ONE parameterised device; the `feed` parameter
+    selects both the layout variant and the model behaviour. The two complete
+    2-terminal versions are 'double' (opposite-side) and 'same' (single-side).
+    They are NOT electrically identical: the single-side 'same' adds a feed
+    capacitance Cfeed that 'double' does not (and uses a different series R), so
+    the two variants have different total capacitance from the same model.
       * 'double' : opposite-side feed. PLUS pad left (even rows), MINUS pad right
                    (odd rows). Cfeed ~ 0. This is the reference configuration.
       * 'same'   : single-side feed. Two STACKED left pads on the same footprint:
