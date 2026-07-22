@@ -397,5 +397,5 @@ class moscap_p(DloGen):
         dbCreateLabel(
             self, text_layer,
             Point((core_left + core_right) / 2, (core_top + core_bottom) / 2),
-            model[5:], 'centerCenter', 'R0', Font.EURO_STYLE, 0.1
+            'moscap_p', 'centerCenter', 'R0', Font.EURO_STYLE, 0.1
         )
