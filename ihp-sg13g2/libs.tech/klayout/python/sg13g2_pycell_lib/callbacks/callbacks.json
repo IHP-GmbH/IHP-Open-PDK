@@ -19,29 +19,24 @@
     "moduleList": [
         "parameters.tcl",
         "util.tcl",
+        "tech.tcl",
         "cap_cb.tcl",
         "diode_cb.tcl",
         "bondpad_cb.tcl",
         "inductor_cb.tcl",
-        "isolbox_cb.tcl"
+        "isolbox_cb.tcl",
+        "res_cb.tcl",
+        "mos_cb.tcl"
     ],
     "callbackDefinition": {
         "callbackList": [
             {
-                "devices": ["cmim"],
+                "devices": ["cmim", "rfcmim"],
                 "callbacks": [
                     {
                         "callback": "CbCap",
-                        "pcellParameters": ["C", "w", "l"]
-                    }
-                ]
-            },
-            {
-                "devices": ["rfcmim"],
-                "callbacks": [
-                    {
-                        "callback": "CbCap",
-                        "pcellParameters": ["C", "w", "l"]
+                        "pcellParameters": ["C", "w", "l", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
@@ -50,16 +45,18 @@
                 "callbacks": [
                     {
                         "callback": "CbSVaricap_wl",
-                        "pcellParameters": ["w", "l"]
+                        "pcellParameters": ["w", "l"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
             {
-                "devices": ["dantenna"],
+                "devices": ["dantenna", "dpantenna"],
                 "callbacks": [
                     {
                         "callback": "CbDiode",
-                        "pcellParameters": ["w", "l", "a"]
+                        "pcellParameters": ["w", "l", "a", "p", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
                     }
                 ]
             },
@@ -68,11 +65,139 @@
                 "callbacks": [
                     {
                         "callback": "CbBondpad",
-                        "pcellParameters": ["topMetal", "bottomMetal"]
+                        "pcellParameters": ["topMetal", "bottomMetal"],
+                        "usePcellParameterAsArgument": "true"
                     },
                     {
                         "callback": "bondpad_cb",
-                        "pcellParameters": ["hwquota", "diameter", "padType", "passEncl", "FlipChip"]
+                        "pcellParameters": ["hwquota", "diameter", "padType", "passEncl", "FlipChip"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["inductor2", "inductor3"],
+                "callbacks": [
+                    {
+                        "callback": "inductor_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_s",
+                        "pcellParameters": ["s"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_nr",
+                        "pcellParameters": ["nr_r"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "inductor_d",
+                        "pcellParameters": ["d"],
+                        "usePcellParameterAsArgument": "false"
+                    }
+                ]
+            },
+            {
+                "devices": ["isolbox"],
+                "callbacks": [
+                    {
+                        "callback": "isol_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isol_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isol_well",
+                        "pcellParameters": ["wellwidth"],
+                        "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "isolbox_cb",
+                        "pcellParameters": ["Bv", "calculate", "pwell_w"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["rsil"],
+                "callbacks": [
+                    {
+                        "callback": "CbRes",
+                        "pcellParameters": ["R", "w", "l", "ps", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["rhigh", "rppd"],
+                "callbacks": [
+                    {
+                        "callback": "CbRes",
+                        "pcellParameters": ["R", "w", "l", "b", "ps", "Calculate", "Recommendation"],
+                        "parameterMappings": ["Recommendation➜Calculate"],
+                        "usePcellParameterAsArgument": "true"
+                    }
+                ]
+            },
+            {
+                "devices": ["nmos", "pmos", "nmosHV"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_mos_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "NLCB_mos_ng",
+                        "pcellParameters": ["ws", "ng"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "NLCB_mos_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["pmosHV"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_mos_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "NLCB_mos_ng",
+                        "pcellParameters": ["ng"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "NLCB_mos_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["sealring"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "NLCB_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             }
