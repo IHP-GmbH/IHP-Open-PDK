@@ -21,7 +21,7 @@
 *
 * feed token: string 'none'|'same'|'double' -> numeric code (0|1|2) for the
 * Verilog-A. w,l in metres; mmin/mmax metal indices (1=Metal1 .. 5=Metal5).
-* m: parallel device multiplier (OSDI mfactor). mm_ok: accepted for cap-family
+* m: parallel device multiplier (ngspice subckt multiplier). mm_ok: accepted for
 * interface parity but a NO-OP -- cap_cmom has no characterised mismatch model.
 *******************************************************************************
 * STATISTICAL / CORNER MODELING (known caveat, to address with silicon):
@@ -43,7 +43,8 @@
 *******************************************************************************
 .param none=0 same=1 double=2
 
-.subckt cap_cmom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0 m=1 mm_ok=1
+.subckt cap_cmom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0 mm_ok=1
+.param m=1
 Ncap PLUS MINUS 0 cap_cmom_mod w={w} l={l} mmin={mmin} mmax={mmax} feed={feed} subblock={subblock} m={m}
 .model cap_cmom_mod cap_cmom
 .ends cap_cmom
