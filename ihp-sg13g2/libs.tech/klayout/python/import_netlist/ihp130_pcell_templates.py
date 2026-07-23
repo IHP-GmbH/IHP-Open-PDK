@@ -306,10 +306,10 @@ templates = [
     },
     {
         "regex": re.compile(
-            rf"^.*cap_mom(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+))(?=.*feed=(?P<feed>\w+)).*$"
+            rf"^.*cap_cmom(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+))(?=.*feed=(?P<feed>\w+)).*$"
         ),
         "pcell_library": "SG13_dev",
-        "pcell_name": "cap_mom",
+        "pcell_name": "cap_cmom",
         "params": [
             {
                 "name": "w",

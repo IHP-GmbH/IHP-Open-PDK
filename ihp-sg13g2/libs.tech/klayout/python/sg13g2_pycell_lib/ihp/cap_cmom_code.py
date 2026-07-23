@@ -24,7 +24,7 @@ from .utility_functions import *
 import math
 
 
-class cap_mom(DloGen):
+class cap_cmom(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
     Source model: IHP "MOM model development notes" (Nov 2022),
@@ -45,7 +45,7 @@ class cap_mom(DloGen):
       * Via stacks at every tooth/bar overlap, linking all layers of the same
         polarity column.
 
-    Feed variants: cap_mom is ONE parameterised device; the `feed` parameter
+    Feed variants: cap_cmom is ONE parameterised device; the `feed` parameter
     selects both the layout variant and the model behaviour. The two complete
     2-terminal versions are 'double' (opposite-side) and 'same' (single-side).
     They are NOT electrically identical: the single-side 'same' adds a feed
@@ -106,7 +106,7 @@ class cap_mom(DloGen):
     #   capacitance. Even-row top-metal bars reach the PLUS pad; odd-row
     #   sub-metal bars reach the MINUS pad. The PLUS/MINUS pins sit stacked at
     #   the pad centre. LVS keeps them on separate nets by connecting each
-    #   metal's pins ONLY to its own metal (per-layer, cap_mom_connections.lvs).
+    #   metal's pins ONLY to its own metal (per-layer, cap_cmom_connections.lvs).
     SAME_PAD_GAP  = 0.30                        # gap from the core to the pad
     SAME_PAD_W    = 0.90                        # pad width (X)
     FEED_EXT_SAME = SAME_PAD_GAP + SAME_PAD_W   # 1.20  left extent of same feed
@@ -126,7 +126,7 @@ class cap_mom(DloGen):
     def defineParamSpecs(cls, specs):
         mchoice = list(range(1, cls.METAL_MAX + 1))
 #ifdef KLAYOUT
-        specs('model', 'cap_mom', 'Model name')
+        specs('model', 'cap_cmom', 'Model name')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -142,7 +142,7 @@ class cap_mom(DloGen):
         specs('subblock', 0, 'Add substrate isolation block',
               ChoiceConstraint([0, 1]))
 #else
-        specs('model', 'cap_mom', 'Model name')
+        specs('model', 'cap_cmom', 'Model name')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -312,7 +312,7 @@ class cap_mom(DloGen):
             # PLUS pin on the top-metal pad and MINUS pin on the sub-metal pad,
             # STACKED at the same pad centre (they overlap in x,y on adjacent
             # metals). LVS keeps them on separate nets because each metal's pins
-            # connect only to that metal (per-layer, cap_mom_connections.lvs); a
+            # connect only to that metal (per-layer, cap_cmom_connections.lvs); a
             # symmetric cap is orientation/terminal-swap invariant, so the two
             # terminals need not be told apart by position.
             pad_cx = (-self.FEED_EXT_SAME + -self.SAME_PAD_GAP) / 2.0
@@ -425,7 +425,7 @@ class cap_mom(DloGen):
             c_total = c_active + cfeed * feed_width
         else:
             c_total = c_active
-        label_text = 'cap_mom C={:.3f}fF'.format(c_total)
+        label_text = 'cap_cmom C={:.3f}fF'.format(c_total)
         dbCreateLabel(self, text_layer,
                       Point(GridFix(x_lo), GridFix(y_lo - 0.5)),
                       label_text, 'centerLeft', 'R0',

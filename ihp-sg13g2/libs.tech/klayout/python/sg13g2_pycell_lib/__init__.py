@@ -44,7 +44,7 @@ moduleNames = [
         'pmos_code',
         'pmosHV_code',
         'cmim_code',
-        'cap_mom_code',
+        'cap_cmom_code',
         'rsil_code',
         'rhigh_code',
         'rppd_code',

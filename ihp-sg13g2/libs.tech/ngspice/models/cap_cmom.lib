@@ -1,5 +1,5 @@
 *******************************************************************************
-* cap_mom - 2-terminal ngspice wrapper around the Verilog-A (OSDI) compact model
+* cap_cmom - 2-terminal ngspice wrapper around the Verilog-A (OSDI) compact model
 *
 * Copyright 2026 IHP PDK Authors
 * Licensed under the Apache License, Version 2.0 (the "License").
@@ -9,12 +9,12 @@
 * development notes v4" (2022); coefficients are the natively characterised
 * g2 values by layer count N = mmax-mmin+1 (N=3,4,5).
 *
-* The Verilog-A device cap_mom is 3-terminal (PLUS, MINUS, SUB); SUB is the
+* The Verilog-A device cap_cmom is 3-terminal (PLUS, MINUS, SUB); SUB is the
 * substrate reference for the oxide shunt. This subckt keeps the classic
 * 2-terminal interface by tying SUB to global ground 0.
 *
 * Requires the OSDI object to be loaded first (done in libs.tech/ngspice/.spiceinit):
-*   osdi $PDK_ROOT/$PDK/libs.tech/ngspice/osdi/cap_mom.osdi
+*   osdi $PDK_ROOT/$PDK/libs.tech/ngspice/osdi/cap_cmom.osdi
 * Build it with libs.tech/verilog-a/openvaf-compile-va.sh.
 * Simulator scope: ngspice via OSDI (built with -D__NGSPICE__). Xyce / gnucap /
 * qucs-s are not wired and would need a separate Verilog-A build per simulator.
@@ -23,13 +23,13 @@
 * Verilog-A. w,l in metres; mmin/mmax metal indices (1=Metal1 .. 5=Metal5).
 *******************************************************************************
 * STATISTICAL / CORNER MODELING (known caveat, to address with silicon):
-* cap_mom has NO characterised process-corner or mismatch variation yet. The
-* Verilog-A density coefficients are the g2-derived NOMINAL values, so cap_mom
+* cap_cmom has NO characterised process-corner or mismatch variation yet. The
+* Verilog-A density coefficients are the g2-derived NOMINAL values, so cap_cmom
 * returns the same nominal capacitance in every corner (typ/bcs/wcs) and in
 * Monte-Carlo (no local mismatch). This is NOT a claim that the device is
 * corner-stable; the spread is simply not modelled. Extracting it needs silicon
 * matched-pair / array test structures (not in the current size-sweep campaign),
-* deferred to a future test chip. Treat corner/MC results for cap_mom as nominal.
+* deferred to a future test chip. Treat corner/MC results for cap_cmom as nominal.
 *******************************************************************************
 * RF VALIDITY WINDOW (full fit-validity note in the Verilog-A header):
 * the low-frequency capacitance is the trustworthy quantity across the drawn size
@@ -41,7 +41,7 @@
 *******************************************************************************
 .param none=0 same=1 double=2
 
-.subckt cap_mom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0
-Ncap PLUS MINUS 0 cap_mom_mod w={w} l={l} mmin={mmin} mmax={mmax} feed={feed} subblock={subblock}
-.model cap_mom_mod cap_mom
-.ends cap_mom
+.subckt cap_cmom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0
+Ncap PLUS MINUS 0 cap_cmom_mod w={w} l={l} mmin={mmin} mmax={mmax} feed={feed} subblock={subblock}
+.model cap_cmom_mod cap_cmom
+.ends cap_cmom
