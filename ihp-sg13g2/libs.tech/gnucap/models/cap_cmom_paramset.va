@@ -1,0 +1,27 @@
+//******************************************************************************
+//                                                                             *
+// Copyright 2026 IHP PDK Authors                                              *
+//                                                                             *
+// Licensed under the Apache License, Version 2.0 (the "License");             *
+// you may not use this file except in compliance with the License.            *
+// You may obtain a copy of the License at                                     *
+//                                                                             *
+//     https://www.apache.org/licenses/LICENSE-2.0                             *
+//                                                                             *
+// Unless required by applicable law or agreed to in writing, software         *
+// distributed under the License is distributed on an "AS IS" BASIS,           *
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+// See the License for the specific language governing permissions and         *
+// limitations under the License.                                              *
+//                                                                             *
+//******************************************************************************
+
+// gnucap plugin for the interdigitated MoM capacitor.
+// Compiles the shared cap_cmom compact model (the same Verilog-A the ngspice
+// OSDI build uses) into a gnucap-modelgen plugin. cap_cmom is a full behavioural
+// module with no corner/mismatch dependence, so it is compiled directly (no
+// paramset binding is needed). The module cap_cmom(PLUS, MINUS, SUB) is exposed;
+// tie SUB to ground for the classic 2-terminal use, as the ngspice subckt does.
+// Resolved through the Makefile MGFLAGS include path -I ../../verilog-a/cap_cmom.
+
+`include "cap_cmom.va"

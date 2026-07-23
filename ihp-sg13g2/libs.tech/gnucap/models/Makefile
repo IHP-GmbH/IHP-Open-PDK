@@ -3,7 +3,7 @@ include ../gnucap.mk
 MODELGEN_VERILOG = gnucap-mg-vams
 OPENVAF = openvaf-r
 IHP_VERILOG_DIR = ../../verilog-a
-MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I $(IHP_VERILOG_DIR)/r3_cmc -I $(IHP_VERILOG_DIR)/psp103
+MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I $(IHP_VERILOG_DIR)/r3_cmc -I $(IHP_VERILOG_DIR)/psp103 -I $(IHP_VERILOG_DIR)/cap_cmom
 
 TARGET_DIR = ../plugins/models
 OSDI_DIR = ../plugins/osdi
@@ -12,6 +12,7 @@ TARGETS = \
 	idc \
 	resistor_paramset \
 	capacitor_paramset \
+	cap_cmom_paramset \
 	sg13g2_moslv_paramset \
 	sg13g2_moslv_rf_paramset \
 	sg13g2_moshv_paramset \
