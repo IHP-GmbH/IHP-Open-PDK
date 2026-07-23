@@ -1,0 +1,39 @@
+################################################## on-canvas device value estimates #############################
+# Helper procs used by sg13g2_pr symbols to show an estimated device value on the
+# schematic canvas via a tcleval() label. Display convenience only; the accurate
+# value always comes from simulation.
+
+# Convert a length field to micron. Accepts SI metres (e.g. 5e-6) or a micron
+# suffix (e.g. 5u), matching how the symbols may be parameterised.
+proc cap_cmom_um {v} {
+  if { [regsub {u$} $v {} v] } {
+    return [expr { double($v) }]
+  }
+  return [expr { double($v) * 1e6 }]
+}
+
+# Low-frequency capacitance estimate (F) for the interdigitated MoM capacitor
+# cap_cmom, from its geometry (w, l), metal stack (mmin..mmax) and feed topology,
+# scaled by the device multiplier m. Mirrors the compact model's per-layer density,
+# the floor discretisation of the active fingers and the feed=same fringe term.
+proc cap_cmom_est {m mmin mmax w l feed} {
+  if { [catch {
+    set lu [cap_cmom_um $l]
+    set wu [cap_cmom_um $w]
+    set N  [expr { $mmax - $mmin + 1 }]
+    if { $N <= 2 } { set dens 0.55 ; set cfeed 0.70 } \
+    elseif { $N == 3 } { set dens 0.82 ; set cfeed 0.97 } \
+    elseif { $N == 4 } { set dens 1.09 ; set cfeed 1.28 } \
+    else { set dens 1.36 ; set cfeed 1.46 }
+    set nx [expr { max(1, int(floor($lu / 0.84))) }]
+    set ny [expr { max(1, int(floor($wu / 0.89)) - 1) }]
+    set c  [expr { $dens * ($nx * 0.84) * ($ny * 0.89) }]
+    if { $feed eq "same" } {
+      set c [expr { $c + $cfeed * ($ny * 0.89 + 0.64) }]
+    }
+    set c  [expr { $m * $c * 1e-15 }]
+  } err] } {
+    return "?"
+  }
+  return [format %.4g $c]
+}
