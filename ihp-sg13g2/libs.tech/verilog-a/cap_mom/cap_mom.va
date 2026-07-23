@@ -22,10 +22,16 @@
 // Fit validity (from the notes): the area/feed capacitance is the trustworthy
 //   quantity across the drawn size range.  The RF branches are characterised
 //   within a limited window only.  The series inductance is FEED-keyed:
-//   feed=double uses the two-sided (opposite-end) loop fit (~20% at 50 GHz),
-//   feed=same/none use the single-side local-L fit (p16 SRF) -- both are small
-//   corrections (<~10% of |Z|) below 50 GHz; using the loop value for a same-
-//   side device would flip the in-band reactance inductive on large geometries.
+//   feed=double uses the two-sided (opposite-end) loop fit (Volker p21, ~20% at
+//   50 GHz), feed=same/none use the single-side local-L fit (p16 SRF).  For
+//   feed=same/none and small-to-mid feed=double the L is a small correction
+//   (<~10% of |Z|) below 50 GHz.  For LARGE feed=double the two-sided loop L is
+//   big enough to self-resonate IN-BAND (l~60um ~30 GHz, ~30x30 ~45 GHz) against
+//   a two-sided SRF Volker never published (he gives single-side SRF p16 and
+//   two-sided L p18/p21, no two-sided SRF) -- treat the default-feed SRF near or
+//   above those frequencies as an unvalidated prediction.  Using the loop value
+//   for a same-side device would flip the in-band reactance inductive on large
+//   geometries, which the feed keying avoids.
 //   The substrate shunt (Cox, Rsub||Csub) is ~10% over 0..100 GHz.  Beyond that
 //   window the polynomials extrapolate (well behaved but unvalidated); in
 //   particular Rsub can go negative for very large devices and is clamped to a
@@ -50,6 +56,10 @@
 //   C_total = density[N] * active_area  +  Cfeed         [fF]
 //     Cfeed = cfeed_per_um[N] * feed_width   (feed == 'same' only)
 //           = 0                              (feed == 'double' | 'none')
+//   density[N] is the ACTIVE-AREA density (p5 "change in C vs length" cancels the
+//   feed overlap), so for feed=double the ~1.7fF opposite-side feed residual
+//   Volker measured is intentionally dropped ("assume zero", p7-8): small double
+//   devices read ~3% low by construction, not by omission.
 //
 // COEFFICIENT PROVENANCE / LAYER-COUNT KEYING
 //   Every coefficient is selected by the metal LAYER COUNT  N = mmax - mmin + 1
@@ -57,9 +67,11 @@
 //   values are:
 //       N = 3  (M3..M5) , N = 4  (M2..M5) , N = 5  (M1..M5)   -> measured (g2)
 //       N = 2                                                 -> extrapolated
-//   N = 2 is provided ONLY for the reduced thin-metal (M1..M4) sibling stack,
-//   where it is an unmeasured extrapolation flagged inline.  For the native
-//   M1..M5 stack (default here) all used N are measured.
+//   N = 2 is the reduced thin-metal (M1..M4) sibling's native config, but it is
+//   ALSO constructible on this g2 stack as any 2-metal subset (e.g. mmin=4,
+//   mmax=5): there density 0.55 / cfeed 0.70 are unmeasured OUR-extrapolation
+//   values (the only non-source C numbers here), flagged inline.  For N = 3,4,5
+//   (the usual g2 subsets) all coefficients are measured.
 //
 // Terminals:
 //   PLUS   - plate 1
@@ -159,7 +171,10 @@ module cap_mom(PLUS, MINUS, SUB);
                   (Nlay == 4) ? 1.09 : 1.36;
 
         // ---- single-side feed cap per unit length [fF/um] by N --------------
-        //   N<=2 -> 0.70 (extrapolated)
+        //   N<=2 -> 0.70 (extrapolated).  These are Volker's published feed caps
+        //   on the OVERSIZE-via basis; unlike the area density they carry NO via
+        //   correction, so small feed=same devices read ~1-2% high.  Kept as the
+        //   source value (a re-fit would deviate from the published number).
         cfeed_pu = (Nlay <= 2) ? 0.70 :
                    (Nlay == 3) ? 0.97 :
                    (Nlay == 4) ? 1.28 : 1.46;
@@ -171,7 +186,10 @@ module cap_mom(PLUS, MINUS, SUB);
 
         // ---- series resistance [Ohm], l,w in um -----------------------------
         //   'same'  : layer-independent ; else per-N (opposite-side / no-feed).
-        //   'none' reuses the opposite-side (double) set (flagged assumption).
+        //   'none' reuses the opposite-side (double) R set: a bare no-feed array
+        //   is both-ends-accessible, so its low R (~65% of the same-side R) is the
+        //   double signature; paired with the single-side (local) Lcore below it
+        //   is a coherent no-feed device, not a topology mismatch.
         if (issame > 0.5)
             Rseries = 0.22 + 0.40 * ratio;
         else
@@ -221,13 +239,16 @@ module cap_mom(PLUS, MINUS, SUB);
 
         // ---- substrate shunt: Cox in series with (Rsub || Csub) -------------
         //   Cox is the oxide capacitance from the BOTTOM MoM plate to the
-        //   substrate, so it scales with the bottom-metal distance and is keyed
-        //   by the bottom metal index (mmin).  The source notes (p22) index the
-        //   three Cox sets by layer count 3/4/5, but that sweep always kept the
-        //   top at M5, so "5 layers"=="M1 bottom", "4"=="M2", "3"=="M3".  Keying
-        //   on mmin reproduces the three characterised sets exactly for the full
-        //   M1..M5 stacks and stays physical for reduced-top stacks (e.g. M1..M4,
-        //   where the bottom is still M1 and Cox is the large M1-bottom value).
+        //   substrate, so it scales with the bottom-metal distance.  The source
+        //   notes (p22) index the three Cox sets by LAYER COUNT 3/4/5 (verbatim
+        //   "For 3/4/5 MOM layers").  We RE-KEY them by the bottom metal index
+        //   (mmin) -- our physically-motivated inference, resting on the (unstated
+        //   in p22) premise that Volker's sweep kept the top at M5, so "5 layers"
+        //   =="M1 bottom", "4"=="M2", "3"=="M3".  This is a NO-OP for every
+        //   mmax==5 stack (mmin- and layer-count-keying pick the same set) and
+        //   stays physical for reduced-top stacks (e.g. M1..M4, bottom still M1 ->
+        //   large M1-bottom Cox); it diverges from literal layer-count keying only
+        //   on uncharacterised reduced-top mid-stacks.
         //     mmin==1 (M1 bottom) : 5-layer set
         //     mmin==2 (M2 bottom) : 4-layer set
         //     mmin>=3 (M3 bottom) : 3-layer set

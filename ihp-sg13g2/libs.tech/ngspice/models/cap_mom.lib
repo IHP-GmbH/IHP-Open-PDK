@@ -31,6 +31,14 @@
 * matched-pair / array test structures (not in the current size-sweep campaign),
 * deferred to a future test chip. Treat corner/MC results for cap_mom as nominal.
 *******************************************************************************
+* RF VALIDITY WINDOW (full fit-validity note in the Verilog-A header):
+* the low-frequency capacitance is the trustworthy quantity across the drawn size
+* range. The RF branches (series R/L, skin, substrate shunt) are lumped fits valid
+* to ~50 GHz. For the DEFAULT feed=double, LARGE devices (l~60um, or ~30x30)
+* self-resonate in-band (~30-47 GHz) against a two-sided SRF Volker never
+* published -- treat the default-feed SRF near/above those frequencies as an
+* unvalidated prediction. feed=same/none stay capacitive well past 50 GHz.
+*******************************************************************************
 .param none=0 same=1 double=2
 
 .subckt cap_mom PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0
