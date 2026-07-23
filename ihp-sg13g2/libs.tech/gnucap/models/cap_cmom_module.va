@@ -16,12 +16,23 @@
 //                                                                             *
 //******************************************************************************
 
-// gnucap plugin for the interdigitated MoM capacitor.
-// Compiles the shared cap_cmom compact model (the same Verilog-A the ngspice
-// OSDI build uses) into a gnucap-modelgen plugin. cap_cmom is a full behavioural
-// module with no corner/mismatch dependence, so it is compiled directly (no
-// paramset binding is needed). The module cap_cmom(PLUS, MINUS, SUB) is exposed;
-// tie SUB to ground for the classic 2-terminal use, as the ngspice subckt does.
-// Resolved through the Makefile MGFLAGS include path -I ../../verilog-a/cap_cmom.
+// gnucap build unit for the interdigitated MoM capacitor.
+//
+// This is a build shim, not a paramset: cap_cmom is a single behavioural
+// compact module (module cap_cmom(PLUS, MINUS, SUB)) with no corner/mismatch
+// spread, so unlike cmim it does not decompose into an sp_capacitor primitive
+// plus corner paramsets. The module itself lives in the shared Verilog-A
+//
+//     ../../verilog-a/cap_cmom/cap_cmom.va
+//
+// and is included below verbatim. Keeping a single source means the gnucap
+// plugin and the ngspice OSDI build compile byte-for-byte identical model code.
+// The include resolves through the Makefile MGFLAGS path
+// -I ../../verilog-a/cap_cmom. gnucap-mg-vams elaborates the included module
+// directly into the plugin (see `make dump-cap_cmom_module` for the emitted
+// module cap_cmom(PLUS, MINUS, SUB) ... analog ... endmodule).
+//
+// Terminals: tie SUB to ground for the classic 2-terminal use, exactly as the
+// ngspice wrapper subckt does.
 
 `include "cap_cmom.va"
