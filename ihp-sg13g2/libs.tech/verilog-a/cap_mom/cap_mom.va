@@ -21,8 +21,12 @@
 //
 // Fit validity (from the notes): the area/feed capacitance is the trustworthy
 //   quantity across the drawn size range.  The RF branches are characterised
-//   within a limited window only: the series-inductance fit is ~20% at 50 GHz,
-//   the substrate shunt (Cox, Rsub||Csub) is ~10% over 0..100 GHz.  Beyond that
+//   within a limited window only.  The series inductance is FEED-keyed:
+//   feed=double uses the two-sided (opposite-end) loop fit (~20% at 50 GHz),
+//   feed=same/none use the single-side local-L fit (p16 SRF) -- both are small
+//   corrections (<~10% of |Z|) below 50 GHz; using the loop value for a same-
+//   side device would flip the in-band reactance inductive on large geometries.
+//   The substrate shunt (Cox, Rsub||Csub) is ~10% over 0..100 GHz.  Beyond that
 //   window the polynomials extrapolate (well behaved but unvalidated); in
 //   particular Rsub can go negative for very large devices and is clamped to a
 //   floor.  Corner/mismatch spread is not modelled (returns nominal); pending
@@ -111,7 +115,7 @@ module cap_mom(PLUS, MINUS, SUB);
     real ax, ay, active_x, active_y, active_area, feed_width;
     real issame, density, cfeed_pu, cfeed_fF, cmain_fF, Cmain;
     real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
-    real cox0, cox1, cox2, Cox, Rsub, Csub;
+    real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
 
     // weak anchor conductance for otherwise-floating internal islands [S]
     localparam real GLEAK = 1.0e-12;
@@ -176,8 +180,34 @@ module cap_mom(PLUS, MINUS, SUB);
                                     0.15 + 0.26 * ratio;
         if (Rseries < 1.0e-3) Rseries = 1.0e-3;
 
-        // ---- core series inductance [H], common to all N (fit err ~20% @50GHz)
-        Lcore = (4.886 + 3.117 * ratio + 0.510 * lu - 2.526 * sqrt(lu)) * 1.0e-12;
+        // ---- core series inductance [H] -- keyed by FEED --------------------
+        //   The p18 fit is the OPPOSITE-END (two-sided) loop inductance: the
+        //   current runs the full finger length down one comb and back the
+        //   other, a long loop worth tens of pH.  It is the right quantity ONLY
+        //   for feed=double (PLUS/MINUS at opposite ends).  A same-side
+        //   (feed=same) or bare (feed=none) device has no such loop; its series
+        //   inductance is the small LOCAL value the notes measure single-side
+        //   (p13-16, ~0.2..1.3 pH).  Volker gives single-side L only via the p16
+        //   SRF fit (width-independent, length-driven), so recover it self-
+        //   consistently from the model's own Cmain:
+        //       L_ss = 1 / ( (2*pi*SRF_ss)^2 * Cmain )
+        //   SRF_ss [Hz] from the p16 1/SRF-vs-length lines (l in um):
+        //       N<=3 : 1e9/(7.68e-5 + 6.64e-5*l)
+        //       N==4 : 1e9/(8.82e-4 + 4.72e-5*l)
+        //       N>=5 : 1e9/(2.85e-4 + 6.87e-5*l)
+        //   Using the loop fit for feed=same overstates L 15..90x and flips the
+        //   in-band series reactance inductive on large devices (e.g. 60x10
+        //   same-feed goes inductive above ~30 GHz); feed keying removes that.
+        //   feed code: 2=double (loop) ; 1=same, 0=none (both -> single-side).
+        if (feed == 2) begin
+            Lcore = (4.886 + 3.117 * ratio + 0.510 * lu - 2.526 * sqrt(lu)) * 1.0e-12;
+        end else begin
+            srf_ss = (Nlay <= 3) ? 1.0e9 / (7.68e-5 + 6.64e-5 * lu) :
+                     (Nlay == 4) ? 1.0e9 / (8.82e-4 + 4.72e-5 * lu) :
+                                   1.0e9 / (2.85e-4 + 6.87e-5 * lu);
+            wsrf  = 6.283185307179586 * srf_ss;
+            Lcore = 1.0 / (wsrf * wsrf * Cmain);
+        end
         if (Lcore < 1.0e-18) Lcore = 1.0e-18;
 
         // ---- skin effect (PDF p12, refinement) ------------------------------
