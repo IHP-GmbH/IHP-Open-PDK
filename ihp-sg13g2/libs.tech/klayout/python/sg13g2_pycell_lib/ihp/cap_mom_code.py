@@ -27,7 +27,7 @@ import math
 class cap_mom(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
-    Source model: V. Muhlhaus, "MOM model development notes" (IHP, Nov 2022),
+    Source model: IHP "MOM model development notes" (Nov 2022),
     which characterised this MoM on the g2 thin-metal stack Metal1..Metal5.
     The metal stack is selected by mmin/mmax (any contiguous subset of
     Metal1..Metal5). Model coefficients (AREACAP / CFEED_PER_UM) are keyed by
