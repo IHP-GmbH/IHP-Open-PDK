@@ -1,6 +1,6 @@
-<Qucs Schematic 24.4.1>
+<Qucs Schematic 25.2.0>
 <Properties>
-  <View=-60,-60,960,560,1,0,0>
+  <View=-114,-61,2753,920,1.34875,0,12>
   <Grid=10,10,1>
   <DataSet=ac_mom_cap.dat>
   <DataDisplay=ac_mom_cap.dpl>
@@ -16,22 +16,27 @@
 <Symbol>
 </Symbol>
 <Components>
-  <Vac V1 1 100 200 18 -26 0 0 "1 V" 1 "1 kHz" 0 "0" 0 "0" 0 "0" 0 "0" 0>
-  <cmom C1 1 300 200 20 -40 0 0 "cap_cmom" 0 "X" 0 "10.0" 1 "70.0" 1 "1" 1 "5" 1 "double" 1 "0" 0 "1" 1 "m*((mmax-mmin+1<=2)?0.55:((mmax-mmin+1==3)?0.82:((mmax-mmin+1==4)?1.09:1.36)))*(max(1,rint(l*1e6/0.84+1e-6-0.5))*0.84)*(max(1,rint(w*1e6/0.89+1e-6-0.5)-1)*0.89)*1e-15" 1 "1" 0 "cap_cmom" 0>
-  <R R1 1 500 200 -26 15 0 0 "100k" 1 "26.85" 0 "0.0" 0 "0.0" 0 "26.85" 0 "US" 0>
-  <GND * 1 70 270 0 0 0 0>
-  <GND * 1 530 270 0 0 0 0>
-  <SpiceLib SpiceLib1 1 120 60 -13 18 0 0 "cornerCAP.lib" 1 "cap_typ" 1>
-  <.CUSTOMSIM CUSTOM1 1 360 60 0 27 0 0 "ac dec 1000 1e6 1e9\nlet mag=abs(out)\nmeas ac freq_at when mag = 0.707\nlet C = 1/(2*PI*freq_at*1e+5)\nprint C\n" 1 "out;C" 0 "" 0>
+  <Vac V1 1 90 250 -57 33 0 1 "1 V" 1 "1 kHz" 0 "0" 0 "0" 0 "0" 0 "0" 0>
+  <R R1 1 360 210 -26 15 0 0 "100k" 1 "26.85" 0 "0.0" 0 "0.0" 0 "26.85" 0 "US" 0>
+  <GND * 1 90 320 0 0 0 0>
+  <GND * 1 460 320 0 0 0 0>
+  <SpiceLib SpiceLib1 1 90 70 -13 18 0 0 "cornerCAP.lib" 1 "cap_typ" 1>
+  <.AC AC1 1 290 50 0 32 0 0 "log" 1 "1e4" 1 "1e10" 1 "1001" 1 "no" 0>
+  <cmom C1 1 220 210 -27 23 0 0 "cap_cmom" 0 "X" 0 "10.0" 1 "70.0" 1 "1" 0 "5" 0 "double" 1 "0" 0 "1" 0 "m*((mmax-mmin+1<=2)?0.55:((mmax-mmin+1==3)?0.82:((mmax-mmin+1==4)?1.09:1.36)))*(max(1,rint(l*1e6/0.84+1e-6-0.5))*0.84)*(max(1,rint(w*1e6/0.89+1e-6-0.5)-1)*0.89)*1e-15" 1 "1" 0>
 </Components>
 <Wires>
-  <130 200 270 200 "in" 180 170 0 "">
-  <330 200 470 200 "out" 380 170 0 "">
-  <70 200 70 270 "" 0 0 0 "">
-  <530 200 530 270 "" 0 0 0 "">
+  <460 210 460 320 "" 0 0 0 "">
+  <90 280 90 320 "" 0 0 0 "">
+  <90 210 90 220 "" 0 0 0 "">
+  <90 210 190 210 "" 0 0 0 "">
+  <390 210 460 210 "" 0 0 0 "">
+  <250 210 330 210 "out" 280 180 0 "">
 </Wires>
 <Diagrams>
+  <Rect 600 390 540 340 1 #c0c0c0 1 10 0 10000 1 1e+10 1 -0.093109 0.2 1.08783 1 -1 0.5 1 315 0 225 1 0 0 "" "" "">
+	<"ngspice/ac.v(out)" #0000ff 2 3 0 0 0>
+  </Rect>
 </Diagrams>
 <Paintings>
-  <Text 60 330 12 #000000 0 "High-pass RC. C is extracted from the -3dB corner: C = 1/(2*pi*f_3dB*R), R = 100k.\ncap_cmom 10x70 (M1..M5, feed=double) -> C ~ 818.5 fF.\nSame method and result as the xschem testcase sg13g2_tests/ac_cap_cmom.">
+  <Text 580 470 12 #000000 0 "High-pass RC: |v(out)| rises through the -3dB corner at f_3dB = 1/(2*pi*R*C), R = 100k.\ncap_cmom 10x70 (M1..M5, feed=double): f_3dB ~ 1.944 MHz -> C ~ 818.5 fF.\nSame method and result as the xschem test sg13g2_tests/ac_cap_cmom.">
 </Paintings>
