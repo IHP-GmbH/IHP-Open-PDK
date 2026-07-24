@@ -25,14 +25,14 @@ import json
 from xml.dom import minidom
 
 class SG13_Tech(TechImpl):
+    TECH_NAME = "sg13g2"   # NOTE: must match the KLayout lyt technology name
 
     def __init__(self):
         self._techParams = {}
         self._dataBaseUnits = 0.001
 
-        techName = "sg13g2"
         techNameParam = "techName"
-        jsonTechFile = techName + "_tech.json"
+        jsonTechFile = self.TECH_NAME + "_tech.json"
 
         techFilePath = os.path.join(os.path.dirname(__file__), jsonTechFile)
 
@@ -56,7 +56,7 @@ class SG13_Tech(TechImpl):
             lypFilePath = lypFileEnv
         else:
             lypSuffix = '.lyp'
-            lypFile = techName + lypSuffix
+            lypFile = self.TECH_NAME + lypSuffix
             lypFilePath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'tech', lypFile))
 
         if os.path.exists(lypFilePath):
@@ -80,10 +80,10 @@ class SG13_Tech(TechImpl):
         else:
             pya.Logger.warn(f"Layer property file '{lypFilePath}' don't exists, use default properties")
 
-        if techNameParam not in self._techParams:
-            pya.Logger.warn(f"Parameter '{techNameParam}' not found in '{jsonTechFile}', using default '{techName}'")
-        else:
-            techName = self._techParams[techNameParam];
+        techName = self._techParams.get(techNameParam, None)
+        if techName is None:
+            pya.Logger.warn(f"Parameter '{techNameParam}' not found in '{jsonTechFile}', using default '{self.TECH_NAME}'")
+            techName = self.TECH_NAME
 
         for name in pya.Technology.technology_names():
             if name.casefold() == techName.casefold():
