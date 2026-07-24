@@ -16,6 +16,7 @@ resistors} 40 -1170 0 0 0.6 0.6 {}
 T {Tap devices} 40 -1010 0 0 0.6 0.6 {}
 T {pnpMPA} 40 -860 0 0 0.6 0.6 {}
 T {Bondpad} 40 -740 0 0 0.6 0.6 {}
+T {Capacitor} 40 -580 0 0 0.6 0.6 {}
 C {sg13g2_pr/sg13_lv_nmos.sym} 380 -1640 0 0 {name=M5
 l=0.13u
 w=0.15u
@@ -177,4 +178,20 @@ spiceprefix=X
 w=1.0e-6
 l=2.0e-6
 m=1
+}
+C {sg13cmos5l_pr/moscap_n.sym} 400 -610 0 0 {name=C3
+l=1.0u
+w=1.0u
+m=1
+mm_ok=1
+model=sg13_moscap_n
+spiceprefix=X
+}
+C {sg13cmos5l_pr/moscap_p.sym} 570 -610 0 0 {name=C4
+l=1.0u
+w=1.0u
+m=1
+mm_ok=1
+model=sg13_moscap_p
+spiceprefix=X
 }

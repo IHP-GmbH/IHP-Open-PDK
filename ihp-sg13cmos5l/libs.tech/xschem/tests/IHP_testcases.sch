@@ -57,3 +57,5 @@ C {sg13g2_tests_xyce/dc_esd_nmos_cl.sym} 180 -230 0 0 {name=x33}
 C {sg13g2_tests_xyce/dc_ntap1.sym} 180 -460 0 0 {name=x25}
 C {sg13g2_tests_xyce/dc_ptap1.sym} 180 -420 0 0 {name=x26}
 C {tests/dc_pnpMPA.sym} 180 -190 0 0 {name=x2}
+C {tests/tran_moscap_n.sym} 520 -570 0 0 {name=x3}
+C {tests/tran_moscap_p.sym} 520 -530 0 0 {name=x4}
