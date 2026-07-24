@@ -12,7 +12,6 @@ TARGETS = \
 	idc \
 	resistor_paramset \
 	capacitor_paramset \
-	cap_cmom_module \
 	sg13g2_moslv_paramset \
 	sg13g2_moslv_rf_paramset \
 	sg13g2_moshv_paramset \

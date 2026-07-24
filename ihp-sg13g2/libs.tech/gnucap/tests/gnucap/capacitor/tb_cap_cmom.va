@@ -1,6 +1,6 @@
 // load model plugins
 load vams/vsine.so
-load ../../../plugins/models/cap_cmom_module.so
+load ../../../plugins/models/capacitor_paramset.so
 
 module tb_cap_cmom(out1);
     // external port for probing
@@ -9,9 +9,10 @@ module tb_cap_cmom(out1);
     // internal nodes
     electrical in1;
     ground gnd;
-    // cap_cmom is 3-terminal (PLUS, MINUS, SUB); tie SUB to ground for the
-    // classic 2-terminal use, exactly as the ngspice subckt does.
+    // cmom is the g2 MoM-cap paramset (over the behavioural cap_cmom module) in
+    // capacitor_paramset.so. It is 3-terminal (PLUS, MINUS, SUB); tie SUB to
+    // ground for the classic 2-terminal use, exactly as the ngspice subckt does.
     vsine #(.mag(1), .dc(0.0)) V1(in1, gnd);
-    cap_cmom #(.w(5u), .l(5u), .mmin(1), .mmax(5), .feed(2)) C1(out1, in1, gnd);
+    cmom #(.w(5u), .l(5u), .mmin(1), .mmax(5), .feed(2)) C1(out1, in1, gnd);
     resistor #(.r(100k)) R1(out1, gnd);
 endmodule
