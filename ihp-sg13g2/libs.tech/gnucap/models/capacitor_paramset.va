@@ -100,8 +100,11 @@ endparamset
 //
 // cap_cmom has no characterised corner/mismatch spread yet (returns nominal in
 // every corner; pending silicon), so there are no corner cross-references here.
-// When the spread is characterised, add mm_ok-overloaded variants the same way
-// the resistor paramsets do.
+// The mm_ok selector is declared (mm_ok = 0, the no-mismatch case) but not mapped
+// -- cap_cmom has no mm_ok port -- so it is an accepted-but-unused selector, just
+// like cmim_core above.  It reserves the mm_ok = 1 overload slot: when the spread
+// is characterised, add an mm_ok = 1 from [1:1] variant the same way the resistor
+// paramsets do.
 //
 // Terminals PLUS, MINUS, SUB are inherited from the module; tie SUB to ground for
 // the classic 2-terminal use (the ngspice wrapper subckt and the gnucap
@@ -113,6 +116,7 @@ paramset cmom cap_cmom
     parameter integer mmax     = 5    from [1:8];
     parameter integer feed     = 2    from [0:2];
     parameter integer subblock = 0    from [0:1];
+    parameter integer mm_ok    = 0    from [0:0];
     .w        = w;
     .l        = l;
     .mmin     = mmin;

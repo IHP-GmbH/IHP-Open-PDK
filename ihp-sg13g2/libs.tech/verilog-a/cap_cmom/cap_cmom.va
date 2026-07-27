@@ -112,6 +112,16 @@ module cap_cmom(PLUS, MINUS, SUB);
     (* type = "instance", desc = "substrate-isolation block (layout/LVS only)" *)
     parameter integer subblock = 0    from [0:1];
 
+    // Device multiplicity is handled through the Verilog-AMS standard $mfactor
+    // (read in the analog block).  The ADMS/Xyce toolchain has no $mfactor, so
+    // under __XYCE__ expose an explicit `mult` instance parameter as the
+    // fallback, mirroring r3_cmc.va.  Neither wired build (openvaf/OSDI, gnucap-mg)
+    // defines __XYCE__, so both take the $mfactor path.
+`ifdef __XYCE__
+    (* type = "instance", desc = "number of devices in parallel" *)
+    parameter real    mult     = 1.0  from (0.0:inf);
+`endif
+
     // ---- named branches ------------------------------------------------------
     branch (PLUS , nsk )  br_lskin, br_rskin;   // skin: L || R
     branch (nsk  , ncap)  br_cmain;             // main capacitance
@@ -128,11 +138,29 @@ module cap_cmom(PLUS, MINUS, SUB);
     real issame, density, cfeed_pu, cfeed_fF, cmain_fF, Cmain;
     real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
     real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
+    real mMod;   // device multiplicity ($mfactor)
 
     // weak anchor conductance for otherwise-floating internal islands [S]
     localparam real GLEAK = 1.0e-12;
 
     analog begin
+
+        // ---- device multiplicity (Verilog-AMS standard $mfactor) ------------
+        //   r3_cmc.va idiom (see r3_cmc.va): read $mfactor into mMod, with an
+        //   explicit `mult` parameter for the ADMS/Xyce path that lacks $mfactor.
+        //   The plain parallel-multiplicity scaling (C*m, R/m, L/m) is applied by
+        //   the simulator automatically -- ngspice/OSDI and gnucap both multiply
+        //   the device stamps by m -- so the model must NOT scale the elements by
+        //   mMod itself (doing so double-counts and yields m^2).  mMod is read
+        //   here as the standard-compliant multiplicity handle and is reserved for
+        //   the future mismatch/statistical model, where the local spread narrows
+        //   as 1/sqrt(mMod*area) exactly as r3_cmc does it -- the same future work
+        //   the mm_ok selector in capacitor_paramset.va reserves.
+`ifdef __XYCE__
+        mMod = mult;
+`else
+        mMod = $mfactor;
+`endif
 
         // ---- units: params arrive in SI, model math in micrometres ----------
         lu = l * 1.0e6;
