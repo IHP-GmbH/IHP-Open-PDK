@@ -49,6 +49,9 @@ proc setCurrentCellParameters {parameters} {
         } else {
             # map space pattern to space
             set value [string map {"\u2709" " "} $value]
+            # map square brackets pattern to square brackets
+            set value [string map {"\u2772" "\["} $value]
+            set value [string map {"\u2773" "\]"} $value]
 
             # remove decoration from value
             regexp {'?([^',]+)'?,?} $value match undecoratedValue
@@ -68,6 +71,8 @@ proc getCurrentCellParameters {} {
             set value "\u2717"
         } else {
             set value [string map {" " "\u2709"} $value]
+            set value [string map {"\[" "\u2772"} $value]
+            set value [string map {"\]" "\u2773"} $value]
         }
         dict append coercedCellParameters $key $value
     }

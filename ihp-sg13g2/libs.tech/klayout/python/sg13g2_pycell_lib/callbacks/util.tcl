@@ -240,7 +240,7 @@ proc Greater {var1 var2 var3} {
 
 proc IsNumberString {str} {
 
-    set x 0
+    set x ""
     set str1 $str
     set str_end [string range $str1 end end]
 
