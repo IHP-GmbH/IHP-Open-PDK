@@ -1,8 +1,8 @@
 # Deep-nwell isolated NMOS (bulk tied to source). Tap extraction must be disabled so the
-# isolated pwell ties to the source through the contact. Note: this case additionally
-# relies on --ignore_top_ports_mismatch (passed by run_regression.py to every testcase)
-# because the isolation nwell ring is not biased to VDD, so the VDD top port does not
-# resolve strictly.
+# isolated pwell ties to the source through the contact. The VDD top port now resolves
+# strictly: the isolation nwell ring is contacted, and isolbox_tie connects that n+ ring
+# to the isolbox I terminal, so this case no longer depends on
+# --ignore_top_ports_mismatch (which run_regression.py still passes to every testcase).
 test_ptap_dnw_ext:
   "--run_mode": deep
   "--disable_tap_extraction": true
