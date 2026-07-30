@@ -24,7 +24,7 @@
 $logger = logger
 $unit = dbu
 
-# Extractor for cap_cmom (metal-oxide-metal interdigitated finger) capacitor on the
+# Extractor for cap_cmomi (metal-oxide-metal interdigitated finger) capacitor on the
 # g2 thin-metal stack (Metal1..Metal5). Recognizes the device by the recog_mom
 # (Recog.mom, GDS 99/39) marker painted by the PCell.
 #
@@ -86,11 +86,11 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
         reg.each { |p| ports << [p, lidx] }
       end
 
-      # A well-formed cap_cmom (double/same) places exactly two MkPins under the
+      # A well-formed cap_cmomi (double/same) places exactly two MkPins under the
       # marker. Skip (and flag) anything else instead of silently picking the two
       # extreme ports, so a malformed / hand-edited >2-pin case fails loud in LVS.
       if ports.size != 2
-        $logger.info("cap_cmom: expected exactly 2 port regions, found #{ports.size}; skipping marker")
+        $logger.info("cap_cmomi: expected exactly 2 port regions, found #{ports.size}; skipping marker")
         next
       end
 
@@ -119,7 +119,7 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
   private
 
   def define_layers
-    define_layer('core', 'cap_cmom recognition marker (Recog.mom, GDS 99/39)')
+    define_layer('core', 'cap_cmomi recognition marker (Recog.mom, GDS 99/39)')
     define_layer('m1p', 'Metal1 pin ports within the marker')
     define_layer('m2p', 'Metal2 pin ports within the marker')
     define_layer('m3p', 'Metal3 pin ports within the marker')

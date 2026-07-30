@@ -22,14 +22,14 @@
 // - remove sf scale factor from cmim_core
 // - converted cjsw to SI units
 // - corner parameters are resolved by cross-referencing corner modules
-// - folded in the cmom paramset, wrapping the behavioural cap_cmom module
+// - folded in the cmomi paramset, wrapping the behavioural cap_cmomi module
 //   (shared verilog-a source), so every g2 capacitor device is a paramset in
 //   this single build unit, mirroring resistor_paramset.va
 // (c) Lukas Deutz 2026
 
 `pragma modelgen nogen-module
 `include "capacitor.va"
-`include "cap_cmom.va"
+`include "cap_cmomi.va"
 
 //******************************************************************************
 // parasitics
@@ -88,20 +88,20 @@ paramset cmim_core sp_capacitor
 endparamset
 
 //******************************************************************************
-// cmom paramset (interdigitated MoM capacitor)
+// cmomi paramset (interdigitated MoM capacitor)
 //******************************************************************************
 
-// cap_cmom is a self-contained behavioural RF model (its own series/shunt
+// cap_cmomi is a self-contained behavioural RF model (its own series/shunt
 // equivalent circuit), not a parallel-plate primitive, so unlike cmim_core it is
 // NOT decomposed onto sp_capacitor. This paramset wraps the behavioural module
-// cap_cmom (shared source ../../verilog-a/cap_cmom/cap_cmom.va, byte-for-byte the
+// cap_cmomi (shared source ../../verilog-a/cap_cmomi/cap_cmomi.va, byte-for-byte the
 // code the ngspice OSDI build uses) and only pins the g2 named-device defaults,
 // exactly as `paramset rsil r3_cmc` wraps the resistor CMC primitive.
 //
-// cap_cmom has no characterised corner/mismatch spread yet (returns nominal in
+// cap_cmomi has no characterised corner/mismatch spread yet (returns nominal in
 // every corner; pending silicon), so there are no corner cross-references here.
 // The mm_ok selector is declared (mm_ok = 0, the no-mismatch case) but not mapped
-// -- cap_cmom has no mm_ok port -- so it is an accepted-but-unused selector, just
+// -- cap_cmomi has no mm_ok port -- so it is an accepted-but-unused selector, just
 // like cmim_core above.  It reserves the mm_ok = 1 overload slot: when the spread
 // is characterised, add an mm_ok = 1 from [1:1] variant the same way the resistor
 // paramsets do.
@@ -109,7 +109,7 @@ endparamset
 // Terminals PLUS, MINUS, SUB are inherited from the module; tie SUB to ground for
 // the classic 2-terminal use (the ngspice wrapper subckt and the gnucap
 // testbench both do this).
-paramset cmom cap_cmom
+paramset cmomi cap_cmomi
     parameter real    w        = 5e-6 from (0.0:inf);
     parameter real    l        = 5e-6 from (0.0:inf);
     parameter integer mmin     = 1    from [1:8];
@@ -128,16 +128,16 @@ endparamset
 //******************************************************************************
 // placeholders: remaining g2 capacitor devices (reserved slots)
 //******************************************************************************
-// Only cmom is adapted for now. cmim / rfcmim and the rest are intentionally
+// Only cmomi is adapted for now. cmim / rfcmim and the rest are intentionally
 // left untouched: cap_cmim/cap_rfcmim stay as source-included wrapper modules in
 // capacitor_module.va, and cmim_core above is their internal core, not a
 // user-facing device. When each cap is ported to this same single-build-unit
 // approach it lands here, following one of two templates:
-//   - a direct paramset over its primitive, like cparasitic / cmim_core / cmom
+//   - a direct paramset over its primitive, like cparasitic / cmim_core / cmomi
 //     (add an mm_ok=0/1 overload once a mismatch model exists, as the resistors do)
 //   - or, if it needs a structural wrapper (core + series R + parasitics, as
 //     cmim does), a compiled _module target, cf. the MOS _module.va/_paramset.va split
 //
 // Reserved slots -- uncomment and fill when the device is adapted:
 //   // paramset cmim            sp_capacitor  ... endparamset
-//   // paramset cmom_<variant>  cap_cmom      ... endparamset
+//   // paramset cmomi_<variant>  cap_cmomi      ... endparamset

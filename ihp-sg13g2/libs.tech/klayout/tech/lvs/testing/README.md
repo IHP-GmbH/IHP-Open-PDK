@@ -62,7 +62,7 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 | **Capacitor** | `cap_cmim` | `C1 PLUS MINUS cap_cmim w=6.99u l=6.99u m=1 C=74.620f`<br>`or`<br>`C1 PLUS MINUS 74.620f $[cap_cmim] w=6.99u l=6.99u m=1` | `w`, `l`, `m`, `A`, `P` | [`C1`](#note-c1) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmim.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmim.gds) |
 |  | `rfcmim` | `C1 N1 N2 SUB rfcmim w=7u l=7u wfeed=3u m=1 C=74.823f` | `w`, `l`, `m`, `A`, `P`, `wfeed` | [`C3`](#note-c3) | [CDL](./testcases/unit/cap_devices/netlist/rfcmim.cdl) / [GDS](./testcases/unit/cap_devices/layout/rfcmim.gds) |
 |  | `sg13_hv_svaricap` | `C1 G1 W G2 SUB sg13_hv_svaricap l=0.3u w=3.74u Nx=1` | `w`, `l`, `Nx` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_hv_svaricap.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_hv_svaricap.gds) |
-|  | `cap_cmom` | `C1 PLUS MINUS cap_cmom w=7u l=7u`<br>`or`<br>`C1 PLUS MINUS 48.8f cap_cmom w=7u l=7u` | topological (`w`, `l` non-primary) | [`C4`](#note-c4) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmom.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmom.gds) |
+|  | `cap_cmomi` | `C1 PLUS MINUS cap_cmomi w=7u l=7u`<br>`or`<br>`C1 PLUS MINUS 48.8f cap_cmomi w=7u l=7u` | topological (`w`, `l` non-primary) | [`C4`](#note-c4) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmomi.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmomi.gds) |
 | **ESD** | `diodevdd_2kv` | `D1 N1 N2 SUB diodevdd_2kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevdd_2kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevdd_2kv.gds) |
 |  | `diodevdd_4kv` | `D1 N1 N2 SUB diodevdd_4kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevdd_4kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevdd_4kv.gds) |
 |  | `diodevss_2kv` | `D1 N1 N2 SUB diodevss_2kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevss_2kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevss_2kv.gds) |
@@ -91,7 +91,7 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 - <a id="note-r3"></a>`R3`: Metal-resistor netlists accept either `w/l` or `width/length`. The resistance value is not used for LVS matching.
 - <a id="note-c1"></a>`C1`: `cap_cmim` compares `w/l`, `A/P`, and `m`. If `A/P` are missing they are derived from `W/L`.
 - <a id="note-c3"></a>`C3`: `rfcmim` compares `w/l`, `A/P`, `m`, and `wfeed`. If `A/P` are missing they are derived from `W/L`.
-- <a id="note-c4"></a>`C4`: `cap_cmom` (interdigitated metal-oxide-metal, Metal1..Metal5) is matched topologically: `w`/`l` are non-primary (not compared, as for `cap_cmim`) and no `A`/`P` are set, so any 2-terminal `cap_cmom` with the correct connectivity matches. Feed style `same` keeps the two stacked plates on distinct nets via per-metal pin connects. The capacitance value comes from the ngspice/Verilog-A model, not extraction.
+- <a id="note-c4"></a>`C4`: `cap_cmomi` (interdigitated metal-oxide-metal, Metal1..Metal5) is matched topologically: `w`/`l` are non-primary (not compared, as for `cap_cmim`) and no `A`/`P` are set, so any 2-terminal `cap_cmomi` with the correct connectivity matches. Feed style `same` keeps the two stacked plates on distinct nets via per-metal pin connects. The capacitance value comes from the ngspice/Verilog-A model, not extraction.
 - <a id="note-t1"></a>`T1`: Tap devices may use either `A/P` (`Perim`) or `W/L`; LVS compares `A/P`.
 
 ## Devices Regression Usage
