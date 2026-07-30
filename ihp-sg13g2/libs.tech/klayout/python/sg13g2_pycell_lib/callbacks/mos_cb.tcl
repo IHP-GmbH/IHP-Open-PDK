@@ -142,7 +142,7 @@ proc NLCB_l {} {
     
     set tmpl [Stof [iPDK_getParamValue l $cellId]]
     set tmpl [GridFix [expr $tmpl*1.0e6]]
-    iPDK_setParamValue l [Ftos $tmpl 3]u $cellId
+    iPDK_setParamValue l [format %.10g $tmpl]u $cellId
 }
 
 #******************************************************************************************************
@@ -176,6 +176,6 @@ proc NLCB_w {} {
     
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
     set tmpw [GridFix [expr $tmpw*1.0e6]]
-    iPDK_setParamValue w [Ftos $tmpw 3]u $cellId
+    iPDK_setParamValue w [format %.10g $tmpw]u $cellId
 }
 
