@@ -26,7 +26,14 @@ logger.info('Starting CAP DERIVATIONS')
 rfmimcap_exc = ind_drw.join(ind_pin)
 
 # === MIMCAP ===
-mimcap_exclude = pwell_block.join(rfmimcap_exc)
+# An RFCMIM sits entirely inside a PWellBlock region (surrounded by a ptap ring), while a
+# regular CMIM has no PWellBlock association. Select the RF well as the PWellBlock that fully
+# encloses a MIM marker, using containment (`covering`) instead of mere interaction. This keeps
+# an unrelated device beneath the MIM (for example a Schottky diode and its PWellBlock, which
+# only partially underlaps the cap) from being mistaken for an RFCMIM and from carving the
+# regular CMIM plate. See IHP-Open-PDK issue #958.
+rfmim_area = pwell_block.covering(mim_drw)
+mimcap_exclude = rfmim_area.join(rfmimcap_exc)
 mim_top = mim_drw.overlapping(topmetal1_con)
 mim_btm = mim_drw.and(metal5_con)
 mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
@@ -38,7 +45,6 @@ cmim_btm = mim_btm.covering(cmim_top)
 cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
 
 # === rfcmim ===
-rfmim_area = pwell_block.interacting(mim_drw)
 rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)

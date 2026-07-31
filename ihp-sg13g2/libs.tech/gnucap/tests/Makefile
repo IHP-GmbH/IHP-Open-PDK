@@ -35,7 +35,7 @@ help:
 	@echo "  clean           - Remove all test outputs"
 	@echo ""
 	@echo "To run individual test directories (resistor, capacitor, moslv, moshv):"
-	@echo "  make -C gnucap <testdir>
-	@echo "  make -C ngspice <testdir>
+	@echo "  make -C gnucap <testdir>"
+	@echo "  make -C ngspice <testdir>"
 
 .PHONY: all check gnucap ngspice clean help

@@ -34,9 +34,17 @@ REQUIREMENTS_FILE := requirements.txt
 $(TOP_DIR)/actions_venv:
 	@python3 -m venv $(TOP_DIR)/actions_venv
 
-# Install requirements	
+# Install requirements
+# tkinter is listed in requirements.txt but is not a PyPI package (it ships as the
+# system package python3-tk), so pip aborts the whole install. Temporary waiver:
+# if the install fails, warn and retry without tkinter so CI proceeds. A real
+# dependency failure still aborts because the retry keeps every other package.
 env: $(TOP_DIR)/actions_venv
-	@. $(VENV_RUN_COMMAND); pip install -r $(REQUIREMENTS_FILE)
+	@. $(VENV_RUN_COMMAND); \
+	pip install -r $(REQUIREMENTS_FILE) || { \
+		echo "::warning::pip install failed on tkinter (not a PyPI package; install python3-tk via the system package manager). Continuing without it so CI can proceed."; \
+		grep -vx 'tkinter' $(REQUIREMENTS_FILE) | pip install -r /dev/stdin; \
+	}
 
 # ========================
 # ----- LINTING TEST -----
