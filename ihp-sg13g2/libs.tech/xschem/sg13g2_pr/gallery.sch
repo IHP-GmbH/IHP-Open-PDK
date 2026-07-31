@@ -20,7 +20,8 @@ T {Tap devices} 20 -820 0 0 0.6 0.6 {}
 T {SVaricap} 20 -670 0 0 0.6 0.6 {}
 T {Bondpad} 20 -550 0 0 0.6 0.6 {}
 T {Isolation box} 20 -390 0 0 0.6 0.6 {}
-T {MiM capacitor} 20 -220 0 0 0.6 0.6 {}
+T {MiM capacitor} 20 -180 0 0 0.6 0.6 {}
+T {MoM capacitor} 20 -260 0 0 0.6 0.6 {}
 T {PNP lateral device} 20 -100 0 0 0.6 0.6 {}
 C {sg13g2_pr/bondpad.sym} 400 -520 0 0 {name=X1
 model=bondpad
@@ -29,13 +30,21 @@ size=80u
 shape=0
 padtype=0
 }
-C {sg13g2_pr/cap_cmim.sym} 400 -200 0 0 {name=C1
+C {sg13g2_pr/cap_cmim.sym} 400 -160 0 0 {name=C1
 model=cap_cmim
 w=7.0e-6
 l=7.0e-6
 m=1
 spiceprefix=X}
-C {sg13g2_pr/cap_rfcmim.sym} 560 -200 0 0 {name=C2 
+C {sg13g2_pr/cap_cmomi.sym} 400 -240 0 0 {name=C4
+model=cap_cmomi
+w=5.0e-6
+l=5.0e-6
+mmin=1
+mmax=5
+feed=double
+spiceprefix=X}
+C {sg13g2_pr/cap_rfcmim.sym} 560 -160 0 0 {name=C2
 model=cap_rfcmim
 w=10.0e-6
 l=10.0e-6

@@ -76,8 +76,11 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     field.to_s.delete_prefix('$').sub(/\A\[(.+)\]\z/, '\1').downcase
   end
 
+  # 2-terminal custom-MIM-style cap models (DeviceCustomMIM): cap_cmim and cap_cmomi.
+  # Both the value-before-model normalization and the model-first term count key on
+  # this, so a cap_cmomi C-line keeps its model token instead of being stripped.
   def cap_cmim_model_field?(field)
-    canonical_cap_model(field) == 'cap_cmim'
+    ['cap_cmim', 'cap_cmomi'].include?(canonical_cap_model(field))
   end
 
   # Accepted resistor forms:

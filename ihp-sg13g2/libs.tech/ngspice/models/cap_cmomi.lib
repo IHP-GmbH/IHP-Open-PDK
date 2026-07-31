@@ -1,0 +1,50 @@
+*******************************************************************************
+* cap_cmomi - 2-terminal ngspice wrapper around the Verilog-A (OSDI) compact model
+*
+* Copyright 2026 IHP PDK Authors
+* Licensed under the Apache License, Version 2.0 (the "License").
+*
+* Interdigitated metal-oxide-metal capacitor on the g2 thin-metal stack
+* (Metal1..Metal5). Full RF equivalent circuit from the IHP "MOM model
+* development notes v4" (2022); coefficients are the natively characterised
+* g2 values by layer count N = mmax-mmin+1 (N=3,4,5).
+*
+* The Verilog-A device cap_cmomi is 3-terminal (PLUS, MINUS, SUB); SUB is the
+* substrate reference for the oxide shunt. This subckt keeps the classic
+* 2-terminal interface by tying SUB to global ground 0.
+*
+* Requires the OSDI object to be loaded first (done in libs.tech/ngspice/.spiceinit):
+*   osdi $PDK_ROOT/$PDK/libs.tech/ngspice/osdi/cap_cmomi.osdi
+* Build it with libs.tech/verilog-a/openvaf-compile-va.sh.
+* Simulator scope: ngspice via OSDI (built with -D__NGSPICE__). Xyce / gnucap /
+* qucs-s are not wired and would need a separate Verilog-A build per simulator.
+*
+* feed token: string 'none'|'same'|'double' -> numeric code (0|1|2) for the
+* Verilog-A. w,l in metres; mmin/mmax metal indices (1=Metal1 .. 5=Metal5).
+* m: parallel device multiplier (ngspice subckt multiplier). mm_ok: accepted for
+* interface parity but a NO-OP -- cap_cmomi has no characterised mismatch model.
+*******************************************************************************
+* STATISTICAL / CORNER MODELING (known caveat, to address with silicon):
+* cap_cmomi has NO characterised process-corner or mismatch variation yet. The
+* Verilog-A density coefficients are the g2-derived NOMINAL values, so cap_cmomi
+* returns the same nominal capacitance in every corner (typ/bcs/wcs) and in
+* Monte-Carlo (no local mismatch). This is NOT a claim that the device is
+* corner-stable; the spread is simply not modelled. Extracting it needs silicon
+* matched-pair / array test structures (not in the current size-sweep campaign),
+* deferred to a future test chip. Treat corner/MC results for cap_cmomi as nominal.
+*******************************************************************************
+* RF VALIDITY WINDOW (full fit-validity note in the Verilog-A header):
+* the low-frequency capacitance is the trustworthy quantity across the drawn size
+* range. The RF branches (series R/L, skin, substrate shunt) are lumped fits valid
+* to ~50 GHz. For the DEFAULT feed=double, LARGE devices (l~60um, or ~30x30)
+* self-resonate in-band (~30-47 GHz) against a two-sided SRF the notes
+* never publish -- treat the default-feed SRF near/above those frequencies as an
+* unvalidated prediction. feed=same/none stay capacitive well past 50 GHz.
+*******************************************************************************
+.param none=0 same=1 double=2
+
+.subckt cap_cmomi PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 feed=double subblock=0 mm_ok=1
+.param m=1
+Ncap PLUS MINUS 0 cap_cmomi_mod w={w} l={l} mmin={mmin} mmax={mmax} feed={feed} subblock={subblock} m={m}
+.model cap_cmomi_mod cap_cmomi
+.ends cap_cmomi

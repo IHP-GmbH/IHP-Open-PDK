@@ -1,0 +1,314 @@
+// cap_cmomi - interdigitated metal-oxide-metal capacitor, Verilog-A compact model
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// -----------------------------------------------------------------------------
+// Model source: IHP "MOM model development notes v4" (2022),
+//   an EM-fitted RF equivalent circuit for the interdigitated MoM capacitor on
+//   the thin-metal stack.  Full M1..M5 characterisation (g2 native).
+//
+// Fit validity (from the notes): the area/feed capacitance is the trustworthy
+//   quantity across the drawn size range.  The RF branches are characterised
+//   within a limited window only.  The series inductance is FEED-keyed:
+//   feed=double uses the two-sided (opposite-end) loop fit (notes p21, ~20% at
+//   50 GHz), feed=same/none use the single-side local-L fit (p16 SRF).  For
+//   feed=same/none and small-to-mid feed=double the L is a small correction
+//   (<~10% of |Z|) below 50 GHz.  For LARGE feed=double the two-sided loop L is
+//   big enough to self-resonate IN-BAND (l~60um ~30 GHz, ~30x30 ~45 GHz) against
+//   a two-sided SRF the notes never publish (they give single-side SRF p16 and
+//   two-sided L p18/p21, no two-sided SRF) -- treat the default-feed SRF near or
+//   above those frequencies as an unvalidated prediction.  Using the loop value
+//   for a same-side device would flip the in-band reactance inductive on large
+//   geometries, which the feed keying avoids.
+//   The substrate shunt (Cox, Rsub||Csub) is ~10% over 0..100 GHz.  Beyond that
+//   window the polynomials extrapolate (well behaved but unvalidated); in
+//   particular Rsub can go negative for very large devices and is clamped to a
+//   floor.  Corner/mismatch spread is not modelled (returns nominal); pending
+//   silicon.
+//
+// Interdigitated horizontal comb rows on every used metal, all layers
+// via-stacked into solid walls, adjacent rows of opposite polarity.
+//   length -> X (finger length), width -> Y (row count).
+//
+// Equivalent circuit (series arm PLUS..MINUS plus a substrate shunt to SUB):
+//
+//   PLUS --(Lskin || Rskin)-- Cmain --(Lcore)-- (Rseries)-- MINUS
+//                                         |
+//                                        Cox        (shunt on the MINUS-side node)
+//                                         |
+//                                    (Rsub || Csub)
+//                                         |
+//                                        SUB
+//
+// Low-frequency capacitance:
+//   C_total = density[N] * active_area  +  Cfeed         [fF]
+//     Cfeed = cfeed_per_um[N] * feed_width   (feed == 'same' only)
+//           = 0                              (feed == 'double' | 'none')
+//   density[N] is the ACTIVE-AREA density (p5 "change in C vs length" cancels the
+//   feed overlap), so for feed=double the ~1.7fF opposite-side feed residual
+//   measured in the notes is intentionally dropped ("assume zero", p7-8): small double
+//   devices read ~3% low by construction, not by omission.
+//
+// COEFFICIENT PROVENANCE / LAYER-COUNT KEYING
+//   Every coefficient is selected by the metal LAYER COUNT  N = mmax - mmin + 1
+//   (and, for the oxide shunt, by the bottom-metal identity).  The characterised
+//   values are:
+//       N = 3  (M3..M5) , N = 4  (M2..M5) , N = 5  (M1..M5)   -> measured (g2)
+//       N = 2                                                 -> extrapolated
+//   N = 2 is the reduced thin-metal (M1..M4) sibling's native config, but it is
+//   ALSO constructible on this g2 stack as any 2-metal subset (e.g. mmin=4,
+//   mmax=5): there density 0.55 / cfeed 0.70 are unmeasured OUR-extrapolation
+//   values (the only non-source C numbers here), flagged inline.  For N = 3,4,5
+//   (the usual g2 subsets) all coefficients are measured.
+//
+// Terminals:
+//   PLUS   - plate 1
+//   MINUS  - plate 2
+//   SUB    - substrate / bulk reference for the oxide shunt (tie to gnd for the
+//            classic 2-terminal behaviour; the ngspice wrapper subckt does this)
+//
+// Instance parameters (per-device geometry / configuration):
+//   w        - capacitor width  [m]  (default 5 um)   MAPS TO Y (row stacking)
+//   l        - capacitor length [m]  (default 5 um)   MAPS TO X (finger length)
+//   mmin     - bottom metal index (1 = M1 ...)        (default 1)
+//   mmax     - top metal index                        (default 5, native stack)
+//   feed     - feed style code: 0 = none, 1 = same, 2 = double (default 2)
+//   subblock - 0|1 substrate-isolation block (layout/LVS only, no electrical
+//              effect available; accepted for interface parity)
+// -----------------------------------------------------------------------------
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module cap_cmomi(PLUS, MINUS, SUB);
+
+    inout PLUS, MINUS, SUB;
+    electrical PLUS, MINUS, SUB;
+    electrical nsk, ncap, nl, nox;   // internal series/shunt nodes
+
+    // ---- instance parameters -------------------------------------------------
+    (* type = "instance", desc = "width (Y, row stacking)",  units = "m" *)
+    parameter real    w        = 5e-6 from (0.0:inf);
+    (* type = "instance", desc = "length (X, finger length)", units = "m" *)
+    parameter real    l        = 5e-6 from (0.0:inf);
+    (* type = "instance", desc = "bottom metal index" *)
+    parameter integer mmin     = 1    from [1:8];
+    (* type = "instance", desc = "top metal index" *)
+    parameter integer mmax     = 5    from [1:8];
+    (* type = "instance", desc = "feed code: 0=none 1=same 2=double" *)
+    parameter integer feed     = 2    from [0:2];
+    (* type = "instance", desc = "substrate-isolation block (layout/LVS only)" *)
+    parameter integer subblock = 0    from [0:1];
+
+    // Device multiplicity is handled through the Verilog-AMS standard $mfactor
+    // (read in the analog block).  The ADMS/Xyce toolchain has no $mfactor, so
+    // under __XYCE__ expose an explicit `mult` instance parameter as the
+    // fallback, mirroring r3_cmc.va.  Neither wired build (openvaf/OSDI, gnucap-mg)
+    // defines __XYCE__, so both take the $mfactor path.
+`ifdef __XYCE__
+    (* type = "instance", desc = "number of devices in parallel" *)
+    parameter real    mult     = 1.0  from (0.0:inf);
+`endif
+
+    // ---- named branches ------------------------------------------------------
+    branch (PLUS , nsk )  br_lskin, br_rskin;   // skin: L || R
+    branch (nsk  , ncap)  br_cmain;             // main capacitance
+    branch (ncap , nl  )  br_lcore;             // core series inductance
+    branch (nl   , MINUS) br_rser;              // series resistance
+    branch (nl   , nox )  br_cox;               // oxide coupling
+    branch (nox  , SUB )  br_rsub, br_csub;     // substrate: R || C
+    branch (PLUS , SUB )  br_lkp;               // weak DC anchor
+    branch (MINUS, SUB )  br_lkm;               // weak DC anchor
+
+    real lu, wu, lw, ratio;
+    integer Nc, Nlay;
+    real ax, ay, active_x, active_y, active_area, feed_width;
+    real issame, density, cfeed_pu, cfeed_fF, cmain_fF, Cmain;
+    real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
+    real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
+    real mMod;   // device multiplicity ($mfactor)
+
+    // weak anchor conductance for otherwise-floating internal islands [S]
+    localparam real GLEAK = 1.0e-12;
+
+    analog begin
+
+        // ---- device multiplicity (Verilog-AMS standard $mfactor) ------------
+        //   r3_cmc.va idiom (see r3_cmc.va): read $mfactor into mMod, with an
+        //   explicit `mult` parameter for the ADMS/Xyce path that lacks $mfactor.
+        //   The plain parallel-multiplicity scaling (C*m, R/m, L/m) is applied by
+        //   the simulator automatically -- ngspice/OSDI and gnucap both multiply
+        //   the device stamps by m -- so the model must NOT scale the elements by
+        //   mMod itself (doing so double-counts and yields m^2).  mMod is read
+        //   here as the standard-compliant multiplicity handle and is reserved for
+        //   the future mismatch/statistical model, where the local spread narrows
+        //   as 1/sqrt(mMod*area) exactly as r3_cmc does it -- the same future work
+        //   the mm_ok selector in capacitor_paramset.va reserves.
+`ifdef __XYCE__
+        mMod = mult;
+`else
+        mMod = $mfactor;
+`endif
+
+        // ---- units: params arrive in SI, model math in micrometres ----------
+        lu = l * 1.0e6;
+        wu = w * 1.0e6;
+        lw = wu + lu;
+        ratio = lu / wu;
+
+        // ---- layer count (clamped >= 1) -------------------------------------
+        Nc   = mmax - mmin + 1;
+        Nlay = (Nc < 1) ? 1 : Nc;
+
+        // ---- unit-cell tiling (unit cell 0.84 x 0.89 um; 1 y-row -> feed) ----
+        //   active_x = floor(l/0.84) ; active_y = floor(w/0.89) - 1
+        // A drawn dimension that is an exact multiple of the pitch (e.g. l=21um
+        // =25*0.84) round-trips through *1e6 to one ULP below the integer, and
+        // floor() then lands on k or k-1 depending on the toolchain's division
+        // vs reciprocal-multiply codegen.  This must agree with the PCell layout
+        // and the C-label for every drawn geometry, so snap to the pitch grid
+        // with a sub-grid epsilon (1e-6 cell = 0.84 pm << layout grid) before the
+        // floor: an exact k-pitch resolves to k on ANY toolchain, a genuine
+        // (k-eps) still floors to k-1.  Apply the SAME rule in the PCell/subckt.
+        ax = floor(lu / 0.84 + 1.0e-6);
+        ay = floor(wu / 0.89 + 1.0e-6) - 1.0;
+        active_x = (ax < 1.0) ? 1.0 : ax;
+        active_y = (ay < 1.0) ? 1.0 : ay;
+        active_area = active_x * active_y * 0.84 * 0.89;
+        feed_width  = active_y * 0.89 + 0.64;
+
+        issame = (feed == 1) ? 1.0 : 0.0;
+
+        // ---- area capacitance density [fF/um^2] by layer count N ------------
+        //   N<=2 -> 0.55 (extrapolated, thin M1..M4 sibling only)
+        //   N=3 -> 0.82 ; N=4 -> 1.09 ; N>=5 -> 1.36   (measured, g2)
+        density = (Nlay <= 2) ? 0.55 :
+                  (Nlay == 3) ? 0.82 :
+                  (Nlay == 4) ? 1.09 : 1.36;
+
+        // ---- single-side feed cap per unit length [fF/um] by N --------------
+        //   N<=2 -> 0.70 (extrapolated).  These are the notes' published feed caps
+        //   on the OVERSIZE-via basis; unlike the area density they carry NO via
+        //   correction, so small feed=same devices read ~1-2% high.  Kept as the
+        //   source value (a re-fit would deviate from the published number).
+        cfeed_pu = (Nlay <= 2) ? 0.70 :
+                   (Nlay == 3) ? 0.97 :
+                   (Nlay == 4) ? 1.28 : 1.46;
+
+        // ---- main capacitance [F] -------------------------------------------
+        cfeed_fF = issame * cfeed_pu * feed_width;   // 'same' only; else 0
+        cmain_fF = density * active_area + cfeed_fF;
+        Cmain    = cmain_fF * 1.0e-15;
+
+        // ---- series resistance [Ohm], l,w in um -----------------------------
+        //   'same'  : layer-independent ; else per-N (opposite-side / no-feed).
+        //   'none' reuses the opposite-side (double) R set: a bare no-feed array
+        //   is both-ends-accessible, so its low R (~65% of the same-side R) is the
+        //   double signature; paired with the single-side (local) Lcore below it
+        //   is a coherent no-feed device, not a topology mismatch.
+        if (issame > 0.5)
+            Rseries = 0.22 + 0.40 * ratio;
+        else
+            Rseries = (Nlay <= 3) ? 0.10 + 0.31 * ratio :
+                      (Nlay == 4) ? 0.14 + 0.27 * ratio :
+                                    0.15 + 0.26 * ratio;
+        if (Rseries < 1.0e-3) Rseries = 1.0e-3;
+
+        // ---- core series inductance [H] -- keyed by FEED --------------------
+        //   The p18 fit is the OPPOSITE-END (two-sided) loop inductance: the
+        //   current runs the full finger length down one comb and back the
+        //   other, a long loop worth tens of pH.  It is the right quantity ONLY
+        //   for feed=double (PLUS/MINUS at opposite ends).  A same-side
+        //   (feed=same) or bare (feed=none) device has no such loop; its series
+        //   inductance is the small LOCAL value the notes measure single-side
+        //   (p13-16, ~0.2..1.3 pH).  The notes give single-side L only via the p16
+        //   SRF fit (width-independent, length-driven), so recover it self-
+        //   consistently from the model's own Cmain:
+        //       L_ss = 1 / ( (2*pi*SRF_ss)^2 * Cmain )
+        //   SRF_ss [Hz] from the p16 1/SRF-vs-length lines (l in um):
+        //       N<=3 : 1e9/(7.68e-5 + 6.64e-5*l)
+        //       N==4 : 1e9/(8.82e-4 + 4.72e-5*l)
+        //       N>=5 : 1e9/(2.85e-4 + 6.87e-5*l)
+        //   Using the loop fit for feed=same overstates L 15..90x and flips the
+        //   in-band series reactance inductive on large devices (e.g. 60x10
+        //   same-feed goes inductive above ~30 GHz); feed keying removes that.
+        //   feed code: 2=double (loop) ; 1=same, 0=none (both -> single-side).
+        if (feed == 2) begin
+            Lcore = (4.886 + 3.117 * ratio + 0.510 * lu - 2.526 * sqrt(lu)) * 1.0e-12;
+        end else begin
+            srf_ss = (Nlay <= 3) ? 1.0e9 / (7.68e-5 + 6.64e-5 * lu) :
+                     (Nlay == 4) ? 1.0e9 / (8.82e-4 + 4.72e-5 * lu) :
+                                   1.0e9 / (2.85e-4 + 6.87e-5 * lu);
+            wsrf  = `M_TWO_PI * srf_ss;
+            Lcore = 1.0 / (wsrf * wsrf * Cmain);
+        end
+        if (Lcore < 1.0e-18) Lcore = 1.0e-18;
+
+        // ---- skin effect (PDF p12, refinement) ------------------------------
+        //   Rskin = Rskin1*l [Ohm] ; Lskin = (Lskin_c + Lskin_s*l) [pH]
+        Rskin1  = (Nlay <= 3) ? 0.031   : 0.035;
+        Lskin_c = (Nlay <= 3) ? 0.214   : 0.010;
+        Lskin_s = (Nlay <= 3) ? 0.02256 : 0.0626;
+        Rskin   = Rskin1 * lu;
+        if (Rskin < 1.0e-3) Rskin = 1.0e-3;
+        Lskin   = (Lskin_c + Lskin_s * lu) * 1.0e-12;
+
+        // ---- substrate shunt: Cox in series with (Rsub || Csub) -------------
+        //   Cox is the oxide capacitance from the BOTTOM MoM plate to the
+        //   substrate, so it scales with the bottom-metal distance.  The source
+        //   notes (p22) index the three Cox sets by LAYER COUNT 3/4/5 (verbatim
+        //   "For 3/4/5 MOM layers").  We RE-KEY them by the bottom metal index
+        //   (mmin) -- our physically-motivated inference, resting on the (unstated
+        //   in p22) premise that the notes' sweep kept the top at M5, so "5 layers"
+        //   =="M1 bottom", "4"=="M2", "3"=="M3".  This is a NO-OP for every
+        //   mmax==5 stack (mmin- and layer-count-keying pick the same set) and
+        //   stays physical for reduced-top stacks (e.g. M1..M4, bottom still M1 ->
+        //   large M1-bottom Cox); it diverges from literal layer-count keying only
+        //   on uncharacterised reduced-top mid-stacks.
+        //     mmin==1 (M1 bottom) : 5-layer set
+        //     mmin==2 (M2 bottom) : 4-layer set
+        //     mmin>=3 (M3 bottom) : 3-layer set
+        if (mmin == 1) begin
+            cox0 = 1.725;   cox1 = 0.1192;  cox2 = 0.019406;
+        end else if (mmin == 2) begin
+            cox0 = 1.240;   cox1 = 0.1139;  cox2 = 0.011417;
+        end else begin
+            cox0 = 1.052;   cox1 = 0.09867; cox2 = 0.011364;
+        end
+        Cox = (cox0 + cox1 * lw + cox2 * wu * lu) * 1.0e-15;
+
+        //   Rsub / Csub coefficients common to all N
+        Rsub = 3144.0 - 9.6942 * lw + 0.0207848 * wu * lu;
+        if (Rsub < 1.0e-2) Rsub = 1.0e-2;
+        Csub = (9.8833 + 0.089195 * lw + 0.000675931 * wu * lu) * 1.0e-15;
+
+        // ---- constitutive relations -----------------------------------------
+        // skin arm: inductor (voltage-defined) parallel resistor (current-defined)
+        V(br_lskin) <+ Lskin   * ddt(I(br_lskin));
+        I(br_rskin) <+ V(br_rskin) / Rskin;
+        // main cap, core inductor, series resistor
+        I(br_cmain) <+ Cmain   * ddt(V(br_cmain));
+        V(br_lcore) <+ Lcore   * ddt(I(br_lcore));
+        I(br_rser)  <+ V(br_rser)  / Rseries;
+        // substrate shunt: Cox in series with Rsub || Csub
+        I(br_cox)   <+ Cox     * ddt(V(br_cox));
+        I(br_rsub)  <+ V(br_rsub)  / Rsub;
+        I(br_csub)  <+ Csub    * ddt(V(br_csub));
+        // weak DC anchors so floating ports/islands never give a singular matrix
+        I(br_lkp)   <+ GLEAK * V(br_lkp);
+        I(br_lkm)   <+ GLEAK * V(br_lkm);
+
+    end
+endmodule
