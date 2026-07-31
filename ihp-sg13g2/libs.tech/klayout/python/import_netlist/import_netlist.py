@@ -101,7 +101,7 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
     layout = cellview.layout()
     if layout == None:
         print(f'Error: Couldn\'t get active layout.')
-        return
+        return (0, 0)
 
     # Get the top cell. Assuming only one top cell exists
     top_cell = layout.top_cell()
@@ -274,6 +274,8 @@ def ihp130_import_netlist():
                 # Parse parameters
                 for param in template['params']:
                     #print(f"Parsing parameter {param['name']}")
+                    if param["type"] == "raw_string":
+                        params[param['name']] = match.group(param['name'])
                     if param["type"] == "string":
                         parsed_value = parse_si_value(match.group(param['name']))
                         params[param['name']] = parsed_value
