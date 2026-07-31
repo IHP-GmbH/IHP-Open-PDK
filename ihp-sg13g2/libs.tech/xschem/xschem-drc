@@ -124,6 +124,59 @@ proc mim_drc {instance symbol model w l } {
   }
   return $res
 }
+# Convert xschem MOSCAP dimensions to um. Bare values are kept compatible
+# with the existing MOSCAP symbols, where numeric values are interpreted as um.
+proc moscap_dim_to_um {value} {
+  set value [string trim $value]
+  if {![regexp {^([+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)([[:alpha:]]*)$} $value -> number unit]} {
+    return {}
+  }
+
+  switch -nocase -- $unit {
+    {} -
+    {u} -
+    {um} {
+      return [expr {double($number)}]
+    }
+    {n} -
+    {nm} {
+      return [expr {double($number) / 1000.0}]
+    }
+    default {
+      return {}
+    }
+  }
+}
+
+# IHP SG13G2 MOS capacitor dimension checks
+proc moscap_drc {instance symbol model w l } {
+  set res {}
+  set model [string trim $model]
+  set w [moscap_dim_to_um $w]
+  set l [moscap_dim_to_um $l]
+  # puts "$instance $model $symbol w=$w l=$l nf=$nf"
+  if { $w ne {} && $l ne {} } {
+
+    switch -exact -- $model {
+      sg13_moscap_n -
+      sg13_moscap_p {
+        if { $w < 1.0 } {
+          append res "${instance} ($model): MOSCAP width is too small, w = $w u, min. w > 1.0u" \n
+        }
+        if { $w > 30.0 } {
+          append res "${instance} ($model): MOSCAP width is too big, w = $w u, max. w < 30.0u" \n
+        }
+        if { $l < 1.0 } {
+          append res "${instance} ($model): MOSCAP length is too small, l = $l u, min. l > 1.0u" \n
+        }
+        if { $l > 30.0 } {
+          append res "${instance} ($model): MOSCAP length is too big, l = $l u, max. l < 30.0u" \n
+        }
+      }
+    } ;# switch
+  }
+  return $res
+}
 # IHP SG13G2 HBT dimension checks
 proc hbt_drc {instance symbol model Nx El } {
   set res {}
