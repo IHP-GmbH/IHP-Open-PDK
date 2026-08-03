@@ -62,6 +62,20 @@ metal5_con    = metal5.not(metal5_res)
 topmetal1_con = topmetal1.not(topmetal1_res).not(ind_drw)
 topmetal2_con = topmetal2.not(topmetal2_res).not(ind_drw)
 
+# Inductor metal stack.
+# ind_wind is the winding metal: w, s and nr_r are all measured on it, and
+# nr_r is the number of winding arcs the crossings cut it into.
+# ind_cross is the metal carrying the underpass crossings that join the turns;
+# it is part of the core so that the coil merges into a single polygon.
+# The *_con lists are the connectivity layers the IND pins bond to. They are
+# lists because KLayout connectivity is defined per layer object: joining two
+# derived layers would create a third one that is connected to neither.
+# A PDK with a different metal stack overrides these after including this deck.
+ind_wind      = topmetal2
+ind_cross     = topmetal1
+ind_wind_con  = [topmetal2_con]
+ind_cross_con = [topmetal1_con]
+
 # Gate FETs
 tgate   = gatpoly.and(activ).not(res_mk)
 ngate   = nactiv.and(tgate)
