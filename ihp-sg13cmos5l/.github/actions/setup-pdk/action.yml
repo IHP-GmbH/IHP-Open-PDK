@@ -18,13 +18,8 @@
 name: Set up the SG13CMOS5L PDK
 description: >
   Place a sibling ihp-sg13g2 checkout next to this one so the cross-PDK
-  symlinks resolve, and install the pinned KLayout.
-
-inputs:
-  klayout:
-    description: Install KLayout. Set to false for jobs that only need Python.
-    required: false
-    default: 'true'
+  symlinks resolve, install the pinned KLayout, and assert the result is
+  self-consistent before any regression runs.
 
 runs:
   using: composite
@@ -38,6 +33,10 @@ runs:
       shell: bash
       run: |
         ref=$(grep -v '^#' ihp-sg13cmos5l/.github/ihp-sg13g2.ref | tr -d '[:space:]')
+        if ! printf '%s' "$ref" | grep -qE '^[0-9a-f]{40}$'; then
+          echo "::error::.github/ihp-sg13g2.ref must hold one full 40-character commit SHA, got '$ref'"
+          exit 1
+        fi
         echo "Pinned SG13G2 commit: $ref"
         echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
@@ -57,12 +56,17 @@ runs:
         ln -s IHP-Open-PDK/requirements.txt requirements.txt
 
     # Guard against the failure mode this layout invites: SG13G2 gains a rule
-    # deck, this repo has no symlink for it, and the whole deck stops loading
-    # with an include error that looks nothing like the real cause.
+    # deck, includes it from one we symlink, and we have no symlink for it. The
+    # run then dies on the first include with a message that names the file but
+    # explains nothing (issue #64).
     #
-    # Scoped to libs.tech/klayout on purpose. Elsewhere the tree links to build
-    # artefacts (compiled .osdi models, Xyce .so plugins) that a plain checkout
-    # legitimately does not have.
+    # Note this is not a dangling-symlink problem. The new deck has no symlink
+    # at all, so there is nothing broken to find; only walking the includes
+    # finds it. The find below is the complement, for links whose target moved.
+    - name: Check every included rule deck exists
+      shell: bash
+      run: python3 ihp-sg13cmos5l/.github/check_includes.py ihp-sg13cmos5l
+
     - name: Check the cross-PDK symlinks resolve
       shell: bash
       run: |
@@ -76,16 +80,8 @@ runs:
         fi
         echo "All KLayout symlinks resolve."
 
-    - name: Restore KLayout .deb from cache
-      if: inputs.klayout == 'true'
-      id: cache-klayout
-      uses: actions/cache@v4
-      with:
-        path: klayout.deb
-        key: klayout-deb-${{ hashFiles('ihp-sg13cmos5l/versions.txt') }}
-
-    - name: Install KLayout
-      if: inputs.klayout == 'true'
+    - name: Read the pinned KLayout version
+      id: klayout
       shell: bash
       run: |
         version=$(awk '/^klayout /{print $2}' ihp-sg13cmos5l/versions.txt)
@@ -93,6 +89,20 @@ runs:
           echo "::error::No klayout entry in versions.txt"
           exit 1
         fi
+        echo "Pinned KLayout version: $version"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Restore KLayout .deb from cache
+      id: cache-klayout
+      uses: actions/cache@v4
+      with:
+        path: klayout.deb
+        key: klayout-deb-${{ steps.klayout.outputs.version }}
+
+    - name: Install KLayout
+      shell: bash
+      run: |
+        version="${{ steps.klayout.outputs.version }}"
         if [ ! -f klayout.deb ]; then
           echo "Downloading KLayout $version..."
           curl -L --retry 5 --retry-delay 5 --retry-all-errors -o klayout.deb \
@@ -101,3 +111,33 @@ runs:
         sudo apt-get update -qq
         sudo apt-get install -y ./klayout.deb
         klayout -v
+
+    # The decks reach KLayout two ways: run_drc.py shells out to the binary,
+    # while run_lvs.py and the regression harnesses `import klayout.db` from the
+    # venv, which pip installs from SG13G2's requirements.txt. Those are two
+    # independent pins and nothing else compares them, so a run can silently
+    # straddle two versions. Both version guards in the decks are floor checks
+    # and cannot see it. Same assertion SG13G2 makes in its own CI.
+    - name: Verify the binary and pip KLayout versions agree
+      shell: bash
+      working-directory: ihp-sg13cmos5l
+      run: |
+        make env
+        expected="${{ steps.klayout.outputs.version }}"
+        binary=$(klayout -b -v | tail -1 | awk '{print $NF}')
+        pip_pkg=$(.venv/bin/python -c "import klayout; print(klayout.__version__)")
+        echo "Expected (versions.txt):        $expected"
+        echo "Binary   (klayout -b -v):       $binary"
+        echo "Pip pkg  (klayout.__version__): $pip_pkg"
+        fail=0
+        if [ "$binary" != "$expected" ]; then
+          echo "::error::klayout binary ($binary) does not match versions.txt ($expected)"
+          fail=1
+        fi
+        if [ "$pip_pkg" != "$expected" ]; then
+          echo "::error::klayout pip package ($pip_pkg) does not match versions.txt ($expected)."
+          echo "It comes from SG13G2's requirements.txt at the commit in .github/ihp-sg13g2.ref,"
+          echo "so bumping that pin can move it. Keep the two in step."
+          fail=1
+        fi
+        exit $fail
