@@ -16,14 +16,14 @@
 #
 ########################################################################
 #
-# cap_mom PCell DRC + LVS sweep.
+# cap_cmomi PCell DRC + LVS sweep.
 #
-# Generates a matrix of cap_mom configurations from the SG13_dev PyCell library
+# Generates a matrix of cap_cmomi configurations from the SG13_dev PyCell library
 # and checks each one:
 #   - the PCell instantiates and writes a GDS,
 #   - geometric DRC is clean (0 errors in the maximum rule set),
 #   - for the complete 2-terminal feeds ('double', 'same') the LVS extractor
-#     recognises a cap_mom device with two distinct terminal nets.
+#     recognises a cap_cmomi device with two distinct terminal nets.
 # 'none' is a layout-only bare array, so only generation + DRC are asserted.
 #
 # Dual mode (single file):
@@ -33,7 +33,7 @@
 #     any failure (CI friendly).
 #
 # Usage:
-#   KLAYOUT_PATH=<libs.tech/klayout> python3 cap_mom_sweep.py [--run_dir DIR]
+#   KLAYOUT_PATH=<libs.tech/klayout> python3 cap_cmomi_sweep.py [--run_dir DIR]
 #
 import os
 import sys
@@ -67,9 +67,9 @@ def _generate_one():
     out = os.environ["CAP_MOM_OUT"]
     layout = pya.Layout()
     layout.technology_name = TECH_NAME
-    cell = layout.create_cell("cap_mom", "SG13_dev", cfg["params"])
+    cell = layout.create_cell("cap_cmomi", "SG13_dev", cfg["params"])
     if cell is None:
-        raise SystemExit("cap_mom PCell not found in SG13_dev library")
+        raise SystemExit("cap_cmomi PCell not found in SG13_dev library")
     top = layout.create_cell(cfg["name"])
     top.insert(pya.DCellInstArray(cell, pya.DTrans()))
     top.flatten(-1, True)
@@ -83,13 +83,13 @@ def _run(cmd):
 
 
 def _extracted_two_terminal(cir_path):
-    """True if the extracted netlist has a cap_mom device with 2 distinct nets."""
+    """True if the extracted netlist has a cap_cmomi device with 2 distinct nets."""
     if not os.path.isfile(cir_path):
         return False
     for line in open(cir_path):
-        if "cap_mom" in line and " w=" in line:
+        if "cap_cmomi" in line and " w=" in line:
             toks = line.split()
-            # <inst> <n1> <n2> cap_mom w=... : nodes are toks[1], toks[2]
+            # <inst> <n1> <n2> cap_cmomi w=... : nodes are toks[1], toks[2]
             if len(toks) >= 4 and toks[1] != toks[2]:
                 return True
     return False
@@ -97,13 +97,12 @@ def _extracted_two_terminal(cir_path):
 
 def _orchestrate():
     import subprocess
-    from datetime import datetime
     args = sys.argv[1:]
     run_dir = None
     if "--run_dir" in args:
         run_dir = args[args.index("--run_dir") + 1]
     if not run_dir:
-        run_dir = os.path.join(os.getcwd(), "cap_mom_sweep_run")
+        run_dir = os.path.join(os.getcwd(), "cap_cmomi_sweep_run")
     os.makedirs(run_dir, exist_ok=True)
 
     env = dict(os.environ)
@@ -117,8 +116,8 @@ def _orchestrate():
         genenv = dict(env)
         genenv["CAP_MOM_CFG"] = json.dumps(cfg)
         genenv["CAP_MOM_OUT"] = gds
-        gp = subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
-                            env=genenv, capture_output=True, text=True)
+        subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
+                       env=genenv, capture_output=True, text=True)
         if not os.path.isfile(gds):
             results.append((name, "GEN-FAIL", "-", "-"))
             continue
@@ -141,7 +140,7 @@ def _orchestrate():
         results.append((name, status, "clean" if drc_ok else "VIOL",
                         "2T" if dev else "array"))
 
-    print("\n=== cap_mom PCell sweep ===")
+    print("\n=== cap_cmomi PCell sweep ===")
     print(f"{'config':14s} {'status':8s} {'geoDRC':8s} {'extract':8s}")
     failed = 0
     for name, status, drc, dev in results:

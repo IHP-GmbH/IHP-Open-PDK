@@ -416,9 +416,12 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     """
 
     # CMOS5L-compatible device groups only
-    # Excluded from G2: RFMOS
-    # CAP: S-Varicap requires cap_derivations.lvs adaptation (nwell_iso -> nwell_drw)
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "IND"]
+    # Excluded from G2: RFMOS, IND
+    # CAP: enabled for cap_cmomi (MoM, Metal1-Metal4). The other CAP-group
+    # devices stay excluded below: MIM caps (cap_cmim/rfcmim, forbidden MIM
+    # layer), S-Varicap (needs cap_derivations nwell_iso -> nwell_drw), and
+    # the moscaps (sg13_moscap_n/p, no CMOS5L testcase yet).
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP"]
 
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
     # Reference: SG13CMOS5L_os_layout_rules.pdf - nBuLay (32/0) is forbidden
@@ -440,6 +443,9 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         "sg13_hv_svaricap",
         # S-Varicap CMOS5L testcase - cap_derivations.lvs not adapted yet (nwell_iso)
         "svaricap_cmos5l",
+        # MOS varactors (CAP group) - no CMOS5L testcase yet
+        "sg13_moscap_n",
+        "sg13_moscap_p",
         # NPN HBT devices - require forbidden HBT layers (BiWind, TRANS, etc.)
         "npn13G2",
         "npn13G2l",
@@ -619,9 +625,9 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # selected device - CMOS5L only supports these device groups
-    # Excluded: RFMOS, CAP (S-Varicap uses nBuLay)
-    # Keep in sync with allowed_device_groups in main().
-    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "IND"]
+    # Excluded: RFMOS, IND. CAP is enabled for cap_cmomi (other CAP-group
+    # devices are filtered by excluded_devices).
+    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP"]
     target_device_group = args.device
 
     if target_device_group and (target_device_group not in allowed_devices):

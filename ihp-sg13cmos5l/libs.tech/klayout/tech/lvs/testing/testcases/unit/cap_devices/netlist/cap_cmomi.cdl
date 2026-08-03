@@ -14,8 +14,12 @@
 * limitations under the License.
 * SPDX-License-Identifier: Apache-2.0
 *==========================================================================
-* cap_mom LVS testcase: single-side (same) feed, 5x5 um, Metal1-Metal4.
-.subckt cap_mom_same_lvs PLUS MINUS
-*.PININFO PLUS:B MINUS:B
-C1 PLUS MINUS cap_mom w=5e-06 l=5e-06
-.ends
+* Covers BOTH feed variants of cap_cmomi on the cmos5l Metal1-Metal4 stack:
+*   C1 = double (opposite-side) feed  -> both pins on the top metal
+*   C2 = same   (single-side) feed    -> two pins stacked on adjacent metals,
+*                                        kept on distinct nets by per-metal
+*                                        pin connectivity (the isolation check)
+.SUBCKT cap_cmomi
+C1 P1 M1 cap_cmomi w=5e-06 l=5e-06
+C2 P2 M2 cap_cmomi w=5e-06 l=5e-06
+.ENDS cap_cmomi

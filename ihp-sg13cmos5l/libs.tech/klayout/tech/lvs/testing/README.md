@@ -27,8 +27,12 @@ general text layer (63/0) inside the `IND` box, or nothing is extracted.
 ## Excluded Device Groups (Not in CMOS5L)
 
 - **RFMOS**: RF MOSFET devices
-- **CAP**: S-Varicap requires nBuLay (forbidden in CMOS5L)
-- **MIM**: MIM capacitors (cap_cmim, rfcmim)
+- **BJT**: HBT bipolar transistors (npn13G2, npn13G2L, npn13G2V)
+- **CAP (S-Varicap only)**: `sg13_hv_svaricap` requires nwell_iso (forbidden); the
+  MoM `cap_cmomi` in the CAP group IS supported (see the table above). The MOS
+  varactors `sg13_moscap_n/p` are excluded for now (no CMOS5L testcase yet).
+- **MIM**: MIM capacitors (cap_cmim, rfcmim) require the forbidden MIM layer
+- **IND**: Inductors (inductor2, inductor3)
 - **Schottky**: Schottky diodes (require nBuLay)
 
 ## Excluded Devices (nBuLay dependency)

@@ -24,15 +24,19 @@ from .utility_functions import *
 import math
 
 
-class cap_mom(DloGen):
+class cap_cmomi(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
-    Source model: V. Muhlhaus, "MOM model development notes" (IHP, Nov 2022).
+    APPROXIMATE, pending cmos5l silicon: the capacitance coefficients
+    (AREACAP / CFEED_PER_UM) are TRANSFERRED from the sg13g2 characterisation
+    (IHP "MOM model development notes", 2022, thin metals M1..M5) and re-used on
+    the cmos5l M1..M4 stack by LAYER COUNT N = mmax-mmin+1; N=2 is additionally
+    extrapolated. None are measured on cmos5l silicon. The C-label and the
+    Verilog-A/OSDI model share this same formula, so they always agree, but
+    treat the absolute value as an engineering estimate (re-fit ~3-6 months).
+
     Built on the four thin metals Metal1..Metal4 of this PDK; the metal stack
-    is selected by mmin/mmax (any contiguous subset of Metal1..Metal4). Model
-    coefficients (AREACAP / CFEED_PER_UM) are reused by LAYER COUNT
-    N = mmax-mmin+1: Metal1..Metal4 are the physical thin-metal layers the
-    model was characterised on, so the per-count densities apply directly.
+    is selected by mmin/mmax (any contiguous subset of Metal1..Metal4).
 
     Topology (brick-staggered interdigitated teeth):
       * Unit cell 0.840 x 0.890 um, tiled nx (X, finger length = l) by
@@ -101,7 +105,7 @@ class cap_mom(DloGen):
     #   capacitance. Even-row top-metal bars reach the PLUS pad; odd-row
     #   sub-metal bars reach the MINUS pad. The PLUS/MINUS pins sit stacked at
     #   the pad centre. LVS keeps them on separate nets by connecting each
-    #   metal's pins ONLY to its own metal (per-layer, cap_mom_connections.lvs).
+    #   metal's pins ONLY to its own metal (per-layer, cap_cmomi_connections.lvs).
     SAME_PAD_GAP  = 0.30                        # gap from the core to the pad
     SAME_PAD_W    = 0.90                        # pad width (X)
     FEED_EXT_SAME = SAME_PAD_GAP + SAME_PAD_W   # 1.20  left extent of same feed
@@ -121,7 +125,7 @@ class cap_mom(DloGen):
     def defineParamSpecs(cls, specs):
         mchoice = list(range(1, cls.METAL_MAX + 1))
 #ifdef KLAYOUT
-        specs('model', 'cap_mom', 'Model name')
+        specs('model', 'cap_cmomi', 'Model name')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -137,7 +141,7 @@ class cap_mom(DloGen):
         specs('subblock', 0, 'Add substrate isolation block',
               ChoiceConstraint([0, 1]))
 #else
-        specs('model', 'cap_mom', 'Model name')
+        specs('model', 'cap_cmomi', 'Model name')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -307,7 +311,7 @@ class cap_mom(DloGen):
             # PLUS pin on the top-metal pad and MINUS pin on the sub-metal pad,
             # STACKED at the same pad centre (they overlap in x,y on adjacent
             # metals). LVS keeps them on separate nets because each metal's pins
-            # connect only to that metal (per-layer, cap_mom_connections.lvs); a
+            # connect only to that metal (per-layer, cap_cmomi_connections.lvs); a
             # symmetric cap is orientation/terminal-swap invariant, so the two
             # terminals need not be told apart by position.
             pad_cx = (-self.FEED_EXT_SAME + -self.SAME_PAD_GAP) / 2.0
@@ -420,7 +424,7 @@ class cap_mom(DloGen):
             c_total = c_active + cfeed * feed_width
         else:
             c_total = c_active
-        label_text = 'cap_mom C={:.3f}fF'.format(c_total)
+        label_text = 'cap_cmomi C={:.3f}fF'.format(c_total)
         dbCreateLabel(self, text_layer,
                       Point(GridFix(x_lo), GridFix(y_lo - 0.5)),
                       label_text, 'centerLeft', 'R0',

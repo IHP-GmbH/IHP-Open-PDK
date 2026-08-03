@@ -1,0 +1,67 @@
+*#######################################################################
+*
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*#######################################################################
+
+**************** CORNERS OF CAPACITORS (ihp-sg13cmos5l) ****************
+* The only capacitor in cmos5l is the interdigitated MoM cap_cmomi (the MIM
+* caps cmim/rfcmim need the forbidden MIM layer and are excluded).  cap_cmomi
+* is an OSDI compact model; the 2-terminal wrapper subckt lives in cap_cmomi.lib
+* and the OSDI object auto-loads via libs.tech/ngspice/.spiceinit.
+*
+* NOTE (caveat, see cap_cmomi.lib / the Verilog-A header): cap_cmomi has NO
+* characterised process-corner or mismatch spread yet -- the coefficients are the
+* g2-derived NOMINAL values, transferred to cmos5l by layer count and not
+* validated on cmos5l silicon.  So EVERY corner/mismatch/stat section below maps
+* to the SAME nominal model.  This is not a claim of corner-stability; the spread
+* is simply not modelled (pending silicon).  The section names mirror g2's
+* cornerCAP.lib so a corner sweep written against g2 resolves unchanged.
+***********************************************************************
+
+* Typical without statistical modeling
+.LIB cap_typ
+.include cap_cmomi.lib
+.ENDL cap_typ
+
+* Typical with mismatch modeling (nominal: no characterised mismatch)
+.LIB cap_typ_mismatch
+.include cap_cmomi.lib
+.ENDL cap_typ_mismatch
+
+* Typical with statistical modeling (nominal: no characterised spread)
+.LIB cap_typ_stat
+.include cap_cmomi.lib
+.ENDL cap_typ_stat
+
+* Best Case without statistical modeling (nominal)
+.LIB cap_bcs
+.include cap_cmomi.lib
+.ENDL cap_bcs
+
+* Best Case with mismatch modeling (nominal)
+.LIB cap_bcs_mismatch
+.include cap_cmomi.lib
+.ENDL cap_bcs_mismatch
+
+* Worst Case without statistical modeling (nominal)
+.LIB cap_wcs
+.include cap_cmomi.lib
+.ENDL cap_wcs
+
+* Worst Case with mismatch modeling (nominal)
+.LIB cap_wcs_mismatch
+.include cap_cmomi.lib
+.ENDL cap_wcs_mismatch

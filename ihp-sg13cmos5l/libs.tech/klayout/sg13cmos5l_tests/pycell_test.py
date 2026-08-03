@@ -79,8 +79,8 @@ pcellPnpMPA = layout.create_cell("pnpMPA", "SG13_dev", {})
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 
 # MoM capacitor (M1-M4 thin-metal stack; both characterised feed versions)
-pcellCapMom = layout.create_cell("cap_mom", "SG13_dev", {"feed": "double"})
-pcellCapMomSame = layout.create_cell("cap_mom", "SG13_dev", {"feed": "same"})
+pcellCapMom = layout.create_cell("cap_cmomi", "SG13_dev", {"feed": "double"})
+pcellCapMomSame = layout.create_cell("cap_cmomi", "SG13_dev", {"feed": "same"})
 
 # Create top cell and place instances
 top = layout.create_cell("TOP")
