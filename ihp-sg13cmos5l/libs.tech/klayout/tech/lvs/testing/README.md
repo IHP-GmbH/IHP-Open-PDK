@@ -11,14 +11,24 @@ This directory contains the LVS regression testing infrastructure for the SG13CM
 | RES | Resistors (poly, silicide, metal M1-M4, TM1) | Supported |
 | ESD | ESD protection devices (diodevdd/vss only) | Supported |
 | TAP | Substrate/well taps | Supported |
+| IND | Custom inductors (inductor2, inductor3) | Supported |
+
+Inductors are recognised, not generated: CMOS5L ships no inductor PCell, so
+a coil is drawn by hand and marked up per section 6.6 of
+`SG13CMOS5L_os_layout_rules.pdf`. The winding goes on TopMetal1 and the
+underpass crossings on Metal4/Metal3, which is one level below the SG13G2
+TopMetal2/TopMetal1 pair. `sg13cmos5l.lvs` says so via `ind_wind`/`ind_cross`;
+the rule decks themselves stay shared with G2.
+
+Besides the `IND`, `IND:pin` and `IND:text` markup the section describes, the
+device also needs a text label matching `inductor2*` or `inductor3*` on the
+general text layer (63/0) inside the `IND` box, or nothing is extracted.
 
 ## Excluded Device Groups (Not in CMOS5L)
 
 - **RFMOS**: RF MOSFET devices
-- **BJT**: HBT bipolar transistors (npn13G2, npn13G2L, npn13G2V)
 - **CAP**: S-Varicap requires nBuLay (forbidden in CMOS5L)
 - **MIM**: MIM capacitors (cap_cmim, rfcmim)
-- **IND**: Inductors (inductor2, inductor3)
 - **Schottky**: Schottky diodes (require nBuLay)
 
 ## Excluded Devices (nBuLay dependency)

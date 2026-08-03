@@ -307,6 +307,18 @@ else
   # %include rule_decks/general_derivations.lvs
 
   #==================================
+  # ----- CMOS5L STACK OVERRIDES ----
+  #==================================
+  # general_derivations.lvs defaults the inductor metals to the SG13G2
+  # TopMetal2/TopMetal1 pair. CMOS5L has no TopMetal2, so the winding sits on
+  # TopMetal1 and the underpass crossings drop to Metal4/Metal3.
+  # See SG13CMOS5L_os_layout_rules.pdf section 6.6, Fig. 6.9.
+  ind_wind      = topmetal1
+  ind_cross     = metal4.join(metal3)
+  ind_wind_con  = [topmetal1_con]
+  ind_cross_con = [metal4_con, metal3_con]
+
+  #==================================
   # ------ MOSFET DERIVATIONS -------
   #==================================
 
@@ -365,6 +377,11 @@ else
   #================================================
 
   # %include rule_decks/devices_connections.lvs
+
+  # general_connections.lvs climbs to TopMetal1 through Via4 and Metal5, both
+  # forbidden here, so Metal4 is left with no path up. The CMOS5L stack is
+  # Metal4 -> TopVia1 -> TopMetal1 (sg13cmos5l.lyt, drc/rule_decks/antenna.drc).
+  connect(metal4_con, topvia1_n_cap)
 
   #================================================
   #------------- DEVICES EXTRACTION ---------------

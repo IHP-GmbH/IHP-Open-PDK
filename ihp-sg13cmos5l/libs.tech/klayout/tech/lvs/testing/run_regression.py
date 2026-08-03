@@ -18,8 +18,9 @@
 """Run IHP 130nm CMOS Open Source PDK - SG13CMOS5L LVS device regression.
 
 SG13CMOS5L supports CMOS-only devices with M1-M4-TM1 metal stack.
-Supported: MOS, RES, DIODE, ESD (diodevdd/vss, nmoscl), TAP, BJT (pnpMPA)
-Excluded: RFMOS, IND, CAP, MIM capacitors
+Supported: MOS, RES, DIODE, ESD (diodevdd/vss, nmoscl), TAP, BJT (pnpMPA),
+           IND (inductor2, TopMetal1 winding)
+Excluded: RFMOS, CAP, MIM capacitors
 
 Note on nBuLay (32/0) - FORBIDDEN per Layout Rules Section 3.2:
   The following devices use nBuLay (via nwell_iso derivation) and are excluded:
@@ -415,9 +416,9 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     """
 
     # CMOS5L-compatible device groups only
-    # Excluded from G2: RFMOS, IND
+    # Excluded from G2: RFMOS
     # CAP: S-Varicap requires cap_derivations.lvs adaptation (nwell_iso -> nwell_drw)
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT"]
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "IND"]
 
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
     # Reference: SG13CMOS5L_os_layout_rules.pdf - nBuLay (32/0) is forbidden
@@ -618,13 +619,15 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # selected device - CMOS5L only supports these device groups
-    # Excluded: RFMOS, BJT, IND, CAP (S-Varicap uses nBuLay)
-    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP"]
+    # Excluded: RFMOS, CAP (S-Varicap uses nBuLay)
+    # Keep in sync with allowed_device_groups in main().
+    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "IND"]
     target_device_group = args.device
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices for CMOS5L are (MOS, DIODE, RES, ESD, TAP) only"
+            "Allowed devices for CMOS5L are (%s) only",
+            ", ".join(allowed_devices),
         )
         exit(1)
 
