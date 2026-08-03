@@ -1,1 +1,74 @@
-../../../../../../ihp-sg13g2/libs.tech/klayout/tech/lvs/rule_decks/cap_derivations.lvs
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================
+# ------- CAP DERIVATIONS -------
+#================================
+
+logger.info('Starting CAP DERIVATIONS')
+
+rfmimcap_exc = ind_drw.join(ind_pin)
+
+# === MIMCAP ===
+# An RFCMIM sits entirely inside a PWellBlock region (surrounded by a ptap ring), while a
+# regular CMIM has no PWellBlock association. Select the RF well as the PWellBlock that fully
+# encloses a MIM marker, using containment (`covering`) instead of mere interaction. This keeps
+# an unrelated device beneath the MIM (for example a Schottky diode and its PWellBlock, which
+# only partially underlaps the cap) from being mistaken for an RFCMIM and from carving the
+# regular CMIM plate. See IHP-Open-PDK issue #958.
+rfmim_area = pwell_block.covering(mim_drw)
+mimcap_exclude = rfmim_area.join(rfmimcap_exc)
+mim_top = mim_drw.overlapping(topmetal1_con)
+mim_btm = mim_drw.and(metal5_con)
+mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
+topvia1_n_cap = topvia1_drw.not(mim_via)
+
+# === cap_cmim ===
+cmim_top = mim_top.not(mimcap_exclude)
+cmim_btm = mim_btm.covering(cmim_top)
+cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
+
+# === rfcmim ===
+rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
+rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
+rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
+# For rfcmim cells with fixed geometry, a local expansion of `rfmim_area` gives a
+# deterministic substrate region that reaches the intended ptap ring.
+rfmim_sub = rfmim_area.sized(1.um)
+rfmeas_mk = metal5_con.overlapping(rfmim_btm).and(rfmim_area)
+
+# === svaricap ===
+cap_exc = nsd_drw.join(trans_drw).join(emwind_drw)
+            .join(emwihv_drw).join(salblock_drw).join(polyres_drw)
+            .join(extblock_drw).join(res_drw).join(activ_mask)
+            .join(recog_diode).join(recog_esd).join(ind_drw)
+            .join(ind_pin).join(substrate_drw)
+
+varicap_exc = pwell.join(pwell_block).join(nwell_holes).join(cap_exc)
+
+varicap_patt = glob_to_case_insensitive_glob("SVaricap")
+# CMOS5L has no nBuLay, so SVaricap uses the PCell's ThickGateOx marker
+# together with NWell rather than the SG13G2 nwell_iso derivation.
+varicap_core = ngate.and(nwell_drw).and(thickgateox_drw).not(varicap_exc)
+varicap_meas_mk = activ.interacting(text_drw.texts(varicap_patt)).interacting(varicap_core)
+varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
+                    .and(nwell_drw).and(thickgateox_drw).not(varicap_exc).sized(-1.nm)
+varicap_poly_port = gatpoly.interacting(varicap_core)
+varicap_ports = varicap_poly_port.join(varicap_diff_port)
+varicap_dev_mk = nwell_drw.sized(1.um).covering(varicap_core).interacting(varicap_ports)
