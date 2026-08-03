@@ -1,0 +1,1 @@
+../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/moslv/tb_moslv_pmos_id_vd_ng1_rf.sp
