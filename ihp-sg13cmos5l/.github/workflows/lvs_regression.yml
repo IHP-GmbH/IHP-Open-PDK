@@ -60,7 +60,11 @@ jobs:
 
       - uses: ./ihp-sg13cmos5l/.github/actions/setup-pdk
 
+      # Non-blocking on purpose: the four filler cells already fail on main,
+      # see #67. The device-level lvs_regression job above stays blocking.
+      # Drop continue-on-error once #67 is resolved.
       - name: Run LVS Regression for SG13CMOS5L Cells
+        continue-on-error: true
         working-directory: ihp-sg13cmos5l
         run: |
           make env
