@@ -1,4 +1,4 @@
-#==========================================================================
+# =========================================================================
 # Copyright 2026 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
-#==========================================================================
+# =========================================================================
 
 """Generate the SG13CMOS5L inductor LVS testcases.
 
@@ -114,6 +114,44 @@ def remap(src_path, dst_path):
     return dst
 
 
+def add_crossing_metal_bridge(layout):
+    """Put a Metal3 shape under both terminals of one inductor.
+
+    The IND:pin layer is connected to the crossing metals over the whole
+    design, so crossing metal that happens to run under both pins of a
+    coil will bond them unless that metal is clipped by IND first. The
+    coil then extracts with its two terminals on one net, which reads as
+    a short that is not in the layout: there is no via from Metal3 up to
+    the TopMetal1 winding.
+
+    SG13G2 never hits this, because both metals it uses for inductors
+    already carry the IND exclusion. Metal3 and Metal4 do not, since on
+    that stack they are ordinary routing.
+
+    One shape is enough to cover it, so this adds it to the first coil
+    that has exactly two pins. It creates no device, so the golden
+    netlist is unaffected as long as the clip is in place.
+    """
+    top = layout.top_cell()
+    ind = kdb.Region(top.begin_shapes_rec(layout.layer(27, 0)))
+    pins = kdb.Region(top.begin_shapes_rec(layout.layer(27, 2)))
+
+    for marker in ind.each():
+        sel = kdb.Region(marker)
+        found = list((pins & sel).each())
+        if len(found) != 2:
+            continue
+        span = found[0].bbox() + found[1].bbox()
+        bridge = kdb.Box(span.left, span.bottom, span.right,
+                         span.bottom + 1000)
+        top.shapes(layout.layer(30, 0)).insert(bridge)
+        print("Metal3 bridge across both pins of one coil: {}".format(bridge))
+        return True
+
+    print("No coil with exactly two pins, no bridge added.")
+    return False
+
+
 def check(layout):
     """Fail loudly if the result cannot extract in CMOS5L.
 
@@ -199,7 +237,11 @@ def main():
         dst = os.path.join(out_dir, "layout", "{}.gds".format(name))
         print("\n=== {} ===".format(name))
         print("{} -> {}".format(src, dst))
-        ok = check(remap(src, dst)) and ok
+        layout = remap(src, dst)
+        if name == "inductor":
+            add_crossing_metal_bridge(layout)
+            layout.write(dst)
+        ok = check(layout) and ok
 
         # The layer shift does not move any edge, so the golden netlist
         # carries over unchanged.

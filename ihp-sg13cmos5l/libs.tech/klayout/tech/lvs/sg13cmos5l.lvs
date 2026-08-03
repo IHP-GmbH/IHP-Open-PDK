@@ -316,7 +316,14 @@ else
   ind_wind      = topmetal1
   ind_cross     = metal4.join(metal3)
   ind_wind_con  = [topmetal1_con]
-  ind_cross_con = [metal4_con, metal3_con]
+  # Clipped by ind_drw, matching what general_derivations.lvs does for the
+  # metals G2 uses here. ind_connections.lvs connects IND:pin to each of these
+  # over the whole design, so without the clip any Metal3 or Metal4 shape
+  # crossing under two IND:pin rectangles bonds them into one net and the coil
+  # extracts shorted. G2 never sees this because both of its inductor metals
+  # already carry the exclusion; Metal3 and Metal4 do not, since on that stack
+  # they are ordinary routing.
+  ind_cross_con = [metal4_con.not(ind_drw), metal3_con.not(ind_drw)]
 
   #==================================
   # ------ MOSFET DERIVATIONS -------
