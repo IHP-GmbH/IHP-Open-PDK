@@ -331,7 +331,7 @@ class bondpad(DloGen):
                         y = y+d
                 #  for metal
                 
-                if fill == 't' :
+                if fill:
                     dbDeleteObject(car(idmask))
             # if stack
         else :
