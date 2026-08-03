@@ -20,8 +20,9 @@ name: Python Code Linting (CMOS5L)
 on:
   pull_request:
     paths:
-      - 'ihp-sg13cmos5l/libs.tech/klayout/tech/drc/**/*.py'
-      - 'ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/**/*.py'
+      - 'libs.tech/klayout/tech/drc/**/*.py'
+      - 'libs.tech/klayout/tech/lvs/**/*.py'
+      - '.github/workflows/linting.yml'
   workflow_dispatch:
 
 jobs:
@@ -29,16 +30,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
 
       - name: Install flake8
         run: pip install flake8
 
       - name: Lint DRC scripts with flake8
         run: |
-          flake8 ihp-sg13cmos5l/libs.tech/klayout/tech/drc
+          flake8 libs.tech/klayout/tech/drc
 
       - name: Lint LVS scripts with flake8
         run: |
-          flake8 ihp-sg13cmos5l/libs.tech/klayout/tech/lvs || true
+          flake8 libs.tech/klayout/tech/lvs || true

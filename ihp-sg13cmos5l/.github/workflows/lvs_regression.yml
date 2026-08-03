@@ -24,7 +24,13 @@ concurrency:
 on:
   pull_request:
     paths:
-      - 'ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/**'
+      - 'libs.tech/klayout/tech/lvs/**'
+      - 'Makefile'
+      - 'requirements.txt'
+      - 'versions.txt'
+      - '.github/ihp-sg13g2.ref'
+      - '.github/actions/setup-pdk/action.yml'
+      - '.github/workflows/lvs_regression.yml'
   workflow_dispatch:
 
 jobs:
@@ -34,34 +40,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          path: ihp-sg13cmos5l
 
-      - name: Restore KLayout .deb from cache
-        id: cache-klayout
-        uses: actions/cache@v4
-        with:
-          path: klayout-0_30_3.deb
-          key: klayout-deb-cache-ubuntu-0_30_3
-          restore-keys: |
-            klayout-deb-cache-
-
-      - name: Download KLayout .deb if not cached
-        if: steps.cache-klayout.outputs.cache-hit != 'true'
-        run: |
-          echo "Downloading KLayout .deb..."
-          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
-            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
-
-      - name: Install KLayout
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ./klayout-0_30_3.deb
-          echo "KLayout version:"
-          klayout -v
+      - uses: ./ihp-sg13cmos5l/.github/actions/setup-pdk
 
       - name: Run SG13CMOS5L KLayout LVS Regression
+        working-directory: ihp-sg13cmos5l
         run: |
-          cd ihp-sg13cmos5l
           make env
           make test-LVS-main
 
@@ -71,33 +56,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          path: ihp-sg13cmos5l
 
-      - name: Restore KLayout .deb from cache
-        id: cache-klayout
-        uses: actions/cache@v4
-        with:
-          path: klayout-0_30_3.deb
-          key: klayout-deb-cache-ubuntu-0_30_3
-          restore-keys: |
-            klayout-deb-cache-
-
-      - name: Download KLayout .deb if not cached
-        if: steps.cache-klayout.outputs.cache-hit != 'true'
-        run: |
-          echo "Downloading KLayout .deb..."
-          curl -L --retry 5 --retry-delay 5 --retry-all-errors \
-            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
-
-      - name: Install KLayout
-        run: |
-          sudo apt update -qq -y
-          sudo apt install ./klayout-0_30_3.deb
-          echo "KLayout version:"
-          klayout -v
+      - uses: ./ihp-sg13cmos5l/.github/actions/setup-pdk
 
       - name: Run LVS Regression for SG13CMOS5L Cells
+        working-directory: ihp-sg13cmos5l
         run: |
-          cd ihp-sg13cmos5l
           make env
           make test-LVS-cells

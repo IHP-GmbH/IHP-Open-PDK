@@ -1,0 +1,103 @@
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+name: Set up the SG13CMOS5L PDK
+description: >
+  Place a sibling ihp-sg13g2 checkout next to this one so the cross-PDK
+  symlinks resolve, and install the pinned KLayout.
+
+inputs:
+  klayout:
+    description: Install KLayout. Set to false for jobs that only need Python.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    # Most of this PDK is symlinked into ihp-sg13g2, six levels up from
+    # libs.tech/klayout/tech/lvs/rule_decks, which lands on the directory
+    # holding this checkout. So ihp-sg13g2 has to sit next to it, and this
+    # repo has to live in a subdirectory rather than at the workspace root.
+    - name: Read the pinned SG13G2 commit
+      id: pin
+      shell: bash
+      run: |
+        ref=$(grep -v '^#' ihp-sg13cmos5l/.github/ihp-sg13g2.ref | tr -d '[:space:]')
+        echo "Pinned SG13G2 commit: $ref"
+        echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+    - name: Check out SG13G2
+      uses: actions/checkout@v4
+      with:
+        repository: IHP-GmbH/IHP-Open-PDK
+        ref: ${{ steps.pin.outputs.ref }}
+        path: IHP-Open-PDK
+
+    - name: Place SG13G2 next to this PDK
+      shell: bash
+      run: |
+        ln -s IHP-Open-PDK/ihp-sg13g2 ihp-sg13g2
+        # The Makefile installs from ../requirements.txt, i.e. the parent of
+        # this checkout, which is where IHP-Open-PDK keeps it.
+        ln -s IHP-Open-PDK/requirements.txt requirements.txt
+
+    # Guard against the failure mode this layout invites: SG13G2 gains a rule
+    # deck, this repo has no symlink for it, and the whole deck stops loading
+    # with an include error that looks nothing like the real cause.
+    #
+    # Scoped to libs.tech/klayout on purpose. Elsewhere the tree links to build
+    # artefacts (compiled .osdi models, Xyce .so plugins) that a plain checkout
+    # legitimately does not have.
+    - name: Check the cross-PDK symlinks resolve
+      shell: bash
+      run: |
+        broken=$(find ihp-sg13cmos5l/libs.tech/klayout -type l -xtype l)
+        if [ -n "$broken" ]; then
+          echo "::error::Symlinks into ihp-sg13g2 do not resolve at the pinned commit."
+          echo "$broken"
+          echo "Either the pin in .github/ihp-sg13g2.ref is wrong, or SG13G2 moved"
+          echo "files this PDK links to and the links need updating."
+          exit 1
+        fi
+        echo "All KLayout symlinks resolve."
+
+    - name: Restore KLayout .deb from cache
+      if: inputs.klayout == 'true'
+      id: cache-klayout
+      uses: actions/cache@v4
+      with:
+        path: klayout.deb
+        key: klayout-deb-${{ hashFiles('ihp-sg13cmos5l/versions.txt') }}
+
+    - name: Install KLayout
+      if: inputs.klayout == 'true'
+      shell: bash
+      run: |
+        version=$(awk '/^klayout /{print $2}' ihp-sg13cmos5l/versions.txt)
+        if [ -z "$version" ]; then
+          echo "::error::No klayout entry in versions.txt"
+          exit 1
+        fi
+        if [ ! -f klayout.deb ]; then
+          echo "Downloading KLayout $version..."
+          curl -L --retry 5 --retry-delay 5 --retry-all-errors -o klayout.deb \
+            "https://www.klayout.org/downloads/Ubuntu-24/klayout_${version}-1_amd64.deb"
+        fi
+        sudo apt-get update -qq
+        sudo apt-get install -y ./klayout.deb
+        klayout -v
