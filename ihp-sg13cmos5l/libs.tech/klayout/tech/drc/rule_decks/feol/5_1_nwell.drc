@@ -17,8 +17,6 @@
 #=========================================================================================
 #
 # IHP-SG13CMOS5L local copy (not symlinked from G2)
-# Reason: G2 PR #819 added svaricap exclusion in NW.f1 rules.
-# SVaricap is not a CMOS5L device, so the exclusion is removed here.
 #
 #=========================================================================================
 
@@ -58,10 +56,8 @@ if TABLES.include?('nwell') || FEOL
   if !PRECHECK_DRC
     # Shared base for NW.f1 variants: substrate tie in P+Activ inside ThickGateOx.
     nw_f1_ptap_thickgateox = ptap.and(thickgateox_drw)
-    # CMOS5L: No SVaricap exclusion needed (SVaricap is not a CMOS5L device).
-    # .dup is required because nw_f1_nwell.forget would destroy nwell_drw otherwise
-    # (G2 uses nwell_drw.not(svaricap) which already creates a new object).
-    nw_f1_nwell = nwell_drw.dup
+    # Exclude recognized SVaricap devices from the NWell side for both NW.f1 checks.
+    nw_f1_nwell = nwell_drw.not(svaricap)
 
     # Rule NW.f1: Min. NWell space to substrate tie in P+Activ inside ThickGateOx is 0.62 um
     logger.info('Executing rule NW.f1')

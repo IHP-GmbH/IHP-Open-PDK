@@ -303,6 +303,17 @@ if TABLES.any?{|x| gate_tables.include?(x)}
   pgate = pact_fet.and(gatpoly_drw)
 end
 
+# SVaricap derivations. CMOS5L uses ThickGateOx instead of nBuLay as the
+# high-voltage marker used by the SG13G2 SVaricap recognizer.
+svaricap_tables = %w[main cont nwell]
+if TABLES.any?{|x| svaricap_tables.include?(x)}
+  logger.info('Starting SVaricap general derivations')
+  svaricap_gate = gatpoly_drw.and(nwell_drw).and(thickgateox_drw)
+  svaricap_text = text_drw.texts('SVaricap')
+  svaricap_recog = activ_drw.not_outside(svaricap_gate).interacting(svaricap_text)
+  svaricap = nwell_drw.not_outside(svaricap_recog)
+end
+
 # Cont derivations
 cont_tables = %w[main cont contbar]
 if TABLES.any?{|x| cont_tables.include?(x)}
