@@ -85,11 +85,24 @@ proc setTechParameters {techParams} {
 
     set techParameters [dict create]
 
-    dict for {key value} $techParams {
-        # remove decoration from key/value
-        regexp {'?([^',]+)'?:?} $key match undecoratedKey
-        regexp {'?([^',]+)'?,?} $value match undecoratedValue
-        dict append techParameters $undecoratedKey $undecoratedValue
+    # techParams arrives as a Python dict repr, e.g.
+    #   'key': 'value', 'key': 0.001, 'key': 'value with spaces', ...
+    # A plain "dict for" over this string breaks whenever a value contains a
+    # space (e.g. 'No value'), because the whitespace split then yields an odd
+    # number of tokens and Tcl raises "missing value to go with key". Parse
+    # with a regex that respects the quoting so that space-containing values
+    # keep their key/value pairing intact.
+    set pattern {'([^']+)'\s*:\s*(?:'([^']*)'|([^,]+))}
+    foreach {match key quotedValue bareValue} [regexp -all -inline $pattern $techParams] {
+        if {$match eq ""} {
+            continue
+        }
+        if {$bareValue ne ""} {
+            set value [string trim $bareValue]
+        } else {
+            set value $quotedValue
+        }
+        dict set techParameters $key $value
     }
 }
 
