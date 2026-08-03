@@ -53,7 +53,7 @@ ANALYSIS_RULES = [
 RULES_VAR = {
     "met_no": ("2", "3", "4"),              # M2-M4 only (metaln.drc)
     "via_no": ("2", "3"),                   # Via2-Via3 only (vian.drc)
-    "metalfiller_no": ("1", "2", "3", "4"), # M1-M4 only (metalnfiller.drc)
+    "metalfiller_no": ("1", "2", "3", "4"),  # M1-M4 only (metalnfiller.drc)
     "met_abbrev": ("M1", "M2", "M3", "M4", "TM1"),  # M1-M4 + TopMetal1
     "pin_rule": ("a", "b", "e", "f_M2", "f_M3", "f_M4", "f_TM1", "g", "h"),
     "forb_lay": (
