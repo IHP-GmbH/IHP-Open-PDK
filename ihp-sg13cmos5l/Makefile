@@ -118,6 +118,12 @@ test-gnucap:
 	elif [ ! -d "$$PDK_ROOT/ihp-sg13g2" ]; then \
 	  echo "Skipping: no ihp-sg13g2 under PDK_ROOT=$$PDK_ROOT"; \
 	  echo "  (this directory is symlinked into it, see libs.tech/gnucap/README.md)"; \
+	elif [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/psp103.osdi" ]; then \
+	  echo "Skipping: the OSDI objects are not built"; \
+	  echo "  cd \$$PDK_ROOT/ihp-sg13g2/libs.tech/verilog-a && ./openvaf-compile-va.sh"; \
+	  echo "  (they are a gitignored build product of the sibling PDK, so the"; \
+	  echo "   osdi/ symlinks here dangle until that runs, and the Ngspice half"; \
+	  echo "   would fail on its first test)"; \
 	else \
 	  echo "Running Gnucap regression for SG13CMOS5L devices"; \
 	  PDK=ihp-sg13cmos5l $(MAKE) -C libs.tech/gnucap check; \

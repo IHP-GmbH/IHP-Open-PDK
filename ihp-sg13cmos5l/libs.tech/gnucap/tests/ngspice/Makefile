@@ -27,8 +27,12 @@ ALL_OUTS := $(foreach f, $(ALL_TESTS), $(dir $(f))check/$(notdir $(f)).out)
 # not pass records itself here, and the aggregate targets fail afterwards. That
 # is what makes `make check` return nonzero when something regressed, which the
 # repository-root `make test-gnucap` target relies on.
-FAILLOG = .check-failures
-RUNLOG  = .check-ran
+# Scoped to this make invocation: two concurrent runs in the same directory would
+# otherwise share the files, and one finishing would clear the other's record,
+# which can turn a real failure into a green report.
+RUNID  := $(shell echo $$PPID)
+FAILLOG = .check-failures.$(RUNID)
+RUNLOG  = .check-ran.$(RUNID)
 
 reset-failures:
 	@rm -f $(FAILLOG) $(RUNLOG)
@@ -82,7 +86,7 @@ endef
 $(foreach d, $(TESTDIRS), $(eval $(call DIR_RULE,$(d))))
 
 clean:
-	@rm -f $(FAILLOG)
+	@rm -f .check-failures.* .check-ran.*
 	@for dir in $(TESTDIRS); do \
 	  rm -rf $$dir/check; \
 	done
