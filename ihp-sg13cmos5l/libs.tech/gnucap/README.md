@@ -206,9 +206,9 @@ through it keeps everything on this tree.
 
 ## Licensing
 
-The rest of this PDK is Apache-2.0, and this directory is not. Three other
-licenses reach the plugins it builds, so the full inventory is worth stating
-rather than leaving to whoever reads the headers.
+The rest of this PDK is Apache-2.0, and this directory is not. Four other sets of
+terms reach the plugins it builds, so it is worth naming them and where they live
+rather than leaving a reader to find them in the headers.
 
 **GPL-3.0-or-later.** The Gnucap simulator plugins under `cpp/` link against
 Gnucap internals and include verbatim Gnucap core sources. They are symlinks into
@@ -237,10 +237,14 @@ IHP's modifications on top are Apache-2.0, which is the header in `r3_cmc.va`.
 `psp103` is not under a named open-source license. The header in `psp103.va`
 carries only a copyright notice, naming NXP Semiconductors, CEA-Leti, Delft
 University of Technology and Arizona State University over different periods. The
-actual terms are the Compact Model Coalition In-Code Statement in
-`psp103/releasenotesPSP103.8.2.txt`: redistribution is permitted, but you may not
-charge for the model code itself, and any product based on it must acknowledge
-NXP Semiconductors, Delft University of Technology and CEA in its documentation.
+terms are the Compact Model Coalition In-Code Statement at the top of
+`psp103/releasenotesPSP103.8.2.txt`. It permits redistribution of source and
+binaries under four numbered conditions, covering what may be charged for,
+acknowledgement in product documentation, and retention of the notice in both
+source and binary redistributions. That last one reaches the compiled plugins in
+`plugins/models/`, so read the statement in full before redistributing anything
+built here; it is short, and paraphrasing it here would only invite relying on
+the paraphrase.
 
 ## Acknowledgements
 
