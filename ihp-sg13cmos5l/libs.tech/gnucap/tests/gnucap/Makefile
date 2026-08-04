@@ -28,20 +28,22 @@ ALL_OUTS := $(foreach f, $(ALL_TESTS), $(dir $(f))check/$(notdir $(f)).out)
 # is what makes `make check` return nonzero when something regressed, which the
 # repository-root `make test-gnucap` target relies on.
 FAILLOG = .check-failures
+RUNLOG  = .check-ran
 
 reset-failures:
-	@rm -f $(FAILLOG)
+	@rm -f $(FAILLOG) $(RUNLOG)
 
-REPORT = if [ -s $(FAILLOG) ]; then \
-	  echo ""; \
-	  echo "$$(wc -l < $(FAILLOG)) test(s) did not pass:"; \
+REPORT = ran=$$(cat $(RUNLOG) 2>/dev/null | wc -l); \
+	bad=$$(cat $(FAILLOG) 2>/dev/null | wc -l); \
+	echo ""; \
+	if [ "$$bad" -gt 0 ]; then \
+	  echo "$$bad of $$ran tests did not pass:"; \
 	  sed 's/^/  /' $(FAILLOG); \
-	  rm -f $(FAILLOG); \
+	  rm -f $(FAILLOG) $(RUNLOG); \
 	  exit 1; \
-	else \
-	  echo ""; \
-	  echo "all $(words $(ALL_TESTS)) tests passed"; \
-	fi
+	fi; \
+	echo "all $$ran tests passed"; \
+	rm -f $(RUNLOG)
 
 # Default: check all tests
 check: $(ALL_OUTS)
@@ -59,6 +61,7 @@ $(dir $(1))check/$(notdir $(1)).out: $(1) | reset-failures
 	  grep -v 'already installed' | \
 	  grep -v '^@@' \
 	  > "check/$(notdir $(1)).out" || true
+	@echo "$$(notdir $$<)" >> $(RUNLOG)
 	@if [ -f "$(dir $(1))ref/$(notdir $(1)).out" ]; then \
 	  if $(DIFF) -u "$(dir $(1))ref/$(notdir $(1)).out" "$$@" > "$$(basename $$@).diff" 2>&1; then \
 	    echo "PASS $$(notdir $$<)"; \
