@@ -47,11 +47,13 @@ Install:
 - [Gnucap](https://codeberg.org/gnucap/gnucap)
 - [gnucap-modelgen-verilog](https://codeberg.org/gnucap/gnucap-modelgen-verilog)
 - [Ngspice](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/46/)
+- [OpenVAF](https://openvaf.semimod.de), for the OSDI step below
 
 Tested with:
-- Gnucap: `sckt 2026.05.12`
-- gnucap-modelgen-verilog: `sckt 2026.05.12`
-- Ngspice: `ngspice-46` 
+- Gnucap: `resolve 2026.06.10`
+- gnucap-modelgen-verilog: `gnucap-mg-vams`, same release
+- Ngspice: `ngspice-46`
+- OpenVAF: `openvaf 23.5.0` (`openvaf-r`)
 
 To run Ngspice testbench, add the following environment variables to your  
 `~/.bashrc`: 
@@ -65,6 +67,15 @@ export PDK=ihp-sg13g2
 
 Replace `/path/to/IHP-Open-PDK` with the path to your local IHP-Open-PDK 
 repository.
+
+The Ngspice testbenches also need the OSDI objects that the model cards
+reference. Those are a build product rather than a tracked file, so on a fresh
+checkout `libs.tech/ngspice/osdi/` does not exist yet and the Ngspice half of the
+suite stops on its first test. Build them once with [OpenVAF](https://openvaf.semimod.de):
+
+```bash
+cd $PDK_ROOT/$PDK/libs.tech/verilog-a && ./openvaf-compile-va.sh
+```
 
 To plot and compare test results between Gnucap and Ngspice, install the 
 required Python dependencies. From the top-level `gnucap/` directory, create a 
@@ -93,7 +104,7 @@ make
 Build only Verilog-A model plugins:
 
 ```bash
-make model-plugins
+make models-plugins
 ```
 
 Build only Gnucap simulator plugins:
@@ -228,7 +239,7 @@ make -C tests/ngspice resistor/check/tb_res_basic_typ.sp.out
 Generate all figures from the reference test data:
 
 ```bash
-python python/plot_tests.py
+python python/plot_all.py
 
 ```
 

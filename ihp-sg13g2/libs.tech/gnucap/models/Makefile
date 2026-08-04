@@ -22,16 +22,52 @@ PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
 # Default target
 all: $(PLUGINS)
 
-# Create target directory if it doesn't exist
+# Create target directories if they don't exist
 $(TARGET_DIR):
 	mkdir -p $(TARGET_DIR)
+
+$(OSDI_DIR):
+	mkdir -p $(OSDI_DIR)
 
 # Auto-generate convenience targets for each item in TARGETS
 $(TARGETS): %: $(TARGET_DIR)/%.so
 # Auto-generate convenience targets to dump each item in TARGETS
 $(TARGETS:%=dump-%): dump-%: %.dump.va
 # Auto-generate convenience targets to build OSDI for each item in TARGETS
-$(TARGETS:%=osdi-%): osdi-%: $(TARGET_DIR)/%.osdi
+$(TARGETS:%=osdi-%): osdi-%: $(OSDI_DIR)/%.osdi
+
+# Sources reached through `include, listed by hand because gnucap-mg-vams has no
+# dependency-output mode. Without them make compares only the paramset file
+# itself, so editing r3_cmc.va, psp103.va, cap_cmomi.va or discipline.h leaves a
+# stale .so in place and `make check` then validates the previous build instead
+# of the current one. The external model trees are taken wholesale: any of their
+# .include files feeds the compile, and they are third-party sources that change
+# rarely enough that over-triggering costs nothing.
+va_sources  = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
+R3CMC_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/r3_cmc)
+PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
+CMOMI_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomi)
+
+$(TARGET_DIR)/resistor_paramset.cc:        resistor.va discipline.h $(R3CMC_SRC)
+$(TARGET_DIR)/capacitor_paramset.cc:       capacitor.va $(CMOMI_SRC)
+$(TARGET_DIR)/sg13g2_moslv_paramset.cc:    discipline.h $(PSP103_SRC)
+$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc: discipline.h $(PSP103_SRC)
+$(TARGET_DIR)/sg13g2_moshv_paramset.cc:    discipline.h $(PSP103_SRC)
+$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc: discipline.h $(PSP103_SRC)
+
+resistor_paramset.dump.va:        resistor.va discipline.h $(R3CMC_SRC)
+capacitor_paramset.dump.va:       capacitor.va $(CMOMI_SRC)
+sg13g2_moslv_paramset.dump.va:    discipline.h $(PSP103_SRC)
+sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
+sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)
+sg13g2_moshv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
+
+# Naming the generated C++ as explicit targets above would make it permanent:
+# GNU make only treats a file as intermediate, and deletes it after the build,
+# when it is never mentioned as a target or prerequisite. These are hundreds of
+# MB, so keep them intermediate; the dependencies above still decide when the
+# chain has to be rebuilt.
+.INTERMEDIATE: $(TARGETS:%=$(TARGET_DIR)/%.cc)
 
 # Generate C++ from Verilog-A
 $(TARGET_DIR)/%.cc: %.va | $(TARGET_DIR)
@@ -54,7 +90,8 @@ $(TARGET_DIR)/%.so: $(TARGET_DIR)/%.o
 	${MODELGEN_VERILOG} ${MGFLAGS} -o $@ --dump $<
 
 # Generate OSDI from dumped paramset Verilog-A module
-$(TARGET_DIR)/%.osdi: %.dump.va
+# (into OSDI_DIR, which is where clean looks for it)
+$(OSDI_DIR)/%.osdi: %.dump.va | $(OSDI_DIR)
 	${OPENVAF} $< -o $@
 
 # Clean plugins
