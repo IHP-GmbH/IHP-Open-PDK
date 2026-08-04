@@ -61,6 +61,13 @@ sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
 sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)
 sg13g2_moshv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
 
+# Naming the generated C++ as explicit targets above would make it permanent:
+# GNU make only treats a file as intermediate, and deletes it after the build,
+# when it is never mentioned as a target or prerequisite. These are hundreds of
+# MB, so keep them intermediate; the dependencies above still decide when the
+# chain has to be rebuilt.
+.INTERMEDIATE: $(TARGETS:%=$(TARGET_DIR)/%.cc)
+
 # Generate C++ from Verilog-A
 $(TARGET_DIR)/%.cc: %.va | $(TARGET_DIR)
 	${MODELGEN_VERILOG} ${MGFLAGS} -o $@ --cc $<

@@ -226,12 +226,21 @@ pulls it in with `` `include ``, so it is compiled into the `resistor_paramset`
 plugin. AGPL-3.0-or-later is a different license from GPL-3.0-or-later, not a
 variant of it.
 
-**Third-party compact models under `libs.tech/verilog-a/`.** `r3_cmc` is
-Apache-2.0, (c) Silicon Integration Initiative, with its own `LICENSE.txt` and
-`NOTICE.txt`. `psp103` carries an NXP Semiconductors / CEA-Leti / Arizona State
-University copyright notice and its own terms; read the header in `psp103.va`
-before redistributing anything built from it. Both are symlinks into
-`ihp-sg13g2`.
+**Third-party compact models under `libs.tech/verilog-a/`.** Both are symlinks
+into `ihp-sg13g2`, and neither is Apache-2.0 outright.
+
+`r3_cmc` has two layers. The original model is `(c) 2020 Silicon Integration
+Initiative` under the **Educational Community License 2.0**, which is the text in
+`r3_cmc/LICENSE.txt`; ECL-2.0 is not Apache-2.0, its patent grant is narrower.
+IHP's modifications on top are Apache-2.0, which is the header in `r3_cmc.va`.
+
+`psp103` is not under a named open-source license. The header in `psp103.va`
+carries only a copyright notice, naming NXP Semiconductors, CEA-Leti, Delft
+University of Technology and Arizona State University over different periods. The
+actual terms are the Compact Model Coalition In-Code Statement in
+`psp103/releasenotesPSP103.8.2.txt`: redistribution is permitted, but you may not
+charge for the model code itself, and any product based on it must acknowledge
+NXP Semiconductors, Delft University of Technology and CEA in its documentation.
 
 ## Acknowledgements
 
