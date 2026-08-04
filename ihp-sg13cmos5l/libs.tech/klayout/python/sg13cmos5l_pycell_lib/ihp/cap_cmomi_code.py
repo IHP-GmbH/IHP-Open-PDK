@@ -405,15 +405,27 @@ class cap_cmomi(DloGen):
             y_hi = max(y_hi, pad_y_hi)
         self._paint(recog_layer, x_lo, y_lo, x_hi, y_hi)
 
-        # 5) Substrate isolation block
+        # 5) Filler keep-out over the full device.
+        # The cap_cmomi value is defined by the metal geometry. Automatic dummy
+        # metal fill (density fill) landing on or beside the fingers, or over the
+        # device on the upper metals the cap does not draw, perturbs the real
+        # capacitance. LVS matches this device topologically and does not compare
+        # its value, and DRC leaves rule-compliant fill untouched, so neither
+        # catches the perturbation. NoMetFiller (160/0) over the device bbox is
+        # honoured by every metal and topmetal filler and excludes all metal
+        # fill in one marker.
+        nofiller_layer = Layer('NoMetFiller', 'drawing')
+        self._paint(nofiller_layer, x_lo, y_lo, x_hi, y_hi)
+
+        # 6) Substrate isolation block
         if self.subblock:
             pwb_layer = Layer('PWell', 'block')
             self._paint(pwb_layer, x_lo, y_lo, x_hi, y_hi)
 
-        # 6) Pins
+        # 7) Pins
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
-        # 7) Capacitance label (must match the simulation model, contract).
+        # 8) Capacitance label (must match the simulation model, contract).
         n_clamped = min(self.METAL_MAX, max(2, n_layers))
         areacap = self.AREACAP[n_clamped]
         active_area = nx_active * self.UC_X * ny_active * self.UC_Y
