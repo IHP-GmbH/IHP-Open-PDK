@@ -211,11 +211,12 @@ The rest of this PDK is Apache-2.0. The Gnucap simulator plugins under `cpp/` ar
 Gnucap core sources. They are symlinks into `ihp-sg13g2`, where the original
 files and their license headers live.
 
-Two GPL-3.0-or-later files are real files here rather than symlinks:
-`tests/gnucap/Makefile` and `tests/ngspice/Makefile`. They are derived from the
-SG13G2 originals and keep their `(c) Felix Salfelder 2024 / Lukas Deutz 2026`
-GPLv3+ headers; they had to be copied because the test directory list and the
-exit-status handling differ here.
+Three GPL-3.0-or-later files are real files here rather than symlinks:
+`tests/Makefile`, `tests/gnucap/Makefile` and `tests/ngspice/Makefile`. They are
+derived from the SG13G2 originals and keep their
+`(c) Felix Salfelder 2024 / Lukas Deutz 2026` GPLv3+ headers; they had to be
+copied because the test directory list, the exit-status handling and the help
+text differ here.
 
 ## Acknowledgements
 
