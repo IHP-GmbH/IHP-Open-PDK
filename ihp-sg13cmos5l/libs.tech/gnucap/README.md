@@ -3,10 +3,13 @@
 This directory contains a Verilog-A standard-compliant implementation of the
 SG13CMOS5L device library, ported from the equivalent `ihp-sg13g2` directory.
 
-The models are compiled with the gnucap-modelgen-verilog compiler. The
-implementation is tested using the Gnucap simulator, and the automated test flow
-cross-validates device behavior by comparing Gnucap simulation results against
-reference Ngspice simulations using the SG13CMOS5L Ngspice device library.
+The models are compiled with the gnucap-modelgen-verilog compiler. Two test
+suites run over them: one drives Gnucap against the Verilog-A models, the other
+drives Ngspice against this PDK's Ngspice device library. Each side diffs its own
+output against checked-in reference data; nothing in `make check` diffs one
+simulator against the other. The cross-validation between the two happened when
+those references were produced upstream, and what the suite enforces from then on
+is that neither simulator drifts away from them.
 
 ## Relationship to ihp-sg13g2
 
@@ -16,10 +19,21 @@ SG13CMOS5L shares its MOS and resistor model cards with SG13G2: the files under
 
 This directory follows the same convention already used by `libs.tech/xschem`,
 `libs.tech/ngspice` and `libs.tech/xyce`: everything that would be a byte-for-byte
-copy is a relative symlink into `../../../../ihp-sg13g2/libs.tech/gnucap/`, and only
-files that genuinely differ are real files here. That includes the reference test
-data under `tests/*/*/ref/`, which is valid for SG13CMOS5L precisely because the
-underlying model cards are the same files.
+copy is a relative symlink into the sibling `ihp-sg13g2/libs.tech/gnucap/` (the
+number of `../` depends on how deep the file sits), and only files that genuinely
+differ are real files here. That includes the reference test data under
+`tests/*/*/ref/`, which is valid for SG13CMOS5L precisely because the underlying
+model cards are the same files.
+
+Worth being explicit about what each half of the suite therefore proves. The
+Gnucap side reads only symlinks: its models, testbenches and references all
+resolve into `ihp-sg13g2`, so a green run there says the links resolve and the
+toolchain works, not anything specific to this PDK. The Ngspice side is the one
+that exercises SG13CMOS5L, because each `.spiceinit` puts
+`$PDK_ROOT/$PDK/libs.tech/ngspice/models` on the Ngspice `sourcepath`. Running it
+under `PDK=ihp-sg13cmos5l` and reproducing SG13G2's reference output is the actual
+cross-PDK comparison, and it holds only for as long as the model cards stay
+shared.
 
 Consequence: a standalone clone of `ihp-sg13cmos5l` is not enough. Clone it inside
 an `IHP-Open-PDK` checkout as described in the top-level `README.md`, so that
@@ -27,18 +41,27 @@ an `IHP-Open-PDK` checkout as described in the top-level `README.md`, so that
 
 ## Device coverage
 
-Covered, with the full SG13G2 test suite:
+Modelled in Verilog-A and exercised by the test suite:
 
-- resistors: `rsil`, `rhigh`, `rppd`, plus `ptap1`, `ntap1` and `Rparasitic`
+- resistors: `rsil`, `rhigh`, `rppd`
 - MOSFETs: `sg13_lv_nmos`, `sg13_lv_pmos`, `sg13_hv_nmos`, `sg13_hv_pmos`,
   including the RF variants selected by `rfmode=1`
 
-Not covered. The capacitors are absent from this PDK rather than unported:
-SG13CMOS5L has no `cap_cmim`, `cap_rfcmim` or `cparasitic`. Its MoM capacitor
-`cap_cmomi` is a different model from the SG13G2 one (Metal1..Metal4 rather than
-Metal1..Metal5), so it is not covered by the SG13G2 Verilog-A model and will be
-added together with the device itself. Diodes, ESD, `bondpad` and `pnpMPA` are
-not yet ported to Verilog-A in SG13G2 either. See `ROAD_MAP.md`.
+Modelled but not exercised: `ptap1` and `ntap1` have paramsets in
+`models/resistor_paramset.va`, and no testbench on either side instantiates them.
+`Rparasitic` is covered on the Gnucap side only; the Ngspice testbench has it
+commented out, because `res_rpara` is missing from `cornerRES.lib`. Both gaps are
+inherited from SG13G2.
+
+Not modelled. Some of these are devices this PDK does not have: there is no
+`cap_cmim`, `cap_rfcmim` or `cparasitic` here, nor the `npn13G2*` HBTs,
+`schottky_nbl1`, `isolbox` or inductors. The rest are devices SG13CMOS5L does
+have that SG13G2 has not ported to Verilog-A either, so the gap is inherited:
+the moscaps, diodes, ESD, `svaricap`, `bondpad` and `pnpMPA`. The MoM capacitor
+`cap_cmomi` is a third case, arriving in this PDK separately; because it is built
+on Metal1..Metal4 rather than Metal1..Metal5 it needs a real adaptation of the
+SG13G2 model rather than a symlink, and it lands together with the device itself.
+See `ROAD_MAP.md`.
 
 ## Prerequisites
 
@@ -47,12 +70,14 @@ Install:
 - [Gnucap](https://codeberg.org/gnucap/gnucap)
 - [gnucap-modelgen-verilog](https://codeberg.org/gnucap/gnucap-modelgen-verilog)
 - [Ngspice](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/46/)
+- [OpenVAF](https://openvaf.semimod.de), for the OSDI step below
 
 Verified working with:
 
 - Gnucap: `resolve 2026.06.10`
 - gnucap-modelgen-verilog: `gnucap-mg-vams`, same release
 - Ngspice: `ngspice-46`
+- OpenVAF: `openvaf-r`
 
 Set the following environment variables. `PDK_ROOT` must point at the
 `IHP-Open-PDK` checkout that contains `ihp-sg13cmos5l`, which is not necessarily
@@ -119,11 +144,15 @@ make -C cpp measure_mean
 
 Each Gnucap test case `tests/gnucap/<testdir>/*.gc` writes its output to
 `tests/gnucap/<testdir>/check/*.gc.out`, which is diffed against the reference data
-in `tests/gnucap/<testdir>/ref/*.gc.out`. Each has an equivalent Ngspice test case
-in `tests/ngspice/<testdir>/*.sp` used for cross-validation.
+in `tests/gnucap/<testdir>/ref/*.gc.out`. Most have a counterpart Ngspice test
+case in `tests/ngspice/<testdir>/*.sp`, which is diffed against its own reference
+in the same way. The two are counterparts by construction, not by anything the
+Makefiles do at run time.
 
 Results are reported as `PASS` (no diff), `FAIL` (see `check/*.diff`) or `MISS`
-(no reference file found).
+(no reference file found). The whole suite always runs to the end, and the
+aggregate targets then exit nonzero if anything was `FAIL` or `MISS`, so these
+are usable as a regression gate rather than only as something to read.
 
 ```bash
 make check                      # build plugins, then run everything
@@ -135,6 +164,21 @@ make -C tests/ngspice check-resistor
 make -C tests/gnucap help
 ```
 
+`make -C tests check` assumes the plugins are already built; on a fresh checkout
+there is no `plugins/` directory yet, and every testbench opens by loading a
+`.so` from it, so run `make check` at least once first.
+
+From the repository root there is also:
+
+```bash
+make test-gnucap
+```
+
+which is `make check` under `PDK=ihp-sg13cmos5l`. It skips with a message,
+rather than failing, when the toolchain is missing or `PDK_ROOT` does not point
+at a checkout holding both PDKs, so that contributors working on DRC or LVS are
+not blocked by a simulator they do not have.
+
 Run a single test:
 
 ```bash
@@ -144,14 +188,21 @@ make -C tests/ngspice resistor/check/tb_res_basic_typ.sp.out
 
 ## Plotting
 
-Generate all figures from the reference test data, or one test directory:
+Generate all figures from the reference test data, or only some test directories:
 
 ```bash
 python python/plot_all.py
-python python/plot_resistor.py
+python python/plot_all.py resistor
 ```
 
 Figures are saved in `gnucap/figures/<testdir>`.
+
+Always go through `plot_all.py`. The `plot_<testdir>.py` modules beside it are
+symlinks into `ihp-sg13g2`, and Python puts the *resolved* directory of the
+script it runs first on `sys.path`, so running one of them directly picks up that
+PDK's `dirs.py` and writes the figures into `ihp-sg13g2/libs.tech/gnucap/figures`
+from that PDK's test data. `plot_all.py` is a real file here, so importing them
+through it keeps everything on this tree.
 
 ## Licensing
 
@@ -159,6 +210,12 @@ The rest of this PDK is Apache-2.0. The Gnucap simulator plugins under `cpp/` ar
 **GPL-3.0-or-later**: they link against Gnucap internals and include verbatim
 Gnucap core sources. They are symlinks into `ihp-sg13g2`, where the original
 files and their license headers live.
+
+Two GPL-3.0-or-later files are real files here rather than symlinks:
+`tests/gnucap/Makefile` and `tests/ngspice/Makefile`. They are derived from the
+SG13G2 originals and keep their `(c) Felix Salfelder 2024 / Lukas Deutz 2026`
+GPLv3+ headers; they had to be copied because the test directory list and the
+exit-status handling differ here.
 
 ## Acknowledgements
 

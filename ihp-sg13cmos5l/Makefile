@@ -92,15 +92,32 @@ test-LVS-switch: env
 # --------- test-gnucap ----------
 #=================================
 
-# Cross-validates the Verilog-A device models against Ngspice.
-# Skips rather than fails when the toolchain is absent, so that contributors
-# working on DRC/LVS are not blocked by a missing simulator.
+# Builds the Verilog-A model plugins, then runs the Gnucap and Ngspice test
+# suites over them. Both suites diff against checked-in reference data and this
+# target propagates their exit status, so it goes red on a model regression.
+#
+# Skips rather than fails when the toolchain or PDK_ROOT is absent, so that
+# contributors working on DRC/LVS are not blocked by a missing simulator. The
+# checks are deliberately specific: the plugin build alone takes tens of minutes,
+# so anything that would make the run fail at the end is worth catching up front.
+GNUCAP_TOOLS = gnucap gnucap-mg-vams ngspice
+
 .ONESHELL:
 test-gnucap:
-	@if ! command -v gnucap >/dev/null 2>&1; then \
-	  echo "Skipping: gnucap not installed (see libs.tech/gnucap/README.md)"; \
-	elif [ -z "$$PDK_ROOT" ]; then \
+	@for tool in $(GNUCAP_TOOLS); do \
+	  if ! command -v $$tool >/dev/null 2>&1; then \
+	    echo "Skipping: $$tool not installed (see libs.tech/gnucap/README.md)"; \
+	    exit 0; \
+	  fi; \
+	done; \
+	if [ -z "$$PDK_ROOT" ]; then \
 	  echo "Skipping: PDK_ROOT is not set (see libs.tech/gnucap/README.md)"; \
+	elif [ ! -d "$$PDK_ROOT/ihp-sg13cmos5l" ]; then \
+	  echo "Skipping: no ihp-sg13cmos5l under PDK_ROOT=$$PDK_ROOT"; \
+	  echo "  (the Ngspice suite reads its model cards from there)"; \
+	elif [ ! -d "$$PDK_ROOT/ihp-sg13g2" ]; then \
+	  echo "Skipping: no ihp-sg13g2 under PDK_ROOT=$$PDK_ROOT"; \
+	  echo "  (this directory is symlinked into it, see libs.tech/gnucap/README.md)"; \
 	else \
 	  echo "Running Gnucap regression for SG13CMOS5L devices"; \
 	  PDK=ihp-sg13cmos5l $(MAKE) -C libs.tech/gnucap check; \
@@ -120,12 +137,6 @@ help:
 	@echo "... test-LVS-<device>          (Run LVS for specific device group             )"
 	@echo "... test-LVS-cells             (Run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
-<<<<<<< HEAD
-	@echo "... test-cap-cmomi-sweep       (Run cap_cmomi PCell DRC+LVS configuration sweep)"
-
-.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-cap-cmomi-sweep help
-=======
-	@echo "... test-gnucap                (Run Gnucap/Ngspice device model regression    )"
+	@echo "... test-gnucap                (Build model plugins, run the device regression)"
 
 .PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-gnucap help
->>>>>>> 07314db2 (Add gnucap support for SG13CMOS5L)

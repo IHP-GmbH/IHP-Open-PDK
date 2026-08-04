@@ -2,7 +2,12 @@
 
 Status for the SG13CMOS5L device set. Devices SG13G2 has but this PDK does not
 (`cap_cmim`, `cap_rfcmim`, `cparasitic`, the `npn13G2*` HBTs, `schottky_nbl1`,
-`isolbox`, the moscaps, inductors) are out of scope and not listed.
+`isolbox`, inductors) are out of scope and not listed.
+
+Checked here means the Verilog-A model exists, which is not the same as being
+tested: `ptap1` and `ntap1` have paramsets that no testbench instantiates, and
+`Rparasitic` is exercised on the Gnucap side only. Both are inherited from
+SG13G2.
 
 - [x] resistors
     - [x] parasitic
@@ -18,6 +23,7 @@ Status for the SG13CMOS5L device set. Devices SG13G2 has but this PDK does not
 
 - [ ] capacitors
     - [ ] cap_cmomi
+    - [ ] moscap_n / moscap_p
 
 - [ ] diode
     - [ ] dantenna
