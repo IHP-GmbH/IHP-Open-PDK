@@ -20,6 +20,12 @@ ALL_TESTS := $(foreach f,$(ALL_TESTS), $(if $(filter $(TEST_EXCLUDE_PREFIX)%,$(n
 # Each test generates an output
 ALL_OUTS := $(foreach f, $(ALL_TESTS), $(dir $(f))check/$(notdir $(f)).out)
 
+# Pinned, because the first rule below is reset-failures and make would
+# otherwise take that as the goal: a bare `make` here would clear the
+# bookkeeping, run no test and exit 0, which is the failure this file exists to
+# stop.
+.DEFAULT_GOAL := check
+
 # Aggregate exit status.
 #
 # A test rule must not fail the build on the spot: the whole suite has to run so
