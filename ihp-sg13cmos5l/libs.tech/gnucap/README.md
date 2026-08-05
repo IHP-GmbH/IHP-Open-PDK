@@ -206,9 +206,10 @@ through it keeps everything on this tree.
 
 ## Licensing
 
-The rest of this PDK is Apache-2.0, and this directory is not. Four other sets of
-terms reach the plugins it builds, so it is worth naming them and where they live
-rather than leaving a reader to find them in the headers.
+The rest of this PDK is Apache-2.0, and this directory is not uniformly so. Most
+of `models/` carries an Apache-2.0 header, but four other sets of terms reach the
+plugins it builds, so it is worth naming them and where they live rather than
+leaving a reader to find them in the headers.
 
 **GPL-3.0-or-later.** The Gnucap simulator plugins under `cpp/` link against
 Gnucap internals and include verbatim Gnucap core sources. They are symlinks into
@@ -230,9 +231,10 @@ variant of it.
 into `ihp-sg13g2`, and neither is Apache-2.0 outright.
 
 `r3_cmc` has two layers. The original model is `(c) 2020 Silicon Integration
-Initiative` under the **Educational Community License 2.0**, which is the text in
-`r3_cmc/LICENSE.txt`; ECL-2.0 is not Apache-2.0, its patent grant is narrower.
-IHP's modifications on top are Apache-2.0, which is the header in `r3_cmc.va`.
+Initiative` under the **Educational Community License 2.0**. `r3_cmc/LICENSE.txt`
+is the short notice for it and points at the license text rather than carrying
+it. ECL-2.0 is not Apache-2.0, its patent grant is narrower. IHP's modifications
+on top are Apache-2.0, which is the header in `r3_cmc.va`.
 
 `psp103` is not under a named open-source license. The header in `psp103.va`
 carries only a copyright notice, naming NXP Semiconductors, CEA-Leti, Delft
