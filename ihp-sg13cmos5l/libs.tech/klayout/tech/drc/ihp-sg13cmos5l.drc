@@ -224,6 +224,23 @@ end
 # Extract DRC rules values from the JSON file
 drc_rules = get_drc_values(logger)
 
+# Method to convert glob pattern to a case-insensitive glob-style pattern
+def glob_to_case_insensitive_glob(glob)
+  wildcards = ['*', '?']
+
+  pattern = glob.chars.map do |c|
+    if c =~ /[A-Za-z]/
+      "[#{c.upcase}#{c.downcase}]"
+    elsif wildcards.include?(c)
+      c
+    else
+      Regexp.escape(c)
+    end
+  end.join
+
+  pattern
+end
+
 #================================================
 #-------------- COMMON DERIVATIONS --------------
 #================================================
@@ -304,14 +321,20 @@ if TABLES.any?{|x| gate_tables.include?(x)}
 end
 
 # SVaricap derivations. CMOS5L uses ThickGateOx instead of nBuLay as the
-# high-voltage marker used by the SG13G2 SVaricap recognizer.
+# high-voltage marker used by the SG13G2 SVaricap recognizer. ThickGateOx is on
+# every HV device, so unlike nBuLay it does not select on its own: the n-Activ
+# term is what keeps ordinary HV PMOS out. Same discriminator the LVS side uses
+# (ngate = nactiv.and(tgate)) and the one in sg13cmos5l_maximal.drc.
 svaricap_tables = %w[main cont nwell]
 if TABLES.any?{|x| svaricap_tables.include?(x)}
   logger.info('Starting SVaricap general derivations')
-  svaricap_gate = gatpoly_drw.and(nwell_drw).and(thickgateox_drw)
-  svaricap_text = text_drw.texts('SVaricap')
+  svaricap_gate = gatpoly_drw.and(nactiv).and(nwell_drw).and(thickgateox_drw)
+  svaricap_text = text_drw.texts(glob_to_case_insensitive_glob('SVaricap'))
   svaricap_recog = activ_drw.not_outside(svaricap_gate).interacting(svaricap_text)
   svaricap = nwell_drw.not_outside(svaricap_recog)
+  svaricap_gate.forget
+  svaricap_text.forget
+  svaricap_recog.forget
 end
 
 # Cont derivations
