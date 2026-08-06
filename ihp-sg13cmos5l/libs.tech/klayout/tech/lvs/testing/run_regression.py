@@ -417,10 +417,11 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
 
     # CMOS5L-compatible device groups only
     # Excluded from G2: RFMOS, IND
-    # CAP: enabled for cap_cmomi (MoM, Metal1-Metal4). The other CAP-group
-    # devices stay excluded below: MIM caps (cap_cmim/rfcmim, forbidden MIM
-    # layer), S-Varicap (needs cap_derivations nwell_iso -> nwell_drw), and
-    # the moscaps (sg13_moscap_n/p, no CMOS5L testcase yet).
+    # CAP: enabled for cap_cmomi (MoM, Metal1-Metal4). Two CAP-group devices
+    # stay excluded below: MIM caps (cap_cmim/rfcmim, forbidden MIM layer) and
+    # S-Varicap (needs cap_derivations nwell_iso -> nwell_drw). The moscaps
+    # (sg13_moscap_n/p) run: main carries their testcases and turning the group
+    # on must not take that away.
     allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP"]
 
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
@@ -443,9 +444,6 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         "sg13_hv_svaricap",
         # S-Varicap CMOS5L testcase - cap_derivations.lvs not adapted yet (nwell_iso)
         "svaricap_cmos5l",
-        # MOS varactors (CAP group) - no CMOS5L testcase yet
-        "sg13_moscap_n",
-        "sg13_moscap_p",
         # NPN HBT devices - require forbidden HBT layers (BiWind, TRANS, etc.)
         "npn13G2",
         "npn13G2l",
