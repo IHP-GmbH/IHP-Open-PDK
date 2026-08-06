@@ -832,7 +832,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--disable_tap_extraction",
         action="store_true",
-        help="Skip ntap1/ptap1 device extraction so taps are not required in the schematic (aligns with Magic+Netgen LVS). Extraction is enabled by default.",
+        help="Skip ntap1/ptap1 device extraction so taps are not required in the schematic "
+             "(aligns with Magic+Netgen LVS). Extraction is enabled by default.",
     )
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
