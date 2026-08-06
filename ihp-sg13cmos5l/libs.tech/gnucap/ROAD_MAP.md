@@ -22,7 +22,7 @@ SG13G2.
     - [x] moshv (including rfmode)
 
 - [ ] capacitors
-    - [ ] cap_cmomi
+    - [x] cap_cmomi
     - [ ] moscap_n / moscap_p
 
 - [ ] diode
@@ -42,13 +42,19 @@ SG13G2.
 
 ## Notes
 
-`cap_cmomi` is the only entry here that cannot be taken from SG13G2 unchanged.
-Both PDKs call the device `cap_cmomi` and its Verilog-A module interface is
-identical, but SG13CMOS5L builds it on Metal1..Metal4 rather than Metal1..Metal5,
-so `mmin`/`mmax` are bounded to `[1:4]` and the coefficients differ. The SG13G2
-`capacitor_paramset.va` therefore needs a real adaptation here rather than a
-symlink, and its reference data has to be regenerated rather than shared. It
-lands once the device itself is in this PDK.
+`cap_cmomi` is the only entry here that could not be taken from SG13G2
+unchanged. Both PDKs call the device `cap_cmomi` and its Verilog-A module
+interface is identical, but SG13CMOS5L builds it on Metal1..Metal4 rather than
+Metal1..Metal5, so `mmin`/`mmax` are bounded to `[1:4]` and the `Nlay = 5`
+coefficient branch is dropped. For `Nlay <= 4` the coefficients are the same
+SG13G2-characterised values, transferred by layer count.
+
+So `models/capacitor_paramset.va` is a real file here rather than a symlink,
+carrying only the `cmomi` paramset, since this PDK has none of the other
+capacitors SG13G2's version covers. The reference data had to be regenerated
+too, not because the model differs but because the testbench does: it
+instantiates `mmax=4` where SG13G2 uses 5, which moves the measured cutoff from
+about 78.2 MHz to about 97.6 MHz. Both live under `tests/{gnucap,ngspice}/capacitor`.
 
 Everything else on the unchecked list is also unported in SG13G2, so those gaps
 are inherited rather than introduced by the SG13CMOS5L port.

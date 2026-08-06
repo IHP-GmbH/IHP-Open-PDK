@@ -21,19 +21,29 @@ This directory follows the same convention already used by `libs.tech/xschem`,
 `libs.tech/ngspice` and `libs.tech/xyce`: everything that would be a byte-for-byte
 copy is a relative symlink into the sibling `ihp-sg13g2/libs.tech/gnucap/` (the
 number of `../` depends on how deep the file sits), and only files that genuinely
-differ are real files here. That includes the reference test data under
+differ are real files here. That includes most of the reference test data under
 `tests/*/*/ref/`, which is valid for SG13CMOS5L precisely because the underlying
 model cards are the same files.
 
-Worth being explicit about what each half of the suite therefore proves. The
-Gnucap side reads only symlinks: its models, testbenches and references all
-resolve into `ihp-sg13g2`, so a green run there says the links resolve and the
-toolchain works, not anything specific to this PDK. The Ngspice side is the one
-that exercises SG13CMOS5L, because each `.spiceinit` puts
-`$PDK_ROOT/$PDK/libs.tech/ngspice/models` on the Ngspice `sourcepath`. Running it
-under `PDK=ihp-sg13cmos5l` and reproducing SG13G2's reference output is the actual
-cross-PDK comparison, and it holds only for as long as the model cards stay
-shared.
+The capacitor is the exception, on both counts. `models/capacitor_paramset.va`,
+`tests/gnucap/capacitor/tb_cap_cmomi.va`, `tests/ngspice/capacitor/tb_cap_cmomi_typ.sp`
+and both `capacitor/ref/` directories are real files here rather than symlinks,
+because `cap_cmomi` is built on Metal1..Metal4 and its testbench instantiates
+`mmax=4` where SG13G2 uses 5, which moves the measured cutoff. The rest of that
+directory, `consts.params`, `tb_cap_cmomi_typ.gc` and the Ngspice `.spiceinit`,
+is symlinked like everything else.
+
+Worth being explicit about what each half of the suite therefore proves. For the
+resistors and the MOS the Gnucap side reads only symlinks, models, testbenches
+and references all resolving into `ihp-sg13g2`, so a green run there says the
+links resolve and the toolchain works rather than anything specific to this PDK.
+The Ngspice side is the one that exercises SG13CMOS5L, because each `.spiceinit`
+puts `$PDK_ROOT/$PDK/libs.tech/ngspice/models` on the Ngspice `sourcepath`.
+Running it under `PDK=ihp-sg13cmos5l` and reproducing SG13G2's reference output
+is the actual cross-PDK comparison, and it holds only for as long as the model
+cards stay shared. The capacitor inverts this: both halves are SG13CMOS5L's own
+there, so what the pair proves is that the two simulators agree on this PDK's
+device, not that this PDK agrees with SG13G2.
 
 Consequence: a standalone clone of `ihp-sg13cmos5l` is not enough. Clone it inside
 an `IHP-Open-PDK` checkout as described in the top-level `README.md`, so that
@@ -46,6 +56,8 @@ Modelled in Verilog-A and exercised by the test suite:
 - resistors: `rsil`, `rhigh`, `rppd`
 - MOSFETs: `sg13_lv_nmos`, `sg13_lv_pmos`, `sg13_hv_nmos`, `sg13_hv_pmos`,
   including the RF variants selected by `rfmode=1`
+- capacitors: `cap_cmomi`, the interdigitated MoM cap, on this PDK's
+  Metal1..Metal4 stack
 
 Modelled but not exercised: `ptap1` and `ntap1` have paramsets in
 `models/resistor_paramset.va`, and no testbench on either side instantiates them.
@@ -57,11 +69,7 @@ Not modelled. Some of these are devices this PDK does not have: there is no
 `cap_cmim`, `cap_rfcmim` or `cparasitic` here, nor the `npn13G2*` HBTs,
 `schottky_nbl1`, `isolbox` or inductors. The rest are devices SG13CMOS5L does
 have that SG13G2 has not ported to Verilog-A either, so the gap is inherited:
-the moscaps, diodes, ESD, `svaricap`, `bondpad` and `pnpMPA`. The MoM capacitor
-`cap_cmomi` is a third case, arriving in this PDK separately; because it is built
-on Metal1..Metal4 rather than Metal1..Metal5 it needs a real adaptation of the
-SG13G2 model rather than a symlink, and it lands together with the device itself.
-See `ROAD_MAP.md`.
+the moscaps, diodes, ESD, `svaricap`, `bondpad` and `pnpMPA`. See `ROAD_MAP.md`.
 
 ## Prerequisites
 
