@@ -182,8 +182,8 @@ proc sg13cmos5l::addtechmenu {framename} {
 	    "magic::gencell sg13cmos5l::pnpMPA" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
-   magic::add_toolkit_command $layoutframe "Capacitor" \
-	    "magic::gencell sg13cmos5l::capacitor" pdk1
+   magic::add_toolkit_command $layoutframe "cap_momf" \
+	    "magic::gencell sg13cmos5l::cap_momf" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
    magic::add_toolkit_command $layoutframe "poly resistor - 7 Ohm/sq" \
