@@ -70,6 +70,7 @@ moduleNames = [
         'NoFillerStack_code',  # Modified - No filler utility (M1-M4-TM1)
         'pnpMPA_code',         # Symlink - Parasitic PNP (tbd.3 - enabled for discussion)
         'cap_cmomi_code',      # MoM capacitor (M1-M4 thin-metal stack)
+        'cap_cmomf_code',      # MoM fringe capacitor (M1-M4 thin-metal stack)
 ]
 
 def getProcessNames():

@@ -45,5 +45,6 @@ echo "             Compiling VerilogA models using: '$COMPILER'             "
 echo "======================================================================"
 
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomi.osdi cap_cmomi/cap_cmomi.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomf.osdi cap_cmomf/cap_cmomf.va
 
 echo done

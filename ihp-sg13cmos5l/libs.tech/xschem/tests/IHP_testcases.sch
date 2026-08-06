@@ -46,6 +46,7 @@ C {sg13g2_tests_xyce/tran_logic_not.sym} 520 -690 0 0 {name=x27}
 C {sg13g2_tests_xyce/tran_logic_nand.sym} 520 -650 0 0 {name=x29}
 C {sg13g2_tests_xyce/ac_lv_nmosrf.sym} 860 -690 0 0 {name=x9}
 C {tests/ac_cap_cmomi.sym} 860 -650 0 0 {name=x34}
+C {tests/ac_cap_cmomf.sym} 860 -610 0 0 {name=x35}
 C {sg13g2_tests_xyce/mc_res_op.sym} 1200 -650 0 0 {name=x16}
 C {sg13g2_tests_xyce/dc_hv_nmos.sym} 180 -660 0 0 {name=x6}
 C {sg13g2_tests_xyce/dc_mos_temp.sym} 180 -570 0 0 {name=x11}

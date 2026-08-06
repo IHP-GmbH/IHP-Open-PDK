@@ -138,6 +138,14 @@ test-gnucap:
 	  PDK=ihp-sg13cmos5l $(MAKE) -C libs.tech/gnucap check; \
 	fi
 
+#=================================
+# ---- test-cap-cmomf-sweep ------
+#=================================
+
+test-cap-cmomf-sweep: env
+	@. $(VENV_RUN_COMMAND); echo "Running cap_cmomf PCell DRC+LVS sweep"
+	@. $(VENV_RUN_COMMAND); python3 libs.tech/klayout/sg13cmos5l_tests/cap_cmomf_sweep.py
+
 #==========================
 # --------- HELP ----------
 #==========================
@@ -152,6 +160,7 @@ help:
 	@echo "... test-LVS-<device>          (Run LVS for specific device group             )"
 	@echo "... test-LVS-cells             (Run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
-	@echo "... test-gnucap                (Build model plugins, run the device regression)"
+	@echo "... test-cap-cmomi-sweep       (Run cap_cmomi PCell DRC+LVS configuration sweep)"
+	@echo "... test-cap-cmomf-sweep       (Run cap_cmomf PCell DRC+LVS configuration sweep)"
 
-.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-gnucap help
+.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-cap-cmomi-sweep test-cap-cmomf-sweep help

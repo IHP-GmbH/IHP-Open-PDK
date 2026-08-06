@@ -422,7 +422,15 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
     # S-Varicap (needs cap_derivations nwell_iso -> nwell_drw). The moscaps
     # (sg13_moscap_n/p) run: main carries their testcases and turning the group
     # on must not take that away.
-    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP"]
+    #
+    # CAP_CMOMF is its own group only because the device is registered from a
+    # cmos5l-local cap_cmomf_extraction.lvs: this runner derives the group from
+    # the deck filename and matches it against the testcase directory. The
+    # shared cap_extraction.lvs, where cap_cmomf belongs next to cap_cmomi, is
+    # a symlink into g2. The group folds back into CAP when cap_cmomf is
+    # upstreamed.
+    allowed_device_groups = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP",
+                             "CAP_CMOMF"]
 
     # Devices excluded from CMOS5L - require forbidden layers per Section 3.2
     # Reference: SG13CMOS5L_os_layout_rules.pdf - nBuLay (32/0) is forbidden
@@ -580,7 +588,8 @@ if __name__ == "__main__":
         "--device",
         type=str,
         default=None,
-        help="Target device group (MOS, DIODE, RES, ESD, TAP).",
+        help="Target device group (MOS, DIODE, RES, ESD, TAP, BJT, CAP, "
+             "CAP_CMOMF).",
     )
     parser.add_argument(
         "--run_dir",
@@ -632,13 +641,15 @@ if __name__ == "__main__":
 
     # selected device - CMOS5L only supports these device groups
     # Excluded: RFMOS, IND. CAP is enabled for cap_cmomi (other CAP-group
-    # devices are filtered by excluded_devices).
-    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP"]
+    # devices are filtered by excluded_devices); CAP_CMOMF is the MoM fringe
+    # capacitor, see the note on allowed_device_groups above.
+    allowed_devices = ["MOS", "DIODE", "RES", "ESD", "TAP", "BJT", "CAP",
+                       "CAP_CMOMF"]
     target_device_group = args.device
 
     if target_device_group and (target_device_group not in allowed_devices):
         logging.error(
-            "Allowed devices for CMOS5L are (%s) only",
+            "Allowed device groups for CMOS5L are (%s) only",
             ", ".join(allowed_devices),
         )
         exit(1)
