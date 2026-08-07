@@ -1,0 +1,30 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* cmomi_all_dropped.gds: a cell whose every cap_cmomi is dropped.
+*
+* Same merged-marker construction as cmomi_merged, with nothing else in the
+* cell, so every device in it is skipped.
+*
+* Expected to end in an extraction ERROR. Before the extractor reported the
+* skipped marker through error(), this was the worst case in the suite: the
+* circuit was left with no devices, dropped out of the layout netlist, and the
+* comparison then reported a match against ANY schematic, a netlist of twelve
+* caps included. The extraction error is what closes that.
+.SUBCKT cmomi_all_dropped
+C1 P1 M1 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=double
+C2 P2 M2 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=double
+.ENDS cmomi_all_dropped

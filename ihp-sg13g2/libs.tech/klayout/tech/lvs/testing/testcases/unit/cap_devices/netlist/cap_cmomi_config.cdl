@@ -1,0 +1,49 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* cap_cmomi configuration matrix.
+*
+* One instance per PCell configuration, each on its own net pair, so the
+* testcase asserts that every configuration is recognised and extracted
+* exactly once. The C-lines mirror CONFIG_MATRIX in
+* create_cap_cmomi_testcases.py, which generates the layout.
+*
+* The mmin/mmax/feed/subblock tokens are here to exercise the SPICE reader, not
+* the comparison: custom_reader.lvs has to carry a cap_cmomi C-line through its
+* cap-line normalisation with those extra named parameters present, including
+* the string token feed=double, and then drop them. None of them is a device
+* parameter, so nothing here is compared. See the cap_cmomi note in
+* testing/README.md.
+*
+* The set of tokens is deliberately wider than what the xschem symbol emits: its
+* lvs_format is "C@name @pinlist @model w=@w l=@l m=@m". C1 carries that m token
+* so the symbol's own form is covered too. Note that m does not end up being
+* compared either, even though DeviceCustomMIM declares it is_primary=true; see
+* case 11 of the cap_cmomi checks suite, which records that.
+.SUBCKT cap_cmomi_config
+* feed=double across the metal bands. C1 also carries the m token the xschem
+* symbol emits; the rest carry the wider form the reader has to accept.
+C1 P1 M1 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=double m=1
+C2 P2 M2 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=2 feed=double
+C3 P3 M3 cap_cmomi w=5e-06 l=5e-06 mmin=4 mmax=5 feed=double
+* feed=same, including a band that does not start at Metal1
+C4 P4 M4 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=same
+C5 P5 M5 cap_cmomi w=5e-06 l=5e-06 mmin=2 mmax=5 feed=same
+* PWell.block variant
+C6 P6 M6 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=double subblock=1
+* non-square geometry, exercises the extractor's l->X / w->Y mapping
+C7 P7 M7 cap_cmomi w=10e-06 l=20e-06 mmin=1 mmax=5 feed=double
+.ENDS cap_cmomi_config

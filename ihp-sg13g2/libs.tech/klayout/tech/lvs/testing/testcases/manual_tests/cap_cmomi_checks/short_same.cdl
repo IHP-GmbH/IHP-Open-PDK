@@ -1,0 +1,31 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* cmomi_short_same.gds: a 'same' feed cap with its two plates shorted, next to
+* a well formed cap.
+*
+* The netlist declares both devices as intended. The layout has a Via4 dropped
+* into the pin overlap of the 'same' feed cap, tying its mmax and mmax-1 plates
+* together, and that device then disappears from the layout netlist. The good
+* cap is what keeps the cell populated, so the comparison is a real one.
+*
+* Expected to FAIL. This is what proves the per-metal pin connect in
+* cap_cmomi_connections.lvs is doing the isolating, rather than the good 'same'
+* testcase passing for some unrelated reason.
+.SUBCKT cmomi_short_same
+C1 PLUS MINUS cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=same
+C2 P2   M2    cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=5 feed=double
+.ENDS cmomi_short_same
