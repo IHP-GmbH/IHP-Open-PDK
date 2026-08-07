@@ -125,8 +125,10 @@ test-gnucap:
 	  echo "   osdi/ symlinks here dangle until that runs, and the Ngspice half"; \
 	  echo "   would fail on its first test)"; \
 	elif [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/cap_cmomi.osdi" ] || \
-	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomi.lib" ]; then \
-	  echo "Skipping: the installed ihp-sg13cmos5l predates the cap_cmomi device"; \
+	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomi.lib" ] || \
+	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/cap_cmomf.osdi" ] || \
+	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomf.lib" ]; then \
+	  echo "Skipping: the installed ihp-sg13cmos5l predates the MoM capacitors"; \
 	  echo "  git -C \$$PDK_ROOT/ihp-sg13cmos5l pull"; \
 	  echo "  (unlike the OSDI above these two are tracked files, so a pull is the"; \
 	  echo "   fix rather than a build. The Ngspice capacitor test resolves them"; \

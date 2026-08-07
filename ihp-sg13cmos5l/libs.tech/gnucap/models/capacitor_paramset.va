@@ -43,6 +43,7 @@
 
 `pragma modelgen nogen-module
 `include "cap_cmomi.va"
+`include "cap_cmomf.va"
 
 //******************************************************************************
 // cmomi paramset (interdigitated MoM capacitor)
@@ -84,5 +85,37 @@ paramset cmomi cap_cmomi
     .mmin     = mmin;
     .mmax     = mmax;
     .feed     = feed;
+    .subblock = subblock;
+endparamset
+
+//******************************************************************************
+// cmomf paramset (metal fringe MoM capacitor)
+//******************************************************************************
+
+// The fringe sibling of cmomi, over the behavioural module cap_cmomf (shared
+// source ../../verilog-a/cap_cmomf/cap_cmomf.va, byte-for-byte the code the
+// ngspice OSDI build uses). Like cmomi it is not decomposed onto sp_capacitor:
+// it carries its own expression rather than being a parallel-plate primitive.
+//
+// Two differences from cmomi, both structural rather than stylistic. There is
+// no feed parameter: the interdigitated device's feed topology has no analogue
+// in a finger comb. And the module is 2-terminal, PLUS and MINUS with no SUB,
+// because no substrate-coupling fit exists for this geometry; see the header of
+// cap_cmomf.va for why the model stops at the low-frequency capacitance.
+//
+// mm_ok is declared from [0:0] and left unmapped for the same reason as cmomi:
+// the device has no characterised mismatch spread yet, so the selector reserves
+// the mm_ok = 1 overload slot without promising anything.
+paramset cmomf cap_cmomf
+    parameter real    w        = 5e-6 from (0.0:inf);
+    parameter real    l        = 5e-6 from (0.0:inf);
+    parameter integer mmin     = 1    from [1:4];
+    parameter integer mmax     = 4    from [1:4];
+    parameter integer subblock = 0    from [0:1];
+    parameter integer mm_ok    = 0    from [0:0];
+    .w        = w;
+    .l        = l;
+    .mmin     = mmin;
+    .mmax     = mmax;
     .subblock = subblock;
 endparamset

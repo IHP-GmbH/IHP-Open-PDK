@@ -58,6 +58,21 @@ TECH_NAME = "sg13cmos5l"
 AREACAP_M1 = 0.372
 AREACAP_MN = 0.305
 
+# Placement grid, mirrored from sg13cmos5l_tech.json techParams. The PCell
+# snaps w and l with GridFix before drawing anything, so the analytic check
+# below has to snap them the same way or an off-grid config would look like a
+# label mismatch instead of the pass it is.
+GRID = 0.005
+EPSILON = 0.001
+
+# Rules that fire on any bare device cell because the surroundings are absent:
+# an isolated capacitor has no Activ, no GatPoly and no TopMetal1 anywhere, so
+# the global density rules have nothing to measure. Anything outside this set
+# is a real violation of the device itself.
+DRC_EXPECTED_VIOLATIONS = {
+    "AFil.g", "GFil.g", "TM1.c", "M1.j", "M2.j", "M3.j", "M4.j",
+}
+
 # name -> pcell params. The metal stack drives the top-layer finger
 # orientation, which is what decides where the PLUS/MINUS pins land, so the
 # stack variants matter more here than they do for cap_cmomi.
@@ -72,7 +87,16 @@ CONFIGS = [
     ("n4_big",    {"w": 15e-6, "l": 15e-6, "mmin": 1, "mmax": 4}),
     ("n4_rect",   {"w": 4e-6,  "l": 12e-6, "mmin": 1, "mmax": 4}),
     ("n4_sub",    {"w": 5e-6,  "l": 5e-6,  "mmin": 1, "mmax": 4, "subblock": 1}),
+    # Dimensions that are not multiples of the 5 nm grid. The PCell has to snap
+    # the outer extents, not just the shapes derived from them, or the metal
+    # edges land off grid and the offgrid table fires on every metal layer.
+    ("n4_offgrid", {"w": 3.333e-6, "l": 7.777e-6, "mmin": 1, "mmax": 4}),
 ]
+
+
+def _gridfix(x_um):
+    """Snap to the placement grid exactly as the PCell's GridFix does."""
+    return int(x_um / GRID + EPSILON) * GRID
 
 
 def expected_c_ff(params):
@@ -81,7 +105,7 @@ def expected_c_ff(params):
     mmax = params.get("mmax", 4)
     base = AREACAP_M1 if mmin == 1 else AREACAP_MN
     areacap = base + (mmax - mmin) * AREACAP_MN
-    return areacap * (params["l"] * 1e6) * (params["w"] * 1e6)
+    return areacap * _gridfix(params["l"] * 1e6) * _gridfix(params["w"] * 1e6)
 
 
 def _generate_one():
@@ -104,6 +128,23 @@ def _run(cmd):
     import subprocess
     p = subprocess.run(cmd, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
+
+
+def _drc_clean(drc_out):
+    """Return (clean, unexpected_rules) from a run_drc.py transcript.
+
+    The old check grepped 'Number of DRC errors for maximum rule set: 0'.
+    That counter does not include the geometry offgrid table, so a layout with
+    off-grid metal edges reported 0 there and 'Violated rules are' on the next
+    line at the same time. Read the rule list instead: it is what run_drc.py
+    exits non-zero on.
+    """
+    unexpected = set()
+    for m in re.finditer(r"Violated rules are\s*:\s*(.+)", drc_out):
+        for rule in re.findall(r"[A-Za-z][\w.]*", m.group(1)):
+            if rule not in DRC_EXPECTED_VIOLATIONS:
+                unexpected.add(rule)
+    return (not unexpected), unexpected
 
 
 def _extracted_two_terminal(cir_path):
@@ -155,7 +196,12 @@ def _orchestrate():
     os.makedirs(run_dir, exist_ok=True)
 
     env = dict(os.environ)
-    env.setdefault("KLAYOUT_PATH", KLAYOUT_DIR)
+    # Prepend, never setdefault: a machine that already exports KLAYOUT_PATH
+    # (a local PDK install does) would otherwise silently resolve SG13_dev to
+    # that tree instead of this worktree, and every configuration comes back
+    # GEN-FAIL for a device that is perfectly fine here.
+    env["KLAYOUT_PATH"] = os.pathsep.join(
+        [KLAYOUT_DIR] + [p for p in [os.environ.get("KLAYOUT_PATH")] if p])
 
     results = []
     for name, params in CONFIGS:
@@ -165,16 +211,23 @@ def _orchestrate():
         genenv = dict(env)
         genenv["CAP_CMOMF_CFG"] = json.dumps(cfg)
         genenv["CAP_CMOMF_OUT"] = gds
-        subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
-                       env=genenv, capture_output=True, text=True)
+        gen = subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
+                             env=genenv, capture_output=True, text=True)
         if not os.path.isfile(gds):
+            # Say why. Swallowing this is what turns "the technology resolved
+            # to the wrong tree" into a bare GEN-FAIL with no diagnostic.
+            print(f"[{name}] generation failed:")
+            print((gen.stdout + gen.stderr).strip() or "(no output)")
             results.append((name, "GEN-FAIL", "-", "-", "-"))
             continue
 
         drc_dir = os.path.join(run_dir, name + "_drc")
         rc, drc_out = _run([sys.executable, DRC_RUNNER, "--path", gds,
                             "--topcell", name, "--run_dir", drc_dir])
-        drc_ok = "Number of DRC errors for maximum rule set: 0" in drc_out
+        drc_ok, drc_unexpected = _drc_clean(drc_out)
+        if not drc_ok:
+            print(f"[{name}] unexpected DRC violations: "
+                  f"{', '.join(sorted(drc_unexpected))}")
 
         lvs_dir = os.path.join(run_dir, name + "_lvs")
         _run([sys.executable, LVS_RUNNER, "--layout", gds, "--topcell", name,

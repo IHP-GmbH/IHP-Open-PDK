@@ -3,13 +3,14 @@ include ../gnucap.mk
 MODELGEN_VERILOG = gnucap-mg-vams
 OPENVAF = openvaf-r
 IHP_VERILOG_DIR = ../../verilog-a
-MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I $(IHP_VERILOG_DIR)/r3_cmc -I $(IHP_VERILOG_DIR)/psp103 -I $(IHP_VERILOG_DIR)/cap_cmomi
+MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I $(IHP_VERILOG_DIR)/r3_cmc -I $(IHP_VERILOG_DIR)/psp103 -I $(IHP_VERILOG_DIR)/cap_cmomi -I $(IHP_VERILOG_DIR)/cap_cmomf
 
 TARGET_DIR = ../plugins/models
 OSDI_DIR = ../plugins/osdi
 
-# capacitor_paramset carries only cmomi: SG13CMOS5L has no cap_cmim, cap_rfcmim or
-# cparasitic, so it is a real file here rather than a symlink into SG13G2.
+# capacitor_paramset carries cmomi and cmomf: SG13CMOS5L has no cap_cmim,
+# cap_rfcmim or cparasitic, so it is a real file here rather than a symlink
+# into SG13G2.
 TARGETS = \
 	idc \
 	resistor_paramset \
@@ -47,21 +48,23 @@ $(TARGETS:%=osdi-%): osdi-%: $(OSDI_DIR)/%.osdi
 # rarely enough that over-triggering costs nothing. cap_cmomi is this PDK's own
 # source rather than a third-party tree, and it is the one model here that is not
 # shared with SG13G2, so a missed rebuild there would silently validate the wrong
-# device.
+# device.  cap_cmomf is this PDK's own source too, and unlike cap_cmomi it has
+# no SG13G2 counterpart at all.
 va_sources = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
 R3CMC_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/r3_cmc)
 PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
 CMOMI_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomi)
+CMOMF_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomf)
 
 $(TARGET_DIR)/resistor_paramset.cc:        resistor.va discipline.h $(R3CMC_SRC)
-$(TARGET_DIR)/capacitor_paramset.cc:       discipline.h $(CMOMI_SRC)
+$(TARGET_DIR)/capacitor_paramset.cc:       discipline.h $(CMOMI_SRC) $(CMOMF_SRC)
 $(TARGET_DIR)/sg13g2_moslv_paramset.cc:    discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc: discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moshv_paramset.cc:    discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc: discipline.h $(PSP103_SRC)
 
 resistor_paramset.dump.va:        resistor.va discipline.h $(R3CMC_SRC)
-capacitor_paramset.dump.va:       discipline.h $(CMOMI_SRC)
+capacitor_paramset.dump.va:       discipline.h $(CMOMI_SRC) $(CMOMF_SRC)
 sg13g2_moslv_paramset.dump.va:    discipline.h $(PSP103_SRC)
 sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
 sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)

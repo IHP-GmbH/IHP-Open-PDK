@@ -25,13 +25,15 @@ differ are real files here. That includes most of the reference test data under
 `tests/*/*/ref/`, which is valid for SG13CMOS5L precisely because the underlying
 model cards are the same files.
 
-The capacitor is the exception, on both counts. `models/capacitor_paramset.va`,
-`tests/gnucap/capacitor/tb_cap_cmomi.va`, `tests/ngspice/capacitor/tb_cap_cmomi_typ.sp`
-and both `capacitor/ref/` directories are real files here rather than symlinks,
-because `cap_cmomi` is built on Metal1..Metal4 and its testbench instantiates
-`mmax=4` where SG13G2 uses 5, which moves the measured cutoff. The rest of that
-directory, `consts.params`, `tb_cap_cmomi_typ.gc` and the Ngspice `.spiceinit`,
-is symlinked like everything else.
+The capacitors are the exception, on both counts. `models/capacitor_paramset.va`,
+every `tb_cap_cmom*` testbench and both `capacitor/ref/` directories are real
+files here rather than symlinks. For `cap_cmomi` the reason is the stack: it is
+built on Metal1..Metal4 and its testbench instantiates `mmax=4` where SG13G2
+uses 5, which moves the measured cutoff. For `cap_cmomf` there is nothing to
+symlink at all, since SG13G2 reserved the name but never shipped the device.
+That is also why the Ngspice `.spiceinit` in `tests/ngspice/capacitor` is a real
+file: the shared one loads only `cap_cmomi.osdi`. `consts.params` and
+`tb_cap_cmomi_typ.gc` are still symlinked like everything else.
 
 Worth being explicit about what each half of the suite therefore proves. For the
 resistors and the MOS the Gnucap side reads only symlinks, models, testbenches
@@ -56,8 +58,10 @@ Modelled in Verilog-A and exercised by the test suite:
 - resistors: `rsil`, `rhigh`, `rppd`
 - MOSFETs: `sg13_lv_nmos`, `sg13_lv_pmos`, `sg13_hv_nmos`, `sg13_hv_pmos`,
   including the RF variants selected by `rfmode=1`
-- capacitors: `cap_cmomi`, the interdigitated MoM cap, on this PDK's
-  Metal1..Metal4 stack
+- capacitors: `cap_cmomi` and `cap_cmomf`, the interdigitated and the metal
+  fringe MoM cap, both on this PDK's Metal1..Metal4 stack. The two testbenches
+  use the same 5 um x 5 um M1..M4 geometry so their numbers compare directly:
+  the fringe device is the denser of the pair, 1.287 fF/um2 against 1.09.
 
 Modelled but not exercised: `ptap1` and `ntap1` have paramsets in
 `models/resistor_paramset.va`, and no testbench on either side instantiates them.

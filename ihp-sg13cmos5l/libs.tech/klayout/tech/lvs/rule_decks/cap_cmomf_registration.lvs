@@ -65,10 +65,15 @@ unless CustomReader.method_defined?(:cap_cmim_model_field?)
         'and rule_decks/cap_cmomf_registration.lvs has to follow it.'
 end
 
-class CustomReader
-  # Extend the shared 2-terminal DeviceCustomMIM model list with cap_cmomf.
-  # Same behaviour as upstream, one more accepted model name.
+# Extend the shared 2-terminal DeviceCustomMIM model list with cap_cmomf.
+# Prepend rather than reopen-and-replace: copying upstream's list here would
+# freeze it, and the guard above only fires if the method disappears, never if
+# its contents change. A capacitor g2 adds later would then be silently dropped
+# on cmos5l, degrading the device to a plain capacitor with no test to catch it.
+module CapCmomfReader
   def cap_cmim_model_field?(field)
-    ['cap_cmim', 'cap_cmomi', 'cap_cmomf'].include?(canonical_cap_model(field))
+    super || canonical_cap_model(field) == 'cap_cmomf'
   end
 end
+
+CustomReader.prepend(CapCmomfReader)

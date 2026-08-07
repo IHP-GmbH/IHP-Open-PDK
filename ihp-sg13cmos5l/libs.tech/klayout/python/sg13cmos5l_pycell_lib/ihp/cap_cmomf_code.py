@@ -86,6 +86,7 @@ class cap_cmomf(DloGen):
     VIA_SPACING  = 0.22    # V1.b = Vn.b
     VIA_WIDTH    = 0.20    # VIA_CUT + 2 * Mn.c
     VIA1_BOT_ENC = 0.005   # V1.c - Mn.c
+    PIN_SIZE     = 0.20    # nominal pin square, clipped to the bar it sits on
 
     # ---------------------------------------------------------------
     # Capacitance density (fF/um^2), recalibrated against OpenEMS in PR #69.
@@ -129,8 +130,12 @@ class cap_cmomf(DloGen):
     def setupParams(self, params):
         self.params = params
         # Axis convention shared with cap_cmomi: length -> X, width -> Y.
-        self.w_um = Numeric(params['w']) * 1e6      # width  -> Y
-        self.l_um = Numeric(params['l']) * 1e6      # length -> X
+        # Snap here, once: every derived coordinate is GridFix'd on its way to
+        # dbCreateRect, so leaving the outer extents unsnapped is what puts the
+        # right and top edges of the metal off grid while the marker, built
+        # from the same numbers, lands on it.
+        self.w_um = GridFix(Numeric(params['w']) * 1e6)      # width  -> Y
+        self.l_um = GridFix(Numeric(params['l']) * 1e6)      # length -> X
         self.mmin = int(params['mmin'])
         self.mmax = int(params['mmax'])
         self.subblock = int(params['subblock'])
@@ -153,6 +158,27 @@ class cap_cmomf(DloGen):
         """
         base = cls.AREACAP_M1 if mmin == 1 else cls.AREACAP_MN
         return base + (mmax - mmin) * cls.AREACAP_MN
+
+    @classmethod
+    def _pin_box(cls, rect, side):
+        """A pin box fully enclosed by `rect`, hugging the given side.
+
+        Pin.e requires the pin to be inside the metal it labels, and the bar
+        it lands on is only as thick as that layer's minimum metal width. Clip
+        to what is drawn instead of assuming PIN_SIZE fits.
+        """
+        llx, lly, urx, ury = rect
+        w = min(cls.PIN_SIZE, urx - llx)
+        h = min(cls.PIN_SIZE, ury - lly)
+        if side == 'left':
+            x0, y0 = llx, (lly + ury) / 2.0 - h / 2.0
+        else:                                   # 'top'
+            x0, y0 = (llx + urx) / 2.0 - w / 2.0, ury - h
+        # GridFix truncates, so clamp both corners back into the bar.
+        x0 = max(llx, GridFix(x0))
+        y0 = max(lly, GridFix(y0))
+        return Box(x0, y0,
+                   min(urx, GridFix(x0 + w)), min(ury, GridFix(y0 + h)))
 
     def _paint_via_array(self, via_layer, llx, lly, urx, ury):
         """Paint an array of square vias within the given bounding box.
@@ -355,6 +381,10 @@ class cap_cmomf(DloGen):
                 dbCreateRect(self, met,
                              Box(tb_llx, GridFix(dy - edget), GridFix(dx), dy))
 
+                # The two bars a pin may sit on for this orientation.
+                plus_rect = (0.0, 0.0, GridFix(edgel), dy)
+                minus_rect = (tb_llx, GridFix(dy - edget), GridFix(dx), dy)
+
             else:               # Fingers along X
                 # Bottom edge (full width)
                 dbCreateRect(self, met,
@@ -393,6 +423,18 @@ class cap_cmomf(DloGen):
                 dbCreateRect(self, met,
                              Box(GridFix(dx - edger), rb_lly, dx, dy))
 
+                # The two bars a pin may sit on for this orientation.
+                plus_rect = (0.0, 0.0, GridFix(edgel), lb_ury)
+                minus_rect = (0.0, te_lly, GridFix(dx), dy)
+
+            # Remember where the pins may go on the layer that carries them.
+            # The bars are only as thick as that layer's minimum metal width,
+            # 0.16 on Metal1 against 0.20 above it, so a fixed-size pin box
+            # hangs off the Metal1 bar and Pin.e fires on a single-layer stack.
+            if m == mmax:
+                top_plus_rect = plus_rect
+                top_minus_rect = minus_rect
+
             # Save edge sizes for next layer's via placement
             last_edge = {'l': edgel, 'r': edger, 't': edget, 'b': edgeb}
 
@@ -428,13 +470,10 @@ class cap_cmomf(DloGen):
         # by x, so PLUS (left) maps to mim_top and MINUS (top) to mim_btm,
         # the same order cap_cmomi produces.
         top_metal_name = self.METAL_NAMES[mmax]
-        plus_box = Box(0, GridFix(dy / 2.0 - 0.1),
-                       GridFix(0.2), GridFix(dy / 2.0 + 0.1))
-        MkPin(self, 'PLUS', 1, plus_box, top_metal_name)
-
-        minus_box = Box(GridFix(dx / 2.0 - 0.1), GridFix(dy - 0.2),
-                        GridFix(dx / 2.0 + 0.1), GridFix(dy))
-        MkPin(self, 'MINUS', 2, minus_box, top_metal_name)
+        MkPin(self, 'PLUS', 1, self._pin_box(top_plus_rect, 'left'),
+              top_metal_name)
+        MkPin(self, 'MINUS', 2, self._pin_box(top_minus_rect, 'top'),
+              top_metal_name)
 
         # -- Capacitance label (must match the simulation model, contract) --
         cval = self.areacap(mmin, mmax) * dx * dy

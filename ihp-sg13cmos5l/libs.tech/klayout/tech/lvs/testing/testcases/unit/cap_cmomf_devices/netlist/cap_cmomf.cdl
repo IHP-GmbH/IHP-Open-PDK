@@ -15,13 +15,17 @@
 * SPDX-License-Identifier: Apache-2.0
 *==========================================================================
 * Covers both top-metal orientations of cap_cmomf on the cmos5l Metal1-Metal4
-* stack. The finger direction alternates per layer, so the metal that carries
-* the PLUS/MINUS pins depends on how many layers the stack has:
+* stack, and a stack that does not reach the top metal. The finger direction
+* alternates per layer, so the metal that carries the PLUS/MINUS pins depends
+* on how many layers the stack has:
 *   C1 = M1..M4 -> the top metal's fingers run along X, pins land on the left
 *                  connecting bar and the top edge
 *   C2 = M2..M4 -> the top metal's fingers run along Y, pins land on the left
 *                  edge and the top connecting bar
+*   C3 = M1..M3 -> same orientation as C1 but the ports come off Metal3, which
+*                  is the only way the m3 port path of the extractor is reached
 .SUBCKT cap_cmomf
 C1 P1 M1 cap_cmomf w=5e-06 l=5e-06
 C2 P2 M2 cap_cmomf w=5e-06 l=5e-06
+C3 P3 M3 cap_cmomf w=5e-06 l=5e-06
 .ENDS cap_cmomf

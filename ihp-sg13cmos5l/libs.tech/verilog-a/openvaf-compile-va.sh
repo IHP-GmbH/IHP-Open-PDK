@@ -5,7 +5,7 @@
 # License: New BSD
 
 # Compile the ihp-sg13cmos5l Verilog-A compact models to OSDI for ngspice.
-# NOTE: cmos5l currently ships only the cap_cmomi Verilog-A source here; the
+# NOTE: cmos5l ships the cap_cmomi and cap_cmomf Verilog-A sources here; the
 # other OSDI objects in ../ngspice/osdi (psp103, psp103_nqs, r3_cmc, mosvar) are
 # supplied pre-built (their Verilog-A sources live in the sibling ihp-sg13g2).
 # Run this from libs.tech/verilog-a/ .

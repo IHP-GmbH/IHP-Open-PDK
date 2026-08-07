@@ -96,4 +96,4 @@ C {devices/launcher.sym} 200 -740 0 0 {name=h5
 descr="load waves"
 tclcommand="xschem raw_read $netlist_dir/ac_cap_cmomf.raw ac"
 }
-C {sg13cmos5l_pr/cap_cmomf.sym} 530 -380 1 0 {name=C1 model=cap_cmomf w=10.0e-6 l=10.0e-6 mmin=1 mmax=4 subblock=0 spiceprefix=X}
+C {sg13cmos5l_pr/cap_cmomf.sym} 530 -380 1 0 {name=C1 model=cap_cmomf w=10.0e-6 l=10.0e-6 mmin=1 mmax=4 subblock=0 m=1 mm_ok=1 spiceprefix=X}

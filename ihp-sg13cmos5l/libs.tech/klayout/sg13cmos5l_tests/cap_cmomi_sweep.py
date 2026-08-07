@@ -106,7 +106,12 @@ def _orchestrate():
     os.makedirs(run_dir, exist_ok=True)
 
     env = dict(os.environ)
-    env.setdefault("KLAYOUT_PATH", KLAYOUT_DIR)
+    # Prepend, never setdefault: on a machine that already exports
+    # KLAYOUT_PATH (a local PDK install does) the technology would resolve to
+    # that tree instead of this one and every configuration comes back
+    # GEN-FAIL for a device that is fine here.
+    env["KLAYOUT_PATH"] = os.pathsep.join(
+        [KLAYOUT_DIR] + [p for p in [os.environ.get("KLAYOUT_PATH")] if p])
 
     results = []
     for name, params, two_terminal in CONFIGS:
