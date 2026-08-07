@@ -34,9 +34,13 @@ $unit = dbu
 # DeviceClassCapacitor exposing terminals 'mim_top'/'mim_btm' and parameters
 # w and l (is_primary=false; matched topologically, consistent with cap_cmim).
 #
-# Terminal convention (PLUS = pin 1, MINUS = pin 2):
-#   PLUS  -> mim_top : port on the lower/left side  (lower x-center, else lower y)
-#   MINUS -> mim_btm : port on the upper/right side (higher x-center, else higher y)
+# Terminal assignment: the two ports are ordered by geometry (lower x-center,
+# then y, then metal index) and the first becomes mim_top. That order is
+# deterministic but arbitrary, because this extractor never reads the pin names:
+# for 'double' it follows the instance orientation, and for 'same' the metal
+# index decides, which puts the PCell's MINUS plate on mim_top. DeviceCustomMIM
+# therefore declares the two terminals EQUIVALENT for cap_cmomi, so the order
+# below does not have to mean anything. See the note in custom_mim_extractor.lvs.
 #
 # Parameter/axis mapping (PDF geometry):
 #   l MAPS TO X (finger length) -> read from marker bounding-box WIDTH
@@ -77,7 +81,7 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
                     5 => layer_geometry[5] }
     dev_mk = layer_geometry[6]
 
-    dev_mk.merged.each do |_region|
+    dev_mk.merged.each do |region|
       # Collect each port polygon together with the layer index that carries its
       # metal connectivity. 'double'/'none' put both pins on the top metal (same
       # index); 'same' stacks them on adjacent metals (two indices).
@@ -87,10 +91,22 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
       end
 
       # A well-formed cap_cmomi (double/same) places exactly two MkPins under the
-      # marker. Skip (and flag) anything else instead of silently picking the two
-      # extreme ports, so a malformed / hand-edited >2-pin case fails loud in LVS.
+      # marker. Skip anything else instead of silently picking the two extreme
+      # ports.
+      #
+      # Reported through error() rather than a log line: the device is dropped
+      # here, and if the cell holds nothing else the circuit is then left empty
+      # and drops out of the layout netlist altogether, at which point the
+      # comparison matches any schematic at all. An info line is not enough to
+      # notice that. The usual cause is two cap_cmomi placed close enough for
+      # their Recog.mom markers to touch, which merges them into one cluster
+      # carrying four ports and takes out BOTH devices.
       if ports.size != 2
-        $logger.info("cap_cmomi: expected exactly 2 port regions, found #{ports.size}; skipping marker")
+        msg = "cap_cmomi: expected exactly 2 port regions under the Recog.mom " \
+              "marker, found #{ports.size}. The device is not extracted. Check " \
+              "for markers of adjacent devices touching or overlapping."
+        $logger.error(msg)
+        error(msg, region)
         next
       end
 
@@ -102,10 +118,11 @@ class CapMomExtractor < RBA::GenericDeviceExtractor
       device.set_parameter('l', bbox.width * $unit)
       device.set_parameter('w', bbox.height * $unit)
 
-      # Deterministic pick of two ports (by x, then y, then metal index). A MoM
-      # cap is symmetric, so the exact PLUS/MINUS mapping is not significant; what
-      # matters is that each terminal is defined on the layer that carries its own
-      # metal net, so 'same'-feed stacked pins stay on separate nets.
+      # Deterministic pick of two ports (by x, then y, then metal index). Which
+      # of the two ends up on mim_top is arbitrary, which is why the terminals
+      # are declared equivalent; what matters is that each terminal is defined on
+      # the layer that carries its own metal net, so 'same'-feed stacked pins
+      # stay on separate nets.
       sorted = ports.sort_by { |poly, lidx| [poly.bbox.center.x, poly.bbox.center.y, lidx] }
       a_poly, a_lidx = sorted[0]
       b_poly, b_lidx = sorted[-1]

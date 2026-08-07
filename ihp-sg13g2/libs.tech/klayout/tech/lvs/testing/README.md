@@ -94,6 +94,16 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 - <a id="note-c1"></a>`C1`: `cap_cmim` compares `w/l`, `A/P`, and `m`. If `A/P` are missing they are derived from `W/L`.
 - <a id="note-c3"></a>`C3`: `rfcmim` compares `w/l`, `A/P`, `m`, and `wfeed`. If `A/P` are missing they are derived from `W/L`.
 - <a id="note-c4"></a>`C4`: `cap_cmomi` (interdigitated metal-oxide-metal, Metal1..Metal5) is matched topologically: `w`/`l` are non-primary (not compared, as for `cap_cmim`) and no `A`/`P` are set, so any 2-terminal `cap_cmomi` with the correct connectivity matches. Feed style `same` keeps the two stacked plates on distinct nets via per-metal pin connects. The capacitance value comes from the ngspice/Verilog-A model, not extraction.
+
+  The two terminals are **equivalent** for this device, unlike `cap_cmim`. `CapMomExtractor` picks the two ports by geometry and never reads their pin names, so the order it produces is arbitrary: for `double` it follows the instance orientation, and for `same` the metal index decides and puts the PCell's MINUS on pin 1. Enforcing that order only produced false mismatches, notably for a mirrored placement.
+
+  Two consequences of topological matching are worth knowing before trusting a green run. `mmin`/`mmax`/`feed` are read from the netlist and then dropped; they are not device parameters. A device on `mmin=4..mmax=5` has the same footprint, the same marker bounding box and its pins on the same top metal as one on `mmin=1..mmax=5`, so **a cap on the wrong metal band matches silently** while its capacitance differs substantially. And `w`/`l` as extracted are the `Recog.mom` bounding box *including the feed pads*, so they never equalled the schematic values anyway. Deriving the band from the geometry is not a fix: `metalN.and(marker)` cannot tell the device's own metal from routing that happens to cross over it, so it misreports as soon as anything is routed above the cap. Doing this properly needs the PCell to encode the band in the markup.
+
+  A marker that does not hold exactly two pin ports is reported as an **extraction error**, and the run then aborts before the comparison rather than producing a verdict (a partial extracted netlist is still written). The usual cause is two `cap_cmomi` placed close enough for their `Recog.mom` to touch, which merges them into one cluster with four ports and takes out both devices. This used to be a log line, and if the cell held nothing else the emptied circuit dropped out of the layout netlist and the comparison then matched any schematic at all.
+
+  `m` is not compared either, despite being declared `is_primary=true`: the SPICE reader takes it as the standard device multiplier rather than mapping it onto the class parameter of the same name, so a netlist declaring `m=2` against a single placement still matches. That matters because `m` is the only token beyond `w`/`l` that the xschem symbol's `lvs_format` emits.
+
+  `make test-LVS-cmomi-checks` holds all of the above as executable cases.
 - <a id="note-t1"></a>`T1`: Tap devices may use either `A/P` (`Perim`) or `W/L`; LVS compares `A/P`.
 
 ## Devices Regression Usage
@@ -125,6 +135,22 @@ Another approach for testing SG13G2 devices, you could make a full test for SG13
 ```bash
   make test-LVS-main
 ```
+
+### cap_cmomi checks
+
+The unit regression can only hold cases that pass, so the cases that have to
+fail, and the cases that record a limitation, live in a separate suite:
+
+```bash
+  make test-LVS-cmomi-checks
+```
+
+Each of its 11 cases declares the verdict it expects (2 FAIL, 2 ERROR and 7
+PASS), and the suite fails if any case stops behaving the way it is recorded to
+behave. ERROR means the extractor rejected the layout and the run aborted before
+any comparison. The seven passing cases are as load bearing as the rest: they
+record what `cap_cmomi` matching does *not* check, which would otherwise only be
+visible by reading the rule decks. See note [`C4`](#note-c4).
 
 ## Cells Regression Usage
 
