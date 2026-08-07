@@ -70,14 +70,18 @@ runs:
     # Scoped to the subtrees whose links point only at tracked files. Not all of
     # libs.tech: libs.tech/ngspice/osdi and libs.tech/xyce/plugins link at build
     # products that are gitignored in SG13G2, so they dangle in any checkout
-    # until someone compiles them, and libs.tech/xyce/models/resistors.lib is
-    # broken on main already. Widening this needs those handled first.
+    # until someone compiles them. Widening further needs those handled first.
+    #
+    # libs.tech/xyce/models is covered now that the stale resistors.lib link is
+    # gone: SG13G2 split that file into resistors_mod/_parm/_stat.lib, which this
+    # PDK already links separately, and nothing includes the old name.
     - name: Check the cross-PDK symlinks resolve
       shell: bash
       run: |
         broken=$(find ihp-sg13cmos5l/libs.tech/klayout \
                       ihp-sg13cmos5l/libs.tech/gnucap \
                       ihp-sg13cmos5l/libs.tech/verilog-a \
+                      ihp-sg13cmos5l/libs.tech/xyce/models \
                       -type l -xtype l 2>/dev/null)
         if [ -n "$broken" ]; then
           echo "::error::Symlinks into ihp-sg13g2 do not resolve at the pinned commit."
