@@ -21,9 +21,15 @@
 # Generates a matrix of cap_cmomf configurations from the SG13_dev PyCell
 # library and checks each one:
 #   - the PCell instantiates and writes a GDS,
-#   - geometric DRC is clean (0 errors in the maximum rule set),
+#   - geometric DRC reports no rule the device itself is responsible for,
 #   - the LVS extractor recognises a cap_cmomf device with two distinct
 #     terminal nets,
+#   - the extracted w and l match the drawn ones, which is what pins the axis
+#     convention: the shared CapMomExtractor reads l from the marker bbox
+#     WIDTH, so the PCell has to draw l along X. Get that backwards and the
+#     netlist reports w and l swapped from the symbol. Nothing else catches it,
+#     because both are non-primary parameters that LVS never compares and the C
+#     label below is w*l, unchanged by a swap.
 #   - the C label the PCell paints matches the analytic density formula, which
 #     is the same expression the Verilog-A model and the xschem symbol carry.
 #
@@ -147,17 +153,35 @@ def _drc_clean(drc_out):
     return (not unexpected), unexpected
 
 
-def _extracted_two_terminal(cir_path):
-    """True if the extracted netlist has a cap_cmomf device with 2 distinct nets."""
+# KLayout writes device parameters in engineering notation ('w=4u', and
+# '3.33u' with the trailing zero dropped), so the values have to be scaled
+# before they can be compared with the drawn dimensions.
+SI_SUFFIX = {"": 1.0, "f": 1e-15, "p": 1e-12, "n": 1e-9, "u": 1e-6,
+             "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6, "G": 1e9}
+
+
+def _extracted_device(cir_path):
+    """Parse the extracted cap_cmomf line.
+
+    Returns (two_terminal, w_um, l_um). w_um/l_um are None when the device is
+    absent or its parameters could not be read.
+    """
     if not os.path.isfile(cir_path):
-        return False
+        return False, None, None
     for line in open(cir_path):
         if "cap_cmomf" in line and " w=" in line:
             toks = line.split()
-            # <inst> <n1> <n2> cap_cmomf w=... : nodes are toks[1], toks[2]
-            if len(toks) >= 4 and toks[1] != toks[2]:
-                return True
-    return False
+            # <inst> <n1> <n2> cap_cmomf w=... l=... : nodes are toks[1], toks[2]
+            if len(toks) < 4 or toks[1] == toks[2]:
+                continue
+            dims = {}
+            for key in ("w", "l"):
+                m = re.search(r"\b" + key + r"=([0-9.eE+-]+)([a-zA-Z]?)", line)
+                if m:
+                    dims[key] = (float(m.group(1))
+                                 * SI_SUFFIX.get(m.group(2), 1.0) * 1e6)
+            return True, dims.get("w"), dims.get("l")
+    return False, None, None
 
 
 def _label_c_ff(gds_path):
@@ -218,7 +242,7 @@ def _orchestrate():
             # to the wrong tree" into a bare GEN-FAIL with no diagnostic.
             print(f"[{name}] generation failed:")
             print((gen.stdout + gen.stderr).strip() or "(no output)")
-            results.append((name, "GEN-FAIL", "-", "-", "-"))
+            results.append((name, "GEN-FAIL", "-", "-", "-", "-"))
             continue
 
         drc_dir = os.path.join(run_dir, name + "_drc")
@@ -233,26 +257,38 @@ def _orchestrate():
         _run([sys.executable, LVS_RUNNER, "--layout", gds, "--topcell", name,
               "--net_only", "--run_dir", lvs_dir])
         cir = os.path.join(lvs_dir, name + "_extracted.cir")
-        dev = _extracted_two_terminal(cir)
+        dev, got_w, got_l = _extracted_device(cir)
+
+        # Compare against the SNAPPED dimensions: the PCell draws on the 5 nm
+        # grid, so an off-grid config extracts the snapped value, not the drawn
+        # one. 1 nm of tolerance covers the printed precision.
+        want_w, want_l = _gridfix(params["w"] * 1e6), _gridfix(params["l"] * 1e6)
+        wl_ok = (got_w is not None and got_l is not None
+                 and abs(got_w - want_w) < 1e-3 and abs(got_l - want_l) < 1e-3)
+        if dev and not wl_ok:
+            print(f"[{name}] extracted w/l is {got_w}/{got_l} um, "
+                  f"expected {want_w}/{want_l} (w and l swapped?)")
 
         want = expected_c_ff(params)
         got = _label_c_ff(gds)
         # The label is printed to 3 decimals, so compare at that resolution.
         c_ok = got is not None and abs(got - want) < 1e-3
 
-        status = "PASS" if (drc_ok and dev and c_ok) else "FAIL"
+        status = "PASS" if (drc_ok and dev and wl_ok and c_ok) else "FAIL"
         results.append((name, status,
                         "clean" if drc_ok else "VIOL",
                         "2T" if dev else "NO-DEV",
+                        "ok" if wl_ok else "BAD",
                         "{:.3f}".format(got) if got is not None else "none"))
 
     print("\n=== cap_cmomf PCell sweep ===")
-    print(f"{'config':12s} {'status':8s} {'geoDRC':8s} {'extract':8s} {'C label/fF':>10s}")
+    print(f"{'config':12s} {'status':8s} {'geoDRC':8s} {'extract':8s} "
+          f"{'w/l':5s} {'C label/fF':>10s}")
     failed = 0
-    for name, status, drc, dev, cval in results:
+    for name, status, drc, dev, wl, cval in results:
         if status != "PASS":
             failed += 1
-        print(f"{name:12s} {status:8s} {drc:8s} {dev:8s} {cval:>10s}")
+        print(f"{name:12s} {status:8s} {drc:8s} {dev:8s} {wl:5s} {cval:>10s}")
     print(f"\n{len(results) - failed}/{len(results)} configurations passed.")
     return 0 if failed == 0 else 1
 

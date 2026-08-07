@@ -21,7 +21,7 @@
 # Generates a matrix of cap_cmomi configurations from the SG13_dev PyCell library
 # and checks each one:
 #   - the PCell instantiates and writes a GDS,
-#   - geometric DRC is clean (0 errors in the maximum rule set),
+#   - geometric DRC reports no rule the device itself is responsible for,
 #   - for the complete 2-terminal feeds ('double', 'same') the LVS extractor
 #     recognises a cap_cmomi device with two distinct terminal nets.
 # 'none' is a layout-only bare array, so only generation + DRC are asserted.
@@ -38,12 +38,21 @@
 import os
 import sys
 import json
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KLAYOUT_DIR = os.path.dirname(HERE)                       # libs.tech/klayout
 LVS_RUNNER = os.path.join(KLAYOUT_DIR, "tech", "lvs", "run_lvs.py")
 DRC_RUNNER = os.path.join(KLAYOUT_DIR, "tech", "drc", "run_drc.py")
 TECH_NAME = "sg13cmos5l"
+
+# Rules that fire on any bare device cell because the surroundings are absent:
+# an isolated capacitor has no Activ, no GatPoly and no TopMetal1 anywhere, so
+# the global density rules have nothing to measure. Anything outside this set
+# is a real violation of the device itself.
+DRC_EXPECTED_VIOLATIONS = {
+    "AFil.g", "GFil.g", "TM1.c", "M1.j", "M2.j", "M3.j", "M4.j",
+}
 
 # name -> pcell params. 'two_terminal' marks feeds that must extract as a cap.
 CONFIGS = [
@@ -80,6 +89,24 @@ def _run(cmd):
     import subprocess
     p = subprocess.run(cmd, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
+
+
+def _drc_clean(drc_out):
+    """Return (clean, unexpected_rules) from a run_drc.py transcript.
+
+    The old check grepped 'Number of DRC errors for maximum rule set: 0'. That
+    counter does not include the geometry offgrid table, so a layout with
+    off-grid metal edges reported 0 there and 'Violated rules are' on the next
+    line at the same time. Read the rule list instead: it is what run_drc.py
+    exits non-zero on. Kept identical to cap_cmomf_sweep.py, where the weaker
+    check hid two real defects.
+    """
+    unexpected = set()
+    for m in re.finditer(r"Violated rules are\s*:\s*(.+)", drc_out):
+        for rule in re.findall(r"[A-Za-z][\w.]*", m.group(1)):
+            if rule not in DRC_EXPECTED_VIOLATIONS:
+                unexpected.add(rule)
+    return (not unexpected), unexpected
 
 
 def _extracted_two_terminal(cir_path):
@@ -130,7 +157,10 @@ def _orchestrate():
         drc_dir = os.path.join(run_dir, name + "_drc")
         rc, drc_out = _run([sys.executable, DRC_RUNNER, "--path", gds,
                             "--topcell", name, "--run_dir", drc_dir])
-        drc_ok = "Number of DRC errors for maximum rule set: 0" in drc_out
+        drc_ok, drc_unexpected = _drc_clean(drc_out)
+        if not drc_ok:
+            print(f"[{name}] unexpected DRC violations: "
+                  f"{', '.join(sorted(drc_unexpected))}")
 
         lvs_dir = os.path.join(run_dir, name + "_lvs")
         _run([sys.executable, LVS_RUNNER, "--layout", gds, "--topcell", name,
