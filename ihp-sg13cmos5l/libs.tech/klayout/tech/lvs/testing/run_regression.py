@@ -456,6 +456,14 @@ def run_regression(lvs_dir, output_path, target_device_group, cpu_count):
         "idiodevss_4kv",
         # isolbox - isolation box requires nBuLay-based isolation layers
         "isolbox",
+        # Deep-nwell tap testcases, symlinked in from G2 (their PR #1032). All
+        # three draw nBuLay, so the forbidden-layer check aborts LVS before any
+        # comparison. They arrived with the .github/ihp-sg13g2.ref bump that
+        # brought the cap_cmomi extractor fix; taps themselves are supported and
+        # the rest of the TAP group runs.
+        "test_ntap_ptap_ext",
+        "test_ntap_ptap_ext_deep",
+        "test_ptap_dnw_ext",
     ]
 
     # Parse Existing devices
