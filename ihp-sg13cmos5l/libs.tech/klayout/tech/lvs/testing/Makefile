@@ -61,15 +61,33 @@ test-LVS-SVS:
 	@bash testcases/manual_tests/svs_testss/run_lvs.sh
 
 #================================
+# ----- test-LVS-cmomi-checks ---
+#================================
+
+# Explicit target, so it does not fall through to the test-LVS-% pattern rule
+# above and get handed to run_regression.py as a device group.
+.ONESHELL:
+test-LVS-cmomi-checks:
+	@echo "========== SG13CMOS5L cap_cmomi LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh
+
+#================================
 # ----- test-LVS-manual ---------
 #================================
 
+# .ONESHELL sends the whole recipe to one shell, so make only ever sees the exit
+# status of the LAST line and a failure in any earlier script is lost. Collecting
+# the statuses keeps every script counted; without it, appending a passing script
+# at the end would have reported this target green.
 .ONESHELL:
 test-LVS-manual:
 	@echo "========== SG13CMOS5L Manual Tests =========="
-	@bash testcases/manual_tests/esd_ptap/run_lvs.sh
-	@bash testcases/manual_tests/implicit_connections/run_lvs.sh
-	@bash testcases/manual_tests/sram_support/run_lvs.sh
+	@rc=0
+	@bash testcases/manual_tests/esd_ptap/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/implicit_connections/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/sram_support/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh || rc=1
+	@exit $$rc
 
 #=================================
 # -------- test-LVS-switch -------
@@ -105,7 +123,8 @@ help:
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
 	@echo "... test-LVS-cells             (To run LVS for all standard cells                )"
 	@echo "... test-LVS-SVS               (To run manual SVS regression: 1 PASS + 2 FAIL   )"
-	@echo "... test-LVS-manual            (To run manual tests: ESD, implicit, SRAM         )"
+	@echo "... test-LVS-manual            (To run manual tests: ESD, implicit, SRAM, cmomi  )"
+	@echo "... test-LVS-cmomi-checks      (To run the cap_cmomi detection-limit checks      )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"

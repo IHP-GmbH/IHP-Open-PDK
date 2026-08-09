@@ -1,0 +1,66 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* Two caps declared against the three-cap hierarchical layout, run in deep mode.
+*
+* This is chain_missing's perturbation applied to cap_cmomi_hier.gds: a device
+* present in the layout and absent from the schematic. In flat mode it fails, as
+* case 2 does. In deep mode it PASSES, and that is the finding.
+*
+* The trigger is cap_cmomi geometry sitting below the top cell. In deep mode such
+* a layout yields NO nets and NO circuits: the .lvsdb has zero N() and zero X()
+* entries.
+*
+* Extraction is not what fails. The deep .lvsdb still carries the device abstract
+* "D(D$cap_cmomi cap_cmomi ...)" with its mim_top/mim_btm terminal geometry, and
+* it is identical to the one the flat run produces, so the extractor did fire on
+* the geometry and did recognise the device. The "expected exactly 2 port regions"
+* guard never trips either. What goes missing is the circuit: the devices are
+* never instantiated anywhere, so the netlist is empty and the comparison has
+* nothing to disagree with. Note the device CLASS entry, K(cap_cmomi CAP 1 ...),
+* is emitted identically in every run and proves nothing on its own.
+*
+* What this is NOT, each checked:
+*   - not simplify: --no_simplify changes nothing.
+*   - not a missing --topcell: passing it explicitly changes nothing.
+*   - not deep mode in general, and not this deck's deep handling. Wrapping the
+*     sg13_lv_nmos switch testcase in a parent cell the same way still extracts
+*     its 7 devices and matches, in deep.
+*   - not the geometry, and not floating nets. Every cap_cmomi layout in this tree
+*     that is a single flat cell deep-extracts correctly: cmomi_chain (3 devices),
+*     cmomi_feed_none (2) and the rebuilt cap_cmomi unit testcase (2), the last two
+*     with their caps floating. Take cmomi_chain, wrap it in one parent cell, and
+*     the same shapes drop to zero circuits and zero nets.
+*   - not specific to this PDK: it reproduces on ihp-sg13g2 at the pinned commit,
+*     which is expected, since the cap_cmomi rule decks are symlinks into it.
+*
+* So: same shapes, one wrapper cell, everything vanishes and LVS still says match.
+* The cause is not diagnosed here and this records the behaviour rather than
+* explaining it. See IHP-GmbH/ihp-sg13cmos5l#91.
+*
+* The layout is the unit testcase's, referenced across rather than copied, so the
+* two cases cannot drift apart. That unit case runs the same layout in flat mode
+* and must pass; this one records what the same layout does in deep.
+*
+* Expected to PASS. It is the same vacuity as case 10, reached without any
+* malformed geometry: an ordinary, well formed cap_cmomi layout is enough.
+* Nothing in the deck reports it, because no marker is ever rejected. Deep is not
+* the default for run_lvs.py or for run_regression.py, so nothing in CI goes
+* through this path.
+.SUBCKT cap_cmomi_hier
+C1 P1 M1 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=4 feed=double
+C2 P2 M2 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=4 feed=double
+.ENDS cap_cmomi_hier

@@ -50,6 +50,15 @@ jobs:
           make env
           make test-LVS-main
 
+      # Kept separate from test-LVS-main because these cases are expected to
+      # fail or to abort in extraction, so they cannot live in the unit
+      # regression. Two of them guard the extraction error that a marker
+      # without exactly two ports now raises, which comes from the G2 deck: if
+      # a pin bump ever reverts it, this is what says so.
+      - name: Run cap_cmomi LVS Checks for SG13CMOS5L
+        working-directory: ihp-sg13cmos5l
+        run: make test-LVS-cmomi-checks
+
   lvs_regression_cells:
     runs-on: ubuntu-latest
     steps:
