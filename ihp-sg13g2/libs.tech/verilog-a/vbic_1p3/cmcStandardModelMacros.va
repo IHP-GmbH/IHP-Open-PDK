@@ -1,0 +1,403 @@
+
+//
+//  This file contains standard macros for standard building blocks for compact models
+//  of semiconductor devices, such as PN junction depletion charge and currents.
+//
+
+//
+//  Release:  N.N.N
+//  Date:     DATE
+//  Comments: From split of r3_cmc macrosAndDefines_cmc.va into separate functional include files.
+//
+
+`ifdef haveIncludededCmcStandardModelMacros
+`else
+`define haveIncludededCmcStandardModelMacros
+
+//
+//  Built-in potential temperature mapping (smoothly goes to zero as the temperature increases).
+//
+//  This is originally from Richard Booth (Agere Systems), and is physically based on the
+//  built-in potential being (kT/q)*ln(ppo*nno/ni^2), whereas the standard SPICE model is
+//  based on (kT/q)*ln(NA*ND/ni^2) which assumes ppo=NA and nno=ND and does not take into
+//  account that at high temperatures material becomes intrinsic and ppo and nno approach ni.
+//  The model is based on ni^2(T)=ni^2(Tnom)*exp(-(EA*q/k)*(1/T-1/Tnom))*(T/Tnom)^3
+//  where the temperatures T and Tnom are in Kelvins.
+//
+//  A derivation is available at http://www.designers-guide.org/VBIC/documents/notesPsibi.html
+//
+//  Outputs:
+//           psibi      built-in potential at temperature T
+//  Inputs:
+//           p          built-in potential at reference temperature Tnom
+//           ea         activation energy for intrinsic concentration squared
+//           vtv        thermal voltage at temperature T (=k*T/q)
+//           rt         T/Tnom, ratio of temperatures
+//           blockName  name for the begin/end block (must be unique)
+//
+
+`define psibi(psibi,p,ea,vtv,rt,blockName) \
+    begin : blockName \
+        real psiio, psiin ; \
+        psiio = 2.0*(vtv/rt)*ln(exp(0.5*p*rt/vtv)-exp(-0.5*p*rt/vtv)); \
+        psiin = psiio*rt-3.0*vtv*ln(rt)-ea*(rt-1.0); \
+        psibi = psiin+2.0*vtv*ln(0.5*(1.0+sqrt(1.0+4.0*exp(-psiin/vtv)))); \
+    end
+
+//
+//  exp(V) that linearizes for V>Vmax
+//
+//  Outputs:
+//           expv       exponential linearized for V>Vmax
+//  Inputs:
+//           V          input voltage
+//           Vmax       voltage at which to linearize the exponential
+//
+
+`define expLin(expv,V,Vmax) \
+    if (V<Vmax) begin \
+        expv    =  exp(V); \
+    end else begin \
+        expv    =  exp(Vmax)*(1.0+(V-Vmax)); \
+    end
+
+//
+//  exp(V*a) that linearizes for V>Vmax
+//
+//  Outputs:
+//           expv       exponential linearized for V>Vmax
+//  Inputs:
+//           V          input voltage
+//           Vmax       voltage at which to linearize the exponential
+//           a          multiplicative factor for V in the exponential calculation
+//
+
+`define expLinA(expv,V,Vmax,a) \
+    if (V<Vmax) begin \
+        expv    =  exp(V*a); \
+    end else begin \
+        expv    =  exp(Vmax*a)*(1.0+(V-Vmax)*a); \
+    end
+
+//
+//  Basic normalized depletion charge models, that include the standard regional SPICE
+//  model (selected if aj<=0.0) and a smooth, single-piece version
+//  (selected if aj>0). The basic capacitance form is 1/(1-v/p)^m.
+//
+//  Outputs:
+//           qj         junction charge
+//  Inputs:
+//           v          voltage across the junction
+//           p          built-in voltage of the junction
+//           m          grading coefficient of the junction
+//           fc         linearization factor, model is linearized for v>fc*p
+//           aj         smoothing parameter, if <=0 a the model is regional
+//           blockName  name for the begin/end block (must be unique)
+//
+//  There are 6 variants of the (aj>0) depletion charge model. Physically,
+//  for high forward bias the depletion region does not exist as it is swamped by
+//  mobile carriers, hence the depletion charge (and capacitance) should
+//  go to zero. This gives a cj(v) characteristic that peaks and then drops
+//  to zero as v increases. This characteristic can cause convergence problems
+//  and has to be carefully matched with a diffusion charge model so that the
+//  total (depletion+diffusion) charge and capacitance are modeled accurately.
+//  A less radical version of this is provided, that smoothly approaches the
+//  constant capacitance at v=fc*p. This also needs to be carefully integrated
+//  with a diffusion charge model to give correct total (depletion+diffusion)
+//  charge and capacitance modeling. A smooth version of the standard SPICE
+//  model, where the capacitance linearly increases with voltage for v>fc*p,
+//  is also provided. In the absence of a diffusion charge model, which is
+//  often the case for parasitic junction models which are not expected to be
+//  driven to high forward bias and so for which diffusion charge can be ignored,
+//  the version that gives a linear cj(v) form for v>fc*p should be used.
+//
+//  Each of these 3 models has 2 variants, one that has qj(v=0)=0 and another
+//  that does not. For capacitance modeling it does not matter which is used,
+//  as only the derivative is important. For modeling base-charge in BJTs
+//  it is the change in depletion charge w.r.t. zero bias that is used to
+//  model the Early effect, hence qj(v=0)=0 is required. This requires
+//  additional calculations that are not needed if only capacitance modeling
+//  is of interest. Hence versions that do not force qj(v=0)=0 are provided
+//  as they are more efficient to evaluate.
+//
+//                         cj(v) for
+//  Name       qj(v=0)=0   v->+inf
+//  =========  ==========  ========
+//  qj         no          linear in v
+//  qj_z       yes         linear in v
+//  qjCnst     no          constant 1/(1-fc)^m
+//  qjCnst_z   yes         constant 1/(1-fc)^m
+//  qjPeak     no          zero
+//  qjPeak_z   yes         zero
+//
+
+`define qj(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*(1.0+0.5*m*dvh/(p*(1.0-fc)))*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)*(1.0+0.5*m*(v-vl+vl0)/(p*(1.0-fc))); \
+        end \
+    end
+
+`define qj_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*(1.0+0.5*m*dvh/(p*(1.0-fc)))*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)*(1.0+0.5*m*(v-vl+vl0)/(p*(1.0-fc)))-q0; \
+        end \
+    end
+
+`define qjCnst(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0); \
+        end \
+    end
+
+`define qjCnst_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+                qhi = dvh*pwq; \
+            end else begin \
+                qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qlo = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+            qj  =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)-q0; \
+        end \
+    end
+
+`define qjPeak(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qj  = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+            end else begin \
+                qj  = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+            end \
+        end else begin \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qj  = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+        end \
+    end
+
+`define qjPeak_z(qj,v,p,m,fc,aj,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, mv0, vl0, q0, dv, mv, vl; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-m)); \
+                qj  = p*(1.0-pwq*(1.0-fc))/(1.0-m); \
+            end else begin \
+                qj  = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+            end \
+        end else begin \
+            mv0 =  sqrt(dv0*dv0+4.0*aj*aj); \
+            vl0 = -0.5*(dv0+mv0); \
+            q0  = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+            dv  =  v+dv0; \
+            mv  =  sqrt(dv*dv+4.0*aj*aj); \
+            vl  =  0.5*(dv-mv)-dv0; \
+            qj  = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m)-q0; \
+        end \
+    end
+
+//
+//  pn junction current, includes area and perimeter components
+//
+//  Outputs:
+//           pnjI       junction current
+//  Inputs:
+//           v          voltage across the junction
+//           vtv        the thermal voltage
+//           a          area of junction
+//           isa        saturation current per unit area
+//           na         ideality factor of the area component
+//           vmaxa      linearization voltage for the area component
+//           p          perimeter of junction
+//           isp        saturation current per unit perimeter
+//           np         ideality factor of the perimeter component
+//           vmaxp      linearization voltage for the perimeter component
+//           blockName  name for the begin/end block (must be unique)
+//
+
+`define pnjIap(pnjI,v,vtv,a,isa,na,vmaxa,p,isp,np,vmaxp,blockName) \
+    begin : blockName \
+        real aisa,pisp,argx,expx,pnjIa,pnjIp; \
+        aisa     = a*isa; \
+        pisp     = p*isp; \
+        if (aisa>0.0) begin \
+            argx     =  1.0/(na*vtv); \
+            `expLinA(expx,v,vmaxa,argx)  \
+            pnjIa    =  aisa*(expx-1.0); \
+        end else begin \
+            pnjIa    =  0.0; \
+        end \
+        if (pisp>0.0) begin \
+            argx     =  1.0/(np*vtv); \
+            `expLinA(expx,v,vmaxp,argx)  \
+            pnjIp    =  pisp*(expx-1.0); \
+        end else begin \
+            pnjIp    =  0.0; \
+        end \
+        pnjI    =  pnjIa+pnjIp; \
+    end
+
+//
+//  pn junction charge, includes area and perimeter components
+//
+//  Based on the basic depletion charge model with a linear increase
+//  in c(v) at high forward bias, qj(v=0)=0 is not enforced.
+//
+//  Outputs:
+//           pnjQ       junction charge
+//  Inputs:
+//           v          voltage across the junction
+//           a          area of junction
+//           cja        zero-bias capacitance per unit area
+//           pa         built-in voltage of the area component
+//           ma         grading coefficient of the area component
+//           fca        linearization factor of the are component
+//           aja        smoothing parameter of the area component
+//           p          perimeter of junction
+//           cjp        zero-bias capacitance per unit perimeter
+//           pp         built-in voltage of the perimeter component
+//           mp         grading coefficient of the perimeter component
+//           fcp        linearization factor of the perimeter component
+//           ajp        smoothing parameter of the perimeter component
+//           blockName  name for the begin/end block (must be unique)
+//           dba        name to pass to `qj for the area component (must be unique)
+//           dbp        name to pass to `qj for the perimeter component (must be unique)
+//
+
+`define pnjQap(pnjQ,v,a,cja,pa,ma,fca,aja,p,cjp,pp,mp,fcp,ajp,blockName,dba,dbp) \
+    begin : blockName \
+        real acja,pcjp,arga,argp; \
+        acja     = a*cja; \
+        pcjp     = p*cjp; \
+        if (acja>0.0) begin \
+            `qj(arga,v,pa,ma,fca,aja,dba); \
+        end else begin \
+            arga     = 0.0; \
+        end \
+        if (pcjp>0.0) begin \
+            `qj(argp,v,pp,mp,fcp,ajp,dbp); \
+        end else begin \
+            argp     = 0.0; \
+        end \
+        pnjQ     = acja*arga+pcjp*argp; \
+    end
+
+//
+//  simple junction breakdown current model
+//
+//  Outputs:
+//           bkdI       breakdown current
+//  Inputs:
+//           v          voltage across the junction
+//           Ibv        current at Vbv
+//           Vbv        breakdown voltage (defined at Ibv)
+//           vtv        the thermal voltage
+//           nb         ideality factor of the breakdown exponential
+//           vmax       linearization voltage
+//           blockName  name for the begin/end block (must be unique)
+//
+//  This model is based on the simple exponential breakdown model
+//  for SPICE diodes. The model has current -Ibv at voltage -Vbv,
+//  and varies exponentially with voltage. The nb parameter controls
+//  the steepness of the exponential. The current is linearized for
+//  for bias and hasvalue zero at zero bias across the junction.
+//
+
+`define pnjIbkd(bkdI,v,Ibv,Vbv,vtv,nb,vmax,blockName) \
+    begin : blockName \
+        real Vbkd,argx,expx; \
+        if (Vbv>0.0) begin \
+            Vbkd     = -Vbv-v; \
+            argx     =  1.0/(nb*vtv); \
+            `expLinA(expx,Vbkd,vmax,argx)  \
+            bkdI     = -Ibv*(expx-exp(-Vbv*argx)); \
+        end else begin \
+            bkdI     =  0.0; \
+        end \
+    end
+
+`endif

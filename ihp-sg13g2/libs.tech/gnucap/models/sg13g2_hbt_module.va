@@ -1,0 +1,254 @@
+//#######################################################################
+//
+// Copyright 2023 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//#######################################################################
+//
+// SPICE-Parameter HBT-Transistor (nom.)
+//
+// Model:                                VBIC (Rev.1.15)
+// Date:                                 25.05.18
+// Lot:                                  EDJ802
+// WAFER:                                02
+// CHIP Nr:                              3.3
+// Emitter size (mask):                  Nx *(0.07 x 0.90) �m^2 with Nx = 1 - 10
+// Maximum collector-to-emitter voltage: 1.6
+// Measurement data:                     T356_EDJ802_W02_3.3
+// Meas. Range forward gummel:           vbe = (0.3 - 1.04)V
+// Meas. Range forward output:           vce = (0.4 - 2.0)V
+// Nom. Temperature  (TNOM):             27 grd C
+// Meas. Temperature (TEMP):             27 grd C
+// Valid range for model
+// ic: <(0.003*Nx) A  vbe :(0.65 - 0.96) V  vce :(0.4 - 2.0) V
+// Temp: -40�C - +125�C
+// Valid numbers: NX = 1 - 10
+// ________________________________________________________________________
+`include "disciplines.vams"
+
+// a four terminal regular npn13G2 device
+module npn13G2(c, b, e, bn);
+    // external ports
+    inout c, b, e, bn;
+    electrical c, b, e, bn;
+    // internal nodes
+    // TODO: add internal thermal port
+    electrical s1;
+
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:10];
+    parameter real dtemp = 0;
+    parameter integer selft = 1 from [0:1];
+    parameter integer sw_nqs = 0 from [0:1];
+    // TODO: unused?
+    parameter integer Ny = 1;
+    // hidden localparam
+    localparam real R = 300 + 100 * Nx;
+    localparam real C = 2.30E-14 - (1.50E-15 * Nx);
+
+    // TODO: connect thermal port
+    npn13G2_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) Qnpn13G2(c, b, e, s1);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO thermal resistor Rt t 0 R = 1e9
+endmodule
+
+// 5 terminal version of npn13G2 device
+// the fifth terminal is temperature output
+// TODO: support thermal ports in Gnucap
+module npn13G2_5t(c, b, e, bn, t);
+    // external ports
+    inout c, b, e, bn, t;
+    electrical c, b, e, bn;
+    thermal t;
+    // internal nodes
+    electrical s1;
+
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:10];
+    parameter real dtemp = 0;
+    parameter integer selft = 1 from [0:1];
+    parameter integer sw_nqs = 0 from [0:1];
+    // TODO: unused?
+    parameter integer Ny = 1;
+    // hidden localparam
+    localparam real R = 300 + 100 * Nx;
+    localparam real C = 2.30E-14 - (1.50E-15 * Nx);
+
+    npn13G2_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) Qnpn13G2(c, b, e, s1, t);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO add thermal resistor Rt t 0 R = 1e9
+endmodule
+
+//--------------------npn13g2l----------------------------------------------------
+// Model:                                VBIC (Rev.1.15)
+// Date:                                 25.05.18
+// Lot:                                  EDJ802
+// WAFER:                                02
+// CHIP Nr:                              3.3
+// Device:                               npn13g2l_VBIC_Q118
+// Emitter size (mask):                  Nx *(0.07 x El) �m^2 with Nx = 1 - 4, El = 1 - 2.5
+// Maximum collector-to-emitter voltage: 1.6
+// Measurement data:                     T356_EDJ802_W02_3.3
+// Meas. Range forward gummel:           vbe = (0.3 - 1.04)V
+// Meas. Range forward output:           vce = (0.4 - 2.0)V
+// Nom. Temperature  (TNOM):             27 grd C
+// Meas. Temperature (TEMP):             27 grd C
+// Valid range for model
+// ic: <(...Nx*El) A  vbe :(0.65 - 0.96) V  vce :(0.4 - 2.0) V
+// Temp: -40�C - +125�C
+// Valid numbers: Nx = 1 - 4, El = 1 - 2.5
+// model card checked with SPECTRE 10.x and ADS2009U1
+// ________________________________________________________________________
+
+// a four therminal version of npn13G2l device
+module npn13G2l(c, b, e, bn);
+    // external ports
+    inout c, b, e, bn;
+    electrical c, b, e, bn;
+    // internal nodes
+    // TODO: add internal thermal port
+    electrical s1;
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:4];
+    parameter real El = 2.5;
+    parameter real selft = 1;
+    parameter real dtemp = 0;
+    // TODO: unused?
+    parameter integer Ny = 1;
+    parameter real we = 0.12e-6;
+    // hidden localparam
+    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.5);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+
+    // TODO: connect thermal port
+    npn13G2l_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft)) q1(c, b, e, s1);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO: add thermal resistor Rt t 0 R = 1e9
+endmodule
+
+// a five terminal version of npn13G2l device
+// TODO: support thermal ports in Gnucap
+module npn13G2l_5t(c, b, e, bn, t);
+    // external ports
+    inout c, b, e, bn, t;
+    electrical c, b, e, bn;
+    thermal t;
+    // internal nodes
+    electrical s1;
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:4];
+    parameter real El = 2.5;
+    parameter real selft = 1;
+    parameter real dtemp = 0;
+    // TODO: unused?
+    parameter integer Ny = 1;
+    parameter real we = 0.12e-6;
+    // hidden localparam
+    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.5);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+
+    // TODO: connect thermal port
+    npn13G2l_NX_vbic  #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft)) q1(c, b, e, s1, t);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO: add thermal resistor Rt t 0 R = 1e9
+endmodule
+
+
+//--------------------npn13g2v----------------------------------------------------
+// Model:                                VBIC (Rev.1.15)
+// Date:                                 25.05.18
+// Lot:                                  EDJ802
+// WAFER:                                02
+// CHIP Nr:                              3.3
+// Device:                               npn13g2v_VBIC_Q118
+// Emitter size (mask):                  Nx *(0.12 x El) �m^2 with Nx = 1 - 4, El = 1.0 - 5.0
+// Maximum collector-to-emitter voltage: 2.5
+// Measurement data:                     T356_EDJ802_W02_3.3
+// Meas. Range forward gummel:           vbe = (0.3 - 1.0)V
+// Meas. Range forward output:           vce = (0 - 3.0)V
+// Nom. Temperature  (TNOM):             27 grd C
+// Meas. Temperature (TEMP):             27 grd C
+// Valid range for model
+// ic: <(0.50*Nx*El) A  vbe :(0.65 - 0.84) V  vce :(0.8 - 2.3) V
+// Temp: -40�C - +125�C
+// Valid numbers: Nx = 1 - 4, El = 1 - 5
+// model card checked with SPECTRE 10.x and ADS2009U1
+// ________________________________________________________________________
+
+// a four terminal version of npn13G2v device
+module npn13G2v(c, b, e, bn);
+    // external ports
+    inout c, b, e, bn;
+    electrical c, b, e, bn;
+    // internal nodes
+    // TODO: add internal thermal port
+    electrical s1;
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:4];
+    parameter real El = 2.5;
+    parameter real selft = 1;
+    parameter real dtemp = 0;
+    parameter integer sw_nqs = 0 from [0:1];
+    // TODO: not used?
+    parameter integer Ny = 1;
+    parameter real we = 0.12e-6;
+    // hidden localparam
+    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.85);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+
+    // TODO: connect thermal port
+    npn13G2v_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) q1(c, b, e, s1);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO: add thermal resistor Rt t 0 R = 1e9
+endmodule
+
+// a five terminal version of npn13G2v device
+// TODO: support thermal ports in Gnucap
+module npn13G2v_5t(c, b, e, bn, t);
+    // external ports
+    inout c, b, e, bn, t;
+    electrical c, b, e, bn;
+    thermal t;
+    // internal nodes
+    electrical s1;
+    // user-facing parameters
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:4];
+    localparam real El = 2.5;
+    parameter real selft = 1;
+    parameter real dtemp = 0;
+    parameter integer sw_nqs = 0 from [0:1];
+    // TODO: not used
+    parameter integer Ny = 1;
+    parameter real we = 0.12e-6;
+    // hidden localparam
+    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.85);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+
+    npn13G2v_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) q1(c, b, e, s1, t);
+    resistor #(.r(R)) Rsub(s1, bn);
+    capacitor #(.c(C)) Csub(s1, bn);
+    // TODO: add thermal resistor Rt t 0 R = 1e9
+endmodule
+

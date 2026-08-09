@@ -13,7 +13,8 @@ TESTDIRS = \
 	resistor \
 	capacitor \
 	moslv \
-	moshv
+	moshv \
+	hbt
 
 # Discover tests automatically: resistor/*.sp, moslv/*.sp, ...
 ALL_TESTS := $(foreach d, $(TESTDIRS), $(wildcard $(d)/*.sp))

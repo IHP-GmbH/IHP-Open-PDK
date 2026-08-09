@@ -1,0 +1,18 @@
+// load modelgen
+load mgsim
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+
+verilog
+`include ../../../models/cornerHBT.va
+`include ./tb_dc_mc_hbt_13g2.va
+
+hbt_bcs corner_hbt();
+tb_mc_hbt_13g2 #(.mm_ok(1)) tb();
+
+print dc i(tb.vc)
+store dc i(tb.vc)
+dc $seed 1 1000 1 basic
+measure ic_mean = sample_mean("i(tb.vc)")
+measure ic_std = sample_std("i(tb.vc)")
+status notime
