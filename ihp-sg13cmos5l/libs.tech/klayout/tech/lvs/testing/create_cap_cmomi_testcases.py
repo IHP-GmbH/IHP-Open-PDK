@@ -44,6 +44,7 @@
 #       cmomi_merged.gds       two caps under one merged Recog.mom marker
 #       cmomi_all_dropped.gds  a cell whose every device is dropped
 #       cmomi_feed_none.gds    'none' feed, an array with no feed structure
+#       cmomi_hier_wired.gds   the hierarchy of cap_cmomi_hier, but wired to the top
 #
 # The malformed layouts carry a well formed cap alongside the broken one, so that
 # each one exercises a comparison rather than an empty cell. cmomi_all_dropped.gds
@@ -231,14 +232,15 @@ def build_hier():
     several cell instances. The regression runs it in the default flat mode.
 
     None of these caps connects to anything outside its own cell, and in deep
-    mode that is what breaks. A sub-circuit with no pins is dropped by align, and
-    since these hold the only devices, the layout netlist comes out empty; the
-    .lvsdb still carries the cap_cmomi device abstract with its terminal
-    geometry, so the extractor did fire. An empty netlist is reported as a
-    mismatch now, so this cannot be a unit testcase in deep mode, and the checks
-    suite runs it there as case 12 instead. Joining two of the sub-cells with a
-    strap in the top cell is enough to make the same hierarchy extract correctly,
-    so the hierarchy itself is not what breaks it.
+    mode the layout netlist then comes out empty; the .lvsdb still carries the
+    cap_cmomi device abstract with its terminal geometry, so the extractor did
+    fire. An empty netlist is reported as a mismatch now, so this cannot be a
+    unit testcase in deep mode, and the checks suite runs it there as case 12.
+
+    Joining two of the sub-cells with a strap in the top cell is enough to make
+    the same hierarchy extract correctly, which is build_hier_wired and case 13,
+    so the hierarchy itself is not what breaks it. Beyond that the cause is not
+    diagnosed, and nothing here establishes that it is specific to cap_cmomi.
     """
     layout = _new_layout()
     top = layout.create_cell("cap_cmomi_hier")
@@ -253,6 +255,41 @@ def build_hier():
     top.insert(pya.DCellInstArray(pcell, pya.DTrans(pya.DVector(2 * pitch, 0.0))))
 
     _write(layout, os.path.join(UNIT_DIR, "cap_cmomi_hier.gds"))
+
+
+def build_hier_wired():
+    """The same hierarchy as build_hier, with one net crossing a cell boundary.
+
+    Two instances of a sub-cell holding one cap, joined by a Metal4 strap drawn
+    in the top cell, so the sub-circuits get a pin and are not dropped. This is
+    the deep-mode counterpart of build_hier: that layout must fail in deep, this
+    one must pass, and the pair is what pins down the trigger. Without a passing
+    deep case, a total collapse of deep extraction would leave case 12 failing
+    for the wrong reason and the suite would stay green.
+
+    The strap keeps the pins' own y range, so it can only touch what the pins
+    already touch, and the two markers stay MARKER_GAP apart.
+    """
+    layout = _new_layout()
+    top = layout.create_cell("cmomi_hier_wired")
+
+    unit = layout.create_cell("cmomi_unit")
+    unit.insert(pya.DCellInstArray(
+        _pcell(layout, w=5e-6, l=5e-6, mmin=1, mmax=4, feed="double"), pya.DTrans()))
+    unit.flatten(-1, True)
+
+    bbox = unit.dbbox()
+    pitch = bbox.width() + MARKER_GAP
+    left = pya.DTrans(pya.DVector(-bbox.left, 0.0))
+    right = pya.DTrans(pya.DVector(-bbox.left + pitch, 0.0))
+    top.insert(pya.DCellInstArray(unit, left))
+    top.insert(pya.DCellInstArray(unit, right))
+
+    pins = _pin_boxes(layout, unit, TOP_METAL)
+    _strap(layout, top, TOP_METAL,
+           pins[-1].transformed(left), pins[0].transformed(right))
+
+    _write(layout, os.path.join(CHECKS_DIR, "cmomi_hier_wired.gds"))
 
 
 # ----------------------------------------------------------------------------
@@ -401,6 +438,7 @@ def main():
     build_original()
     build_config()
     build_hier()
+    build_hier_wired()
     build_chain()
     build_short_same()
     build_merged()

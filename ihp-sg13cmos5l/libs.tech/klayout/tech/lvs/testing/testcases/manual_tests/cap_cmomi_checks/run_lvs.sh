@@ -134,24 +134,35 @@ run_case "10_all_devices_dropped" \
   "cmomi_all_dropped.gds" "cmomi_all_dropped" "all_dropped.cdl" "ERROR"
 
 # A multiplier the layout does not have. m is declared is_primary=true on
-# DeviceCustomMIM, so it looks compared, but the SPICE reader takes it as the
-# standard device multiplier instead and a wrong m matches. m is also the only
-# token beyond w/l that the xschem symbol's lvs_format emits.
+# DeviceCustomMIM, so it looks compared, but map_capacitor_params only sets it
+# when the model name contains 'mim', and cap_cmomi does not, so the value is
+# read off the card and dropped and both sides keep the default of 1. m is also
+# the only token beyond w/l that the xschem symbol's lvs_format emits.
 run_case "11_wrong_multiplier_accepted" \
   "cmomi_chain.gds" "cmomi_chain" "chain_wrong_m.cdl" "PASS"
 
 # The same missing-device perturbation as case 2, on the hierarchical unit
-# layout, in deep mode. Case 2 fails on the comparison; this one fails before it,
-# on the empty-extraction guard. In deep mode a cap_cmomi whose nets never leave
-# its sub-cell gives that sub-circuit no pins, align drops it for having no
-# counterpart in the schematic, and the layout netlist ends up empty. The
+# layout, in deep mode. Case 2 fails on the comparison; this one fails on the
+# empty-extraction guard, which runs after a comparison that had nothing left to
+# compare and returned true, because every cap here sits in a sub-cell with
+# no net crossing its boundary and the layout netlist comes out empty. The
 # extraction hole is still open: what the deck no longer does is call an empty
-# netlist a match, which is how this case passed before the guard. The layout is
-# referenced across from the unit testcase rather than copied, so the flat and
-# deep runs cannot drift apart.
+# netlist a match, which is how this case passed before the guard. Read it
+# together with case 13, which is the same hierarchy wired to the top and must
+# pass; the cause itself is not diagnosed. The layout is referenced across from
+# the unit testcase rather than copied, so the flat and deep runs cannot drift
+# apart.
 run_case "12_deep_empty_extraction_reported" \
   "../../unit/cap_devices/layout/cap_cmomi_hier.gds" "cap_cmomi_hier" \
   "hier_deep_missing.cdl" "FAIL" "deep"
+
+# The same hierarchy as case 12, with one Metal4 strap in the top cell joining
+# the two sub-cells, so a net crosses a cell boundary and the sub-circuits keep
+# a pin. Deep extracts both caps and the comparison is real. This case is what
+# makes case 12's failure mean something: on its own, case 12 would keep failing
+# even if deep extraction broke outright, and the suite would stay green.
+run_case "13_deep_wired_hierarchy" \
+  "cmomi_hier_wired.gds" "cmomi_hier_wired" "hier_wired.cdl" "PASS" "deep"
 
 if [[ "${FAILED}" -ne 0 ]]; then
   echo "cap_cmomi checks FAILED (${FAILED} case(s) did not behave as recorded)."
@@ -159,5 +170,5 @@ if [[ "${FAILED}" -ne 0 ]]; then
   exit 1
 fi
 
-echo "cap_cmomi checks PASSED (12 cases behaved as recorded)."
+echo "cap_cmomi checks PASSED (13 cases behaved as recorded)."
 echo "Logs: ${RUN_ROOT}"

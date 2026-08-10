@@ -18,33 +18,32 @@
 *
 * This is chain_missing's perturbation applied to cap_cmomi_hier.gds: a device
 * present in the layout and absent from the schematic. Case 2 catches it on the
-* comparison. This one fails earlier, on the empty-extraction guard, and before
-* that guard existed it PASSED, which is what makes it worth keeping.
+* comparison. This one fails on the empty-extraction guard, which runs after a
+* comparison that had nothing left to compare and returned true; before that guard
+* existed the run PASSED, which is what makes this case worth keeping.
 *
-* What happens in deep mode: a cap_cmomi whose nets never leave its sub-cell
-* gives that sub-circuit no pins at all. align then drops it, having no
-* counterpart for it in the schematic, and here that was the only circuit holding
-* devices, so the layout netlist ends up empty. compare is left with no pair to
-* compare and returns true, which is how an empty run used to be reported as a
-* match. Extraction is not what fails: the .lvsdb still carries the cap_cmomi
-* device abstract with its mim_top/mim_btm terminal geometry, identical to the
-* flat run's, and no marker is ever rejected.
+* What happens in deep mode: every cap here sits in a sub-cell with no net
+* crossing that cell's boundary, and the layout netlist comes out empty. compare
+* is then left with no pair to compare and returns true, which is how an empty
+* run used to be reported as a match. Extraction is not what fails: the .lvsdb
+* still carries the cap_cmomi device abstract with its mim_top/mim_btm terminal
+* geometry, identical to the flat run's, and no marker is ever rejected.
 *
-* The trigger is narrower than "geometry below the top cell". Each of these was
-* run to bound it:
-*   - not the hierarchy. Put two such sub-cells side by side and join them with a
-*     Metal4 strap drawn in the top cell, so one net crosses a cell boundary, and
-*     deep extracts both caps, matches the correct netlist and fails one that is
-*     missing a device.
+* This is recorded, not explained. The cause was not diagnosed. What was measured,
+* and only this:
+*   - not the hierarchy. Case 13 is this same shape with one Metal4 strap drawn in
+*     the top cell, so a single net crosses a boundary, and deep extracts both
+*     caps, matches the correct netlist and fails one missing a device.
 *   - not an isolated cap by itself. Add a third cap, in its own cell and
-*     connected to nothing, beside those two, and all three still extract. It
-*     takes every device in the layout being isolated to empty the netlist.
+*     connected to nothing, beside two strapped ones, and all three still extract.
 *   - not simplify (--no_simplify), not --top_lvl_pins, not a missing --topcell.
-*   - not deep mode in general. The sg13_lv_nmos testcase wrapped in a parent cell
-*     keeps its devices because its sub-circuit still has one pin, the bulk net.
-*     Every device in this PDK except cap_cmomi has a bulk terminal, so a MoM cap,
-*     with two plain metal terminals and nothing else, is the only one that can
-*     sit in a sub-cell with nothing crossing its boundary.
+*   - not helped by naming: a hierarchical schematic declaring a subcircuit named
+*     after the sub-cell leaves the layout netlist just as empty.
+*
+* Nothing above establishes that this is cap_cmomi-specific, so do not read it
+* that way. Note for whoever tries to settle it with another device: run_lvs.py
+* writes the extracted .cir before align, so a run that aborts there still leaves
+* a plausible-looking netlist behind. Read the verdict line, not the artifacts.
 *
 * What the guard changed, and what it did not. The deck now refuses to call an
 * empty layout netlist a match, so this case is reported instead of passing. The
@@ -57,7 +56,7 @@
 * two cases cannot drift apart. That unit case runs the same layout in flat mode
 * and must pass; this one records what the same layout does in deep.
 *
-* Expected to FAIL, on the guard rather than on the comparison.
+* Expected to FAIL, on the guard rather than on the comparison itself.
 .SUBCKT cap_cmomi_hier
 C1 P1 M1 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=4 feed=double
 C2 P2 M2 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=4 feed=double

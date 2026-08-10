@@ -54,11 +54,15 @@ What follows from that:
   metal from routing that happens to cross over it, so it misreports as soon as
   anything is routed above the cap. Doing this properly needs the PCell to
   encode the band in the markup.
-- `m` is not compared either, despite being declared `is_primary=true`: the
-  SPICE reader takes it as the standard device multiplier rather than mapping it
-  onto the class parameter of the same name, so a netlist declaring `m=2`
-  against a single placement still matches. That matters because `m` is the only
-  token beyond `w`/`l` that the xschem symbol's `lvs_format` emits.
+- `m` is not compared either, despite being declared `is_primary=true`, and the
+  reason is a substring test. `CustomReader` intercepts every `C` element
+  (`CUSTOM_READER` in `globals.lvs`), so the default SPICE delegate never runs,
+  and `map_capacitor_params` sets `m` only `if model.downcase.include?('mim')`.
+  `cap_cmomi` does not contain `mim`, so the value is read off the card and
+  dropped, and both sides keep the class default of 1. A netlist declaring `m=2`
+  against a single placement matches. That matters because `m` is the only token
+  beyond `w`/`l` that the xschem symbol's `lvs_format` emits. Anyone fixing this
+  should look at that `'mim'` gate, not at multiplier handling.
 - The capacitance itself comes from the ngspice/Verilog-A model, never from
   extraction, so LVS says nothing about whether the layout realises the C the
   schematic asked for.
@@ -77,32 +81,39 @@ What follows from that:
   the comparison then matched any schematic at all.
 - `feed='none'` still emits two pins, so an array with no feed structure, which
   is not a usable capacitor, extracts as an ordinary cap_cmomi.
-- **In deep mode, a cap_cmomi whose nets never leave its sub-cell is not
-  extracted.** That sub-circuit ends up with no pins, `align` drops it for having
-  no counterpart in the schematic, and if it held the only devices the layout
-  netlist comes out empty. Extraction is not what fails: the `.lvsdb` still
-  carries the device abstract with its terminal geometry, identical to the flat
-  run's, and no marker is ever rejected. The trigger is narrow. Join two such
-  sub-cells with a strap drawn in the top cell and both caps extract, match a
-  correct netlist and fail a wrong one; add a third cap in its own unconnected
-  cell and all three still extract. It takes every device in the layout being
-  isolated to empty the netlist. It is not `simplify`, not `--top_lvl_pins`, not
-  a missing `--topcell`, and not deep mode in general: the `sg13_lv_nmos`
-  testcase wrapped the same way keeps its devices, because its sub-circuit still
-  has one pin on the bulk net. Every device here except `cap_cmomi` has a bulk
-  terminal, which is why a MoM cap is the only one that can be fully isolated.
+- **In deep mode, a layout whose every cap_cmomi sits in a sub-cell with no net
+  crossing that cell's boundary extracts nothing.** The netlist comes out empty
+  and the comparison has nothing left to compare. Extraction itself is not what
+  fails: the `.lvsdb` still carries the device abstract with its terminal
+  geometry, identical to the flat run's, and no marker is ever rejected.
+
+  This is recorded, not explained. What is measured, and only this: case 12 is
+  that layout and it fails; case 13 is the same hierarchy with one Metal4 strap
+  drawn in the top cell, so a single net crosses a boundary, and it extracts both
+  caps and gets both verdicts right. A third cap in its own never-connected cell
+  beside two strapped ones still extracts, so one isolated cap is not enough to
+  trigger it. It is not `simplify` (`--no_simplify` changes nothing), not
+  `--top_lvl_pins`, not a missing `--topcell`, and writing the schematic
+  hierarchically with a subcircuit named after the sub-cell does not help either.
+
+  Nothing here establishes that it is specific to `cap_cmomi`, so do not read it
+  that way.
+
   An empty layout netlist used to be reported as a match, since `compare` had no
   pair left to compare; the deck now refuses that (see below). The extraction
-  hole itself is open, so deep mode still cannot verify such a layout. Case 12 of
-  the checks suite records it, and see
+  hole itself is open, so deep mode still cannot verify such a layout. See
   [#91](https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91).
 - **An empty layout netlist is no longer a match.** `sg13cmos5l.lvs` counts the
-  devices the schematic declares before `align` and the devices left on the
-  layout side after it, and reports a mismatch when the layout side is empty and
-  the schematic is not. Without it, any extraction that silently produced nothing
-  ended in a green run, whatever the cause. This is local to this PDK: the
-  cap_cmomi rule decks are symlinks into `ihp-sg13g2`, but the comparison flow is
-  not, and G2 at the pinned commit still reports a match on the same layout.
+  devices hanging off the schematic's top circuit before `align`, and the devices
+  left on the layout side after it, and reports a mismatch when the layout side
+  is empty and the schematic side is not. Without it, any extraction that
+  silently produced nothing ended in a green run, whatever the cause. The
+  schematic count is scoped to the compared top on purpose: counting the whole
+  file instead failed a device-free block, a filler or a routing-only cell,
+  verified against a library netlist whose other subcircuits do hold devices.
+  This is local to this PDK: the cap_cmomi rule decks are symlinks into
+  `ihp-sg13g2`, but the comparison flow is not, and G2 at the pinned commit still
+  reports a match on the same layout.
 
 `make test-LVS-cmomi-checks` holds all of the above as executable cases, so any
 change in this behaviour surfaces as a verdict change rather than silently
@@ -161,7 +172,7 @@ make test-LVS-SVS
 # Run manual tests (ESD ptap, implicit connections, SRAM support, cap_cmomi)
 make test-LVS-manual
 
-# Run the cap_cmomi checks on their own (3 FAIL + 2 ERROR + 7 PASS, all expected)
+# Run the cap_cmomi checks on their own (3 FAIL + 2 ERROR + 8 PASS, all expected)
 make test-LVS-cmomi-checks
 
 # Run standard cell regression (generates testcases then runs LVS)
@@ -182,12 +193,12 @@ Manual tests validate advanced LVS features using CMOS-compatible testcases
 | esd_ptap | ESD structure with ptap | PASS |
 | implicit_connections | SP6TCClockGenerator with implicit vdd net | PASS |
 | sram_support | SP01 SRAM cell (deep mode, OAS format) | PASS |
-| cap_cmomi_checks | cap_cmomi detection limits, see above | 3 FAIL + 2 ERROR + 7 PASS |
+| cap_cmomi_checks | cap_cmomi detection limits, see above | 3 FAIL + 2 ERROR + 8 PASS |
 
-Every one of the 12 cases in `cap_cmomi_checks` declares the verdict it expects,
+Every one of the 13 cases in `cap_cmomi_checks` declares the verdict it expects,
 and the suite fails if a case stops behaving the way it is recorded to behave.
 ERROR means the extractor rejected the layout and the run aborted before any
-comparison ran. The eight passing cases are as load bearing as the four
+comparison ran. The eight passing cases are as load bearing as the five
 detections: they record what `cap_cmomi` matching does *not* check, which would
 otherwise only be visible by reading the rule decks.
 
@@ -220,7 +231,10 @@ python3 run_lvs.py --layout=design.gds --net_only
 # Implicit net connections (for SRAM or custom cells)
 python3 run_lvs.py --layout=design.gds --netlist=design.cdl --implicit_nets="VDD,VSS"
 
-# Ignore top-level port mismatches (floating-bulk SRAM)
+# Ignore top-level port mismatches. Needed by every testcase in this tree, not
+# just the floating-bulk SRAM: none of the layouts carries net labels on the
+# deck's label layers, so every top-level net stays anonymous and the strict
+# port check would fail them all. run_regression.py passes it for every device.
 python3 run_lvs.py --layout=design.gds --netlist=design.cdl --ignore_top_ports_mismatch
 ```
 
