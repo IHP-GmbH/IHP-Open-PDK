@@ -27,7 +27,12 @@
         "inductor_cb.tcl",
         "isolbox_cb.tcl",
         "res_cb.tcl",
-        "mos_cb.tcl"
+        "mos_cb.tcl",
+        "rfmos_cb.tcl",
+        "npn_cb.tcl",
+        "tap_cb.tcl",
+        "nofiller_cb.tcl",
+        "via_cb.tcl"
     ],
     "callbackDefinition": {
         "callbackList": [
@@ -62,7 +67,7 @@
                 ]
             },
             {
-                "devices": ["dantenna", "dpantenna"],
+                "devices": ["dantenna", "dpantenna", "pnpMPA"],
                 "callbacks": [
                     {
                         "callback": "CbDiode",
@@ -209,6 +214,105 @@
                         "callback": "NLCB_l",
                         "pcellParameters": ["l"],
                         "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["rfnmos", "rfpmos", "rfnmosHV", "rfpmosHV"],
+                "callbacks": [
+                    {
+                        "callback": "rfmos_cb_w",
+                        "pcellParameters": ["w"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "rfmos_cb_l",
+                        "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "rfmos_cb_ng",
+                        "pcellParameters": ["ng"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "rfmos_cb_sd",
+                        "pcellParameters": ["calculate"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "rfmos_cb_cnt_rows",
+                        "pcellParameters": ["cnt_rows"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["npn13G2"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_npnG2_Nx",
+                        "pcellParameters": ["Nx"],
+                        "usePcellParameterAsArgument": "no",
+                        "parameterValue": "t"
+                    }
+                ]
+            },
+            {
+                "devices": ["npn13G2L"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_npnG2L_Nx",
+                        "pcellParameters": ["Nx"],
+                        "usePcellParameterAsArgument": "no",
+                        "parameterValue": "t"
+                    },
+                    {
+                        "callback": "NLCB_npnG2L_le",
+                        "pcellParameters": ["le"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["npn13G2V"],
+                "callbacks": [
+                    {
+                        "callback": "NLCB_npnG2L_Nx",
+                        "pcellParameters": ["Nx"],
+                        "usePcellParameterAsArgument": "no",
+                        "parameterValue": "t"
+                    },
+                    {
+                        "callback": "NLCB_npnG2V_le",
+                        "pcellParameters": ["le"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["ptap1", "ntap1"],
+                "callbacks": [
+                    {
+                        "callback": "CbTap",
+                        "pcellParameters": ["Calculate", "R", "w", "l", "A", "Perim"],
+                        "usePcellParameterAsArgument": "yes"
+                    }
+                ]
+            },
+            {
+                "devices": ["NoFillerStack"],
+                "callbacks": [
+                    {
+                        "callback": "noFiller_cb",
+                        "pcellParameters": ["w", "l"],
+                        "usePcellParameterAsArgument": "yes"
+                    },
+                    {
+                        "callback": "noFiller_cb",
+                        "pcellParameters": ["noAct", "noGP", "noM1", "noM2", "noM3", "noM4", "noM5", "noTM1", "noTM2"],
+                        "usePcellParameterAsArgument": "no",
+                        "parameterValue": "m"
                     }
                 ]
             }

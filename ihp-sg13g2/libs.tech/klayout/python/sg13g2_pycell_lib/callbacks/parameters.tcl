@@ -123,7 +123,11 @@ proc cni_getParamValue {param inst} {
 proc cni_setParamValue {param value inst {evalCB true} } {
     global currentCellParameters
 
-    dict set currentCellParameters $param $value
+    if {[dict exists $currentCellParameters $param]} {
+        dict set currentCellParameters $param $value
+    } else {
+        #puts "Warning: parameter '$param' not bound to current PyCell"
+    }
 }
 
 global SG13_GRID

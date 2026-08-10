@@ -26,9 +26,9 @@ proc rfmos_cb_ng {} {
     set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
     
-    set ngv [iPDK_getParamValue ng $cellId]
+    set ng [iPDK_getParamValue ng $cellId]
 
-    set ng [expr int(ng)]
+    set ng [expr int($ng)]
     if {$ng < 1} {
         set ng 1
         CbMessage "ng out of range, set to 1"
@@ -108,7 +108,7 @@ proc rfmos_cb_l {} {
         return t
     }
     
-    set l [GridFix [expr [$l*1e6]]
+    set l [GridFix [expr $l*1e6]]
     iPDK_setParamValue l [Ftos [expr $l/1e6] 3] $cellId
 }
 
@@ -148,7 +148,7 @@ proc rfmos_cb_w {} {
         return t
     }
     
-    set w [expr [GridFix [expr ($w*1e6)]/1e6]]
+    set w [expr {[GridFix [expr ($w*1e6)] ] / 1e6}]
     iPDK_setParamValue w  [Ftos [expr $w*$ng] 3] $cellId
     iPDK_setParamValue ws [Ftos $w 3] $cellId
     
@@ -174,7 +174,7 @@ proc rfmos_cb_sd {} {
     set z1 [expr 0.345e-6+0.41e-6*($nr-1)]
     set z2 [expr  0.38e-6+0.41e-6*($nr-1)]
     
-    if {[oddp $ng]} {
+    if {[odd $ng]} {
         set as [expr $ws*($z1+(($ng-1)/2)*$z2)]
         set ad $as
         set ps [expr ($ws*($ng+1)+$z1*2+$z2*($ng-1))]

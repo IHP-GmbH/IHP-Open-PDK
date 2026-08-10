@@ -117,13 +117,14 @@ proc NLCB_npn_Ny {} {
     
     global SG13_EPSILON2
 
+    set cellId [iPDK_getCurrentInst]
+
     set tmpwe [Stof [iPDK_getParamValue we $cellId]]
     set tmple [Stof [iPDK_getParamValue le $cellId]]
     set tmpNx [expr int(int([iPDK_getParamValue Nx $cellId])+$SG13_EPSILON2)]
     set tmpNy [expr int(int([iPDK_getParamValue Ny $cellId])+$SG13_EPSILON2)]
     set Iarea [Stof [iPDK_getParamValue Iarea $cellId]]
     
-    set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
 
     set Nymin [expr int([techGetParam ${cell}_minNY])]
@@ -213,13 +214,14 @@ proc NLCB_npnG2_Nx {{change nil}} {
     
     global SG13_EPSILON2
 
+    set cellId [iPDK_getCurrentInst]
+
     set tmpwe [Stof [iPDK_getParamValue we $cellId]]
     set tmple [Stof [iPDK_getParamValue le $cellId]]
     set tmpNx [expr int(int([iPDK_getParamValue Nx $cellId])+$SG13_EPSILON2)]
     set tmpNy [expr int(int([iPDK_getParamValue Ny $cellId])+$SG13_EPSILON2)]
     set Iarea [Stof [iPDK_getParamValue Iarea $cellId]]
     
-    set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
 
     set Nxmin [expr int([techGetParam ${cell}_minNX])]
@@ -267,13 +269,14 @@ proc NLCB_npnG2L_Nx {{change nil}} {
     
     global SG13_EPSILON2
 
+    set cellId [iPDK_getCurrentInst]
+
     set tmpwe [Stof [iPDK_getParamValue we $cellId]]
     set tmple [Stof [iPDK_getParamValue le $cellId]]
     set tmpNx [expr int(int([iPDK_getParamValue Nx $cellId])+$SG13_EPSILON2)]
-    set tmpNy [expr int(int([iPDK_getParamValue Ny $cellId])+$SG13_EPSILON2)]
+    #set tmpNy [expr int(int([iPDK_getParamValue Ny $cellId])+$SG13_EPSILON2)]
     set Iarea [Stof [iPDK_getParamValue Iarea $cellId]]
     
-    set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
 
     set Nxmin [expr int([techGetParam ${cell}_minNX])]
@@ -321,10 +324,12 @@ proc NLCB_npnG2L_le {} {
     
     global SG13_EPSILON2
 
+    set cellId [iPDK_getCurrentInst]
+
     set tmpwe [Stof [iPDK_getParamValue we $cellId]]
     set tmple [Stof [iPDK_getParamValue le $cellId]]
     set tmpNx [expr int([iPDK_getParamValue Nx $cellId])]
-    set tmpNy [expr int([iPDK_getParamValue Ny $cellId])]
+    #set tmpNy [expr int([iPDK_getParamValue Ny $cellId])]
     set Iarea [Stof [iPDK_getParamValue Iarea $cellId]]
     
     set lemin [Stof 1.0e-6]
@@ -356,10 +361,12 @@ proc NLCB_npnG2V_le {} {
     
     global SG13_EPSILON2
 
+    set cellId [iPDK_getCurrentInst]
+
     set tmpwe [Stof [iPDK_getParamValue we $cellId]]
     set tmple [Stof [iPDK_getParamValue le $cellId]]
     set tmpNx [expr int([iPDK_getParamValue Nx $cellId])]
-    set tmpNy [expr int([iPDK_getParamValue Ny $cellId])]
+    #set tmpNy [expr int([iPDK_getParamValue Ny $cellId])]
     set Iarea [Stof [iPDK_getParamValue Iarea $cellId]]
     
     set lemin [Stof 1.0e-6]

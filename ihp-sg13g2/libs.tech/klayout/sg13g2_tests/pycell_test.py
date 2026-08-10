@@ -26,8 +26,10 @@
 # KLAYOUT_PATH=$(pwd)/.. klayout ihp-pycells.gds -e
 
 layout = pya.Layout()
-pcellNmos = layout.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
-pcellPmos = layout.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
+pcellNmos = layout.create_cell("nmos", "SG13_dev", {})
+pcellNmosHV = layout.create_cell("nmosHV", "SG13_dev", {})
+pcellPmos = layout.create_cell("pmos", "SG13_dev", {})
+pcellPmosHV = layout.create_cell("pmosHV", "SG13_dev", {})
 pcellCmim = layout.create_cell("cmim", "SG13_dev", {})
 pcellCapMom = layout.create_cell("cmomi", "SG13_dev", { "w": "5.0u", "l": "5.0u", "mmin": 1, "mmax": 5, "feed": "double" })
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
@@ -54,10 +56,14 @@ pcellNoFillerStack = layout.create_cell("NoFillerStack", "SG13_dev", {})
 pcellSVaricap = layout.create_cell("SVaricap", "SG13_dev", {})
 pcellEsd = layout.create_cell("esd", "SG13_dev", {})
 pcellIsolbox = layout.create_cell("isolbox", "SG13_dev", {})
+pcellSchottky = layout.create_cell("schottky", "SG13_dev", {})
 
 top = layout.create_cell("TOP")
+
 top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
+top.insert(pya.DCellInstArray(pcellNmosHV, pya.DTrans(pya.DVector(2, 0))))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(4, 0))))
+top.insert(pya.DCellInstArray(pcellPmosHV, pya.DTrans(pya.DVector(6, 0))))
 top.insert(pya.DCellInstArray(pcellNpn13G2, pya.DTrans(pya.DVector(11, 3.1))))
 top.insert(pya.DCellInstArray(pcellNpn13G2L, pya.DTrans(pya.DVector(16, -0.3))))
 top.insert(pya.DCellInstArray(pcellNpn13G2V, pya.DTrans(pya.DVector(25, -0.3))))
@@ -84,6 +90,7 @@ top.insert(pya.DCellInstArray(pcellSealring, pya.DTrans(pya.DVector(160, -190)))
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 60))))
 top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(40, 120))))
 top.insert(pya.DCellInstArray(pcellIsolbox, pya.DTrans(pya.DVector(20, 140))))
+top.insert(pya.DCellInstArray(pcellSchottky, pya.DTrans(pya.DVector(20, 150))))
 
 output = "SG13_dev.gds"
 layout.write(output)
