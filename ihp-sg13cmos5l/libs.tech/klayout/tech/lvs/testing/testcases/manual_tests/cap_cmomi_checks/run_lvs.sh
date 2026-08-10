@@ -141,14 +141,17 @@ run_case "11_wrong_multiplier_accepted" \
   "cmomi_chain.gds" "cmomi_chain" "chain_wrong_m.cdl" "PASS"
 
 # The same missing-device perturbation as case 2, on the hierarchical unit
-# layout, in deep mode. Case 2 fails; this passes, because in deep mode a
-# cap_cmomi layout with sub-cells produces no circuit at all, so the empty
-# netlist matches any schematic. The extractor itself still fires. The layout is
+# layout, in deep mode. Case 2 fails on the comparison; this one fails before it,
+# on the empty-extraction guard. In deep mode a cap_cmomi whose nets never leave
+# its sub-cell gives that sub-circuit no pins, align drops it for having no
+# counterpart in the schematic, and the layout netlist ends up empty. The
+# extraction hole is still open: what the deck no longer does is call an empty
+# netlist a match, which is how this case passed before the guard. The layout is
 # referenced across from the unit testcase rather than copied, so the flat and
 # deep runs cannot drift apart.
-run_case "12_deep_mode_extracts_nothing" \
+run_case "12_deep_empty_extraction_reported" \
   "../../unit/cap_devices/layout/cap_cmomi_hier.gds" "cap_cmomi_hier" \
-  "hier_deep_missing.cdl" "PASS" "deep"
+  "hier_deep_missing.cdl" "FAIL" "deep"
 
 if [[ "${FAILED}" -ne 0 ]]; then
   echo "cap_cmomi checks FAILED (${FAILED} case(s) did not behave as recorded)."

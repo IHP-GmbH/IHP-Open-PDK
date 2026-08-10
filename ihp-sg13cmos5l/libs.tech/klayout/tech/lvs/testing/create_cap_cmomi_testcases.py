@@ -190,15 +190,16 @@ def build_original():
     the drift can be found and undone instead of being unreproducible.
 
     Flattening also happens to take this testcase out of the deep-mode hole: as
-    two sub-cells it extracted nothing in deep mode and matched anything, and as
-    one flat cell it extracts both caps. See build_hier.
+    two sub-cells with nothing connected across their boundaries it extracted
+    nothing in deep mode and matched anything, and as one flat cell it extracts
+    both caps. See build_hier.
 
     Same intent as before, so cap_cmomi.cdl is unchanged: one 'double' feed cap
     and one 'same' feed cap, each on its own net pair. The 'same' cap is what
     makes the per-metal pin connect observable, since its two plates are stacked
     over one footprint and only that connect keeps them apart.
 
-    Flattened, like the other generated layouts. A cap_cmomi below the top cell
+    Flattened, like the other generated layouts. A cap_cmomi alone in a sub-cell
     extracts nothing in deep mode (see build_hier), and a testcase should not
     depend on that.
     """
@@ -229,12 +230,15 @@ def build_hier():
     Deliberately not flattened, so the same marker geometry appears under
     several cell instances. The regression runs it in the default flat mode.
 
-    The same layout in deep mode produces no circuit at all: the .lvsdb still
-    carries the cap_cmomi device abstract with its terminal geometry, so the
-    extractor fired, but nothing instantiates it, the netlist is empty and the
-    comparison matches any schematic. It therefore cannot be a unit testcase
-    in deep mode, and the checks suite runs it there instead, against a netlist
-    that is wrong on purpose, so the hole is recorded rather than hidden.
+    None of these caps connects to anything outside its own cell, and in deep
+    mode that is what breaks. A sub-circuit with no pins is dropped by align, and
+    since these hold the only devices, the layout netlist comes out empty; the
+    .lvsdb still carries the cap_cmomi device abstract with its terminal
+    geometry, so the extractor did fire. An empty netlist is reported as a
+    mismatch now, so this cannot be a unit testcase in deep mode, and the checks
+    suite runs it there as case 12 instead. Joining two of the sub-cells with a
+    strap in the top cell is enough to make the same hierarchy extract correctly,
+    so the hierarchy itself is not what breaks it.
     """
     layout = _new_layout()
     top = layout.create_cell("cap_cmomi_hier")
@@ -405,4 +409,8 @@ def main():
     print("Done.")
 
 
-main()
+# Guarded, so importing this module to reuse its helpers does not rewrite every
+# checked-in layout as a side effect. `klayout -zz -r` sets __name__ to
+# "__main__", so the documented invocation still runs.
+if __name__ == "__main__":
+    main()

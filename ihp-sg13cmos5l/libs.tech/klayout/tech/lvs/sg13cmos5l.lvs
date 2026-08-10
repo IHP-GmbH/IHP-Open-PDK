@@ -508,9 +508,29 @@ else
   else
     logger.info('SG13CMOS5L LVS flow: extraction -> alignment -> option preparation -> comparison.')
   end
+  # align drops circuits that have no counterpart on the other side. When the
+  # extraction produced no circuit at all, that removes the schematic's top
+  # circuit as well, compare is then left with no pair to compare and returns
+  # true, and a run that checked nothing is reported as a match. The counts here
+  # are what the guard after the comparison uses to tell that case apart from a
+  # real match.
+  count_devices = lambda do |target_netlist|
+    total = 0
+    target_netlist.each_circuit { |circuit| circuit.each_device { |_device| total += 1 } }
+    total
+  end
+  schematic_device_count = count_devices.call(schematic)
+
   # === Aligns the extracted netlist vs. the schematic ===
   logger.info('Starting SG13CMOS5L LVS Alignment')
   align
+
+  # The layout side is counted after align, and only here: before it a deep-mode
+  # netlist holds one device per circuit definition rather than one per
+  # placement, so an earlier count undercounts a cell instanced more than once.
+  layout_device_count = count_devices.call(netlist)
+  logger.info("Devices to compare: layout=#{layout_device_count} " \
+              "schematic=#{schematic_device_count} (schematic counted before alignment)")
 
   #=== NETLIST OPTIONS ===
   logger.info('Starting SG13CMOS5L LVS Simplification')
@@ -529,6 +549,20 @@ else
     logger.info('Starting SG13CMOS5L LVS Comparison in strict port mode.')
     logger.info('flag_missing_ports enabled: missing/mislabeled top-level ports are treated as errors.')
     success = compare && flag_missing_ports
+  end
+
+  # A comparison with nothing on the layout side is not a match, whatever compare
+  # returned. This is the only thing standing between an extraction that silently
+  # produced nothing and a green run.
+  if layout_device_count.zero? && schematic_device_count > 0
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    logger.error('ERROR : The layout netlist holds no devices while the schematic holds ' \
+                 "#{schematic_device_count}, so the comparison had nothing to compare.")
+    logger.error('Check the extraction: the device markers may be missing, or every device ' \
+                 'may sit in a sub-cell with no net crossing its boundary, which leaves the ' \
+                 'extracted netlist empty in deep mode.')
+    logger.info('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    success = false
   end
 
   #================================================

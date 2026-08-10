@@ -77,19 +77,32 @@ What follows from that:
   the comparison then matched any schematic at all.
 - `feed='none'` still emits two pins, so an array with no feed structure, which
   is not a usable capacitor, extracts as an ordinary cap_cmomi.
-- **In deep mode, cap_cmomi geometry below the top cell produces no circuit at
-  all**, and the empty netlist then matches any schematic. Extraction is not what
-  fails: the `.lvsdb` still carries the device abstract with its terminal
-  geometry, identical to the flat run's, and no marker is ever rejected. What is
-  missing is the circuit, so the devices are never instantiated. Every cap_cmomi
-  layout here that is a single flat cell deep-extracts correctly; wrap one in a
-  parent cell and the same shapes drop to zero circuits and zero nets. It is not
-  `simplify`, not a missing `--topcell`, and not deep mode in general, since the
-  `sg13_lv_nmos` switch testcase wrapped the same way still extracts its devices.
-  Case 12 of the checks suite records it. Deep is not the default for
-  `run_lvs.py` or for the regression, so nothing in CI runs cap_cmomi that way,
-  but a user who does gets a clean run that checked nothing. Cause not diagnosed,
-  see [#91](https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91).
+- **In deep mode, a cap_cmomi whose nets never leave its sub-cell is not
+  extracted.** That sub-circuit ends up with no pins, `align` drops it for having
+  no counterpart in the schematic, and if it held the only devices the layout
+  netlist comes out empty. Extraction is not what fails: the `.lvsdb` still
+  carries the device abstract with its terminal geometry, identical to the flat
+  run's, and no marker is ever rejected. The trigger is narrow. Join two such
+  sub-cells with a strap drawn in the top cell and both caps extract, match a
+  correct netlist and fail a wrong one; add a third cap in its own unconnected
+  cell and all three still extract. It takes every device in the layout being
+  isolated to empty the netlist. It is not `simplify`, not `--top_lvl_pins`, not
+  a missing `--topcell`, and not deep mode in general: the `sg13_lv_nmos`
+  testcase wrapped the same way keeps its devices, because its sub-circuit still
+  has one pin on the bulk net. Every device here except `cap_cmomi` has a bulk
+  terminal, which is why a MoM cap is the only one that can be fully isolated.
+  An empty layout netlist used to be reported as a match, since `compare` had no
+  pair left to compare; the deck now refuses that (see below). The extraction
+  hole itself is open, so deep mode still cannot verify such a layout. Case 12 of
+  the checks suite records it, and see
+  [#91](https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91).
+- **An empty layout netlist is no longer a match.** `sg13cmos5l.lvs` counts the
+  devices the schematic declares before `align` and the devices left on the
+  layout side after it, and reports a mismatch when the layout side is empty and
+  the schematic is not. Without it, any extraction that silently produced nothing
+  ended in a green run, whatever the cause. This is local to this PDK: the
+  cap_cmomi rule decks are symlinks into `ihp-sg13g2`, but the comparison flow is
+  not, and G2 at the pinned commit still reports a match on the same layout.
 
 `make test-LVS-cmomi-checks` holds all of the above as executable cases, so any
 change in this behaviour surfaces as a verdict change rather than silently
@@ -148,7 +161,7 @@ make test-LVS-SVS
 # Run manual tests (ESD ptap, implicit connections, SRAM support, cap_cmomi)
 make test-LVS-manual
 
-# Run the cap_cmomi checks on their own (2 FAIL + 2 ERROR + 8 PASS, all expected)
+# Run the cap_cmomi checks on their own (3 FAIL + 2 ERROR + 7 PASS, all expected)
 make test-LVS-cmomi-checks
 
 # Run standard cell regression (generates testcases then runs LVS)
@@ -169,7 +182,7 @@ Manual tests validate advanced LVS features using CMOS-compatible testcases
 | esd_ptap | ESD structure with ptap | PASS |
 | implicit_connections | SP6TCClockGenerator with implicit vdd net | PASS |
 | sram_support | SP01 SRAM cell (deep mode, OAS format) | PASS |
-| cap_cmomi_checks | cap_cmomi detection limits, see above | 2 FAIL + 2 ERROR + 8 PASS |
+| cap_cmomi_checks | cap_cmomi detection limits, see above | 3 FAIL + 2 ERROR + 7 PASS |
 
 Every one of the 12 cases in `cap_cmomi_checks` declares the verdict it expects,
 and the suite fails if a case stops behaving the way it is recorded to behave.

@@ -29,10 +29,11 @@
 * this case can catch.
 *
 * Deep mode is deliberately NOT run here, and not because it is uninteresting:
-* this same layout in deep mode produces no circuit at all and then matches any
-* schematic, so a deep unit testcase would pass without testing anything. That
-* is recorded as case 12 of the cap_cmomi checks suite, which runs this layout
-* in deep mode against a netlist that is wrong on purpose, and see
+* every cap in this layout sits in a sub-cell with no net crossing its boundary,
+* so in deep mode the sub-circuits have no pins, align drops them and the layout
+* netlist comes out empty. The deck reports that now instead of matching, so a
+* deep unit testcase would simply fail. It is case 12 of the cap_cmomi checks
+* suite, which runs this same layout in deep mode and records the failure. See
 * IHP-GmbH/ihp-sg13cmos5l#91.
 .SUBCKT cap_cmomi_hier
 C1 P1 M1 cap_cmomi w=5e-06 l=5e-06 mmin=1 mmax=4 feed=double
