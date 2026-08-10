@@ -44,6 +44,9 @@ TECH_DIR = os.path.dirname(TEST_DIR)
 LIBRARY_NAME = 'SG13_dev'
 TECHNOLOGY_NAME = 'sg13g2'
 
+# A PCell whose module uses '#ifdef', so it goes through the preprocessed path.
+PROBE_PCELL = 'rfnmos'
+
 DEFAULT_PROCESSES = 8
 
 # Tells the copy running inside KLayout that it is the worker. Checking for an
@@ -72,7 +75,7 @@ def runWorker():
 
     # A registered but unusable library is just as broken, so build one PCell
     # that goes through the preprocessed path.
-    layout.create_cell('rfnmos', LIBRARY_NAME, {})
+    layout.create_cell(PROBE_PCELL, LIBRARY_NAME, {})
 
     return 0 if len(pcellNames) > 0 else 1
 
