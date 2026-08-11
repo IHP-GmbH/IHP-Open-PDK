@@ -33,14 +33,16 @@
 // that path, only this one holds a cap_cmomi.va, and the other three
 // (models/, and the r3_cmc and psp103 symlinks into SG13G2) do not.
 //
-// Worth being precise about what that buys, because the two files are no longer
-// interchangeable. Besides these parameter bounds and the dropped Nlay = 5
-// coefficient branch, this PDK's copy now differs numerically from the SG13G2
-// one at every Nlay: it bills the coupled rows the cell draws rather than one
-// fewer, and its single-side feed term is fitted on the drawn cell instead of
-// transferred. Both corrections apply to the g2 twin too and have not been made
-// there yet. So including the wrong file WOULD change numbers here. The include
-// path is right by construction, not because a test would catch it being wrong.
+// Worth being precise about what that buys, because whether it matters depends
+// on what the sibling tree currently holds. Besides these parameter bounds and
+// the dropped Nlay = 5 coefficient branch, this PDK's copy corrects two things
+// in the shipped SG13G2 model: it bills the coupled rows the cell draws rather
+// than one fewer, and its single-side feed term is fitted on the drawn cell
+// instead of transferred. Both corrections apply to the g2 twin, which draws
+// the same cell, and are made on its own branch. Until that lands, including
+// the wrong file WOULD change numbers here; once it does, the two are
+// numerically identical again for Nlay <= 4. Either way the include path is
+// right by construction, not because a test would catch it being wrong.
 
 `pragma modelgen nogen-module
 `include "cap_cmomi.va"
