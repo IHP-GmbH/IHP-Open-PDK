@@ -72,6 +72,17 @@ test-LVS-cmomi-checks:
 	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh
 
 #================================
+# ----- test-LVS-cmomf-checks ---
+#================================
+
+# Same reasoning as the cmomi target above: explicit, so it does not fall
+# through to the test-LVS-% pattern rule.
+.ONESHELL:
+test-LVS-cmomf-checks:
+	@echo "========== SG13CMOS5L cap_cmomf LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomf_checks/run_lvs.sh
+
+#================================
 # ----- test-LVS-manual ---------
 #================================
 
@@ -87,6 +98,7 @@ test-LVS-manual:
 	@bash testcases/manual_tests/implicit_connections/run_lvs.sh || rc=1
 	@bash testcases/manual_tests/sram_support/run_lvs.sh || rc=1
 	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/cap_cmomf_checks/run_lvs.sh || rc=1
 	@exit $$rc
 
 #=================================
@@ -126,8 +138,9 @@ help:
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
 	@echo "... test-LVS-cells             (To run LVS for all standard cells                )"
 	@echo "... test-LVS-SVS               (To run manual SVS regression: 1 PASS + 2 FAIL   )"
-	@echo "... test-LVS-manual            (To run manual tests: ESD, implicit, SRAM, cmomi  )"
+	@echo "... test-LVS-manual            (To run manual tests: ESD, implicit, SRAM, caps    )"
 	@echo "... test-LVS-cmomi-checks      (To run the cap_cmomi detection-limit checks      )"
+	@echo "... test-LVS-cmomf-checks      (To run the cap_cmomf detection-limit checks      )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"
