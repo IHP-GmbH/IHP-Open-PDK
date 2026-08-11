@@ -5,7 +5,7 @@ This is the sg13g2_io library. The following files are included in this library:
   * `InputPerformance.html`: simulation results for input bandwidth and duty ratio.
   * `DriveStrengthSim.html`: simulation of drive strength of the output drivers.
 * `gds/sg13g2_io.gds`: GDS view of the IO cells
-* `spice/sg13g2_io.spi`: spice netlists of the IO cells
+* `spice/sg13g2_io.spice`: spice netlists of the IO cells
 * `lef/sg13g2_io.lef`: LEF view of the IO cells
 * `lib/sg13g2_io_dummy.lib`: dummy liberty view of the IO cells.  
   This file only contains enough information to get the OpenROAD flow going; no timing
