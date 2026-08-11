@@ -30,9 +30,12 @@ class cmomi(DloGen):
     Source model: IHP "MOM model development notes" (Nov 2022),
     which characterised this MoM on the g2 thin-metal stack Metal1..Metal5.
     The metal stack is selected by mmin/mmax (any contiguous subset of
-    Metal1..Metal5). Model coefficients (AREACAP / CFEED_PER_UM) are keyed by
-    LAYER COUNT N = mmax-mmin+1; the g2 values N=3,4,5 are the natively
-    characterised densities (full M1..M5 stack -> N=5).
+    Metal1..Metal5). The area density AREACAP is keyed by LAYER COUNT
+    N = mmax-mmin+1; the g2 values N=3,4,5 are the natively characterised
+    densities (full M1..M5 stack -> N=5). The single-side feed term is the
+    exception: the notes' feed section is a different structure from the one
+    drawn here, so CFEED_SLOPE and CFEED_END are fitted to this cell's own
+    geometry. The C-label and the model must agree; keep both in step.
 
     Topology (brick-staggered interdigitated teeth):
       * Unit cell 0.840 x 0.890 um, tiled nx (X, finger length = l) by
@@ -57,7 +60,8 @@ class cmomi(DloGen):
                    PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
                    below it, overlapping in x,y but with no via between them
                    (separate nets). That plate overlap is the feed capacitance
-                   Cfeed ~ (active_y*UC_Y + 0.64) * cfeed_per_um.
+                   Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len
+                   the drawn pad height ny*UC_Y + 2*T_BAR.
                    Requires mmax > mmin (>=2 metals) for the two stacked plates;
                    a single-metal stack has no second layer, so use 'double'
                    when mmin == mmax.
@@ -117,7 +121,14 @@ class cmomi(DloGen):
     # N=2 is extrapolated (~+0.27 fF/um^2 per thin layer); unmeasured.
     # ---------------------------------------------------------------
     AREACAP      = {2: 0.55, 3: 0.82, 4: 1.09, 5: 1.36}
-    CFEED_PER_UM = {2: 0.70, 3: 0.97, 4: 1.28, 5: 1.46}
+    # Single-side feed, measured on the cell as drawn rather than taken from the
+    # notes: Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len the drawn
+    # height of the two stacked pads. No layer keying: those pads sit on the top
+    # two metals whatever the stack is, every thin-metal via tier is 0.54 um, and
+    # the measurement is flat for N>=3 (a two-metal window reads ~3% lower,
+    # inside the term's own error bar). See cap_cmomi.va for the provenance.
+    CFEED_SLOPE  = 0.1625
+    CFEED_END    = 0.0916
 
     # ---------------------------------------------------------------
     # Parameter specs
@@ -427,14 +438,20 @@ class cmomi(DloGen):
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
         # 8) Capacitance label (must match the simulation model, contract).
+        # The active area bills the rows this cell DRAWS, which is ny: every one
+        # of them has a counter electrode. The reference notes subtract a row
+        # because their characterised structure ends in single fingers that face
+        # nothing (p3) and one pitch of its width does not couple; nothing here
+        # is drawn that way. ny_active is that pre-fix count and no longer enters
+        # any billed quantity: the feed term is fitted against pad_len, the drawn
+        # pad height. Keep all of this identical to cap_cmomi.va.
         n_clamped = min(self.METAL_MAX, max(2, n_layers))
         areacap = self.AREACAP[n_clamped]
-        active_area = nx_active * self.UC_X * ny_active * self.UC_Y
+        active_area = nx_active * self.UC_X * ny * self.UC_Y
         c_active = areacap * active_area
         if self.feed == 'same':
-            cfeed = self.CFEED_PER_UM[n_clamped]
-            feed_width = ny_active * self.UC_Y + 0.64
-            c_total = c_active + cfeed * feed_width
+            pad_len = ny * self.UC_Y + 2 * self.T_BAR
+            c_total = c_active + self.CFEED_SLOPE * pad_len + self.CFEED_END
         else:
             c_total = c_active
         label_text = 'cap_cmomi C={:.3f}fF'.format(c_total)

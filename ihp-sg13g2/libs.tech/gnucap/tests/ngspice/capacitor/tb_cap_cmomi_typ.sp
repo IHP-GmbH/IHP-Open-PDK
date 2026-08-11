@@ -9,7 +9,7 @@
 * SAME libs.tech/verilog-a/cap_cmomi/cap_cmomi.va source the gnucap plugin uses --
 * cross-checks the two simulators against each other.
 *   Device: 5 um x 5 um, Metal1..Metal5, feed = double.
-*   Expected (matches the .gc): f_3dB ~ 78.24 MHz -> C ~ 20.34 fF.
+*   Expected (matches the .gc): f_3dB ~ 62.60 MHz -> C ~ 25.43 fF.
 *
 * The cap_cmomi OSDI is loaded by the directory .spiceinit; cap_cmomi.lib (the
 * 2-terminal wrapper subckt, which ties SUB to ground) is resolved through the

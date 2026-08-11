@@ -22,7 +22,7 @@
   <GND * 1 460 320 0 0 0 0>
   <SpiceLib SpiceLib1 1 90 70 -13 18 0 0 "cornerCAP.lib" 1 "cap_typ" 1>
   <.AC AC1 1 290 50 0 32 0 0 "log" 1 "1e4" 1 "1e10" 1 "1001" 1 "no" 0>
-  <cmomi C1 1 220 210 -27 23 0 0 "cap_cmomi" 0 "X" 0 "10.0" 1 "70.0" 1 "1" 0 "5" 0 "double" 1 "0" 0 "1" 0 "m*((mmax-mmin+1<=2)?0.55:((mmax-mmin+1==3)?0.82:((mmax-mmin+1==4)?1.09:1.36)))*(max(1,rint(l*1e6/0.84+1e-6-0.5))*0.84)*(max(1,rint(w*1e6/0.89+1e-6-0.5)-1)*0.89)*1e-15" 1 "1" 0>
+  <cmomi C1 1 220 210 -27 23 0 0 "cap_cmomi" 0 "X" 0 "10.0" 1 "70.0" 1 "1" 0 "5" 0 "double" 1 "0" 0 "1" 0 "m*((mmax-mmin+1<=2)?0.55:((mmax-mmin+1==3)?0.82:((mmax-mmin+1==4)?1.09:1.36)))*(max(1,rint(l*1e6/0.84+1e-6-0.5))*0.84)*(max(2,rint(w*1e6/0.89+1e-6-0.5))*0.89)*1e-15" 1 "1" 0>
 </Components>
 <Wires>
   <460 210 460 320 "" 0 0 0 "">
@@ -38,5 +38,5 @@
   </Rect>
 </Diagrams>
 <Paintings>
-  <Text 580 470 12 #000000 0 "High-pass RC: |v(out)| rises through the -3dB corner at f_3dB = 1/(2*pi*R*C), R = 100k.\ncap_cmomi 10x70 (M1..M5, feed=double): f_3dB ~ 1.944 MHz -> C ~ 818.5 fF.\nSame method and result as the xschem test sg13g2_tests/ac_cap_cmomi.">
+  <Text 580 470 12 #000000 0 "High-pass RC: |v(out)| rises through the -3dB corner at f_3dB = 1/(2*pi*R*C), R = 100k.\ncap_cmomi 10x70 (M1..M5, feed=double): f_3dB ~ 1.714 MHz -> C ~ 928.5 fF.\nSame method and result as the xschem test sg13g2_tests/ac_cap_cmomi.">
 </Paintings>
