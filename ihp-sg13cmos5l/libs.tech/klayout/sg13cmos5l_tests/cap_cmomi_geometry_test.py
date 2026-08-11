@@ -33,7 +33,8 @@
 #    cannot be satisfied by two copies of the same mistake agreeing with each
 #    other, which is exactly what a label-against-model comparison does.
 #
-# 2. FREEZE.  A digest of every drawn polygon, pinned to the current output.
+# 2. FREEZE.  A digest of the drawn geometry, pinned to the current output,
+#    taken once per drawing path (each feed variant, each metal window).
 #    The drawn cell is already in fabricated designs, so a model correction must
 #    leave the layout untouched.  Any edit that reaches the drawing path breaks
 #    this check loudly instead of silently changing future GDS.
@@ -69,12 +70,34 @@ FMEAS = 1e6                   # low enough that L and R are negligible vs 1/(wC)
 GEOM_W = [2.0, 3.0, 5.0, 7.0, 8.9, 15.0]
 GEOM_L = [2.0, 3.0, 5.0, 5.5, 10.0, 21.0]
 
-# Layout freeze: digests of the flattened PCell output.  Regenerate only with
-# --update-freeze, and only when the layout was meant to move.
+# Layout freeze: digests of the flattened PCell output.  One entry per drawing
+# path, not just per size: the feed variants and the metal window each build
+# different geometry, and a digest taken only on the default would not see a
+# change confined to one of them.  Regenerate only with --update-freeze, and
+# only when the layout was meant to move.
+FREEZE_CASES = [
+    {"w": 2.0, "l": 2.0, "mmin": 1, "mmax": 4, "feed": "double"},
+    {"w": 5.0, "l": 5.0, "mmin": 1, "mmax": 4, "feed": "double"},
+    {"w": 7.0, "l": 5.5, "mmin": 1, "mmax": 4, "feed": "double"},
+    {"w": 5.0, "l": 5.0, "mmin": 1, "mmax": 4, "feed": "same"},
+    {"w": 5.0, "l": 5.0, "mmin": 1, "mmax": 4, "feed": "none"},
+    {"w": 5.0, "l": 5.0, "mmin": 2, "mmax": 4, "feed": "double"},
+    {"w": 5.0, "l": 5.0, "mmin": 3, "mmax": 4, "feed": "same"},
+]
+
+
+def fkey(c):
+    return f"w{c['w']}_l{c['l']}_m{c['mmin']}{c['mmax']}_{c['feed']}"
+
+
 FREEZE = {
-    "w2.0_l2.0": "9234a5625f3ebdfe",
-    "w5.0_l5.0": "cd8c56aefe2fe93e",
-    "w7.0_l5.5": "edf100fc1f9b7dd1",
+    "w2.0_l2.0_m14_double": "d8c45afaf0044cd6",
+    "w5.0_l5.0_m14_double": "ef110478b3dfbb13",
+    "w7.0_l5.5_m14_double": "bfc6879cd6c123b0",
+    "w5.0_l5.0_m14_same": "4c4867cf08fdac28",
+    "w5.0_l5.0_m14_none": "85eb051af4a255da",
+    "w5.0_l5.0_m24_double": "416fed2063e3f49f",
+    "w5.0_l5.0_m34_same": "46b31a7c4f9a11cb",
 }
 
 
@@ -95,12 +118,12 @@ def _measure():
             json.dump({"error": f"PCell resolved to {src}, outside {PDK_ROOT}"}, f)
         return
 
-    def build(w, l):
+    def build(w, l, mmin=1, mmax=4, feed="double"):
         layout = pya.Layout()
         layout.technology_name = TECH_NAME
         cell = layout.create_cell("cap_cmomi", "SG13_dev",
                                   {"w": w * 1e-6, "l": l * 1e-6,
-                                   "mmin": 1, "mmax": 4, "feed": "double"})
+                                   "mmin": mmin, "mmax": mmax, "feed": feed})
         if cell is None:
             raise SystemExit("cap_cmomi PCell not found in SG13_dev library")
         top = layout.create_cell("T")
@@ -129,16 +152,24 @@ def _measure():
         return bars - 1, len(tooth_x) // 2
 
     def digest(layout, top):
-        """Order-independent hash of every drawn polygon, in database units."""
+        """Order-independent hash of the drawn geometry, in database units.
+
+        Polygons go in through their full string form, so holes count as well
+        as hulls.  Text is deliberately excluded: the C label states a modelled
+        value and legitimately moves whenever a coefficient does, so hashing it
+        here would turn every honest model change into a red freeze and invite
+        re-pinning, which is the one thing this check exists to prevent.  The
+        label's value is pinned separately, in cap_cmomi_consistency_test.py.
+        """
         per_layer = []
         for li in layout.layer_indexes():
             info = str(layout.get_info(li))
-            polys = sorted(
-                ";".join(f"{p.x},{p.y}" for p in s.polygon.each_point_hull())
-                for s in top.shapes(li).each() if not s.is_text()
+            items = sorted(
+                sh.polygon.to_s() for sh in top.shapes(li).each()
+                if not sh.is_text()
             )
-            if polys:
-                per_layer.append(info + "|" + "|".join(polys))
+            if items:
+                per_layer.append(info + "|" + "|".join(items))
         blob = "\n".join(sorted(per_layer)).encode()
         return hashlib.sha256(blob).hexdigest()[:16]
 
@@ -149,10 +180,9 @@ def _measure():
     for l in GEOM_L:
         layout, top = build(5.0, l)
         out["cols"][f"{l}"] = counts(layout, top)[1]
-    for key in FREEZE:
-        w, l = (float(v[1:]) for v in key.split("_"))
-        layout, top = build(w, l)
-        out["freeze"][key] = digest(layout, top)
+    for c in FREEZE_CASES:
+        layout, top = build(c["w"], c["l"], c["mmin"], c["mmax"], c["feed"])
+        out["freeze"][fkey(c)] = digest(layout, top)
 
     with open(os.environ["CAP_CMOMI_GEOM_OUT"], "w") as f:
         json.dump(out, f)
@@ -264,16 +294,17 @@ def _orchestrate():
         _repin(drawn["freeze"])
         print("freeze digests re-pinned in", os.path.basename(__file__))
     else:
-        for key, want in FREEZE.items():
-            got = drawn["freeze"][key]
+        for c in FREEZE_CASES:
+            key = fkey(c)
+            want, got = FREEZE.get(key), drawn["freeze"][key]
             if want is None:
-                print(f"{key:12s} {got}  UNPINNED (run --update-freeze once)")
+                print(f"{key:28s} {got}  UNPINNED (run --update-freeze once)")
                 bad += 1
             elif got != want:
-                print(f"{key:12s} {got}  MOVED (pinned {want})")
+                print(f"{key:28s} {got}  MOVED (pinned {want})")
                 bad += 1
             else:
-                print(f"{key:12s} {got}  unchanged")
+                print(f"{key:28s} {got}  unchanged")
 
     print(f"\n{'FAIL' if bad else 'PASS'}: {bad} check(s) failed")
     return 1 if bad else 0
@@ -283,7 +314,7 @@ def _repin(digests):
     """Rewrite the FREEZE table in this file with freshly measured digests."""
     path = os.path.abspath(__file__)
     src = open(path).read()
-    body = "\n".join(f'    "{k}": "{digests[k]}",' for k in FREEZE)
+    body = "\n".join(f'    "{fkey(c)}": "{digests[fkey(c)]}",' for c in FREEZE_CASES)
     new = re.sub(r"FREEZE = \{.*?\n\}", "FREEZE = {\n" + body + "\n}", src,
                  flags=re.S)
     open(path, "w").write(new)

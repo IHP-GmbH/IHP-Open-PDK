@@ -59,10 +59,11 @@ no `feed`, matching the module.
 So `models/capacitor_paramset.va` is a real file here rather than a symlink,
 carrying the `cmomi` and `cmomf` paramsets, since this PDK has none of the other
 capacitors SG13G2's version covers. The reference data had to be regenerated
-too. For `cap_cmomi` that is not because the model differs but because the
-testbench does: it instantiates `mmax=4` where SG13G2 uses 5, which moves the
-measured cutoff from about 78.2 MHz to about 97.6 MHz. For `cap_cmomf` there was
-never anything to regenerate from. Both live under
+too. For `cap_cmomi` the testbench instantiates `mmax=4` where SG13G2 uses 5,
+and since the row-count correction the models differ as well: this PDK bills
+`floor(w/0.89)` coupled rows while the SG13G2 twin still subtracts one (until its
+own fix lands). The measured cutoff for `mmax=4` is about 78.1 MHz. For
+`cap_cmomf` there was never anything to regenerate from. Both live under
 `tests/{gnucap,ngspice}/capacitor`, and the Ngspice `.spiceinit` there is a real
 file because the shared one loads only `cap_cmomi.osdi`.
 

@@ -89,6 +89,49 @@ test-LVS-switch: env
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-switch
 
 #=================================
+# ---- test-cap-cmomi-sweep ------
+#=================================
+
+test-cap-cmomi-sweep: env
+	@. $(VENV_RUN_COMMAND); echo "Running cap_cmomi PCell DRC+LVS sweep"
+	@. $(VENV_RUN_COMMAND); python3 libs.tech/klayout/sg13cmos5l_tests/cap_cmomi_sweep.py
+
+#=================================
+# ---- test-cap-cmomf-sweep ------
+#=================================
+
+test-cap-cmomf-sweep: env
+	@. $(VENV_RUN_COMMAND); echo "Running cap_cmomf PCell DRC+LVS sweep"
+	@. $(VENV_RUN_COMMAND); python3 libs.tech/klayout/sg13cmos5l_tests/cap_cmomf_sweep.py
+
+#=================================
+# ------ test-cap-cmomi-model ----
+#=================================
+
+# The two guards that keep the cap_cmomi capacitance honest. The geometry test
+# compares the coupled rows and columns the PCell draws against the count the
+# compiled model bills, measuring each side independently, and pins a digest of
+# the drawn polygons so a model change cannot move the layout. The consistency
+# test asks every artifact that states the capacitance for the same device and
+# compares it against the OSDI a designer's simulation actually runs.
+#
+# Skips rather than fails when a tool is missing, like test-gnucap, so DRC/LVS
+# work is not blocked by an absent simulator.
+CAP_CMOMI_MODEL_TOOLS = klayout ngspice tclsh
+
+.ONESHELL:
+test-cap-cmomi-model:
+	@for tool in $(CAP_CMOMI_MODEL_TOOLS); do \
+	  if ! command -v $$tool >/dev/null 2>&1; then \
+	    echo "Skipping: $$tool not installed"; \
+	    exit 0; \
+	  fi; \
+	done; \
+	cd libs.tech/klayout/sg13cmos5l_tests && \
+	python3 cap_cmomi_geometry_test.py && \
+	python3 cap_cmomi_consistency_test.py
+
+#=================================
 # --------- test-gnucap ----------
 #=================================
 
@@ -164,5 +207,7 @@ help:
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
 	@echo "... test-cap-cmomi-sweep       (Run cap_cmomi PCell DRC+LVS configuration sweep)"
 	@echo "... test-cap-cmomf-sweep       (Run cap_cmomf PCell DRC+LVS configuration sweep)"
+	@echo "... test-cap-cmomi-model       (Check the cap_cmomi row count and every stated C)"
+	@echo "... test-gnucap                (Build model plugins, run the device regression)"
 
-.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-cap-cmomi-sweep test-cap-cmomf-sweep help
+.PHONY: env lint lint_python test-DRC-main test-LVS-main test-LVS-cells test-LVS-switch test-cap-cmomi-sweep test-cap-cmomf-sweep test-cap-cmomi-model test-gnucap help
