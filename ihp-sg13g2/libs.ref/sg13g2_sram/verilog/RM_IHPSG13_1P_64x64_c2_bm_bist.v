@@ -15,7 +15,7 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////
-`timescale 1ns/10ns
+`timescale 1ns/10ps
 `celldefine
 module RM_IHPSG13_1P_64x64_c2_bm_bist (
     A_CLK,

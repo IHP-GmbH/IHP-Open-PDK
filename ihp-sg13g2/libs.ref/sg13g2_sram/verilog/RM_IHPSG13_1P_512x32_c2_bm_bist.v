@@ -17,7 +17,7 @@
 //		Generated on Wed Apr  2 16:02:47 2025		
 //
 // ------------------------------------------------------ 
-`timescale 1ns/10ns
+`timescale 1ns/10ps
 `celldefine
 module RM_IHPSG13_1P_512x32_c2_bm_bist (
     A_CLK,
