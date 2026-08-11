@@ -29,6 +29,11 @@
 
 layout = pya.Layout()
 
+# Without a technology the SG13_dev lookup cannot resolve, every create_cell
+# below returns nil and the first DCellInstArray raises an internal error that
+# reads like a broken PCell library. Setting it here is the whole fix.
+layout.technology_name = "sg13cmos5l"
+
 # Basic MOSFET devices
 pcellNmos = layout.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellPmos = layout.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
