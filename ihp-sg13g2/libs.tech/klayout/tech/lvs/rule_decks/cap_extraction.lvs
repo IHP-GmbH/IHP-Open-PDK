@@ -69,6 +69,23 @@ extract_devices(CapMomExtractor.new('cap_cmomi'), {
                   'dev_mk' => cap_cmomi_dev_mk
                 })
 
+# === cap_cmomf ===
+# The metal fringe (finger) sibling of cap_cmomi, reusing the same extractor
+# and the same DeviceCustomMIM class, told apart by its own Recog.momf marker.
+# Marker/ports derived in cap_cmomf_derivations.lvs, per-metal pin nets tied in
+# cap_cmomf_connections.lvs. In the CAP group with the rest, so its testcases
+# live in cap_devices/ beside cap_cmomi's.
+logger.info('Extracting cap_cmomf device')
+extract_devices(CapMomExtractor.new('cap_cmomf'), {
+                  'core' => cap_cmomf_marker,
+                  'm1p' => cap_cmomf_m1_ports,
+                  'm2p' => cap_cmomf_m2_ports,
+                  'm3p' => cap_cmomf_m3_ports,
+                  'm4p' => cap_cmomf_m4_ports,
+                  'm5p' => cap_cmomf_m5_ports,
+                  'dev_mk' => cap_cmomf_dev_mk
+                })
+
 # === moscap_n ===
 logger.info('Extracting sg13_moscap_n capacitor')
 extract_devices(MOSCAPExtractor.new('sg13_moscap_n'), {

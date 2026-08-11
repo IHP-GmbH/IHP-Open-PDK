@@ -1,0 +1,50 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* Two caps declared against the three-cap hierarchical layout, run in deep mode.
+*
+* This is chain_missing's perturbation applied to cap_cmomf_hier.gds: a device
+* present in the layout and absent from the schematic. The flat case catches it
+* on the comparison. This one does NOT, and that is the finding.
+*
+* In deep mode every cap here sits in a sub-cell with no net crossing that
+* cell's boundary, and the layout netlist comes out empty. compare is then left
+* with no pair to compare and returns true, so the run reports a match having
+* verified nothing. Extraction is not what fails: the .lvsdb still carries the
+* device abstract with its terminal geometry, identical to the flat run's, and
+* no marker is ever rejected.
+*
+* Expected to PASS, which is the hole rather than the behaviour anyone wants.
+* It is not specific to cap_cmomf: cap_cmomi empties the same way on the same
+* construction. That was observed on the ihp-sg13cmos5l side, where both
+* devices have a deep case in their checks suite and the issue is tracked as
+* https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91. Nothing in this tree
+* demonstrates it for cap_cmomi, because its suite here has no deep case. ihp-sg13cmos5l answers
+* the vacuous half of it in its own sg13cmos5l.lvs, which counts the devices on
+* both sides and refuses to call an empty layout netlist a match; this PDK has
+* no such guard, so the run here is green. The extraction hole itself is open in
+* both.
+*
+* Read it together with the wired case, which is the same hierarchy with one
+* Metal5 route in the top cell and does compare for real.
+*
+* The layout is the unit testcase's, referenced across rather than copied, so the
+* flat and deep runs cannot drift apart. That unit case runs the same layout in
+* flat mode and must pass.
+.SUBCKT cap_cmomf_hier
+C1 P1 M1 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+C2 P2 M2 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+.ENDS cap_cmomf_hier

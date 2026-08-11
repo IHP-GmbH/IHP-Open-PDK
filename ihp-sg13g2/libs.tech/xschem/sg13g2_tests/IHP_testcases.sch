@@ -52,6 +52,7 @@ C {sg13g2_tests/tran_mim_cap.sym} 520 -710 0 0 {name=x10}
 C {sg13g2_tests/ac_lv_nmosrf.sym} 860 -710 0 0 {name=x9}
 C {sg13g2_tests/ac_mim_cap.sym} 860 -670 0 0 {name=x21}
 C {sg13g2_tests/ac_cap_cmomi.sym} 860 -630 0 0 {name=x42}
+C {sg13g2_tests/ac_cap_cmomf.sym} 860 -590 0 0 {name=x44}
 C {sg13g2_tests/mc_lv_nmos_cs_loop.sym} 1200 -710 0 0 {name=x1}
 C {sg13g2_tests/mc_hv_nmos_cs_loop.sym} 1200 -670 0 0 {name=x2}
 C {sg13g2_tests/mc_lv_pmos_cs_loop.sym} 1200 -630 0 0 {name=x3}

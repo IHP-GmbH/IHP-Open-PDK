@@ -1,0 +1,35 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* chain_match's netlist against cmomf_mirrored.gds, the same chain with its
+* last cap mirrored about the y axis.
+*
+* A cap_cmomf is symmetric, so mirroring a placement does not change the
+* circuit and this netlist is the correct one for that layout. What mirroring
+* does change is which of the two pins CapMomExtractor reaches first: it sorts
+* the ports by x, so PLUS on the left edge becomes PLUS on the right edge and
+* the two terminals come out exchanged.
+*
+* Expected to PASS, and it only does because DeviceCustomMIM declares the two
+* terminals equivalent for this device. That gate keys on the device name
+* containing 'cmom', which is what widened it from cap_cmomi to cover cap_cmomf
+* as well. Narrow it back and this case fails, and so does every mirrored
+* instance in a real block.
+.SUBCKT cmomf_mirrored
+C1 A  N1 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+C2 N1 N2 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+C3 N2 B  cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+.ENDS cmomf_mirrored
