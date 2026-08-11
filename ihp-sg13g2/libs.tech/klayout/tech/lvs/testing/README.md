@@ -63,6 +63,7 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 |  | `rfcmim` | `C1 N1 N2 SUB rfcmim w=7u l=7u wfeed=3u m=1 C=74.823f` | `w`, `l`, `m`, `A`, `P`, `wfeed` | [`C3`](#note-c3) | [CDL](./testcases/unit/cap_devices/netlist/rfcmim.cdl) / [GDS](./testcases/unit/cap_devices/layout/rfcmim.gds) |
 |  | `sg13_hv_svaricap` | `C1 G1 W G2 SUB sg13_hv_svaricap l=0.3u w=3.74u Nx=1` | `w`, `l`, `Nx` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_hv_svaricap.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_hv_svaricap.gds) |
 |  | `cap_cmomi` | `C1 PLUS MINUS cap_cmomi w=7u l=7u`<br>`or`<br>`C1 PLUS MINUS 48.8f cap_cmomi w=7u l=7u` | topological (`w`, `l` non-primary) | [`C4`](#note-c4) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmomi.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmomi.gds) |
+|  | `cap_cmomf` | `C1 PLUS MINUS cap_cmomf w=5u l=5u` | topological (`w`, `l` non-primary) | [`C5`](#note-c5) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmomf.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmomf.gds) |
 |  | `sg13_moscap_n` | `C1 G SUB sg13_moscap_n w=1u l=1u` | `w`, `l` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_moscap_n.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_moscap_n.gds) |
 |  | `sg13_moscap_p` | `C1 G NW sg13_moscap_p w=1u l=1u` | `w`, `l` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_moscap_p.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_moscap_p.gds) |
 | **ESD** | `diodevdd_2kv` | `D1 N1 N2 SUB diodevdd_2kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevdd_2kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevdd_2kv.gds) |
@@ -104,6 +105,13 @@ This table summarizes the supported schematic-side device syntax used by the LVS
   `m` is not compared either, despite being declared `is_primary=true`: the SPICE reader takes it as the standard device multiplier rather than mapping it onto the class parameter of the same name, so a netlist declaring `m=2` against a single placement still matches. That matters because `m` is the only token beyond `w`/`l` that the xschem symbol's `lvs_format` emits.
 
   `make test-LVS-cmomi-checks` holds all of the above as executable cases.
+- <a id="note-c5"></a>`C5`: `cap_cmomf` (metal fringe, cross-fingered, Metal1..Metal5) goes through the same `CapMomExtractor` into the same `DeviceCustomMIM` class as `cap_cmomi`, and is told apart from it by nothing but its recognition marker: `Recog.momf` (99/40) against `Recog.mom` (99/39). Everything note [`C4`](#note-c4) says about what the comparison does not check therefore holds here too: `w`/`l` and `m` are not compared, the two terminals are equivalent, a marker without exactly two pin ports is an extraction error, and a device on the wrong metal band matches silently. The band case costs more here: `cap_cmomf` runs from 0.372 fF/um2 on Metal1 alone to 1.592 on the full Metal1..Metal5 stack.
+
+  The marker split is what keeps the two devices apart, so it is tested rather than assumed: the checks suite holds a layout with one of each that must extract exactly one of each. Sharing 99/39 would make a single geometry recognised by both extractors and fail on the device count.
+
+  Two things behave differently from `cap_cmomi` and are worth knowing. A `cap_cmomf` whose two plates are tied together reports as a **missing** device, not as a short: KLayout drops a device whose terminals all land on the same net, so it never reaches the comparison. And **in deep mode a layout whose every cap sits in a sub-cell with no net crossing that cell's boundary extracts nothing**, the comparison then has no pair left and reports a match having verified nothing. That one is not specific to this device: `cap_cmomi` does the same on the same construction, and it was first recorded in [ihp-sg13cmos5l#91](https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91). The checks suite holds it as a case, together with the same hierarchy wired to the top, which does compare for real.
+
+  `make test-LVS-cmomf-checks` holds all of the above as executable cases.
 - <a id="note-t1"></a>`T1`: Tap devices may use either `A/P` (`Perim`) or `W/L`; LVS compares `A/P`.
 
 ## Devices Regression Usage
@@ -151,6 +159,31 @@ behave. ERROR means the extractor rejected the layout and the run aborted before
 any comparison. The seven passing cases are as load bearing as the rest: they
 record what `cap_cmomi` matching does *not* check, which would otherwise only be
 visible by reading the rule decks. See note [`C4`](#note-c4).
+
+### cap_cmomf checks
+
+The same idea for the fringe capacitor:
+
+```bash
+  make test-LVS-cmomf-checks
+```
+
+13 cases (2 FAIL, 2 ERROR and 9 PASS). Most of them mirror the cmomi suite,
+because both devices go through the same extractor and the same device class.
+Four have no counterpart there: a mirrored placement, which is what the terminal
+equivalence exists for; one cap of each kind side by side, holding the marker
+split; a shorted device, which reports as a missing one; and a deep-mode
+hierarchy that passes having compared nothing. See note [`C5`](#note-c5).
+
+The layouts for both suites, and the `cap_devices/` testcases of both MoM
+capacitors, are generated from the SG13_dev PCells rather than drawn by hand:
+
+```bash
+  KLAYOUT_HOME=$(mktemp -d) KLAYOUT_PATH=<repo>/libs.tech/klayout \
+    klayout -zz -r create_cap_cmomi_testcases.py
+  KLAYOUT_HOME=$(mktemp -d) KLAYOUT_PATH=<repo>/libs.tech/klayout \
+    klayout -zz -r create_cap_cmomf_testcases.py
+```
 
 ## Cells Regression Usage
 
