@@ -26,6 +26,9 @@
 # KLAYOUT_PATH=$(pwd)/.. klayout ihp-pycells.gds -e
 
 layout = pya.Layout()
+# The SG13_dev library is bound to the sg13g2 technology; the layout must
+# use the same technology for the library lookup to succeed (KLayout >= 0.28)
+layout.technology_name = "sg13g2"
 pcellNmos = layout.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellPmos = layout.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellCmim = layout.create_cell("cmim", "SG13_dev", {})
