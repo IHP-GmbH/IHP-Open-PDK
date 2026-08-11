@@ -56,7 +56,8 @@ class cap_cmomi(DloGen):
                    PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
                    below it, overlapping in x,y but with no via between them
                    (separate nets). That plate overlap is the feed capacitance
-                   Cfeed ~ (active_y*UC_Y + 0.64) * cfeed_per_um.
+                   Cfeed ~ ((ny - 1)*UC_Y + 0.64) * cfeed_per_um, on the row
+                   count cfeed_per_um was fitted against (see genLayout).
                    Requires mmax > mmin (>=2 metals) for the two stacked plates;
                    a single-metal stack has no second layer, so use 'double'
                    when mmin == mmax.
@@ -426,9 +427,16 @@ class cap_cmomi(DloGen):
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
         # 8) Capacitance label (must match the simulation model, contract).
+        # The active area bills the rows this cell DRAWS, which is ny: every one
+        # of them has a counter electrode. The reference notes subtract a row
+        # because their characterised structure ends in single fingers that face
+        # nothing (p3) and one pitch of its width does not couple; nothing here
+        # is drawn that way. ny_active is that pre-fix count and survives only
+        # in the feed term, whose cfeed_per_um was fitted against it. Keep both
+        # of these identical to cap_cmomi.va.
         n_clamped = min(self.METAL_MAX, max(2, n_layers))
         areacap = self.AREACAP[n_clamped]
-        active_area = nx_active * self.UC_X * ny_active * self.UC_Y
+        active_area = nx_active * self.UC_X * ny * self.UC_Y
         c_active = areacap * active_area
         if self.feed == 'same':
             cfeed = self.CFEED_PER_UM[n_clamped]

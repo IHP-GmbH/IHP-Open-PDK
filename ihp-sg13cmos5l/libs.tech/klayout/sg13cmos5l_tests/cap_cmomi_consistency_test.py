@@ -173,7 +173,10 @@ def sym_values(sym_path):
     out = {}
     for c in CASES:
         e = expr
-        # longest name first: substituting @m before @mmax would eat its prefix
+        # longest name first: substituting @m before @mmax would eat its prefix.
+        # feed is a token, and xschem pastes it in bare, so it goes in unwrapped
+        # and the symbol expression is the thing that has to quote it.
+        e = e.replace("@feed", c["feed"])
         for name, val in (("@mmax", c["mmax"]), ("@mmin", c["mmin"]),
                           ("@m", 1), ("@w", c["w"] * 1e-6),
                           ("@l", c["l"] * 1e-6)):

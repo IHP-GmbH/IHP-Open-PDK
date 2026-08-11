@@ -76,6 +76,25 @@
 //   measured in the notes is intentionally dropped ("assume zero", p7-8): small
 //   double devices read ~3% low by construction, not by omission.
 //
+//   ROW COUNT.  active_y counts the coupled rows this PCell DRAWS, floor(w/0.89).
+//   The notes subtract one because their characterised structure ends in single
+//   fingers that have no counter electrode (p3) and one pitch of its width
+//   therefore does not couple; the drawn cell here has no such fingers.  The
+//   subtraction was a property of that structure's boundary, not of the device,
+//   and carrying it over under-counted every device by one row: about 1% at
+//   w = 80 um and a factor of two at w = 2 um.  The construction is inherited
+//   from the reference generator, so the sg13g2 twin has the same mismatch.
+//   density[N] itself is unchanged: the notes define it per coupled unit cell,
+//   which transfers directly.  It remains the g2-transferred value pending the
+//   cmos5l silicon campaign, which measures exactly this scalar per N.
+//
+//   INVARIANT UNDER A CAPACITANCE CORRECTION.  For feed=same/none the series
+//   inductance is derived as Lcore = 1/(w_SRF^2 * Cmain) from the notes' p16 SRF
+//   fits, so correcting Cmain moves L and leaves the resonance where it was
+//   characterised.  SRF is the preserved quantity, L is not.  For feed=double
+//   Lcore is a direct loop fit (p21) that does not involve Cmain and does not
+//   move at all.
+//
 // COEFFICIENT PROVENANCE / LAYER-COUNT KEYING (cmos5l = M1..M4)
 //   Every coefficient is selected by the metal LAYER COUNT  N = mmax - mmin + 1
 //   (and, for the oxide shunt, by the bottom-metal identity mmin).  Sourced
@@ -153,7 +172,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
 
     real lu, wu, lw, ratio;
     integer Nc, Nlay;
-    real ax, ay, active_x, active_y, active_area, feed_width;
+    real ax, ay, active_x, active_y, active_area, feed_rows, feed_width;
     real issame, density, cfeed_pu, cfeed_fF, cmain_fF, Cmain;
     real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
     real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
@@ -190,8 +209,23 @@ module cap_cmomi(PLUS, MINUS, SUB);
         Nc   = mmax - mmin + 1;
         Nlay = (Nc < 1) ? 1 : Nc;
 
-        // ---- unit-cell tiling (unit cell 0.84 x 0.89 um; 1 y-row -> feed) ----
-        //   active_x = floor(l/0.84) ; active_y = floor(w/0.89) - 1
+        // ---- unit-cell tiling (unit cell 0.84 x 0.89 um) --------------------
+        //   active_x = floor(l/0.84) ; active_y = floor(w/0.89)
+        // The notes take the active area to be the unit cells that HAVE a
+        // counter electrode (p3: "the outer rows with single fingers are not
+        // included here").  Their characterised structure ends in fingers with
+        // nothing facing them, so one pitch of its width does not couple, and
+        // subtracting a row was right FOR THAT STRUCTURE.  The PCell terminates
+        // the array at the last coupled row instead and draws no unpaired
+        // fingers, so at a given w it fits floor(w/0.89) coupled rows and the
+        // subtraction no longer describes it.  Counting the drawn bars settles
+        // this without a field solver; see cap_cmomi_geometry_test.py, which
+        // compares the drawn rows against the row count this model bills.
+        //
+        // The feed keeps the old count on purpose: cfeed_per_um was fitted
+        // against feed_width = (floor(w/0.89) - 1)*0.89 + 0.64, so feed_rows
+        // below preserves that convention and Cfeed does not move here.
+        //
         // A drawn dimension that is an exact multiple of the pitch (e.g. l=21um
         // =25*0.84) round-trips through *1e6 to one ULP below the integer, and
         // floor() then lands on k or k-1 depending on the toolchain's division
@@ -201,11 +235,13 @@ module cap_cmomi(PLUS, MINUS, SUB);
         // floor: an exact k-pitch resolves to k on ANY toolchain, a genuine
         // (k-eps) still floors to k-1.  Apply the SAME rule in the PCell/subckt.
         ax = floor(lu / 0.84 + 1.0e-6);
-        ay = floor(wu / 0.89 + 1.0e-6) - 1.0;
+        ay = floor(wu / 0.89 + 1.0e-6);
         active_x = (ax < 1.0) ? 1.0 : ax;
         active_y = (ay < 1.0) ? 1.0 : ay;
         active_area = active_x * active_y * 0.84 * 0.89;
-        feed_width  = active_y * 0.89 + 0.64;
+        // pre-fix row count, kept only for the feed: see the note above
+        feed_rows   = (ay - 1.0 < 1.0) ? 1.0 : ay - 1.0;
+        feed_width  = feed_rows * 0.89 + 0.64;
 
         issame = (feed == 1) ? 1.0 : 0.0;
 
