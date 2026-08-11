@@ -41,7 +41,7 @@
 #
 # Produces two families:
 #
-#   testcases/unit/cap_cmomf_devices/layout/
+#   testcases/unit/cap_devices/layout/
 #       cap_cmomf.gds          the original testcase, rebuilt from the PCell
 #       cap_cmomf_config.gds   configuration matrix, every instance must extract
 #       cap_cmomf_hier.gds     hierarchical instantiation, no double extraction
@@ -80,7 +80,7 @@ LIB_NAME = "SG13_dev"
 PCELL_NAME = "cap_cmomf"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UNIT_DIR = os.path.join(HERE, "testcases", "unit", "cap_cmomf_devices", "layout")
+UNIT_DIR = os.path.join(HERE, "testcases", "unit", "cap_devices", "layout")
 CHECKS_DIR = os.path.join(HERE, "testcases", "manual_tests", "cap_cmomf_checks")
 
 # Layer numbers as used by the LVS deck, see

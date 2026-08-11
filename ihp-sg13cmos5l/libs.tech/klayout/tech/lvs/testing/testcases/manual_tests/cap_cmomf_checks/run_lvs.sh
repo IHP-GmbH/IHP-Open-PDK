@@ -108,9 +108,8 @@ run_case "5_terminals_swapped" \
 # last cap is mirrored about the y axis. Mirroring moves PLUS from the left edge
 # to the right one, and the extractor sorts its two ports by x, so the terminals
 # come out exchanged for a circuit that did not change. This is the case that
-# bites in practice, and it only passes because cap_cmomf adds itself to the
-# terminal equivalence in rule_decks/cap_cmomf_registration.lvs: the shared
-# DeviceCustomMIM gates that on the device name containing 'cmomi'.
+# bites in practice, and it only passes because DeviceCustomMIM declares the
+# two terminals equivalent for any device whose name contains 'cmom'.
 run_case "6_mirrored_placement" \
   "cmomf_mirrored.gds" "cmomf_mirrored" "mirrored.cdl" "PASS"
 
@@ -159,7 +158,7 @@ run_case "11_coexists_with_cap_cmomi" \
 # The layout is referenced across from the unit testcase rather than copied, so
 # the flat and deep runs cannot drift apart.
 run_case "12_deep_empty_extraction_reported" \
-  "../../unit/cap_cmomf_devices/layout/cap_cmomf_hier.gds" "cap_cmomf_hier" \
+  "../../unit/cap_devices/layout/cap_cmomf_hier.gds" "cap_cmomf_hier" \
   "hier_deep_missing.cdl" "FAIL" "deep"
 
 # The same hierarchy as case 12, with one Metal4 route in the top cell joining

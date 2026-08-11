@@ -227,11 +227,6 @@ end
 
 # %include rule_decks/custom_classes.lvs
 
-# Extends the shared PREFIX_MAP and SPICE reader with cap_cmomf. Must sit
-# after custom_classes.lvs (which defines both) and before the reader is
-# instantiated below.
-# %include rule_decks/cap_cmomf_registration.lvs
-
 # Instantiate a reader using the new delegate
 reader = RBA::NetlistSpiceReader.new(CustomReader.new)
 
@@ -401,10 +396,6 @@ else
 
   # %include rule_decks/devices_connections.lvs
 
-  # cap_cmomf is not reachable from devices_connections.lvs, which is a
-  # symlink into g2 and only chains the shared devices.
-  # %include rule_decks/cap_cmomf_connections.lvs
-
   #================================================
   #------------- DEVICES EXTRACTION ---------------
   #================================================
@@ -450,7 +441,6 @@ else
   #==================================
 
   # %include rule_decks/cap_extraction.lvs
-  # %include rule_decks/cap_cmomf_extraction.lvs
 
   #================================
   # ------- ESD EXTRACTION --------

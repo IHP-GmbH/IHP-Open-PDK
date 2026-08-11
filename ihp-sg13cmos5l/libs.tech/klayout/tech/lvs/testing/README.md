@@ -11,15 +11,11 @@ This directory contains the LVS regression testing infrastructure for the SG13CM
 | RES | Resistors (poly, silicide, metal M1-M4, TM1) | Supported |
 | ESD | ESD protection devices (diodevdd/vss only) | Supported |
 | TAP | Substrate/well taps | Supported |
-| CAP | MoM capacitor (cap_cmomi, Metal1-Metal4) | Supported (approximate model, pending silicon) |
-| CAP_CMOMF | MoM fringe capacitor (cap_cmomf, Metal1-Metal4) | Supported (approximate model, pending silicon) |
+| CAP | MoM capacitors (cap_cmomi, cap_cmomf, Metal1-Metal4) | Supported (approximate model, pending silicon) |
+| IND | Custom inductors (inductor2, inductor3) | Supported |
 
-`cap_cmomf` sits in its own group rather than in CAP because it is registered
-from a cmos5l-local `cap_cmomf_extraction.lvs`: this runner derives the group
-from the extraction deck's filename and matches it against the testcase
-directory, and the shared `cap_extraction.lvs` where the device belongs is a
-symlink into the sibling ihp-sg13g2. The two merge once cap_cmomf is
-upstreamed. The device is recognised by its own marker, `Recog.momf` (99/40),
+Both MoM capacitors share the CAP group and the `cap_devices/` testcase
+directory. `cap_cmomf` is recognised by its own marker, `Recog.momf` (99/40),
 because `cap_cmomi` owns `Recog.mom` (99/39) by design in the shared deck.
 
 Inductors are recognised, not generated: CMOS5L ships no inductor PCell, so
@@ -146,16 +142,14 @@ wrong band is a factor of three, not two.
 
 Three things differ, and they are what the cmomf suite adds:
 
-- **The two terminals are equivalent, and this PDK is what says so.** The shared
-  `DeviceCustomMIM` declares the equivalence only when the device name contains
-  `cmomi`, so `cap_cmomf` falls outside it. Without the equivalence, mirroring an
-  instance is reported as a mismatch: the extractor sorts its two ports by x and
-  never reads the pin names, and the PCell puts PLUS on the left edge, so a
-  mirror exchanges the terminals for a circuit that did not change.
-  `rule_decks/cap_cmomf_registration.lvs` adds `cap_cmomf` to the equivalence the
-  same way it extends `PREFIX_MAP` and `CustomReader`, and case 6 of the suite is
-  the mirrored layout that fails without it. Fold this into the g2 gate when
-  `cap_cmomf` is upstreamed.
+- **The two terminals are equivalent, and a mirrored instance proves it.**
+  Without the equivalence, mirroring an instance is reported as a mismatch: the
+  extractor sorts its two ports by x and never reads the pin names, and the
+  PCell puts PLUS on the left edge, so a mirror exchanges the terminals for a
+  circuit that did not change. The shared `DeviceCustomMIM` gates the
+  equivalence on the device name containing `cmom`, which covers both MoM
+  capacitors, and case 6 of the suite is the mirrored layout that fails without
+  it.
 - **The marker split is load bearing and is tested.** Case 11 puts one
   `cap_cmomf` beside one `cap_cmomi` and requires exactly one device of each
   class. Sharing 99/39 would make a single geometry extract as both devices,

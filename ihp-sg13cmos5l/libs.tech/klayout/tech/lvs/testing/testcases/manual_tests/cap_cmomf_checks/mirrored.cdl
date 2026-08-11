@@ -23,11 +23,10 @@
 * the ports by x, so PLUS on the left edge becomes PLUS on the right edge and
 * the two terminals come out exchanged.
 *
-* Expected to PASS, and it only does because cap_cmomf declares its terminals
-* equivalent. The shared DeviceCustomMIM gates that on the device name
-* containing 'cmomi', so cap_cmomf has to add itself, in
-* rule_decks/cap_cmomf_registration.lvs. Without it this case fails and every
-* mirrored instance in a real block is reported as a mismatch.
+* Expected to PASS, and it only does because DeviceCustomMIM declares the two
+* terminals equivalent for every device whose name contains 'cmom'. Without
+* that, this case fails and every mirrored instance in a real block is reported
+* as a mismatch.
 .SUBCKT cmomf_mirrored
 C1 A  N1 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=4
 C2 N1 N2 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=4
