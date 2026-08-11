@@ -245,10 +245,18 @@ module cap_cmomi(PLUS, MINUS, SUB);
         // with a sub-grid epsilon (1e-6 cell = 0.84 pm << layout grid) before the
         // floor: an exact k-pitch resolves to k on ANY toolchain, a genuine
         // (k-eps) still floors to k-1.  Apply the SAME rule in the PCell/subckt.
+        //
+        // The floors clamp the way the PCell's do.  Note the two clamps differ:
+        // a row needs a facing row, so the layout never draws fewer than TWO,
+        // while one column of fingers is a valid (if pointless) cell.  Below
+        // w = 1.78 um that clamp is the only thing setting the row count, and
+        // the PCell's minimum w is 2 um, so nothing reachable from a layout
+        // lands there; a hand-written netlist can, and used to get a device one
+        // row and one pitch of pad smaller than the one that would be drawn.
         ax = floor(lu / 0.84 + 1.0e-6);
         ay = floor(wu / 0.89 + 1.0e-6);
         active_x = (ax < 1.0) ? 1.0 : ax;
-        active_y = (ay < 1.0) ? 1.0 : ay;
+        active_y = (ay < 2.0) ? 2.0 : ay;
         active_area = active_x * active_y * 0.84 * 0.89;
         // The drawn stacked feed pads span the whole array plus half a bar at
         // each end, which is exactly active_y*0.89 + 2*0.21 um of the PCell's
@@ -293,11 +301,11 @@ module cap_cmomi(PLUS, MINUS, SUB);
         //   3% lower, which is inside this term's own error bar, so there is no
         //   per-N table here any more.  The residual trend is unmodelled and
         //   bills an M3..M4 device's feed about 4% (50 aF) high, some 0.3% of
-        //   such a part.  Run-to-run scatter of the solver is 2-3 aF per solve,
-        //   which after differencing is ~0.3% of the term at w=7 and ~1% at
-        //   w=2, and boundary placement moves the difference by about another
-        //   1%.  Evidence and the solver configurations are archived with the
-        //   project.
+        //   such a part.  Run-to-run scatter of the solver, from eight repeats
+        //   of identical inputs, is about 2.5 aF per solve: ~0.3% of the term
+        //   at w=7 and ~0.8% at w=2 after differencing, with boundary placement
+        //   worth about as much again.  Evidence and the solver configurations
+        //   are archived with the project.
         //
         //   SCALE.  The term is calibrated on the same field solve whose active
         //   area reads about 17% below the transferred density[N] above.  If the

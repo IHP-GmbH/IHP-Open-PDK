@@ -75,6 +75,13 @@ CASES = [
     {"w": 8.9,  "l": 21.0, "mmin": 1, "mmax": 4, "feed": "double"},
     {"w": 5.0,  "l": 5.0,  "mmin": 1, "mmax": 4, "feed": "none"},
     {"w": 5.0,  "l": 5.0,  "mmin": 1, "mmax": 4, "feed": "same"},
+    # Below w = 1.78 um the row clamp is the only thing setting the row count,
+    # and the model and the layout used to disagree there. The PCell will not
+    # draw it (w is constrained to [2:100] um and an out-of-range value falls
+    # back to the default), so this case checks the model against the symbol
+    # only: "pcell": False.
+    {"w": 1.0,  "l": 2.0,  "mmin": 1, "mmax": 4, "feed": "same",
+     "pcell": False},
 ]
 
 TOL_REL = 1e-4        # exact artifacts: the same arithmetic, or nearly
@@ -102,6 +109,8 @@ def _emit_labels():
 
     labels = {}
     for c in CASES:
+        if not c.get("pcell", True):
+            continue
         layout = pya.Layout()
         layout.technology_name = TECH_NAME
         cell = layout.create_cell("cap_cmomi", "SG13_dev",
@@ -258,10 +267,13 @@ def main():
         k = key(c)
         row = [f"{k:28s}", f"{ref[k]:9.4f}"]
         lab = labels.get(k)
-        ok = lab is not None and (abs(lab - ref[k]) <= TOL_ABS or
-                                  abs(lab - ref[k]) <= TOL_REL * ref[k])
+        drawn = c.get("pcell", True)
+        ok = (not drawn) or (lab is not None and
+                             (abs(lab - ref[k]) <= TOL_ABS or
+                              abs(lab - ref[k]) <= TOL_REL * ref[k]))
         bad += 0 if ok else 1
-        row.append(f"{lab:9.4f}" if lab is not None else f"{'none':>9}")
+        row.append(f"{lab:9.4f}" if lab is not None else
+                   f"{'not drawn':>9}" if not drawn else f"{'none':>9}")
         for path, vals in syms:
             v = vals.get(k) if vals else None
             sok = v is not None and abs(v - ref[k]) <= TOL_REL * max(ref[k], 1e-9)
