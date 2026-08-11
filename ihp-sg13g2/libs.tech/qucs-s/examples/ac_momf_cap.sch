@@ -2,10 +2,10 @@
 <Properties>
   <View=-114,-61,2753,920,1.34875,0,12>
   <Grid=10,10,1>
-  <DataSet=ac_mom_cap.dat>
-  <DataDisplay=ac_mom_cap.dpl>
+  <DataSet=ac_momf_cap.dat>
+  <DataDisplay=ac_momf_cap.dpl>
   <OpenDisplay=0>
-  <Script=ac_mom_cap.m>
+  <Script=ac_momf_cap.m>
   <RunScript=0>
   <showFrame=3>
   <FrameText0=AC MoM fringe capacitor (cap_cmomf) -3dB extraction>

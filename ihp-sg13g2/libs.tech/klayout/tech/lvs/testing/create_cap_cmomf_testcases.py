@@ -276,10 +276,11 @@ def build_hier_wired():
 
     Two instances of a sub-cell holding one cap, joined by a Metal5 route drawn
     in the top cell, so the sub-circuits get a pin and are not dropped. This is
-    the deep-mode counterpart of build_hier: that layout must fail in deep, this
-    one must pass, and the pair is what pins down the trigger. Without a passing
-    deep case, a total collapse of deep extraction would leave the failing case
-    failing for the wrong reason and the suite would stay green.
+    the deep-mode counterpart of build_hier, whose layout extracts nothing in
+    deep and is then reported as a match having compared nothing. This one is
+    what makes that case mean something: it compares for real, so a total
+    collapse of deep extraction shows up here instead of hiding behind the
+    other case's vacuous pass.
     """
     layout = _new_layout()
     top = layout.create_cell("cmomf_hier_wired")

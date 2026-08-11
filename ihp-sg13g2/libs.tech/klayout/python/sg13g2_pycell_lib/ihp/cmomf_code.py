@@ -48,7 +48,11 @@ class cmomf(DloGen):
     them. They are therefore a simulation-derived fit, not foundry-provided
     silicon data, and no corner or mismatch spread is modelled. The C label
     painted here, the Verilog-A/OSDI model and the xschem symbol all evaluate
-    the same expression, so layout and simulation agree by construction.
+    the same expression, so layout and simulation agree by construction. With
+    one caveat on the area rather than the density: the label below multiplies
+    the extents AFTER they are snapped to the 5 nm grid, while the model and
+    the symbols use the parameters as given, so a w or l that is not a multiple
+    of 5 nm puts the label a fraction of a percent under the simulated value.
 
     Metal5, specifically, is EXTRAPOLATED. That calibration was run on the
     ihp-sg13cmos5l stack, which stops at Metal4, so the Metal4 to Metal5 step

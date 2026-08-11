@@ -155,8 +155,10 @@ run_case "11_coexists_with_cap_cmomi" \
 # empty, and compare then has no pair left to compare and returns true. The
 # .lvsdb still carries the device abstract, so extraction is not what fails.
 #
-# cap_cmomi does the same on the same construction, so the hole belongs to
-# neither device. It was first recorded there, in ihp-sg13cmos5l#91, and that
+# cap_cmomi empties the same way on the same construction, so the hole belongs
+# to neither device. That was observed on the ihp-sg13cmos5l side, where both
+# devices have a deep case; nothing in this tree demonstrates it for cap_cmomi.
+# It is tracked as ihp-sg13cmos5l#91, and that
 # PDK refuses the vacuous half of it in its own sg13cmos5l.lvs by counting the
 # devices on both sides; this one has no such guard. Read this case together
 # with case 13, the same hierarchy wired to the top, which compares for real.
