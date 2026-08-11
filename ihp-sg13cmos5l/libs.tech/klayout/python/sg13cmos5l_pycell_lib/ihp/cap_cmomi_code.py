@@ -122,8 +122,10 @@ class cap_cmomi(DloGen):
     AREACAP      = {2: 0.55, 3: 0.82, 4: 1.09}
     # Single-side feed, measured on the cell as drawn rather than transferred:
     # Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len the drawn height of
-    # the two stacked pads. No layer keying, because those pads sit on the top two
-    # metals whatever the stack is. See cap_cmomi.va for the provenance.
+    # the two stacked pads. No layer keying: those pads sit on the top two metals
+    # whatever the stack is, and the measurement is flat for N>=3 (a two-metal
+    # window reads ~3% lower, inside the term's own error bar). See cap_cmomi.va
+    # for the provenance.
     CFEED_SLOPE  = 0.1625
     CFEED_END    = 0.0916
 
@@ -439,9 +441,9 @@ class cap_cmomi(DloGen):
         # of them has a counter electrode. The reference notes subtract a row
         # because their characterised structure ends in single fingers that face
         # nothing (p3) and one pitch of its width does not couple; nothing here
-        # is drawn that way. ny_active is that pre-fix count and survives only
-        # in the feed term, whose cfeed_per_um was fitted against it. Keep both
-        # of these identical to cap_cmomi.va.
+        # is drawn that way. ny_active is that pre-fix count and no longer enters
+        # any billed quantity: the feed term is now fitted against pad_len, the
+        # drawn pad height. Keep all of this identical to cap_cmomi.va.
         n_clamped = min(self.METAL_MAX, max(2, n_layers))
         areacap = self.AREACAP[n_clamped]
         active_area = nx_active * self.UC_X * ny * self.UC_Y

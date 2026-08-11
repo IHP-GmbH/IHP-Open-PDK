@@ -78,10 +78,16 @@
 //     pad_len = active_y*0.89 + 0.42, the drawn height of the stacked pads [um]
 //   density[N] is the ACTIVE-AREA density (p5 "change in C vs length" cancels the
 //   feed overlap), so for feed=double the opposite-side feed residual is
-//   intentionally dropped ("assume zero", p7-8, bounded there at under 2 fF).
-//   On this layout that residual is 0.40 fF at w=2 rising to 2.23 fF at w=15,
-//   measured; dropping it makes feed=double read low by that much, and makes the
-//   step from 'double' to 'same' read high by the same amount.
+//   intentionally dropped.  The notes assume it away (p7-8) but their bound does
+//   not apply to this structure, and our own measurement exceeds it anyway: on
+//   this layout the residual is 0.40 fF at w=2 rising to 2.23 fF at w=15.  The
+//   zero rests on that measurement and on the pending silicon re-fit, not on
+//   p7-8.  Dropping it makes feed=double read low by that much, and makes the
+//   step from 'double' to 'same' read high by the same amount.  It must be
+//   revisited TOGETHER with density[N]: on the default device the two err in
+//   opposite directions (the transferred density reads high against the same
+//   field solve that measured this residual), so applying either correction
+//   alone moves the default device further from the measurement, not closer.
 //
 //   ROW COUNT.  active_y counts the coupled rows this PCell DRAWS, floor(w/0.89).
 //   The notes subtract one because their characterised structure ends in single
@@ -275,23 +281,39 @@ module cap_cmomi(PLUS, MINUS, SUB);
         //   So the term below is fitted to the cell as drawn, from an
         //   electrostatic field solve of the PCell's own three feed branches in
         //   one shared domain: Cfeed = C(feed='same') - C(feed='none').  Four
-        //   widths at Metal1..Metal4 give 0.1625*pad_len + 0.0916 fF with a
-        //   worst residual of 3 aF, and three further layer windows at w=7 give
-        //   1.126 to 1.171 fF, flat to 4%, which is what two plates on the top
-        //   two metals must do: they cannot see the layer count.  That is why
-        //   there is no per-N table here any more.  Mesh realisation noise on
-        //   these numbers is 0.3% of the term.  Evidence and the solver
-        //   configurations are archived with the project.
+        //   widths at Metal1..Metal4 give 0.1625*pad_len + 0.0916 fF, worst
+        //   residual 3 aF, which is at the measurement floor and is not a
+        //   statement of the term's accuracy.  The regressor is pad_len rather
+        //   than the notes' feed_width on geometric grounds, not statistical
+        //   ones: over the calibrated range the two differ by a constant, so
+        //   they fit equally well, and pad_len is what the PCell paints.
         //
-        //   The opposite-side feed is still charged at zero, as the notes decided
-        //   ("assume zero", p7-8, bound under 2 fF).  It is NOT zero on this
-        //   layout: the same field solve puts it at 0.40 fF at w=2 rising to
-        //   2.23 fF at w=15, and unlike the single-side term it does grow with
-        //   the layer count.  Dropping it is kept deliberately, so that this
-        //   change carries one decision; the consequence is that the step the
-        //   model predicts when a designer switches from 'double' to 'same' is
-        //   still larger than the drawn step by about the size of the dropped
-        //   term.
+        //   Three further layer windows at w=7 give 1.126 (N=2), 1.160 and 1.165
+        //   (N=3) and 1.171 (N=4) fF.  Flat for N>=3; the N=2 window sits about
+        //   3% lower, which is inside this term's own error bar, so there is no
+        //   per-N table here any more.  The residual trend is unmodelled and
+        //   bills an M3..M4 device's feed about 4% (50 aF) high, some 0.3% of
+        //   such a part.  Run-to-run scatter of the solver is 2-3 aF per solve,
+        //   which after differencing is ~0.3% of the term at w=7 and ~1% at
+        //   w=2, and boundary placement moves the difference by about another
+        //   1%.  Evidence and the solver configurations are archived with the
+        //   project.
+        //
+        //   SCALE.  The term is calibrated on the same field solve whose active
+        //   area reads about 17% below the transferred density[N] above.  If the
+        //   silicon campaign moves that density, this coefficient should be read
+        //   as moving by the same factor: about 0.2 fF at w=7.  The correction
+        //   itself does not depend on the scale question, since rescuing the
+        //   notes' term would need the solver wrong by a factor near six on a
+        //   differential quantity.
+        //
+        //   The opposite-side feed is still charged at zero (see the header).
+        //   The same field solve puts it at 0.40 fF at w=2 rising to 2.23 fF at
+        //   w=15, and unlike the single-side term it does grow with the layer
+        //   count.  Dropping it is kept deliberately, so that this change
+        //   carries one decision; the consequence is that the step the model
+        //   predicts when a designer switches from 'double' to 'same' is still
+        //   larger than the drawn step by about the size of the dropped term.
 
         // ---- main capacitance [F] -------------------------------------------
         cfeed_fF = issame * (0.1625 * pad_len + 0.0916);   // 'same' only; else 0
