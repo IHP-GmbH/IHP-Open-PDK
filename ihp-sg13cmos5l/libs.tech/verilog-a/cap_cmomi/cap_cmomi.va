@@ -18,14 +18,18 @@
 // =============================================================================
 // ***  APPROXIMATE MODEL -- NOT YET VALIDATED ON ihp-sg13cmos5l SILICON  ***
 //
-//   Every coefficient in this model is TRANSFERRED from the sg13g2
-//   characterisation (IHP "MOM model development notes v4", 2022), which was
+//   Every coefficient in this model except the single-side feed term is
+//   TRANSFERRED from the sg13g2 characterisation (IHP "MOM model development
+//   notes v4", 2022), which was
 //   fitted on the g2 thin-metal stack (Metal1..Metal5).  cmos5l uses only the
 //   four thin metals Metal1..Metal4, so the model is re-used here BY LAYER
 //   COUNT N = mmax - mmin + 1: an N-layer cmos5l device borrows the g2 N-layer
 //   coefficients.  NONE of these numbers are measured on cmos5l silicon, and the
 //   N = 2 set is additionally an extrapolation (see below).  Treat all results
-//   as engineering estimates.  A proper re-fit is pending cmos5l silicon
+//   as engineering estimates.  The single-side feed term is instead fitted to
+//   this PCell's own drawn geometry with a field solve, because the structure the
+//   notes characterised is not the one drawn here.  A proper re-fit is pending
+//   cmos5l silicon
 //   (matched-pair / array test structures, ~3-6 months); until then this is the
 //   best-available nominal model and is intentionally shipped so designers can
 //   simulate a physically-reasonable cap_cmomi today.
@@ -69,12 +73,15 @@
 //
 // Low-frequency capacitance:
 //   C_total = density[N] * active_area  +  Cfeed         [fF]
-//     Cfeed = cfeed_per_um[N] * feed_width   (feed == 'same' only)
+//     Cfeed = 0.1625 * pad_len + 0.0916      (feed == 'same' only)
 //           = 0                              (feed == 'double' | 'none')
+//     pad_len = active_y*0.89 + 0.42, the drawn height of the stacked pads [um]
 //   density[N] is the ACTIVE-AREA density (p5 "change in C vs length" cancels the
-//   feed overlap), so for feed=double the ~1.7fF opposite-side feed residual
-//   measured in the notes is intentionally dropped ("assume zero", p7-8): small
-//   double devices read ~3% low by construction, not by omission.
+//   feed overlap), so for feed=double the opposite-side feed residual is
+//   intentionally dropped ("assume zero", p7-8, bounded there at under 2 fF).
+//   On this layout that residual is 0.40 fF at w=2 rising to 2.23 fF at w=15,
+//   measured; dropping it makes feed=double read low by that much, and makes the
+//   step from 'double' to 'same' read high by the same amount.
 //
 //   ROW COUNT.  active_y counts the coupled rows this PCell DRAWS, floor(w/0.89).
 //   The notes subtract one because their characterised structure ends in single
@@ -100,9 +107,11 @@
 //   (and, for the oxide shunt, by the bottom-metal identity mmin).  Sourced
 //   values by N (all g2-characterised, TRANSFERRED to cmos5l here):
 //       N = 3 , N = 4  -> g2-measured (borrowed by layer count)
-//       N = 2          -> extrapolated (density 0.55 / cfeed 0.70, OUR numbers,
-//                         the only non-source C values here) -- e.g. an M3..M4
-//                         or M1..M2 two-metal cmos5l subset
+//       N = 2          -> extrapolated (density 0.55, OUR number) -- e.g. an
+//                         M3..M4 or M1..M2 two-metal cmos5l subset
+//   The single-side feed term is the exception to all of this: it is measured on
+//   the cell as drawn (see the Cfeed block below) and carries no layer keying,
+//   because the two plates sit on the top two metals whatever N is.
 //   On cmos5l NONE of these are silicon-measured (see the top-of-file banner).
 //   The oxide Cox is keyed by the BOTTOM metal (mmin): mmin==1 (M1 bottom) is the
 //   largest bottom-to-substrate coupling and reuses the notes' 5-layer Cox set;
@@ -172,8 +181,8 @@ module cap_cmomi(PLUS, MINUS, SUB);
 
     real lu, wu, lw, ratio;
     integer Nc, Nlay;
-    real ax, ay, active_x, active_y, active_area, feed_rows, feed_width;
-    real issame, density, cfeed_pu, cfeed_fF, cmain_fF, Cmain;
+    real ax, ay, active_x, active_y, active_area, pad_len;
+    real issame, density, cfeed_fF, cmain_fF, Cmain;
     real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
     real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
     real mMod;   // device multiplicity ($mfactor)
@@ -222,10 +231,6 @@ module cap_cmomi(PLUS, MINUS, SUB);
         // this without a field solver; see cap_cmomi_geometry_test.py, which
         // compares the drawn rows against the row count this model bills.
         //
-        // The feed keeps the old count on purpose: cfeed_per_um was fitted
-        // against feed_width = (floor(w/0.89) - 1)*0.89 + 0.64, so feed_rows
-        // below preserves that convention and Cfeed does not move here.
-        //
         // A drawn dimension that is an exact multiple of the pitch (e.g. l=21um
         // =25*0.84) round-trips through *1e6 to one ULP below the integer, and
         // floor() then lands on k or k-1 depending on the toolchain's division
@@ -239,9 +244,11 @@ module cap_cmomi(PLUS, MINUS, SUB);
         active_x = (ax < 1.0) ? 1.0 : ax;
         active_y = (ay < 1.0) ? 1.0 : ay;
         active_area = active_x * active_y * 0.84 * 0.89;
-        // pre-fix row count, kept only for the feed: see the note above
-        feed_rows   = (ay - 1.0 < 1.0) ? 1.0 : ay - 1.0;
-        feed_width  = feed_rows * 0.89 + 0.64;
+        // The drawn stacked feed pads span the whole array plus half a bar at
+        // each end, which is exactly active_y*0.89 + 2*0.21 um of the PCell's
+        // own painting.  See the Cfeed note below for why this replaced the
+        // notes' feed_width.
+        pad_len = active_y * 0.89 + 0.42;
 
         issame = (feed == 1) ? 1.0 : 0.0;
 
@@ -251,16 +258,43 @@ module cap_cmomi(PLUS, MINUS, SUB);
         density = (Nlay <= 2) ? 0.55 :
                   (Nlay == 3) ? 0.82 : 1.09;
 
-        // ---- single-side feed cap per unit length [fF/um] by N --------------
-        //   N<=2 -> 0.70 (extrapolated).  The N=3,4 values are the notes' published
-        //   feed caps on the OVERSIZE-via basis; unlike the area density they carry
-        //   NO via correction, so small feed=same devices read ~1-2% high.  Kept as
-        //   the source value (a re-fit would deviate from the published number).
-        cfeed_pu = (Nlay <= 2) ? 0.70 :
-                   (Nlay == 3) ? 0.97 : 1.28;
+        // ---- single-side feed capacitance [fF] ------------------------------
+        //   MEASURED ON THE DRAWN CELL, not transferred.  The notes give
+        //   cfeed_per_um = {2:0.70, 3:0.97, 4:1.28} fF/um against feed_width, for
+        //   a feed section built as an extended fan-in with a via column tying
+        //   every polarity tower across all metals.  This PCell does not draw
+        //   that.  It draws two plates 0.90 um wide on the top metal and the one
+        //   below it, overlapping completely with no via between them, and a
+        //   plate overlap at the 0.54 um inter-metal spacing cannot reach
+        //   1.28 fF per um of feed width without a pad about 19 um wide.  The
+        //   reference generator does not reproduce the published number either,
+        //   so this is not a porting regression; neither generator draws what was
+        //   characterised, and the notes do not contain enough of that structure
+        //   to rebuild it.
+        //
+        //   So the term below is fitted to the cell as drawn, from an
+        //   electrostatic field solve of the PCell's own three feed branches in
+        //   one shared domain: Cfeed = C(feed='same') - C(feed='none').  Four
+        //   widths at Metal1..Metal4 give 0.1625*pad_len + 0.0916 fF with a
+        //   worst residual of 3 aF, and three further layer windows at w=7 give
+        //   1.126 to 1.171 fF, flat to 4%, which is what two plates on the top
+        //   two metals must do: they cannot see the layer count.  That is why
+        //   there is no per-N table here any more.  Mesh realisation noise on
+        //   these numbers is 0.3% of the term.  Evidence and the solver
+        //   configurations are archived with the project.
+        //
+        //   The opposite-side feed is still charged at zero, as the notes decided
+        //   ("assume zero", p7-8, bound under 2 fF).  It is NOT zero on this
+        //   layout: the same field solve puts it at 0.40 fF at w=2 rising to
+        //   2.23 fF at w=15, and unlike the single-side term it does grow with
+        //   the layer count.  Dropping it is kept deliberately, so that this
+        //   change carries one decision; the consequence is that the step the
+        //   model predicts when a designer switches from 'double' to 'same' is
+        //   still larger than the drawn step by about the size of the dropped
+        //   term.
 
         // ---- main capacitance [F] -------------------------------------------
-        cfeed_fF = issame * cfeed_pu * feed_width;   // 'same' only; else 0
+        cfeed_fF = issame * (0.1625 * pad_len + 0.0916);   // 'same' only; else 0
         cmain_fF = density * active_area + cfeed_fF;
         Cmain    = cmain_fF * 1.0e-15;
 

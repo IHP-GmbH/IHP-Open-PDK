@@ -27,11 +27,13 @@ import math
 class cap_cmomi(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
-    APPROXIMATE, pending cmos5l silicon: the capacitance coefficients
-    (AREACAP / CFEED_PER_UM) are TRANSFERRED from the sg13g2 characterisation
-    (IHP "MOM model development notes", 2022, thin metals M1..M5) and re-used on
-    the cmos5l M1..M4 stack by LAYER COUNT N = mmax-mmin+1; N=2 is additionally
-    extrapolated. None are measured on cmos5l silicon. The C-label and the
+    APPROXIMATE, pending cmos5l silicon: the area density AREACAP is TRANSFERRED
+    from the sg13g2 characterisation (IHP "MOM model development notes", 2022,
+    thin metals M1..M5) and re-used on the cmos5l M1..M4 stack by LAYER COUNT
+    N = mmax-mmin+1; N=2 is additionally extrapolated. None are measured on
+    cmos5l silicon. The single-side feed term is the exception: the notes'
+    feed section is a different structure from the one drawn here, so CFEED_SLOPE
+    and CFEED_END are fitted to this cell's own geometry. The C-label and the
     Verilog-A/OSDI model share this same formula, so they always agree, but
     treat the absolute value as an engineering estimate (re-fit ~3-6 months).
 
@@ -56,8 +58,9 @@ class cap_cmomi(DloGen):
                    PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
                    below it, overlapping in x,y but with no via between them
                    (separate nets). That plate overlap is the feed capacitance
-                   Cfeed ~ ((ny - 1)*UC_Y + 0.64) * cfeed_per_um, on the row
-                   count cfeed_per_um was fitted against (see genLayout).
+                   Cfeed, measured on this drawn overlap rather than taken from
+                   the reference notes, whose feed section is a different
+                   structure (see cap_cmomi.va).
                    Requires mmax > mmin (>=2 metals) for the two stacked plates;
                    a single-metal stack has no second layer, so use 'double'
                    when mmin == mmax.
@@ -117,7 +120,12 @@ class cap_cmomi(DloGen):
     # N=2 is extrapolated (~+0.27 fF/um^2 per thin layer); unmeasured.
     # ---------------------------------------------------------------
     AREACAP      = {2: 0.55, 3: 0.82, 4: 1.09}
-    CFEED_PER_UM = {2: 0.70, 3: 0.97, 4: 1.28}
+    # Single-side feed, measured on the cell as drawn rather than transferred:
+    # Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len the drawn height of
+    # the two stacked pads. No layer keying, because those pads sit on the top two
+    # metals whatever the stack is. See cap_cmomi.va for the provenance.
+    CFEED_SLOPE  = 0.1625
+    CFEED_END    = 0.0916
 
     # ---------------------------------------------------------------
     # Parameter specs
@@ -439,9 +447,8 @@ class cap_cmomi(DloGen):
         active_area = nx_active * self.UC_X * ny * self.UC_Y
         c_active = areacap * active_area
         if self.feed == 'same':
-            cfeed = self.CFEED_PER_UM[n_clamped]
-            feed_width = ny_active * self.UC_Y + 0.64
-            c_total = c_active + cfeed * feed_width
+            pad_len = ny * self.UC_Y + 2 * self.T_BAR
+            c_total = c_active + self.CFEED_SLOPE * pad_len + self.CFEED_END
         else:
             c_total = c_active
         label_text = 'cap_cmomi C={:.3f}fF'.format(c_total)
