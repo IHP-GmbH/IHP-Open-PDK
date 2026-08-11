@@ -109,6 +109,13 @@ def _drc_clean(drc_out):
     return (not unexpected), unexpected
 
 
+def _rm(path):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
 def _extracted_two_terminal(cir_path):
     """True if the extracted netlist has a cap_cmomi device with 2 distinct nets."""
     if not os.path.isfile(cir_path):
@@ -145,27 +152,41 @@ def _orchestrate():
         gds = os.path.join(run_dir, name + ".gds")
         cfg = {"name": name, "params": params}
 
+        # Both artifacts this loop judges are read back off disk, so a file left
+        # by an earlier run into the same directory would be read as this run's
+        # result. Delete them first, and believe the runners' exit codes rather
+        # than the presence of a file.
+        _rm(gds)
         genenv = dict(env)
         genenv["CAP_MOM_CFG"] = json.dumps(cfg)
         genenv["CAP_MOM_OUT"] = gds
-        subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
-                       env=genenv, capture_output=True, text=True)
-        if not os.path.isfile(gds):
+        gen = subprocess.run(["klayout", "-zz", "-r", os.path.abspath(__file__)],
+                             env=genenv, capture_output=True, text=True)
+        if gen.returncode != 0 or not os.path.isfile(gds):
             results.append((name, "GEN-FAIL", "-", "-"))
             continue
 
         drc_dir = os.path.join(run_dir, name + "_drc")
-        rc, drc_out = _run([sys.executable, DRC_RUNNER, "--path", gds,
-                            "--topcell", name, "--run_dir", drc_dir])
+        # The DRC exit code is deliberately not the verdict: a bare PCell with
+        # no chip context always trips the density and fill rules, so the runner
+        # exits non-zero on every config. _drc_clean reads the violated-rules
+        # list from stdout and passes as long as none is outside the expected
+        # set, so it cannot go stale on a leftover file either.
+        _, drc_out = _run([sys.executable, DRC_RUNNER, "--path", gds,
+                           "--topcell", name, "--run_dir", drc_dir])
         drc_ok, drc_unexpected = _drc_clean(drc_out)
         if not drc_ok:
             print(f"[{name}] unexpected DRC violations: "
                   f"{', '.join(sorted(drc_unexpected))}")
 
         lvs_dir = os.path.join(run_dir, name + "_lvs")
-        _run([sys.executable, LVS_RUNNER, "--layout", gds, "--topcell", name,
-              "--net_only", "--run_dir", lvs_dir])
         cir = os.path.join(lvs_dir, name + "_extracted.cir")
+        _rm(cir)
+        rc, _ = _run([sys.executable, LVS_RUNNER, "--layout", gds,
+                      "--topcell", name, "--net_only", "--run_dir", lvs_dir])
+        if rc != 0:
+            results.append((name, "LVS-FAIL", "clean" if drc_ok else "VIOL", "-"))
+            continue
         dev = _extracted_two_terminal(cir)
 
         if two_terminal:
