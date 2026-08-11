@@ -77,3 +77,37 @@ module CapCmomfReader
 end
 
 CustomReader.prepend(CapCmomfReader)
+
+unless DeviceCustomMIM.method_defined?(:equivalent_terminal_id)
+  raise 'cap_cmomf: DeviceCustomMIM cannot declare equivalent terminals. The ' \
+        'shared custom_mim_extractor.lvs no longer derives from ' \
+        'RBA::DeviceClassCapacitor, and rule_decks/cap_cmomf_registration.lvs ' \
+        'has to follow it.'
+end
+
+# The two terminals of a cap_cmomf are interchangeable, and the shared
+# DeviceCustomMIM only says so for cap_cmomi.
+#
+# CapMomExtractor picks the two ports by geometry, sorting them by x, and never
+# reads their pin names, so the order it hands over carries no information: the
+# PCell puts PLUS on the left edge and MINUS on the top one, and mirroring the
+# instance moves PLUS to the right and exchanges the two terminals. g2 hit this
+# on cap_cmomi and answered it in custom_mim_extractor.lvs, behind a gate on the
+# device name containing 'cmomi', which leaves cap_cmomf out. Without this
+# block a mirrored placement of a symmetric device is reported as a mismatch.
+# cap_cmomf_checks holds it as cmomf_mirrored.gds. Fold into the g2 gate when
+# cap_cmomf is upstreamed.
+#
+# cap_cmim keeps its asymmetry, which is why the gate is per device and not on
+# the class: it has a real top and bottom plate and its extractor tells them
+# apart by the layer they sit on.
+module CapCmomfSymmetricTerminals
+  def initialize(name)
+    super
+    return unless name.downcase.include?('cmomf')
+
+    equivalent_terminal_id(terminal_id('mim_btm'), terminal_id('mim_top'))
+  end
+end
+
+DeviceCustomMIM.prepend(CapCmomfSymmetricTerminals)
