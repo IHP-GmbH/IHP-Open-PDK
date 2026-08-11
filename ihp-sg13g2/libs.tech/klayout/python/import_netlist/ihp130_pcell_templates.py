@@ -336,6 +336,32 @@ templates = [
     },
     {
         "regex": re.compile(
+            rf"^.*cap_cmomf(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+)).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "cmomf",
+        "params": [
+            {
+                "name": "w",
+                "type": "string",
+            },
+            {
+                "name": "l",
+                "type": "string",
+            },
+            {
+                "name": "mmin",
+                "type": "int",
+            },
+            {
+                "name": "mmax",
+                "type": "int",
+            },
+        ],
+        "default_params": {"w": "5.0e-6", "l": "5.0e-6", "mmin": 1, "mmax": 5},
+    },
+    {
+        "regex": re.compile(
             rf"^.*sg13_moscap_n(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>[0-9]+))|).*$"
         ),
         "pcell_library": "SG13_dev",
