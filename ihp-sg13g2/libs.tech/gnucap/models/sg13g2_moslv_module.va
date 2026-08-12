@@ -504,3 +504,94 @@ module sg13_lv_pmos_TODO(d, g, s, b);
         .rfmode(rfmode)) \
     sg13_lv_pmos(d, g, s, b);
 endmodule
+
+//******************************************************************************
+// ESD MOSLV Clamp devices
+//******************************************************************************
+
+(* desc = "SG13G2 nmoscl_2 NMOS ESD clamp, 2-finger diffusion" *)
+module nmoscl_2(VDD, VSS);
+    inout VDD, VSS;
+    electrical VDD, VSS;
+
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.36u from [0.13u:10u];
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 168u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 58e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 58e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 336u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 336u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    nmoscl_psp #( \
+        .w(w), \
+        .l(l), \
+        .m(m), \
+        .ng(ng), \
+        .as(as), \
+        .ad(ad), \
+        .pd(pd), \
+        .ps(ps), \
+        .trise(trise), \
+        .pre_layout(pre_layout), \
+        .rfmode(rfmode) \
+    ) sg13_lv_nmos(VDD, VSS, VSS, VSS);
+endmodule
+
+(* desc = "SG13G2 nmoscl_4 NMOS ESD clamp, 4-finger diffusion" *)
+module nmoscl_4(VDD, VSS);
+    inout VDD, VSS;
+    electrical VDD, VSS;
+
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.36u from [0.13u:10u];
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 168u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 114e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 114e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 672u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 672u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    nmoscl_psp #( \
+        .w(w), \
+        .l(l), \
+        .m(m), \
+        .ng(ng), \
+        .as(as), \
+        .ad(ad), \
+        .pd(pd), \
+        .ps(ps), \
+        .trise(trise), \
+        .pre_layout(pre_layout), \
+        .rfmode(rfmode) \
+    ) sg13_lv_nmos(VDD, VSS, VSS, VSS);
+endmodule
+

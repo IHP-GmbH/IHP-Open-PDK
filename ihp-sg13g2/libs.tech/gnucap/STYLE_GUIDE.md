@@ -282,8 +282,8 @@ sg13g2_lv_nmos_psp #( \
     .delvto(0.0), \
     .factuo(1.0), \
     .pre_layout(pre_layout), \
-    .rfmode(rfmode)) \
-sg13_lv_nmos(d, g, s, b);
+    .rfmode(rfmode) \
+) sg13_lv_nmos(d, g, s, b);
 ```
 
 ## Naming

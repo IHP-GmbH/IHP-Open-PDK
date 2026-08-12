@@ -13,17 +13,17 @@
     - [x] mos_cap (psp)
     - [ ] mos_var (psp)
 
-- [ ] diode (sp_diode)
-   - [ ] antina   
-   - [ ] esd 
-   - [ ] dschottky_nb1 
-   - [ ] isobox 
+- [x] diode (sp_diode)
+   - [x] antina   
+   - [x] esd 
+   - [x] dschottky_nb1 
+   - [x] isobox 
 
 - [ ] mosfets
-  - [X] moslv (psp)
-  - [X] moshv (psp)
+  - [X] moslv (psp103)
+  - [X] moshv (psp103)
   - [x] hbt (vbic)
-  - [ ] esd clamp (psp) (don't expose parameters)
+  - [x] esd clamp (psp) (don't expose parameters)
   - [ ] bondpad
  
 ## TODOs

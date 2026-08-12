@@ -28,7 +28,7 @@ TARGETS = \
 	sg13g2_moslv_rf_paramset \
 	sg13g2_moshv_paramset \
 	sg13g2_moshv_rf_paramset \
-	sg13g2_hbt_paramset \
+	sg13g2_hbt_paramset
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
 
