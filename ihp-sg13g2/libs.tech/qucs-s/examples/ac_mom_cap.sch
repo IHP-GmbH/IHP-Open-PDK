@@ -38,5 +38,5 @@
   </Rect>
 </Diagrams>
 <Paintings>
-  <Text 580 470 12 #000000 0 "High-pass RC: |v(out)| rises through the -3dB corner at f_3dB = 1/(2*pi*R*C), R = 100k.\ncap_cmomi 10x70 (M1..M5, feed=double): f_3dB ~ 1.714 MHz -> C ~ 928.5 fF.\nSame method and result as the xschem test sg13g2_tests/ac_cap_cmomi.">
+  <Text 580 470 12 #000000 0 "High-pass RC: |v(out)| rises through the -3dB corner at f_3dB = 1/(2*pi*R*C), R = 100k.\ncap_cmomi 10x70 (M1..M5, feed=double): f_3dB ~ 1.824 MHz -> C ~ 872.4 fF.\nSame method and result as the xschem test sg13g2_tests/ac_cap_cmomi.">
 </Paintings>
