@@ -171,6 +171,15 @@ module cap_cmomi(PLUS, MINUS, SUB);
     // weak anchor conductance for otherwise-floating internal islands [S]
     localparam real GLEAK = 1.0e-12;
 
+    // Single-side feed capacitance, Cfeed = CFEED_SLOPE*pad_len + CFEED_END.
+    // Named because these two are the only C coefficients in this file that
+    // cannot be looked up in the reference notes: they are fitted here, on the
+    // cell as drawn.  The same two names carry the same two values in the PCell
+    // (cap_cmomi_code.py) and the xschem symbol; the block below explains where
+    // they come from.
+    localparam real CFEED_SLOPE = 0.1625;   // [fF/um] against the drawn pad height
+    localparam real CFEED_END   = 0.0916;   // [fF]    end fringing at pad_len -> 0
+
     analog begin
 
         // ---- device multiplicity (Verilog-AMS standard $mfactor) ------------
@@ -292,7 +301,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
         //   with that work.
 
         // ---- main capacitance [F] -------------------------------------------
-        cfeed_fF = issame * (0.1625 * pad_len + 0.0916);   // 'same' only; else 0
+        cfeed_fF = issame * (CFEED_SLOPE * pad_len + CFEED_END);  // 'same' only
         cmain_fF = density * active_area + cfeed_fF;
         Cmain    = cmain_fF * 1.0e-15;
 
