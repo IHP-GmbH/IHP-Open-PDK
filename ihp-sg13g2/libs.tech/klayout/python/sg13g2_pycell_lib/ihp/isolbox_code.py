@@ -71,7 +71,7 @@ class isolbox(DloGen):
         l = self.l
         w = self.w
         wellwidth = self.wellwidth
-        diode_layer = self.diode_layer
+        diode_layer = self.diode_layer == 't'
         pwell_w = self.pwell_w
         cont_ring = self.cont_ring
 
