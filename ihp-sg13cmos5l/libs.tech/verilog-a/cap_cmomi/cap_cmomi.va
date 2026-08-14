@@ -73,21 +73,19 @@
 //
 // Low-frequency capacitance:
 //   C_total = density[N] * active_area  +  Cfeed         [fF]
-//     Cfeed = 0.1625 * pad_len + 0.0916      (feed == 'same' only)
-//           = 0                              (feed == 'double' | 'none')
+//     Cfeed = 0.1625 * pad_len + 0.0916      (feed == 'same')
+//           = 0.152  * pad_len               (feed == 'double')
+//           = 0                              (feed == 'none')
 //     pad_len = active_y*0.89 + 0.42, the drawn height of the stacked pads [um]
-//   density[N] is the ACTIVE-AREA density (p5 "change in C vs length" cancels the
-//   feed overlap), so for feed=double the opposite-side feed residual is
-//   intentionally dropped.  The notes assume it away (p7-8) but their bound does
-//   not apply to this structure, and our own measurement exceeds it anyway: on
-//   this layout the residual is 0.40 fF at w=2 rising to 2.23 fF at w=15.  The
-//   zero rests on that measurement and on the pending silicon re-fit, not on
-//   p7-8.  Dropping it makes feed=double read low by that much, and makes the
-//   step from 'double' to 'same' read high by the same amount.  It must be
-//   revisited TOGETHER with density[N]: on the default device the two err in
-//   opposite directions (the transferred density reads high against the same
-//   field solve that measured this residual), so applying either correction
-//   alone moves the default device further from the measurement, not closer.
+//   density[N] is the ACTIVE-AREA density.  The opposite-side (double) feed adds
+//   a real capacitance over the bare array, measured on the via-fixed cell as
+//   Cfeed_dbl = C(feed='double') - C(feed='none') = 0.152*pad_len (through
+//   origin, four widths at Metal1..Metal4, worst residual 0.03 fF).  The notes
+//   dropped it to zero ("assume zero", p7-8), which left small feed=double
+//   devices reading low by construction; the via fix also removed a density
+//   deficit that had partly masked it, so the residual now stands on its own and
+//   is billed.  Dropping it made the default feed=double device (w=l=5 um) read
+//   about 3.6% low, size-dependent: ~10% at w=l=2 um down to ~0.1% at 100 um.
 //
 //   ROW COUNT.  active_y counts the coupled rows this PCell DRAWS, floor(w/0.89).
 //   The notes subtract one because their characterised structure ends in single
@@ -188,7 +186,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
     real lu, wu, lw, ratio;
     integer Nc, Nlay;
     real ax, ay, active_x, active_y, active_area, pad_len;
-    real issame, density, cfeed_fF, cmain_fF, Cmain;
+    real issame, isdbl, density, cfeed_fF, cmain_fF, Cmain;
     real Rseries, Lcore, Rskin1, Lskin_c, Lskin_s, Rskin, Lskin;
     real cox0, cox1, cox2, Cox, Rsub, Csub, srf_ss, wsrf;
     real mMod;   // device multiplicity ($mfactor)
@@ -196,14 +194,16 @@ module cap_cmomi(PLUS, MINUS, SUB);
     // weak anchor conductance for otherwise-floating internal islands [S]
     localparam real GLEAK = 1.0e-12;
 
-    // Single-side feed capacitance, Cfeed = CFEED_SLOPE*pad_len + CFEED_END.
-    // Named because these two are the only C coefficients in this file that
-    // cannot be looked up in the reference notes: they are fitted here, on the
-    // cell as drawn.  The same two names carry the same two values in the PCell
-    // (cap_cmomi_code.py) and the xschem symbol; the block below explains where
-    // they come from.
-    localparam real CFEED_SLOPE = 0.1625;   // [fF/um] against the drawn pad height
-    localparam real CFEED_END   = 0.0916;   // [fF]    end fringing at pad_len -> 0
+    // Feed capacitance coefficients.  These three are the only C coefficients in
+    // this file that cannot be looked up in the reference notes: they are fitted
+    // here, on the cell as drawn.  The same names carry the same values in the
+    // PCell (cap_cmomi_code.py) and the xschem symbol; the block below explains
+    // where they come from.  Single-side feed (feed=='same'):
+    //   Cfeed = CFEED_SLOPE*pad_len + CFEED_END.  Opposite-side (feed=='double'):
+    //   Cfeed = CFEED2_SLOPE*pad_len (through origin).
+    localparam real CFEED_SLOPE  = 0.1625;  // [fF/um] single-side, against drawn pad height
+    localparam real CFEED_END    = 0.0916;  // [fF]    single-side end fringing at pad_len -> 0
+    localparam real CFEED2_SLOPE = 0.152;   // [fF/um] opposite-side (double) feed vs bare array
 
     analog begin
 
@@ -274,6 +274,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
         pad_len = active_y * 0.89 + 0.42;
 
         issame = (feed == 1) ? 1.0 : 0.0;
+        isdbl  = (feed == 2) ? 1.0 : 0.0;
 
         // ---- area capacitance density [fF/um^2] by layer count N ------------
         //   N<=2 -> 0.55 (extrapolated, cmos5l 2-metal subset)
@@ -316,24 +317,25 @@ module cap_cmomi(PLUS, MINUS, SUB);
         //   worth about as much again.  Evidence and the solver configurations
         //   are archived with the project.
         //
-        //   SCALE.  The term is calibrated on the same field solve whose active
-        //   area reads about 17% below the transferred density[N] above.  If the
-        //   silicon campaign moves that density, this coefficient should be read
-        //   as moving by the same factor: about 0.2 fF at w=7.  The correction
-        //   itself does not depend on the scale question, since rescuing the
-        //   notes' term would need the solver wrong by a factor near six on a
-        //   differential quantity.
+        //   SCALE.  This term was first calibrated on a field solve of the
+        //   sparse-via cell, whose active area then read well below the
+        //   transferred density[N].  The via fix (tooth-tip vias) closed that
+        //   gap: on the via-fixed cell the solved active-area density agrees with
+        //   density[N] to about 1%, so the single-side term needs no rescaling.
+        //   If a silicon campaign moves density[N], read this coefficient as
+        //   moving by the same factor.
         //
-        //   The opposite-side feed is still charged at zero (see the header).
-        //   The same field solve puts it at 0.40 fF at w=2 rising to 2.23 fF at
-        //   w=15, and unlike the single-side term it does grow with the layer
-        //   count.  Dropping it is kept deliberately, so that this change
-        //   carries one decision; the consequence is that the step the model
-        //   predicts when a designer switches from 'double' to 'same' is still
-        //   larger than the drawn step by about the size of the dropped term.
+        //   The opposite-side (double) feed is now billed at CFEED2_SLOPE*pad_len
+        //   (see the header).  The same field solve on the via-fixed cell puts it
+        //   at 0.73 fF at w=5 rising to 2.26 fF at w=15, growing linearly with
+        //   pad_len through the origin.  With it billed, the step the model
+        //   predicts when a designer switches from 'double' to 'same' matches the
+        //   drawn step (the two feed terms differ only by the single-side end
+        //   fringing CFEED_END).
 
         // ---- main capacitance [F] -------------------------------------------
-        cfeed_fF = issame * (CFEED_SLOPE * pad_len + CFEED_END);  // 'same' only
+        cfeed_fF = issame * (CFEED_SLOPE * pad_len + CFEED_END)   // single-side
+                 + isdbl  * (CFEED2_SLOPE * pad_len);             // opposite-side (double)
         cmain_fF = density * active_area + cfeed_fF;
         Cmain    = cmain_fF * 1.0e-15;
 

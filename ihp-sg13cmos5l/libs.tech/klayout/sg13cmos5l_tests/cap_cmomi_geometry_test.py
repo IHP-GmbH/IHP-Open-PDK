@@ -91,13 +91,13 @@ def fkey(c):
 
 
 FREEZE = {
-    "w2.0_l2.0_m14_double": "d8c45afaf0044cd6",
-    "w5.0_l5.0_m14_double": "ef110478b3dfbb13",
-    "w7.0_l5.5_m14_double": "bfc6879cd6c123b0",
-    "w5.0_l5.0_m14_same": "4c4867cf08fdac28",
-    "w5.0_l5.0_m14_none": "85eb051af4a255da",
-    "w5.0_l5.0_m24_double": "416fed2063e3f49f",
-    "w5.0_l5.0_m34_same": "46b31a7c4f9a11cb",
+    "w2.0_l2.0_m14_double": "944b83dd6b44143a",
+    "w5.0_l5.0_m14_double": "2580ac3086c98b97",
+    "w7.0_l5.5_m14_double": "9b89e22667a019f9",
+    "w5.0_l5.0_m14_same": "a481a5460c965ea3",
+    "w5.0_l5.0_m14_none": "c5965f6812c5a713",
+    "w5.0_l5.0_m24_double": "e445e40120aabd8d",
+    "w5.0_l5.0_m34_same": "aa68dede0ef23d5f",
 }
 
 

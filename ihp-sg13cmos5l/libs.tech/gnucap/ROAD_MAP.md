@@ -62,7 +62,7 @@ capacitors SG13G2's version covers. The reference data had to be regenerated
 too. For `cap_cmomi` the testbench instantiates `mmax=4` where SG13G2 uses 5,
 and since the row-count correction the models differ as well: this PDK bills
 `floor(w/0.89)` coupled rows while the SG13G2 twin still subtracts one (until its
-own fix lands). The measured cutoff for `mmax=4` is about 78.1 MHz. For
+own fix lands). The measured cutoff for `mmax=4` is about 75.4 MHz. For
 `cap_cmomf` there was never anything to regenerate from. Both live under
 `tests/{gnucap,ngspice}/capacitor`, and the Ngspice `.spiceinit` there is a real
 file because the shared one loads only `cap_cmomi.osdi`.
