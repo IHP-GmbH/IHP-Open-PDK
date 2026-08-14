@@ -94,7 +94,7 @@ CASES = [
     {"w": 1.0,  "l": 2.0,  "mmin": 1, "mmax": 5, "feed": "same",
      "pcell": False},
     # The same width with the default feed, so the qucs-s equations see the
-    # clamp too: they model the active area only and skip every 'same' case.
+    # clamp too: they model the default feed=double and skip same/none cases.
     {"w": 1.0,  "l": 2.0,  "mmin": 1, "mmax": 5, "feed": "double",
      "pcell": False},
 ]
@@ -253,10 +253,11 @@ def sym_values():
 def qucs_values(path, pattern):
     """Capacitance the qucs-s equation would show, for the cases it covers.
 
-    That equation deliberately models only the active area, so it is compared on
-    feed != 'same' cases and skipped on the rest; the parameter's own
-    Description says as much.  qucs-s spells floor as rint(x - 0.5) and has no
-    string comparison, both of which tclsh evaluates unchanged.
+    That equation models the symbol's default feed=double configuration (active
+    area plus the opposite-side feed term), so it is compared on feed == 'double'
+    cases and skipped on the rest; the parameter's own Description says as much.
+    qucs-s spells floor as rint(x - 0.5) and has no string comparison, so a
+    single expression cannot branch on feed and tracks the default only.
     """
     text = open(path).read()
     m = re.search(pattern, text, re.S)
@@ -265,7 +266,7 @@ def qucs_values(path, pattern):
     expr = m.group(1).replace("&lt;", "<").replace("&gt;", ">")
     out = {}
     for c in CASES:
-        if c["feed"] == "same":
+        if c["feed"] != "double":
             continue
         e = expr
         for name, val in (("mmax", c["mmax"]), ("mmin", c["mmin"]),

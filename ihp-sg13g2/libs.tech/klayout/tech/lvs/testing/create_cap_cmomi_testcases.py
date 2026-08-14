@@ -170,6 +170,29 @@ CONFIG_MATRIX = [
 ]
 
 
+def build_original():
+    """The original cap_cmomi testcase, rebuilt from the PCell.
+
+    cap_cmomi.cdl pairs a 'double' feed cap (C1, 7x7) with a 'same' feed cap
+    (C2, 5x5), each on its own net pair; the 'same' cap, two plates stacked over
+    one footprint, is what makes the per-metal pin isolation observable.  This
+    layout used to be a frozen snapshot no generator emitted, so it silently
+    drifted from the PCell (it missed the tooth-tip vias once those were added).
+    Rebuilding it from the PCell keeps it in step; like the other generated
+    layouts it is flattened, since a lone cap_cmomi in a sub-cell extracts
+    nothing in deep mode (see build_hier).
+    """
+    layout = _new_layout()
+    top = layout.create_cell("cap_cmomi")
+
+    double = _pcell(layout, w=7e-6, l=7e-6, mmin=1, mmax=5, feed="double")
+    same = _pcell(layout, w=5e-6, l=5e-6, mmin=1, mmax=5, feed="same")
+    _row(layout, top, [double, same])
+
+    top.flatten(-1, True)
+    _write(layout, os.path.join(UNIT_DIR, "cap_cmomi.gds"))
+
+
 def build_config():
     """Configuration matrix: one device per PCell configuration, own net pair."""
     layout = _new_layout()
@@ -338,6 +361,7 @@ def build_feed_none():
 
 def main():
     print("Generating cap_cmomi LVS testcase layouts")
+    build_original()
     build_config()
     build_hier()
     build_chain()

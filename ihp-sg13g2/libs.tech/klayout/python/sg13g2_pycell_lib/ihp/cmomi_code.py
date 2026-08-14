@@ -51,11 +51,13 @@ class cmomi(DloGen):
     Feed variants: cap_cmomi is ONE parameterised device; the `feed` parameter
     selects both the layout variant and the model behaviour. The two complete
     2-terminal versions are 'double' (opposite-side) and 'same' (single-side).
-    They are NOT electrically identical: the single-side 'same' adds a feed
-    capacitance Cfeed that 'double' does not (and uses a different series R), so
-    the two variants have different total capacitance from the same model.
+    They are NOT electrically identical: each adds a feed capacitance Cfeed on a
+    different slope (single-side 'same' the larger, opposite-side 'double' the
+    smaller) and uses a different series R, so the two variants have different
+    total capacitance from the same model.
       * 'double' : opposite-side feed. PLUS pad left (even rows), MINUS pad right
-                   (odd rows). Cfeed ~ 0. This is the reference configuration.
+                   (odd rows). Adds a feed capacitance Cfeed = CFEED2_SLOPE *
+                   pad_len (see cap_cmomi.va). This is the reference configuration.
       * 'same'   : single-side feed. Two STACKED left pads on the same footprint:
                    PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
                    below it, overlapping in x,y but with no via between them
@@ -93,6 +95,19 @@ class cmomi(DloGen):
     # the opposite-polarity bar = Mn.b (Metal2..4 min space). 0.58 would give
     # 0.205 um and fail Mn.b on Metal2/3/4.
     TOOTH_EXT   = 0.575
+    # Along-tooth via offset. The foundry reference (MOM_92u_92u) vias each finger
+    # on a 0.41 um pitch: one via at the bar/tooth base and one 0.41 um out along
+    # the tooth toward the tip. We had drawn only the
+    # base via, under-viaing the teeth by ~half. A full-wave (gds2palace) + electro-
+    # static Palace campaign measured the missing tip vias at ~+13% (full-wave) /
+    # ~+14% (electrostatic) capacitance, the same in our cell and the reference (the
+    # earlier "~5%" estimate was wrong). TOOTH_VIA_OFF = 0.41 reproduces the reference
+    # lattice exactly: 0.41 - VIA_CUT = 0.22 um to the base via = V1.b/Vn.b min via
+    # space (the reference sits at this same limit), and TOOTH_EXT - TOOTH_VIA_OFF
+    # - VIA_CUT/2 = 0.07 um of metal past the tip via = clears the 0.05 um endcap
+    # enclosure (V1.c1/Mn.c1). Larger offsets shrink the tip endcap; smaller ones
+    # break V1.b, so 0.41 is the only on-grid value that satisfies both.
+    TOOTH_VIA_OFF = 0.41
     X_UP        = 0.0
     X_DOWN      = 0.42
     BAR_OVERHANG = 0.05
@@ -129,6 +144,9 @@ class cmomi(DloGen):
     # inside the term's own error bar). See cap_cmomi.va for the provenance.
     CFEED_SLOPE  = 0.1625
     CFEED_END    = 0.0916
+    # Opposite-side (double) feed, fitted on the via-fixed cell against the same
+    # pad_len as the single-side term: Cfeed_dbl = CFEED2_SLOPE * pad_len.
+    CFEED2_SLOPE = 0.152
 
     # ---------------------------------------------------------------
     # Parameter specs
@@ -235,16 +253,26 @@ class cmomi(DloGen):
     def _draw_core_vias(self, vlayer, nx, ny):
         half_fw = self.FINGER_W / 2.0
         half_via = self.VIA_CUT / 2.0
+        off = self.TOOTH_VIA_OFF
+
+        def via(xc, yc):
+            self._paint(vlayer, xc - half_via, yc - half_via,
+                        xc + half_via, yc + half_via)
+
         for i in range(nx):
             for j in range(ny):
+                # UP-tooth (rooted at bar j, extends up): base via at the bar,
+                # tooth via 0.41 um out toward the tip (reference finger pitch).
                 xc = i * self.UC_X + self.X_UP + half_fw
-                yc = j * self.UC_Y
-                self._paint(vlayer, xc - half_via, yc - half_via,
-                            xc + half_via, yc + half_via)
+                y_base = j * self.UC_Y
+                via(xc, y_base)
+                via(xc, y_base + off)
+                # DOWN-tooth (rooted at bar j+1, extends down): base via at the
+                # bar, tooth via 0.41 um out toward the tip.
                 xc = i * self.UC_X + self.X_DOWN + half_fw
-                yc = (j + 1) * self.UC_Y
-                self._paint(vlayer, xc - half_via, yc - half_via,
-                            xc + half_via, yc + half_via)
+                y_base = (j + 1) * self.UC_Y
+                via(xc, y_base)
+                via(xc, y_base - off)
 
     def _draw_feed_double(self, m_bot, m_top, ny, dev_w,
                           metal_layers, via_layers):
@@ -449,9 +477,11 @@ class cmomi(DloGen):
         areacap = self.AREACAP[n_clamped]
         active_area = nx_active * self.UC_X * ny * self.UC_Y
         c_active = areacap * active_area
+        pad_len = ny * self.UC_Y + 2 * self.T_BAR
         if self.feed == 'same':
-            pad_len = ny * self.UC_Y + 2 * self.T_BAR
             c_total = c_active + self.CFEED_SLOPE * pad_len + self.CFEED_END
+        elif self.feed == 'double':
+            c_total = c_active + self.CFEED2_SLOPE * pad_len
         else:
             c_total = c_active
         label_text = 'cap_cmomi C={:.3f}fF'.format(c_total)
