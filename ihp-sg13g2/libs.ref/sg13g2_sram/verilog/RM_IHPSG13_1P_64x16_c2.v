@@ -1,6 +1,6 @@
 // ------------------------------------------------------
 //
-//		Copyright 2023 IHP PDK Authors
+//		Copyright 2025 IHP PDK Authors
 //
 //		Licensed under the Apache License, Version 2.0 (the "License");
 //		you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
 //		See the License for the specific language governing permissions and
 //		limitations under the License.
 //		
-//		Generated on Mon Apr  7 14:15:45 2025		
+//		Generated on Thu Jul 30 11:38:31 2026		
 //
 // ------------------------------------------------------ 
-`timescale 1ns/10ps
 `celldefine
-module RM_IHPSG13_1P_8192x32_c4 (
+module RM_IHPSG13_1P_64x16_c2 (
     A_CLK,
     A_MEN,
     A_WEN,
@@ -34,10 +33,10 @@ module RM_IHPSG13_1P_8192x32_c4 (
     input A_MEN;
     input A_WEN;
     input A_REN;
-    input [12:0] A_ADDR;
-    input [31:0] A_DIN;
+    input [5:0] A_ADDR;
+    input [15:0] A_DIN;
     input A_DLY;
-    output [31:0] A_DOUT;
+    output [15:0] A_DOUT;
 
 // ---- Simulation-only check: A_DLY must be tied high ----------------------
 `ifndef SYNTHESIS
@@ -61,8 +60,8 @@ module RM_IHPSG13_1P_8192x32_c4 (
 
 
     SRAM_1P_behavioral #(
-	.P_DATA_WIDTH(32),
-	.P_ADDR_WIDTH(13)
+	.P_DATA_WIDTH(16),
+	.P_ADDR_WIDTH(6)
 	) i_SRAM_1P_behavioral (
                     .A_CLK(A_CLK),
                     .A_MEN(A_MEN),
@@ -80,8 +79,8 @@ module RM_IHPSG13_1P_8192x32_c4 (
     wire A_MEN_DELAY;
     wire A_WEN_DELAY;
     wire A_REN_DELAY;
-    wire [12:0] A_ADDR_DELAY;
-    wire [31:0] A_DIN_DELAY;
+    wire [5:0] A_ADDR_DELAY;
+    wire [15:0] A_DIN_DELAY;
 
     reg notifier;
 
@@ -91,8 +90,8 @@ module RM_IHPSG13_1P_8192x32_c4 (
 
 
     SRAM_1P_behavioral #(
-	.P_DATA_WIDTH(32),
-	.P_ADDR_WIDTH(13)
+	.P_DATA_WIDTH(16),
+	.P_ADDR_WIDTH(6)
 	) i_SRAM_1P_behavioral (
                     .A_CLK(A_CLK_DELAY),
                     .A_MEN(A_MEN_DELAY),
