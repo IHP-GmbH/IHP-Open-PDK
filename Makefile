@@ -105,6 +105,13 @@ test-SVS-cell: env
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-SVS-cell
 
 #=================================
+# -------- test-SRAM ------------
+#=================================
+
+test-SRAM:
+	@python3 ihp-sg13g2/libs.qa/sram/validate_sram.py
+
+#=================================
 # -------- test-LVS-switch -------
 #=================================
 
