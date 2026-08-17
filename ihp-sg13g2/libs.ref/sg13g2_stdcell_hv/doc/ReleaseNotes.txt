@@ -27,20 +27,31 @@ Important Notes:
 - 68 cells in GDS and LEF (66 retargeted + 2 tie cells built here); all 68
   are DRC clean (cell rules; the density rules are chip-level checks) and
   LVS clean against the CDL under the PDK's own KLayout decks.
-- 68 cells in the Liberty file: 66 characterized (combinational cells,
-  9 flip-flops with clk->Q / setup / hold, 5 latches with en->Q and
-  closing-edge constraints) + 2 tie cells (no arcs; measured leakage).
+- 75 cells in this repository's Liberty file: 66 characterized
+  (combinational cells, 9 flip-flops with clk->Q / setup / hold, 5
+  latches with en->Q and closing-edge constraints) + 2 tie cells (no
+  arcs; measured leakage) + 7 area-only stubs for the physical cells
+  (fill_*, decap_*, antennanp; measured leakage, measured diode pin
+  capacitance). The INSTALLED liberty ships 63 cells: the 12
+  characterized-but-undrawn flip-flops and latches are stripped at
+  install time so the PDK never advertises timing for a cell without a
+  layout; their characterization data stays in the repository.
 - 56 cells are complete in every view.
 - Not drawn (16): the 12 characterized flip-flops and latches (their PMOS
   band cannot be scaled without moving the rail off the cell boundary),
   ebufn_2, ebufn_8, lgcp_1, sighold.
 - Not characterized: the 6 tri-state cells (ebufn_*, einvn_*), the 2
   statetable clock gates (lgcp_1, slgcp_1), and the no-arc physical cells
-  (fill_*, decap_*, antennanp, sighold) which carry no Liberty entry.
+  (fill_*, decap_*, antennanp, sighold).
 
 2. Liberty:
 ==========================================================================================
-- One corner: typical, 3.30 V, 25 C (sg13g2_stdcell_hv_typ_3p30V_25C.lib).
+- One corner: typical, 3.30 V, 25 C (sg13g2_stdcell_hv_typ_3p30V_25C.lib;
+  the library name carries the corner suffix, matching upstream).
+- Per-pin max_capacitance / max_transition derived from the characterized
+  table axes (load-axis top per output pin, slew-axis top per pin), plus
+  default_max_capacitance 0.66 / default_max_transition 6.66968. Without
+  them STA limit checks pass vacuously and OpenROAD TritonCTS crashes.
 - NLDM, thresholds 20/80/50, 7x7 tables; grids are the thin-oxide grids
   scaled by the measured 2.66x delay / 2.20x capacitance ratios.
 - Characterized with CharLib (charge-integration input capacitance) plus
@@ -58,7 +69,30 @@ Important Notes:
   primitives; use the PDK's sg13g2_udp.v alongside it, exactly as for the
   thin-oxide library. Loading two copies would collide.
 
-4. Known limitations:
+4. LibreLane:
+==========================================================================================
+- libs.tech/librelane/sg13g2_stdcell_hv/ is a complete SCL: config.tcl
+  (PLACE_SITE CoreSiteHV 0.48 x 7.14, HV driving/tie/fill/decap/diode/CTS
+  cells), tracks.info, latch and mux techmaps, exclude lists, and
+  sdfbbp_map.v.
+- The PDK-level libs.tech/librelane/config.tcl gains a conditional block
+  for STD_CELL_LIBRARY == sg13g2_stdcell_hv (LIB corner *_typ_3p30V_25C,
+  VDD_PIN_VOLTAGE 3.30); libs.ref/sg13g2_stdcell_hv/lef/ carries a copy
+  of the shared sg13g2_tech.lef because the PDK config globs it per-SCL.
+- Flip-flops map onto the scan cell sg13g2_hv_sdfbbp_1 (the only flop
+  with layout + liberty) via sdfbbp_map.v; designs must set, at design
+  level: SYNTH_EXTRA_MAPPING_FILE:
+  pdk_dir::libs.tech/librelane/sg13g2_stdcell_hv/sdfbbp_map.v
+  (the variable is not PDK-scoped in LibreLane). All clocked mappings are
+  proven against the Yosys cell semantics with equiv_induct. Costs until
+  the dfrbp/dfrbpq layouts are drawn: ~2x flop area plus tie cells for
+  the unused scan/set pins; negedge-clock flops deliberately unmapped;
+  no tri-state or clock-gate mapping (not characterized).
+- Smoke-tested end to end on an 8-bit counter (ihp-sg13g2-ams-chip-
+  template): synthesis, CTS, routing, LVS clean via the auto-derived
+  CELL_SPICE_MODELS, no design-level LIB/corner overrides needed.
+
+5. Known limitations:
 ==========================================================================================
 - Not silicon-proven; everything is simulation against the PDK models.
 - 11 signal pins sit off the vertical Metal1 track grid and cannot be
@@ -71,6 +105,17 @@ Important Notes:
   geometry kept).
 - Tie cells are a tied-input inv_1 (gate on the diffusion-clamped rail),
   not the four-transistor thin-oxide chain; antenna rule set passes.
+- Magic DRC reports NW.c1 (and, on isolated cells, NW.e1) against these
+  cells: Magic's SG13G2 tech has no DigiBnd concept and applies the
+  analog 0.62 um N-well rules unconditionally, while the cells carry the
+  DigiBnd marker and are built to the relaxed digital rules (NW.c1.dig
+  0.31 um), which the KLayout maximal deck verifies clean. Measured
+  against the strict rule the shortfall is 25 nm in 65 of 68 cells
+  (210/215 nm in mux4_1 / slgcp_1); a well-bottom-only layout fix that
+  satisfies the strict rules without touching any device is worked out
+  and planned as a follow-up. In a placed block Magic additionally flags
+  wide-metal M1.e on the PDN rails; the KLayout deck implements the same
+  rule (M1_e 0.22) and reports the same layout clean.
 
 Generators, verification suites and provenance:
 https://github.com/ChipDesign-BV/sg13g2_stdcell_hv

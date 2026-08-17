@@ -54,6 +54,21 @@ set ::env(STA_CORNERS) "\
 
 set ::env(DEFAULT_CORNER) "nom_typ_1p20V_25C"
 
+# Thick-oxide (3.3 V) standard-cell library: one characterized corner so
+# far. Overrides the thin-oxide LIB dict / corner list / core voltage
+# above (LibreLane validates every LIB path eagerly, so the thin-oxide
+# entries must not survive into an HV run).
+if { $::env(STD_CELL_LIBRARY) eq "sg13g2_stdcell_hv" } {
+    set ::env(VDD_PIN_VOLTAGE) "3.30"
+    set ::env(LIB) [dict create]
+    dict set ::env(LIB) "*_typ_3p30V_25C" "\
+        $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_stdcell_hv/lib/sg13g2_stdcell_hv_typ_3p30V_25C.lib\
+        $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_typ_1p5V_3p3V_25C.lib\
+    "
+    set ::env(STA_CORNERS) "nom_typ_3p30V_25C"
+    set ::env(DEFAULT_CORNER) "nom_typ_3p30V_25C"
+}
+
 # Check all timing corners
 set ::env(TIMING_VIOLATION_CORNERS) "*"
 
