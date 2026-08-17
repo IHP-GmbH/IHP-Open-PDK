@@ -4,8 +4,6 @@ set ::env(DEF_UNITS_PER_MICRON) 1000
 
 set ::env(VDD_PIN) "VPWR"
 set ::env(GND_PIN) "VGND"
-set ::env(VDD_PIN_VOLTAGE) "1.20"
-set ::env(GND_PIN_VOLTAGE) "0.00"
 
 set ::env(SCL_POWER_PINS) "VDD"
 set ::env(SCL_GROUND_PINS) "VSS"
@@ -121,9 +119,6 @@ set ::env(SYNTH_EXCLUDED_CELL_FILE) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/libr
 # Default PNR Exclude List
 set ::env(PNR_EXCLUDED_CELL_FILE) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/pnr_exclude.cells"
 
-## DRC Exclude List for Optimization library
-#set ::env(DRC_EXCLUDE_CELL_LIST_OPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY_OPT)/drc_exclude.cells"
-
 # OpenRCX Rules File
 
 # Generated using proprietary reference extractor
@@ -209,16 +204,15 @@ dict set ::env(VIAS_R) "*" Via4 res 2.0E-3
 dict set ::env(VIAS_R) "*" TopVia1 res 0.4E-3
 dict set ::env(VIAS_R) "*" TopVia2 res 0.22E-3
 
-# Don't set DATA_WIRE_RC_LAYER, CLOCK_WIRE_RC_LAYER
-# Have been renamed to SIGNAL_WIRE_RC_LAYERS, CLOCK_WIRE_RC_LAYERS
-# If unset, RT_MIN_LAYER and RT_MAX_LAYER are used for the calculation
+# If SIGNAL_WIRE_RC_LAYERS, CLOCK_WIRE_RC_LAYERS are unset
+# RT_MIN_LAYER and RT_MAX_LAYER are used for the calculation
 
-#set ::env(DATA_WIRE_RC_LAYER) "Metal2"
-#set ::env(CLOCK_WIRE_RC_LAYER) "Metal5"
+#set ::env(SIGNAL_WIRE_RC_LAYERS) "Metal2"
+#set ::env(CLOCK_WIRE_RC_LAYERS) "Metal5"
 
 # I/O Layer info
-set ::env(FP_IO_HLAYER) "Metal3"
-set ::env(FP_IO_VLAYER) "Metal2"
+set ::env(IO_PIN_H_LAYER) "Metal3"
+set ::env(IO_PIN_V_LAYER) "Metal2"
 
 # Routing Layer Info
 set ::env(GRT_LAYER_ADJUSTMENTS) "0.00,0.00,0.00,0.00,0.00,0.00,0.00"
@@ -227,6 +221,3 @@ set ::env(RT_MIN_LAYER) "Metal2"
 set ::env(RT_MAX_LAYER) "TopMetal2"
 
 #set ::env(RT_CLOCK_MIN_LAYER) "met3"
-
-## CVC
-#set ::env(CVC_SCRIPTS_DIR) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/cvc"
