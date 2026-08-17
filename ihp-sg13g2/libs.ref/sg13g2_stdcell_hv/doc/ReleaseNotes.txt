@@ -1,0 +1,76 @@
+Tech Info
+------------------------------------------------------------------------------------------
+Technology   : SG13G2
+Library      : sg13g2_stdcell_hv  (thick-oxide, 3.3 V standard cells)
+Derived from : sg13g2_stdcell (Copyright 2023 IHP PDK Authors, Apache-2.0)
+Maintainer   : ChipDesign B.V.  <info@chipdesign.be>
+Date         : 17 Aug 2026
+
+------------------------------------------------------------------------------------------
+All 84 cells of sg13g2_stdcell rebuilt on the 3.3 V thick-oxide devices
+(sg13_hv_nmos / sg13_hv_pmos): same topology, same pin names, same pin
+order, cells named sg13g2_hv_* so both libraries coexist in one netlist.
+The transform: gate length 130 nm -> 450 nm (Gat.a3 minimum), PMOS width
+x 2.40 (re-centres the switching threshold at Vm/VDD = 0.5046, matching
+the thin-oxide sizing intent), NMOS unchanged, supply 1.2 V -> 3.3 V.
+Cost, measured on inv_1: input capacitance 2.20x, FO4 delay 2.66x.
+
+Layout is a 1-D monotone retarget of the hand-drawn thin-oxide GDS on a
+17-track (7.14 um) row with the CoreSiteHV 0.48 um site.
+
+Important Notes:
+------------------------------------------------------------------------------------------
+
+1. View coverage (work/view_matrix.py prints the full per-cell matrix):
+==========================================================================================
+- 84 cells in SPICE, CDL, Verilog, xschem symbol + schematic views.
+- 68 cells in GDS and LEF (66 retargeted + 2 tie cells built here); all 68
+  are DRC clean (cell rules; the density rules are chip-level checks) and
+  LVS clean against the CDL under the PDK's own KLayout decks.
+- 68 cells in the Liberty file: 66 characterized (combinational cells,
+  9 flip-flops with clk->Q / setup / hold, 5 latches with en->Q and
+  closing-edge constraints) + 2 tie cells (no arcs; measured leakage).
+- 56 cells are complete in every view.
+- Not drawn (16): the 12 characterized flip-flops and latches (their PMOS
+  band cannot be scaled without moving the rail off the cell boundary),
+  ebufn_2, ebufn_8, lgcp_1, sighold.
+- Not characterized: the 6 tri-state cells (ebufn_*, einvn_*), the 2
+  statetable clock gates (lgcp_1, slgcp_1), and the no-arc physical cells
+  (fill_*, decap_*, antennanp, sighold) which carry no Liberty entry.
+
+2. Liberty:
+==========================================================================================
+- One corner: typical, 3.30 V, 25 C (sg13g2_stdcell_hv_typ_3p30V_25C.lib).
+- NLDM, thresholds 20/80/50, 7x7 tables; grids are the thin-oxide grids
+  scaled by the measured 2.66x delay / 2.20x capacitance ratios.
+- Characterized with CharLib (charge-integration input capacitance) plus
+  project sequential procedures; cross-checked against an independent
+  characterizer (lctime) at 3132 table points: median 2.9 % on delays,
+  0.0 % on transitions in the STA-relevant region.
+- area is the LEF footprint for every drawn cell; the 12 undrawn
+  flip-flops/latches carry a documented pre-layout estimate.
+- Validated by OpenSTA read-back; the characterization method comparison
+  and the library derivation are documented in doc/ (two PDF reports).
+
+3. Verilog:
+==========================================================================================
+- sg13g2_stdcell_hv.v deliberately ships no copy of the shared ihp_* UDP
+  primitives; use the PDK's sg13g2_udp.v alongside it, exactly as for the
+  thin-oxide library. Loading two copies would collide.
+
+4. Known limitations:
+==========================================================================================
+- Not silicon-proven; everything is simulation against the PDK models.
+- 11 signal pins sit off the vertical Metal1 track grid and cannot be
+  widened within M1.b (12 others were widened onto tracks in the shipped
+  GDS). Route with RT_MIN_LAYER Metal1, or expect the router to jog; the
+  LEF OBS covers all non-pin Metal1.
+- dlygate4sd2_1 and o21ai_1 used gate lengths below the thick-oxide
+  minimum; their delay ratios differ from the thin-oxide originals.
+- decap_4 / decap_8 store less charge per area (thicker oxide, thin-oxide
+  geometry kept).
+- Tie cells are a tied-input inv_1 (gate on the diffusion-clamped rail),
+  not the four-transistor thin-oxide chain; antenna rule set passes.
+
+Generators, verification suites and provenance:
+https://github.com/ChipDesign-BV/sg13g2_stdcell_hv
