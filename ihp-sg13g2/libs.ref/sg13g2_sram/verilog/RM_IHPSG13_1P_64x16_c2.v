@@ -17,6 +17,7 @@
 //		Generated on Thu Jul 30 11:38:31 2026		
 //
 // ------------------------------------------------------ 
+`timescale 1ns/10ps
 `celldefine
 module RM_IHPSG13_1P_64x16_c2 (
     A_CLK,
