@@ -105,17 +105,17 @@ Important Notes:
   geometry kept).
 - Tie cells are a tied-input inv_1 (gate on the diffusion-clamped rail),
   not the four-transistor thin-oxide chain; antenna rule set passes.
-- Magic DRC reports NW.c1 (and, on isolated cells, NW.e1) against these
-  cells: Magic's SG13G2 tech has no DigiBnd concept and applies the
-  analog 0.62 um N-well rules unconditionally, while the cells carry the
-  DigiBnd marker and are built to the relaxed digital rules (NW.c1.dig
-  0.31 um), which the KLayout maximal deck verifies clean. Measured
-  against the strict rule the shortfall is 25 nm in 65 of 68 cells
-  (210/215 nm in mux4_1 / slgcp_1); a well-bottom-only layout fix that
-  satisfies the strict rules without touching any device is worked out
-  and planned as a follow-up. In a placed block Magic additionally flags
-  wide-metal M1.e on the PDN rails; the KLayout deck implements the same
-  rule (M1_e 0.22) and reports the same layout clean.
+- The N-wells satisfy the STRICT analog HV rules (NW.c1/NW.d1 0.62 um),
+  not just the DigiBnd digital ones the cells were originally built to:
+  work/fix_well_nwc1.py moved the well bottom (2.625 -> 2.570 um, deeper
+  jogs over the two deep P-active bands) and widened the lateral
+  overhang (0.24 -> 0.62 um). Well-layer-only: zero device changes, no
+  re-characterization; Magic reports 0 NW.* errors on the abutted array
+  and both KLayout decks stay clean. Residual Magic flags are tool
+  interpretation differences on geometry KLayout accepts (Cnt.c contact
+  overlap, wide-metal M1.e on PDN rails), plus possible NW.e1 at the
+  outermost rows of a block where the VDD tap has only its own 0.24 um
+  top overhang (legal under NW.e1.dig; merged away wherever rows abut).
 
 Generators, verification suites and provenance:
 https://github.com/ChipDesign-BV/sg13g2_stdcell_hv
