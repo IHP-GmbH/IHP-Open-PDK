@@ -28,11 +28,12 @@ class cap_cmomi(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
     APPROXIMATE, pending cmos5l silicon: the area density AREACAP is TRANSFERRED
-    from the sg13g2 characterisation (IHP "MOM model development notes", 2022,
-    thin metals M1..M5) and re-used on the cmos5l M1..M4 stack by LAYER COUNT
+    from the sg13g2 characterisation (thin metals M1..M5) and re-used on the
+    cmos5l M1..M4 stack by LAYER COUNT
     N = mmax-mmin+1; N=2 is additionally extrapolated. None are measured on
-    cmos5l silicon. The single-side feed term is the exception: the notes'
-    feed section is a different structure from the one drawn here, so CFEED_SLOPE
+    cmos5l silicon. The single-side feed term is the exception: that
+    characterisation's feed section is a different structure from the one drawn
+    here, so CFEED_SLOPE
     and CFEED_END are fitted to this cell's own geometry. The C-label and the
     Verilog-A/OSDI model share this same formula, so they always agree, but
     treat the absolute value as an engineering estimate (re-fit ~3-6 months).
@@ -55,13 +56,13 @@ class cap_cmomi(DloGen):
       * 'double' : opposite-side feed. PLUS pad left (even rows), MINUS pad right
                    (odd rows). Adds a feed capacitance Cfeed = CFEED2_SLOPE *
                    pad_len, measured on the drawn cell (see cap_cmomi.va). This
-                   is the reference configuration.
+                   is the default configuration.
       * 'same'   : single-side feed. Two STACKED left pads on the same footprint:
                    PLUS on the mmax metal, MINUS on the (mmax-1) metal directly
                    below it, overlapping in x,y but with no via between them
                    (separate nets). That plate overlap is the feed capacitance
                    Cfeed, measured on this drawn overlap rather than taken from
-                   the reference notes, whose feed section is a different
+                   the g2 characterisation, whose feed section is a different
                    structure (see cap_cmomi.va).
                    Requires mmax > mmin (>=2 metals) for the two stacked plates;
                    a single-metal stack has no second layer, so use 'double'
@@ -466,9 +467,9 @@ class cap_cmomi(DloGen):
 
         # 8) Capacitance label (must match the simulation model, contract).
         # The active area bills the rows this cell DRAWS, which is ny: every one
-        # of them has a counter electrode. The reference notes subtract a row
-        # because their characterised structure ends in single fingers that face
-        # nothing (p3) and one pitch of its width does not couple; nothing here
+        # of them has a counter electrode. The earlier billing subtracts a row
+        # because the characterised structure ends in single fingers that face
+        # nothing and one pitch of its width does not couple; nothing here
         # is drawn that way. ny_active is that pre-fix count and no longer enters
         # any billed quantity: the feed term is now fitted against pad_len, the
         # drawn pad height. Keep all of this identical to cap_cmomi.va.
