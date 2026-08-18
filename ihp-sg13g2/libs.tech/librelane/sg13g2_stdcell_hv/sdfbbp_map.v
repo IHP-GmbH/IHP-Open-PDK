@@ -1,10 +1,12 @@
-// Map every posedge fine-grained Yosys flip-flop onto sg13g2_hv_sdfbbp_1,
-// the only flop in sg13g2_stdcell_hv with both a liberty and a layout
-// view today (the plain dfrbp*/dfrbpq* flops are characterized but not
-// yet drawn, so the installed liberty does not ship them). dfflibmap
-// cannot target a scan flop -- its next_state, (SCE & SCD) | (!SCE & D),
-// is not a plain D function -- so this file runs as SYNTH_EXTRA_MAPPING_FILE
-// (design-level; the variable is not PDK-scoped in LibreLane):
+// OPTIONAL techmap: force every posedge fine-grained Yosys flip-flop
+// onto the scan cell sg13g2_hv_sdfbbp_1. The default flow does NOT need
+// this file -- the dfrbp/dfrbpq/sdfrbp/sdfrbpq flops all carry liberty
+// and layout views and dfflibmap maps onto them directly. Use it only
+// when every flop must be the scan cell (e.g. ad-hoc scan insertion);
+// dfflibmap cannot target it itself because its next_state,
+// (SCE & SCD) | (!SCE & D), is not a plain D function. To use it:
+// remove sg13g2_hv_sdfbbp_1 from synth_exclude.cells and set, at design
+// level (the variable is not PDK-scoped in LibreLane):
 //
 //   SYNTH_EXTRA_MAPPING_FILE: pdk_dir::libs.tech/librelane/sg13g2_stdcell_hv/sdfbbp_map.v
 //

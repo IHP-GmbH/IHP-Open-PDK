@@ -24,25 +24,20 @@ Important Notes:
 1. View coverage (work/view_matrix.py prints the full per-cell matrix):
 ==========================================================================================
 - 84 cells in SPICE, CDL, Verilog, xschem symbol + schematic views.
-- 68 cells in GDS and LEF (66 retargeted + 2 tie cells built here); all 68
-  are DRC clean (cell rules; the density rules are chip-level checks) and
-  LVS clean against the CDL under the PDK's own KLayout decks.
-- 75 cells in this repository's Liberty file: 66 characterized
-  (combinational cells, 9 flip-flops with clk->Q / setup / hold, 5
-  latches with en->Q and closing-edge constraints) + 2 tie cells (no
-  arcs; measured leakage) + 7 area-only stubs for the physical cells
-  (fill_*, decap_*, antennanp; measured leakage, measured diode pin
-  capacitance). The INSTALLED liberty ships 63 cells: the 12
-  characterized-but-undrawn flip-flops and latches are stripped at
-  install time so the PDK never advertises timing for a cell without a
-  layout; their characterization data stays in the repository.
-- 56 cells are complete in every view.
-- Not drawn (16): the 12 characterized flip-flops and latches (their PMOS
-  band cannot be scaled without moving the rail off the cell boundary),
-  ebufn_2, ebufn_8, lgcp_1, sighold.
-- Not characterized: the 6 tri-state cells (ebufn_*, einvn_*), the 2
-  statetable clock gates (lgcp_1, slgcp_1), and the no-arc physical cells
-  (fill_*, decap_*, antennanp, sighold).
+- 84 cells in GDS and LEF (66 retargeted, 2 tie cells and 16 formerly
+  skipped cells built by per-cell generators); all 84 are DRC clean
+  (cell rules; the density rules are chip-level checks) under both the
+  PDK's KLayout decks AND Magic's strict analog N-well rules, and LVS
+  clean against the CDL.
+- 75 cells in the Liberty file: 66 characterized (combinational cells,
+  9 flip-flops with clk->Q / setup / hold, 5 latches with en->Q and
+  closing-edge constraints) + 2 tie cells (no arcs; measured leakage)
+  + 7 area-only stubs for the physical cells (fill_*, decap_*,
+  antennanp; measured leakage, measured diode pin capacitance). Every
+  liberty cell has a layout; nothing is stripped at install time.
+- Not characterized (drawn, no timing arcs shipped): the 6 tri-state
+  cells (ebufn_*, einvn_*), the 2 statetable clock gates (lgcp_1,
+  slgcp_1), and sighold.
 
 2. Liberty:
 ==========================================================================================
@@ -58,8 +53,8 @@ Important Notes:
   project sequential procedures; cross-checked against an independent
   characterizer (lctime) at 3132 table points: median 2.9 % on delays,
   0.0 % on transitions in the STA-relevant region.
-- area is the LEF footprint for every drawn cell; the 12 undrawn
-  flip-flops/latches carry a documented pre-layout estimate.
+- area is the measured LEF footprint for every cell (all 84 are drawn;
+  no pre-layout estimates remain).
 - Validated by OpenSTA read-back; the characterization method comparison
   and the library derivation are documented in doc/ (two PDF reports).
 
@@ -79,15 +74,12 @@ Important Notes:
   for STD_CELL_LIBRARY == sg13g2_stdcell_hv (LIB corner *_typ_3p30V_25C,
   VDD_PIN_VOLTAGE 3.30); libs.ref/sg13g2_stdcell_hv/lef/ carries a copy
   of the shared sg13g2_tech.lef because the PDK config globs it per-SCL.
-- Flip-flops map onto the scan cell sg13g2_hv_sdfbbp_1 (the only flop
-  with layout + liberty) via sdfbbp_map.v; designs must set, at design
-  level: SYNTH_EXTRA_MAPPING_FILE:
-  pdk_dir::libs.tech/librelane/sg13g2_stdcell_hv/sdfbbp_map.v
-  (the variable is not PDK-scoped in LibreLane). All clocked mappings are
-  proven against the Yosys cell semantics with equiv_induct. Costs until
-  the dfrbp/dfrbpq layouts are drawn: ~2x flop area plus tie cells for
-  the unused scan/set pins; negedge-clock flops deliberately unmapped;
-  no tri-state or clock-gate mapping (not characterized).
+- Flip-flops and latches map through dfflibmap / the latch techmap as in
+  the thin-oxide flow (all 9 flops and 5 latches have liberty + layout);
+  the exclude lists mirror the thin-oxide ones (sdfbbp_1, dfrbp_2).
+  sdfbbp_map.v remains as an opt-in for all-scan-flop designs (see its
+  header; all clocked mappings proven with equiv_induct). No tri-state
+  or clock-gate mapping (those cells are not characterized).
 - Smoke-tested end to end on an 8-bit counter (ihp-sg13g2-ams-chip-
   template): synthesis, CTS, routing, LVS clean via the auto-derived
   CELL_SPICE_MODELS, no design-level LIB/corner overrides needed.

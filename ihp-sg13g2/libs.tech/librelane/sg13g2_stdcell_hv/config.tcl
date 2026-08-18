@@ -14,11 +14,11 @@ set ::env(SYNTH_MUX_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::en
 # sg13g2_hv_einvn_2/4/8) are not characterized, so a mapped tri-state could
 # not be timed. Designs that infer $_TBUF_ fail loudly at synthesis instead.
 
-# Flip-flop mapping is NOT done by dfflibmap: the only characterized flop
-# with a layout, sg13g2_hv_sdfbbp_1, is a scan flop whose next_state
-# function dfflibmap cannot pattern-match. Designs must set, at design
-# level (the variable is not PDK-scoped in LibreLane):
-#   SYNTH_EXTRA_MAPPING_FILE: pdk_dir::libs.tech/librelane/sg13g2_stdcell_hv/sdfbbp_map.v
+# Flip-flops map through dfflibmap like the thin-oxide library: all 8
+# dfrbp/dfrbpq/sdfrbp/sdfrbpq flops and the 5 latches carry liberty AND
+# layout views. sdfbbp_map.v remains available for designs that want
+# every flop on the scan cell (see its header; it conflicts with the
+# sdfbbp_1 entry in synth_exclude.cells, remove that line first).
 
 # Placement site for core cells
 # This can be found in the cell lef
