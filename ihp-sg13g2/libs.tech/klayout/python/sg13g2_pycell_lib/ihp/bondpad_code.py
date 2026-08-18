@@ -319,7 +319,7 @@ class bondpad(DloGen):
                 #  for metal
                 
                 if fill:
-                    dbDeleteObject(car(idmask))
+                    dbDeleteObject(idmask)
             # if stack
         else :
             if shape == 'square' :
