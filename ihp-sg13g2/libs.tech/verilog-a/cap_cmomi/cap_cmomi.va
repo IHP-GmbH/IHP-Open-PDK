@@ -15,20 +15,19 @@
 // limitations under the License.
 //
 // -----------------------------------------------------------------------------
-// Model source: IHP "MOM model development notes v4" (2022),
-//   an EM-fitted RF equivalent circuit for the interdigitated MoM capacitor on
-//   the thin-metal stack.  Full M1..M5 characterisation (g2 native).
+// Model source: an EM-fitted RF equivalent circuit for the interdigitated MoM
+//   capacitor on the thin-metal stack.  Full M1..M5 characterisation (g2 native).
 //
-// Fit validity (from the notes): the area/feed capacitance is the trustworthy
+// Fit validity (as characterised on g2): the area/feed capacitance is the trustworthy
 //   quantity across the drawn size range.  The RF branches are characterised
 //   within a limited window only.  The series inductance is FEED-keyed:
-//   feed=double uses the two-sided (opposite-end) loop fit (notes p21, ~20% at
-//   50 GHz), feed=same/none use the single-side local-L fit (p16 SRF).  For
+//   feed=double uses the two-sided (opposite-end) loop fit (~20% at
+//   50 GHz), feed=same/none use the single-side local-L fit (single-side SRF).  For
 //   feed=same/none and small-to-mid feed=double the L is a small correction
 //   (<~10% of |Z|) below 50 GHz.  For LARGE feed=double the two-sided loop L is
 //   big enough to self-resonate IN-BAND (l~60um ~30 GHz, ~30x30 ~45 GHz) against
-//   a two-sided SRF the notes never publish (they give single-side SRF p16 and
-//   two-sided L p18/p21, no two-sided SRF) -- treat the default-feed SRF near or
+//   a two-sided SRF the g2 characterisation does not cover (it gives single-side
+//   SRF and two-sided L, but no two-sided SRF) -- treat the default-feed SRF near or
 //   above those frequencies as an unvalidated prediction.  Using the loop value
 //   for a same-side device would flip the in-band reactance inductive on large
 //   geometries, which the feed keying avoids.
@@ -61,29 +60,29 @@
 //   density[N] is the ACTIVE-AREA density.  The opposite-side (double) feed adds
 //   a real capacitance over the bare array, measured on the via-fixed cell as
 //   Cfeed_dbl = C(feed='double') - C(feed='none') = 0.152*pad_len (through
-//   origin, four widths at Metal1..Metal4, worst residual 0.03 fF).  The notes
-//   dropped it to zero ("assume zero", p7-8), which left small feed=double
+//   origin, four widths at Metal1..Metal4, worst residual 0.03 fF).  The g2 fit
+//   dropped it to zero (it was assumed to cancel), which left small feed=double
 //   devices reading low by construction; the via fix also removed a density
 //   deficit that had partly masked it, so the residual now stands on its own and
 //   is billed.  Dropping it made the default feed=double device (w=l=5 um) read
 //   about 2.9% low, size-dependent: ~8% at w=l=2 um down to ~0.1% at 100 um.
 //
 //   ROW COUNT.  active_y counts the coupled rows this PCell DRAWS, floor(w/0.89).
-//   The notes subtract one because their characterised structure ends in single
-//   fingers that have no counter electrode (p3) and one pitch of its width
+//   The earlier billing subtracts one because the characterised structure ends
+//   in single fingers that have no counter electrode and one pitch of its width
 //   therefore does not couple; the drawn cell here has no such fingers.  The
 //   subtraction was a property of that structure's boundary, not of the device,
 //   and carrying it over under-counted every device by one row: about 1% at
 //   w = 80 um and a factor of two at w = 2 um.  The construction is inherited
-//   from IHP's reference generator, so the reduced thin-metal sibling had the
+//   from the g2 generator, so the reduced thin-metal sibling had the
 //   same mismatch and is corrected the same way.  density[N] itself is
-//   unchanged: the notes define it per coupled unit cell, which is unaffected.
+//   unchanged: it is defined per coupled unit cell, which is unaffected.
 //
 //   INVARIANT UNDER A CAPACITANCE CORRECTION.  For feed=same/none the series
-//   inductance is derived as Lcore = 1/(w_SRF^2 * Cmain) from the notes' p16 SRF
-//   fits, so correcting Cmain moves L and leaves the resonance where it was
+//   inductance is derived as Lcore = 1/(w_SRF^2 * Cmain) from the single-side
+//   SRF fits, so correcting Cmain moves L and leaves the resonance where it was
 //   characterised.  SRF is the preserved quantity, L is not.  For feed=double
-//   Lcore is a direct loop fit (p21) that does not involve Cmain and does not
+//   Lcore is a direct loop fit that does not involve Cmain and does not
 //   move at all.
 //
 // COEFFICIENT PROVENANCE / LAYER-COUNT KEYING
@@ -172,7 +171,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
     localparam real GLEAK = 1.0e-12;
 
     // Feed capacitance coefficients.  These three are the only C coefficients in
-    // this file that cannot be looked up in the reference notes: they are fitted
+    // this file that are not transferred from the g2 characterisation: they are fitted
     // here, on the cell as drawn.  The same names carry the same values in the
     // PCell (cmomi_code.py) and the xschem symbol; the block below explains where
     // they come from.  Single-side feed (feed=='same'):
@@ -213,9 +212,9 @@ module cap_cmomi(PLUS, MINUS, SUB);
 
         // ---- unit-cell tiling (unit cell 0.84 x 0.89 um) --------------------
         //   active_x = floor(l/0.84) ; active_y = floor(w/0.89)
-        // The notes take the active area to be the unit cells that HAVE a
-        // counter electrode (p3: "the outer rows with single fingers are not
-        // included here").  Their characterised structure ends in fingers with
+        // The g2 characterisation takes the active area to be the unit cells
+        // that HAVE a counter electrode: the outer, unpaired rows are excluded.
+        // That characterised structure ends in fingers with
         // nothing facing them, so one pitch of its width does not couple, and
         // subtracting a row was right FOR THAT STRUCTURE.  The PCell terminates
         // the array at the last coupled row instead and draws no unpaired
@@ -246,7 +245,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
         // The drawn stacked feed pads span the whole array plus half a bar at
         // each end, which is exactly active_y*0.89 + 2*0.21 um of the PCell's
         // own painting.  See the Cfeed note below for why this replaced the
-        // notes' feed_width.
+        // earlier feed_width.
         pad_len = active_y * 0.89 + 0.42;
 
         issame = (feed == 1) ? 1.0 : 0.0;
@@ -260,17 +259,17 @@ module cap_cmomi(PLUS, MINUS, SUB);
                   (Nlay == 4) ? 1.09 : 1.36;
 
         // ---- single-side feed capacitance [fF] ------------------------------
-        //   MEASURED ON THE DRAWN CELL, not taken from the notes.  The notes give
-        //   cfeed_per_um = {2:0.70, 3:0.97, 4:1.28, 5:1.46} fF/um against
+        //   MEASURED ON THE DRAWN CELL, not transferred.  The g2 characterisation
+        //   gives cfeed_per_um = {2:0.70, 3:0.97, 4:1.28, 5:1.46} fF/um against
         //   feed_width, for a feed section built as an extended fan-in with a via
         //   column tying every polarity tower across all metals.  This PCell does
         //   not draw that.  It draws two plates 0.90 um wide on the top metal and
         //   the one below it, overlapping completely with no via between them,
         //   and a plate overlap at the 0.54 um inter-metal spacing cannot reach
-        //   1.28 fF per um of feed width without a pad about 19 um wide.  IHP's
-        //   reference generator does not reproduce the published number either,
-        //   so this is not a porting regression; neither generator draws what was
-        //   characterised, and the notes do not contain enough of that structure
+        //   1.28 fF per um of feed width without a pad about 19 um wide.  The g2
+        //   generator does not reproduce that number either, so this is not a
+        //   porting regression; neither generator draws that characterised
+        //   structure, and the g2 characterisation does not contain enough of it
         //   to rebuild it.
         //
         //   So the term below is fitted to the cell as drawn, from an
@@ -278,7 +277,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
         //   one shared domain: Cfeed = C(feed='same') - C(feed='none').  Four
         //   widths give 0.1625*pad_len + 0.0916 fF, worst residual 3 aF, which is
         //   at the measurement floor and is not a statement of the term's
-        //   accuracy.  The regressor is pad_len rather than the notes'
+        //   accuracy.  The regressor is pad_len rather than the earlier
         //   feed_width on geometric grounds, not statistical ones: over the
         //   calibrated range the two differ by a constant, so they fit equally
         //   well, and pad_len is what the PCell paints.
@@ -324,17 +323,17 @@ module cap_cmomi(PLUS, MINUS, SUB);
         if (Rseries < 1.0e-3) Rseries = 1.0e-3;
 
         // ---- core series inductance [H] -- keyed by FEED --------------------
-        //   The p18 fit is the OPPOSITE-END (two-sided) loop inductance: the
+        //   The two-sided loop fit is the OPPOSITE-END loop inductance: the
         //   current runs the full finger length down one comb and back the
         //   other, a long loop worth tens of pH.  It is the right quantity ONLY
         //   for feed=double (PLUS/MINUS at opposite ends).  A same-side
         //   (feed=same) or bare (feed=none) device has no such loop; its series
-        //   inductance is the small LOCAL value the notes measure single-side
-        //   (p13-16, ~0.2..1.3 pH).  The notes give single-side L only via the p16
+        //   inductance is the small LOCAL value characterised single-side
+        //   (~0.2..1.3 pH).  Single-side L is available only via the single-side
         //   SRF fit (width-independent, length-driven), so recover it self-
         //   consistently from the model's own Cmain:
         //       L_ss = 1 / ( (2*pi*SRF_ss)^2 * Cmain )
-        //   SRF_ss [Hz] from the p16 1/SRF-vs-length lines (l in um):
+        //   SRF_ss [Hz] from the 1/SRF-vs-length lines (l in um):
         //       N<=3 : 1e9/(7.68e-5 + 6.64e-5*l)
         //       N==4 : 1e9/(8.82e-4 + 4.72e-5*l)
         //       N>=5 : 1e9/(2.85e-4 + 6.87e-5*l)
@@ -353,7 +352,7 @@ module cap_cmomi(PLUS, MINUS, SUB);
         end
         if (Lcore < 1.0e-18) Lcore = 1.0e-18;
 
-        // ---- skin effect (PDF p12, refinement) ------------------------------
+        // ---- skin effect (refinement) ---------------------------------------
         //   Rskin = Rskin1*l [Ohm] ; Lskin = (Lskin_c + Lskin_s*l) [pH]
         Rskin1  = (Nlay <= 3) ? 0.031   : 0.035;
         Lskin_c = (Nlay <= 3) ? 0.214   : 0.010;
@@ -364,12 +363,12 @@ module cap_cmomi(PLUS, MINUS, SUB);
 
         // ---- substrate shunt: Cox in series with (Rsub || Csub) -------------
         //   Cox is the oxide capacitance from the BOTTOM MoM plate to the
-        //   substrate, so it scales with the bottom-metal distance.  The source
-        //   notes (p22) index the three Cox sets by LAYER COUNT 3/4/5 (verbatim
-        //   "For 3/4/5 MOM layers").  We RE-KEY them by the bottom metal index
-        //   (mmin) -- our physically-motivated inference, resting on the (unstated
-        //   in p22) premise that the notes' sweep kept the top at M5, so "5 layers"
-        //   =="M1 bottom", "4"=="M2", "3"=="M3".  This is a NO-OP for every
+        //   substrate, so it scales with the bottom-metal distance.  The g2
+        //   characterisation indexes the three Cox sets by LAYER COUNT 3/4/5.
+        //   We RE-KEY them by the bottom metal index (mmin) -- our physically-
+        //   motivated inference, resting on the (unstated) premise that the g2
+        //   sweep kept the top at M5, so "5 layers"=="M1 bottom", "4"=="M2",
+        //   "3"=="M3".  This is a NO-OP for every
         //   mmax==5 stack (mmin- and layer-count-keying pick the same set) and
         //   stays physical for reduced-top stacks (e.g. M1..M4, bottom still M1 ->
         //   large M1-bottom Cox); it diverges from literal layer-count keying only

@@ -27,14 +27,14 @@ import math
 class cmomi(DloGen):
     """Interdigitated MoM (metal-oxide-metal) capacitor PCell.
 
-    Source model: IHP "MOM model development notes" (Nov 2022),
-    which characterised this MoM on the g2 thin-metal stack Metal1..Metal5.
+    Source model: an EM-fitted RF characterisation of this MoM on the g2
+    thin-metal stack Metal1..Metal5.
     The metal stack is selected by mmin/mmax (any contiguous subset of
     Metal1..Metal5). The area density AREACAP is keyed by LAYER COUNT
     N = mmax-mmin+1; the g2 values N=3,4,5 are the natively characterised
     densities (full M1..M5 stack -> N=5). The single-side feed term is the
-    exception: the notes' feed section is a different structure from the one
-    drawn here, so CFEED_SLOPE and CFEED_END are fitted to this cell's own
+    exception: that characterisation's feed section is a different structure from
+    the one drawn here, so CFEED_SLOPE and CFEED_END are fitted to this cell's own
     geometry. The C-label and the model must agree; keep both in step.
 
     Topology (brick-staggered interdigitated teeth):
@@ -137,7 +137,7 @@ class cmomi(DloGen):
     # ---------------------------------------------------------------
     AREACAP      = {2: 0.55, 3: 0.82, 4: 1.09, 5: 1.36}
     # Single-side feed, measured on the cell as drawn rather than taken from the
-    # notes: Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len the drawn
+    # g2 characterisation: Cfeed = CFEED_SLOPE * pad_len + CFEED_END, with pad_len the drawn
     # height of the two stacked pads. No layer keying: those pads sit on the top
     # two metals whatever the stack is, every thin-metal via tier is 0.54 um, and
     # the measurement is flat for N>=3 (a two-metal window reads ~3% lower,
@@ -467,9 +467,9 @@ class cmomi(DloGen):
 
         # 8) Capacitance label (must match the simulation model, contract).
         # The active area bills the rows this cell DRAWS, which is ny: every one
-        # of them has a counter electrode. The reference notes subtract a row
-        # because their characterised structure ends in single fingers that face
-        # nothing (p3) and one pitch of its width does not couple; nothing here
+        # of them has a counter electrode. The earlier billing subtracts a row
+        # because the characterised structure ends in single fingers that face
+        # nothing and one pitch of its width does not couple; nothing here
         # is drawn that way. ny_active is that pre-fix count and no longer enters
         # any billed quantity: the feed term is fitted against pad_len, the drawn
         # pad height. Keep all of this identical to cap_cmomi.va.
