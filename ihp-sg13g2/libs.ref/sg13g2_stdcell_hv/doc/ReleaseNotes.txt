@@ -4,7 +4,7 @@ Technology   : SG13G2
 Library      : sg13g2_stdcell_hv  (thick-oxide, 3.3 V standard cells)
 Derived from : sg13g2_stdcell (Copyright 2023 IHP PDK Authors, Apache-2.0)
 Maintainer   : ChipDesign B.V.  <info@chipdesign.be>
-Date         : 17 Aug 2026
+Date         : 18 Aug 2026
 
 ------------------------------------------------------------------------------------------
 All 84 cells of sg13g2_stdcell rebuilt on the 3.3 V thick-oxide devices
@@ -29,15 +29,20 @@ Important Notes:
   (cell rules; the density rules are chip-level checks) under both the
   PDK's KLayout decks AND Magic's strict analog N-well rules, and LVS
   clean against the CDL.
-- 75 cells in the Liberty file: 66 characterized (combinational cells,
-  9 flip-flops with clk->Q / setup / hold, 5 latches with en->Q and
-  closing-edge constraints) + 2 tie cells (no arcs; measured leakage)
-  + 7 area-only stubs for the physical cells (fill_*, decap_*,
-  antennanp; measured leakage, measured diode pin capacitance). Every
-  liberty cell has a layout; nothing is stripped at install time.
-- Not characterized (drawn, no timing arcs shipped): the 6 tri-state
-  cells (ebufn_*, einvn_*), the 2 statetable clock gates (lgcp_1,
-  slgcp_1), and sighold.
+- 82 cells in the Liberty file, 72 of them with timing arcs:
+  66 characterized with CharLib (combinational cells, 9 flip-flops with
+  clk->Q / setup / hold, 5 latches with en->Q and closing-edge
+  constraints) + 6 tri-state cells measured directly (data arc plus
+  three_state_enable / three_state_disable) + sighold (driver_type
+  bus_hold, measured capacitance and leakage, no timing arcs) + 2 tie
+  cells (no arcs; measured leakage) + 7 area-only stubs for the physical
+  cells (fill_*, decap_*, antennanp; measured leakage, measured diode pin
+  capacitance). Every liberty cell has a layout; nothing is stripped at
+  install time.
+- Not characterized (drawn, no Liberty entry): the 2 statetable clock
+  gates (lgcp_1, slgcp_1). CharLib has no input form for a statetable and
+  their direct characterization is still in progress, so the SCL excludes
+  them -- as the thin-oxide SCL excludes its own clock gates.
 
 2. Liberty:
 ==========================================================================================
@@ -77,9 +82,17 @@ Important Notes:
 - Flip-flops and latches map through dfflibmap / the latch techmap as in
   the thin-oxide flow (all 9 flops and 5 latches have liberty + layout);
   the exclude lists mirror the thin-oxide ones (sdfbbp_1, dfrbp_2).
-  sdfbbp_map.v remains as an opt-in for all-scan-flop designs (see its
-  header; all clocked mappings proven with equiv_induct). No tri-state
-  or clock-gate mapping (those cells are not characterized).
+- Tri-states map through SYNTH_TRISTATE_MAP (tribuff_map.v: Yosys $_TBUF_
+  onto sg13g2_hv_ebufn_2) with TRISTATE_CELLS listing both footprints,
+  mirroring the thin-oxide SCL. No clock-gate mapping (not characterized).
+- DFT / scan flows: sdfbbp_map.v puts every posedge flop on the scan cell
+  sg13g2_hv_sdfbbp_1. It is opt-in because dfflibmap cannot pattern-match
+  a scan-mux next_state. To enable it, remove sg13g2_hv_sdfbbp_1 from
+  synth_exclude.cells and set, at DESIGN level (LibreLane does not let a
+  PDK set this variable):
+    SYNTH_EXTRA_MAPPING_FILE: pdk_dir::libs.tech/librelane/sg13g2_stdcell_hv/sdfbbp_map.v
+  All 23 clocked mappings are proven against the Yosys cell semantics with
+  equiv_induct; negedge flops are deliberately left unmapped.
 - Smoke-tested end to end on an 8-bit counter (ihp-sg13g2-ams-chip-
   template): synthesis, CTS, routing, LVS clean via the auto-derived
   CELL_SPICE_MODELS, no design-level LIB/corner overrides needed.
@@ -87,6 +100,12 @@ Important Notes:
 5. Known limitations:
 ==========================================================================================
 - Not silicon-proven; everything is simulation against the PDK models.
+- One Liberty corner only (typ, 3.30 V, 25 C); multi-corner signoff needs
+  fast/slow process and V/T corners that do not exist yet.
+- No internal_power tables on any cell: the characterization was scoped to
+  timing and leakage, so STA power reports see leakage only.
+- The 2 clock gates (lgcp_1, slgcp_1) have layout but no Liberty entry and
+  are excluded from the flow.
 - 11 signal pins sit off the vertical Metal1 track grid and cannot be
   widened within M1.b (12 others were widened onto tracks in the shipped
   GDS). Route with RT_MIN_LAYER Metal1, or expect the router to jog; the
