@@ -10,9 +10,8 @@ set ::env(SYNTH_MUX4_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::e
  # MUX2 mapping
 set ::env(SYNTH_MUX_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/mux2_map.v"
 
-# No tri-state buffer mapping: the drawn tri-state cells (sg13g2_hv_ebufn_4,
-# sg13g2_hv_einvn_2/4/8) are not characterized, so a mapped tri-state could
-# not be timed. Designs that infer $_TBUF_ fail loudly at synthesis instead.
+# Tri-state buffer mapping
+set ::env(SYNTH_TRISTATE_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/tribuff_map.v"
 
 # Flip-flops map through dfflibmap like the thin-oxide library: all 8
 # dfrbp/dfrbpq/sdfrbp/sdfrbpq flops and the 5 latches carry liberty AND
@@ -70,7 +69,8 @@ set ::env(CLOCK_TRANSITION_CONSTRAINT) 0.15
 set ::env(TIME_DERATING_CONSTRAINT) 5
 set ::env(IO_DELAY_CONSTRAINT) 20
 
-# No TRISTATE_CELLS: see the tri-state note above.
+# Tristate cells
+set ::env(TRISTATE_CELLS) "sg13g2_hv_ebufn_* sg13g2_hv_einvn_*"
 
 # TODO adjust threshold
 set ::env(HEURISTIC_ANTENNA_THRESHOLD) 90
