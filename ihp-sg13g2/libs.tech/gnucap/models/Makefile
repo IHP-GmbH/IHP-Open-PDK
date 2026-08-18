@@ -71,6 +71,7 @@ $(TARGET_DIR)/sg13g2_moslv_paramset.cc:    discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc: discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moshv_paramset.cc:    discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc: discipline.h $(PSP103_SRC)
+$(TARGET_DIR)/sg13g2_hbt_paramset.cc:      $(HBT_PARAMSETS) $(VBIC_SRC)
 
 resistor_paramset.dump.va:        resistor.va discipline.h $(R3CMC_SRC)
 capacitor_paramset.dump.va:       capacitor.va $(CMOMI_SRC) $(CMOMF_SRC)
@@ -78,6 +79,7 @@ sg13g2_moslv_paramset.dump.va:    discipline.h $(PSP103_SRC)
 sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
 sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)
 sg13g2_moshv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
+sg13g2_hbt_paramset.dump.va:      $(HBT_PARAMSETS) $(VBIC_SRC)
 
 # Naming the generated C++ as explicit targets above would make it permanent:
 # GNU make only treats a file as intermediate, and deletes it after the build,
