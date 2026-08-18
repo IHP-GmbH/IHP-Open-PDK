@@ -126,15 +126,16 @@ module npn13G2l(c, b, e, bn);
     // user-facing parameters
     parameter integer mm_ok = 0 from [0:1];
     parameter integer Nx = 1 from [1:4];
-    parameter real El = 2.5;
+    parameter real El = 2.5 from [1:2.5];
     parameter real selft = 1;
     parameter real dtemp = 0;
     // TODO: unused?
     parameter integer Ny = 1;
     parameter real we = 0.12e-6;
     // hidden localparam
-    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.5);
-    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+    localparam real El_norm = El / 2.5;
+    localparam real R = (300 + (400 * Nx)) * pow(El_norm, 0.5);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El_norm, 0);
 
     // TODO: connect thermal port
     npn13G2l_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft)) q1(c, b, e, s1);
@@ -155,15 +156,16 @@ module npn13G2l_5t(c, b, e, bn, t);
     // user-facing parameters
     parameter integer mm_ok = 0 from [0:1];
     parameter integer Nx = 1 from [1:4];
-    parameter real El = 2.5;
+    parameter real El = 2.5 from [1:2.5];
     parameter real selft = 1;
     parameter real dtemp = 0;
     // TODO: unused?
     parameter integer Ny = 1;
     parameter real we = 0.12e-6;
     // hidden localparam
-    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.5);
-    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+    localparam real El_norm = El / 2.5;
+    localparam real R = (300 + (400 * Nx)) * pow(El_norm, 0.5);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El_norm, 0);
 
     // TODO: connect thermal port
     npn13G2l_NX_vbic  #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft)) q1(c, b, e, s1, t);
@@ -205,7 +207,7 @@ module npn13G2v(c, b, e, bn);
     // user-facing parameters
     parameter integer mm_ok = 0 from [0:1];
     parameter integer Nx = 1 from [1:4];
-    parameter real El = 2.5;
+    parameter real El = 2.5 from [1:5];
     parameter real selft = 1;
     parameter real dtemp = 0;
     parameter integer sw_nqs = 0 from [0:1];
@@ -213,8 +215,9 @@ module npn13G2v(c, b, e, bn);
     parameter integer Ny = 1;
     parameter real we = 0.12e-6;
     // hidden localparam
-    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.85);
-    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+    localparam real El_norm = El / 2.5;
+    localparam real R = (300 + (400 * Nx)) * pow(El_norm, 0.85);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El_norm, 0);
 
     // TODO: connect thermal port
     npn13G2v_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) q1(c, b, e, s1);
@@ -235,7 +238,7 @@ module npn13G2v_5t(c, b, e, bn, t);
     // user-facing parameters
     parameter integer mm_ok = 0 from [0:1];
     parameter integer Nx = 1 from [1:4];
-    localparam real El = 2.5;
+    parameter real El = 2.5 from [1:5];
     parameter real selft = 1;
     parameter real dtemp = 0;
     parameter integer sw_nqs = 0 from [0:1];
@@ -243,8 +246,9 @@ module npn13G2v_5t(c, b, e, bn, t);
     parameter integer Ny = 1;
     parameter real we = 0.12e-6;
     // hidden localparam
-    localparam real R = (300 + (400 * Nx)) * pow(El / 2.5, 0.85);
-    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El / 2.5, 0);
+    localparam real El_norm = El / 2.5;
+    localparam real R = (300 + (400 * Nx)) * pow(El_norm, 0.85);
+    localparam real C = (1.70E-14 - (2.00E-15 * Nx)) * pow(El_norm, 0);
 
     npn13G2v_NX_vbic #(.mm_ok(mm_ok), .Nx(Nx), .El(El), .dtemp(dtemp), .selft(selft), .sw_nqs(sw_nqs)) q1(c, b, e, s1, t);
     resistor #(.r(R)) Rsub(s1, bn);
