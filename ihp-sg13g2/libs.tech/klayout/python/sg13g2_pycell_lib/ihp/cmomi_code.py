@@ -165,13 +165,37 @@ class cmomi(DloGen):
         # in setupParams and for the label.
         c_def = eng_string(cls._model_C_fF(5.0, 5.0, 1, cls.METAL_MAX,
                                            'double') * 1e-15)
+        # Effective drawn size for the default device. l and w are requested
+        # values; the array floors them to the unit cell, so the drawn extents
+        # are Lx = floor(l/0.84)*0.84 and Wy = floor(w/0.89)*0.89. These are
+        # shown read-only and are recomputed live by the coerce callback CbCmomi.
+        nx0 = max(1, int(5.0 / cls.UC_X + 1e-6))
+        ny0 = max(1, int(5.0 / cls.UC_Y + 1e-6) - 1) + 1
+        lx_def = eng_string(nx0 * cls.UC_X * 1e-6)
+        wy_def = eng_string(ny0 * cls.UC_Y * 1e-6)
+        formula = 'C = D[N]*Lx*Wy + Cfeed'
+
+        def _ro():
+            # Mark the just-added parameter read-only (KLayout only; the guard
+            # keeps the non-KLayout branch harmless).
+            try:
+                decls = getattr(specs, '_paramDecls', None)
+                if decls is None:
+                    decls = specs.param_decls
+                decls[-1].readonly = True
+            except Exception:
+                pass
 #ifdef KLAYOUT
         specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C')
-        specs('w', '5.0u', 'Width (Y, rows); snapped down to 0.89u cell, drawn size in label',
+        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('formula', formula,
+              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X, fingers); snapped down to 0.84u cell, drawn size in label',
+        specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
+        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
+        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',
@@ -182,11 +206,15 @@ class cmomi(DloGen):
         specs('subblock', False, 'Add substrate isolation block')
 #else
         specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C')
-        specs('w', '5.0u', 'Width (Y, rows); snapped down to 0.89u cell, drawn size in label',
+        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('formula', formula,
+              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X, fingers); snapped down to 0.84u cell, drawn size in label',
+        specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
+        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
+        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',

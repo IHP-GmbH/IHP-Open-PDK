@@ -74,12 +74,27 @@ proc CbCmomiCalc {l w mmin mmax feed cell} {
         double { set cfeed [expr {$CFEED2_SLOPE * $pad_len}] }
     }
 
-    return [expr {($c_active + $cfeed) * 1.0e-15}]
+    # Returns {C [F]  Lx [um]  Wy [um]}: the modelled capacitance and the
+    # effective drawn extents (the read-only Lx/Wy dialog fields).
+    set c_F  [expr {($c_active + $cfeed) * 1.0e-15}]
+    set lx_um [expr {$nx * $UC_X}]
+    set wy_um [expr {$ny * $UC_Y}]
+    return [list $c_F $lx_um $wy_um]
 }
 
 proc CbCmomi {param} {
     set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
+
+    # The coerce writeback applies bool() to the string form of a bool
+    # parameter, so "False" comes back as True (any non-empty string is
+    # truthy). Normalise the subblock checkbox so a false value round-trips as
+    # false (empty string -> bool("") = False); a true value is left as is.
+    # Without this every coerced cmomi would draw a spurious PWell.block.
+    set sb [iPDK_getParamValue subblock $cellId]
+    if {$sb ne "True" && $sb ne "1"} {
+        iPDK_setParamValue subblock "" $cellId
+    }
 
     set wraw [iPDK_getParamValue w    $cellId]
     set lraw [iPDK_getParamValue l    $cellId]
@@ -91,6 +106,8 @@ proc CbCmomi {param} {
         return
     }
 
-    set c [CbCmomiCalc [Stof $lraw] [Stof $wraw] $mmin $mmax $feed $cell]
-    iPDK_setParamValue C [Ftos $c 3] $cellId
+    set res [CbCmomiCalc [Stof $lraw] [Stof $wraw] $mmin $mmax $feed $cell]
+    iPDK_setParamValue C  [Ftos [lindex $res 0] 3] $cellId
+    iPDK_setParamValue Lx [Ftos [expr {[lindex $res 1] * 1.0e-6}] 3] $cellId
+    iPDK_setParamValue Wy [Ftos [expr {[lindex $res 2] * 1.0e-6}] 3] $cellId
 }
