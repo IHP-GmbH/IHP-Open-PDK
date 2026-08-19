@@ -165,14 +165,15 @@ class cmomi(DloGen):
         # in setupParams and for the label.
         c_def = eng_string(cls._model_C_fF(5.0, 5.0, 1, cls.METAL_MAX,
                                            'double') * 1e-15)
-        # Effective drawn size for the default device. l and w are requested
-        # values; the array floors them to the unit cell, so the drawn extents
-        # are Lx = floor(l/0.84)*0.84 and Wy = floor(w/0.89)*0.89. These are
-        # shown read-only and are recomputed live by the coerce callback CbCmomi.
-        nx0 = max(1, int(5.0 / cls.UC_X + 1e-6))
-        ny0 = max(1, int(5.0 / cls.UC_Y + 1e-6) - 1) + 1
-        lx_def = eng_string(nx0 * cls.UC_X * 1e-6)
-        wy_def = eng_string(ny0 * cls.UC_Y * 1e-6)
+        # l and w are requested values; the array floors them to the unit cell
+        # (drawn = floor(l/0.84)*0.84 by floor(w/0.89)*0.89). That rule is stated
+        # in the w/l field descriptions rather than shown as extra fields.
+        # Outer footprint (Recog box) for the default device, feed pads
+        # included. Recomputed live by CbCmomi; equals what the LVS extractor
+        # emits as l/w.
+        fx0, fy0 = cls._footprint_um(5.0, 5.0, 'double')
+        fx_def = eng_string(fx0 * 1e-6)
+        fy_def = eng_string(fy0 * 1e-6)
 
         def _ro():
             # Mark the just-added parameter read-only (KLayout only; the guard
@@ -187,9 +188,9 @@ class cmomi(DloGen):
 #ifdef KLAYOUT
         # Editable inputs (write) first, then read-only derived/info fields,
         # so the dialog reads top-to-bottom as "what you set" then "what you get".
-        specs('w', '5.0u', 'Width (Y), requested [um]',
+        specs('w', '5.0u', 'Width Y, requested; drawn = floor(w/0.89)*0.89 [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X), requested [um]',
+        specs('l', '5.0u', 'Length X, requested; drawn = floor(l/0.84)*0.84 [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
@@ -199,19 +200,25 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # C is editable so a target capacitance can drive the geometry
+        # (ref. cmim/CbCap). Calculate picks the direction: read C from L,W, or
+        # solve W (fix L) / L (fix W) from a target C via the CbCmomi callback.
+        specs('Calculate', 'C',
+              'Calc mode: C (from L,W) | w (solve W, fix L) | l (solve L, fix W)',
+              ChoiceConstraint(['C', 'w', 'l']))
+        specs('C', c_def, 'C [F]: read (Calc=C) or target (Calc=w/l)')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
         specs('sep', '', '──────  read only  ──────'); _ro()
-        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
-        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
-        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('Fx', fx_def, 'Total footprint X incl. feed [um] (Recog box)'); _ro()
+        specs('Fy', fy_def, 'Total footprint Y incl. feed [um] (Recog box)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #else
         # Editable inputs (write) first, then read-only derived/info fields,
         # so the dialog reads top-to-bottom as "what you set" then "what you get".
-        specs('w', '5.0u', 'Width (Y), requested [um]',
+        specs('w', '5.0u', 'Width Y, requested; drawn = floor(w/0.89)*0.89 [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X), requested [um]',
+        specs('l', '5.0u', 'Length X, requested; drawn = floor(l/0.84)*0.84 [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
@@ -221,12 +228,18 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # C is editable so a target capacitance can drive the geometry
+        # (ref. cmim/CbCap). Calculate picks the direction: read C from L,W, or
+        # solve W (fix L) / L (fix W) from a target C via the CbCmomi callback.
+        specs('Calculate', 'C',
+              'Calc mode: C (from L,W) | w (solve W, fix L) | l (solve L, fix W)',
+              ChoiceConstraint(['C', 'w', 'l']))
+        specs('C', c_def, 'C [F]: read (Calc=C) or target (Calc=w/l)')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
         specs('sep', '', '──────  read only  ──────'); _ro()
-        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
-        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
-        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('Fx', fx_def, 'Total footprint X incl. feed [um] (Recog box)'); _ro()
+        specs('Fy', fy_def, 'Total footprint Y incl. feed [um] (Recog box)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #endif
 
@@ -252,6 +265,28 @@ class cmomi(DloGen):
         if feed == 'double':
             return c_active + cls.CFEED2_SLOPE * pad_len
         return c_active
+
+    @classmethod
+    def _footprint_um(cls, l_um, w_um, feed):
+        """Outer footprint (Recog box) in um, feed pads included.
+
+        Mirrors the Recog extents painted in genLayout and the live coerce
+        callback CbCmomi. Fx is the X (length) extent, Fy the Y (width) extent;
+        these equal what the LVS extractor emits as l/w. Keep in step with the
+        Recog box logic in genLayout and with CbCmomiCalc in cmomi_cb.tcl.
+        """
+        nx = max(1, int(l_um / cls.UC_X + 1e-6))
+        ny = max(1, int(w_um / cls.UC_Y + 1e-6) - 1) + 1
+        dev_w = nx * cls.UC_X
+        dev_l = ny * cls.UC_Y
+        if feed == 'double':
+            # 0.64 is the double-feed pad Y overhang (feed_width - dev_l), the
+            # literal used in _draw_feed_double.
+            return (dev_w + 2 * cls.FEED_EXT, dev_l + 0.64)
+        if feed == 'same':
+            return (dev_w + cls.BAR_OVERHANG + cls.FEED_EXT_SAME,
+                    dev_l + 2 * cls.T_BAR)
+        return (dev_w + 2 * cls.BAR_OVERHANG, dev_l)
 
     def setupParams(self, params):
         self.params = params
@@ -553,12 +588,9 @@ class cmomi(DloGen):
         # 7) Pins
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
-        # 8) Device name + capacitance label, three lines centred inside the cell
+        # 8) Device name + capacitance label, two lines centred inside the cell
         # (ref. cmim/rfcmim). The value must match the simulation model; the
         # billing lives in _model_C_fF, kept identical to cap_cmomi.va.
-        # l and w are snapped down to the unit cell, so the drawn active array is
-        # nx*UC_X by ny*UC_Y, generally smaller than the requested l x w. The
-        # effective size is put on its own line so the layout is self-describing.
         c_total = self._model_C_fF(self.l_um, self.w_um,
                                    self.mmin, self.mmax, self.feed)
         labelpos = Point(GridFix(dev_w / 2.0 + self.ox),
@@ -568,10 +600,4 @@ class cmomi(DloGen):
                       'C={:.3f}fF'.format(c_total), 'lowerCenter', 'R0',
                       Font.EURO_STYLE, label_h)
         dbCreateLabel(self, text_layer, labelpos, 'cap_cmomi',
-                      'upperCenter', 'R0', Font.EURO_STYLE, label_h)
-        sizepos = Point(GridFix(dev_w / 2.0 + self.ox),
-                        GridFix(ny * self.UC_Y / 2.0 + self.oy - label_h))
-        dbCreateLabel(self, text_layer, sizepos,
-                      'l={:.2f} w={:.2f}u'.format(nx * self.UC_X,
-                                                  ny * self.UC_Y),
                       'upperCenter', 'R0', Font.EURO_STYLE, label_h)
