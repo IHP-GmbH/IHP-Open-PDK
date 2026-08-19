@@ -112,6 +112,12 @@ class cmomi(DloGen):
     X_DOWN      = 0.42
     BAR_OVERHANG = 0.05
 
+    # Origin offset (per-instance in genLayout): shifts every drawn coordinate so
+    # (0,0) lands at the device centre. Class defaults keep _paint safe if it were
+    # ever called before genLayout sets them.
+    ox = 0.0
+    oy = 0.0
+
     # Double feed (opposite side)
     FEED_GAP    = 0.30
     FEED_PAD_W  = 0.60
@@ -154,8 +160,14 @@ class cmomi(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
         mchoice = list(range(1, cls.METAL_MAX + 1))
+        # Default capacitance shown as a parameter (ref. cmim/rfcmim). Computed
+        # from the shipped model on the default device; recomputed per geometry
+        # in setupParams and for the label.
+        c_def = eng_string(cls._model_C_fF(5.0, 5.0, 1, cls.METAL_MAX,
+                                           'double') * 1e-15)
 #ifdef KLAYOUT
         specs('model', 'cap_cmomi', 'Model name')
+        specs('C', c_def, 'C')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -165,13 +177,12 @@ class cmomi(DloGen):
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('feed', 'double',
-              "Feed topology: 'double'/'same' = complete 2-terminal cap, "
-              "'none' = bare array (layout only)",
+              "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
-        specs('subblock', 0, 'Add substrate isolation block',
-              ChoiceConstraint([0, 1]))
+        specs('subblock', False, 'Add substrate isolation block')
 #else
         specs('model', 'cap_cmomi', 'Model name')
+        specs('C', c_def, 'C')
         specs('w', '5.0u', 'Width (Y, row stacking)',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X, finger length)',
@@ -181,12 +192,33 @@ class cmomi(DloGen):
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('feed', 'double',
-              "Feed topology: 'double'/'same' = complete 2-terminal cap, "
-              "'none' = bare array (layout only)",
+              "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
-        specs('subblock', 0, 'Add substrate isolation block',
-              ChoiceConstraint([0, 1]))
+        specs('subblock', False, 'Add substrate isolation block')
 #endif
+
+    @classmethod
+    def _model_C_fF(cls, l_um, w_um, mmin, mmax, feed):
+        """Model capacitance (fF) for the 'C' parameter and the label.
+
+        Must stay identical to cap_cmomi.va. The active area bills the ny rows
+        this cell DRAWS (each has a counter electrode); the feed term is fitted
+        against pad_len, the drawn pad height. The earlier billing subtracted a
+        row because the characterised structure ends in single fingers that
+        couple to nothing; nothing here is drawn that way.
+        """
+        if mmax < mmin:
+            mmax = mmin
+        nx = max(1, int(l_um / cls.UC_X + 1e-6))
+        ny = max(1, int(w_um / cls.UC_Y + 1e-6) - 1) + 1
+        n_clamped = min(cls.METAL_MAX, max(2, mmax - mmin + 1))
+        c_active = cls.AREACAP[n_clamped] * (nx * cls.UC_X) * (ny * cls.UC_Y)
+        pad_len = ny * cls.UC_Y + 2 * cls.T_BAR
+        if feed == 'same':
+            return c_active + cls.CFEED_SLOPE * pad_len + cls.CFEED_END
+        if feed == 'double':
+            return c_active + cls.CFEED2_SLOPE * pad_len
+        return c_active
 
     def setupParams(self, params):
         self.params = params
@@ -196,7 +228,7 @@ class cmomi(DloGen):
         self.mmin = int(params['mmin'])
         self.mmax = int(params['mmax'])
         self.feed = str(params['feed'])
-        self.subblock = int(params['subblock'])
+        self.subblock = bool(params['subblock'])
         if self.mmax < self.mmin:
             self.mmax = self.mmin
 
@@ -204,9 +236,10 @@ class cmomi(DloGen):
     # Helpers
     # ---------------------------------------------------------------
     def _paint(self, layer, x0, y0, x1, y1):
+        # self.ox/self.oy centre the cell on (0,0); set in genLayout before use.
         dbCreateRect(self, layer,
-                     Box(GridFix(x0), GridFix(y0),
-                         GridFix(x1), GridFix(y1)))
+                     Box(GridFix(x0 + self.ox), GridFix(y0 + self.oy),
+                         GridFix(x1 + self.ox), GridFix(y1 + self.oy)))
 
     def _bar_x_range(self, m, j, m_top, dev_w):
         """Return (xL, xR) for the horizontal bar at row j on layer m."""
@@ -330,20 +363,21 @@ class cmomi(DloGen):
         pin_h = self.T_BAR
         pin_w = 0.20
 
+        def B(x0, y0, x1, y1):
+            # Same centring offset as _paint, so pins sit on their drawn pads.
+            return Box(GridFix(x0 + self.ox), GridFix(y0 + self.oy),
+                       GridFix(x1 + self.ox), GridFix(y1 + self.oy))
+
         if self.feed == 'double':
             pad_y_lo, pad_y_hi = feed_pad_yrange
             pad_cy = (pad_y_lo + pad_y_hi) / 2.0
             plus_cx = (-self.FEED_EXT + -self.FEED_GAP) / 2.0
-            plus_box = Box(GridFix(plus_cx - pin_w / 2.0),
-                           GridFix(pad_cy - pin_h / 2.0),
-                           GridFix(plus_cx + pin_w / 2.0),
-                           GridFix(pad_cy + pin_h / 2.0))
+            plus_box = B(plus_cx - pin_w / 2.0, pad_cy - pin_h / 2.0,
+                         plus_cx + pin_w / 2.0, pad_cy + pin_h / 2.0)
             MkPin(self, 'PLUS', 1, plus_box, top_metal_name)
             minus_cx = dev_w + (self.FEED_GAP + self.FEED_EXT) / 2.0
-            minus_box = Box(GridFix(minus_cx - pin_w / 2.0),
-                            GridFix(pad_cy - pin_h / 2.0),
-                            GridFix(minus_cx + pin_w / 2.0),
-                            GridFix(pad_cy + pin_h / 2.0))
+            minus_box = B(minus_cx - pin_w / 2.0, pad_cy - pin_h / 2.0,
+                          minus_cx + pin_w / 2.0, pad_cy + pin_h / 2.0)
             MkPin(self, 'MINUS', 2, minus_box, top_metal_name)
             return
 
@@ -356,29 +390,30 @@ class cmomi(DloGen):
             # terminals need not be told apart by position.
             pad_cx = (-self.FEED_EXT_SAME + -self.SAME_PAD_GAP) / 2.0
             pad_cy = (ny * self.UC_Y) / 2.0
-            pin_box = Box(GridFix(pad_cx - pin_w / 2.0),
-                          GridFix(pad_cy - pin_h / 2.0),
-                          GridFix(pad_cx + pin_w / 2.0),
-                          GridFix(pad_cy + pin_h / 2.0))
+            pin_box = B(pad_cx - pin_w / 2.0, pad_cy - pin_h / 2.0,
+                        pad_cx + pin_w / 2.0, pad_cy + pin_h / 2.0)
             MkPin(self, 'PLUS', 1, pin_box, top_metal_name)
             MkPin(self, 'MINUS', 2, pin_box, sub_metal_name)
             return
 
         # feed == 'none': pins inside the outer top-metal bars.
         plus_x0 = 0.0
-        plus_box = Box(GridFix(plus_x0), GridFix(0 - half_bar),
-                       GridFix(plus_x0 + pin_w), GridFix(0 + half_bar))
+        plus_box = B(plus_x0, 0 - half_bar, plus_x0 + pin_w, 0 + half_bar)
         MkPin(self, 'PLUS', 1, plus_box, top_metal_name)
         minus_x0 = dev_w - pin_w
-        minus_box = Box(GridFix(minus_x0), GridFix(ny * self.UC_Y - half_bar),
-                        GridFix(minus_x0 + pin_w),
-                        GridFix(ny * self.UC_Y + half_bar))
+        minus_box = B(minus_x0, ny * self.UC_Y - half_bar,
+                      minus_x0 + pin_w, ny * self.UC_Y + half_bar)
         MkPin(self, 'MINUS', 2, minus_box, top_metal_name)
 
     # ---------------------------------------------------------------
     # Main
     # ---------------------------------------------------------------
     def genLayout(self):
+        self.techparams = self.tech.getTechParams()
+        # Thin-via cut from the tech file instead of a hardcoded literal; Via1..Via4
+        # share this cut (V1_a = 0.19) on the g2 thin-metal stack.
+        self.VIA_CUT = self.techparams['V1_a']
+
         # Active unit-cell counts (PDF: length -> X, width -> Y).
         # A drawn dimension that is a non-integer exact multiple of the pitch
         # (e.g. l=8.4um = 10*UC_X) can round-trip through *1e6 to one ULP below
@@ -394,9 +429,19 @@ class cmomi(DloGen):
         dev_w = GridFix(nx * self.UC_X)     # X extent (finger length)
         dev_l = GridFix(ny * self.UC_Y)     # Y extent (row stacking)
 
+        # Centre the cell on its own origin: shift every drawn coordinate so
+        # (0,0) is the device centre. Y is symmetric about the core mid-row for
+        # every feed; X is symmetric except single-side 'same', whose feed sits
+        # only on the left, so use its real bbox centre there. All offsets land
+        # on the 5 nm grid, so GridFix after the shift stays exact.
+        self.oy = -(ny * self.UC_Y) / 2.0
+        if self.feed == 'same':
+            self.ox = -((-self.FEED_EXT_SAME) + (dev_w + self.BAR_OVERHANG)) / 2.0
+        else:
+            self.ox = -dev_w / 2.0
+
         m_top = self.mmax
         m_bot = self.mmin
-        n_layers = m_top - m_bot + 1
 
         metal_layers = {m: Layer(self.METAL_NAMES[m], 'drawing')
                         for m in range(m_bot, m_top + 1)}
@@ -465,27 +510,16 @@ class cmomi(DloGen):
         # 7) Pins
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
-        # 8) Capacitance label (must match the simulation model, contract).
-        # The active area bills the rows this cell DRAWS, which is ny: every one
-        # of them has a counter electrode. The earlier billing subtracts a row
-        # because the characterised structure ends in single fingers that face
-        # nothing and one pitch of its width does not couple; nothing here
-        # is drawn that way. ny_active is that pre-fix count and no longer enters
-        # any billed quantity: the feed term is fitted against pad_len, the drawn
-        # pad height. Keep all of this identical to cap_cmomi.va.
-        n_clamped = min(self.METAL_MAX, max(2, n_layers))
-        areacap = self.AREACAP[n_clamped]
-        active_area = nx_active * self.UC_X * ny * self.UC_Y
-        c_active = areacap * active_area
-        pad_len = ny * self.UC_Y + 2 * self.T_BAR
-        if self.feed == 'same':
-            c_total = c_active + self.CFEED_SLOPE * pad_len + self.CFEED_END
-        elif self.feed == 'double':
-            c_total = c_active + self.CFEED2_SLOPE * pad_len
-        else:
-            c_total = c_active
-        label_text = 'cap_cmomi C={:.3f}fF'.format(c_total)
-        dbCreateLabel(self, text_layer,
-                      Point(GridFix(x_lo), GridFix(y_lo - 0.5)),
-                      label_text, 'centerLeft', 'R0',
-                      Font.EURO_STYLE, 0.25)
+        # 8) Device name + capacitance label, two lines centred inside the cell
+        # (ref. cmim/rfcmim). The value must match the simulation model; the
+        # billing lives in _model_C_fF, kept identical to cap_cmomi.va.
+        c_total = self._model_C_fF(self.l_um, self.w_um,
+                                   self.mmin, self.mmax, self.feed)
+        labelpos = Point(GridFix(dev_w / 2.0 + self.ox),
+                         GridFix(ny * self.UC_Y / 2.0 + self.oy))
+        label_h = min(self.l_um, self.w_um) / 10.0
+        dbCreateLabel(self, text_layer, labelpos,
+                      'C={:.3f}fF'.format(c_total), 'lowerCenter', 'R0',
+                      Font.EURO_STYLE, label_h)
+        dbCreateLabel(self, text_layer, labelpos, 'cap_cmomi',
+                      'upperCenter', 'R0', Font.EURO_STYLE, label_h)
