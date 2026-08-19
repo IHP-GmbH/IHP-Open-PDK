@@ -1,6 +1,19 @@
-# Mirrors the thin-oxide list: the scan flop's next_state is not a plain
-# D function (dfflibmap cannot pattern-match it; remove this line if a
-# design deliberately maps onto it with sdfbbp_map.v), and dfrbp_2 is
-# kept out of synthesis like its thin-oxide counterpart.
+# Mirrors the thin-oxide list cell for cell (sg13g2_stdcell's own
+# synth_exclude.cells names lgcp_1, sighold, slgcp_1, sdfbbp_1, dfrbp_2).
+#
+# All five now carry Liberty entries, so unlike earlier revisions of this
+# library they *could* be selected -- which is exactly why they are listed:
+#   * the two integrated clock gates are instantiated deliberately, not
+#     inferred; enabling clock gating is a design-level decision (set
+#     SYNTH_CLOCKGATE_MIN_WIDTH and SYNTH_CLOCKGATE_POSEDGE_ICG
+#     "sg13g2_hv_lgcp_1/GATE/CLK/GCLK", and drop lgcp_1 from this list).
+#     Yosys takes the ICG from that variable, not from the Liberty.
+#   * sighold is a bus holder, placed by hand where a net must not float.
+#   * sdfbbp_1's next_state is a scan mux, which dfflibmap cannot
+#     pattern-match (see sdfbbp_map.v for the opt-in all-scan flow).
+#   * dfrbp_2 is excluded as in the thin-oxide library.
+sg13g2_hv_lgcp_1
+sg13g2_hv_sighold
+sg13g2_hv_slgcp_1
 sg13g2_hv_sdfbbp_1
 sg13g2_hv_dfrbp_2

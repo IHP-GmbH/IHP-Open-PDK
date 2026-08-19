@@ -29,7 +29,7 @@ Important Notes:
   (cell rules; the density rules are chip-level checks) under both the
   PDK's KLayout decks AND Magic's strict analog N-well rules, and LVS
   clean against the CDL.
-- 82 cells in the Liberty file, 72 of them with timing arcs:
+- All 84 cells in the Liberty file, 74 of them with timing arcs:
   66 characterized with CharLib (combinational cells, 9 flip-flops with
   clk->Q / setup / hold, 5 latches with en->Q and closing-edge
   constraints) + 6 tri-state cells measured directly (data arc plus
@@ -39,10 +39,12 @@ Important Notes:
   cells (fill_*, decap_*, antennanp; measured leakage, measured diode pin
   capacitance). Every liberty cell has a layout; nothing is stripped at
   install time.
-- Not characterized (drawn, no Liberty entry): the 2 statetable clock
-  gates (lgcp_1, slgcp_1). CharLib has no input form for a statetable and
-  their direct characterization is still in progress, so the SCL excludes
-  them -- as the thin-oxide SCL excludes its own clock gates.
+- The 2 statetable clock gates (lgcp_1, slgcp_1) carry the full ICG
+  model: statetable, internal state pin, state_function on GCLK, the
+  clock_gate_* pin attributes, CLK->GCLK propagation, setup/hold of the
+  enables against the rising edge, minimum clock high and low time, and
+  per-state leakage. CharLib has no input form for a statetable, so they
+  are measured directly by work/char_clockgate/.
 
 2. Liberty:
 ==========================================================================================
@@ -84,7 +86,11 @@ Important Notes:
   the exclude lists mirror the thin-oxide ones (sdfbbp_1, dfrbp_2).
 - Tri-states map through SYNTH_TRISTATE_MAP (tribuff_map.v: Yosys $_TBUF_
   onto sg13g2_hv_ebufn_2) with TRISTATE_CELLS listing both footprints,
-  mirroring the thin-oxide SCL. No clock-gate mapping (not characterized).
+  mirroring the thin-oxide SCL. No automatic clock gating: an ICG is
+  instantiated deliberately, not inferred. To enable it, drop lgcp_1 from
+  synth_exclude.cells and set SYNTH_CLOCKGATE_MIN_WIDTH plus
+  SYNTH_CLOCKGATE_POSEDGE_ICG "sg13g2_hv_lgcp_1/GATE/CLK/GCLK" -- Yosys
+  takes the ICG from that variable, not from the Liberty.
 - DFT / scan flows: sdfbbp_map.v puts every posedge flop on the scan cell
   sg13g2_hv_sdfbbp_1. It is opt-in because dfflibmap cannot pattern-match
   a scan-mux next_state. To enable it, remove sg13g2_hv_sdfbbp_1 from
@@ -100,12 +106,16 @@ Important Notes:
 5. Known limitations:
 ==========================================================================================
 - Not silicon-proven; everything is simulation against the PDK models.
-- One Liberty corner only (typ, 3.30 V, 25 C); multi-corner signoff needs
-  fast/slow process and V/T corners that do not exist yet.
+- One Liberty corner only (typ, 3.30 V, 25 C). The characterization flow
+  is corner-parameterized (work/corners.py, work/run_corner.sh) and the
+  PDK config registers whichever corners are present, so fast
+  (3.60 V, -40 C) and slow (3.00 V, 125 C) drop in when characterized.
 - No internal_power tables on any cell: the characterization was scoped to
   timing and leakage, so STA power reports see leakage only.
-- The 2 clock gates (lgcp_1, slgcp_1) have layout but no Liberty entry and
-  are excluded from the flow.
+- The min_pulse_width of lgcp_1 and slgcp_1 is identical point for
+  point. Their CLK->GCLK delays differ only in the 4th-6th digit (the
+  scan leg affects the enable path, not the clock path), which is far
+  below the 0.01 ns bisection tolerance, so both land on the same value.
 - 11 signal pins sit off the vertical Metal1 track grid and cannot be
   widened within M1.b (12 others were widened onto tracks in the shipped
   GDS). Route with RT_MIN_LAYER Metal1, or expect the router to jog; the
