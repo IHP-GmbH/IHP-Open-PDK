@@ -48,8 +48,12 @@ Important Notes:
 
 2. Liberty:
 ==========================================================================================
-- One corner: typical, 3.30 V, 25 C (sg13g2_stdcell_hv_typ_3p30V_25C.lib;
-  the library name carries the corner suffix, matching upstream).
+- Two corners, each covering all 84 cells:
+    typ   3.30 V,  25 C, mos_tt  sg13g2_stdcell_hv_typ_3p30V_25C.lib
+    fast  3.60 V, -40 C, mos_ff  sg13g2_stdcell_hv_fast_3p60V_m40C.lib
+  Each library name carries its corner suffix, matching upstream. The
+  slew and load grids are deliberately identical at both corners, so an
+  STA tool can interpolate across them.
 - Per-pin max_capacitance / max_transition derived from the characterized
   table axes (load-axis top per output pin, slew-axis top per pin), plus
   default_max_capacitance 0.66 / default_max_transition 6.66968. Without
@@ -78,8 +82,10 @@ Important Notes:
   cells), tracks.info, latch and mux techmaps, exclude lists, and
   sdfbbp_map.v.
 - The PDK-level libs.tech/librelane/config.tcl gains a conditional block
-  for STD_CELL_LIBRARY == sg13g2_stdcell_hv (LIB corner *_typ_3p30V_25C,
-  VDD_PIN_VOLTAGE 3.30); libs.ref/sg13g2_stdcell_hv/lef/ carries a copy
+  for STD_CELL_LIBRARY == sg13g2_stdcell_hv, registering every corner
+  present (nom_typ_3p30V_25C is the default, VDD_PIN_VOLTAGE 3.30;
+  fast_3p60V_m40C is registered alongside it);
+  libs.ref/sg13g2_stdcell_hv/lef/ carries a copy
   of the shared sg13g2_tech.lef because the PDK config globs it per-SCL.
 - Flip-flops and latches map through dfflibmap / the latch techmap as in
   the thin-oxide flow (all 9 flops and 5 latches have liberty + layout);
@@ -106,14 +112,17 @@ Important Notes:
 5. Known limitations:
 ==========================================================================================
 - Not silicon-proven; everything is simulation against the PDK models.
-- One Liberty corner only (typ, 3.30 V, 25 C). The characterization flow
-  is corner-parameterized (work/corners.py, work/run_corner.sh) and the
-  PDK config registers whichever corners are present, so fast
-  (3.60 V, -40 C) and slow (3.00 V, 125 C) drop in when characterized.
+- Two Liberty corners (typ and fast). Slow (3.00 V, 125 C) is not yet
+  characterized; the flow is corner-parameterized (work/corners.py,
+  work/run_corner.sh) and the PDK config registers whichever corners are
+  present, so it drops in when it is. Designs that must close over full
+  PVT should treat this library as incomplete until then.
 - No internal_power tables on any cell: the characterization was scoped to
   timing and leakage, so STA power reports see leakage only.
 - The min_pulse_width of lgcp_1 and slgcp_1 is identical point for
-  point. Their CLK->GCLK delays differ only in the 4th-6th digit (the
+  point at both characterized corners -- independent measurements that
+  agree, which supports the explanation below rather than a measurement
+  artifact. Their CLK->GCLK delays differ only in the 4th-6th digit (the
   scan leg affects the enable path, not the clock path), which is far
   below the 0.01 ns bisection tolerance, so both land on the same value.
 - 11 signal pins sit off the vertical Metal1 track grid and cannot be

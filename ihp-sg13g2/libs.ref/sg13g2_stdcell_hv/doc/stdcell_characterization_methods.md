@@ -876,7 +876,8 @@ together.
 applied produces a plausible library rather than an error:
 
 ```sh
-grep -E 'voltage: 3.6|temperature: -40|mos_ff' charlib_sg13g2_stdcell_hv_fast_3p60V_m40C.yml | head
+CFG=charlib_sg13g2_stdcell_hv_fast_3p60V_m40C.yml
+grep -E 'voltage: 3.6|temperature: -40|mos_ff' $CFG | head
 ```
 
 ### Stage 2 — CharLib, combinational
@@ -901,7 +902,8 @@ HSpice backend, fails, and falls through to ngspice. Do not go hunting
 them. To count *real* problems, filter them out:
 
 ```sh
-grep -hiE 'error|assert|fail' log | grep -viE 'numpy|hspice|pybind11|ImportError' | wc -l
+grep -hiE 'error|assert|fail' log \
+  | grep -viE 'numpy|hspice|pybind11|ImportError' | wc -l
 ```
 
 **Where the simulations are.** They will not appear in `ps` as `ngspice`.
@@ -1012,15 +1014,36 @@ The slew and load grids are deliberately **not** corner-dependent: the
 tables must span the same electrical territory at every corner or an STA
 tool cannot interpolate across them.
 
-> **The failure mode to watch for when adding corners** is a constant
-> derived from `VDD` at module import time. Rebinding `VDD` from
-> `--corner` does not update anything computed from it, so a threshold
-> keeps the *previous* corner's volts while the run looks perfectly
-> healthy. This shape has produced five defects in this flow so far
-> (`.option temp`, the SPICE header, the ICG trip points, the keeper bias,
-> the tri-state hold tolerance). When you add a corner-dependent constant,
-> recompute it in the same block that rebinds `VDD`, and prefer deriving it
-> at the point of use.
+> **Three failure modes to watch for when adding corners**, all of which
+> this flow shipped at least once. Every one was invisible while `typ` was
+> the only corner that existed.
+>
+> 1. **A constant derived from `VDD` at module import time.** Rebinding
+>    `VDD` from `--corner` does not update anything computed from it, so a
+>    threshold keeps the *previous* corner's volts while the run looks
+>    perfectly healthy. Six instances so far: `.option temp`, the SPICE
+>    header, the ICG trip points, the keeper bias, the tri-state hold
+>    tolerance, and the calibration reference. Recompute derived constants
+>    in the same block that rebinds `VDD`, or derive them at the point of
+>    use.
+> 2. **A measurement cache not keyed by corner.** `char_tristate`
+>    memoises each simulation to disk under `<cell>_<slew>_<direction>`.
+>    With no PVT in the key, the fast run replayed the typ run's results
+>    and would have shipped typical tri-state timing in the fast Liberty.
+>    It was caught only because an independent check — the keeper-hold
+>    assertion — saw a floating node at 3.3 V when the rail was 3.6 V. A
+>    cache is a correctness surface, not just a speed one.
+> 3. **A step that patches what it assumes already exists.**
+>    `tie_leakage.py` inserted leakage into tie-cell entries that nothing
+>    in the flow ever created — they had come from the initial bulk
+>    import. That held for exactly as long as no corner was built from
+>    scratch. Anything that edits the Liberty should be able to create
+>    what it edits, or say plainly that it cannot.
+>
+> The common root is that `typ` was built up incrementally over many
+> sessions and never once from an empty directory. **A flow is only
+> reproducible if it has actually been run that way**; until then it is
+> merely a flow that has not yet been contradicted.
 
 ## 4. Installing into the PDK
 
@@ -1043,10 +1066,14 @@ runs two checks that exist because both have failed silently before:
 
 ## 5. Traps, in descending order of time lost
 
-1. **A clean log does not mean a complete run.** CharLib has no Hi-Z
+1. **A clean log does not mean a correct run.** CharLib has no Hi-Z
    concept, so the tri-states were *configured*, produced nothing,
-   swallowed the empty result, and logged not one word. Always compare the
-   emitted cell list against the intended one.
+   swallowed the empty result, and logged not one word. The same lesson
+   arrived a second way when a corner-blind cache silently served typical
+   numbers to a fast-corner run (§3). Compare the emitted cell list against
+   the intended one, and keep at least one check that looks at the physics
+   rather than the bookkeeping — the cache bug was caught by a keeper-hold
+   assertion, not by anything counting cells.
 2. **Never ship an unbracketed bisection.** A search that hits its bounds
    without bracketing must raise, not return the bound. The clock-gate
    min-pulse-width search once emitted its 48 ns upper bound as measured
