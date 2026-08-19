@@ -173,7 +173,6 @@ class cmomi(DloGen):
         ny0 = max(1, int(5.0 / cls.UC_Y + 1e-6) - 1) + 1
         lx_def = eng_string(nx0 * cls.UC_X * 1e-6)
         wy_def = eng_string(ny0 * cls.UC_Y * 1e-6)
-        formula = 'C = D[N]*Lx*Wy + Cfeed'
 
         def _ro():
             # Mark the just-added parameter read-only (KLayout only; the guard
@@ -206,8 +205,6 @@ class cmomi(DloGen):
         specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
         specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('C', c_def, 'C [F], modelled'); _ro()
-        specs('formula', formula,
-              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #else
         # Editable inputs (write) first, then read-only derived/info fields,
@@ -230,8 +227,6 @@ class cmomi(DloGen):
         specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
         specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('C', c_def, 'C [F], modelled'); _ro()
-        specs('formula', formula,
-              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #endif
 
