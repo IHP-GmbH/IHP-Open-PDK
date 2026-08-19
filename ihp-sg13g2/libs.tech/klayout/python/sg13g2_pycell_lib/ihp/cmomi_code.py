@@ -361,7 +361,7 @@ class cmomi(DloGen):
         sub_metal_name = self.METAL_NAMES[sub_idx]
         half_bar = self.T_BAR / 2.0
         pin_h = self.T_BAR
-        pin_w = 0.20
+        pin_w = self.techparams['Mn_a']    # min metal width, was 0.20
 
         def B(x0, y0, x1, y1):
             # Same centring offset as _paint, so pins sit on their drawn pads.
@@ -410,9 +410,19 @@ class cmomi(DloGen):
     # ---------------------------------------------------------------
     def genLayout(self):
         self.techparams = self.tech.getTechParams()
-        # Thin-via cut from the tech file instead of a hardcoded literal; Via1..Via4
-        # share this cut (V1_a = 0.19) on the g2 thin-metal stack.
-        self.VIA_CUT = self.techparams['V1_a']
+        # Geometry that is a DRC minimum is read from the tech file rather than
+        # hardcoded (Via1..Via4 share the thin-via rules). The class literals
+        # above stay as documented fallbacks; these overrides are authoritative:
+        #   via cut         = V1_a                 (0.19)
+        #   tooth via pitch = V1_a + V1_b          (cut + min via space -> the
+        #                                           foundry finger lattice, 0.41)
+        #   tooth extension = UC_Y - T_BAR/2 - Mn_b (leaves Mn_b from the tip to
+        #                                            the opposite bar, 0.575)
+        # pin width (Mn_a) is applied in _place_pins.
+        tp = self.techparams
+        self.VIA_CUT = tp['V1_a']
+        self.TOOTH_VIA_OFF = self.VIA_CUT + tp['V1_b']
+        self.TOOTH_EXT = self.UC_Y - self.T_BAR / 2.0 - tp['Mn_b']
 
         # Active unit-cell counts (PDF: length -> X, width -> Y).
         # A drawn dimension that is a non-integer exact multiple of the pitch
