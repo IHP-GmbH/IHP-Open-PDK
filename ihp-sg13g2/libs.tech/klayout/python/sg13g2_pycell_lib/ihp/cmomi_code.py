@@ -200,7 +200,9 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
-        # --- read-only (derived / info) ---
+        # A read-only string acts as a visible divider before the derived
+        # fields, since the dialog has no native section separator.
+        specs('sep', '', '──────  read only  ──────'); _ro()
         specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
         specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('C', c_def, 'C [F], modelled'); _ro()
@@ -222,7 +224,9 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
-        # --- read-only (derived / info) ---
+        # A read-only string acts as a visible divider before the derived
+        # fields, since the dialog has no native section separator.
+        specs('sep', '', '──────  read only  ──────'); _ro()
         specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
         specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('C', c_def, 'C [F], modelled'); _ro()
