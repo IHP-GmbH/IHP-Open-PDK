@@ -186,16 +186,12 @@ class cmomi(DloGen):
             except Exception:
                 pass
 #ifdef KLAYOUT
-        specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C [F], modelled'); _ro()
-        specs('formula', formula,
-              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        # Editable inputs (write) first, then read-only derived/info fields,
+        # so the dialog reads top-to-bottom as "what you set" then "what you get".
         specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
-        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',
@@ -204,17 +200,20 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # --- read-only (derived / info) ---
+        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
+        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
+        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('formula', formula,
+              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        specs('model', 'cap_cmomi', 'Model name'); _ro()
 #else
-        specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C [F], modelled'); _ro()
-        specs('formula', formula,
-              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        # Editable inputs (write) first, then read-only derived/info fields,
+        # so the dialog reads top-to-bottom as "what you set" then "what you get".
         specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
-        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
         specs('mmin', 1, 'Bottom metal (1=M1 .. 5=M5)',
               ChoiceConstraint(mchoice))
         specs('mmax', 5, 'Top metal (1=M1 .. 5=M5)',
@@ -223,6 +222,13 @@ class cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # --- read-only (derived / info) ---
+        specs('Lx', lx_def, 'Effective length drawn = floor(l/0.84)*0.84'); _ro()
+        specs('Wy', wy_def, 'Effective width drawn = floor(w/0.89)*0.89'); _ro()
+        specs('C', c_def, 'C [F], modelled'); _ro()
+        specs('formula', formula,
+              'Lx=floor(l/0.84)*0.84  Wy=floor(w/0.89)*0.89  N=mmax-mmin+1  D=area density'); _ro()
+        specs('model', 'cap_cmomi', 'Model name'); _ro()
 #endif
 
     @classmethod
