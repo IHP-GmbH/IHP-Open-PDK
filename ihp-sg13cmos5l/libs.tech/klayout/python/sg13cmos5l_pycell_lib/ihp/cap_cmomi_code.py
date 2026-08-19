@@ -163,6 +163,16 @@ class cap_cmomi(DloGen):
         # Default capacitance shown as a parameter (ref. cmim/rfcmim). Computed
         # from the shipped model on the default device; recomputed per geometry
         # in setupParams and for the label.
+        #
+        # On cmos5l this C field is a STATIC default: it does NOT track w/l/mmin/
+        # mmax/feed live in the parameter dialog. The g2 twin (cmomi) updates C on
+        # edit through a coerce callback (callbacks/cmomi_cb.tcl), but that
+        # subsystem is not available here: cmos5l does not vendor its own PCell
+        # framework, it symlinks pycell4klayout-api from the g2 tree, and that
+        # shared copy ships the older dlo.py without coerce_parameters / callbacks
+        # loading. Making C live on cmos5l is a shared-framework upgrade (it also
+        # changes the in-tree g2), out of scope for this device. The live value is
+        # always on the cell label instead (see _model_C_fF / genLayout).
         c_def = eng_string(cls._model_C_fF(5.0, 5.0, 1, cls.METAL_MAX,
                                            'double') * 1e-15)
 #ifdef KLAYOUT
