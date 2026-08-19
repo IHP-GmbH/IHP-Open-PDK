@@ -22,6 +22,7 @@ TARGETS = \
 	idc \
 	resistor_paramset \
 	capacitor_paramset \
+	sg13g2_moscap_paramset \
 	sg13g2_moslv_paramset \
 	sg13g2_moslv_rf_paramset \
 	sg13g2_moshv_paramset \
@@ -64,9 +65,11 @@ CMOMF_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomf)
 VBIC_SRC   := $(call va_sources,$(IHP_VERILOG_DIR)/vbic_1p3)
 
 HBT_PARAMSETS = $(wildcard paramsets/sg13g2_hbt_*.va)
+MOSCAP_PARAMSETS = $(wildcard paramsets/sg13g2_moscap_*.va)
 
 $(TARGET_DIR)/resistor_paramset.cc:        resistor.va discipline.h $(R3CMC_SRC)
 $(TARGET_DIR)/capacitor_paramset.cc:       capacitor.va $(CMOMI_SRC) $(CMOMF_SRC)
+$(TARGET_DIR)/sg13g2_moscap_paramset.cc:   discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moslv_paramset.cc:    discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc: discipline.h $(PSP103_SRC)
 $(TARGET_DIR)/sg13g2_moshv_paramset.cc:    discipline.h $(PSP103_SRC)
@@ -75,6 +78,7 @@ $(TARGET_DIR)/sg13g2_hbt_paramset.cc:      $(HBT_PARAMSETS) $(VBIC_SRC)
 
 resistor_paramset.dump.va:        resistor.va discipline.h $(R3CMC_SRC)
 capacitor_paramset.dump.va:       capacitor.va $(CMOMI_SRC) $(CMOMF_SRC)
+sg13g2_moscap_paramset.dump.va:   discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
 sg13g2_moslv_paramset.dump.va:    discipline.h $(PSP103_SRC)
 sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
 sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)

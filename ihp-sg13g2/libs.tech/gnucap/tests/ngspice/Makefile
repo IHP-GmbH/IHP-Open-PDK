@@ -12,6 +12,7 @@ MAKEFLAGS += -B
 TESTDIRS = \
 	resistor \
 	capacitor \
+	moscap \
 	moslv \
 	moshv \
 	hbt
