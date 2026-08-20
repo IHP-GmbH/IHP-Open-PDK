@@ -1039,6 +1039,15 @@ tool cannot interpolate across them.
 >    import. That held for exactly as long as no corner was built from
 >    scratch. Anything that edits the Liberty should be able to create
 >    what it edits, or say plainly that it cannot.
+> 4. **A deck that converges is not a deck that is well posed.** The
+>    antenna-diode leakage deck left its signal pin dangling, with no DC
+>    path. At typ and fast ngspice converged on *some* operating point and
+>    returned a number; at slow (125 °C) gmin stepping, source stepping and
+>    the transient op all failed. The failure is what exposed it, but the
+>    successes were the real damage: typ's floating answer was **6.6× the
+>    well-defined one**, and it shipped. Every signal pin now gets a 1 GΩ
+>    tie to ground — 3 nA, three orders below the currents being measured.
+>    Convergence is not evidence of a meaningful question.
 >
 > The common root is that `typ` was built up incrementally over many
 > sessions and never once from an empty directory. **A flow is only
@@ -1088,6 +1097,14 @@ runs two checks that exist because both have failed silently before:
 5. **`import` at the top of a one-line multi-import** can silently no-op a
    scripted edit. Assert on every automated source replacement; the one
    substitution not checked was the one that did nothing.
+6. **A report must not be able to break a build.** The HV/LV ratio
+   cross-check sits in the clock-gate driver's task list, so when its
+   Liberty parser failed, `set -e` killed `run_corner.sh` before the merge
+   and the final two stages. It had in fact *never* worked — its pattern
+   required `") ;"` where the thin-oxide library writes `");"` — so no
+   corner had ever completed a scripted end-to-end run; the tail was
+   finished by hand each time without anyone noticing. Both are fixed, and
+   the parser now asserts rather than returning `None`.
 
 # Conclusions
 

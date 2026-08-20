@@ -25,7 +25,7 @@ so both libraries coexist in one netlist.
 | xschem symbols / schematics | 84 + gallery sheet | netlist-equivalence proven |
 | GDS layout (`gds/`) | **84 cells** (66 retargeted + 18 per-cell generated) | **DRC clean, LVS clean** |
 | LEF abstracts (`lef/`) | **84 macros** + `CoreSiteHV` site | generated from the GDS, pin sets verified against CDL |
-| Liberty NLDM (`lib/`) | **all 84 cells**, 668 timing tables, **2 corners** | combinational, sequential, tri-state and clock-gate; areas all measured; typ and fast |
+| Liberty NLDM (`lib/`) | **all 84 cells**, 668 timing tables, **3 corners** | combinational, sequential, tri-state and clock-gate; areas all measured; typ, fast and slow |
 | LibreLane SCL (`librelane/`) | site, cell maps, tracks, excludes | flops map natively through `dfflibmap` |
 
 Physical sign-off, one fixed invocation of the PDK's own klayout decks — on
@@ -307,8 +307,9 @@ cells, Metal1 routing, rails-only fillers) are documented in the
 
 # Liberty characterisation
 
-`lib/sg13g2_stdcell_hv_typ_3p30V_25C.lib` and
-`lib/sg13g2_stdcell_hv_fast_3p60V_m40C.lib` are produced with **CharLib**
+`lib/sg13g2_stdcell_hv_typ_3p30V_25C.lib`,
+`lib/sg13g2_stdcell_hv_fast_3p60V_m40C.lib` and
+`lib/sg13g2_stdcell_hv_slow_3p00V_125C.lib` are produced with **CharLib**
 against the shipped, layout-synchronised SPICE netlist on the PSP103/OSDI
 models — 25 839 combinational simulations plus a 2 962-task sequential
 run: 600 delay/slew tables over 66 cells (52 combinational, 9 flip-flops,
@@ -527,7 +528,7 @@ the failure reproduced only for someone cloning the branch, never for
 anyone testing an installed tree, which is why every local gate passed.
 `make_pdk_pr.py` now asks `git check-ignore --no-index` about every
 installed file and fails the run if any would be invisible; the check
-reproduces the defect against the unpatched `.gitignore` and passes 194
+reproduces the defect against the unpatched `.gitignore` and passes 195
 files against the fixed one.
 
 **Tri-states are wired too**, now that they carry timing:
@@ -580,7 +581,7 @@ max-cap violations against real limits.
 | Liberty special classes | `verify_lib.py` 8 | tri-state / ICG / bus-hold constructs | complete-construct check |
 | LibreLane block run | reference counter, no design-level overrides | RTL→GDS | flops native, DRC **0/0**, LVS clean |
 | LibreLane tri-state run | shared-bus design inferring `$_TBUF_` | RTL→GDS | 16 `ebufn_2`, DRC **0/0**, LVS 0, slew/cap 0 |
-| Git visibility of views | `git check-ignore --no-index` in `make_pdk_pr.py` | 194 installed files | all trackable |
+| Git visibility of views | `git check-ignore --no-index` in `make_pdk_pr.py` | 195 installed files | all trackable |
 
 The library is submitted upstream as
 [IHP-Open-PDK PR #1103](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1103)
@@ -602,8 +603,8 @@ assembles and verifies the contribution against a checkout.
   instantiated deliberately rather than inferred, so both remain in the
   exclude lists exactly as the thin-oxide SCL keeps its own. Enabling it
   needs two design-level variables, documented in the exclude list.
-* **Two corners** (typ 3.3 V/25 °C and fast 3.6 V/−40 °C; slow 3.0 V/125 °C
-  is not yet characterized); sequential leakage is a
+* **Three corners** (typ 3.3 V/25 °C, fast 3.6 V/−40 °C, slow 3.0 V/125 °C);
+  sequential leakage is a
   single-settled-state number; the delay cells' ratios shift with the
   450 nm minimum; the decaps store less per unit area.
 * **Timing is schematic-characterized.** Device sizes match the drawn
