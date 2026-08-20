@@ -23,6 +23,7 @@ so both libraries coexist in one netlist.
 | CDL netlist (`cdl/`) | 84 cells + 2 tie cells | LVS reference, all 84 cells match |
 | Verilog (`verilog/`) | 84 modules | shared `ihp_*` UDPs, deliberately not duplicated |
 | xschem symbols / schematics | 84 + gallery sheet | netlist-equivalence proven |
+| Qucs-S symbols / schematics | 84 + 84 XML + 45 shared .sym | retarget of the thin-oxide views, gated against the SPICE netlist |
 | GDS layout (`gds/`) | **84 cells** (66 retargeted + 18 per-cell generated) | **DRC clean, LVS clean** |
 | LEF abstracts (`lef/`) | **84 macros** + `CoreSiteHV` site | generated from the GDS, pin sets verified against CDL |
 | Liberty NLDM (`lib/`) | **all 84 cells**, 668 timing tables, **3 corners** | combinational, sequential, tri-state and clock-gate; areas all measured; typ, fast and slow |
@@ -528,7 +529,7 @@ the failure reproduced only for someone cloning the branch, never for
 anyone testing an installed tree, which is why every local gate passed.
 `make_pdk_pr.py` now asks `git check-ignore --no-index` about every
 installed file and fails the run if any would be invisible; the check
-reproduces the defect against the unpatched `.gitignore` and passes 195
+reproduces the defect against the unpatched `.gitignore` and passes 410
 files against the fixed one.
 
 **Tri-states are wired too**, now that they carry timing:
@@ -581,7 +582,7 @@ max-cap violations against real limits.
 | Liberty special classes | `verify_lib.py` 8 | tri-state / ICG / bus-hold constructs | complete-construct check |
 | LibreLane block run | reference counter, no design-level overrides | RTL→GDS | flops native, DRC **0/0**, LVS clean |
 | LibreLane tri-state run | shared-bus design inferring `$_TBUF_` | RTL→GDS | 16 `ebufn_2`, DRC **0/0**, LVS 0, slew/cap 0 |
-| Git visibility of views | `git check-ignore --no-index` in `make_pdk_pr.py` | 195 installed files | all trackable |
+| Git visibility of views | `git check-ignore --no-index` in `make_pdk_pr.py` | 410 installed files | all trackable |
 
 The library is submitted upstream as
 [IHP-Open-PDK PR #1103](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1103)

@@ -23,7 +23,19 @@ Important Notes:
 
 1. View coverage (work/view_matrix.py prints the full per-cell matrix):
 ==========================================================================================
-- 84 cells in SPICE, CDL, Verilog, xschem symbol + schematic views.
+- 84 cells in SPICE, CDL, Verilog, xschem symbol + schematic, and
+  Qucs-S symbol + schematic views. The Qucs-S views mirror the thin-oxide
+  library's: sch/qucs-s (84 schematics), sym/qucs-s (84 component XML plus
+  45 shared gate-shape .sym). They are a device-level retarget of the
+  thin-oxide schematics -- identical topology and wiring, devices changed
+  to sg13_hv_* and resized from the shipped SPICE netlist -- except
+  tiehi/tielo, whose thick-oxide topology genuinely differs and which are
+  composed from this library's own inv_1. work/verify_qucs.py gates them:
+  the retargeted files must differ from their thin-oxide originals only in
+  device size and title block, all 920 device sizes must match the SPICE
+  netlist, and the two composed cells must match it terminal by terminal.
+  To use them in Qucs-S, symlink sym/qucs-s into libs.tech/qucs-s as
+  symbols_stdcell_hv (see sym/README.md).
 - 84 cells in GDS and LEF (66 retargeted, 2 tie cells and 16 formerly
   skipped cells built by per-cell generators); all 84 are DRC clean
   (cell rules; the density rules are chip-level checks) under both the
