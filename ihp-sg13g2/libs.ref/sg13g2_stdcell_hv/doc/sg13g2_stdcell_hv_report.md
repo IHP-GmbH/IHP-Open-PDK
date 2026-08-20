@@ -100,10 +100,13 @@ All netlist views are re-emitted from one internal model by
   reference; compared field-by-field against SPICE by `verify_sch.py`.
 * **`verilog/`** — 84 modules; deliberately no copy of `sg13g2_udp.v` (the
   `ihp_*` UDPs are shared — a second copy would collide).
-* **`sym/`, `sch/`** — 84 symbols (thin-oxide drawn geometry, thick-oxide
-  netlist prefix, `$::SG13G2_HV_SCH` resolution) and 84 schematics plus a
-  generated gallery sheet; three-view consistency proven on all 920
-  devices.
+* **`sym/`, `sch/`** — two tool front-ends over the same netlist.
+  **xschem**: 84 symbols (thin-oxide drawn geometry, thick-oxide netlist
+  prefix, `$::SG13G2_HV_SCH` resolution) and 84 schematics plus a generated
+  gallery sheet; three-view consistency proven on all 920 devices.
+  **Qucs-S**: 84 schematics, 84 component definitions and the 45 shared
+  gate-shape files, retargeted from the thin-oxide views and gated against
+  the SPICE netlist (see *The Qucs-S views* below).
 * **`gds/`** — **all 84 cells**: 66 by 1-D retarget (section 4), 18 by
   per-cell generators (section 4.1). Uniform 7.140 µm row height (17
   tracks), every width a 0.48 µm site multiple, all contact/via cuts
@@ -114,13 +117,54 @@ All netlist views are re-emitted from one internal model by
   geometry, antenna values recomputed from the netlist (the thin-oxide
   numbers are wrong for 3.5× longer gates). Parsed back with klayout and
   pin sets verified against the CDL.
-* **`lib/`** — Liberty NLDM at 3.3 V / 25 °C typical (section 7).
+* **`lib/`** — Liberty NLDM at three PVT corners: typ 3.30 V/25 °C, fast
+  3.60 V/−40 °C and slow 3.00 V/125 °C (section 7).
 * **`librelane/`** — a complete LibreLane standard-cell-library
   configuration (section 8), installed as
   `libs.tech/librelane/sg13g2_stdcell_hv/`.
 * **`klayout/`** — a cell-library registration macro: with the repository's
   `klayout/` directory on `KLAYOUT_PATH`, all 84 cells appear in
   KLayout's Instance dialog as library `sg13g2_stdcell_hv`.
+
+## The Qucs-S views
+
+The thin-oxide library ships Qucs-S views, so this one does too: 84
+schematics in `sch/qucs-s`, and in `sym/qucs-s` one component definition per
+cell plus the 45 gate-shape files those definitions reference.
+
+They are a device-level retarget rather than fresh drawings. The two
+libraries are topologically identical — a cell-by-cell comparison against the
+shipped SPICE netlist confirms it, with exactly two exceptions — so redrawing
+920 devices could only introduce differences the transform cannot. Device
+sizes are read from the netlist, never computed: the thick-oxide transform is
+not one ratio, because gate length is clamped at 450 nm where the thin-oxide
+cell used 180 nm, becomes 625 nm where it used 250 nm, and is untouched on the
+deliberately long devices. The exceptions are `tiehi` and `tielo`, whose
+thick-oxide topology genuinely differs — a tied-input `inv_1` rather than the
+thin-oxide four-transistor chain — so they are composed from this library's
+own `inv_1` with the gate clamped to a rail.
+
+`work/verify_qucs.py` gates the result with three checks, each matched to how
+the file was produced:
+
+| check | scope | criterion |
+|---|---|---|
+| diff against the thin-oxide original | 82 retargeted cells | only device size and title-block lines may differ — a changed wire or coordinate fails |
+| device sizes vs the netlist | all 84 cells | 920 devices, type and (W, L) per cell |
+| full connectivity | the 2 composed tie cells | netlist extracted from the wire graph, compared terminal by terminal |
+
+The first check is a stronger claim than re-deriving connectivity would be:
+it proves the geometry was never touched, with the thin-oxide library as the
+authority. Deriving connectivity for all 84 was deliberately not attempted,
+because 73 of the 920 device instances are rotated or mirrored and a general
+extractor would have to reimplement Qucs's placement transforms to prove
+something the diff already proves.
+
+Not verified: that these open and netlist in the Qucs-S GUI. The tool is
+present in the development container but off `PATH`, and the PDK's own
+standard-cell symbol link is broken in that image — see
+`doc/iic-osic-tools-notes.md`. The files are structurally correct and match
+the netlist, which is a different and weaker claim.
 
 ---
 
@@ -568,11 +612,13 @@ max-cap violations against real limits.
 | LEF | klayout parse-back + pin sets vs CDL | **84 macros** | PASS, on-grid |
 | P&R block validation | LibreLane `spi_slave` ×2 + full signoff deck | ~354 × 400 µm, 100 MHz | all clean; signoff **0 geometry violations**, 8 density markers |
 | Liberty structure/views/areas | `verify_lib.py` 1–3 | **84 cells**, 668 tables | PASS, **all areas measured**, exact to 1 nm² |
-| Liberty monotonicity | `verify_lib.py` 4 | 2 142 delay series | 2 141 + 1 documented waiver |
+| Liberty monotonicity | `verify_lib.py` 4 | 2 170 delay series | 2 169 + 1 documented waiver (typ only; fast and slow are clean) |
 | Liberty Cin | vs both-rails reference | `inv_1` | 6.44 vs 5.87 fF (9.7 %) |
 | Liberty delay point-check | hand-written transient | table corner | 0.3 % |
 | Independent characteriser | lctime, 8 cells, 3 132 points | STA region | median 2.9 % / 0.0 % |
 | Sequential arcs | `verify_lib.py` 6 | 14 flip-flops/latches | **14/14 clean** |
+| Liberty, all corners | `verify_lib.py` per corner | typ, fast, slow | **3/3 PASS**, 84 cells and 668 tables each |
+| Qucs-S views | `verify_qucs.py` diff + sizes + connectivity | 84 schematics, 920 devices | **PASS** |
 | Site geometry | boundary scan | all **84 cells** | 7.140 µm, widths on 0.48 µm site |
 | Tie-cell leakage | `tie_leakage.py` settled-tail average | `tiehi`/`tielo` | 0.011 / 0.013 nW, in the Liberty |
 | Pin track alignment | `grid_align_pins.py --apply` + full re-signoff | 12 of 25 off-track pins widened; 11 of 282 remain | DRC 0 cell rules ×2, LVS clean |

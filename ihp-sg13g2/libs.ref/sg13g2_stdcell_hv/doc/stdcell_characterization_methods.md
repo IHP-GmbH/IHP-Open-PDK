@@ -5,7 +5,7 @@ author:
   - "Koen Van Caekenberghe, Ph.D."
   - "ChipDesign B.V."
   - "[info@chipdesign.be](mailto:info@chipdesign.be)"
-date: "2026-08-19 (rev. 3: clock gates characterized, step-by-step howto, corner flow)"
+date: "2026-08-20 (rev. 4: all three PVT corners characterized; howto and corner-flow failure modes)"
 logo: "ChipDesign_logo.png"
 ---
 
@@ -999,13 +999,17 @@ RESULT: PASS
 
 ## 3. Adding a corner
 
-Corners are data, not code. Add an entry to `CORNERS` in `work/corners.py`:
+Corners are data, not code. All three shipped corners are one line each in
+`CORNERS` in `work/corners.py`:
 
 ```python
-"slow": Corner("slow", "mos_ss", 3.00, 125.0, 1.00),
+"typ":  Corner("typ",  "mos_tt", 3.30,   25.0, 1.00),
+"fast": Corner("fast", "mos_ff", 3.60,  -40.0, 1.00),
+"slow": Corner("slow", "mos_ss", 3.00,  125.0, 1.00),
 ```
 
-…and run `./run_corner.sh slow`. The filename, the Liberty library name,
+A fourth is added the same way, then run `./run_corner.sh <name>`. The
+filename, the Liberty library name,
 the ngspice `.lib` section, the supply and the temperature all follow from
 that one line. The PDK-level LibreLane config registers whichever corners
 are actually present, so no downstream file needs editing.
@@ -1168,12 +1172,12 @@ runs two checks that exist because both have failed silently before:
 | CharLib | 2.1.0, git `stineje/CharLib` commit `6859faf`, venv `/foss/tools/charlib`, install hash-verified unmodified |
 | PySpice | 1.6 fork, git `infinitymdm/PySpice` commit `da81c4d` (adds `.meas` readback) |
 | lctime | 0.0.26, `/usr/local/lib/python3.12/dist-packages/lctime` |
-| models | IHP SG13G2 PSP103 Verilog-A via OSDI, `cornerMOShv.lib mos_tt`, 3.3 V, 25 °C |
-| shipped library | `lib/sg13g2_stdcell_hv_typ_3p30V_25C.lib`, thresholds 20/80/50, 7×7 NLDM grids |
+| models | IHP SG13G2 PSP103 Verilog-A via OSDI, `cornerMOShv.lib`, one section per corner: `mos_tt` 3.30 V/25 °C, `mos_ff` 3.60 V/−40 °C, `mos_ss` 3.00 V/125 °C |
+| shipped libraries | `lib/sg13g2_stdcell_hv_{typ_3p30V_25C, fast_3p60V_m40C, slow_3p00V_125C}.lib` — 84 cells and 668 delay/transition tables each, thresholds 20/80/50, 7×7 NLDM grids on identical axes at every corner |
 | cross-check | `work/lctime_compare.py`: 8 cells, 3 132 aligned points |
 | local CharLib adaptations | `charlib_patched.py` (case-insensitive branch lookup, procedure registration), `seq_delay_procedure.py` (clk→Q, setup/hold bisection), `seq_leakage.py`, `gen_charlib_config.py` (grids ×2.66/×2.20, charge integration selected), `fix_lib.py` / `fix_lib_seq.py` (header and sequential emission repairs) |
 | direct measurement, outside both characterizers | `tie_leakage.py` (tie cells), `char_sighold.py` (bus holder: settled-tail leakage, bias-swept AC capacitance, fight-charge sweep), `char_tristate/char_tristate.py` (data + enable/disable arcs), `char_clockgate/char_clockgate.py` (CLK→GCLK propagation, enable setup/hold, CLK min-pulse-width, per-state leakage for the two statetable ICGs) |
-| Liberty post-processing | `finalize_lib.py` (drive limits from the table axes, physical-cell stubs with measured leakage, corner-suffixed library name) |
+| Liberty post-processing | `finalize_lib.py` (drive limits from the table axes, physical-cell stubs with measured leakage and a defined DC path on every signal pin, corner-suffixed library name) |
 | Liberty gate | `verify_lib.py`: structure, cross-view, areas vs layout, load-axis monotonicity, C~in~ vs reference, sequential arcs, drive limits, and complete-construct checks for the tri-state / clock-gate / bus-hold classes |
 
 Key source locations cited: CharLib `procedures/combinational/delay.py`
