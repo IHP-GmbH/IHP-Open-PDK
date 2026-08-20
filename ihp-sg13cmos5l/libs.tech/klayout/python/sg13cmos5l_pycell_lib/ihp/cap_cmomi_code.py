@@ -553,12 +553,9 @@ class cap_cmomi(DloGen):
         # 7) Pins
         self._place_pins(m_top, dev_w, ny, feed_pad_yrange, metal_layers)
 
-        # 8) Device name + capacitance label, three lines centred inside the cell
+        # 8) Device name + capacitance label, two lines centred inside the cell
         # (ref. cmim/rfcmim). The value must match the simulation model; the
         # billing lives in _model_C_fF, kept identical to cap_cmomi.va.
-        # l and w are snapped down to the unit cell, so the drawn active array is
-        # nx*UC_X by ny*UC_Y, generally smaller than the requested l x w. The
-        # effective size is put on its own line so the layout is self-describing.
         c_total = self._model_C_fF(self.l_um, self.w_um,
                                    self.mmin, self.mmax, self.feed)
         labelpos = Point(GridFix(dev_w / 2.0 + self.ox),
@@ -568,10 +565,4 @@ class cap_cmomi(DloGen):
                       'C={:.3f}fF'.format(c_total), 'lowerCenter', 'R0',
                       Font.EURO_STYLE, label_h)
         dbCreateLabel(self, text_layer, labelpos, 'cap_cmomi',
-                      'upperCenter', 'R0', Font.EURO_STYLE, label_h)
-        sizepos = Point(GridFix(dev_w / 2.0 + self.ox),
-                        GridFix(ny * self.UC_Y / 2.0 + self.oy - label_h))
-        dbCreateLabel(self, text_layer, sizepos,
-                      'l={:.2f} w={:.2f}u'.format(nx * self.UC_X,
-                                                  ny * self.UC_Y),
                       'upperCenter', 'R0', Font.EURO_STYLE, label_h)
