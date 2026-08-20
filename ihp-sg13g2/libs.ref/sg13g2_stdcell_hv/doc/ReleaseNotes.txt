@@ -140,6 +140,19 @@ Important Notes:
   measurement artifact. Their CLK->GCLK delays differ only in the 4th-6th digit (the
   scan leg affects the enable path, not the clock path), which is far
   below the 0.01 ns bisection tolerance, so both land on the same value.
+- The clock gates' min_pulse_width is the measured CIRCUIT limit: the
+  narrowest CLK pulse for which GCLK still produces a full-swing pulse.
+  The thin-oxide library's table is dominated instead by a waveform
+  geometry limit -- for most of its range it equals 0.990 x (slew / 0.6),
+  one full 0-100 % input transition -- so the two differ in shape, by
+  2.01x at the fastest slew down to 0.24x at the slowest. Neither is
+  wrong; they answer different questions. Below one full transition the
+  clock is a triangle that never reaches the rail, and a latch-based ICG
+  still responds to it: at the slowest slew the measured 0.9748 ns pulse
+  peaks at 1.79 V (54 % of VDD) and GCLK still reaches 2.999 V. A flow
+  that wants the thin-oxide convention should use
+  max(shipped value, slew / 0.6). doc/ (characterization methods report)
+  derives this in full.
 - 11 signal pins sit off the vertical Metal1 track grid and cannot be
   widened within M1.b (12 others were widened onto tracks in the shipped
   GDS). Route with RT_MIN_LAYER Metal1, or expect the router to jog; the

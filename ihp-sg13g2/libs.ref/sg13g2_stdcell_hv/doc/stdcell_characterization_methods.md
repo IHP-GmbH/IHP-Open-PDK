@@ -771,6 +771,70 @@ recording because neither is an artifact of the method:
   The emit path now asserts that every point bracketed before it will write
   anything.
 
+### Why the min_pulse_width shape differs from the thin-oxide library
+
+The HV/LV cross-check (`char_clockgate.py … ratio`) reports `min_pulse_width`
+ratios running from 5.47 at the fastest slew down to 0.24 at the slowest.
+That is not a measurement error in either library: **the two tables answer
+different questions**, and the answers cross over.
+
+| CLK slew HV (LV) | HV | LV | HV/LV |
+|---|---|---|---|
+| 0.04948 (0.0186) | 0.4626 | 0.2304 | 2.01 |
+| 1.37352 (0.5164) | 0.6256 | 0.8521 | 0.73 |
+| 3.35958 (1.2630) | 0.7928 | 2.0850 | 0.38 |
+| 6.66968 (2.5074) | 0.9748 | 4.1382 | 0.24 |
+
+The thin-oxide numbers give the game away. With 20/80 slew thresholds a full
+0→100 % input transition takes $s/0.6$, and for the three larger slews the
+thin-oxide table is
+
+$$\text{mpw}_{LV} = 0.990 \times \frac{s}{0.6}$$
+
+to three decimals at every point — 0.8521/0.8607, 2.0850/2.1050,
+4.1382/4.1790. A constant of that precision across a 5× range of $s$ is not
+something a bisection produces; it is a **waveform-geometry limit**: the
+narrowest pulse for which the clock still completes one full transition.
+Below it the input never reaches the rail. At the fastest slew the same table
+gives 0.2304 and 0.1022 ns against a geometric value of 0.031 ns, so there
+the number is circuit-limited instead. The thin-oxide table is therefore the
+*envelope* of the two limits, and for most of its range the geometric one is
+in control.
+
+This project's number is the **circuit limit alone**, obtained by shrinking
+the clock pulse until the gated output stops producing a full-swing pulse
+(§ *Clock gates*). It grows only weakly with slew — 0.46 → 0.97 ns while the
+slew grows 135× — because what sets it is internal gate delay, not the shape
+of the input edge.
+
+The two therefore cross: at fast slews the thick-oxide devices are slow
+enough that the circuit limit dominates and HV is the larger number
+(ratio 2.01, 5.47); at slow slews the thin-oxide geometric term grows
+linearly, overtakes, and HV becomes the smaller one (0.38, 0.24).
+
+**What the circuit limit means physically, checked directly.** At the slowest
+slew the stimulus generator degenerates the pulse to a triangle once its
+width falls below one ramp time, preserving the edge *rate* and losing
+amplitude. At the reported 0.9748 ns width the clock peaks at **1.79 V, 54 %
+of VDD** — and GCLK still reaches **2.999 V**, above the 2.97 V full-swing
+criterion; at 0.8× that width GCLK reaches only 1.92 V and the trial fails.
+So the ICG responds to a half-amplitude clock blip. That is correct for a
+latch-based clock gate: the internal latch is a threshold device, and once
+CLK crosses its trip point the output gate drives GCLK to the rail
+irrespective of what the clock does afterwards.
+
+**Consequence for users.** The shipped value is what the cell does, not what
+a clock of that slew can be expected to look like. A flow that wants the
+conservative thin-oxide convention should take
+
+$$\max\left(\text{mpw}_{\text{shipped}},\; s/0.6\right)$$
+
+i.e. never allow a clock pulse narrower than one full transition of its own
+edge rate. This library reports the measured limit because that is the
+quantity it can defend by simulation; the geometric limit is arithmetic the
+consuming tool can apply itself, and folding it in silently would hide a real
+device measurement behind a rule of thumb.
+
 # Drive limits: the attribute whose absence fails twice
 
 CharLib emits no `max_capacitance` and no `max_transition`, on any pin, in
