@@ -172,15 +172,28 @@ class cap_cmomi(DloGen):
         # shared copy ships the older dlo.py without coerce_parameters / callbacks
         # loading. Making C live on cmos5l is a shared-framework upgrade (it also
         # changes the in-tree g2), out of scope for this device. The live value is
-        # always on the cell label instead (see _model_C_fF / genLayout).
+        # always on the cell label instead (see _model_C_fF / genLayout). For the
+        # same reason the effective-size fields Lx/Wy that g2 shows live are not
+        # added here; the drawn size is on the cell label.
         c_def = eng_string(cls._model_C_fF(5.0, 5.0, 1, cls.METAL_MAX,
                                            'double') * 1e-15)
+
+        def _ro():
+            # Mark the just-added parameter read-only (KLayout only; the guard
+            # keeps the non-KLayout branch harmless).
+            try:
+                decls = getattr(specs, '_paramDecls', None)
+                if decls is None:
+                    decls = specs.param_decls
+                decls[-1].readonly = True
+            except Exception:
+                pass
 #ifdef KLAYOUT
-        specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C')
-        specs('w', '5.0u', 'Width (Y, rows); snapped down to 0.89u cell, drawn size in label',
+        # Editable inputs (write) first, then read-only derived/info fields, so
+        # the dialog reads top-to-bottom as "what you set" then "what you get".
+        specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X, fingers); snapped down to 0.84u cell, drawn size in label',
+        specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('mmin', 1, 'Bottom metal (1=M1 .. 4=M4)',
               ChoiceConstraint(mchoice))
@@ -190,12 +203,17 @@ class cap_cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # A read-only string acts as a visible divider before the derived
+        # fields, since the dialog has no native section separator.
+        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('C', c_def, 'C [F], static default (live value on label)'); _ro()
+        specs('model', 'cap_cmomi', 'Model name'); _ro()
 #else
-        specs('model', 'cap_cmomi', 'Model name')
-        specs('C', c_def, 'C')
-        specs('w', '5.0u', 'Width (Y, rows); snapped down to 0.89u cell, drawn size in label',
+        # Editable inputs (write) first, then read-only derived/info fields, so
+        # the dialog reads top-to-bottom as "what you set" then "what you get".
+        specs('w', '5.0u', 'Width (Y), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
-        specs('l', '5.0u', 'Length (X, fingers); snapped down to 0.84u cell, drawn size in label',
+        specs('l', '5.0u', 'Length (X), requested [um]',
               RangeConstraint(2e-6, 100e-6, USE_DEFAULT))
         specs('mmin', 1, 'Bottom metal (1=M1 .. 4=M4)',
               ChoiceConstraint(mchoice))
@@ -205,6 +223,11 @@ class cap_cmomi(DloGen):
               "Feed: double/same = 2-term cap; none = bare array",
               ChoiceConstraint(['none', 'same', 'double']))
         specs('subblock', False, 'Add substrate isolation block')
+        # A read-only string acts as a visible divider before the derived
+        # fields, since the dialog has no native section separator.
+        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('C', c_def, 'C [F], static default (live value on label)'); _ro()
+        specs('model', 'cap_cmomi', 'Model name'); _ro()
 #endif
 
     @classmethod
