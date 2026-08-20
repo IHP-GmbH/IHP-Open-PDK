@@ -561,10 +561,10 @@ LibreCell traces.
 
 Nine of the 84 cells are drawn but could not be characterized by either
 tool, and in every case the obstacle is the characterizer's data model
-rather than anything about the cell. Seven of the nine — `sighold` and the
-6 tri-states — are measured directly instead and do ship Liberty data
-(sections 10.1 and 10.2); the 2 clock gates are still in progress
-(section 10.3). The three mechanisms are worth separating, because only one of them
+rather than anything about the cell. All nine are measured directly
+instead and ship full Liberty data: `sighold` and the 6 tri-states
+(sections 10.1 and 10.2), and the 2 statetable clock gates (section 10.3).
+The three mechanisms are worth separating, because only one of them
 announces itself.
 
 **No high-impedance state (the 6 tri-states).** CharLib's cell schema

@@ -358,9 +358,10 @@ cells, Metal1 routing, rails-only fillers) are documented in the
 against the shipped, layout-synchronised SPICE netlist on the PSP103/OSDI
 models — 25 839 combinational simulations plus a 2 962-task sequential
 run: 600 delay/slew tables over 66 cells (52 combinational, 9 flip-flops,
-5 latches), none empty. The 6 tri-states add 60 more from the direct
-measurement of section 7.2, for 660 tables over 72 cells in the shipped
-file. Grids are the thin-oxide grids rescaled by the
+5 latches), none empty. The 6 tri-states add 60 more and the 2 statetable
+clock gates 8 more, both from the direct measurements of section 7.2, for
+668 tables over 74 cells with arcs in each shipped corner. Grids are the
+thin-oxide grids rescaled by the
 measured 2.66× delay / 2.20× capacitance ratios; boolean functions are
 translated from the thin-oxide Liberty and checked by truth-table
 equivalence. Stock CharLib needed five committed tool workarounds (OSDI
@@ -370,10 +371,11 @@ characterise at all — custom clk→Q and setup/hold-bisection procedures
 with a c2q-degradation pass criterion (`work/seq_delay_procedure.py`).
 
 The shipped file is verified **as data** by `work/verify_lib.py`:
-structure (660/660 tables populated), cross-view (all pins exist in the
-CDL), physical (every `area` equals the drawn boundary to 1 nm²),
-monotonicity along the load axis (2 141/2 142 series, one documented
-pessimistic waiver: `xnor2_1` glitch latching), input capacitance against
+structure (668/668 tables populated at each of the three corners),
+cross-view (all pins exist in the CDL), physical (every `area` equals the
+drawn boundary to 1 nm²), monotonicity along the load axis (2 169/2 170
+series, one documented pessimistic waiver at typ — `xnor2_1` glitch
+latching — with fast and slow clean), input capacitance against
 an independent both-rails measurement (6.44 vs 5.87 fF, 9.7 % — this
 check caught a 6.8–7.5× Miller defect in CharLib's default procedure),
 and sequential arcs (14/14 cells: delay + setup + hold present, nothing
