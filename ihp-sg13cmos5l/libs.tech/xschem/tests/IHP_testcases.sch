@@ -61,3 +61,5 @@ C {sg13g2_tests_xyce/dc_ptap1.sym} 180 -420 0 0 {name=x26}
 C {tests/dc_pnpMPA.sym} 180 -190 0 0 {name=x2}
 C {tests/tran_moscap_n.sym} 520 -570 0 0 {name=x3}
 C {tests/tran_moscap_p.sym} 520 -530 0 0 {name=x4}
+C {tests/tran_cap_cmomi.sym} 520 -490 0 0 {name=x50}
+C {tests/tran_cap_cmomf.sym} 520 -450 0 0 {name=x51}
