@@ -85,3 +85,5 @@ C {sg13g2_tests/iso_dc_res.sym} 2220 -630 0 0 {name=x40}
 C {sg13g2_tests/dc_schottky.sym} 180 -80 0 0 {name=x41}
 C {sg13g2_tests/tran_moscap_n.sym} 520 -550 0 0 {name=x42}
 C {sg13g2_tests/tran_moscap_p.sym} 520 -510 0 0 {name=x43}
+C {sg13g2_tests/tran_cap_cmomi.sym} 520 -470 0 0 {name=x50}
+C {sg13g2_tests/tran_cap_cmomf.sym} 520 -430 0 0 {name=x51}

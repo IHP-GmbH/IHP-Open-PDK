@@ -118,3 +118,34 @@ test-SRAM:
 test-LVS-switch: env
 	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS switch test"
 	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-switch
+
+#=================================
+# ---- test-cap-cmomi-model ------
+#=================================
+
+# The guard that keeps the cap_cmomi capacitance honest. Six artifacts state it
+# and nothing keeps them in step: the Verilog-A, the PCell C= label, the xschem
+# tcleval expression, the qucs-s symbol equation, the copy of that equation
+# pasted into the qucs-s example, and the two stored simulator references. The
+# test asks each of them for the same devices and compares against the Verilog-A
+# built here, which is what a simulation runs.
+#
+# No venv: it drives klayout, ngspice, openvaf and tclsh directly. Skips rather
+# than fails when one of those is missing, like test-gnucap, so DRC/LVS work is
+# not blocked by an absent simulator.
+CAP_CMOMI_MODEL_TOOLS = klayout ngspice tclsh
+
+.ONESHELL:
+test-cap-cmomi-model:
+	@for tool in $(CAP_CMOMI_MODEL_TOOLS); do \
+	  if ! command -v $$tool >/dev/null 2>&1; then \
+	    echo "Skipping: $$tool not installed"; \
+	    exit 0; \
+	  fi; \
+	done; \
+	if ! command -v openvaf-r >/dev/null 2>&1 && ! command -v openvaf >/dev/null 2>&1; then \
+	  echo "Skipping: no Verilog-A compiler installed"; \
+	  exit 0; \
+	fi; \
+	cd ihp-sg13g2/libs.tech/klayout/sg13g2_tests && \
+	python3 cap_cmomi_consistency_test.py
