@@ -195,3 +195,26 @@ mm_ok=1
 model=sg13_moscap_p
 spiceprefix=X
 }
+C {sg13cmos5l_pr/cap_cmomi.sym} 740 -580 0 0 {name=C5
+model=cap_cmomi
+w=5.0e-6
+l=5.0e-6
+mmin=1
+mmax=4
+feed=double
+subblock=0
+m=1
+mm_ok=1
+spiceprefix=X
+}
+C {sg13cmos5l_pr/cap_cmomf.sym} 910 -580 0 0 {name=C6
+model=cap_cmomf
+w=5.0e-6
+l=5.0e-6
+mmin=1
+mmax=4
+subblock=0
+m=1
+mm_ok=1
+spiceprefix=X
+}
