@@ -31,8 +31,8 @@ import klayout.db
 LIB = 'SG13_dev'
 PCELL = 'sealring'
 
-def generate_sealring(length: float, width: float, input: str | None, output: str, offset_x: float,
-                      offset_y: float):
+def generate_sealring(length: float, width: float, input_file: str | None, output: str,
+                      offset_x: float, offset_y: float):
     """Function to create a new layout, add the sealring PCell to sealring_top
     and save it somewhere on the filesystem.
 
@@ -40,9 +40,9 @@ def generate_sealring(length: float, width: float, input: str | None, output: st
     :type length: float
     :param width: Width (Y-Axis) of the sealring.
     :type width: float
-    :param input: Path and name of an existing layout the sealring should be added to.
-                  If omitted, a new layout with a 'sealring_top' cell is created.
-    :type input: str | None
+    :param input_file: Path and name of an existing layout the sealring should be added to.
+                       If omitted, a new layout with a 'sealring_top' cell is created.
+    :type input_file: str | None
     :param output: Path and name of the file where the sealring should be written to.
     :type output: str
     :param offset_x: Translation in X direction in µm.
@@ -54,8 +54,8 @@ def generate_sealring(length: float, width: float, input: str | None, output: st
     layout = klayout.db.Layout(True)
     layout.dbu = 0.001
 
-    if input:
-        layout.read(input)
+    if input_file:
+        layout.read(input_file)
 
     lib = pya.Library.library_by_name(LIB, 'sg13g2')
     if lib is None:
@@ -77,7 +77,7 @@ def generate_sealring(length: float, width: float, input: str | None, output: st
     width = float(width) - edge_box * 2
     length = float(length) - edge_box * 2
 
-    if input:
+    if input_file:
         top_cell = layout.top_cell()
     else:
         top_cell = layout.cell(layout.add_cell("sealring_top"))
@@ -133,13 +133,9 @@ try:
 except NameError:
     offset_y = 0.0
 
-try:
-    input
-    # Ignore built-in input function
-    if callable(input):
-        input = None
-except NameError:
-    input = None
+# The optional '-rd input=<path-to-layout>' argument shadows the built-in input
+# function, so copy it into a dedicated variable and don't use it any further.
+input_file = None if callable(input) else input
 
-generate_sealring(length=length, width=width, input=input, output=output, offset_x=offset_x,
-                  offset_y=offset_y)  # pylint: disable=undefined-variable
+generate_sealring(length=length, width=width, input_file=input_file, output=output,
+                  offset_x=offset_x, offset_y=offset_y)  # pylint: disable=undefined-variable
