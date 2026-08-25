@@ -53,3 +53,53 @@ extract_devices(GeneralNTerminalExtractor.new('sg13_hv_svaricap', 3), {
                   'dev_mk' => varicap_dev_mk,
                   'sub_mk' => ptap
                 })
+
+# === cap_cmomi ===
+# Marker/ports derived in cap_cmomi_derivations.lvs (CAP DERIVATIONS stage),
+# per-metal pin nets tied in cap_cmomi_connections.lvs. Kept in the CAP group so
+# the LVS device regression finds its cap_devices/ testcase (as for cap_cmim).
+logger.info('Extracting cap_cmomi device')
+extract_devices(CapMomExtractor.new('cap_cmomi'), {
+                  'core' => cap_cmomi_marker,
+                  'm1p' => cap_cmomi_m1_ports,
+                  'm2p' => cap_cmomi_m2_ports,
+                  'm3p' => cap_cmomi_m3_ports,
+                  'm4p' => cap_cmomi_m4_ports,
+                  'm5p' => cap_cmomi_m5_ports,
+                  'dev_mk' => cap_cmomi_dev_mk
+                })
+
+# === cap_cmomf ===
+# The metal fringe (finger) sibling of cap_cmomi, reusing the same extractor
+# and the same DeviceCustomMIM class, told apart by its own Recog.momf marker.
+# Marker/ports derived in cap_cmomf_derivations.lvs, per-metal pin nets tied in
+# cap_cmomf_connections.lvs. In the CAP group with the rest, so its testcases
+# live in cap_devices/ beside cap_cmomi's.
+logger.info('Extracting cap_cmomf device')
+extract_devices(CapMomExtractor.new('cap_cmomf'), {
+                  'core' => cap_cmomf_marker,
+                  'm1p' => cap_cmomf_m1_ports,
+                  'm2p' => cap_cmomf_m2_ports,
+                  'm3p' => cap_cmomf_m3_ports,
+                  'm4p' => cap_cmomf_m4_ports,
+                  'm5p' => cap_cmomf_m5_ports,
+                  'dev_mk' => cap_cmomf_dev_mk
+                })
+
+# === moscap_n ===
+logger.info('Extracting sg13_moscap_n capacitor')
+extract_devices(MOSCAPExtractor.new('sg13_moscap_n'), {
+                  'core' => nmoscap_core,
+                  'gate_port' => nmoscap_poly_port,
+                  'bulk_port' => nmoscap_bulk_port,
+                  'dev_mk' => nmoscap_dev_mk,
+                })
+
+# === moscap_p ===
+logger.info('Extracting sg13_moscap_p capacitor')
+extract_devices(MOSCAPExtractor.new('sg13_moscap_p'), {
+                  'core' => pmoscap_core,
+                  'gate_port' => pmoscap_poly_port,
+                  'bulk_port' => pmoscap_bulk_port,
+                  'dev_mk' => pmoscap_dev_mk,
+                })

@@ -29,6 +29,8 @@ if TABLES.include?('cont') || FEOL
   cont_nsvaricap = cont_sq.not(svaricap)
 
   # Rule Cnt.a: Min. and max. Cont width is 0.16µm
+  # Per spec section 5.14: applies only to square-shaped Cont (non-squares are ContBar).
+  # cont_sq = squares only (from orchestrator non_squares split).
   logger.info('Executing rule Cnt.a')
   cnt_a_value = drc_rules['Cnt_a'].to_f
   cnt_a_l = cont_sq.without_bbox_width(cnt_a_value.um)

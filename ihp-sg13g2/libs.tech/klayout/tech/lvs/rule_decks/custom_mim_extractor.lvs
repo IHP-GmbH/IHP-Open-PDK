@@ -47,6 +47,34 @@ class DeviceCustomMIM < RBA::DeviceClassCapacitor
     # Enable MIM combiner for both cap_cmim and rfcmim classes.
     self.combiner = MIMCAPNDeviceCombiner.new
 
+    # The MoM capacitors: make the two terminals interchangeable again.
+    #
+    # A MIM has a genuine top and bottom plate, and the extractor tells them
+    # apart by the layer they sit on, so clearing the equivalence is right
+    # there. cap_cmomi and cap_cmomf are different: CapMomExtractor picks the
+    # two ports by geometry alone and never reads their pin names, so the order
+    # it produces carries no information to check against.
+    #
+    #   cap_cmomi, 'double' feed: both pads sit on the top metal as mirror
+    #     images, so which one becomes pin 1 depends on the instance
+    #     orientation. Mirroring a placement swaps them and LVS reports a
+    #     mismatch for a circuit that did not change.
+    #   cap_cmomi, 'same' feed: both pads share one footprint and the metal
+    #     index breaks the tie, so the LOWER metal becomes pin 1. That is the
+    #     PCell's MINUS, i.e. the opposite of the pin order the xschem symbol
+    #     documents.
+    #   cap_cmomf: PLUS is on the left edge and MINUS on the top one, so a
+    #     mirrored instance moves PLUS to the right and exchanges the two.
+    #
+    # Note this trades away an orientation check that the deck was not actually
+    # performing correctly. The compact model IS asymmetric (the substrate shunt
+    # hangs off the MINUS-side node), so if that orientation ever has to be
+    # verified, the fix is for the PCell to label its pins and for the extractor
+    # to read those labels, not to infer an order from geometry.
+    # 'cmom' rather than 'cmomi' so both MoM capacitors are covered. It does
+    # not catch cap_cmim or rfcmim, which keep their asymmetry.
+    equivalent_terminal_id(terminal_id('mim_btm'), terminal_id('mim_top')) if name.downcase.include?('cmom')
+
     # Adding extra param & terminal for rfcmim
     return unless name.downcase.include?('rfcmim')
 

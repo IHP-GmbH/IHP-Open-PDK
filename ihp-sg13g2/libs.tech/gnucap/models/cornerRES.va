@@ -1,0 +1,164 @@
+//------------------------------------------------------------------------------
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//------------------------------------------------------------------------------
+
+// Resistor corner modules
+// Ported from `ngspice/models/cornerRES.lib` to Verilog-A
+// Modifications:
+// - removed mismatch corners; mismatch device variants are implemented via
+//   paramset overloading
+// - renamed dw_par_* and mismatch parameter names for consistency
+// (c) Lukas Deutz 2026
+
+// typical corner
+module res_typ();
+    // rsil
+    localparam real rsh_rsil = 7.0;
+    localparam real dw_par_rsil = 0.01e-6;
+    localparam real nsig_rsh_rsil = 0.0;
+    localparam real nsig_w_rsil = 0.0;
+    localparam real nsig_l_rsil = 0.0;
+    // rhigh
+    localparam real rsh_rhigh = 1360.0;
+    localparam real dw_par_rhigh = -0.04e-6;
+    localparam real nsig_rsh_rhigh = 0.0;
+    localparam real nsig_w_rhigh = 0.0;
+    localparam real nsig_l_rhigh = 0.0;
+    // rppd
+    localparam real rsh_rppd = 260.0;
+    localparam real dw_par_rppd = 0.006e-6;
+    localparam real nsig_rsh_rppd = 0.0;
+    localparam real nsig_w_rppd = 0.0;
+    localparam real nsig_l_rppd = 0.0;
+    // parasitic
+    localparam real res_rpara = 1.0;
+endmodule
+
+// best-case corner
+module res_bcs();
+    // rsil
+    localparam real rsh_rsil = 6.02;
+    localparam real dw_par_rsil = 0.04e-6;
+    localparam real nsig_rsh_rsil = 0.0;
+    localparam real nsig_w_rsil = 0.0;
+    localparam real nsig_l_rsil = 0.0;
+    // rhigh
+    localparam real rsh_rhigh = 1020.0;
+    localparam real dw_par_rhigh = 0.0;
+    localparam real nsig_rsh_rhigh = 0.0;
+    localparam real nsig_w_rhigh = 0.0;
+    localparam real nsig_l_rhigh = 0.0;
+    // rppd
+    localparam real rsh_rppd = 234.0;
+    localparam real dw_par_rppd = 0.036e-6;
+    localparam real nsig_rsh_rppd = 0.0;
+    localparam real nsig_w_rppd = 0.0;
+    localparam real nsig_l_rppd = 0.0;
+    // parasitic
+    localparam real res_rpara = 1.0;
+endmodule
+
+// worst-case corner
+module res_wcs();
+    // rsil
+    localparam real rsh_rsil = 7.98;
+    localparam real dw_par_rsil = -0.02e-6;
+    localparam real nsig_rsh_rsil = 0.0;
+    localparam real nsig_w_rsil = 0.0;
+    localparam real nsig_l_rsil = 0.0;
+    // rhigh
+    localparam real rsh_rhigh = 1700.0;
+    localparam real dw_par_rhigh = -0.08e-6;
+    localparam real nsig_rsh_rhigh = 0.0;
+    localparam real nsig_w_rhigh = 0.0;
+    localparam real nsig_l_rhigh = 0.0;
+    // rppd
+    localparam real rsh_rppd = 286.0;
+    localparam real dw_par_rppd = -0.024e-6;
+    localparam real nsig_rsh_rppd = 0.0;
+    localparam real nsig_w_rppd = 0.0;
+    localparam real nsig_l_rppd = 0.0;
+    // parasitic
+    localparam real res_rpara = 1.0;
+endmodule
+
+// statistical corner
+module res_stat();
+    parameter integer seed = 1;
+    // rsil
+    localparam real rsh_rsil = 7.0;
+    localparam real dw_par_rsil = 0.01e-6;
+    localparam real nsig_rsh_rsil = $rdist_normal(seed,   0, 1, "global");
+    localparam real nsig_w_rsil   = $rdist_normal(seed+1, 0, 1, "global");
+    localparam real nsig_l_rsil   = $rdist_normal(seed+2, 0, 1, "global");
+    // rhigh
+    localparam real rsh_rhigh = 1360;
+    localparam real dw_par_rhigh = -0.04e-6;
+    localparam real nsig_rsh_rhigh = $rdist_normal(seed+3, 0, 1, "global");
+    localparam real nsig_w_rhigh   = $rdist_normal(seed+4, 0, 1, "global");
+    localparam real nsig_l_rhigh   = $rdist_normal(seed+5, 0, 1, "global");
+    // rppd
+    localparam real rsh_rppd = 260.0;
+    localparam real dw_par_rppd = 0.006e-6;
+    localparam real nsig_rsh_rppd = $rdist_normal(seed+6, 0, 1, "global");
+    localparam real nsig_w_rppd   = $rdist_normal(seed+7, 0, 1, "global");
+    localparam real nsig_l_rppd   = $rdist_normal(seed+8, 0, 1, "global");
+    // parasitic
+    localparam real res_rpara_nom = 1.0;
+    localparam real res_rpara_sig = 0.067;
+    localparam real res_rpara = $rdist_normal(seed+9, res_rpara_nom, res_rpara_sig, "global");
+endmodule
+
+module res_stat_param();
+  // rsil
+  localparam real drsh_rsil = 4.67; // % of 1 Sigma
+  localparam real dw_rsil = 0.01; // um of 1 Sigma
+  localparam real dl_rsil = 0.01; // um of 1 Sigma
+  // rhigh
+  localparam real drsh_rhigh = 8.33; // % of 1 Sigma
+  localparam real dl_rhigh = 0.015; // um of 1 Sigma
+  localparam real dw_rhigh = 0.015; // um of 1 Sigma
+  // rppd
+  localparam real drsh_rppd = 3.3; // % of 1 Sigma
+  localparam real dl_rppd = 0.01; // um of 1 Sigma
+  localparam real dw_rppd = 0.01; // um of 1 Sigma
+endmodule
+
+// mismatch parameter
+module res_mm();
+  // rsil
+  localparam real drsh_mm_rsil  = 1.7; // local %um of 1 Sigma
+  localparam real dl_mm_rsil = 0.006; // local um of 1 Sigma
+  localparam real dw_mm_rsil = 0.006; // local um of 1 Sigma
+  localparam real nsmm_rsh_rsil = $rdist_normal(1, 0.0, 1.0, "instance");
+  localparam real nsmm_w_rsil   = $rdist_normal(2, 0.0, 1.0, "instance");
+  localparam real nsmm_l_rsil   = $rdist_normal(3, 0.0, 1.0, "instance");
+  // rhigh
+  localparam real drsh_mm_rhigh = 5.0; // local %um of 1 Sigma
+  localparam real dl_mm_rhigh = 0.009; // local um of 1 Sigma
+  localparam real dw_mm_rhigh = 0.009; // local um of 1 Sigma
+  localparam real nsmm_rsh_rhigh = $rdist_normal(4, 0.0, 1.0, "instance");
+  localparam real nsmm_w_rhigh   = $rdist_normal(5, 0.0, 1.0, "instance");
+  localparam real nsmm_l_rhigh   = $rdist_normal(6, 0.0, 1.0, "instance");
+  // rppd
+  localparam real drsh_mm_rppd = 2.0; // local %um of 1 Sigma
+  localparam real dl_mm_rppd = 0.006; // local um of 1 Sigma
+  localparam real dw_mm_rppd = 0.006; // local um of 1 Sigma
+  localparam real nsmm_rsh_rppd = $rdist_normal(7, 0.0, 1.0, "instance");
+  localparam real nsmm_w_rppd   = $rdist_normal(8, 0.0, 1.0, "instance");
+  localparam real nsmm_l_rppd   = $rdist_normal(9, 0.0, 1.0, "instance");
+endmodule

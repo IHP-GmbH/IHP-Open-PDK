@@ -1,0 +1,19 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include corner and testbench modules
+include ../../../models/cornerMOSlv.va
+include ./tb_moslv_mc.va
+// instantiate tt corner and testbench modules
+moslv_tt corner_moslv();
+tb_moslv_mc #(.rfmode(1), .mm_ok(1)) tb(vgs1, vgs2, vgs3, vgs4);
+
+// run mc mismatch simulation
+print dc v(vgs1) v(vgs2) v(vgs3) v(vgs4)
+store dc v(vgs1) v(vgs2) v(vgs3) v(vgs4)
+dc $seed 1 1000 1 basic
+measure vg_mean_nmos1 = sample_mean("v(vgs1)")
+measure vg_mean_nmos2 = sample_mean("v(vgs2)")
+measure vg_std_nmos1 = sample_std("v(vgs1)")
+measure vg_std_nmos2 = sample_std("v(vgs2)")

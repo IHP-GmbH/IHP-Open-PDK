@@ -32,11 +32,11 @@ if TABLES.include?('topmetal2') || BEOL
   tm2_a_l.output('TM2.a', "5.25. TM2.a: Min. TopMetal2 width: #{tm2_a_value} μm.")
   tm2_a_l.forget
 
-  # Rule TM2.b: Min. TopMetal2 space or notch is 2.00µm
+  # Rule TM2.b: Min. TopMetal2 (drawing + filler) space or notch is 2.00µm
   logger.info('Executing rule TM2.b')
   tm2_b_value = drc_rules['TM2_b'].to_f
-  tm2_b_l = topmetal2_drw.space(tm2_b_value.um, euclidian)
-  tm2_b_l.output('TM2.b', "5.25. TM2.b: Min. TopMetal2 space or notch: #{tm2_b_value} μm.")
+  tm2_b_l = topmetal2_drw.join(topmetal2_filler).space(tm2_b_value.um, euclidian)
+  tm2_b_l.output('TM2.b', "5.25. TM2.b: Min. TopMetal2 (drawing + filler) space or notch: #{tm2_b_value} μm.")
   tm2_b_l.forget
 
   unless PRECHECK_DRC

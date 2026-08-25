@@ -1,0 +1,61 @@
+//#######################################################################
+//
+// Copyright 2023 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//#######################################################################
+
+// Capacitor corner modules
+// Ported from `ngspice/models/cornerCAP.lib` to Verilog-A
+// Modifications:
+// - removed mismatch corners; mismatch device variants are implemented via
+//   paramset overloading
+// - converted cap_carea to SI units
+// (c) Lukas Deutz 2026
+
+// **************** CORNERS OF CAPACITORS ****************
+
+// Typical corner
+module cap_typ();
+    localparam real cap_carea = 1.5E-3; // F/m^2
+    localparam real cap_cpara = 1.0;
+endmodule
+
+// Best-case corner
+module cap_bcs();
+    localparam cap_carea = 0.9 * 1.5E-3; // F/m^2
+    localparam cap_cpara  = 0.9;
+endmodule
+
+// Worst-case corner
+module cap_wcs();
+    localparam cap_carea = 1.1 * 1.5E-3; // F/m^2
+    localparam cap_cpara = 1.1;
+endmodule
+
+// Typical corner global process variation
+module cap_typ_stat();
+    parameter integer seed = 1;
+    localparam real cap_carea_nom = 1.5E-3; // F/m^2
+    localparam real cap_cpara_nom  = 1.0;
+    localparam real cap_carea_sig = 0.033 * cap_carea_nom;
+    localparam real cap_cpara_sig = 0.067 * cap_cpara_nom;
+    localparam real cap_carea = $rdist_normal(3, cap_carea_nom, cap_carea_sig, "global");
+    localparam real cap_cpara = $rdist_normal(4, cap_cpara_nom, cap_cpara_sig, "global");
+endmodule
+
+// Mismatch module
+module cap_mm();
+    localparam real cap_carea_mm = $rdist_normal(1, 1, 0.01, "instance");
+endmodule

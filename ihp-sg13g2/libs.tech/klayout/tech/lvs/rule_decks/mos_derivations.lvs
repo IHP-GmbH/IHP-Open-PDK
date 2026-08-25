@@ -51,6 +51,14 @@ rfpmos_mk_gen = ntap.join(ntap_holes)
 rfpmos_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmos_patt))
 rfpmoshv_mk = rfpmos_mk_gen.interacting(text_drw.texts(rfpmoshv_patt))
 
+nmoscap_patt = glob_to_case_insensitive_glob("moscap_n")
+nmoscap_mos_exc = nactiv.and(gatpoly).not(thickgateox_drw)
+                   .interacting(text_drw.texts(nmoscap_patt))
+
+pmoscap_patt = glob_to_case_insensitive_glob("moscap_p")
+pmoscap_mos_exc = activ.and(gatpoly).and(psd_drw).inside(nwell_drw)
+                   .not(thickgateox_drw).interacting(text_drw.texts(pmoscap_patt))
+
 # ==============
 # ---- NMOS ----
 # ==============
@@ -59,6 +67,7 @@ logger.info('Starting NMOS DERIVATIONS')
 
 # for regular FETs
 nmos_exc = rfnmos_exc.join(rfnmos_mk)
+nmos_exc = nmos_exc.join(nmoscap_mos_exc)
 nmoshv_exc = rfnmos_exc.join(rfnmoshv_mk)
 
 # nmos - LV
@@ -75,6 +84,7 @@ logger.info('Starting PMOS DERIVATIONS')
 
 # for regular FETs
 pmos_exc = rfpmos_exc.join(rfpmos_mk)
+pmos_exc = pmos_exc.join(pmoscap_mos_exc)
 pmoshv_exc = rfpmos_exc.join(rfpmoshv_mk)
 
 # pmos - LV

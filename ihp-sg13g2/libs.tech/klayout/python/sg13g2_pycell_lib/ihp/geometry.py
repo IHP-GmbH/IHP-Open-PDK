@@ -355,6 +355,7 @@ def dbCreateEllipse(self, layerId, bbox):
 def dbConvertEllipseToPolygon(self, ellipse, numPoints, grid):
     points = Ellipse.genPolygonPoints(ellipse.getBBox(), numPoints, grid)
     polyId = dbCreatePolygon(self, ellipse.layer, points)
+    dbDeleteObject(ellipse)
 
     return polyId
 
@@ -1224,7 +1225,7 @@ def bondpadStretchedCircle(self, layer, rx, ry, grid):
         return id
 
     if rx > ry :
-        id1 = dbCreateEllipse(self, layer, Box(-rx, -ry -rx+ry*2, ry))
+        id1 = dbCreateEllipse(self, layer, Box(-rx, -ry, -rx+ry*2, ry))
         id2 = dbCreateEllipse(self, layer, Box(rx-ry*2, -ry, rx, ry))
         id3 = dbCreateRect(self, layer, Box(ry-rx, -ry, rx-ry, ry))
         id = dbLayerOrList(layer, [id1, id2, id3])
@@ -1236,7 +1237,7 @@ def bondpadStretchedCircle(self, layer, rx, ry, grid):
     id1 = dbCreateEllipse(self, layer, Box(-rx, -ry, rx, -ry+rx*2))
     id2 = dbCreateEllipse(self, layer, Box(-rx, ry-rx*2, rx, ry))
     id3 = dbCreateRect(self, layer, Box(-rx, rx-ry, rx, ry-rx))
-    id = dbLayerOr(layer, [id1, id2, id3])
+    id = dbLayerOrList(layer, [id1, id2, id3])
     dbDeleteObject(id1)
     dbDeleteObject(id2)
     dbDeleteObject(id3)

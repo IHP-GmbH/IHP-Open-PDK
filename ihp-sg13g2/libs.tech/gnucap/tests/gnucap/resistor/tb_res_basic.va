@@ -1,0 +1,16 @@
+// load model plugins
+load ../../../plugins/models/resistor_paramset.so
+load ../../../plugins/models/idc.so
+
+module tb_res_basic();
+    ground gnd;
+
+    rsil #(.l(0.5u), .w(0.5u), .mm_ok(0)) r1(n1, gnd, gnd);
+    rppd #(.l(0.5u), .w(0.5u), .mm_ok(0)) r2(n2, gnd, gnd);
+    rhigh #(.l(0.96u), .w(0.5u), .mm_ok(0)) r3(n3, gnd, gnd);
+    Rparasitic #(.R(100)) r4(n4, gnd);
+    idc #(.dc(0.001)) Ir1(n1, gnd);
+    idc #(.dc(0.001)) Ir2(n2, gnd);
+    idc #(.dc(0.001)) Ir3(n3, gnd);
+    idc #(.dc(0.001)) Ir4(gnd, n4);
+endmodule

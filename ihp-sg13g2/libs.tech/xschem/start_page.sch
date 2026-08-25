@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2
+v {xschem version=3.4.8RC file_version=1.3
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 P 4 5 430 -1040 430 -130 1830 -130 1830 -1040 430 -1040 {}
 T {NGSPICE} 150 -1080 0 0 0.6 0.6 {}
@@ -41,7 +42,6 @@ descr="IHP-Open-PDK"
 url="https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main"}
 C {sg13g2_tests/IHP_testcases.sym} 210 -1010 0 0 {name=x1}
 C {sg13g2_tests_xyce/IHP_testcases.sym} 210 -890 0 0 {name=x2}
-C {sg13g2_stdcells/IHP130_stdcells.sym} 210 -760 0 0 {name=x3}
 C {simulator_commands_shown.sym} 440 -980 0 0 {
 name=Libs_Ngspice
 simulator=ngspice
@@ -142,3 +142,4 @@ write <filename>.raw
 .endc
 "}
 C {sg13g2_pr/gallery.sym} 210 -640 0 0 {name=x4}
+C {sg13g2_test_stdcells/IHP130_stdcells.sym} 210 -750 0 0 {name=x3}

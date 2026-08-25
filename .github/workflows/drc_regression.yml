@@ -37,28 +37,62 @@ jobs:
         with:
           submodules: recursive
 
+      - name: 🔢 Read KLayout version from versions.txt
+        id: klayout_version
+        run: |
+          VERSION=$(grep '^klayout ' versions.txt | awk '{print $2}')
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: Could not read klayout version from versions.txt" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_underscore=${VERSION//./_}" >> "$GITHUB_OUTPUT"
+          echo "KLayout target version: $VERSION"
+
       - name: 💾 Restore KLayout .deb from cache
         id: cache-klayout
         uses: actions/cache@v4
         with:
-          path: klayout-0_30_3.deb
-          key: klayout-deb-cache-ubuntu-0_30_3
+          path: klayout-${{ steps.klayout_version.outputs.version_underscore }}.deb
+          key: klayout-deb-cache-ubuntu-${{ steps.klayout_version.outputs.version_underscore }}
           restore-keys: |
             klayout-deb-cache-
 
       - name: 🔽 Download KLayout .deb if not cached
         if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
-          echo "Downloading KLayout .deb..."
+          VERSION="${{ steps.klayout_version.outputs.version }}"
+          VERSION_U="${{ steps.klayout_version.outputs.version_underscore }}"
+          echo "Downloading KLayout .deb (${VERSION})..."
           curl -L --retry 5 --retry-delay 5 --retry-all-errors \
-            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
+            -o "klayout-${VERSION_U}.deb" "https://www.klayout.org/downloads/Ubuntu-24/klayout_${VERSION}-1_amd64.deb"
 
       - name: ⚙️ Install KLayout
         run: |
           sudo apt update -qq -y
-          sudo apt install ./klayout-0_30_3.deb
+          sudo apt install ./klayout-${{ steps.klayout_version.outputs.version_underscore }}.deb
           echo "✅ KLayout version:"
           klayout -v
+
+      - name: 🔎 Verify binary and pip klayout versions agree
+        run: |
+          make env
+          EXPECTED="${{ steps.klayout_version.outputs.version }}"
+          BIN_V=$(klayout -b -v | tail -1 | awk '{print $NF}')
+          PIP_V=$(. actions_venv/bin/activate && python3 -c "import klayout; print(klayout.__version__)")
+          echo "Expected (versions.txt):        $EXPECTED"
+          echo "Binary   (klayout -b -v):       $BIN_V"
+          echo "Pip pkg  (klayout.__version__): $PIP_V"
+          fail=0
+          if [ "$BIN_V" != "$EXPECTED" ]; then
+            echo "ERROR: klayout binary ($BIN_V) != versions.txt ($EXPECTED)" >&2
+            fail=1
+          fi
+          if [ "$PIP_V" != "$EXPECTED" ]; then
+            echo "ERROR: klayout pip package ($PIP_V) != versions.txt ($EXPECTED)" >&2
+            fail=1
+          fi
+          exit $fail
 
       - name: 🧪 Run KLayout DRC Regression
         run: make test-DRC-main
@@ -134,25 +168,62 @@ jobs:
         with:
           submodules: recursive
 
+      - name: 🔢 Read KLayout version from versions.txt
+        id: klayout_version
+        run: |
+          VERSION=$(grep '^klayout ' versions.txt | awk '{print $2}')
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: Could not read klayout version from versions.txt" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_underscore=${VERSION//./_}" >> "$GITHUB_OUTPUT"
+          echo "KLayout target version: $VERSION"
+
       - name: 💾 Restore KLayout .deb from cache
         id: cache-klayout
         uses: actions/cache@v4
         with:
-          path: klayout-0_30_3.deb
-          key: klayout-deb-cache-ubuntu-0_30_3
+          path: klayout-${{ steps.klayout_version.outputs.version_underscore }}.deb
+          key: klayout-deb-cache-ubuntu-${{ steps.klayout_version.outputs.version_underscore }}
           restore-keys: |
             klayout-deb-cache-
+
       - name: 🔽 Download KLayout .deb if not cached
         if: steps.cache-klayout.outputs.cache-hit != 'true'
         run: |
-          echo "Downloading KLayout .deb..."
+          VERSION="${{ steps.klayout_version.outputs.version }}"
+          VERSION_U="${{ steps.klayout_version.outputs.version_underscore }}"
+          echo "Downloading KLayout .deb (${VERSION})..."
           curl -L --retry 5 --retry-delay 5 --retry-all-errors \
-            -o klayout-0_30_3.deb https://www.klayout.org/downloads/Ubuntu-24/klayout_0.30.3-1_amd64.deb
+            -o "klayout-${VERSION_U}.deb" "https://www.klayout.org/downloads/Ubuntu-24/klayout_${VERSION}-1_amd64.deb"
+
       - name: ⚙️ Install KLayout
         run: |
           sudo apt update -qq -y
-          sudo apt install ./klayout-0_30_3.deb
+          sudo apt install ./klayout-${{ steps.klayout_version.outputs.version_underscore }}.deb
           echo "✅ KLayout version:"
           klayout -v
+
+      - name: 🔎 Verify binary and pip klayout versions agree
+        run: |
+          make env
+          EXPECTED="${{ steps.klayout_version.outputs.version }}"
+          BIN_V=$(klayout -b -v | tail -1 | awk '{print $NF}')
+          PIP_V=$(. actions_venv/bin/activate && python3 -c "import klayout; print(klayout.__version__)")
+          echo "Expected (versions.txt):        $EXPECTED"
+          echo "Binary   (klayout -b -v):       $BIN_V"
+          echo "Pip pkg  (klayout.__version__): $PIP_V"
+          fail=0
+          if [ "$BIN_V" != "$EXPECTED" ]; then
+            echo "ERROR: klayout binary ($BIN_V) != versions.txt ($EXPECTED)" >&2
+            fail=1
+          fi
+          if [ "$PIP_V" != "$EXPECTED" ]; then
+            echo "ERROR: klayout pip package ($PIP_V) != versions.txt ($EXPECTED)" >&2
+            fail=1
+          fi
+          exit $fail
+
       - name: 🧪 Run DRC Regression for SG13G2 Cells
         run: make test-DRC-cells

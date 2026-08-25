@@ -42,5 +42,7 @@ $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/psp103.osdi psp103/psp103
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/psp103_nqs.osdi psp103/psp103_nqs.va
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/r3_cmc.osdi r3_cmc/r3_cmc.va
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/mosvar.osdi mosvar/mosvar.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomi.osdi cap_cmomi/cap_cmomi.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomf.osdi cap_cmomf/cap_cmomf.va
 
 echo done

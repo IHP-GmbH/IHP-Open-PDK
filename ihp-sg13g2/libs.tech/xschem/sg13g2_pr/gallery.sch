@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 T {HBT Devices} 30 -1720 0 0 0.6 0.6 {}
 T {HBT Devices w/  
@@ -19,7 +20,8 @@ T {Tap devices} 20 -820 0 0 0.6 0.6 {}
 T {SVaricap} 20 -670 0 0 0.6 0.6 {}
 T {Bondpad} 20 -550 0 0 0.6 0.6 {}
 T {Isolation box} 20 -390 0 0 0.6 0.6 {}
-T {MiM capacitor} 20 -220 0 0 0.6 0.6 {}
+T {MiM capacitor} 20 -180 0 0 0.6 0.6 {}
+T {MoM capacitor} 20 -260 0 0 0.6 0.6 {}
 T {PNP lateral device} 20 -100 0 0 0.6 0.6 {}
 C {sg13g2_pr/bondpad.sym} 400 -520 0 0 {name=X1
 model=bondpad
@@ -28,13 +30,28 @@ size=80u
 shape=0
 padtype=0
 }
-C {sg13g2_pr/cap_cmim.sym} 400 -200 0 0 {name=C1
+C {sg13g2_pr/cap_cmim.sym} 400 -160 0 0 {name=C1
 model=cap_cmim
 w=7.0e-6
 l=7.0e-6
 m=1
 spiceprefix=X}
-C {sg13g2_pr/cap_rfcmim.sym} 560 -200 0 0 {name=C2 
+C {sg13g2_pr/cap_cmomi.sym} 400 -240 0 0 {name=C4
+model=cap_cmomi
+w=5.0e-6
+l=5.0e-6
+mmin=1
+mmax=5
+feed=double
+spiceprefix=X}
+C {sg13g2_pr/cap_cmomf.sym} 560 -240 0 0 {name=C6
+model=cap_cmomf
+w=5.0e-6
+l=5.0e-6
+mmin=1
+mmax=5
+spiceprefix=X}
+C {sg13g2_pr/cap_rfcmim.sym} 560 -160 0 0 {name=C2
 model=cap_rfcmim
 w=10.0e-6
 l=10.0e-6
@@ -123,14 +140,6 @@ C {sg13g2_pr/rppd.sym} 550 -950 0 0 {name=R4
 w=0.5e-6
 l=0.5e-6
 model=rppd
-spiceprefix=X
-b=0
-m=1
-}
-C {sg13g2_pr/rsil.sym} 710 -950 0 0 {name=R5
-w=0.5e-6
-l=0.5e-6
-model=rsil
 spiceprefix=X
 b=0
 m=1
@@ -240,5 +249,28 @@ C {sg13g2_pr/schottky_nbl1.sym} 680 -1070 0 0 {name=D10
 model=schottky_nbl1
 Nx=1
 Ny=1
+spiceprefix=X
+}
+C {sg13g2_pr/rsil.sym} 710 -950 0 0 {name=R5
+w=0.5e-6
+l=0.5e-6
+model=rsil
+body=sub!
+spiceprefix=X
+m=1
+value="expr_eng(  ( 9.0e-6 / @w + 7.0 * ( @l ) / ( @w + 1.0e-8 ) ) / @m  )"
+}
+C {sg13g2_pr/moscap_n.sym} 720 -230 0 0 {name=C4
+l=1.0u
+w=1.0u
+m=1
+model=sg13_moscap_n
+spiceprefix=X
+}
+C {sg13g2_pr/moscap_p.sym} 860 -230 0 0 {name=C5
+l=1.0u
+w=1.0u
+m=1
+model=sg13_moscap_p
 spiceprefix=X
 }

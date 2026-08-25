@@ -15,6 +15,8 @@
 |GFil.g            |5.9.  GFil.g Min. global GatPoly density [%]                                                   |15    |
 |Cnt.a             |5.14.  Cnt.a Min. and max. Cont width                                                          |0.16  |
 |Cnt.b             |5.14.  Cnt.b Min. Cont space                                                                   |0.18  |
+|CntB.a            |5.15.  CntB.a Min. and max. ContBar width                                                       |0.16  |
+|CntB.a1           |5.15.  CntB.a1 Min. ContBar length                                                              |0.34  |
 |M1.a              |5.16.  M1.a Min. Metal1 width                                                                  |0.16  |
 |M1.b              |5.16.  M1.b Min. Metal1 space or notch                                                         |0.18  |
 |M1.j              |5.16.  M1.j Min. global Metal1 density [%]                                                     |35    |

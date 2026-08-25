@@ -1,0 +1,17 @@
+load mgsim
+
+verilog
+// include corners and testbench modules
+include ../../../models/cornerMOShv.va
+include ./tb_moshv_nmos_id_vd.va
+
+// instantiate tt corner and testbench
+moshv_tt corner_moshv();
+tb_nmos_dc #(.rfmode(1), .vd(vd), .vg(vg), .w(0.4u), .ng(1)) tb(d, g);
+
+// run dc sweep
+parameter real vd = 0.0;
+parameter real vg = 0.0;
+print dc v(g) i(tb.sd) iter(0)
+dc vd 0 1.2 0.02 vg 0.2 1.2 0.2 basic
+status notime

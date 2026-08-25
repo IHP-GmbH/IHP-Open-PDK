@@ -34,9 +34,26 @@
 # Everything else is done inside this module's __init__.py.
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'python/'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'python/pycell4klayout-api/source/python/'))
-import sg13g2_pycell_lib
-import sg13g2_native_pcell_lib
+import pkgutil
+import importlib
+
+def append_if_exists(path):
+    path = os.path.abspath(path)
+    if os.path.isdir(path) and path not in sys.path:
+        sys.path.append(path)
+
+base_dir = os.path.dirname(__file__)
+append_if_exists(os.path.join(base_dir, '..', '..', 'python'))
+append_if_exists(os.path.join(base_dir, '..', '..', 'python', 'pycell4klayout-api', 'source', 'python'))
+
+# PDK modules
+modules_root = os.path.abspath(os.path.join(base_dir, '..', '..', '..', '..', '..', 'ihp-sg13_modules'))
+if os.path.isdir(modules_root):
+    for module_name in sorted(os.listdir(modules_root)):
+        append_if_exists(os.path.join(modules_root, module_name, 'libs.tech', 'klayout', 'python'))
+
+for finder, name, ispkg in pkgutil.iter_modules():
+    if name.startswith("sg13"):
+        importlib.import_module(name)
 </text>
 </klayout-macro>

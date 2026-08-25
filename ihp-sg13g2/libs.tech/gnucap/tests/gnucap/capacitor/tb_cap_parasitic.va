@@ -1,0 +1,19 @@
+// load model plugins
+load ../../../plugins/models/capacitor_paramset.so
+load vams/vpulse.so
+
+module tb_cap_parasitic(vsrc, n1, n2, n3);
+    // external ports for probing
+    inout vsrc, n1, n2, n3;
+    electrical vsrc, n1, n2, n3;
+    ground gnd;
+    // cparasitic
+    vpulse #(.dc(0), .val0(0), .val1(1), .td(10n), .rise(100p), .fall(100p), .width(0.5u), .period(1u)) VSTEP(vsrc, gnd);
+    cparasitic #(.c(100f)) C1(n1, gnd);
+    cparasitic #(.c(5p  )) C2(n2, gnd);
+    cparasitic #(.c(10p )) C3(n3, gnd);
+
+    resistor #(.r(10k)) R1(vsrc, n1);
+    resistor #(.r(10k)) R2(vsrc, n2);
+    resistor #(.r(10k)) R3(vsrc, n3);
+endmodule

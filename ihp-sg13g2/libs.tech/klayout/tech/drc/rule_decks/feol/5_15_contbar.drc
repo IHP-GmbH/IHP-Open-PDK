@@ -23,7 +23,23 @@ if TABLES.include?('contbar') || FEOL
 
   logger.info('Starting 5.15. ContBar table')
 
-  # ContBar derivations
+  # Rule CntB.a: Min. and max. ContBar width is 0.16 um (precheck)
+  logger.info('Executing rule CntB.a')
+  cntb_a_value = drc_rules['CntB_a'].to_f
+  cntb_a_l1 = contbar.not(edgeseal_drw).not(schottky_nbl1_or_schottky_nw1).width(cntb_a_value.um, euclidian)
+  cntb_a_l2 = cont_drw.not(edgeseal_drw).not(schottky_nbl1_or_schottky_nw1).sized(-(cntb_a_value / 2.0).um).sized((cntb_a_value / 2.0).um)
+  cntb_a_l1.output('CntB.a', "5.15. CntB.a Min. and max. ContBar width is #{cntb_a_value} um")
+  cntb_a_l2.output('CntB.a', "5.15. CntB.a Min. and max. ContBar width is #{cntb_a_value} um")
+  cntb_a_l1.forget
+  cntb_a_l2.forget
+
+  # Rule CntB.a1: Min. ContBar length is 0.34 um (precheck)
+  logger.info('Executing rule CntB.a1')
+  cntb_a1_value = drc_rules['CntB_a1'].to_f
+  cntb_a1_area = cntb_a_value * cntb_a1_value
+  cntb_a1_l = contbar.with_area(nil, cntb_a1_area.um2)
+  cntb_a1_l.output('CntB.a1', "5.15. CntB.a1 Min. ContBar length is #{cntb_a1_value} um")
+  cntb_a1_l.forget
 
   unless PRECHECK_DRC
     # Rule CntB.b1: Min. ContBar space with common run > 5 µm is 0.36 um

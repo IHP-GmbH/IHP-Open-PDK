@@ -1,0 +1,166 @@
+// ---------------------------------------------------------------------------
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
+// ---------------------------------------------------------------------------
+//
+// cap_cmomf - metal fringe (finger) MoM capacitor, ihp-sg13g2 M1..M5
+//
+// *** LOW-FREQUENCY MODEL ONLY. NOT VALIDATED ON SILICON. ***
+//
+// This is deliberately a much thinner model than its sibling cap_cmomi, and
+// the difference is not an oversight. cap_cmomi ships a full RF equivalent
+// circuit (series R/L, skin effect, oxide and substrate shunt) because IHP
+// characterised that device and published coefficients for it. For the fringe
+// cap no such characterisation exists: neither silicon measurements nor an EM
+// fit. Reusing cap_cmomi's RF branches here would mean attaching one device's
+// measured parasitics to another device's geometry, which is inventing data.
+//
+// So this model contributes exactly what is actually known:
+//
+//     C = areacap(mmin, mmax) * l * w
+//
+// and nothing else. There is no series resistance, no series inductance, no
+// substrate coupling and therefore no substrate terminal; the device is
+// 2-terminal. Consequences a designer should be aware of:
+//
+//   - it stays capacitive at every frequency and has no self-resonance, so
+//     high-frequency results are optimistic and must not be trusted;
+//   - it has no path to the substrate, so substrate parasitics of the real
+//     structure are absent. Extract the layout if you need them;
+//   - there is no corner or mismatch spread. Every corner section of
+//     cornerCAP.lib maps to this same nominal model. That is not a claim of
+//     corner stability, the spread is simply not modelled.
+//
+// COEFFICIENT PROVENANCE
+//   AREACAP_M1 = 0.372 fF/um^2, AREACAP_MN = 0.305 fF/um^2 come from the Magic
+//   device generator libs.tech/magic/ihp-sg13cmos5l-cap.tcl in the sibling
+//   PDK, which is the origin of this device (contributed by R. Timothy
+//   Edwards, ihp-sg13cmos5l#31). They are the values it carries after
+//   ihp-sg13cmos5l#69, where the Magic wire-edge parasitic extraction was
+//   compared against a full 3D OpenEMS analysis and corrected for the roughly
+//   constant 11% difference between the two. They are therefore
+//   simulation-derived, not foundry silicon data.
+//
+//   That generator, and therefore that calibration, stops at Metal4. The
+//   Metal4 to Metal5 step here reuses AREACAP_MN like every other step and is
+//   EXTRAPOLATED. cap_cmomi is in the same position for its own N=2 entry.
+//
+//   Do NOT use the earlier 0.67 / 0.55 fF/um^2 pair that circulated before
+//   that recalibration: for a full M1..M4 stack it overstates the density by
+//   about a factor of 1.8.
+//
+//   The same expression is duplicated, on purpose, in the PCell
+//   (cmomf_code.py), the xschem symbol (cap_cmomf.sym), the qucs-s component
+//   (cap_cmomf.xml) and the ngspice wrapper (cap_cmomf.lib), so the drawn C
+//   label and the simulated value can never disagree. All five have to be
+//   changed together. One caveat on "never": the PCell multiplies the drawn
+//   extents AFTER snapping them to the 5 nm grid, so for a w or l that is not
+//   a multiple of 5 nm its label sits a fraction of a percent below what the
+//   model returns.
+//
+// Terminals:
+//   PLUS   - plate 1 (left edge of the drawn device)
+//   MINUS  - plate 2 (top edge of the drawn device)
+//
+// Instance parameters:
+//   w        - width  [m], the Y extent of the drawn device (default 5 um)
+//   l        - length [m], the X extent of the drawn device (default 5 um)
+//   mmin     - bottom metal index (1 = M1 .. 5 = M5)  (default 1)
+//   mmax     - top metal index    (1 = M1 .. 5 = M5)  (default 5)
+//   subblock - 0|1 substrate-isolation block (layout/LVS only, no electrical
+//              effect; accepted for interface parity with cap_cmomi)
+// ---------------------------------------------------------------------------
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module cap_cmomf(PLUS, MINUS);
+
+    inout PLUS, MINUS;
+    electrical PLUS, MINUS;
+
+    // ---- instance parameters -------------------------------------------------
+    (* type = "instance", units = "m", desc = "width (Y extent)" *)
+    parameter real    w        = 5e-6 from (0.0:inf);
+    (* type = "instance", units = "m", desc = "length (X extent)" *)
+    parameter real    l        = 5e-6 from (0.0:inf);
+    (* type = "instance", desc = "bottom metal index (1=M1 .. 5=M5)" *)
+    parameter integer mmin     = 1    from [1:5];
+    (* type = "instance", desc = "top metal index (1=M1 .. 5=M5)" *)
+    parameter integer mmax     = 5    from [1:5];
+    (* type = "instance", desc = "substrate-isolation block (layout/LVS only)" *)
+    parameter integer subblock = 0    from [0:1];
+
+    // Device multiplicity goes through the Verilog-AMS standard $mfactor, read
+    // in the analog block. The ADMS/Xyce toolchain has no $mfactor, so under
+    // __XYCE__ expose an explicit `mult` instead, mirroring cap_cmomi.va and
+    // r3_cmc.va. Neither wired build defines __XYCE__.
+`ifdef __XYCE__
+    (* type = "instance", desc = "number of devices in parallel" *)
+    parameter real    mult     = 1.0  from (0.0:inf);
+`endif
+
+    // ---- named branch --------------------------------------------------------
+    branch (PLUS, MINUS) br_cmain;
+
+    real lu, wu, areacap, cmain_fF, Cmain, mMod;
+    integer Nc, Nlay;
+
+    // Weak DC anchor across the plates. A pure ddt() contribution leaves the
+    // node pair without a DC path, which is a singular operating point for an
+    // otherwise unconnected instance. 1e-12 S is a 1 Tohm parallel leak.
+    localparam real GLEAK = 1.0e-12;
+
+    // Capacitance density [fF/um^2], see COEFFICIENT PROVENANCE above.
+    localparam real AREACAP_M1 = 0.372;
+    localparam real AREACAP_MN = 0.305;
+
+    analog begin
+
+        // ---- device multiplicity --------------------------------------------
+        // Read as the standard-compliant handle only. The simulator already
+        // scales the device stamp by m (ngspice/OSDI and gnucap both do), so
+        // the model must NOT scale by mMod itself or the result goes as m^2.
+        // Reserved for the future mismatch model, as in cap_cmomi.va.
+`ifdef __XYCE__
+        mMod = mult;
+`else
+        mMod = $mfactor;
+`endif
+
+        // ---- units: parameters arrive in SI, model math in micrometres ------
+        lu = l * 1.0e6;
+        wu = w * 1.0e6;
+
+        // ---- layer count (clamped >= 1) -------------------------------------
+        Nc   = mmax - mmin + 1;
+        Nlay = (Nc < 1) ? 1 : Nc;
+
+        // ---- area capacitance density [fF/um^2] -----------------------------
+        // Base set by the bottom plate, plus one increment per extra layer.
+        // Identical to the Magic generator's cap_recalc.
+        areacap  = ((mmin == 1) ? AREACAP_M1 : AREACAP_MN)
+                   + (Nlay - 1) * AREACAP_MN;
+
+        cmain_fF = areacap * lu * wu;
+        Cmain    = cmain_fF * 1.0e-15;
+
+        // ---- contributions ---------------------------------------------------
+        I(br_cmain) <+ Cmain * ddt(V(br_cmain));
+        I(br_cmain) <+ GLEAK * V(br_cmain);
+
+    end
+
+endmodule

@@ -1,0 +1,20 @@
+load mgsim
+
+verilog
+// include corners and testbench
+include ../../../models/cornerRES.va
+include ./tb_res_mc.va
+
+// instantiate best-case corner and testbench module
+res_stat corner_res();
+tb_res_mc #(.mm_ok(0)) tb();
+
+// run mc dc simulation with global process variation
+print dc v(tb.r*)
+store dc v(tb.r*)
+dc $seed 1 1000 1 basic
+// measure sample mean and standard deviation
+measure v_mean_rsil1 = sample_mean("v(tb.r1)")
+measure v_mean_rsil2 = sample_mean("v(tb.r2)")
+measure v_std_rsil1 = sample_std("v(tb.r1)")
+measure v_std_rsil2 = sample_std("v(tb.r2)")

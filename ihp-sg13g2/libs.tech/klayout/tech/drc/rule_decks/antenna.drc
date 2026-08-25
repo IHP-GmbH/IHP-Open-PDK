@@ -296,7 +296,8 @@ def get_drc_values(logger)
     raise "Error reading default DRC rules from #{$drc_json_default}: #{e.message}"
   end
 
-  merged_rules = tech_rules.merge(default_rules)
+  # Defaults are the baseline; process-specific TECH values must override them when provided.
+  merged_rules = default_rules.merge(tech_rules)
 
   # Report any fallback rules used
   missing_keys = default_rules.keys - tech_rules.keys

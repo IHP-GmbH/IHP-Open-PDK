@@ -1,0 +1,22 @@
+// load moslv model plugin
+load ../../../plugins/models/sg13g2_moslv_paramset.so
+load ../../../plugins/models/sg13g2_moslv_rf_paramset.so
+// include moslv module wrapper
+include ../../../models/sg13g2_moslv_module.va
+
+module tb_nmos_dc(d, g);
+    // external ports
+    inout d, g;
+    electrical d, g;
+    // testbench parameters
+    parameter integer rfmode = 0 from [0:1]; // rf switch
+    parameter real vd = 0.0;
+    parameter real vg = 0.0;
+    parameter real w = 0.35u;
+    parameter integer ng = 1;
+
+    ground gnd;
+    vsource #(.dc(vd)) sd(d, gnd);
+    vsource #(.dc(vg)) sg(g, gnd);
+    sg13_lv_nmos #(.w(w), .l(0.34u), .ng(ng), .mm_ok(0), .rfmode(rfmode)) M1(d, g, gnd, gnd);
+endmodule

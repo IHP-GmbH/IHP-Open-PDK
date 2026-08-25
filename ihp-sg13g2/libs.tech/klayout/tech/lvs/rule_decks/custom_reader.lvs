@@ -76,8 +76,12 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     field.to_s.delete_prefix('$').sub(/\A\[(.+)\]\z/, '\1').downcase
   end
 
+  # 2-terminal custom-MIM-style cap models (DeviceCustomMIM): cap_cmim and the two
+  # MoM capacitors. Both the value-before-model normalization and the model-first
+  # term count key on this, so a cap_cmomi or cap_cmomf C-line keeps its model
+  # token instead of having it parsed as a value and stripped.
   def cap_cmim_model_field?(field)
-    canonical_cap_model(field) == 'cap_cmim'
+    ['cap_cmim', 'cap_cmomi', 'cap_cmomf'].include?(canonical_cap_model(field))
   end
 
   # Accepted resistor forms:
@@ -385,6 +389,10 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       raise ArgumentError, 'Varicap should have 4 nodes, please recheck' unless num_nets == 4
 
       DeviceCustomVaractor.new(model, num_nets - 1)
+    elsif model.downcase.include?('moscap')
+      raise ArgumentError, 'MOSCAP should have 2 nodes, please recheck' unless num_nets == 2
+
+      DeviceCustomMOSCAP.new(model)
     else
       raise ArgumentError, 'Capacitor should have 2 or 3 nodes, please recheck' unless [2, 3].include?(num_nets)
 
@@ -464,7 +472,15 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
         %w[C B E S]
       end
     when 'C'
-      model.downcase.include?('varicap') ? %w[G1 W G2 SUB] : gen_mim_terms(model)
+      if model.downcase.include?('varicap')
+        %w[G1 W G2 SUB]
+      elsif model.downcase.include?('moscap_p')
+        %w[G NW]
+      elsif model.downcase.include?('moscap_n')
+        %w[G SUB]
+      else
+        gen_mim_terms(model)
+      end
     when 'R'
       if RES_DEV.include?(model.downcase)
         gen_res_terms(model, nets.size)

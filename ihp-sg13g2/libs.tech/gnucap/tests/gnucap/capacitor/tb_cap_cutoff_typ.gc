@@ -1,0 +1,29 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include corners and testbench
+include ../../../models/cornerCAP.va
+include ./tb_cap_cutoff.va
+include ./consts.params
+
+options numdgt=9
+
+// instantiate typical corner and testbench module
+cap_typ corner_cap();
+tb_cap_cutoff tb(out1, out2);
+
+// run ac
+dc
+print ac v(out1) v(out2)
+store ac v(out1) v(out2)
+ac dec 1e3 1e6 1e9 basic
+// measure the -3 dB cutoff frequency
+measure fcut1 = cross(probe="v(out1)" cross=0.707 rise first)
+measure fcut2 = cross(probe="v(out2)" cross=0.707 rise first)
+// approximate capacitance from cutoff frequency
+// TODO: braces required to parse RHS as expression and not literal
+parameter C1 = {1.0 / (M_TWO_PI * fcut1 * 1e5)}
+parameter C2 = {1.0 / (M_TWO_PI * fcut2 * 1e5)}
+eval C1
+eval C2

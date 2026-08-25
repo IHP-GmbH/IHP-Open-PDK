@@ -32,10 +32,10 @@ if TABLES.include?('activ') || FEOL
   acta_l1.output('Act.a', "5.5. Act.a : Min. Activ width : #{act_a_value} µm")
   acta_l1.forget
 
-  # Rule Act.b:  Min. Activ space or notch is 0.21µm.
+  # Rule Act.b:  Min. Activ (drawing + filler) space or notch is 0.21µm.
   logger.info('Executing rule Act.b')
   act_b_value = drc_rules['Act_b'].to_f
-  actb_l1 = activ_drw.space(act_b_value.um, euclidian)
-  actb_l1.output('Act.b', "5.5. Act.b : Min. Activ space or notch: #{act_b_value} µm.")
+  actb_l1 = activ_drw.join(activ_filler).space(act_b_value.um, euclidian)
+  actb_l1.output('Act.b', "5.5. Act.b : Min. Activ (drawing + filler) space or notch: #{act_b_value} µm.")
   actb_l1.forget
 end

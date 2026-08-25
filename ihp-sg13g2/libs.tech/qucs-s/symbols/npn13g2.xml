@@ -15,9 +15,13 @@
     <Netlists>
         <NgspiceNetlist value=
             "{{{Letter}}}::schematic_id='nequal'Q{PartCounter} {nets} {bulk} {{{model}}}::model='nonempty'
-            {{Nx={Nx}}}::Nx='nonempty' ">
+            {{Nx={Nx}}}::Nx='nonempty' mm_ok={mm_ok}">
         </NgspiceNetlist>
-        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
+        <CDLNetlist value="{{{Letter}}}::schematic_id='nequal'Q{PartCounter} {nets} {bulk} {{{model}}}::model='nonempty' {{Nx={Nx}}}::Nx='nonempty'"></CDLNetlist>
+        <XyceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'Q{PartCounter} {nets} {bulk} {{{model}}}::model='nonempty'
+            {{Nx={Nx}}}::Nx='nonempty'">
+        </XyceNetlist>
     </Netlists>
     <Symbols>
         <Symbol id="Standard">
@@ -39,6 +43,9 @@
         </Parameter>
         <Parameter name="type" unit="" default_value="npn" show="false">
             <Description>Device type</Description>
+        </Parameter>
+        <Parameter name="mm_ok" unit="" default_value="1" show="false">
+            <Description>[0,1]</Description>
         </Parameter>
     </Parameters>
 </Component>

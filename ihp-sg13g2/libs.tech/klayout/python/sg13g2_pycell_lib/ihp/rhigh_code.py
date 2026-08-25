@@ -152,6 +152,8 @@ class rhigh(ResistorBase):
         #*************************************************************************
         psdover = self.techparams['Rhi_c']
         nsdover = self.techparams['Rhi_c']
+        psdNotch = self.techparams['pSD_b']
+        extBlockNotch = self.techparams['EXTB_b']
         li_salblock = self.techparams['Rhi_d']
         poly_cont_len = consize+polyover # self.techparams['rhigh_poly_cont_len']   # 0.57
         
@@ -373,7 +375,7 @@ class rhigh(ResistorBase):
                     dbCreateRect(self, sallayer, Box(xpos1+w+ps-salover, ypos1, xpos1+stripes*(w+ps)-ps+salover, ypos1-w-salover))
                     # 09.02.07 GGa added EXTBlock
                     dbCreateRect(self, extBlocklayer, Box(xpos1-salover, ypos2, xpos1+(stripes-1)*(w+ps)-ps+salover, ypos2+w+salover))
-                    dbCreateRect(self, sallayer, Box(xpos1+w+ps-salover, ypos1, xpos1+stripes*(w+ps)-ps+salover, ypos1-w-salover))
+                    dbCreateRect(self, sallayer, Box(xpos1-salover, ypos2, xpos1+(stripes-1)*(w+ps)-ps+salover, ypos2+w+salover))
                     # 09.02.07 GGa added EXTBlock
                     dbCreateRect(self, extBlocklayer, Box(xpos1+w+ps-salover, ypos1, xpos1+stripes*(w+ps)-ps+salover, ypos1-w-salover))
                     dbCreateRect(self, psdlayer, Box(xpos1-psdover, ypos2, xpos1+(stripes-1)*(w+ps)-ps+psdover, ypos2+w+psdover))
@@ -479,7 +481,36 @@ class rhigh(ResistorBase):
     
         minus_pin_box = Box(bBox.left-endcap, bBox.bottom-endcap, bBox.right+endcap, bBox.top+endcap)
         MkPin(self, f"MINUS{index}", 2, minus_pin_box, metlayer)
-        
+
+        # *********************************************************
+        # fill notches in pSD, nSD and EXTBlock layers (issue #996)
+        # When the contact heads are not pushed out of the resistor body
+        # (contactpush == 0), the gap between the pSD/nSD/EXTBlock cover
+        # of a contact head and the adjacent bend cover is ps-2*psdover
+        # (pSD/nSD) resp. ps-psdover-salover (EXTBlock). If this gap is
+        # smaller than the minimum space of the layer (pSD.b / EXTB.b),
+        # fill it so the shapes merge and no space violation remains.
+        psdNotchWidth = ps-2.0*psdover
+        extBlockNotchWidth = ps-psdover-salover
+        notchXpos1 = xpos1-w-ps
+
+        if zerop(contactpush) :
+            if (psdNotchWidth < psdNotch) and (psdNotchWidth > 0.0) :
+                if stripes > 1 :
+                    # notch right of the bottom contact head (first stripe)
+                    dbCreateRect(self, psdlayer, Box(x_offset+w+psdover, 0, x_offset+w+ps-psdover, -li_salblock-poly_cont_len-psdover))
+                    dbCreateRect(self, nsdlayer, Box(x_offset+w+psdover, 0, x_offset+w+ps-psdover, -li_salblock-poly_cont_len-psdover))
+                if stripes > 2 :
+                    # notch left of the top contact head (last stripe)
+                    dbCreateRect(self, psdlayer, Box(notchXpos1+w+psdover, ypos2, notchXpos1+w+ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
+                    dbCreateRect(self, nsdlayer, Box(notchXpos1+w+psdover, ypos2, notchXpos1+w+ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
+
+            if (extBlockNotchWidth < extBlockNotch) and (extBlockNotchWidth > 0.0) :
+                if stripes > 1 :
+                    dbCreateRect(self, extBlocklayer, Box(x_offset+w+psdover, 0, x_offset+w+ps-salover, -li_salblock-poly_cont_len-psdover))
+                if stripes > 2 :
+                    dbCreateRect(self, extBlocklayer, Box(notchXpos1+w+salover, ypos2, notchXpos1+w+ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
+
         # *********************************************************
         # draw the label
         # GGa 08.05.06 added lcalc

@@ -22,6 +22,8 @@ on:
     paths:
       - 'ihp-sg13g2/libs.tech/klayout/tech/drc/**'
       - 'ihp-sg13g2/libs.tech/klayout/tech/lvs/**'
+      - 'versions.txt'
+      - 'requirements.txt'
   workflow_dispatch:
 
 jobs:
@@ -34,3 +36,33 @@ jobs:
       - name: Lint with flake8
         run: |
           make lint_python
+
+  klayout_version_consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check klayout pin in requirements.txt matches versions.txt
+        run: |
+          VERSIONS_TXT=$(grep '^klayout ' versions.txt | awk '{print $2}')
+          REQ_LINE=$(grep '^klayout' requirements.txt | head -1)
+          REQ_VERSION=$(echo "$REQ_LINE" | sed -nE 's/^klayout==([^[:space:]]+).*/\1/p')
+
+          echo "versions.txt klayout: '$VERSIONS_TXT'"
+          echo "requirements.txt klayout line: '$REQ_LINE'"
+          echo "requirements.txt klayout version (pinned): '$REQ_VERSION'"
+
+          if [ -z "$VERSIONS_TXT" ]; then
+            echo "ERROR: versions.txt is missing a 'klayout <version>' line" >&2
+            exit 1
+          fi
+          if [ -z "$REQ_VERSION" ]; then
+            echo "ERROR: requirements.txt must pin klayout exactly as 'klayout==<version>'" >&2
+            echo "       Current line: '$REQ_LINE'" >&2
+            exit 1
+          fi
+          if [ "$VERSIONS_TXT" != "$REQ_VERSION" ]; then
+            echo "ERROR: klayout version drift between versions.txt ($VERSIONS_TXT) and requirements.txt ($REQ_VERSION)" >&2
+            echo "       Update both to the same value." >&2
+            exit 1
+          fi
+          echo "OK: klayout version is consistent ($VERSIONS_TXT)"

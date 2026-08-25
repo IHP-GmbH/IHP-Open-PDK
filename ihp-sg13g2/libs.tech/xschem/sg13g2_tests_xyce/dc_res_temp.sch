@@ -155,7 +155,6 @@ l=0.5e-6
 model=rsil
 body=sub!
 spiceprefix=X
-b=0
 m=1
 }
 C {sg13g2_pr/rppd.sym} 90 130 0 0 {name=R3

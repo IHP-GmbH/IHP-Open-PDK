@@ -1,0 +1,101 @@
+//******************************************************************************
+//                                                                             *
+// Copyright 2023 IHP PDK Authors                                              *
+//                                                                             *
+// Licensed under the Apache License, Version 2.0 (the "License");             *
+// you may not use this file except in compliance with the License.            *
+// You may obtain a copy of the License at                                     *
+//                                                                             *
+//     https://www.apache.org/licenses/LICENSE-2.0                             *
+//                                                                             *
+// Unless required by applicable law or agreed to in writing, software         *
+// distributed under the License is distributed on an "AS IS" BASIS,           *
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+// See the License for the specific language governing permissions and         *
+// limitations under the License.                                              *
+//                                                                             *
+//******************************************************************************
+
+// Capacitor Verilog-A modules
+// Ported from `ngspice/models/capacitors_*.lib` files
+// Modifications:
+// - removed sf scale factor
+// - removed ic parameter TODO: is this ok?
+// - forward mm_ok to cmim_core paramset
+// - moved if branches in cap_rfcmim into localparams
+// (c) Lukas Deutz
+
+// TODO: test setting multiplicity via $mfactor during device instantiaion
+
+//******************************************************************************
+// cmim
+//******************************************************************************
+
+// Note: top/bottom plate parasitic capacitance is included by parasiticC extraction!
+// Note: top (Metal3) corresponds to PLUS pin
+
+module cap_cmim(PLUS, MINUS);
+    // external ports
+    inout PLUS, MINUS;
+    electrical PLUS, MINUS;
+    // internal nodes
+    electrical n1;
+    // parameters
+    parameter real l = 7u;
+    parameter real w = 7u;
+    parameter integer mm_ok = 0 from [0:1];
+
+    resistor #(.r(55m)) R1(PLUS, n1);
+    cmim_core #(.l(l), .w(w), .mm_ok(mm_ok)) C1(n1, MINUS);
+endmodule
+
+//******************************************************************************
+// rfcmim
+//******************************************************************************
+
+// module for rfcmim
+// Note: top plate (Metal3) corresponds to PLUS pin, bottom plate corresponds to MINUS pin, bn is substrate bulk node
+// Note: valid parameter range for w and l: 7um to 75um
+// Note: valid parameter range for wfeed: 1um to 30um but maximum wfeed = w-1.2um
+//
+module cap_rfcmim(PLUS, MINUS, bn);
+    // external ports
+    inout PLUS, MINUS, bn;
+    electrical PLUS, MINUS, bn;
+    // internal nodes
+    electrical n2, n3, n4, n5, n51;
+    // user facing parameters
+    parameter real l = 7u from [7u:75u];
+    parameter real w = 7u from [7u:75u];
+    parameter integer mm_ok = 0 from [0:1];
+    parameter real wfeed = 2uc from [1u:30u];
+    parameter real cic0 = 1E-18;
+    // localparam
+    localparam real sf = 1E-6;
+    localparam real lplate_val = (0.353158 * (l/sf) + 0.485684*l/w) * 1e-12;
+    localparam real lfeed_val  = (6.03468  + 0.0814268* (w/sf) - 0.821243*log(wfeed/sf)/log(1.55)) * 1e-12;
+    localparam real lskin_val  = 1.18545e-012 + 6.95462e-014*(l/sf);
+    localparam real cox_val    = (0.48922 + 0.0965145*(w+l)/sf + 0.00610947   * (w*l)/(sf*sf) + 0.017*(wfeed/sf)*5)*1e-15;
+    localparam real csub_val   = (50.1021 + 0.277881 *(w+l)/sf + 1.25023e-005 * (w*l)/(sf*sf))*1e-15;
+    localparam real rsub_val   = 610.132  - 1.11685  *(w+l)/sf + 0.00434371   * (w*l)/(sf*sf);
+    localparam real rmim_val   = 0.0463973 + 0.00219577*l/w + 0.961292/(wfeed/sf) + 0.00307712 *(l/sf) + 0.000217076*(l/sf)*l/w;
+    localparam real rskin_val  = 0.154618 + 0.00702016*(l/sf);
+    localparam real lmim_raw = lplate_val + lfeed_val - lskin_val;
+    localparam real lmim_eff = (lmim_raw > 1.0e-18) ? lmim_raw : 1.0e-18;
+    localparam real rsub_eff = (rsub_val > 10.0e-3) ? rsub_val : 10.0e-3;
+    localparam real lfeed_eff = (lfeed_val > 1.0e-18) ? lfeed_val : 1.0e-18;
+    //   --------- model subcircuit ------------------------------
+    // TODO: use device primitives from LRM annex E instead?
+    capacitor #(.c(cic0)) Cic1(PLUS, bn);
+    capacitor #(.c(cic0)) Cic1(MINUS, bn);
+    inductor #(.l(lskin_val)) Lskin(PLUS, n2)
+    resistor #(.r(rskin_val)) Rskin(PLUS, n2)
+    inductor #(.l(lmim_eff)) Lmim(n2, n3);
+    resistor #(.r(rmim_val)) Rmim(n3, n4);
+    cap_cmim #(.l(l), .w(w), .mm_ok(mm_ok)) cmim(n4, n5);
+    capacitor #(.c(cox_val)) Cox(n5, n51);
+    capacitor #(.c(csub_val)) Csub(n51, bn);
+    resistor #(.r(rsub_eff)) Rsub(n51, bn);
+    inductor #(.l(lfeed_eff)) Lfeed(n5, MINUS);
+    resistor #(.r(1G)) Rdummy(n5, bn);
+endmodule

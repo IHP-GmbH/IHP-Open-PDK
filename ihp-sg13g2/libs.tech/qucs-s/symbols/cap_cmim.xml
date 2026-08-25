@@ -15,10 +15,17 @@
     <Netlists>
         <NgspiceNetlist value=
             "{{{Letter}}}::schematic_id='nequal'C{PartCounter} {nets} {{{model}}}::model='nonempty'
-            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' m={m}">
+            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' m={m} mm_ok={mm_ok}">
         </NgspiceNetlist>
-        <CDLNetlist value="{NgspiceNetlist}"></CDLNetlist>
-    </Netlists>
+        <CDLNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'C{PartCounter} {nets} {{{model}}}::model='nonempty'
+            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' m={m}">
+        </CDLNetlist>
+        <XyceNetlist value=
+            "{{{Letter}}}::schematic_id='nequal'C{PartCounter} {nets} {{{model}}}::model='nonempty'
+            {{w={w}}}::w='nonempty' {{l={l}}}::l='nonempty' m={m}">
+        </XyceNetlist>
+   </Netlists>
     <Symbols>
         <Symbol id="Standard">
             <File>{QUCS_S_COMPONENTS_LIBRARY}/Capacitor.sym</File>
@@ -42,6 +49,9 @@
         </Parameter>
         <Parameter name="C" unit="F" equation="m*((w*l*1.e-3) + 2*(w+l)*40e-12)" show="true">
             <Description>Capacitance value</Description>
+        </Parameter>
+        <Parameter name="mm_ok" unit="" default_value="1" show="false">
+            <Description>[0,1]</Description>
         </Parameter>
     </Parameters>
 </Component>

@@ -1,0 +1,59 @@
+*******************************************************************************
+*                                                                             *
+* Copyright 2026 IHP PDK Authors                                              *
+*                                                                             *
+* Licensed under the Apache License, Version 2.0 (the "License");             *
+* you may not use this file except in compliance with the License.            *
+* You may obtain a copy of the License at                                     *
+*                                                                             *
+*     https://www.apache.org/licenses/LICENSE-2.0                             *
+*                                                                             *
+* Unless required by applicable law or agreed to in writing, software         *
+* distributed under the License is distributed on an "AS IS" BASIS,           *
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+* See the License for the specific language governing permissions and         *
+* limitations under the License.                                              *
+*                                                                             *
+*******************************************************************************
+
+*******************************************************************************
+* MOS capacitors with mismatch
+*******************************************************************************
+*
+* Xyce random expression operators return their mean outside UQ analysis.
+* Use .SAMPLING USEEXPR=TRUE to enable mismatch sampling.
+*
+
+.param SWSOA = 0
+
+.subckt sg13_moscap_n G SUB
++ w=1.0u l=1.0u m=1 mm_ok=1 ng=1 rfmode=0 pre_layout=1
+
+.include sg13g2_moscap_parm.lib
+
+YPSP103_VA M1 SUB G SUB SUB sg13g2_moscap_n_psp
++ w='if(mm_ok == 1, agauss(w, sg13g2_moscap_n_dw_mm, 1), w)'
++ l='if(mm_ok == 1, agauss(l, sg13g2_moscap_n_dl_mm, 1), l)'
++ nf=1 mult='m'
++ as='w*0.34e-6' ad='w*0.34e-6' ps='2*(w+0.34e-6)' pd='2*(w+0.34e-6)'
++ dta=0
++ ngcon=2
++ delvto='if(mm_ok == 1, agauss(0, sg13g2_moscap_n_delvto_mm/sqrt(m*l*w*1e12), 1), 0)'
++ factuo='if(mm_ok == 1, agauss(1, sg13g2_moscap_n_factuo_mm/sqrt(m*l*w*1e12), 1), 1)'
+.ends sg13_moscap_n
+
+.subckt sg13_moscap_p G NW
++ w=1.0u l=1.0u m=1 mm_ok=1 ng=1 rfmode=0 pre_layout=1
+
+.include sg13g2_moscap_parm.lib
+
+YPSP103_VA M1 NW G NW NW sg13g2_moscap_p_psp
++ w='if(mm_ok == 1, agauss(w, sg13g2_moscap_p_dw_mm, 1), w)'
++ l='if(mm_ok == 1, agauss(l, sg13g2_moscap_p_dl_mm, 1), l)'
++ nf=1 mult='m'
++ as='w*0.34e-6' ad='w*0.34e-6' ps='2*(w+0.34e-6)' pd='2*(w+0.34e-6)'
++ dta=0
++ ngcon=2
++ delvto='if(mm_ok == 1, agauss(0, sg13g2_moscap_p_delvto_mm/sqrt(m*l*w*1e12), 1), 0)'
++ factuo='if(mm_ok == 1, agauss(1, sg13g2_moscap_p_factuo_mm/sqrt(m*l*w*1e12), 1), 1)'
+.ends sg13_moscap_p

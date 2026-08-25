@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2
+v {xschem version=3.4.8RC file_version=1.3
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 L 7 360 -810 360 -60 {}
 L 7 700 -810 700 -60 {}
@@ -50,6 +51,8 @@ C {sg13g2_tests/dc_hbt_13g2.sym} 180 -340 0 0 {name=x17}
 C {sg13g2_tests/tran_mim_cap.sym} 520 -710 0 0 {name=x10}
 C {sg13g2_tests/ac_lv_nmosrf.sym} 860 -710 0 0 {name=x9}
 C {sg13g2_tests/ac_mim_cap.sym} 860 -670 0 0 {name=x21}
+C {sg13g2_tests/ac_cap_cmomi.sym} 860 -630 0 0 {name=x42}
+C {sg13g2_tests/ac_cap_cmomf.sym} 860 -590 0 0 {name=x44}
 C {sg13g2_tests/mc_lv_nmos_cs_loop.sym} 1200 -710 0 0 {name=x1}
 C {sg13g2_tests/mc_hv_nmos_cs_loop.sym} 1200 -670 0 0 {name=x2}
 C {sg13g2_tests/mc_lv_pmos_cs_loop.sym} 1200 -630 0 0 {name=x3}
@@ -80,3 +83,7 @@ C {sg13g2_tests/iso_dc_lv_nmos.sym} 2220 -710 0 0 {name=x38}
 C {sg13g2_tests/iso_dc_hv_nmos.sym} 2220 -670 0 0 {name=x39}
 C {sg13g2_tests/iso_dc_res.sym} 2220 -630 0 0 {name=x40}
 C {sg13g2_tests/dc_schottky.sym} 180 -80 0 0 {name=x41}
+C {sg13g2_tests/tran_moscap_n.sym} 520 -550 0 0 {name=x42}
+C {sg13g2_tests/tran_moscap_p.sym} 520 -510 0 0 {name=x43}
+C {sg13g2_tests/tran_cap_cmomi.sym} 520 -470 0 0 {name=x50}
+C {sg13g2_tests/tran_cap_cmomf.sym} 520 -430 0 0 {name=x51}

@@ -31,11 +31,11 @@ Explains how to use the SG13G2 LVS rule decks.
 You need the following set of tools installed to be able to run SG13G2 LVS:
 
 - Python 3.9+
-- KLayout 0.30.2+
+- KLayout: see the version pinned in [`versions.txt`](../../../../../versions.txt) at the repository root (single source of truth shared by the runtime checks, CI workflows, and the pip pin in `requirements.txt`).
 
 We have tested this using the following setup:
 - Python 3.12.4
-- KLayout 0.30.3
+- KLayout 0.30.5
 
 ## Installation
 
@@ -60,6 +60,7 @@ run_lvs.py [--layout=<layout_path>]
            [--topcell=<topcell_name>] [--run_mode=<run_mode>]
            [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
            [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+           [--disable_tap_extraction]
            [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
            [--implicit_nets=<nets>]
 ```
@@ -93,6 +94,8 @@ run_lvs.py [--layout=<layout_path>]
 - `--no_parallel_res`                 Prevents simplification of parallel resistors for both layout and schematic.
 
 - `--combine_devices`                 Enables device combination for both layout and schematic netlists.
+
+- `--disable_tap_extraction`          Skips `ntap1`/`ptap1` device extraction so taps are not required in the schematic, matching Magic+Netgen LVS behavior. Extraction is enabled by default.
 
 - `--top_lvl_pins`                    Creates pins for top-level circuits in both layout and schematic netlists.
 

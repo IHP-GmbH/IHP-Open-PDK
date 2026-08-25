@@ -38,11 +38,11 @@ Explains how to test SG13G2 DRC rule decks.
 You need the following set of tools installed to be able to run SG13G2 DRC regression:
 
 - Python 3.9+
-- KLayout 0.30.3+
+- KLayout: see the version pinned in [`versions.txt`](../../../../../../versions.txt) at the repository root (single source of truth shared by the runtime checks, CI workflows, and the pip pin in `requirements.txt`).
 
 We have tested this using the following setup:
 - Python 3.9.18
-- KLayout 0.30.3
+- KLayout 0.30.5
 
 ## Installation
 

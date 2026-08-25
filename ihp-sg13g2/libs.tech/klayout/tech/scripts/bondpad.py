@@ -1,3 +1,19 @@
+# =========================================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
 """Module to automatically generate a bondpad and create a new GDS file. Can be used in
 Klayout's batch mode. For example:
 
@@ -29,7 +45,7 @@ def generate_bondpad(diameter: float, shape: str, output: str):
     layout = klayout.db.Layout(True)
     layout.dbu = 0.001
 
-    lib = pya.Library.library_by_name(LIB)
+    lib = pya.Library.library_by_name(LIB, 'sg13g2')
     pcell_decl = lib.layout().pcell_declaration(PCELL)
 
     cell_name = pathlib.Path(output).resolve().name.split('.')[0]

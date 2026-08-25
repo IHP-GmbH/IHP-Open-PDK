@@ -89,7 +89,7 @@ proc sg13g2::scr1_defaults {} {
     xstep 16.8 ystep 31.2 class diode}
 }
 
-proc sg13g2::schottky_nbl1_defaults {} {
+proc sg13g2::schottky_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
     xstep 5.5 ystep 6.0 class diode}
 }
@@ -147,7 +147,7 @@ proc sg13g2::scr1_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
-proc sg13g2::schottky_nbl1_convert {parameters} {
+proc sg13g2::schottky_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
@@ -227,15 +227,15 @@ proc sg13g2::scr1_dialog {parameters} {
     sg13g2::fixed_dialog scr1 $parameters
 }
 
-proc sg13g2::schottky_nbl1_dialog {parameters} {
-    sg13g2::fixed_dialog schottky_nbl1 $parameters
+proc sg13g2::schottky_dialog {parameters} {
+    sg13g2::fixed_dialog schottky $parameters
 }
 
 #----------------------------------------------------------------
 # Fixed devices:  Generate the devices
 #----------------------------------------------------------------
 
-proc sg13g2::diodevdd_2kv_generate {} {
+proc sg13g2::diodevdd_2kv_generate {parameters} {
     if {[cellname list exists diodevdd_2kv]} {return}
     suspendall
 
@@ -261,7 +261,7 @@ proc sg13g2::diodevdd_2kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::diodevdd_4kv_generate {} {
+proc sg13g2::diodevdd_4kv_generate {parameters} {
     if {[cellname list exists diodevdd_4kv]} {return}
     suspendall
 
@@ -287,7 +287,7 @@ proc sg13g2::diodevdd_4kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::diodevss_2kv_generate {} {
+proc sg13g2::diodevss_2kv_generate {parameters} {
     if {[cellname list exists diodevss_2kv]} {return}
     suspendall
 
@@ -313,7 +313,7 @@ proc sg13g2::diodevss_2kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::diodevss_4kv_generate {} {
+proc sg13g2::diodevss_4kv_generate {parameters} {
     if {[cellname list exists diodevss_4kv]} {return}
     suspendall
 
@@ -339,7 +339,7 @@ proc sg13g2::diodevss_4kv_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::nmoscl_2_generate {} {
+proc sg13g2::nmoscl_2_generate {parameters} {
     if {[cellname list exists nmoscl_2]} {return}
     suspendall
 
@@ -365,7 +365,7 @@ proc sg13g2::nmoscl_2_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::nmoscl_4_generate {} {
+proc sg13g2::nmoscl_4_generate {parameters} {
     if {[cellname list exists nmoscl_4]} {return}
     suspendall
 
@@ -391,7 +391,7 @@ proc sg13g2::nmoscl_4_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::scr1_generate {} {
+proc sg13g2::scr1_generate {parameters} {
     if {[cellname list exists scr1]} {return}
     suspendall
 
@@ -417,8 +417,8 @@ proc sg13g2::scr1_generate {} {
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 
-proc sg13g2::schottky_nbl1_generate {} {
-    if {[cellname list exists schottky_nbl1]} {return}
+proc sg13g2::schottky_generate {parameters} {
+    if {[cellname list exists schottky_cell]} {return}
     suspendall
 
     # Save critical values before creating and editing a new cell 
@@ -427,10 +427,10 @@ proc sg13g2::schottky_nbl1_generate {} {
     # Stop the tag method from messing with this procedure
     set ltag [tag load]
     tag load {}
-    load schottky_nbl1 -silent
+    load schottky -silent
     tech unlock *
 
-    source ${sg13g2::script_path}/schottky_nbl1.tcl
+    source ${sg13g2::script_path}/schottky.tcl
 
     # Return to our regularly scheduled program
     load $curcell
@@ -479,43 +479,59 @@ proc sg13g2::fixed_draw {devname parameters} {
 #----------------------------------------------------------------
 
 proc sg13g2::diodevdd_2kv_draw {parameters} {
-    if {[cellname list exists diodevdd_2kv] == 0} {sg13g2::diodevdd_2kv_generate}
+    if {[cellname list exists diodevdd_2kv] == 0} {
+	sg13g2::diodevdd_2kv_generate $parameters
+    }
     return [sg13g2::fixed_draw diodevdd_2kv $parameters]
 }
 
 proc sg13g2::diodevdd_4kv_draw {parameters} {
-    if {[cellname list exists diodevdd_4kv] == 0} {sg13g2::diodevdd_4kv_generate}
+    if {[cellname list exists diodevdd_4kv] == 0} {
+	sg13g2::diodevdd_4kv_generate $parameters
+    }
     return [sg13g2::fixed_draw diodevdd_4kv $parameters]
 }
 
 proc sg13g2::diodevss_2kv_draw {parameters} {
-    if {[cellname list exists diodevss_2kv] == 0} {sg13g2::diodevss_2kv_generate}
+    if {[cellname list exists diodevss_2kv] == 0} {
+	sg13g2::diodevss_2kv_generate $parameters
+    }
     return [sg13g2::fixed_draw diodevss_2kv $parameters]
 }
 
 proc sg13g2::diodevss_4kv_draw {parameters} {
-    if {[cellname list exists diodevss_4kv] == 0} {sg13g2::diodevss_4kv_generate}
+    if {[cellname list exists diodevss_4kv] == 0} {
+	sg13g2::diodevss_4kv_generate $parameters
+    }
     return [sg13g2::fixed_draw diodevss_4kv $parameters]
 }
 
 proc sg13g2::nmoscl_2_draw {parameters} {
-    if {[cellname list exists nmoscl_2] == 0} {sg13g2::nmoscl_2_generate}
+    if {[cellname list exists nmoscl_2] == 0} {
+	sg13g2::nmoscl_2_generate $parameters
+    }
     return [sg13g2::fixed_draw nmoscl_2 $parameters]
 }
 
 proc sg13g2::nmoscl_4_draw {parameters} {
-    if {[cellname list exists nmoscl_4] == 0} {sg13g2::nmoscl_4_generate}
+    if {[cellname list exists nmoscl_4] == 0} {
+	sg13g2::nmoscl_4_generate $parameters
+    }
     return [sg13g2::fixed_draw nmoscl_4 $parameters]
 }
 
 proc sg13g2::scr1_draw {parameters} {
-    if {[cellname list exists scr1] == 0} {sg13g2::scr1_generate}
+    if {[cellname list exists scr1] == 0} {
+	sg13g2::scr1_generate $parameters
+    }
     return [sg13g2::fixed_draw scr1 $parameters]
 }
 
-proc sg13g2::schottky_nbl1_draw {parameters} {
-    if {[cellname list exists schottky_nbl1] == 0} {sg13g2::schottky_nbl1_generate}
-    return [sg13g2::fixed_draw schottky_nbl1 $parameters]
+proc sg13g2::schottky_draw {parameters} {
+    if {[cellname list exists schottky] == 0} {
+	sg13g2::schottky_generate $parameters
+    }
+    return [sg13g2::fixed_draw schottky $parameters]
 }
 
 #----------------------------------------------------------------
@@ -596,7 +612,7 @@ proc sg13g2::scr1_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::schottky_nbl1_check {parameters} {
+proc sg13g2::schottky_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 

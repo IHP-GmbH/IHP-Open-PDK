@@ -1,0 +1,13 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include testbench and corners
+include ./tb_res_basic.va
+include ../../../models/cornerRES.va
+// instantiate best-case corner and testbench
+res_bcs corner_res();
+tb_res_basic tb();
+// run simple dc
+print dc v(tb.r1) v(tb.r2) v(tb.r3) v(tb.r4)
+dc

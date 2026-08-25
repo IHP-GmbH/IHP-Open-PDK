@@ -17,6 +17,25 @@
 ******************************************************************************* 
 
 *******************************************************************************
+* Interdigitated MoM capacitor (cap_cmomi): OSDI compact-model wrapper subckt.
+* KNOWN CAVEAT: no characterised mismatch/corner spread yet (no cap_cmomi silicon
+* data). The nominal wrapper is included so cap_cmomi RESOLVES (returns nominal) in
+* the *_mismatch corner sections that pull only this file; there is NO local
+* mismatch (agauss) and no corner scaling. Modelling it needs matched-pair/array
+* silicon structures (future test chip). Deferred; treat MC/corner as nominal.
+*******************************************************************************
+.include cap_cmomi.lib
+
+*******************************************************************************
+* Metal fringe MoM capacitor (cap_cmomf): same caveat, and one step further
+* removed from silicon. Its density is a simulation fit rather than a
+* characterisation, so there is nothing to spread even in principle yet. The
+* nominal wrapper is included so cap_cmomf RESOLVES in the *_mismatch sections;
+* treat MC/corner as nominal. See the header of cap_cmomf.lib.
+*******************************************************************************
+.include cap_cmomf.lib
+
+*******************************************************************************
 * parasitics 
 *******************************************************************************
 
@@ -51,7 +70,7 @@
 .subckt cap_cmim PLUS MINUS 
 .param l=7u
 .param w=7u
-.param mm_ok=1
+.param mm_ok=0
 .param sf=1E-6
 .param ic=1E10
 R1 PLUS 1 r=55m
@@ -76,7 +95,7 @@ R1 PLUS 1 r=55m
 .subckt cap_rfcmim PLUS MINUS bn
 .param l=7u
 .param w=7u
-.param mm_ok=1
+.param mm_ok=0
 .param wfeed=2E-6
 
 .param ic=1E10

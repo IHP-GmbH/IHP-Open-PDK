@@ -1,0 +1,154 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#================================================
+# ------------ CAP_CMOM CUSTOM DEVICE ------------
+#================================================
+
+$logger = logger
+$unit = dbu
+
+# Extractor for the metal-oxide-metal capacitors on the g2 thin-metal stack
+# (Metal1..Metal5). Generic over the device: the name arrives by constructor and
+# every layer through the hash, so one instance serves cap_cmomi, recognized by
+# recog_mom (Recog.mom, GDS 99/39), and another serves cap_cmomf, recognized by
+# recog_momf (Recog.momf, GDS 99/40). The marker is the only thing that tells
+# the two devices apart, so they must never share one.
+#
+# Uses DeviceCustomMIM (defined in custom_mim_extractor.lvs, loaded via
+# custom_classes.lvs) for compatibility with the SPICE reader, which creates
+# DeviceCustomMIM for all non-varicap capacitor models. DeviceCustomMIM is a
+# DeviceClassCapacitor exposing terminals 'mim_top'/'mim_btm' and parameters
+# w and l (is_primary=false; matched topologically, consistent with cap_cmim).
+#
+# Terminal assignment: the two ports are ordered by geometry (lower x-center,
+# then y, then metal index) and the first becomes mim_top. That order is
+# deterministic but arbitrary, because this extractor never reads the pin names:
+# for cap_cmomi 'double' it follows the instance orientation, for 'same' the
+# metal index decides and puts the PCell's MINUS plate on mim_top, and for
+# cap_cmomf it follows the mirroring of the instance. DeviceCustomMIM therefore
+# declares the two terminals EQUIVALENT for both MoM capacitors, so the order
+# below does not have to mean anything. See the note in custom_mim_extractor.lvs.
+#
+# Parameter/axis mapping (PDF geometry):
+#   l MAPS TO X (finger length) -> read from marker bounding-box WIDTH
+#   w MAPS TO Y (row stacking)  -> read from marker bounding-box HEIGHT
+#
+# Capacitance value: the LVS extractor does NOT compute C. LVS matches devices on
+# topology; the value C_total = density[N]*active_area + Cfeed is supplied by the
+# SPICE / Verilog-A model, not by extraction.
+class CapMomExtractor < RBA::GenericDeviceExtractor
+  def initialize(name)
+    self.name = name
+    @name = name
+  end
+
+  def setup
+    define_layers
+    @reg_dev = DeviceCustomMIM.new(@name)
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    core   = layers[0]                                             # recog_mom marker
+    m_ports = [layers[1], layers[2], layers[3], layers[4], layers[5]]  # M1..M5 pin ports
+    dev_mk = layers[6]                                             # device marker (same as core)
+
+    conn = RBA::Connectivity.new
+    conn.connect(core, core)
+    conn.connect(core, dev_mk)
+    m_ports.each { |mp| conn.connect(mp, dev_mk) }
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    core = layer_geometry[0]
+    # layer_geometry index == define_layer order: m1p=1 .. m5p=5.
+    metal_ports = { 1 => layer_geometry[1], 2 => layer_geometry[2],
+                    3 => layer_geometry[3], 4 => layer_geometry[4],
+                    5 => layer_geometry[5] }
+    dev_mk = layer_geometry[6]
+
+    dev_mk.merged.each do |region|
+      # Collect each port polygon together with the layer index that carries its
+      # metal connectivity. 'double'/'none' put both pins on the top metal (same
+      # index); 'same' stacks them on adjacent metals (two indices).
+      ports = []
+      metal_ports.each do |lidx, reg|
+        reg.each { |p| ports << [p, lidx] }
+      end
+
+      # A well-formed device places exactly two MkPins under the marker.
+      # Skip anything else instead of silently picking the two extreme ports.
+      #
+      # Reported through error() rather than a log line: the device is dropped
+      # here, and if the cell holds nothing else the circuit is then left empty
+      # and drops out of the layout netlist altogether, at which point the
+      # comparison matches any schematic at all. An info line is not enough to
+      # notice that. The usual cause is two devices placed close enough for
+      # their markers to touch, which merges them into one cluster carrying four
+      # ports and takes out BOTH.
+      #
+      # The message names the device it is extracting rather than a fixed
+      # cap_cmomi, because two devices now share this extractor and a fixed name
+      # sends the reader to the wrong marker.
+      if ports.size != 2
+        msg = "#{@name}: expected exactly 2 port regions under its recognition " \
+              "marker, found #{ports.size}. The device is not extracted. Check " \
+              "for markers of adjacent devices touching or overlapping."
+        $logger.error(msg)
+        error(msg, region)
+        next
+      end
+
+      device = create_device
+
+      # Measure L and W from the marker bounding box:
+      #   l -> X extent (finger length), w -> Y extent (row stacking).
+      bbox = core.merged.bbox
+      device.set_parameter('l', bbox.width * $unit)
+      device.set_parameter('w', bbox.height * $unit)
+
+      # Deterministic pick of two ports (by x, then y, then metal index). Which
+      # of the two ends up on mim_top is arbitrary, which is why the terminals
+      # are declared equivalent; what matters is that each terminal is defined on
+      # the layer that carries its own metal net, so 'same'-feed stacked pins
+      # stay on separate nets.
+      sorted = ports.sort_by { |poly, lidx| [poly.bbox.center.x, poly.bbox.center.y, lidx] }
+      a_poly, a_lidx = sorted[0]
+      b_poly, b_lidx = sorted[-1]
+
+      # DeviceCustomMIM terminal IDs: mim_top = pin 1, mim_btm = pin 2.
+      define_terminal(device, @reg_dev.terminal_id('mim_top'), a_lidx, a_poly)
+      define_terminal(device, @reg_dev.terminal_id('mim_btm'), b_lidx, b_poly)
+    end
+  end
+
+  private
+
+  def define_layers
+    define_layer('core', "#{@name} recognition marker")
+    define_layer('m1p', 'Metal1 pin ports within the marker')
+    define_layer('m2p', 'Metal2 pin ports within the marker')
+    define_layer('m3p', 'Metal3 pin ports within the marker')
+    define_layer('m4p', 'Metal4 pin ports within the marker')
+    define_layer('m5p', 'Metal5 pin ports within the marker')
+    define_layer('dev_mk', 'Device marker')
+  end
+end

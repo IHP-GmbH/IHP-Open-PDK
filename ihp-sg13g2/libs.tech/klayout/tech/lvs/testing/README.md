@@ -19,11 +19,11 @@ At a minimum:
 
 You need the following set of tools installed to be able to run the regression:
 - Python 3.9+
-- KLayout 0.30.2+
+- KLayout: see the version pinned in [`versions.txt`](../../../../../../versions.txt) at the repository root (single source of truth shared by the runtime checks, CI workflows, and the pip pin in `requirements.txt`).
 
 We have tested this using the following setup:
 - Python 3.12.4
-- KLayout 0.30.3
+- KLayout 0.30.5
 
 ## Installation
 
@@ -55,13 +55,17 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 |  | `dpantenna` | `D1 A C dpantenna w=780n l=780n a=608.4f p=3.12u m=1` | `A`, `P`, `m` | [`D1`](#note-d1) | [CDL](./testcases/unit/diode_devices/netlist/dpantenna.cdl) / [GDS](./testcases/unit/diode_devices/layout/dpantenna.gds) |
 |  | `schottky_nbl1` | `D1 A C SUB schottky_nbl1 m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/diode_devices/netlist/schottky_nbl1.cdl) / [GDS](./testcases/unit/diode_devices/layout/schottky_nbl1.gds) |
 |  | `isolbox` | `D1 S I Bn isolbox l=6.0u w=6.0u` | `a`, `p` | [`I1`](#note-i1) | [CDL](./testcases/unit/diode_devices/netlist/isolbox.cdl) / [GDS](./testcases/unit/diode_devices/layout/isolbox.gds) |
-| **Resistor** | `rsil` | `R1 N1 N2 SUB rsil w=0.5u l=0.5u b=0 m=1`<br>`or`<br>`R1 N1 N2 3.1583k $SUB=sub! $[rsil] w=0.5e-6 l=0.96e-6 b=0` | `w`, `l`, `ps`, `b`, `m` | [`R1`](#note-r1), [`R2`](#note-r2) | [CDL](./testcases/unit/res_devices/netlist/rsil.cdl) / [GDS](./testcases/unit/res_devices/layout/rsil.gds) |
+| **Resistor** | `rsil` | `R1 N1 N2 SUB rsil w=0.5u l=0.5u m=1`<br>`or`<br>`R1 N1 N2 3.1583k $SUB=sub! $[rsil] w=0.5e-6 l=0.96e-6 ` | `w`, `l`, `ps`, `m` | [`R1`](#note-r1), [`R2`](#note-r2) | [CDL](./testcases/unit/res_devices/netlist/rsil.cdl) / [GDS](./testcases/unit/res_devices/layout/rsil.gds) |
 |  | `rppd` | `R1 N1 N2 SUB rppd w=0.5u l=0.5u b=0 m=1`<br>`or`<br>`R1 N1 N2 3.1583k $SUB=sub! $[rppd] w=0.5e-6 l=0.96e-6 b=0` | `w`, `l`, `ps`, `b`, `m` | [`R1`](#note-r1), [`R2`](#note-r2) | [CDL](./testcases/unit/res_devices/netlist/rppd.cdl) / [GDS](./testcases/unit/res_devices/layout/rppd.gds) |
 |  | `rhigh` | `R1 N1 N2 SUB rhigh w=0.5u l=0.96u b=0 m=1`<br>`or`<br>`R1 N1 N2 3.1583k $SUB=sub! $[rhigh] w=0.5e-6 l=0.96e-6 b=0` | `w`, `l`, `ps`, `b`, `m` | [`R1`](#note-r1), [`R2`](#note-r2) | [CDL](./testcases/unit/res_devices/netlist/rhigh.cdl) / [GDS](./testcases/unit/res_devices/layout/rhigh.gds) |
 |  | `res_metal*`, `res_topmetal*` | `R1 N1 N2 res_metal1 l=1u w=5u R=20k`<br>`or`<br>`R1 N1 N2 20k $[res_metal1] l=1u w=5u` | `W`, `L` | [`R3`](#note-r3) | [CDL](./testcases/unit/res_devices/netlist/res_metal1.cdl) / [GDS](./testcases/unit/res_devices/layout/res_metal1.gds) |
 | **Capacitor** | `cap_cmim` | `C1 PLUS MINUS cap_cmim w=6.99u l=6.99u m=1 C=74.620f`<br>`or`<br>`C1 PLUS MINUS 74.620f $[cap_cmim] w=6.99u l=6.99u m=1` | `w`, `l`, `m`, `A`, `P` | [`C1`](#note-c1) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmim.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmim.gds) |
 |  | `rfcmim` | `C1 N1 N2 SUB rfcmim w=7u l=7u wfeed=3u m=1 C=74.823f` | `w`, `l`, `m`, `A`, `P`, `wfeed` | [`C3`](#note-c3) | [CDL](./testcases/unit/cap_devices/netlist/rfcmim.cdl) / [GDS](./testcases/unit/cap_devices/layout/rfcmim.gds) |
 |  | `sg13_hv_svaricap` | `C1 G1 W G2 SUB sg13_hv_svaricap l=0.3u w=3.74u Nx=1` | `w`, `l`, `Nx` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_hv_svaricap.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_hv_svaricap.gds) |
+|  | `cap_cmomi` | `C1 PLUS MINUS cap_cmomi w=7u l=7u`<br>`or`<br>`C1 PLUS MINUS 48.8f cap_cmomi w=7u l=7u` | topological (`w`, `l` non-primary) | [`C4`](#note-c4) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmomi.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmomi.gds) |
+|  | `cap_cmomf` | `C1 PLUS MINUS cap_cmomf w=5u l=5u` | topological (`w`, `l` non-primary) | [`C5`](#note-c5) | [CDL](./testcases/unit/cap_devices/netlist/cap_cmomf.cdl) / [GDS](./testcases/unit/cap_devices/layout/cap_cmomf.gds) |
+|  | `sg13_moscap_n` | `C1 G SUB sg13_moscap_n w=1u l=1u` | `w`, `l` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_moscap_n.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_moscap_n.gds) |
+|  | `sg13_moscap_p` | `C1 G NW sg13_moscap_p w=1u l=1u` | `w`, `l` | - | [CDL](./testcases/unit/cap_devices/netlist/sg13_moscap_p.cdl) / [GDS](./testcases/unit/cap_devices/layout/sg13_moscap_p.gds) |
 | **ESD** | `diodevdd_2kv` | `D1 N1 N2 SUB diodevdd_2kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevdd_2kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevdd_2kv.gds) |
 |  | `diodevdd_4kv` | `D1 N1 N2 SUB diodevdd_4kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevdd_4kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevdd_4kv.gds) |
 |  | `diodevss_2kv` | `D1 N1 N2 SUB diodevss_2kv m=1` | `m` | [`FD1`](#note-fd1) | [CDL](./testcases/unit/esd_devices/netlist/diodevss_2kv.cdl) / [GDS](./testcases/unit/esd_devices/layout/diodevss_2kv.gds) |
@@ -90,6 +94,24 @@ This table summarizes the supported schematic-side device syntax used by the LVS
 - <a id="note-r3"></a>`R3`: Metal-resistor netlists accept either `w/l` or `width/length`. The resistance value is not used for LVS matching.
 - <a id="note-c1"></a>`C1`: `cap_cmim` compares `w/l`, `A/P`, and `m`. If `A/P` are missing they are derived from `W/L`.
 - <a id="note-c3"></a>`C3`: `rfcmim` compares `w/l`, `A/P`, `m`, and `wfeed`. If `A/P` are missing they are derived from `W/L`.
+- <a id="note-c4"></a>`C4`: `cap_cmomi` (interdigitated metal-oxide-metal, Metal1..Metal5) is matched topologically: `w`/`l` are non-primary (not compared, as for `cap_cmim`) and no `A`/`P` are set, so any 2-terminal `cap_cmomi` with the correct connectivity matches. Feed style `same` keeps the two stacked plates on distinct nets via per-metal pin connects. The capacitance value comes from the ngspice/Verilog-A model, not extraction.
+
+  The two terminals are **equivalent** for this device, unlike `cap_cmim`. `CapMomExtractor` picks the two ports by geometry and never reads their pin names, so the order it produces is arbitrary: for `double` it follows the instance orientation, and for `same` the metal index decides and puts the PCell's MINUS on pin 1. Enforcing that order only produced false mismatches, notably for a mirrored placement.
+
+  Two consequences of topological matching are worth knowing before trusting a green run. `mmin`/`mmax`/`feed` are read from the netlist and then dropped; they are not device parameters. A device on `mmin=4..mmax=5` has the same footprint, the same marker bounding box and its pins on the same top metal as one on `mmin=1..mmax=5`, so **a cap on the wrong metal band matches silently** while its capacitance differs substantially. And `w`/`l` as extracted are the `Recog.mom` bounding box *including the feed pads*, so they never equalled the schematic values anyway. Deriving the band from the geometry is not a fix: `metalN.and(marker)` cannot tell the device's own metal from routing that happens to cross over it, so it misreports as soon as anything is routed above the cap. Doing this properly needs the PCell to encode the band in the markup.
+
+  A marker that does not hold exactly two pin ports is reported as an **extraction error**, and the run then aborts before the comparison rather than producing a verdict (a partial extracted netlist is still written). The usual cause is two `cap_cmomi` placed close enough for their `Recog.mom` to touch, which merges them into one cluster with four ports and takes out both devices. This used to be a log line, and if the cell held nothing else the emptied circuit dropped out of the layout netlist and the comparison then matched any schematic at all.
+
+  `m` is not compared either, despite being declared `is_primary=true`: the SPICE reader takes it as the standard device multiplier rather than mapping it onto the class parameter of the same name, so a netlist declaring `m=2` against a single placement still matches. That matters because `m` is the only token beyond `w`/`l` that the xschem symbol's `lvs_format` emits.
+
+  `make test-LVS-cmomi-checks` holds all of the above as executable cases.
+- <a id="note-c5"></a>`C5`: `cap_cmomf` (metal fringe, cross-fingered, Metal1..Metal5) goes through the same `CapMomExtractor` into the same `DeviceCustomMIM` class as `cap_cmomi`, and is told apart from it by nothing but its recognition marker: `Recog.momf` (99/40) against `Recog.mom` (99/39). Everything note [`C4`](#note-c4) says about what the comparison does not check therefore holds here too: `w`/`l` and `m` are not compared, the two terminals are equivalent, a marker without exactly two pin ports is an extraction error, and a device on the wrong metal band matches silently. The band case costs more here: `cap_cmomf` runs from 0.372 fF/um2 on Metal1 alone to 1.592 on the full Metal1..Metal5 stack.
+
+  The marker split is what keeps the two devices apart, so it is tested rather than assumed: the checks suite holds a layout with one of each that must extract exactly one of each. Sharing 99/39 would make a single geometry recognised by both extractors and fail on the device count.
+
+  Two things behave differently from `cap_cmomi` and are worth knowing. A `cap_cmomf` whose two plates are tied together reports as a **missing** device, not as a short: KLayout drops a device whose terminals all land on the same net, so it never reaches the comparison. And **in deep mode a layout whose every cap sits in a sub-cell with no net crossing that cell's boundary extracts nothing**, the comparison then has no pair left and reports a match having verified nothing. That one is not specific to this device: `cap_cmomi` does the same on the same construction, and it was first recorded in [ihp-sg13cmos5l#91](https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91). The checks suite holds it as a case, together with the same hierarchy wired to the top, which does compare for real.
+
+  `make test-LVS-cmomf-checks` holds all of the above as executable cases.
 - <a id="note-t1"></a>`T1`: Tap devices may use either `A/P` (`Perim`) or `W/L`; LVS compares `A/P`.
 
 ## Devices Regression Usage
@@ -120,6 +142,49 @@ Another approach for testing SG13G2 devices, you could make a full test for SG13
 
 ```bash
   make test-LVS-main
+```
+
+### cap_cmomi checks
+
+The unit regression can only hold cases that pass, so the cases that have to
+fail, and the cases that record a limitation, live in a separate suite:
+
+```bash
+  make test-LVS-cmomi-checks
+```
+
+Each of its 11 cases declares the verdict it expects (2 FAIL, 2 ERROR and 7
+PASS), and the suite fails if any case stops behaving the way it is recorded to
+behave. ERROR means the extractor rejected the layout and the run aborted before
+any comparison. The seven passing cases are as load bearing as the rest: they
+record what `cap_cmomi` matching does *not* check, which would otherwise only be
+visible by reading the rule decks. See note [`C4`](#note-c4).
+
+### cap_cmomf checks
+
+The same idea for the fringe capacitor:
+
+```bash
+  make test-LVS-cmomf-checks
+```
+
+13 cases (2 FAIL, 2 ERROR and 9 PASS). Most of them mirror the cmomi suite,
+because both devices go through the same extractor and the same device class.
+Four have no counterpart there: a mirrored placement, which is what the terminal
+equivalence exists for; one cap of each kind side by side, holding the marker
+split; a shorted device, which reports as a missing one; and a deep-mode
+hierarchy that passes having compared nothing. See note [`C5`](#note-c5).
+
+The layouts for both suites, and the `cap_devices/` testcases they came with,
+are generated from the SG13_dev PCells rather than drawn by hand. The one
+exception is `cap_cmomi.gds` itself, which predates its generator and is not
+regenerated by it:
+
+```bash
+  KLAYOUT_HOME=$(mktemp -d) KLAYOUT_PATH=<repo>/libs.tech/klayout \
+    klayout -zz -r create_cap_cmomi_testcases.py
+  KLAYOUT_HOME=$(mktemp -d) KLAYOUT_PATH=<repo>/libs.tech/klayout \
+    klayout -zz -r create_cap_cmomf_testcases.py
 ```
 
 ## Cells Regression Usage

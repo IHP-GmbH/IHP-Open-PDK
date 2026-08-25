@@ -1,0 +1,19 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include corners and testbench
+include ../../../models/cornerMOSlv.va
+include ./tb_moslv_inv.va
+
+// instantiate ss corner and testbench
+moslv_ss corner_moslv();
+tb_moslv_inv #(.rfmode(1), .vin_dc(vin_sweep)) tb(in, out);
+
+// run dc sweep
+parameter real vin_sweep = 0.0;
+print dc v(out) i(tb.vdd_src) iter(0)
+dc vin_sweep 0 1.2 0.02 basic
+status notime
+
+

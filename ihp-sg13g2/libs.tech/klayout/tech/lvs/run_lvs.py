@@ -19,7 +19,9 @@
 
 import argparse
 import os
+from pathlib import Path
 import logging
+import klayout
 import klayout.db
 from datetime import datetime, timezone
 from subprocess import Popen, PIPE, STDOUT
@@ -272,33 +274,70 @@ def discover_run_artifacts(run_dir, main_log_path):
     }
 
 
+def _get_required_klayout_version():
+    """
+    Read the required KLayout version from the repo-level versions.txt
+    (single source of truth). Returns ((major, minor, patch), raw_string).
+    """
+    versions_txt = Path(__file__).resolve().parents[5] / "versions.txt"
+    try:
+        with open(versions_txt, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) == 2 and parts[0] == "klayout":
+                    return tuple(int(x) for x in parts[1].split(".")), parts[1]
+    except (OSError, ValueError) as e:
+        logging.error(f"Could not read klayout version from {versions_txt}: {e}")
+        exit(1)
+    logging.error(f"klayout entry not found in {versions_txt}")
+    exit(1)
+
+
 def check_klayout_version():
     """
-    Check klayout version and makes sure it would work with the LVS.
+    Check klayout version and makes sure it meets the required version
+    specified in the repo-level versions.txt.
     """
-    # ======= Checking Klayout version =======
+    required_tuple, required_str = _get_required_klayout_version()
+
     klayout_v_ = os.popen("klayout -b -v").read()
     klayout_v_ = klayout_v_.split("\n")[0]
-    klayout_v_list = []
 
     if klayout_v_ == "":
         logging.error("Klayout is not found. Please make sure klayout is installed.")
         exit(1)
-    else:
-        klayout_v_list = [int(v) for v in klayout_v_.split(" ")[-1].split(".")]
 
-    if len(klayout_v_list) < 1 or len(klayout_v_list) > 3:
+    try:
+        klayout_v_list = tuple(int(v) for v in klayout_v_.split(" ")[-1].split("."))
+    except ValueError:
+        logging.error(f"Was not able to parse klayout version from: '{klayout_v_}'")
+        exit(1)
+
+    if not 1 <= len(klayout_v_list) <= 3:
         logging.error("Was not able to get klayout version properly.")
         exit(1)
-    elif len(klayout_v_list) >= 2 or len(klayout_v_list) <= 3:
-        if klayout_v_list[1] < 30 or (klayout_v_list[1] == 30 and klayout_v_list[2] < 2):
-            logging.error("Prerequisites at a minimum: KLayout 0.30.2")
-            logging.error(
-                "Using this klayout version has not been assessed. Limits are unknown"
-            )
-            exit(1)
 
-    logging.info(f"Your Klayout version is: {klayout_v_}")
+    # Pad to 3 components for comparison
+    padded = klayout_v_list + (0,) * (3 - len(klayout_v_list))
+
+    if padded < required_tuple:
+        logging.error(f"Prerequisites at a minimum: KLayout {required_str} (from versions.txt)")
+        logging.error(
+            "Using this klayout version has not been assessed. Limits are unknown"
+        )
+        exit(1)
+
+    logging.info(f"Your Klayout version is: {klayout_v_} (required >= {required_str})")
+
+    # Warn if the imported klayout Python package version drifts from the binary.
+    binary_version_str = klayout_v_.split(" ")[-1]
+    pip_version = getattr(klayout, "__version__", None)
+    if pip_version and pip_version != binary_version_str:
+        logging.warning(
+            f"KLayout binary version ({binary_version_str}) differs from the imported "
+            f"klayout Python package version ({pip_version}). "
+            f"Re-align with: pip install klayout=={binary_version_str}"
+        )
 
 
 def check_layout_type(layout_path):
@@ -489,6 +528,7 @@ def generate_klayout_switches(
         "no_series_res": "true" if args.no_series_res else "false",
         "no_parallel_res": "true" if args.no_parallel_res else "false",
         "combine_devices": "true" if args.combine_devices else "false",
+        "disable_tap_extraction": "true" if args.disable_tap_extraction else "false",
         "purge": "true" if args.purge else "false",
         "purge_nets": "true" if args.purge_nets else "false",
         "topcell": get_run_top_cell_name(args, layout_path),
@@ -738,6 +778,7 @@ if __name__ == "__main__":
                [--topcell=<topcell_name>] [--run_mode=<run_mode>]
                [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+               [--disable_tap_extraction]
                [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
                [--implicit_nets=<nets>]
     """
@@ -788,6 +829,12 @@ if __name__ == "__main__":
     parser.add_argument("--no_series_res", action="store_true", help="Disable resistor series simplification.")
     parser.add_argument("--no_parallel_res", action="store_true", help="Disable resistor parallel simplification.")
     parser.add_argument("--combine_devices", action="store_true", help="Enable generic device combination.")
+    parser.add_argument(
+        "--disable_tap_extraction",
+        action="store_true",
+        help="Skip ntap1/ptap1 device extraction so taps are not required in the schematic "
+             "(aligns with Magic+Netgen LVS). Extraction is enabled by default.",
+    )
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")

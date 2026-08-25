@@ -29,6 +29,7 @@ from pathlib import Path
 from tqdm import tqdm
 import re
 import gdstk
+import klayout
 import klayout.db
 import errno
 import numpy as np
@@ -119,11 +120,32 @@ def get_unit_test_coverage(gds_file):
     return rules
 
 
+def _get_required_klayout_version():
+    """
+    Read the required KLayout version from the repo-level versions.txt
+    (single source of truth). Returns ([major, minor, patch], raw_string).
+    """
+    versions_txt = Path(__file__).resolve().parents[6] / "versions.txt"
+    try:
+        with open(versions_txt, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) == 2 and parts[0] == "klayout":
+                    return [int(x) for x in parts[1].split(".")], parts[1]
+    except (OSError, ValueError) as e:
+        logging.error(f"Could not read klayout version from {versions_txt}: {e}")
+        exit(1)
+    logging.error(f"klayout entry not found in {versions_txt}")
+    exit(1)
+
+
 def check_klayout_version():
     """
     check_klayout_version checks KLayout version and ensures
-    it meets the minimum required version for the DRC.
+    it meets the required version specified in the repo-level versions.txt.
     """
+    min_required, required_str = _get_required_klayout_version()
+
     klayout_v_output = os.popen("klayout -b -v").read().strip()
 
     if not klayout_v_output:
@@ -132,7 +154,7 @@ def check_klayout_version():
         )
         exit(1)
 
-    version_str = klayout_v_output.split()[-1]  # Expecting format: 'KLayout 0.29.11'
+    version_str = klayout_v_output.split()[-1]
     version_parts = version_str.split(".")
 
     try:
@@ -141,18 +163,24 @@ def check_klayout_version():
         logging.error(f"Could not parse KLayout version from string: '{version_str}'")
         exit(1)
 
-    # Pad to 3 parts if necessary
     while len(klayout_v_list) < 3:
         klayout_v_list.append(0)
 
-    # Minimum required version: 0.29.11
-    min_required = [0, 29, 11]
     if klayout_v_list < min_required:
-        logging.error("Minimum required KLayout version is 0.29.11")
+        logging.error(f"Minimum required KLayout version is {required_str} (from versions.txt)")
         logging.error(f"Your KLayout version is: {version_str}")
         exit(1)
 
-    logging.info(f"KLayout version: {version_str}")
+    logging.info(f"KLayout version: {version_str} (required >= {required_str})")
+
+    # Warn if the imported klayout Python package version drifts from the binary.
+    pip_version = getattr(klayout, "__version__", None)
+    if pip_version and pip_version != version_str:
+        logging.warning(
+            f"KLayout binary version ({version_str}) differs from the imported "
+            f"klayout Python package version ({pip_version}). "
+            f"Re-align with: pip install klayout=={version_str}"
+        )
 
 
 def get_switches(yaml_file, rule_name):

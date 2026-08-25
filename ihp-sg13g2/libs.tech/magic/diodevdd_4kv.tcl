@@ -563,26 +563,21 @@ paint metal2
 box values 2456 743 3101 1263
 paint metal2
 box values 1432 135 1432 135
-label VSS FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label VSS FreeSans 200 0 0 0 c -metal1
 box values -100 3703 -100 3703
-label PAD FreeSans 500 90 0 0 c comment
-select area label
-setlabel sticky true
+label PAD FreeSans 500 90 0 0 c -metal2
 box values 2737 3702 2737 3702
-label VDD FreeSans 500 90 0 0 c comment
-select area label
-setlabel sticky true
+label VDD FreeSans 500 90 0 0 c -metal2
 box values 132 310 132 310
-label sub! FreeSans 200 0 0 0 c comment
-select area label
-setlabel sticky true
+label sub! FreeSans 200 0 0 0 c -psd
 box values 2124 3650 2124 3650
-label diodevdd_4kv FreeSans 600 90 0 0 c comment
-select area label
-setlabel sticky true
+label diodevdd_4kv FreeSans 600 90 0 0 c -comment
 select clear
+property gencell diodevdd_4kv
+property library sg13g2
+if {[info var parameters] == "parameters"} {
+    property parameters $parameters
+}
 view
 units {*}$curunits
 tech revert

@@ -1,0 +1,19 @@
+// load moshv model plugin
+load ../../../plugins/models/sg13g2_moshv_paramset.so
+load ../../../plugins/models/sg13g2_moshv_rf_paramset.so
+// include moshv module wrapper
+include ../../../models/sg13g2_moshv_module.va
+
+module tb_nmos_dc(d, g);
+    parameter rfmode integer = 0 from [0:1];
+    parameter real vd = 0.0;
+    parameter real vg = 0.0;
+    parameter real w = 0.45u;
+    parameter integer ng = 1;
+    inout d, g;
+    electrical d, g;
+    ground gnd;
+    vsource #(.dc(vd)) sd(d, gnd);
+    vsource #(.dc(vg)) sg(g, gnd);
+    sg13_hv_nmos #(.w(w), .l(0.45u), .ng(ng), .mm_ok(0), .rfmode(rfmode) ) M1(d, g, gnd, gnd);
+endmodule

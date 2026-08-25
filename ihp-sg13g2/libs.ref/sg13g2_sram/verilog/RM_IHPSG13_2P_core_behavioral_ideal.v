@@ -17,6 +17,7 @@
 //		Generated on Thu Jun 12 11:08:49 2025		
 //
 // ------------------------------------------------------ 
+`timescale 1ns/10ps
 module SRAM_2P_behavioral(//inputs port
                           A_CLK,
                           A_DLY,

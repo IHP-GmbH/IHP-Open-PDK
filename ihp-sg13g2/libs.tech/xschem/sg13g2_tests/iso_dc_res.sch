@@ -117,7 +117,6 @@ l=10.5e-6
 model=rsil
 body=iso_B
 spiceprefix=X
-b=0
 m=1
 }
 C {sg13g2_pr/rppd.sym} 310 -510 0 0 {name=R2

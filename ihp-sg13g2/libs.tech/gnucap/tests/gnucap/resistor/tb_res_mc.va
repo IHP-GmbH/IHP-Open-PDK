@@ -1,0 +1,23 @@
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+// load model plugins
+load ../../../plugins/models/resistor_paramset.so
+load ../../../plugins/models/idc.so
+
+module tb_res_mc();
+    parameter integer mm_ok = 0 from [0:1];
+    ground gnd;
+    rsil  #(.l(0.5u),  .w(0.5u), .mm_ok(mm_ok)) r1(n1, gnd, gnd);
+    rsil  #(.l(0.5u),  .w(0.5u), .mm_ok(mm_ok)) r2(n2, gnd, gnd);
+    rhigh #(.l(0.96u), .w(0.5u), .mm_ok(mm_ok)) r3(n3, gnd, gnd);
+    rhigh #(.l(0.96u), .w(0.5u), .mm_ok(mm_ok)) r4(n4, gnd, gnd);
+    rppd  #(.l(0.5u),  .w(0.5u), .mm_ok(mm_ok)) r5(n5, gnd, gnd);
+    rppd  #(.l(0.5u),  .w(0.5u), .mm_ok(mm_ok)) r6(n6, gnd, gnd);
+
+    idc #(.dc(0.001)) Ir1(n1, gnd);
+    idc #(.dc(0.001)) Ir2(n2, gnd);
+    idc #(.dc(0.001)) Ir3(n3, gnd);
+    idc #(.dc(0.001)) Ir4(n4, gnd);
+    idc #(.dc(0.001)) Ir5(n5, gnd);
+    idc #(.dc(0.001)) Ir6(n6, gnd);
+endmodule

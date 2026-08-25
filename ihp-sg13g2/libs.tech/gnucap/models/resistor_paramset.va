@@ -1,0 +1,483 @@
+//#######################################################################
+//
+// Copyright 2023 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//#######################################################################
+
+// resistor paramsets
+// Ported from `ngspice/models/resistor_mod.lib` to Verilog-A
+// Modifications:
+// - corner parameters are resolved by cross-referencing corner modules
+// (c) Lukas Deutz 2026
+
+`pragma modelgen nogen-module
+`include "r3_cmc.va"
+`include "resistor.va"
+
+// TODO: test setting multiplicity via $mfactor during device instantiaion
+
+//*ptap1 (TIE SUB)
+// In order to have consistency between the netlisted device format
+// the w and l parameters are defined but not used.
+// The value of R is calculated by schematic capture tool.
+paramset ptap1 sp_resistor
+    parameter real R = 262.08;
+    parameter real w = 0.78u;
+    parameter real l = 0.78u;
+    .resistance = R;
+endparamset
+
+//*ntap1 (TIE WELL)
+// In order to have consistency between the netlisted device format
+// the w and l parameters are defined but not used.
+// The value of R is calculated by schematic capture tool.
+paramset ntap1 sp_resistor
+    parameter real R = 262.08;
+    parameter real w = 0.78u;
+    parameter real l = 0.78u;
+    .resistance = R;
+endparamset
+
+// Parasitic R/C models
+// aluminum: prozess tol. res_rpara
+// value is taken from extraction routine
+paramset Rparasitic sp_resistor
+    parameter real R = 0;
+    parameter real tc1 = 0.00353;
+    parameter real tc2 = 0.0;
+    .resistance = R * corner_res.res_rpara;
+    .tc = tc1;
+    .tc2 = tc2;
+endparamset
+
+// rsil without mismatch (mm_ok=0)
+paramset rsil r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.5e-6 from [0.5e-6:10e-6);
+    parameter integer mm_ok = 0 from [0:0];
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rsil;
+    localparam real leff = l;
+    localparam real rzspec = 4.5e-6;
+    localparam real lhead = 0.86e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rshspec = 7; // TODO: never used and not a r3_cmc param
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 0;
+    .rsh = corner_res.rsh_rsil;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = 0.01;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = 3100e-6;
+    .tc2 = 0.3e-6;
+    .tc1rc = 3100e-6;
+    .tc2rc = 0.3e-6;
+    .gth0  = 1e-12;
+    .gthc  = 1e-12;
+    .gthp  = 2e-6;
+    .gtha  = 6e-6;
+    .cth0  = 0;
+    .cthp  = 0;
+    .ctha  = 594e-15;
+    .cthc = 0;
+    .kfn = 2.812e-12;
+    .afn = 1.607;
+    .bfn = 1.267;
+    .nsig_rsh = corner_res.nsig_rsh_rsil;
+    .nsig_w   = corner_res.nsig_w_rsil;
+    .nsig_l   = corner_res.nsig_l_rsil;
+    .sig_rsh  = res_stat_param.drsh_rsil;
+    .sig_w    = res_stat_param.dw_rsil;
+    .sig_l    = res_stat_param.dl_rsil;
+endparamset
+
+// rsil with mismatch (mm_ok=1)
+paramset rsil r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.5e-6 from [0.5e-6:10e-6);
+    parameter integer mm_ok = 1 from [1:1];
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rsil;
+    localparam real leff = l;
+    localparam real rzspec = 4.5e-6;
+    localparam real lhead = 0.86e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rshspec = 7; // TODO: never used and not a r3_cmc param
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 1;
+    .rsh = corner_res.rsh_rsil;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = 0.01;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = 3100e-6;
+    .tc2 = 0.3e-6;
+    .tc1rc = 3100e-6;
+    .tc2rc = 0.3e-6;
+    .gth0  = 1e-12;
+    .gthc  = 1e-12;
+    .gthp  = 2e-6;
+    .gtha  = 6e-6;
+    .cth0  = 0;
+    .cthp  = 0;
+    .ctha  = 594e-15;
+    .cthc = 0;
+    .kfn = 2.812e-12;
+    .afn = 1.607;
+    .bfn = 1.267;
+    .nsig_rsh = corner_res.nsig_rsh_rsil;
+    .nsig_w = corner_res.nsig_w_rsil;
+    .nsig_l = corner_res.nsig_l_rsil;
+    .sig_rsh = res_stat_param.drsh_rsil;
+    .sig_w = res_stat_param.dw_rsil;
+    .sig_l = res_stat_param.dl_rsil;
+    .nsmm_rsh = res_mm.nsmm_rsh_rsil;
+    .nsmm_w = res_mm.nsmm_w_rsil;
+    .nsmm_l = res_mm.nsmm_l_rsil;
+    .smm_rsh = res_mm.drsh_mm_rsil;
+    .smm_w = res_mm.dw_mm_rsil;
+    .smm_l = res_mm.dl_mm_rsil;
+endparamset
+
+// rhigh without mismatch (mm_ok=0)
+paramset rhigh r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.96e-6 from [0.96e-6:10e-6);
+    parameter integer mm_ok = 0 from [0:0];
+    parameter integer b = 0 from [0:inf);
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rhigh;
+    localparam real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+    localparam real lhead = 0.86e-6;
+    localparam real rzspec = 80e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rshspec = 1360; // TODO: never used and not a r3_cmc param
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 0;
+    .rsh = corner_res.rsh_rhigh;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = -0.04;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = -2300e-6;
+    .tc2 = 2.1e-6;
+    .tc1rc = -2300e-6;
+    .tc2rc = 2.1e-6;
+    .gth0 = 1e-12;
+    .gtha = 6e-6;
+    .gthp = 2e-6;
+    .gthc = 1e-12;
+    .cth0 = 0;
+    .cthp = 0;
+    .ctha = 594e-15;
+    .cthc = 0;
+    .kfn = 5.205e-10;
+    .afn = 1.935;
+    .bfn = 0.9086;
+    .nsig_rsh = corner_res.nsig_rsh_rhigh;
+    .nsig_w   = corner_res.nsig_w_rhigh;
+    .nsig_l   = corner_res.nsig_l_rhigh;
+    .sig_rsh  = res_stat_param.drsh_rhigh;
+    .sig_w    = res_stat_param.dw_rhigh;
+    .sig_l    = res_stat_param.dl_rhigh;
+endparamset
+
+// rhigh with mismatch (mm_ok=1)
+paramset rhigh r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.96e-6 from [0.96e-6:10e-6);
+    parameter integer mm_ok = 1 from [1:1];
+    parameter integer b = 0 from [0:inf);
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rhigh;
+    localparam real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+    localparam real lhead = 0.86e-6;
+    localparam real rzspec = 80e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rshspec = 1360; // TODO: never used and not a r3_cmc param
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 1;
+    .rsh = corner_res.rsh_rhigh;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = -0.04;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = -2300e-6;
+    .tc2 = 2.1e-6;
+    .tc1rc = -2300e-6;
+    .tc2rc = 2.1e-6;
+    .gth0 = 1e-12;
+    .gtha = 6e-6;
+    .gthp = 2e-6;
+    .gthc = 1e-12;
+    .cth0 = 0;
+    .cthp = 0;
+    .ctha = 594e-15;
+    .cthc = 0;
+    .kfn = 5.205e-10;
+    .afn = 1.935;
+    .bfn = 0.9086;
+    .nsig_rsh = corner_res.nsig_rsh_rhigh;
+    .nsig_w   = corner_res.nsig_w_rhigh;
+    .nsig_l   = corner_res.nsig_l_rhigh;
+    .sig_rsh  = res_stat_param.drsh_rhigh;
+    .sig_w    = res_stat_param.dw_rhigh;
+    .sig_l    = res_stat_param.dl_rhigh;
+    .nsmm_rsh = res_mm.nsmm_rsh_rhigh;
+    .nsmm_w   = res_mm.nsmm_w_rhigh;
+    .nsmm_l   = res_mm.nsmm_l_rhigh;
+    .smm_rsh  = res_mm.drsh_mm_rhigh;
+    .smm_w    = res_mm.dw_mm_rhigh;
+    .smm_l    = res_mm.dl_mm_rhigh;
+endparamset
+
+// rppd without mismatch (mm_ok=0)
+paramset rppd r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.5e-6 from [0.5e-6:10e-6);
+    parameter integer mm_ok = 0 from [0:0];
+    parameter integer b = 0 from [0:inf);
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rppd;
+    localparam real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+    localparam real lhead = 0.86e-6;
+    localparam real rzspec = 35e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 0;
+    .rsh = corner_res.rsh_rppd;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = 0.006;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = 170e-6;
+    .tc2 = 0.4e-6;
+    .tc1rc = -950e-6;
+    .gth0 = 1e-12;
+    .gthc = 1e-12;
+    .gthp = 2e-6;
+    .gtha = 6e-6;
+    .cth0 = 0;
+    .cthp = 0;
+    .ctha = 594e-15;
+    .cthc = 0;
+    .kfn = 4.601e-11;
+    .afn = 1.886;
+    .bfn = 0.9963;
+    .nsig_rsh = corner_res.nsig_rsh_rppd;
+    .nsig_w   = corner_res.nsig_w_rppd;
+    .nsig_l   = corner_res.nsig_l_rppd;
+    .sig_rsh  = res_stat_param.drsh_rppd;
+    .sig_w    = res_stat_param.dw_rppd;
+    .sig_l    = res_stat_param.dl_rppd;
+endparamset
+
+// rppd with mismatch (mm_ok=1)
+paramset rppd r3_cmc
+    parameter real w = 0.5e-6 from [0.5e-6:10e-6);
+    parameter real l = 0.5e-6 from [0.5e-6:10e-6);
+    parameter integer mm_ok = 1 from [1:1];
+    parameter integer b = 0 from [0:inf);
+    parameter real trise = 0;
+    parameter integer sw_et = 0 from [0:1];
+    parameter integer postsim = 0 from [0:1];
+    localparam real kappa = 1.85;
+    localparam real ps = 0.18e-6;
+    localparam real weff = w + corner_res.dw_par_rppd;
+    localparam real leff = (b + 1) * l + (2 / kappa * weff + ps) * b;
+    localparam real lhead = 0.86e-6;
+    localparam real rzspec = 35e-6;
+    localparam real cax = 90e-18;
+    localparam real cpx = 25e-18;
+    localparam real ax = 175e-18 * (1 - 1 / (1.5 * leff * 1e6 + 1)) / cax;
+    localparam real px = 115e-18 / cpx;
+    localparam real a0 = 0.5 * (leff + lhead) * w - (postsim > 0) * w * ax * 1e-6;
+    localparam real a = (a0 > 0) * a0;
+    localparam real p0 = leff + lhead + w - (postsim > 0) * px * 1e-6;
+    localparam real p = (p0 > 0) * p0;
+    localparam real rqrc = 4.5e-6;
+    localparam real rz = rzspec / w - (postsim > 0) * rqrc / w;
+    .l = leff;
+    .w = weff;
+    .a1 = a;
+    .a2 = a;
+    .p1 = p;
+    .p2 = p;
+    .c1 = 1;
+    .c2 = 1;
+    .trise = trise;
+    .sw_et = sw_et;
+    .sw_mman = 1;
+    .rsh = corner_res.rsh_rppd;
+    .ecrit = 1000;
+    .dfinf = 1e-4;
+    .dp = 1000;
+    .xw = 0.006;
+    .rc = rz;
+    .ca = cax;
+    .cp = cpx;
+    .tc1 = 170e-6;
+    .tc2 = 0.4e-6;
+    .tc1rc = -950e-6;
+    .gth0 = 1e-12;
+    .gthc = 1e-12;
+    .gthp = 2e-6;
+    .gtha = 6e-6;
+    .cth0 = 0;
+    .cthp = 0;
+    .ctha = 594e-15;
+    .cthc = 0;
+    .kfn = 4.601e-11;
+    .afn = 1.886;
+    .bfn = 0.9963;
+    .nsig_rsh = corner_res.nsig_rsh_rppd;
+    .nsig_w   = corner_res.nsig_w_rppd;
+    .nsig_l   = corner_res.nsig_l_rppd;
+    .sig_rsh  = res_stat_param.drsh_rppd;
+    .sig_w    = res_stat_param.dw_rppd;
+    .sig_l    = res_stat_param.dl_rppd;
+    .nsmm_rsh = res_mm.nsmm_rsh_rppd;
+    .nsmm_w   = res_mm.nsmm_w_rppd;
+    .nsmm_l   = res_mm.nsmm_l_rppd;
+    .smm_rsh  = res_mm.drsh_mm_rppd;
+    .smm_w    = res_mm.dw_mm_rppd;
+    .smm_l    = res_mm.dl_mm_rppd;
+endparamset

@@ -220,7 +220,7 @@ write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get curr
 
 # run netlist and simulation
 xschem netlist
-python3 $\{PDK_ROOT\}/$\{PDK\}/libs.tech/xschem/sg13g2_tests/ngspice_parallel_mc.py [file tail [xschem get current_name]]
+exec >&@stdout python3 $\{PDK_ROOT\}/$\{PDK\}/libs.tech/xschem/sg13g2_tests/ngspice_parallel_mc.py [file tail [xschem get current_name]]
 "}
 C {sg13g2_pr/cap_cmim.sym} 370 -350 1 0 {name=C1
 model=cap_cmim

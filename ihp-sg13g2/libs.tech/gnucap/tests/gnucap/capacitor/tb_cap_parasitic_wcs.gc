@@ -1,0 +1,35 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include corners and testbench
+include ../../../models/cornerCAP.va
+include ./tb_cap_parasitic.va
+
+options method=gear
+
+// instantiate worst-case corner and testbench module
+cap_wcs corner_cap();
+tb_cap_parasitic tb(vsrc, n1, n2, n3);
+
+// run transient analysis
+print tran v(vsrc) v(n1) v(n2) v(n3)
+store tran v(vsrc) v(n1) v(n2) v(n3)
+transient 0 2u 0.1n basic
+// Measure vpulse input edge at 50% of the 1V step
+measure t0 = cross(probe="v(vsrc)" cross=0.5 rise first)
+// Measure capacitor 63.2% voltage crossings for RC time constant
+measure t1 = cross(probe="v(n1)" cross=0.632 rise first)
+measure t2 = cross(probe="v(n2)" cross=0.632 rise first)
+measure t3 = cross(probe="v(n3)" cross=0.632 rise first)
+// Extract RC time constants relative to pulse edge
+parameter tau1 = {t1 - t0}
+parameter tau2 = {t2 - t0}
+parameter tau3 = {t3 - t0}
+// Extract capacitance from C = tau / R
+parameter C1 = {tau1 / 10k}
+parameter C2 = {tau2 / 10k}
+parameter C3 = {tau3 / 10k}
+eval C1
+eval C2
+eval C3

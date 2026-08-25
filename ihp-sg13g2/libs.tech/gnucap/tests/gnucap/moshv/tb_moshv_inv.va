@@ -1,0 +1,23 @@
+// load model plugins
+load ../../../plugins/models/sg13g2_moshv_paramset.so
+load ../../../plugins/models/sg13g2_moshv_rf_paramset.so
+// include model modules
+include ../../../models/sg13g2_moshv_module.va
+
+// TODO: need to set iterations convergence issues
+options itl6=250
+
+module tb_moshv_inv(in, out);
+    parameter integer rfmode = 0 from [0:1];
+    parameter real vin_dc;
+    parameter real vdd_dc = 1.2;
+    input in;
+    output out;
+    electrical in, out, vdd;
+    ground gnd;
+    vsource #(.dc(vdd_dc)) vdd_src(vdd, gnd);
+    vsource #(.dc(vin_dc)) vin_src(in, gnd);
+    sg13_hv_pmos #(.w(2.0u), .l(0.4u), .mm_ok(0), .rfmode(rfmode)) P1(out, in, vdd, vdd);
+    sg13_hv_nmos #(.w(1.0u), .l(0.45u), .mm_ok(0), .rfmode(rfmode)) N1(out, in, gnd, gnd);
+endmodule
+

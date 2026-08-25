@@ -1,0 +1,29 @@
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+// load model plugins
+load ../../../plugins/models/idc.so
+load ../../../plugins/models/sg13g2_moslv_paramset.so
+load ../../../plugins/models/sg13g2_moslv_rf_paramset.so
+// include modules that wrap moslv paramsets
+include ../../../models/sg13g2_moslv_module.va
+
+module tb_moslv_mc(vgs1, vgs2, vgs3, vgs4);
+    // external ports
+    inout vgs1, vgs2, vgs3, vgs4;
+    electrical vgs1, vgs2, vgs3, vgs4;
+    // testbench parameters
+    parameter integer rfmode = 0 from [0:1]; // rf model switch
+    parameter integer mm_ok = 0 from [0:1];
+
+    ground gnd;
+    // nmos
+    idc #(.dc(10u)) I1(gnd, vgs1);
+    idc #(.dc(10u)) I1(gnd, vgs2);
+    sg13_lv_nmos #(.w(1.0u), .l(0.45u), .mm_ok(mm_ok), .rfmode(rfmode)) M1(vgs1, vgs1, gnd, gnd);
+    sg13_lv_nmos #(.w(1.0u), .l(0.45u), .mm_ok(mm_ok), .rfmode(rfmode)) M2(vgs2, vgs2, gnd, gnd);
+    // pmos
+    idc #(.dc(-10u)) I2(gnd, vgs3);
+    idc #(.dc(-10u)) I2(gnd, vgs4);
+    sg13_lv_pmos #(.w(1.0u), .l(0.45u), .mm_ok(mm_ok), .rfmode(rfmode)) M3(vgs3, vgs3, gnd, gnd);
+    sg13_lv_pmos #(.w(1.0u), .l(0.45u), .mm_ok(mm_ok), .rfmode(rfmode)) M4(vgs4, vgs4, gnd, gnd);
+endmodule

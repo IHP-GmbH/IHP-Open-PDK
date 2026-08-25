@@ -1,0 +1,180 @@
+//******************************************************************************
+//                                                                             *
+// Copyright 2023 IHP PDK Authors                                              *
+//                                                                             *
+// Licensed under the Apache License, Version 2.0 (the "License");             *
+// you may not use this file except in compliance with the License.            *
+// You may obtain a copy of the License at                                     *
+//                                                                             *
+//     https://www.apache.org/licenses/LICENSE-2.0                             *
+//                                                                             *
+// Unless required by applicable law or agreed to in writing, software         *
+// distributed under the License is distributed on an "AS IS" BASIS,           *
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+// See the License for the specific language governing permissions and         *
+// limitations under the License.                                              *
+//                                                                             *
+//******************************************************************************
+
+// Verilog-A capacitors paramsets
+// Ported from `ngspice/models/capacitors_*.lib` files
+// Modifications:
+// - remove sf scale factor from cmim_core
+// - converted cjsw to SI units
+// - corner parameters are resolved by cross-referencing corner modules
+// - folded in the cmomi paramset, wrapping the behavioural cap_cmomi module
+//   (shared verilog-a source), so every g2 capacitor device is a paramset in
+//   this single build unit, mirroring resistor_paramset.va
+// (c) Lukas Deutz 2026
+
+`pragma modelgen nogen-module
+`include "capacitor.va"
+`include "cap_cmomi.va"
+`include "cap_cmomf.va"
+
+//******************************************************************************
+// parasitics
+//******************************************************************************
+
+// SiO2: only area cap., prozess tol. cap_cpara
+// C value is taken from extraction routine
+
+paramset cparasitic sp_capacitor
+    parameter real c = 0.0;
+    parameter real w = 0.0;
+    parameter real l = 0.0;
+    parameter real tc1 = 0.0;
+    parameter real tc2 = 0.0;
+    .capacitance = c * corner_cap.cap_cpara;
+    .w = w;
+    .l = l;
+    .tc1 = tc1;
+    .tc2 = tc2;
+endparamset
+
+//******************************************************************************
+// cmim_core paramset
+//******************************************************************************
+
+// cmim_core paramset
+// without mismatch (mm_ok = 0)
+paramset cmim_core sp_capacitor
+    parameter real l = 7.0u;
+    parameter real w = 7.0u;
+    parameter integer mm_ok = 0 from [0:0];
+    .l = l;
+    .w = w;
+    .scale = 1;
+    .tnom = 27.0;
+    .tc1 = 3.6E-6;
+    .tc2 = 2E-9;
+    .cj = corner_cap.cap_carea;
+    .cjsw = 40E-12; // F/m
+endparamset
+
+// with mismatch (mm_ok = 1)
+paramset cmim_core sp_capacitor
+    parameter real l = 7.0u;
+    parameter real w = 7.0u;
+    parameter integer mm_ok = 1 from [1:1];
+    localparam real area_um = sqrt(l * w * 1e12);
+    .l = l;
+    .w = w;
+    .scale = (1 + (cap_mm.cap_carea_mm - 1) / area_um);
+    .tnom = 27.0;
+    .tc1 = 3.6E-6;
+    .tc2 = 2E-9;
+    .cj = corner_cap.cap_carea;
+    .cjsw = 40E-12; // F/m
+endparamset
+
+//******************************************************************************
+// cmomi paramset (interdigitated MoM capacitor)
+//******************************************************************************
+
+// cap_cmomi is a self-contained behavioural RF model (its own series/shunt
+// equivalent circuit), not a parallel-plate primitive, so unlike cmim_core it is
+// NOT decomposed onto sp_capacitor. This paramset wraps the behavioural module
+// cap_cmomi (shared source ../../verilog-a/cap_cmomi/cap_cmomi.va, byte-for-byte the
+// code the ngspice OSDI build uses) and only pins the g2 named-device defaults,
+// exactly as `paramset rsil r3_cmc` wraps the resistor CMC primitive.
+//
+// cap_cmomi has no characterised corner/mismatch spread yet (returns nominal in
+// every corner; pending silicon), so there are no corner cross-references here.
+// The mm_ok selector is declared (mm_ok = 0, the no-mismatch case) but not mapped
+// -- cap_cmomi has no mm_ok port -- so it is an accepted-but-unused selector, just
+// like cmim_core above.  It reserves the mm_ok = 1 overload slot: when the spread
+// is characterised, add an mm_ok = 1 from [1:1] variant the same way the resistor
+// paramsets do.
+//
+// Terminals PLUS, MINUS, SUB are inherited from the module; tie SUB to ground for
+// the classic 2-terminal use (the ngspice wrapper subckt and the gnucap
+// testbench both do this).
+paramset cmomi cap_cmomi
+    parameter real    w        = 5e-6 from (0.0:inf);
+    parameter real    l        = 5e-6 from (0.0:inf);
+    parameter integer mmin     = 1    from [1:8];
+    parameter integer mmax     = 5    from [1:8];
+    parameter integer feed     = 2    from [0:2];
+    parameter integer subblock = 0    from [0:1];
+    parameter integer mm_ok    = 0    from [0:0];
+    .w        = w;
+    .l        = l;
+    .mmin     = mmin;
+    .mmax     = mmax;
+    .feed     = feed;
+    .subblock = subblock;
+endparamset
+
+//******************************************************************************
+// cmomf paramset (metal fringe MoM capacitor)
+//******************************************************************************
+
+// The fringe sibling of cmomi, over the behavioural module cap_cmomf (shared
+// source ../../verilog-a/cap_cmomf/cap_cmomf.va, byte-for-byte the code the
+// ngspice OSDI build uses). Like cmomi it is not decomposed onto sp_capacitor:
+// it carries its own expression rather than being a parallel-plate primitive.
+//
+// Two differences from cmomi, both structural rather than stylistic. There is
+// no feed parameter: the interdigitated device's feed topology has no analogue
+// in a finger comb. And the module is 2-terminal, PLUS and MINUS with no SUB,
+// because no substrate-coupling fit exists for this geometry; see the header of
+// cap_cmomf.va for why the model stops at the low-frequency capacitance.
+//
+// The bounds are [1:5] rather than cmomi's [1:8]: this device is drawn on the
+// thin metals only, and its own module declaration rejects anything above
+// Metal5.
+//
+// mm_ok is declared from [0:0] and left unmapped for the same reason as cmomi:
+// the device has no characterised mismatch spread yet, so the selector reserves
+// the mm_ok = 1 overload slot without promising anything.
+paramset cmomf cap_cmomf
+    parameter real    w        = 5e-6 from (0.0:inf);
+    parameter real    l        = 5e-6 from (0.0:inf);
+    parameter integer mmin     = 1    from [1:5];
+    parameter integer mmax     = 5    from [1:5];
+    parameter integer subblock = 0    from [0:1];
+    parameter integer mm_ok    = 0    from [0:0];
+    .w        = w;
+    .l        = l;
+    .mmin     = mmin;
+    .mmax     = mmax;
+    .subblock = subblock;
+endparamset
+
+//******************************************************************************
+// placeholders: remaining g2 capacitor devices (reserved slots)
+//******************************************************************************
+// Only cmomi and cmomf are adapted for now. cmim / rfcmim and the rest are intentionally
+// left untouched: cap_cmim/cap_rfcmim stay as source-included wrapper modules in
+// capacitor_module.va, and cmim_core above is their internal core, not a
+// user-facing device. When each cap is ported to this same single-build-unit
+// approach it lands here, following one of two templates:
+//   - a direct paramset over its primitive, like cparasitic / cmim_core / cmomi
+//     (add an mm_ok=0/1 overload once a mismatch model exists, as the resistors do)
+//   - or, if it needs a structural wrapper (core + series R + parasitics, as
+//     cmim does), a compiled _module target, cf. the MOS _module.va/_paramset.va split
+//
+// Reserved slots -- uncomment and fill when the device is adapted:
+//   // paramset cmim            sp_capacitor  ... endparamset
+//   // paramset cmomi_<variant>  cap_cmomi      ... endparamset

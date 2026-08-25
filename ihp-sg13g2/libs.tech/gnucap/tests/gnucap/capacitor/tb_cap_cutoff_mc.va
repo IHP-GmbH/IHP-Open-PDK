@@ -1,0 +1,25 @@
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+// load models plugins
+load vams/vsine.so
+load ../../../plugins/models/capacitor_paramset.so
+// include capacitor modules
+include ../../../models/capacitor_module.va
+
+module tb_cap_ac_mc(out1, out2);
+    // external ports for probing
+    inout out1, out2
+    electrical out1, out2;
+    // internal nodes
+    electrical in1, in2;
+    parameter integer mm_ok = 0 from [0:1];
+    ground gnd;
+    // cmim
+    vsine #(.mag(1), .dc(0.0)) V1(in1, gnd);
+    cap_cmim #(.w(10u), .l(70u), .mm_ok(mm_ok)) C1(out1, in1);
+    resistor #(.r(100k)) R1(out1, gnd);
+    // rfcmim
+    vsine #(.mag(1), .dc(0.0)) V2(in2, gnd);
+    cap_cmim #(.w(10u), .l(70u), .mm_ok(mm_ok)) C2(out2, in2);
+    resistor #(.r(100k)) R2(out2, gnd);
+endmodule
