@@ -23,6 +23,9 @@ import sys
 python_directory = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "python"))
 sys.path.insert(0, python_directory)
 
+api_directory = os.path.join(python_directory, "pycell4klayout-api", "source", "python")
+sys.path.insert(0, api_directory)
+
 from sg13g2_pycell_lib.ihp.utility_functions import sprintf
 
 
