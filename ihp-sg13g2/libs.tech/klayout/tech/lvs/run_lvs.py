@@ -842,7 +842,7 @@ if __name__ == "__main__":
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
     parser.add_argument("--purge_devices", action="store_true", help="Purge unused devices.")
-    
+
     parser.add_argument(
         "--implicit_nets",
         type=str,
