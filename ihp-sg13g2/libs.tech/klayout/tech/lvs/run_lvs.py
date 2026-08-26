@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # ==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
@@ -531,6 +533,7 @@ def generate_klayout_switches(
         "disable_tap_extraction": "true" if args.disable_tap_extraction else "false",
         "purge": "true" if args.purge else "false",
         "purge_nets": "true" if args.purge_nets else "false",
+        "purge_devices": "true" if args.purge_devices else "false",
         "topcell": get_run_top_cell_name(args, layout_path),
         "input": os.path.abspath(layout_path),
         "schematic": os.path.abspath(netlist_path) if netlist_path else None,
@@ -779,7 +782,7 @@ if __name__ == "__main__":
                [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
                [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
                [--disable_tap_extraction]
-               [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
+               [--purge] [--purge_nets] [--purge_devices] [--ignore_top_ports_mismatch]
                [--implicit_nets=<nets>]
     """
 
@@ -838,6 +841,8 @@ if __name__ == "__main__":
     parser.add_argument("--top_lvl_pins", action="store_true", help="Create top-level pins in netlists.")
     parser.add_argument("--purge", action="store_true", help="Purge unused nets/devices.")
     parser.add_argument("--purge_nets", action="store_true", help="Purge floating nets.")
+    parser.add_argument("--purge_devices", action="store_true", help="Purge unused devices.")
+    
     parser.add_argument(
         "--implicit_nets",
         type=str,
