@@ -5,9 +5,11 @@
 # License: New BSD
 
 # Compile the ihp-sg13cmos5l Verilog-A compact models to OSDI for ngspice.
-# NOTE: cmos5l ships the cap_cmomi and cap_cmomf Verilog-A sources here; the
-# other OSDI objects in ../ngspice/osdi (psp103, psp103_nqs, r3_cmc, mosvar) are
-# supplied pre-built (their Verilog-A sources live in the sibling ihp-sg13g2).
+# NOTE: cmos5l owns the cap_cmomi and cap_cmomf Verilog-A sources; psp103,
+# psp103_nqs, r3_cmc and mosvar are built from ihp-sg13g2's sources, which the
+# psp103/, r3_cmc/ and mosvar/ symlinks in this directory point at. Every object
+# ../ngspice/osdi needs is produced here, so a checkout has no pre-built files
+# to depend on. All four are loaded by ../ngspice/.spiceinit.
 # Run this from libs.tech/verilog-a/ .
 
 # Parse command line arguments
@@ -44,6 +46,10 @@ echo "======================================================================"
 echo "             Compiling VerilogA models using: '$COMPILER'             "
 echo "======================================================================"
 
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/psp103.osdi psp103/psp103.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/psp103_nqs.osdi psp103/psp103_nqs.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/r3_cmc.osdi r3_cmc/r3_cmc.va
+$COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/mosvar.osdi mosvar/mosvar.va
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomi.osdi cap_cmomi/cap_cmomi.va
 $COMPILER -D__NGSPICE__ $TARGET_CPU_FLAG -o $DIRECTORY/cap_cmomf.osdi cap_cmomf/cap_cmomf.va
 
