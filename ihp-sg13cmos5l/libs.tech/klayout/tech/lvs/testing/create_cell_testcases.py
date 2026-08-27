@@ -25,7 +25,6 @@ import pya
 from pathlib import Path
 import shutil
 import logging
-import inspect
 
 BOUNDARY_LAYER = (189, 4)
 
