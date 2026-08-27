@@ -92,6 +92,20 @@ def get_cell_layers(layout, cell):
 # ~~~~~~~~~~~~~~~~~~~~~~~ Main Procedure ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Clone cdl PDK -> LVS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def subckt_has_devices(subckt_lines):
+    """True when a cloned .SUBCKT body carries at least one device instance.
+
+    Device lines are the SPICE instance prefixes; everything else in these
+    bodies is a comment, .SUBCKT/.ENDS, or a *.PININFO line.
+    """
+    if not subckt_lines:
+        return False
+    return any(
+        re.match(r'[MQXCRDJVIL]', line, re.IGNORECASE)
+        for line in subckt_lines
+    )
+
+
 def clone_cdl_files(cdl_in: str, cell_list: list, ref_dir: str, out_dir: str,
                     *, verbose=False):
 
@@ -131,6 +145,17 @@ def clone_cdl_files(cdl_in: str, cell_list: list, ref_dir: str, out_dir: str,
 
     out_dir_by_cell = {}
     for cell_ref in cell_list:
+
+        # Filler cells declare pins and no devices, so there is nothing for LVS
+        # to compare. KLayout drops the empty circuit and the layout netlist
+        # comes out with no top-level ports at all, which the deck's strict port
+        # mode (flag_missing_ports) then reports as a mismatch. Writing no
+        # netlist leaves run_regression_cells.py's "missing layout (GDS) or
+        # netlist (CDL)" filter to drop them, which is how SG13G2 excludes its
+        # own fill cells: it commits their layout and no .cdl.
+        if not subckt_has_devices(subckt_ref.get(cell_ref)):
+            info(f'{cell_ref} declares no devices => no netlist written', verbose=True)
+            continue
 
         search_cdl = find_files_by_extension(ref_dir, f'{cell_ref}.cdl')
         src_path = search_cdl[0] if search_cdl else None
