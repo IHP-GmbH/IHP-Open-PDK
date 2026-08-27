@@ -61,6 +61,21 @@ layer (M1-M4-TM1). The MIM layer is not available, metal-oxide-metal capacitors 
 
 Switch between the process nodes by setting the `$PDK` environment variable to `ihp-sg13g2` or `ihp-sg13cmos5l`.
 
+## Supported Devices
+
+* MOSFETs: LV/HV NMOS/PMOS, plus RF variants (including HV RF).
+* Bipolar: `pnpMPA`.
+* Diodes: antenna diodes, `diodevdd`/`diodevss` variants.
+* Resistors: silicided, p+ poly, high-R poly (and model variants).
+* ESD: `nmoscl_2` and `nmoscl_4`.
+* Capacitors: metal-oxide-metal on the Metal1-Metal4 stack, `cap_cmomi`
+  (interdigitated, with feed topology) and `cap_cmomf` (metal fringe / finger).
+  Both ship a KLayout PCell, an xschem symbol, an OSDI compact model and LVS
+  recognition. Neither is validated on CMOS5L silicon yet and neither models
+  corner or mismatch spread; see the header of each model for what is and is
+  not covered.
+* Taps/utilities: `ntap1`, `ptap1`, `sub`, via stack, sealring, `NoFillerStack`.
+
 # PDK Contents
 
 * Base cellset with limited set of standard logic cells
