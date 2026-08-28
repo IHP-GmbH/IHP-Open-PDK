@@ -129,6 +129,7 @@ def plot_tb_dc_mc_mm_hbt_13g2(corner: str, show: bool = False):
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
+    ic_gc = np.abs(ic_gc)
 
     mean_gc = np.mean(ic_gc)
     std_gc = np.std(ic_gc)
@@ -157,6 +158,7 @@ def plot_tb_dc_mc_stat_hbt_13g2(show: bool = False):
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
+    ic_gc = np.abs(ic_gc)
 
     filepath_sp = ref_dir_sp / (test_name + ".sp.out")
     data_sp = pd.read_csv(filepath_sp, sep=r'\s+').values
