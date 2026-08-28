@@ -123,9 +123,9 @@ def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
 
     plt.close()
 
-def plot_tb_dc_mc_mm_hbt_13g2(corner: str, show: bool = False):
+def plot_tb_dc_mc_mm_hbt(device_variant: str, corner: str, title: str, show: bool = False):
 
-    test_name = f"tb_dc_mc_mm_hbt_13g2_{corner}"
+    test_name = f"tb_dc_mc_mm_hbt_{device_variant}_{corner}"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
@@ -142,7 +142,7 @@ def plot_tb_dc_mc_mm_hbt_13g2(corner: str, show: bool = False):
 
     ax.set_xlabel("I(C) [uA]")
     ax.set_ylabel("Probability Density")
-    ax.set_title(f"HBT DC Monte Carlo ({corner.upper()} Corner)")
+    ax.set_title(title)
     ax.legend()
 
     plt.savefig(hbt_fig_dir / f"{test_name}.png", dpi=300)
@@ -152,9 +152,18 @@ def plot_tb_dc_mc_mm_hbt_13g2(corner: str, show: bool = False):
 
     plt.close()
 
-def plot_tb_dc_mc_stat_hbt_13g2(show: bool = False):
+def plot_tb_dc_mc_mm_hbt_13g2(corner: str, show: bool = False):
+    plot_tb_dc_mc_mm_hbt("13g2", corner, f"HBT G2 MM Monte Carlo ({corner.upper()} Corner)", show)
 
-    test_name = "tb_dc_mc_stat_hbt_13g2"
+def plot_tb_dc_mc_mm_hbt_13g2l(corner: str, show: bool = False):
+    plot_tb_dc_mc_mm_hbt("13g2l", corner, f"HBT G2L MM Monte Carlo ({corner.upper()} Corner)", show)
+
+def plot_tb_dc_mc_mm_hbt_13g2v(corner: str, show: bool = False):
+    plot_tb_dc_mc_mm_hbt("13g2v", corner, f"HBT G2V MM Monte Carlo ({corner.upper()} Corner)", show)
+
+def plot_tb_dc_mc_stat_hbt(device_variant: str, title: str, show: bool = False):
+
+    test_name = f"tb_dc_mc_stat_hbt_{device_variant}"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
@@ -181,7 +190,7 @@ def plot_tb_dc_mc_stat_hbt_13g2(show: bool = False):
 
     ax.set_xlabel("I(C) [uA]")
     ax.set_ylabel("Probability Density")
-    ax.set_title("HBT DC Monte Carlo Statistics")
+    ax.set_title(title)
     ax.legend()
 
     plt.savefig(hbt_fig_dir / f"{test_name}.png", dpi=300)
@@ -190,6 +199,15 @@ def plot_tb_dc_mc_stat_hbt_13g2(show: bool = False):
         plt.show()
 
     plt.close()
+
+def plot_tb_dc_mc_stat_hbt_13g2(show: bool = False):
+    plot_tb_dc_mc_stat_hbt("13g2", "HBT G2 Global Monte Carlo ", show)
+
+def plot_tb_dc_mc_stat_hbt_13g2l(show: bool = False):
+    plot_tb_dc_mc_stat_hbt("13g2l", "HBT G2L Global Monte Carlo", show)
+
+def plot_tb_dc_mc_stat_hbt_13g2v(show: bool = False):
+    plot_tb_dc_mc_stat_hbt("13g2v", "HBT G2V Global Monte Carlo", show)
 
 # def plot_tb_dc_pnpMPA(corner: str, show: bool = False):
 #
@@ -226,10 +244,14 @@ def main():
         plot_tb_dc_mc_mm_hbt_13g2(corner)
         # hbt_13g2l
         plot_tb_dc_hbt_13g2l(corner)
+        plot_tb_dc_mc_mm_hbt_13g2l(corner)
         # hbt_13g2v
         plot_tb_dc_hbt_13g2v(corner)
+        plot_tb_dc_mc_mm_hbt_13g2v(corner)
 
     plot_tb_dc_mc_stat_hbt_13g2()
+    plot_tb_dc_mc_stat_hbt_13g2l()
+    plot_tb_dc_mc_stat_hbt_13g2v()
 
     print('Finished plotting hbt!')
 
