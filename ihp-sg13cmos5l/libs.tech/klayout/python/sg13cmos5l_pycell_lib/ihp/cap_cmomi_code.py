@@ -205,7 +205,7 @@ class cap_cmomi(DloGen):
         specs('subblock', False, 'Add substrate isolation block')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
-        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('sep', '', '------  read only  ------'); _ro()
         specs('C', c_def, 'C [F], static default (live value on label)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #else
@@ -225,7 +225,7 @@ class cap_cmomi(DloGen):
         specs('subblock', False, 'Add substrate isolation block')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
-        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('sep', '', '------  read only  ------'); _ro()
         specs('C', c_def, 'C [F], static default (live value on label)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
 #endif
