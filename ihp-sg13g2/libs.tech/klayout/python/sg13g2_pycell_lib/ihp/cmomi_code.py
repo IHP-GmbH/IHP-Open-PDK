@@ -209,7 +209,7 @@ class cmomi(DloGen):
         specs('C', c_def, 'C [F]: read (Calc=C) or target (Calc=w/l)')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
-        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('sep', '', '------  read only  ------'); _ro()
         specs('Fx', fx_def, 'Total footprint X incl. feed [um] (Recog box)'); _ro()
         specs('Fy', fy_def, 'Total footprint Y incl. feed [um] (Recog box)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()
@@ -237,7 +237,7 @@ class cmomi(DloGen):
         specs('C', c_def, 'C [F]: read (Calc=C) or target (Calc=w/l)')
         # A read-only string acts as a visible divider before the derived
         # fields, since the dialog has no native section separator.
-        specs('sep', '', '──────  read only  ──────'); _ro()
+        specs('sep', '', '------  read only  ------'); _ro()
         specs('Fx', fx_def, 'Total footprint X incl. feed [um] (Recog box)'); _ro()
         specs('Fy', fy_def, 'Total footprint Y incl. feed [um] (Recog box)'); _ro()
         specs('model', 'cap_cmomi', 'Model name'); _ro()

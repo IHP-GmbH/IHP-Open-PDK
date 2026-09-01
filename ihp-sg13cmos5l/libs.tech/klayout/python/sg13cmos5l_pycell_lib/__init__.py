@@ -1,0 +1,277 @@
+########################################################################
+#
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
+import pya
+import os
+import sys
+
+from cni.tech import Tech
+from cni.dlo import PCellWrapper
+
+# Creates the SG13_dev technology
+from .sg13_tech import *
+from .sg13_tech_info import *
+from .native_pcells.via_pcell import ViaPCell
+
+from pypreprocessor.pypreprocessor import preprocessor as preProcessor
+
+import pya
+
+import os
+import io
+import sys
+import inspect
+import re
+import importlib
+import importlib.util
+import pathlib
+import shutil
+import tempfile
+import traceback
+
+moduleNames = [
+        'nmos_code',
+        'pmos_code',
+        # Additional devices for SG13CMOS5L PDK
+        'SVaricap_code',   # Symlink - no modification needed
+        'rsil_code',       # Symlink - silicided resistor
+        'rppd_code',       # Symlink - p+ poly resistor
+        'rhigh_code',      # Symlink - high-R poly resistor
+        'sealring_code',   # Modified - M1-M4-TM1 stack
+        'via_stack_code',  # Modified - M1-M4-TM1 stack
+        'bondpad_code',    # Modified - TopMetal1 top
+        # Phase 8 additions:
+        'ntap1_code',          # Symlink - N-tap (NWell contact)
+        'ptap1_code',          # Symlink - P-tap (substrate contact)
+        'nmosHV_code',         # Symlink - HV NMOS
+        'pmosHV_code',         # Symlink - HV PMOS
+        'dantenna_code',       # Symlink - N-type antenna diode
+        'dpantenna_code',      # Symlink - P-type antenna diode
+        'esd_code',            # Symlink - ESD protection
+        'rfnmos_code',         # Symlink - RF NMOS
+        'rfnmosHV_code',       # Symlink - RF NMOS HV
+        'rfpmos_code',         # Symlink - RF PMOS
+        'rfpmosHV_code',       # Symlink - RF PMOS HV
+        'NoFillerStack_code',  # Modified - No filler utility (M1-M4-TM1)
+        'pnpMPA_code',         # Symlink - Parasitic PNP (tbd.3 - enabled for discussion)
+        'cap_cmomi_code',      # MoM capacitor (M1-M4 thin-metal stack)
+        'cap_cmomf_code',      # MoM fringe capacitor (M1-M4 thin-metal stack)
+]
+
+def getProcessNames():
+    processNames = []
+    maxDepth = 10
+
+    if sys.platform.startswith('win'):
+        process = pya.QProcess()
+        powershellCmd = (
+            "Get-CimInstance Win32_Process | "
+            "Select-Object ProcessId, ParentProcessId, Name | "
+            "Format-Table -HideTableHeaders"
+        )
+        process.start("powershell", ["-Command", powershellCmd])
+        process.waitForFinished()
+        output = process.readAllStandardOutput().decode()
+
+        # Parse the output into a list of tuples (pid, ppid, name)
+        processList = []
+        for line in output.splitlines():
+            parts = line.split()
+            if len(parts) >= 3:
+                pid = int(parts[0])
+                ppid = int(parts[1])
+                name = ' '.join(parts[2:])
+                processList.append((pid, ppid, name))
+
+        processDict = {pid: (ppid, name) for pid, ppid, name in processList}
+        currentPid = os.getpid()
+
+        while currentPid in processDict and maxDepth > 0:
+            maxDepth -= 1
+            ppid, name = processDict[currentPid]
+            processNames.append(name.lower())
+            if ppid == currentPid or ppid == 0:
+                break
+            currentPid = ppid
+
+    else:
+        try:
+            import psutil
+
+            parent = None
+
+            p = psutil.Process()
+            with p.oneshot():
+                processNames.append(p.name().lower())
+                parent = p.parent()
+
+            while parent is not None and maxDepth > 0:
+                maxDepth -= 1
+                with parent.oneshot():
+                    processNames.append(parent.name().lower())
+                    parent = parent.parent()
+        except ImportError:
+            pya.Logger.warn(f"Python package 'psutil' not found!")
+            return processNames
+
+    assert len(processNames) > 0
+
+    return processNames
+
+
+"""
+Support for 'conditional compilation' in a C-style manner of PyCell code:
+
+#ifdef name
+    ...some_code...
+#else
+    ...some_other_code...
+#endif
+
+The #ifdef-block is executed (name is considered as defined) if
+  1. An environment variable 'name' can be found case-insentive, or
+  2. The name can be found case-insentive as part of a process name of the process chain beginnig at
+     the current process upwards through all parent processes.
+otherwise the #else-block is executed
+
+The current process chain will be dumped if the environment variable 'IHP_PYCELL_LIB_PRINT_PROCESS_TREE'
+is set.
+
+The list of names which are used in an #ifdef-statement and are considered as 'defined' will be dumped
+if the environment variable 'IHP_PYCELL_LIB_PRINT_DEFINES_SET' is set.
+
+"""
+class PyCellLib(pya.Library):
+    def __init__(self):
+        self.description = "IHP SG13CMOS5L Pcells"
+        self.technology = SG13_Tech.TECH_NAME
+
+        # Modules using '#ifdef' are preprocessed into this directory before
+        # they are imported. mkdtemp() hands every process its own directory,
+        # so concurrent KLayout sessions cannot overwrite or delete each
+        # other's files. That also covers the case of a second IHP PDK being
+        # loaded, which ships the very same module names.
+        preProcDir = tempfile.mkdtemp(prefix='sg13cmos5l_pycell_')
+
+        try:
+            self.registerPCells(preProcDir)
+        finally:
+            shutil.rmtree(preProcDir, ignore_errors=True)
+
+    def registerPCells(self, preProcDir):
+        tech = Tech.get('SG13_dev')
+
+        processNames = []
+
+        if os.getenv('IHP_PYCELL_LIB_PRINT_PROCESS_TREE') is not None:
+            processNames = getProcessNames()
+            processChain = ''
+            isFirst = True
+            for processName in reversed(processNames):
+                if not isFirst:
+                    processChain += ' <- '
+                processChain += "'" + processName + "'"
+                isFirst = False
+            print(f'Current process chain: {processChain}')
+
+        definesSetToPrint = []
+
+        for moduleName in moduleNames:
+            defines = []
+            definesSet = []
+
+            modulePath = os.path.join(os.path.dirname(__file__), 'ihp', f"{moduleName}.py")
+            moduleFile = io.open(modulePath, 'r', encoding=sys.stdin.encoding)
+
+            try:
+                for line in moduleFile:
+                    match = re.match(r'^#ifdef\s+\w+', line)
+                    if match:
+                        splittedLine = line.split()
+                        for i, define in enumerate(splittedLine):
+                            if i % 2 == 1:
+                                if define not in defines:
+                                    defines.append(define)
+
+            finally:
+                moduleFile.close()
+
+            envs = []
+            for env in os.environ:
+                envs.append(env.lower())
+
+            for define in defines:
+                if len(processNames) == 0:
+                    processNames = getProcessNames()
+
+                locDefine = define.lower()
+                for processName in processNames:
+                    if processName.find(locDefine) != -1:
+                        definesSet.append(define)
+                else:
+                    if locDefine in envs:
+                        definesSet.append(define)
+
+            for defineSet in definesSet:
+                definesSetToPrint.append(defineSet)
+
+            modulePreProcPath = None
+
+            if len(defines) > 0:
+                modulePreProcPath = os.path.join(preProcDir, f"{moduleName}_pre.py")
+
+                pyPreProcessor = preProcessor(modulePath, modulePreProcPath, definesSet, removeMeta=False, resume=True, run=False)
+                pyPreProcessor.parse()
+
+                spec = importlib.util.spec_from_file_location(f"{__name__}.ihp.{moduleName}", modulePreProcPath)
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[moduleName] = module
+
+                try:
+                    spec.loader.exec_module(module)
+                except:
+                    trace = traceback.format_exc().splitlines()
+                    for line in trace:
+                        print(line.replace(modulePreProcPath, modulePath))
+
+                    sys.exit(1)
+            else:
+                module = importlib.import_module(f"{__name__}.ihp." + moduleName)
+
+            match = re.fullmatch(r'^(\S+)_code$', moduleName)
+            if match:
+                func = getattr(module, f"{match.group(1)}")
+                self.layout().register_pcell(match.group(1), PCellWrapper(func(), tech, modulePreProcPath, modulePath))
+
+        if os.getenv('IHP_PYCELL_LIB_PRINT_DEFINES_SET') is not None:
+            print(f"Current defines set: {definesSetToPrint}")
+
+        self.register("SG13_dev")
+
+
+class SG13G2_NativePCellLib(pya.Library):
+    def __init__(self):
+        self.description = "SG13G2 Native PCells"
+        self.technology = SG13_Tech.TECH_NAME
+        self.layout().register_pcell("Via", ViaPCell())
+        self.register("SG13_native_pcell_lib")
+
+
+# instantiate and register the libraries
+PyCellLib()
+SG13G2_NativePCellLib()

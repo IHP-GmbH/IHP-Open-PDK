@@ -1,0 +1,146 @@
+#==========================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#=========================================================================
+# ---------------------------------- LVS ---------------------------------
+#=========================================================================
+
+SHELL        := /bin/bash
+
+.DEFAULT_GOAL := all
+
+all: test-LVS
+
+test-LVS: test-LVS-switch  test-LVS-main
+
+#=================================
+# ----- test-LVS_regression ------
+#=================================
+
+.ONESHELL:
+test-LVS-main:
+	@echo "========== LVS-$* testing =========="
+	@ python3 run_regression.py
+
+.ONESHELL:
+test-LVS-%:
+	@echo "========== LVS-$* testing =========="
+	@ python3 run_regression.py --device=$*
+
+#================================
+# ------ test-LVS-stdcells ------
+#================================
+
+.ONESHELL:
+test-LVS-cells:
+	@echo "========== SG13CMOS5L-Cells Testing =========="
+	@ python3 create_cell_testcases.py
+	@ python3 run_regression_cells.py
+
+#================================
+# ------- test-LVS-SVS ----------
+#================================
+
+.ONESHELL:
+test-LVS-SVS:
+	@echo "========== SG13CMOS5L Manual SVS Regression =========="
+	@bash testcases/manual_tests/svs_testss/run_lvs.sh
+
+#================================
+# ----- test-LVS-cmomi-checks ---
+#================================
+
+# Explicit target, so it does not fall through to the test-LVS-% pattern rule
+# above and get handed to run_regression.py as a device group.
+.ONESHELL:
+test-LVS-cmomi-checks:
+	@echo "========== SG13CMOS5L cap_cmomi LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh
+
+#================================
+# ----- test-LVS-cmomf-checks ---
+#================================
+
+# Same reasoning as the cmomi target above: explicit, so it does not fall
+# through to the test-LVS-% pattern rule.
+.ONESHELL:
+test-LVS-cmomf-checks:
+	@echo "========== SG13CMOS5L cap_cmomf LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomf_checks/run_lvs.sh
+
+#================================
+# ----- test-LVS-manual ---------
+#================================
+
+# .ONESHELL sends the whole recipe to one shell, so make only ever sees the exit
+# status of the LAST line and a failure in any earlier script is lost. Collecting
+# the statuses keeps every script counted; without it, appending a passing script
+# at the end would have reported this target green.
+.ONESHELL:
+test-LVS-manual:
+	@echo "========== SG13CMOS5L Manual Tests =========="
+	@rc=0
+	@bash testcases/manual_tests/esd_ptap/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/implicit_connections/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/sram_support/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh || rc=1
+	@bash testcases/manual_tests/cap_cmomf_checks/run_lvs.sh || rc=1
+	@exit $$rc
+
+#=================================
+# -------- test-LVS-switch -------
+#=================================
+
+.ONESHELL:
+test-LVS-switch:
+	@echo "========== LVS-Switch Testing =========="
+	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=deep --run_dir=test_nmos_deep --ignore_top_ports_mismatch
+	@python3 ../run_lvs.py --layout=testcases/extraction_checking/sg13_lv_nmos.gds --netlist=testcases/extraction_checking/sg13_lv_nmos.cdl --run_mode=flat --run_dir=test_nmos_flat --ignore_top_ports_mismatch
+
+#==============================
+# -------- LIST DEVICES -------
+#==============================
+
+.ONESHELL:
+list-devices:
+	@echo "test-LVS-MOS"
+	@echo "test-LVS-DIODE"
+	@echo "test-LVS-RES"
+	@echo "test-LVS-ESD"
+	@echo "test-LVS-TAP"
+	@echo "test-LVS-BJT"
+	@echo "test-LVS-CAP"
+	@echo "test-LVS-IND"
+
+#==========================
+# --------- HELP ----------
+#==========================
+
+# Help Target
+help:
+	@echo "\n ==== The following are some of the valid targets for this Makefile ====\n"
+	@echo "... all                        (the default if no target is provided             )"
+	@echo "... test-LVS                   (To run LVS for all devices with switching test   )"
+	@echo "... test-LVS-main              (To run LVS for all devices                       )"
+	@echo "... test-LVS-cells             (To run LVS for all standard cells                )"
+	@echo "... test-LVS-SVS               (To run manual SVS regression: 1 PASS + 2 FAIL   )"
+	@echo "... test-LVS-manual            (To run manual tests: ESD, implicit, SRAM, caps    )"
+	@echo "... test-LVS-cmomi-checks      (To run the cap_cmomi detection-limit checks      )"
+	@echo "... test-LVS-cmomf-checks      (To run the cap_cmomf detection-limit checks      )"
+	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
+	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
+	@echo "... list-devices               (To list all available device groups              )"
