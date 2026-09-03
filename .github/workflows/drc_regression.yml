@@ -1,4 +1,4 @@
-#==========================================================================
+# ==========================================================================
 # Copyright 2025 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
-#==========================================================================
+# ==========================================================================
+
+# DRC regression, per affected PDK. `detect` decides which PDKs a change touches
+# (a change to ihp-sg13g2 also runs ihp-sg13cmos5l, which symlinks into it; a
+# change to cmos5l's own files runs cmos5l only), `drc` runs them, and the
+# always-run `gate` is the single required status check (see .github/pdk-ci.yml).
 
 name: DRC Regression Testing
 
@@ -23,122 +28,37 @@ concurrency:
 
 on:
   pull_request:
-    paths:
-      - 'ihp-*/libs.tech/klayout/tech/drc/**'
-      - '.github/actions/setup-klayout/action.yml'
-      - '.github/workflows/drc_regression.yml'
+  merge_group:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  drc_regression:
+  detect:
+    uses: ./.github/workflows/detect-affected-pdks.yml
+
+  drc:
+    needs: detect
+    if: ${{ needs.detect.outputs.any == 'true' }}
+    uses: ./.github/workflows/pdk-run.yml
+    with:
+      matrix: ${{ needs.detect.outputs.matrix }}
+      targets: "test-DRC-main test-DRC-cells"
+
+  gate:
+    # The single required status check. Always runs, even when no PDK is
+    # affected (drc skipped), so a required check is never left pending.
+    if: ${{ always() }}
+    needs: [detect, drc]
     runs-on: ubuntu-latest
-
-    # The path filter above gates the workflow, not the individual legs, so a
-    # change to one PDK's deck runs both. That is deliberate: the decks share
-    # rule files through symlinks, so a change to one can break the other.
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - pdk: ihp-sg13g2
-            sp_tables: '--table=nwell --table=activ --table=cont --table=via1 --table=mim'
-          - pdk: ihp-sg13cmos5l
-            sp_tables: '--table=nwell --table=activ --table=cont --table=via1'
-
     steps:
-      - name: 🧾 Checkout repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: 🔧 Set up KLayout
-        uses: ./.github/actions/setup-klayout
-
-      - name: 🧪 Run KLayout DRC Regression
-        run: make test-DRC-main PDK=${{ matrix.pdk }}
-
-      # The steps below smoke-test the two ways a designer reaches the deck --
-      # the binary directly, and run_drc.py -- rather than the rules themselves,
-      # which is why they all end in `|| true`. The regression above is what
-      # actually gates the pull request. The venv they source is created by
-      # setup-klayout.
-      - name: ⛰️ Run KLayout top-level DRC Deck
+      - name: Aggregate result
         run: |
-          klayout -b -r ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/${{ matrix.pdk }}.drc \
-            -rd run_mode=deep \
-            -rd threads=1 \
-            -rd no_feol=false \
-            -rd no_beol=false \
-            -rd no_offgrid=false \
-            -rd no_pin=false \
-            -rd no_forbidden=false \
-            -rd input=${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-      - name: ⛰️ Run KLayout top-level DRC Deck with selected tables
-        run: |
-          klayout -b -r ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/${{ matrix.pdk }}.drc \
-            -rd run_mode=deep \
-            -rd threads=1 \
-            -rd tables="nwell activ cont vian passiv lbe metal1" \
-            -rd no_feol=true \
-            -rd no_beol=true \
-            -rd no_offgrid=true \
-            -rd no_pin=true \
-            -rd no_forbidden=true \
-            -rd input=${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-      - name: 📜 Run KLayout "run_drc" script in sp
-        run: |
-          . actions_venv/bin/activate; python3 ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/run_drc.py \
-            --mp 1 \
-            --disable_extra_rules \
-            --path ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-      - name: 📜 Run KLayout "run_drc" script in mp
-        run: |
-          . actions_venv/bin/activate; python3 ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/run_drc.py \
-            --mp 2 \
-            --disable_extra_rules \
-            --path ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-      - name: 📜 Run KLayout "run_drc" script with selected tables in sp
-        run: |
-          . actions_venv/bin/activate; python3 ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/run_drc.py \
-            --mp 1 \
-            ${{ matrix.sp_tables }} --no_density --disable_extra_rules \
-            --path ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-      - name: 📜 Run KLayout "run_drc" script with selected tables in mp
-        run: |
-          . actions_venv/bin/activate; python3 ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/run_drc.py \
-            --mp 2 \
-            --table=nbulay --table=gatpoly --table=psd --table=vian --table=passiv --table=lbe --table=metal1 --no_density --disable_extra_rules \
-            --path ${{ matrix.pdk }}/libs.tech/klayout/tech/drc/testing/testcases/unit/activ.gds \
-          || true
-
-  drc_regression_cells:
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pdk: [ihp-sg13g2, ihp-sg13cmos5l]
-
-    steps:
-      - name: 🧾 Checkout repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: 🔧 Set up KLayout
-        uses: ./.github/actions/setup-klayout
-
-      # Reports and succeeds on a PDK with no run_regression_cells.py, which is
-      # CMOS5L today. It starts testing for real the moment that file lands.
-      - name: 🧪 Run DRC Regression for Cells
-        run: make test-DRC-cells PDK=${{ matrix.pdk }}
+          echo "detect=${{ needs.detect.result }} drc=${{ needs.drc.result }}"
+          if echo "${{ needs.detect.result }} ${{ needs.drc.result }}" \
+             | grep -qE "failure|cancelled"; then
+            echo "::error::DRC regression failed"; exit 1
+          fi
+          echo "DRC regression passed (or no affected PDK for this change)."

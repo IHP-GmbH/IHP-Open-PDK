@@ -1,4 +1,4 @@
-#==========================================================================
+# ==========================================================================
 # Copyright 2026 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,33 +13,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
-#==========================================================================
+# ==========================================================================
 
 # AI provenance: Generated with OpenAI Codex (GPT-5).
 
+# SRAM validation. Only ihp-sg13g2 ships an SRAM, so this is g2-only and does not
+# use the per-PDK matrix. It runs on every PR (so the required `gate` check is
+# never left pending), decides internally whether the SRAM sources changed, and
+# validates through `make test-SRAM` for a single, make-driven entry point.
+
 name: SRAM validation
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   pull_request:
-    paths:
-      - 'ihp-sg13g2/libs.ref/sg13g2_sram/**'
-      - 'ihp-sg13g2/libs.qa/sram/**'
-      - '.github/workflows/sram_validation.yml'
+  merge_group:
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
-  validate_sram:
+  changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      sram: ${{ steps.filter.outputs.sram }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            sram:
+              - 'ihp-sg13g2/libs.ref/sg13g2_sram/**'
+              - 'ihp-sg13g2/libs.qa/sram/**'
+              - '.github/workflows/sram_validation.yml'
+
+  validate_sram:
+    needs: changes
+    if: ${{ needs.changes.outputs.sram == 'true' || github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Install validation tools
         run: |
           sudo apt-get update
           sudo apt-get install --yes iverilog
-          python3 -m pip install gdstk
       - name: Validate SRAM views and Verilog models
+        run: make test-SRAM PDK=ihp-sg13g2
+
+  gate:
+    if: ${{ always() }}
+    needs: [changes, validate_sram]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate result
         run: |
-          python3 ihp-sg13g2/libs.qa/sram/validate_sram.py
+          echo "changes=${{ needs.changes.result }} validate_sram=${{ needs.validate_sram.result }}"
+          if echo "${{ needs.changes.result }} ${{ needs.validate_sram.result }}" \
+             | grep -qE "failure|cancelled"; then
+            echo "::error::SRAM validation failed"; exit 1
+          fi
+          echo "SRAM validation passed (or SRAM sources unchanged)."

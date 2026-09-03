@@ -1,4 +1,4 @@
-#==========================================================================
+# ==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
-#==========================================================================
+# ==========================================================================
+
+# LVS regression, per affected PDK. See drc_regression.yml and .github/pdk-ci.yml
+# for how `detect` decides which PDKs run and why the `gate` job is the required
+# check.
 
 name: LVS Regression Testing
 
@@ -23,58 +27,35 @@ concurrency:
 
 on:
   pull_request:
-    paths:
-      - 'ihp-*/libs.tech/klayout/tech/lvs/**'
-      - '.github/actions/setup-klayout/action.yml'
-      - '.github/workflows/lvs_regression.yml'
+  merge_group:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  lvs_regression:
+  detect:
+    uses: ./.github/workflows/detect-affected-pdks.yml
+
+  lvs:
+    needs: detect
+    if: ${{ needs.detect.outputs.any == 'true' }}
+    uses: ./.github/workflows/pdk-run.yml
+    with:
+      matrix: ${{ needs.detect.outputs.matrix }}
+      targets: "test-LVS-main test-LVS-SVS test-LVS-cmomi-checks test-LVS-cmomf-checks test-LVS-cells"
+
+  gate:
+    if: ${{ always() }}
+    needs: [detect, lvs]
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pdk: [ihp-sg13g2, ihp-sg13cmos5l]
-
     steps:
-      - name: 🧾 Checkout repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: 🔧 Set up KLayout
-        uses: ./.github/actions/setup-klayout
-
-      - name: 🧪 Run KLayout LVS Regression
-        run: make test-LVS-main PDK=${{ matrix.pdk }}
-
-      - name: 🧪 Run Manual SVS Regression
-        run: make test-LVS-SVS PDK=${{ matrix.pdk }}
-
-      - name: 🧪 Run cap_cmomi LVS Checks
-        run: make test-LVS-cmomi-checks PDK=${{ matrix.pdk }}
-
-      - name: 🧪 Run cap_cmomf LVS Checks
-        run: make test-LVS-cmomf-checks PDK=${{ matrix.pdk }}
-
-  lvs_regression_cells:
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pdk: [ihp-sg13g2, ihp-sg13cmos5l]
-
-    steps:
-      - name: 🧾 Checkout repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: 🔧 Set up KLayout
-        uses: ./.github/actions/setup-klayout
-
-      - name: 🧪 Run LVS Regression for Cells
-        run: make test-LVS-cells PDK=${{ matrix.pdk }}
+      - name: Aggregate result
+        run: |
+          echo "detect=${{ needs.detect.result }} lvs=${{ needs.lvs.result }}"
+          if echo "${{ needs.detect.result }} ${{ needs.lvs.result }}" \
+             | grep -qE "failure|cancelled"; then
+            echo "::error::LVS regression failed"; exit 1
+          fi
+          echo "LVS regression passed (or no affected PDK for this change)."
