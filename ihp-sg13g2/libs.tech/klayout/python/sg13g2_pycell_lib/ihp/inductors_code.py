@@ -18,12 +18,14 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 import math
 
-class inductors(DloGen):
+class inductors(DeviceBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -75,6 +77,8 @@ class inductors(DloGen):
         specs('minNr_t', minNr_t, 'Minimum number of turns')
         specs('mergeStat', 16, 'Layer mask')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -88,7 +92,17 @@ class inductors(DloGen):
         self.blockqrc = params['blockqrc']
         self.subE = params['subE']
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        # return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.PSUB]
+
+    def genDeviceLayout(self):
         w = self.w
         s = self.s
         d = self.d
