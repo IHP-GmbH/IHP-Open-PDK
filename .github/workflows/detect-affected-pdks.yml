@@ -28,6 +28,12 @@ name: detect-affected-pdks
 
 on:
   workflow_call:
+    inputs:
+      test_class:
+        description: "Test class to scope by (drc|lvs|pcell|lint); empty = any PDK file."
+        required: false
+        type: string
+        default: ""
     outputs:
       matrix:
         description: "GitHub Actions matrix (JSON) of the affected PDKs."
@@ -67,6 +73,7 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           CHANGED: ${{ steps.changes.outputs.any_files }}
+          CLASS: ${{ inputs.test_class }}
         run: |
           python3 -c 'import yaml' 2>/dev/null || python3 -m pip install --quiet pyyaml
           python3 .github/scripts/affected_pdks.py

@@ -46,7 +46,7 @@ import sys
 
 import yaml
 
-FORCE_ALL_EVENTS = ("workflow_dispatch", "merge_group", "schedule")
+FORCE_ALL_EVENTS = ("workflow_dispatch", "merge_group", "schedule", "push")
 
 
 def load_config(path):
@@ -72,6 +72,11 @@ def matches_shared(path, shared_globs):
     return any(fnmatch.fnmatch(path, pattern) for pattern in shared_globs)
 
 
+def matches_class(rel_path, globs):
+    """rel_path is relative to the PDK dir; globs come from test_classes."""
+    return any(fnmatch.fnmatch(rel_path, g) for g in globs)
+
+
 def dependents(pdks):
     """Reverse of `depends_on`: dep -> set of PDKs that depend on it."""
     rev = {name: set() for name in pdks}
@@ -93,10 +98,17 @@ def closure(seed, rev):
     return affected
 
 
-def compute(cfg, event, changed):
-    """Return (matrix_dict, any_bool) for the given event and changed files."""
+def compute(cfg, event, changed, test_class=None):
+    """Return (matrix_dict, any_bool) for the given event and changed files.
+
+    With test_class set, a PDK is "directly changed" only when one of its own
+    changed files matches that class's globs in cfg['test_classes']; a
+    shared_infra change still forces every PDK. With no test_class (or an
+    unknown one) any file under a PDK dir counts.
+    """
     pdks = cfg["pdks"]
     shared = cfg.get("shared_infra", [])
+    class_globs = (cfg.get("test_classes") or {}).get(test_class) if test_class else None
 
     force_all = (
         event in FORCE_ALL_EVENTS
@@ -107,8 +119,15 @@ def compute(cfg, event, changed):
     if force_all:
         affected = set(pdks)
     else:
-        direct = {name for name in pdks
-                  for f in changed if f.startswith(name + "/")}
+        direct = set()
+        for name in pdks:
+            prefix = name + "/"
+            for f in changed:
+                if not f.startswith(prefix):
+                    continue
+                if class_globs is None or matches_class(f[len(prefix):], class_globs):
+                    direct.add(name)
+                    break
         affected = closure(direct, dependents(pdks))
 
     include = [{"pdk": name} for name in sorted(affected)]
@@ -120,8 +139,9 @@ def main(argv):
     cfg = load_config(config_path)
     event = os.environ.get("EVENT", "")
     changed = parse_changed(os.environ.get("CHANGED", ""))
+    test_class = os.environ.get("CLASS", "") or None
 
-    matrix, any_affected = compute(cfg, event, changed)
+    matrix, any_affected = compute(cfg, event, changed, test_class)
 
     line_matrix = "matrix=" + json.dumps(matrix)
     line_any = "any=" + ("true" if any_affected else "false")

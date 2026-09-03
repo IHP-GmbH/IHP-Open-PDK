@@ -36,8 +36,8 @@ import affected_pdks as ap  # noqa: E402
 CONFIG = os.path.join(REPO, ".github", "pdk-ci.yml")
 
 
-def affected(cfg, event, changed):
-    matrix, any_affected = ap.compute(cfg, event, changed)
+def affected(cfg, event, changed, test_class=None):
+    matrix, any_affected = ap.compute(cfg, event, changed, test_class)
     names = sorted(entry["pdk"] for entry in matrix["include"])
     return names, any_affected
 
@@ -133,6 +133,57 @@ def test_third_pdk_scales_by_one_entry():
     # A change to the new PDK alone stays contained.
     names, _ = affected(cfg, "pull_request", ["ihp-sg13foo/libs.tech/x"])
     assert names == ["ihp-sg13foo"], names
+
+
+# --- per-test-class scoping ---------------------------------------------
+
+DRC_G2 = "ihp-sg13g2/libs.tech/klayout/tech/drc/rule_decks/beol/5_16_metal1.drc"
+LVS_G2 = "ihp-sg13g2/libs.tech/klayout/tech/lvs/rule_decks/x.lvs"
+DRC_CMOS5L_OWN = "ihp-sg13cmos5l/libs.tech/klayout/tech/drc/ihp-sg13cmos5l.drc"
+PCELL_G2 = "ihp-sg13g2/libs.tech/klayout/python/sg13g2_pycell_lib/ihp/nmos_code.py"
+DOC_G2 = "ihp-sg13g2/libs.doc/SG13G2_os_process_spec.pdf"
+
+
+def test_class_drc_only_runs_for_drc_change():
+    cfg = load()
+    assert affected(cfg, "pull_request", [DRC_G2], "drc")[0] == ["ihp-sg13cmos5l", "ihp-sg13g2"]
+    # an LVS change must NOT trigger the drc class
+    assert affected(cfg, "pull_request", [LVS_G2], "drc") == ([], False)
+
+
+def test_class_lvs_only_runs_for_lvs_change():
+    cfg = load()
+    assert affected(cfg, "pull_request", [LVS_G2], "lvs")[0] == ["ihp-sg13cmos5l", "ihp-sg13g2"]
+    assert affected(cfg, "pull_request", [DRC_G2], "lvs") == ([], False)
+
+
+def test_class_cmos5l_own_drc_stays_cmos5l():
+    cfg = load()
+    assert affected(cfg, "pull_request", [DRC_CMOS5L_OWN], "drc")[0] == ["ihp-sg13cmos5l"]
+
+
+def test_class_pcell_matches_python_and_tests():
+    cfg = load()
+    assert affected(cfg, "pull_request", [PCELL_G2], "pcell")[0] == ["ihp-sg13cmos5l", "ihp-sg13g2"]
+    # a drc change must not trigger pcell
+    assert affected(cfg, "pull_request", [DRC_G2], "pcell") == ([], False)
+
+
+def test_class_non_test_path_runs_nothing():
+    cfg = load()
+    # a doc/data file under a PDK dir matches no class -> that class runs nothing
+    assert affected(cfg, "pull_request", [DOC_G2], "drc") == ([], False)
+
+
+def test_class_shared_infra_still_forces_all():
+    cfg = load()
+    assert affected(cfg, "pull_request", ["ihp-common/pdk.mk"], "drc")[0] == ["ihp-sg13cmos5l", "ihp-sg13g2"]
+
+
+def test_class_push_event_forces_all():
+    cfg = load()
+    names, any_a = affected(cfg, "push", [], "drc")
+    assert names == ["ihp-sg13cmos5l", "ihp-sg13g2"] and any_a is True
 
 
 def _all_tests():

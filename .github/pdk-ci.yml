@@ -57,3 +57,22 @@ shared_infra:
   - .flake8
   - .rubocop.yml
   - .gitmodules
+
+# Which PDK-relative paths each test class cares about. A workflow passes its
+# class to the detect job, and a PDK's leg for that class runs only when a file
+# under it (or a PDK it depends on) matches one of these globs (a shared_infra
+# change still runs every class for every PDK). This keeps a DRC-only change
+# from spinning LVS and PCell. A change under a PDK dir that matches no class
+# (docs, libs.ref data) runs nothing here. Globs are relative to the PDK dir.
+test_classes:
+  drc:
+    - "libs.tech/klayout/tech/drc/**"
+  lvs:
+    - "libs.tech/klayout/tech/lvs/**"
+  pcell:
+    - "libs.tech/klayout/python/**"
+    - "libs.tech/klayout/*_tests/**"
+  lint:
+    - "libs.tech/klayout/tech/drc/**"
+    - "libs.tech/klayout/tech/lvs/**"
+    - "libs.tech/klayout/python/*_pycell_lib/**"
