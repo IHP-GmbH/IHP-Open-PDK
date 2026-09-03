@@ -29,6 +29,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches: [dev]
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -56,6 +58,13 @@ jobs:
               - 'ihp-sg13g2/libs.ref/sg13g2_sram/**'
               - 'ihp-sg13g2/libs.qa/sram/**'
               - '.github/workflows/sram_validation.yml'
+              # `make test-SRAM` builds the venv and runs through the shared
+              # Makefiles, so a change to any of these can change the result.
+              - 'Makefile'
+              - 'Makefile.*'
+              - 'ihp-common/**'
+              - 'requirements.txt'
+              - 'versions.txt'
 
   validate_sram:
     needs: changes
@@ -73,6 +82,7 @@ jobs:
         run: make test-SRAM PDK=ihp-sg13g2
 
   gate:
+    name: SRAM gate
     if: ${{ always() }}
     needs: [changes, validate_sram]
     runs-on: ubuntu-latest

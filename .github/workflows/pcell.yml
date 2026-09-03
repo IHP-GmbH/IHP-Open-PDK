@@ -28,6 +28,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches: [dev]
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -49,6 +51,7 @@ jobs:
       targets: "test-PCell-lib test-PCell-concurrency test-PCell-drc test-PCell-native test-PCell-sprintf"
 
   gate:
+    name: PCell gate
     if: ${{ always() }}
     needs: [detect, pcell]
     runs-on: ubuntu-latest

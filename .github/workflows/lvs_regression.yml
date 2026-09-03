@@ -26,6 +26,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches: [dev]
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -47,6 +49,7 @@ jobs:
       targets: "test-LVS-main test-LVS-SVS test-LVS-cmomi-checks test-LVS-cmomf-checks test-LVS-cells"
 
   gate:
+    name: LVS gate
     if: ${{ always() }}
     needs: [detect, lvs]
     runs-on: ubuntu-latest

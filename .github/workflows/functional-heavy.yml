@@ -79,7 +79,11 @@ jobs:
       - name: Build Verilog-A OSDI objects
         run: |
           . actions_venv/bin/activate
+          # Both PDKs have their own compile script and osdi/ dir (cmos5l ships
+          # its own cap_cmomi/cap_cmomf VA; only mosvar/psp103/r3_cmc symlink g2),
+          # so build both or cmos5l's model checks resolve a missing OSDI.
           (cd ihp-sg13g2/libs.tech/verilog-a && ./openvaf-compile-va.sh)
+          (cd ihp-sg13cmos5l/libs.tech/verilog-a && ./openvaf-compile-va.sh)
       - name: Run cap_cmomi model check (${{ matrix.pdk }})
         run: make test-cap-cmomi-model PDK=${{ matrix.pdk }}
 
@@ -111,7 +115,11 @@ jobs:
       - name: Build Verilog-A OSDI objects
         run: |
           . actions_venv/bin/activate
+          # Both PDKs have their own compile script and osdi/ dir (cmos5l ships
+          # its own cap_cmomi/cap_cmomf VA; only mosvar/psp103/r3_cmc symlink g2),
+          # so build both or cmos5l's model checks resolve a missing OSDI.
           (cd ihp-sg13g2/libs.tech/verilog-a && ./openvaf-compile-va.sh)
+          (cd ihp-sg13cmos5l/libs.tech/verilog-a && ./openvaf-compile-va.sh)
       - name: Build gnucap and gnucap-mg-vams from source
         continue-on-error: true
         run: |
@@ -121,10 +129,20 @@ jobs:
           git clone --depth 1 https://codeberg.org/gnucap/gnucap-modelgen-verilog
           (cd gnucap-modelgen-verilog && autoreconf -i && ./configure && make -j"$(nproc)" && sudo make install)
           sudo ldconfig
+      - name: Report gnucap tool availability
+        run: |
+          for t in gnucap gnucap-mg-vams; do
+            if command -v "$t" >/dev/null 2>&1; then
+              echo "::notice::$t is available"
+            else
+              echo "::warning::$t was not built; make test-gnucap will skip (no regression run)"
+            fi
+          done
       - name: Run gnucap regression (ihp-sg13cmos5l)
         run: make test-gnucap PDK=ihp-sg13cmos5l
 
   gate:
+    name: Heavy suites gate
     if: ${{ always() }}
     needs: [cap_sweeps, cap_model, gnucap]
     runs-on: ubuntu-latest

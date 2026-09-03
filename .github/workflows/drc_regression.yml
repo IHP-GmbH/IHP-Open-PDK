@@ -27,6 +27,10 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  # Runs the full matrix (all PDKs) after a merge, catching cross-PDK breakage
+  # that two separately-green PRs can introduce once both land on dev.
+  push:
+    branches: [dev]
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -48,8 +52,12 @@ jobs:
       targets: "test-DRC-main test-DRC-cells"
 
   gate:
-    # The single required status check. Always runs, even when no PDK is
-    # affected (drc skipped), so a required check is never left pending.
+    # The single required status check for this workflow. Always runs, even when
+    # no PDK is affected (drc skipped), so a required check is never left
+    # pending. The name must be unique across workflows, otherwise every "gate"
+    # job would report the same check context and branch protection could not
+    # tell them apart.
+    name: DRC gate
     if: ${{ always() }}
     needs: [detect, drc]
     runs-on: ubuntu-latest

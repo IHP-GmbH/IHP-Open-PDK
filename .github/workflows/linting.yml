@@ -27,6 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    branches: [dev]
   pull_request:
   merge_group:
   workflow_dispatch:
@@ -112,9 +114,28 @@ jobs:
           fi
           echo "OK: klayout version is consistent ($VERSIONS_TXT)"
 
+  ci_selftest:
+    # The CI routing (affected_pdks.py + pdk-ci.yml) decides what every other
+    # gate runs, so it is tested and kept honest here on every PR: unit tests for
+    # the closure, flake8 over the scripts, and the repo-invariant checks (the
+    # pdk map matches the tree, cross-PDK symlinks match depends_on). Without
+    # this, a bad edit to the routing fails open (empty matrix, green gates).
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint and self-test the CI scripts
+        run: |
+          python3 -m pip install --quiet pyyaml flake8
+          flake8 --config=.flake8 .github/scripts
+          python3 .github/scripts/test_affected_pdks.py
+          python3 .github/scripts/check_repo_invariants.py
+
   gate:
+    name: Lint gate
     if: ${{ always() }}
-    needs: [detect, lint_python, klayout_version_consistency]
+    needs: [detect, lint_python, klayout_version_consistency, ci_selftest]
     runs-on: ubuntu-latest
     steps:
       - name: Aggregate result

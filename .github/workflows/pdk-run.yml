@@ -56,5 +56,8 @@ jobs:
         uses: ./.github/actions/setup-klayout
 
       - name: Run make targets (${{ matrix.pdk }})
+        # -k (keep-going): run every target and still exit non-zero if any
+        # failed, so one failing target does not hide the result of the rest
+        # (e.g. a failing test-LVS-main must not skip test-LVS-cells).
         run: |
-          make ${{ inputs.targets }} PDK=${{ matrix.pdk }}
+          make -k ${{ inputs.targets }} PDK=${{ matrix.pdk }}
