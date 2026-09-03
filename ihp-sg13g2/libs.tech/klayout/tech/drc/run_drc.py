@@ -660,6 +660,15 @@ def run_parallel_run(
                 rule_deck_full_path / "rule_decks" / "sg13g2_maximal.drc"
             )
 
+        # Opt-in optional diagnostic decks (not part of precheck_drc or maximal).
+        if args.optional_diag:
+            optional_dir = rule_deck_full_path / "rule_decks" / "optional"
+            if optional_dir.is_dir():
+                for deck in sorted(optional_dir.glob("*.drc")):
+                    rule_deck_files[deck.stem] = deck
+            else:
+                logging.warning("--optional_diag requested but rule_decks/optional/ does not exist.")
+
     # Main table-based checks
     table_list = args.table if args.table else get_list_of_tables(rule_deck_full_path, switches)
     for table in table_list:
@@ -752,6 +761,18 @@ def run_single_processor(
         run_check_by_flag(not args.no_density, "density")
         run_check_by_flag(not args.disable_extra_rules, "sg13g2_maximal")
 
+        # Opt-in optional diagnostic decks enumerated from rule_decks/optional/.
+        # Not part of precheck_drc or maximal; each deck runs as an independent
+        # klayout subprocess producing its own lyrdb.
+        if args.optional_diag:
+            optional_dir = rule_deck_full_path / "rule_decks" / "optional"
+            if optional_dir.is_dir():
+                for deck in sorted(optional_dir.glob("*.drc")):
+                    result_dbs.append(run_check(deck, [deck.stem], layout_path, run_dir, switches))
+                    logging.info(f"Completed running optional diagnostic: {deck.name}")
+            else:
+                logging.warning("--optional_diag requested but rule_decks/optional/ does not exist.")
+
     # Final result verification
     return check_drc_results(result_dbs, run_dir, layout_path, switches)
 
@@ -806,6 +827,7 @@ def parse_args():
             [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--no_angle] [--no_recommended]
+            [--optional_diag]
     """
 
     parser = argparse.ArgumentParser(
@@ -912,6 +934,11 @@ def parse_args():
     )
     parser.add_argument(
         "--no_recommended", action="store_true", help="Disable recommended rule checks."
+    )
+    parser.add_argument(
+        "--optional_diag",
+        action="store_true",
+        help="Also run each .drc under rule_decks/optional/ as an opt-in diagnostic pass. Not part of precheck_drc or maximal.",
     )
 
     return parser.parse_args()
