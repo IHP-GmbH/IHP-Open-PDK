@@ -1,0 +1,13 @@
+`include ../../../models/sg13g2_moscap_module.va
+
+module tb_moscap_pmos_mc(outp);
+    inout outp;
+    electrical outp;
+    electrical inn;
+    parameter integer mm_ok = 0 from [0:1];
+    ground gnd;
+
+    vsine #(.mag(1), .dc(1.2)) V1(inn, gnd);
+    resistor #(.r(100k)) Rser(inn, outp);
+    sg13_moscap_p #(.w(1.0u), .l(1.0u), .m(1), .mm_ok(mm_ok)) C1(outp, gnd);
+endmodule

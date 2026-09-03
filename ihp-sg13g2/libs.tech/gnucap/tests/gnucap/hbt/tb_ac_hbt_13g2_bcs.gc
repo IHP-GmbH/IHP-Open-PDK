@@ -1,0 +1,16 @@
+load mgsim
+
+verilog
+`include ../../../models/cornerHBT.va
+`include ./tb_ac_hbt_13g2.va
+
+hbt_bcs corner_hbt();
+tb_ac_hbt_13g2 tb(vc, vb);
+
+// run ac
+dc
+options numdgt = 9
+print ac v(vc) v(vb)
+store ac v(vc) v(vb)
+ac dec 10 1e4 1e8 basic
+status notime
