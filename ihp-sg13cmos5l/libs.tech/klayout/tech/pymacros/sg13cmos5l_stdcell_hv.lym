@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Register sg13cmos5l_stdcell_hv as a KLayout cell library</description>
+ <version/>
+ <category>pymacros</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>true</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>false</show-in-menu>
+ <group-name/>
+ <menu-path/>
+ <interpreter>python</interpreter>
+ <dsl-interpreter-name/>
+ <text># Register the thick-oxide standard cells as a KLayout cell library.
+#
+# With this macro on the KLayout search path (see README, "Using it /
+# klayout"), all 84 cells appear in the Instance dialog under the
+# library name "sg13cmos5l_stdcell_hv", next to the PDK's own libraries, and
+# can be placed like any PCell/library cell. Layer display comes from the
+# IHP sg13cmos5l technology as usual.
+#
+# The GDS is found relative to this file (../../gds/), so a checkout works
+# without configuration; SG13CMOS5L_HV_HOME overrides the location if the
+# macro is copied elsewhere (e.g. into ~/.klayout/pymacros).
+
+import os
+import pya
+
+LIB_NAME = "sg13cmos5l_stdcell_hv"
+
+
+def _find_gds():
+    candidates = []
+    try:
+        here = os.path.dirname(os.path.realpath(__file__))
+        candidates.append(os.path.join(
+            here, "..", "..", "..", "..", "libs.ref", LIB_NAME,
+            "gds", LIB_NAME + ".gds"))
+    except NameError:
+        pass
+    home = os.environ.get("SG13CMOS5L_HV_HOME")
+    if home:
+        candidates.append(os.path.join(home, "gds", LIB_NAME + ".gds"))
+    for c in candidates:
+        c = os.path.normpath(c)
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+_gds = _find_gds()
+if _gds is None:
+    print("sg13cmos5l_stdcell_hv.lym: library GDS not found "
+          "(set SG13CMOS5L_HV_HOME to the repository root)")
+else:
+    _lib = pya.Library()
+    _lib.description = ("IHP SG13CMOS5L thick-oxide (3.3 V) standard cells, "
+                        "84 cells, 7.14 um / 17-track rows")
+    _lib.layout().read(_gds)
+    _lib.register(LIB_NAME)
+    print("registered KLayout library '%s' (%d cells) from %s" %
+          (LIB_NAME, _lib.layout().cells(), _gds))
+</text>
+</klayout-macro>
