@@ -13,7 +13,8 @@ TESTDIRS = \
 	resistor \
 	capacitor \
 	moslv \
-	moshv
+	moshv \
+	hbt
 
 # Discover tests automatically: resistor/*.sp, moslv/*.sp, ...
 ALL_TESTS := $(foreach d, $(TESTDIRS), $(wildcard $(d)/*.sp))
@@ -63,21 +64,31 @@ check: $(ALL_OUTS)
 # Rule: one test file *.sp generates one output file *.sp.out
 define TEST_RULE
 $(dir $(1))check/$(notdir $(1)).out: $(1) | reset-failures
-	@mkdir -p $(dir $(1))check
-	@cd "$(dir $(1))" && \
-	  $(NGSPICE) -b -o /dev/null "$(notdir $(1))" > /dev/null
 	@echo "$$(notdir $$<)" >> $(RUNLOG)
-	@if [ -f "$(dir $(1))ref/$(notdir $(1)).out" ]; then \
-	  if $(DIFF) -u "$(dir $(1))ref/$(notdir $(1)).out" "$$@" > "$$(basename $$@).diff" 2>&1; then \
-	    echo "PASS $$(notdir $$<)"; \
-	    rm -f "$$(basename $$@).diff"; \
-	  else \
-	    echo "FAIL $$(notdir $$<)"; \
-	    echo "FAIL $$(notdir $$<)" >> $(FAILLOG); \
-	  fi; \
+	@mkdir -p $(dir $(1))check
+	@rm -f "$$@" \
+	  "$(dir $(1))check/$(notdir $(1)).log" \
+	  "$(dir $(1))check/$(notdir $(1)).diff"
+	@(cd "$(dir $(1))" && \
+	  $(NGSPICE) -b "$(notdir $(1))" > "check/$(notdir $(1)).log" 2>&1); \
+	status=$$$$?; \
+	if [ $$$$status -ne 0 ] || [ ! -f "$$@" ]; then \
+	  echo "CRASH $$(notdir $$<)"; \
+	  echo "CRASH $$(notdir $$<)" >> $(FAILLOG); \
 	else \
-	  echo "MISS $$(notdir $$<)"; \
-	  echo "MISS $$(notdir $$<)" >> $(FAILLOG); \
+	  rm -f "$(dir $(1))check/$(notdir $(1)).log"; \
+	  if [ -f "$(dir $(1))ref/$(notdir $(1)).out" ]; then \
+	    if $(DIFF) -u "$(dir $(1))ref/$(notdir $(1)).out" "$$@" > "$$(basename $$@).diff" 2>&1; then \
+	      echo "PASS $$(notdir $$<)"; \
+	      rm -f "$$(basename $$@).diff"; \
+	    else \
+	      echo "FAIL $$(notdir $$<)"; \
+	      echo "FAIL $$(notdir $$<)" >> $(FAILLOG); \
+	    fi; \
+	  else \
+	    echo "MISS $$(notdir $$<)"; \
+	    echo "MISS $$(notdir $$<)" >> $(FAILLOG); \
+	  fi; \
 	fi
 endef
 

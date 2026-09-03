@@ -13,7 +13,8 @@ TESTDIRS = \
 	resistor \
 	capacitor \
 	moslv \
-	moshv
+	moshv \
+	hbt
 
 # Discover tests automatically: resistor/*.gc, moslv/*.gc, ...
 ALL_TESTS := $(foreach d, $(TESTDIRS), $(wildcard $(d)/*.gc))
@@ -63,27 +64,40 @@ check: $(ALL_OUTS)
 # Rule: one test file *.gc generates one output file *.gc.out
 define TEST_RULE
 $(dir $(1))check/$(notdir $(1)).out: $(1) | reset-failures
-	@mkdir -p $(dir $(1))check
-	@# Run gnucap and filter output:
-	@cd "$(dir $(1))" && \
-	  $(GNUCAP) "$(notdir $(1))" 2>&1 | \
-	  tail -n +12 | \
-	  grep -v '^stashing as' | \
-	  grep -v 'already installed' | \
-	  grep -v '^@@' \
-	  > "check/$(notdir $(1)).out" || true
+	@# Record test attempt in RUNLOG
 	@echo "$$(notdir $$<)" >> $(RUNLOG)
-	@if [ -f "$(dir $(1))ref/$(notdir $(1)).out" ]; then \
-	  if $(DIFF) -u "$(dir $(1))ref/$(notdir $(1)).out" "$$@" > "$$(basename $$@).diff" 2>&1; then \
-	    echo "PASS $$(notdir $$<)"; \
+	@mkdir -p $(dir $(1))check
+	@# Clean up
+	@rm -f "$$@" \
+	  "$(dir $(1))check/$(notdir $(1)).log" \
+	  "$(dir $(1))check/$(notdir $(1)).diff"
+	@# Run gnucap and capture output
+	@(cd "$(dir $(1))" && \
+	  $(GNUCAP) "$(notdir $(1))" > "check/$(notdir $(1)).log" 2>&1); \
+	status=$$$$?; \
+	if [ $$$$status -ne 0 ]; then \
+      rm -f "$(dir $(1))check/$(notdir $(1)).out"; \
+	  echo "CRASH $$(notdir $$<)"; \
+	  echo "CRASH $$(notdir $$<)" >> $(FAILLOG); \
+	else \
+	  tail -n +12 "$(dir $(1))check/$(notdir $(1)).log" | \
+	    grep -v '^stashing as' | \
+	    grep -v 'already installed' | \
+	    grep -v '^@@' \
+        > "$$@" || true; \
+      rm -f "$(dir $(1))check/$(notdir $(1)).log"; \
+	  if [ -f "$(dir $(1))ref/$(notdir $(1)).out" ]; then \
+	    if $(DIFF) -u "$(dir $(1))ref/$(notdir $(1)).out" "$$@" > "$$(basename $$@).diff" 2>&1; then \
+		echo "PASS $$(notdir $$<)"; \
 	    rm -f "$$(basename $$@).diff"; \
 	  else \
-	    echo "FAIL $$(notdir $$<)"; \
-	    echo "FAIL $$(notdir $$<)" >> $(FAILLOG); \
+		echo "FAIL $$(notdir $$<)"; \
+		echo "FAIL $$(notdir $$<)" >> $(FAILLOG); \
 	  fi; \
-	else \
-	  echo "MISS $$(notdir $$<)"; \
-	  echo "MISS $$(notdir $$<)" >> $(FAILLOG); \
+	   else \
+	      echo "MISS $$(notdir $$<)"; \
+	      echo "MISS $$(notdir $$<)" >> $(FAILLOG); \
+	   fi; \
 	fi
 endef
 
