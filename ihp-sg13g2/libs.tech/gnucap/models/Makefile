@@ -20,6 +20,7 @@ OSDI_DIR = ../plugins/osdi
 
 TARGETS = \
 	idc \
+	vpulse \
 	resistor_paramset \
 	capacitor_paramset \
 	sg13g2_moscap_paramset \
