@@ -1,88 +1,42 @@
 //******************************************************************************
-//                                                                             *
-// Library:      SG13G2_dev                                                    *
-// Technologies: SG13G2                                                        *
-// Component:    Spice model file                                              *
-//                                                                             *
-// Simulator:    NGSPICE                                                       *
-// Model:        PSP 103.6                                                     *
-// Revision:     210511                                                        *
-//                                                                             *
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 //******************************************************************************
-//                                                                             *
-// Copyright 2023 IHP PDK Authors                                              *
-//                                                                             *
-// Licensed under the Apache License, Version 2.0 (the "License");             *
-// you may not use this file except in compliance with the License.            *
-// You may obtain a copy of the License at                                     *
-//                                                                             *
-//     https://www.apache.org/licenses/LICENSE-2.0                             *
-//                                                                             *
-// Unless required by applicable law or agreed to in writing, software         *
-// distributed under the License is distributed on an "AS IS" BASIS,           *
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
-// See the License for the specific language governing permissions and         *
-// limitations under the License.                                              *
-//                                                                             *
-//******************************************************************************
-//******************************************************************************
-//                                                                             *
-//                                                                             *
-//                            M O S     C O R N E R S                          *
-//                                                                             *
-//                                                                             *
 //******************************************************************************
 //
-// NOTE: use only typical mean file (this file) for Monte Carlo simulations of process tolerance!
 //
-// hint: using spectre, add this file as a model file in analog artist;
-//   using spectreS, add it under Environment/Include with syntax=spectre
+//                            M O S     C O R N E R S
+//
+//
+//******************************************************************************
 //
 // Corner naming scheme: typical mean=tt, worst case=ss, best case=ff, combinations sf, fs, ...
 // Digit Devices
-// Monte-Carlo begin ---------------------------------------------
-//
-// NOTE: default of all   parameters should be 1.0
-// NOTE: deviations from 1.0 are used to fit statistical results
-//
-//
-//
-//
-//******************************************************************************
-//
-// High Voltage (hv) MOS Transistors
-//
-// Model:                                PSP 103.6
-// Date:                                 10.03.2020
-// Lot:                                  EDJ
-// WAFER:                                06
-// CHIP Nr:                              x=3, y=9
-// Device:                               SG13G2
-// Maximum drain-source voltage:         3.3
-// Measurement data:
-// Nom. Temperature  (TNOM):             27 grd C
-// Meas. Temperature (TEMP):             27 grd C
-// Valid range for model:                L = (0.45 - 10)um   nmos
-//                                       L = (0.40 - 10)um   pmos
-//                                       W = (0.30 - 10)um
-//
-//******************************************************************************
 
-// Moshv corner modules
-// Ported the ngspice/models/cornerMOShv.lib to Verilog-A
+//******************************************************************************
+// MOSHV corner modules
+//
+// Adapted from `ngspice/models/cornerMOShv.lib`
+//
 // Modifications:
-// - removed mismatch corners; mismatch device variants are implemented via
-//   paramset overloading
-// - moved global process-variation parameters from `sg13g2_moslv_stat.lib` to
-//   into statistical corner-related definitions are kept in a single file
-// - renamed the norm suffix to nom for nominal values for consitency across
-//   corners
-// (c) Lukas Deutz 2026
+// - Removed mismatch corners; mismatch is implemented in paramsets
+// - Moved global process-variation parameters into the statistical corner
+//******************************************************************************
 
-
-//*************** CORNER_LIB OF sg13g2_hv TT MODEL ****************
-// Typical
-
+(* desc = "Typical High-Voltage SG13G2 MOS corner (tt: typical n, typical p)" *)
 module moshv_tt();
     // nmos
     localparam real sg13g2_hv_nmos_vfbo = 1.0;
@@ -123,15 +77,14 @@ module moshv_tt();
     localparam real sg13g2_hv_pmos_cjorbot = 1.0000;
     localparam real sg13g2_hv_pmos_cjorsti = 1.0000;
     localparam real sg13g2_hv_pmos_cjorgat = 1.0000;
-    // generic
+    // svaricaphv
     localparam real sg13g2_hv_svaricap_vfbo = 1.0;
     localparam real sg13g2_hv_svaricap_toxo = 1.0;
     localparam real sg13g2_hv_svaricap_dlq = 1.0;
     localparam real sg13g2_hv_svaricap_dwq = 1.0;
 endmodule
 
-//*************** CORNER_LIB OF sg13g2_hv SS MODEL ****************
-// Slow n, Slow p
+(* desc = "Worst-case High-Voltage SG13G2 MOS corner (ss: slow n, slow p)" *)
 module moshv_ss();
     // nmos
     localparam real sg13g2_hv_nmos_vfbo = 1.0;
@@ -172,18 +125,16 @@ module moshv_ss();
     localparam real sg13g2_hv_pmos_cjorbot = 1.0800;
     localparam real sg13g2_hv_pmos_cjorsti = 1.0800;
     localparam real sg13g2_hv_pmos_cjorgat = 1.0800;
-    // generic
+    // svaricaphv
     localparam real sg13g2_hv_svaricap_vfbo = 0.8;
     localparam real sg13g2_hv_svaricap_toxo = 1.04;
     localparam real sg13g2_hv_svaricap_dlq = 1.05;
     localparam real sg13g2_hv_svaricap_dwq = 1.05;
 endmodule
 
-//*************** CORNER_LIB OF sg13g2_hv FF MODEL ****************
-// Fast n, Fast p
-//Generated from SPICE model card mos_ff in cornerMOShv.lib
+(* desc = "Best-case High-Voltage SG13G2 MOS corner (ff: fast n, fast p)" *)
 module moshv_ff();
-    // noms
+    // nmos
     localparam real sg13g2_hv_nmos_vfbo = 1.0;
     localparam real sg13g2_hv_nmos_rsgo = 1.0000;
     localparam real sg13g2_hv_nmos_rsw1 = 0.7880;
@@ -222,15 +173,14 @@ module moshv_ff();
     localparam real sg13g2_hv_pmos_cjorbot = 0.9200;
     localparam real sg13g2_hv_pmos_cjorsti = 0.9200;
     localparam real sg13g2_hv_pmos_cjorgat = 0.9200;
-    // generic
+    // svaricaphv
     localparam real sg13g2_hv_svaricap_vfbo = 1.2;
     localparam real sg13g2_hv_svaricap_toxo = 0.96;
     localparam real sg13g2_hv_svaricap_dlq = 0.90;
     localparam real sg13g2_hv_svaricap_dwq = 0.90;
 endmodule
 
-//*************** CORNER_LIB OF sg13g2_hv SF MODEL ****************
-// Slow n, Fast p
+(* desc = "Slow/Fast High-Voltage SG13G2 MOS corner (sf: slow n, fast p)" *)
 module moshv_sf();
     // nmos
     localparam real sg13g2_hv_nmos_vfbo = 1.0;
@@ -271,64 +221,63 @@ module moshv_sf();
     localparam real sg13g2_hv_pmos_cjorbot = 0.9600;
     localparam real sg13g2_hv_pmos_cjorsti = 0.9600;
     localparam real sg13g2_hv_pmos_cjorgat = 0.9600;
-    // generic
+    // svaricaphv
     localparam real sg13g2_hv_svaricap_vfbo = 0.8;
     localparam real sg13g2_hv_svaricap_toxo = 1.02;
     localparam real sg13g2_hv_svaricap_dlq = 1.1;
     localparam real sg13g2_hv_svaricap_dwq = 1.1;
 endmodule
 
-//*************** CORNER_LIB OF sg13g2_hv FS MODEL ****************
-// Fast n, Slow p
-//Generated from SPICE model card mos_fs in cornerMOShv.lib
+(* desc = "Fast/Slow High-Voltage SG13G2 MOS corner (fs: fast n, slow p)" *)
 module moshv_fs();
-  parameter real sg13g2_hv_nmos_vfbo = 1.0;
-  parameter real sg13g2_hv_nmos_rsgo = 1.0000;
-  parameter real sg13g2_hv_nmos_rsw1 = 0.7883;
-  parameter real sg13g2_hv_nmos_mueo = 1.0221;
-  parameter real sg13g2_hv_nmos_dphibo = 1.6762;
-  parameter real sg13g2_hv_nmos_dphibl = 1.8307;
-  parameter real sg13g2_hv_nmos_dphibw = 1.0000;
-  parameter real sg13g2_hv_nmos_dphiblw = 0.8932;
-  parameter real sg13g2_hv_nmos_ctl = 1.0000;
-  parameter real sg13g2_hv_nmos_thesato = 1.0000;
-  parameter real sg13g2_hv_nmos_thesatl = 0.9907;
-  parameter real sg13g2_hv_nmos_thesatw = 1.0000;
-  parameter real sg13g2_hv_nmos_thesatlw = 1.6500;
-  parameter real sg13g2_hv_nmos_toxo = 0.9800;
-  parameter real sg13g2_hv_nmos_toxovo = 0.9800;
-  parameter real sg13g2_hv_nmos_cjorbot = 0.9600;
-  parameter real sg13g2_hv_nmos_cjorsti = 0.9600;
-  parameter real sg13g2_hv_nmos_cjorgat = 0.9600;
-  parameter real sg13g2_hv_pmos_vfbo = 1.0;
-  parameter real sg13g2_hv_pmos_rsgo = 0.5300;
-  parameter real sg13g2_hv_pmos_rsw1 = 1.0000;
-  parameter real sg13g2_hv_pmos_mueo = 0.9612;
-  parameter real sg13g2_hv_pmos_dphibo = 0.9164;
-  parameter real sg13g2_hv_pmos_dphibl = 1.0497;
-  parameter real sg13g2_hv_pmos_dphibw = 1.4280;
-  parameter real sg13g2_hv_pmos_dphiblw = 1.2769;
-  parameter real sg13g2_hv_pmos_bgidlo = 1.1204;
-  parameter real sg13g2_hv_pmos_thesato = 1.0000;
-  parameter real sg13g2_hv_pmos_thesatl = 0.5407;
-  parameter real sg13g2_hv_pmos_thesatw = 4.7562;
-  parameter real sg13g2_hv_pmos_thesatlw = 1.0000;
-  parameter real sg13g2_hv_pmos_csl = 1.0000;
-  parameter real sg13g2_hv_pmos_toxo = 1.0200;
-  parameter real sg13g2_hv_pmos_toxovo = 1.0200;
-  parameter real sg13g2_hv_pmos_cjorbot = 1.0400;
-  parameter real sg13g2_hv_pmos_cjorsti = 1.0400;
-  parameter real sg13g2_hv_pmos_cjorgat = 1.0400;
-  parameter real sg13g2_hv_svaricap_vfbo = 1.2;
-  parameter real sg13g2_hv_svaricap_toxo = 0.98;
-  parameter real sg13g2_hv_svaricap_dlq = 0.90;
-  parameter real sg13g2_hv_svaricap_dwq = 0.90;
+    // nmos
+    localparam real sg13g2_hv_nmos_vfbo = 1.0;
+    localparam real sg13g2_hv_nmos_rsgo = 1.0000;
+    localparam real sg13g2_hv_nmos_rsw1 = 0.7883;
+    localparam real sg13g2_hv_nmos_mueo = 1.0221;
+    localparam real sg13g2_hv_nmos_dphibo = 1.6762;
+    localparam real sg13g2_hv_nmos_dphibl = 1.8307;
+    localparam real sg13g2_hv_nmos_dphibw = 1.0000;
+    localparam real sg13g2_hv_nmos_dphiblw = 0.8932;
+    localparam real sg13g2_hv_nmos_ctl = 1.0000;
+    localparam real sg13g2_hv_nmos_thesato = 1.0000;
+    localparam real sg13g2_hv_nmos_thesatl = 0.9907;
+    localparam real sg13g2_hv_nmos_thesatw = 1.0000;
+    localparam real sg13g2_hv_nmos_thesatlw = 1.6500;
+    localparam real sg13g2_hv_nmos_toxo = 0.9800;
+    localparam real sg13g2_hv_nmos_toxovo = 0.9800;
+    localparam real sg13g2_hv_nmos_cjorbot = 0.9600;
+    localparam real sg13g2_hv_nmos_cjorsti = 0.9600;
+    localparam real sg13g2_hv_nmos_cjorgat = 0.9600;
+    // pmos
+    localparam real sg13g2_hv_pmos_vfbo = 1.0;
+    localparam real sg13g2_hv_pmos_rsgo = 0.5300;
+    localparam real sg13g2_hv_pmos_rsw1 = 1.0000;
+    localparam real sg13g2_hv_pmos_mueo = 0.9612;
+    localparam real sg13g2_hv_pmos_dphibo = 0.9164;
+    localparam real sg13g2_hv_pmos_dphibl = 1.0497;
+    localparam real sg13g2_hv_pmos_dphibw = 1.4280;
+    localparam real sg13g2_hv_pmos_dphiblw = 1.2769;
+    localparam real sg13g2_hv_pmos_bgidlo = 1.1204;
+    localparam real sg13g2_hv_pmos_thesato = 1.0000;
+    localparam real sg13g2_hv_pmos_thesatl = 0.5407;
+    localparam real sg13g2_hv_pmos_thesatw = 4.7562;
+    localparam real sg13g2_hv_pmos_thesatlw = 1.0000;
+    localparam real sg13g2_hv_pmos_csl = 1.0000;
+    localparam real sg13g2_hv_pmos_toxo = 1.0200;
+    localparam real sg13g2_hv_pmos_toxovo = 1.0200;
+    localparam real sg13g2_hv_pmos_cjorbot = 1.0400;
+    localparam real sg13g2_hv_pmos_cjorsti = 1.0400;
+    localparam real sg13g2_hv_pmos_cjorgat = 1.0400;
+    // svaricaphv
+    localparam real sg13g2_hv_svaricap_vfbo = 1.2;
+    localparam real sg13g2_hv_svaricap_toxo = 0.98;
+    localparam real sg13g2_hv_svaricap_dlq = 0.90;
+    localparam real sg13g2_hv_svaricap_dwq = 0.90;
 endmodule
-
-// Typical with statistical
-//Generated from SPICE model card mos_tt_stat in cornerMOShv.lib
+(* desc = "Typical statistical High-Voltage SG13G2 MOS corner (tt: typical n, typical p)" *)
 module moshv_tt_stat();
-    parameter integer seed = 1 from [0:1000000); // TODO: upper inf not working yet
+    parameter integer seed = 0;
     // nmos nominal
     localparam real sg13g2_hv_nmos_vfbo_nom     = 1.0;
     localparam real sg13g2_hv_nmos_rsgo_nom     = 1.0000;
@@ -348,7 +297,7 @@ module moshv_tt_stat();
     localparam real sg13g2_hv_nmos_cjorbot_nom  = 1.0000;
     localparam real sg13g2_hv_nmos_cjorsti_nom  = 1.0000;
     localparam real sg13g2_hv_nmos_cjorgat_nom  = 1.0000;
-    // nmos sig
+    // nmos sigma
     localparam real sg13g2_hv_nmos_vfbo_sig     = 0.004  * sg13g2_hv_nmos_vfbo_nom;
     localparam real sg13g2_hv_nmos_rsgo_sig     = 1e-9   * sg13g2_hv_nmos_rsgo_nom;
     localparam real sg13g2_hv_nmos_rsw1_sig     = 0.0001 * sg13g2_hv_nmos_rsw1_nom;
@@ -368,45 +317,45 @@ module moshv_tt_stat();
     localparam real sg13g2_hv_nmos_cjorsti_sig  = 0.0267 * sg13g2_hv_nmos_cjorsti_nom;
     localparam real sg13g2_hv_nmos_cjorgat_sig  = 0.0267 * sg13g2_hv_nmos_cjorgat_nom;
     // nmos params with global process variation
-    localparam real sg13g2_hv_nmos_vfbo     = sg13g2_hv_nmos_vfbo_nom     + $rdist_normal(seed + 1 , 0, sg13g2_hv_nmos_vfbo_sig,     "global");
-    localparam real sg13g2_hv_nmos_rsgo     = sg13g2_hv_nmos_rsgo_nom     + $rdist_normal(seed + 2 , 0, sg13g2_hv_nmos_rsgo_sig,     "global");
-    localparam real sg13g2_hv_nmos_rsw1     = sg13g2_hv_nmos_rsw1_nom     + $rdist_normal(seed + 3 , 0, sg13g2_hv_nmos_rsw1_sig,     "global");
-    localparam real sg13g2_hv_nmos_mueo     = sg13g2_hv_nmos_mueo_nom     + $rdist_normal(seed + 4 , 0, sg13g2_hv_nmos_mueo_sig,     "global");
-    localparam real sg13g2_hv_nmos_dphibo   = sg13g2_hv_nmos_dphibo_nom   + $rdist_normal(seed + 5 , 0, sg13g2_hv_nmos_dphibo_sig,   "global");
-    localparam real sg13g2_hv_nmos_dphibl   = sg13g2_hv_nmos_dphibl_nom   + $rdist_normal(seed + 5 , 0, sg13g2_hv_nmos_dphibl_sig,   "global");
-    localparam real sg13g2_hv_nmos_dphibw   = sg13g2_hv_nmos_dphibw_nom   + $rdist_normal(seed + 6 , 0, sg13g2_hv_nmos_dphibw_sig,   "global");
-    localparam real sg13g2_hv_nmos_dphiblw  = sg13g2_hv_nmos_dphiblw_nom  + $rdist_normal(seed + 7 , 0, sg13g2_hv_nmos_dphiblw_sig,  "global");
-    localparam real sg13g2_hv_nmos_ctl      = sg13g2_hv_nmos_ctl_nom      + $rdist_normal(seed + 8 , 0, sg13g2_hv_nmos_ctl_sig,      "global");
-    localparam real sg13g2_hv_nmos_thesato  = sg13g2_hv_nmos_thesato_nom  + $rdist_normal(seed + 10, 0, sg13g2_hv_nmos_thesato_sig,  "global");
-    localparam real sg13g2_hv_nmos_thesatl  = sg13g2_hv_nmos_thesatl_nom  + $rdist_normal(seed + 11, 0, sg13g2_hv_nmos_thesatl_sig,  "global");
-    localparam real sg13g2_hv_nmos_thesatw  = sg13g2_hv_nmos_thesatw_nom  + $rdist_normal(seed + 12, 0, sg13g2_hv_nmos_thesatw_sig,  "global");
-    localparam real sg13g2_hv_nmos_thesatlw = sg13g2_hv_nmos_thesatlw_nom + $rdist_normal(seed + 13, 0, sg13g2_hv_nmos_thesatlw_sig, "global");
-    localparam real sg13g2_hv_nmos_toxo     = sg13g2_hv_nmos_toxo_nom     + $rdist_normal(seed + 14, 0, sg13g2_hv_nmos_toxo_sig,     "global");
-    localparam real sg13g2_hv_nmos_toxovo   = sg13g2_hv_nmos_toxovo_nom   + $rdist_normal(seed + 15, 0, sg13g2_hv_nmos_toxovo_sig,   "global");
-    localparam real sg13g2_hv_nmos_cjorbot  = sg13g2_hv_nmos_cjorbot_nom  + $rdist_normal(seed + 16, 0, sg13g2_hv_nmos_cjorbot_sig,  "global");
-    localparam real sg13g2_hv_nmos_cjorsti  = sg13g2_hv_nmos_cjorsti_nom  + $rdist_normal(seed + 17, 0, sg13g2_hv_nmos_cjorsti_sig,  "global");
-    localparam real sg13g2_hv_nmos_cjorgat  = sg13g2_hv_nmos_cjorgat_nom  + $rdist_normal(seed + 18, 0, sg13g2_hv_nmos_cjorgat_sig,  "global");
-    // pmos nominal parameter values
-    localparam real sg13g2_hv_pmos_vfbo_nom = 1.0;
-    localparam real sg13g2_hv_pmos_rsgo_nom = 1.1110;
-    localparam real sg13g2_hv_pmos_rsw1_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_mueo_nom = 0.9605;
-    localparam real sg13g2_hv_pmos_dphibo_nom = 1.0010;
-    localparam real sg13g2_hv_pmos_dphibl_nom = 0.9504;
-    localparam real sg13g2_hv_pmos_dphibw_nom = 1.4080;
-    localparam real sg13g2_hv_pmos_dphiblw_nom = -0.1693;
-    localparam real sg13g2_hv_pmos_bgidlo_nom = 0.8409;
-    localparam real sg13g2_hv_pmos_thesato_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_thesatl_nom = 0.4814;
-    localparam real sg13g2_hv_pmos_thesatw_nom = 5.7745;
+    localparam real sg13g2_hv_nmos_vfbo     = $rdist_normal(seed + 1, sg13g2_hv_nmos_vfbo_nom,      sg13g2_hv_nmos_vfbo_sig,     "global");
+    localparam real sg13g2_hv_nmos_rsgo     = $rdist_normal(seed + 2, sg13g2_hv_nmos_rsgo_nom,      sg13g2_hv_nmos_rsgo_sig,     "global");
+    localparam real sg13g2_hv_nmos_rsw1     = $rdist_normal(seed + 3, sg13g2_hv_nmos_rsw1_nom,      sg13g2_hv_nmos_rsw1_sig,     "global");
+    localparam real sg13g2_hv_nmos_mueo     = $rdist_normal(seed + 4, sg13g2_hv_nmos_mueo_nom,      sg13g2_hv_nmos_mueo_sig,     "global");
+    localparam real sg13g2_hv_nmos_dphibo   = $rdist_normal(seed + 5, sg13g2_hv_nmos_dphibo_nom,    sg13g2_hv_nmos_dphibo_sig,   "global");
+    localparam real sg13g2_hv_nmos_dphibl   = $rdist_normal(seed + 6, sg13g2_hv_nmos_dphibl_nom,    sg13g2_hv_nmos_dphibl_sig,   "global");
+    localparam real sg13g2_hv_nmos_dphibw   = $rdist_normal(seed + 7, sg13g2_hv_nmos_dphibw_nom,    sg13g2_hv_nmos_dphibw_sig,   "global");
+    localparam real sg13g2_hv_nmos_dphiblw  = $rdist_normal(seed + 8, sg13g2_hv_nmos_dphiblw_nom,   sg13g2_hv_nmos_dphiblw_sig,  "global");
+    localparam real sg13g2_hv_nmos_ctl      = $rdist_normal(seed + 9, sg13g2_hv_nmos_ctl_nom,       sg13g2_hv_nmos_ctl_sig,      "global");
+    localparam real sg13g2_hv_nmos_thesato  = $rdist_normal(seed + 10, sg13g2_hv_nmos_thesato_nom,  sg13g2_hv_nmos_thesato_sig,  "global");
+    localparam real sg13g2_hv_nmos_thesatl  = $rdist_normal(seed + 11, sg13g2_hv_nmos_thesatl_nom,  sg13g2_hv_nmos_thesatl_sig,  "global");
+    localparam real sg13g2_hv_nmos_thesatw  = $rdist_normal(seed + 12, sg13g2_hv_nmos_thesatw_nom,  sg13g2_hv_nmos_thesatw_sig,  "global");
+    localparam real sg13g2_hv_nmos_thesatlw = $rdist_normal(seed + 13, sg13g2_hv_nmos_thesatlw_nom, sg13g2_hv_nmos_thesatlw_sig, "global");
+    localparam real sg13g2_hv_nmos_toxo     = $rdist_normal(seed + 14, sg13g2_hv_nmos_toxo_nom,     sg13g2_hv_nmos_toxo_sig,     "global");
+    localparam real sg13g2_hv_nmos_toxovo   = $rdist_normal(seed + 15, sg13g2_hv_nmos_toxovo_nom,   sg13g2_hv_nmos_toxovo_sig,   "global");
+    localparam real sg13g2_hv_nmos_cjorbot  = $rdist_normal(seed + 16, sg13g2_hv_nmos_cjorbot_nom,  sg13g2_hv_nmos_cjorbot_sig,  "global");
+    localparam real sg13g2_hv_nmos_cjorsti  = $rdist_normal(seed + 17, sg13g2_hv_nmos_cjorsti_nom,  sg13g2_hv_nmos_cjorsti_sig,  "global");
+    localparam real sg13g2_hv_nmos_cjorgat  = $rdist_normal(seed + 18, sg13g2_hv_nmos_cjorgat_nom,  sg13g2_hv_nmos_cjorgat_sig,  "global");
+    // pmos nominal
+    localparam real sg13g2_hv_pmos_vfbo_nom     = 1.0;
+    localparam real sg13g2_hv_pmos_rsgo_nom     = 1.1110;
+    localparam real sg13g2_hv_pmos_rsw1_nom     = 1.0000;
+    localparam real sg13g2_hv_pmos_mueo_nom     = 0.9605;
+    localparam real sg13g2_hv_pmos_dphibo_nom   = 1.0010;
+    localparam real sg13g2_hv_pmos_dphibl_nom   = 0.9504;
+    localparam real sg13g2_hv_pmos_dphibw_nom   = 1.4080;
+    localparam real sg13g2_hv_pmos_dphiblw_nom  = -0.1693;
+    localparam real sg13g2_hv_pmos_bgidlo_nom   = 0.8409;
+    localparam real sg13g2_hv_pmos_thesato_nom  = 1.0000;
+    localparam real sg13g2_hv_pmos_thesatl_nom  = 0.4814;
+    localparam real sg13g2_hv_pmos_thesatw_nom  = 5.7745;
     localparam real sg13g2_hv_pmos_thesatlw_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_csl_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_toxo_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_toxovo_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_cjorbot_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_cjorsti_nom = 1.0000;
-    localparam real sg13g2_hv_pmos_cjorgat_nom = 1.0000;
-   // pmos sig
+    localparam real sg13g2_hv_pmos_csl_nom      = 1.0000;
+    localparam real sg13g2_hv_pmos_toxo_nom     = 1.0000;
+    localparam real sg13g2_hv_pmos_toxovo_nom   = 1.0000;
+    localparam real sg13g2_hv_pmos_cjorbot_nom  = 1.0000;
+    localparam real sg13g2_hv_pmos_cjorsti_nom  = 1.0000;
+    localparam real sg13g2_hv_pmos_cjorgat_nom  = 1.0000;
+    // pmos sigma
     localparam real sg13g2_hv_pmos_vfbo_sig     = 0.004  * sg13g2_hv_pmos_vfbo_nom;
     localparam real sg13g2_hv_pmos_rsgo_sig     = 0.4253 * sg13g2_hv_pmos_rsgo_nom;
     localparam real sg13g2_hv_pmos_rsw1_sig     = 1e-9   * sg13g2_hv_pmos_rsw1_nom;
@@ -427,39 +376,53 @@ module moshv_tt_stat();
     localparam real sg13g2_hv_pmos_cjorsti_sig  = 0.0267 * sg13g2_hv_pmos_cjorsti_nom;
     localparam real sg13g2_hv_pmos_cjorgat_sig  = 0.0267 * sg13g2_hv_pmos_cjorgat_nom;
     // pmos params with global process variation
-    localparam real sg13g2_hv_pmos_vfbo     = sg13g2_hv_pmos_vfbo_nom     + $rdist_normal(seed + 19, 0, sg13g2_hv_pmos_vfbo_sig,     "global");
-    localparam real sg13g2_hv_pmos_rsgo     = sg13g2_hv_pmos_rsgo_nom     + $rdist_normal(seed + 20, 0, sg13g2_hv_pmos_rsgo_sig,     "global");
-    localparam real sg13g2_hv_pmos_rsw1     = sg13g2_hv_pmos_rsw1_nom     + $rdist_normal(seed + 21, 0, sg13g2_hv_pmos_rsw1_sig,     "global");
-    localparam real sg13g2_hv_pmos_mueo     = sg13g2_hv_pmos_mueo_nom     + $rdist_normal(seed + 22, 0, sg13g2_hv_pmos_mueo_sig,     "global");
-    localparam real sg13g2_hv_pmos_dphibo   = sg13g2_hv_pmos_dphibo_nom   + $rdist_normal(seed + 23, 0, sg13g2_hv_pmos_dphibo_sig,   "global");
-    localparam real sg13g2_hv_pmos_dphibl   = sg13g2_hv_pmos_dphibl_nom   + $rdist_normal(seed + 24, 0, sg13g2_hv_pmos_dphibl_sig,   "global");
-    localparam real sg13g2_hv_pmos_dphibw   = sg13g2_hv_pmos_dphibw_nom   + $rdist_normal(seed + 25, 0, sg13g2_hv_pmos_dphibw_sig,   "global");
-    localparam real sg13g2_hv_pmos_dphiblw  = sg13g2_hv_pmos_dphiblw_nom  + $rdist_normal(seed + 26, 0, sg13g2_hv_pmos_dphiblw_sig,  "global");
-    localparam real sg13g2_hv_pmos_bgidlo   = sg13g2_hv_pmos_bgidlo_nom   + $rdist_normal(seed + 27, 0, sg13g2_hv_pmos_bgidlo_sig,   "global");
-    localparam real sg13g2_hv_pmos_thesato  = sg13g2_hv_pmos_thesato_nom  + $rdist_normal(seed + 28, 0, sg13g2_hv_pmos_thesato_sig,  "global");
-    localparam real sg13g2_hv_pmos_thesatl  = sg13g2_hv_pmos_thesatl_nom  + $rdist_normal(seed + 29, 0, sg13g2_hv_pmos_thesatl_sig,  "global");
-    localparam real sg13g2_hv_pmos_thesatw  = sg13g2_hv_pmos_thesatw_nom  + $rdist_normal(seed + 30, 0, sg13g2_hv_pmos_thesatw_sig,  "global");
-    localparam real sg13g2_hv_pmos_thesatlw = sg13g2_hv_pmos_thesatlw_nom + $rdist_normal(seed + 31, 0, sg13g2_hv_pmos_thesatlw_sig, "global");
-    localparam real sg13g2_hv_pmos_csl      = sg13g2_hv_pmos_csl_nom      + $rdist_normal(seed + 32, 0, sg13g2_hv_pmos_csl_sig,      "global");
-    localparam real sg13g2_hv_pmos_toxo     = sg13g2_hv_pmos_toxo_nom     + $rdist_normal(seed + 33, 0, sg13g2_hv_pmos_toxo_sig,     "global");
-    localparam real sg13g2_hv_pmos_toxovo   = sg13g2_hv_pmos_toxovo_nom   + $rdist_normal(seed + 34, 0, sg13g2_hv_pmos_toxovo_sig,   "global");
-    localparam real sg13g2_hv_pmos_cjorbot  = sg13g2_hv_pmos_cjorbot_nom  + $rdist_normal(seed + 35, 0, sg13g2_hv_pmos_cjorbot_sig,  "global");
-    localparam real sg13g2_hv_pmos_cjorsti  = sg13g2_hv_pmos_cjorsti_nom  + $rdist_normal(seed + 36, 0, sg13g2_hv_pmos_cjorsti_sig,  "global");
-    localparam real sg13g2_hv_pmos_cjorgat  = sg13g2_hv_pmos_cjorgat_nom  + $rdist_normal(seed + 37, 0, sg13g2_hv_pmos_cjorgat_sig,  "global");
-    // generic
-    parameter real sg13g2_hv_svaricap_vfbo_nom = 1.0;
-    parameter real sg13g2_hv_svaricap_toxo_nom = 1.0;
-    parameter real sg13g2_hv_svaricap_dlq_nom  = 1.0;
-    parameter real sg13g2_hv_svaricap_dwq_nom  = 1.0;
-    // generic sigma
-    parameter real sg13g2_hv_svaricap_vfbo_sig = 0.04   * sg13g2_hv_svaricap_vfbo_nom;
-    parameter real sg13g2_hv_svaricap_toxo_sig = 0.0133 * sg13g2_hv_svaricap_toxo_nom;
-    parameter real sg13g2_hv_svaricap_dlq_sig  = 0.10   * sg13g2_hv_svaricap_dlq_nom;
-    parameter real sg13g2_hv_svaricap_dwq_sig  = 0.10   * sg13g2_hv_svaricap_dwq_nom;
-    // generic paramete with global process variation
-    parameter sg13g2_hv_svaricap_vfbo = sg13g2_hv_svaricap_vfbo_nom + $rdist_normal(seed + 37, 0, sg13g2_hv_svaricap_vfbo_sig, "global");
-    parameter sg13g2_hv_svaricap_toxo = sg13g2_hv_svaricap_toxo_nom + $rdist_normal(seed + 38, 0, sg13g2_hv_svaricap_toxo_sig, "global");
-    parameter sg13g2_hv_svaricap_dlq  = sg13g2_hv_svaricap_dlq_nom  + $rdist_normal(seed + 39, 0, sg13g2_hv_svaricap_dlq_sig,  "global");
-    parameter sg13g2_hv_svaricap_dwq  = sg13g2_hv_svaricap_dwq_nom  + $rdist_normal(seed + 40, 0, sg13g2_hv_svaricap_dwq_sig,  "global");
+    localparam real sg13g2_hv_pmos_vfbo     = $rdist_normal(seed + 19, sg13g2_hv_pmos_vfbo_nom,     sg13g2_hv_pmos_vfbo_sig,     "global");
+    localparam real sg13g2_hv_pmos_rsgo     = $rdist_normal(seed + 20, sg13g2_hv_pmos_rsgo_nom,     sg13g2_hv_pmos_rsgo_sig,     "global");
+    localparam real sg13g2_hv_pmos_rsw1     = $rdist_normal(seed + 21, sg13g2_hv_pmos_rsw1_nom,     sg13g2_hv_pmos_rsw1_sig,     "global");
+    localparam real sg13g2_hv_pmos_mueo     = $rdist_normal(seed + 22, sg13g2_hv_pmos_mueo_nom,     sg13g2_hv_pmos_mueo_sig,     "global");
+    localparam real sg13g2_hv_pmos_dphibo   = $rdist_normal(seed + 23, sg13g2_hv_pmos_dphibo_nom,   sg13g2_hv_pmos_dphibo_sig,   "global");
+    localparam real sg13g2_hv_pmos_dphibl   = $rdist_normal(seed + 24, sg13g2_hv_pmos_dphibl_nom,   sg13g2_hv_pmos_dphibl_sig,   "global");
+    localparam real sg13g2_hv_pmos_dphibw   = $rdist_normal(seed + 25, sg13g2_hv_pmos_dphibw_nom,   sg13g2_hv_pmos_dphibw_sig,   "global");
+    localparam real sg13g2_hv_pmos_dphiblw  = $rdist_normal(seed + 26, sg13g2_hv_pmos_dphiblw_nom,  sg13g2_hv_pmos_dphiblw_sig,  "global");
+    localparam real sg13g2_hv_pmos_bgidlo   = $rdist_normal(seed + 27, sg13g2_hv_pmos_bgidlo_nom,   sg13g2_hv_pmos_bgidlo_sig,   "global");
+    localparam real sg13g2_hv_pmos_thesato  = $rdist_normal(seed + 28, sg13g2_hv_pmos_thesato_nom,  sg13g2_hv_pmos_thesato_sig,  "global");
+    localparam real sg13g2_hv_pmos_thesatl  = $rdist_normal(seed + 29, sg13g2_hv_pmos_thesatl_nom,  sg13g2_hv_pmos_thesatl_sig,  "global");
+    localparam real sg13g2_hv_pmos_thesatw  = $rdist_normal(seed + 30, sg13g2_hv_pmos_thesatw_nom,  sg13g2_hv_pmos_thesatw_sig,  "global");
+    localparam real sg13g2_hv_pmos_thesatlw = $rdist_normal(seed + 31, sg13g2_hv_pmos_thesatlw_nom, sg13g2_hv_pmos_thesatlw_sig, "global");
+    localparam real sg13g2_hv_pmos_csl      = $rdist_normal(seed + 32, sg13g2_hv_pmos_csl_nom,      sg13g2_hv_pmos_csl_sig,      "global");
+    localparam real sg13g2_hv_pmos_toxo     = $rdist_normal(seed + 33, sg13g2_hv_pmos_toxo_nom,     sg13g2_hv_pmos_toxo_sig,     "global");
+    localparam real sg13g2_hv_pmos_toxovo   = $rdist_normal(seed + 34, sg13g2_hv_pmos_toxovo_nom,   sg13g2_hv_pmos_toxovo_sig,   "global");
+    localparam real sg13g2_hv_pmos_cjorbot  = $rdist_normal(seed + 35, sg13g2_hv_pmos_cjorbot_nom,  sg13g2_hv_pmos_cjorbot_sig,  "global");
+    localparam real sg13g2_hv_pmos_cjorsti  = $rdist_normal(seed + 36, sg13g2_hv_pmos_cjorsti_nom,  sg13g2_hv_pmos_cjorsti_sig,  "global");
+    localparam real sg13g2_hv_pmos_cjorgat  = $rdist_normal(seed + 37, sg13g2_hv_pmos_cjorgat_nom,  sg13g2_hv_pmos_cjorgat_sig,  "global");
+    // svaricaphv
+    localparam real sg13g2_hv_svaricap_vfbo_nom = 1.0;
+    localparam real sg13g2_hv_svaricap_toxo_nom = 1.0;
+    localparam real sg13g2_hv_svaricap_dlq_nom  = 1.0;
+    localparam real sg13g2_hv_svaricap_dwq_nom  = 1.0;
+    // svaricaphv sigma
+    localparam real sg13g2_hv_svaricap_vfbo_sig = 0.04   * sg13g2_hv_svaricap_vfbo_nom;
+    localparam real sg13g2_hv_svaricap_toxo_sig = 0.0133 * sg13g2_hv_svaricap_toxo_nom;
+    localparam real sg13g2_hv_svaricap_dlq_sig  = 0.10   * sg13g2_hv_svaricap_dlq_nom;
+    localparam real sg13g2_hv_svaricap_dwq_sig  = 0.10   * sg13g2_hv_svaricap_dwq_nom;
+    // svaricaphv parameters with global process variation
+    localparam real sg13g2_hv_svaricap_vfbo = $rdist_normal(seed + 38, sg13g2_hv_svaricap_vfbo_nom, sg13g2_hv_svaricap_vfbo_sig, "global");
+    localparam real sg13g2_hv_svaricap_toxo = $rdist_normal(seed + 39, sg13g2_hv_svaricap_toxo_nom, sg13g2_hv_svaricap_toxo_sig, "global");
+    localparam real sg13g2_hv_svaricap_dlq  = $rdist_normal(seed + 40, sg13g2_hv_svaricap_dlq_nom,  sg13g2_hv_svaricap_dlq_sig,  "global");
+    localparam real sg13g2_hv_svaricap_dwq  = $rdist_normal(seed + 41, sg13g2_hv_svaricap_dwq_nom,  sg13g2_hv_svaricap_dwq_sig,  "global");
 endmodule
 
+// TODO: mm params are hard coded into paramsets, pull out of module instead?
+(* desc = "High-Voltage SG13G2 MOS mismatch parameters" *)
+module moshv_mm();
+    // nmos
+    localparam real sg13g2_hv_nmos_delvto_mm  = 0.007;
+    localparam real sg13g2_hv_nmos_factuo_mm  = 0.005;
+    localparam real sg13g2_hv_nmos_dw_mm      = 3e-9;
+    localparam real sg13g2_hv_nmos_dl_mm      = 3e-9;
+    // pmos
+    localparam real sg13g2_hv_pmos_delvto_mm  = 0.0045;
+    localparam real sg13g2_hv_pmos_factuo_mm  = 0.0040;
+    localparam real sg13g2_hv_pmos_dw_mm      = 3e-9;
+    localparam real sg13g2_hv_pmos_dl_mm      = 3e-9;
+endmodule
