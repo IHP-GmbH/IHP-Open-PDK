@@ -1,0 +1,67 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// cmim_core paramsets (with and without mismatch)
+//
+// Adapted from model declarations in ngspice/models/capacitors_mod*.lib.
+//
+// Modifications:
+// - Removed sf scale factor;
+// - Converted cjsw to SI units (F/m);
+//******************************************************************************
+
+(* desc = "cmim_core capacitor paramset, without mismatch" *)
+paramset cmim_core sp_capacitor
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 7.0u;
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 7.0u;
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+
+    .l = l;
+    .w = w;
+    .scale = 1;
+    .tnom = 27.0;
+    .tc1 = 3.6E-6;
+    .tc2 = 2E-9;
+    .cj = corner_cap.cap_carea;
+    .cjsw = 40E-12; // F/m
+endparamset
+
+(* desc = "cmim_core sp_capacitor paramset, with mismatch" *)
+paramset cmim_core sp_capacitor
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 7.0u;
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 7.0u;
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+
+    localparam real area_um = sqrt(l * w * 1e12);
+
+    .l = l;
+    .w = w;
+    .scale = (1 + (cap_mm.cap_carea_mm - 1) / area_um);
+    .tnom = 27.0;
+    .tc1 = 3.6E-6;
+    .tc2 = 2E-9;
+    .cj = corner_cap.cap_carea;
+    .cjsw = 40E-12; // F/m
+endparamset

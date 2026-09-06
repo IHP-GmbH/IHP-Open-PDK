@@ -1,0 +1,42 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// cparasitic paramsets
+//
+// Adapted from model declarations in ngspice/models/capacitors_mod*.lib.
+//******************************************************************************
+
+(* desc="parasitic capacitor paramset" *)
+paramset cparasitic sp_capacitor
+    (* desc="Capacitance", units="F" *)
+    parameter real c = 0.0;
+    (* desc="Device width", units="m" *)
+    parameter real w = 0.0;
+    (* desc="Device length", units="m" *)
+    parameter real l = 0.0;
+    (* desc="First order temp. coefficient" *)
+    parameter real tc1 = 0.0;
+    (* desc="Second order temp. coefficient" *)
+    parameter real tc2 = 0.0;
+    .capacitance = c * corner_cap.cap_cpara;
+    .w = w;
+    .l = l;
+    .tc1 = tc1;
+    .tc2 = tc2;
+endparamset

@@ -1,0 +1,64 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// cmomf - metal fringe MoM capacitor paramset
+//
+// The fringe sibling of cmomi, over the behavioural module cap_cmomf (shared
+// source ../../verilog-a/cap_cmomf/cap_cmomf.va, byte-for-byte the code the
+// ngspice OSDI build uses). Like cmomi it is not decomposed onto sp_capacitor:
+// it carries its own expression rather than being a parallel-plate primitive.
+//
+// Two differences from cmomi, both structural rather than stylistic. There
+// is no feed parameter: the interdigitated device's feed topology has no
+// analogue in a finger comb. And the module is 2-terminal, PLUS and MINUS
+// with no SUB, because no substrate-coupling fit exists for this geometry;
+// see the header of cap_cmomf.va for why the model stops at the
+// low-frequency capacitance.
+//
+// The bounds are [1:5] rather than cmomi's [1:8]: this device is drawn on
+// the thin metals only, and its own module declaration rejects anything
+// above Metal5.
+//
+// mm_ok is declared from [0:0] and left unmapped for the same reason as
+// cmomi: the device has no characterised mismatch spread yet, so the
+// selector reserves the mm_ok = 1 overload slot without promising
+// anything.
+//******************************************************************************
+
+(* desc = "cmomf cap_cmomf behavioural paramset, without mismatch" *)
+paramset cmomf cap_cmomf
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 5e-6 from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 5e-6 from (0:inf);
+    (* desc = "Minimum number of metal segments" *)
+    parameter integer mmin = 1 from [1:5];
+    (* desc = "Maximum number of metal segments" *)
+    parameter integer mmax = 5 from [1:5];
+    (* desc = "Sub-block selector (0 or 1)" *)
+    parameter integer subblock = 0 from [0:1];
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+
+    .w        = w;
+    .l        = l;
+    .mmin     = mmin;
+    .mmax     = mmax;
+    .subblock = subblock;
+endparamset
