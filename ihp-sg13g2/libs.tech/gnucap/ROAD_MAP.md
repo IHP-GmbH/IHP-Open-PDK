@@ -11,7 +11,7 @@
     - [x] cap_cmim
     - [x] cap_rfcmim
     - [x] mos_cap (psp)
-    - [ ] mos_var (psp)
+    - [x] mos_var (psp)
 
 - [x] diode (sp_diode)
    - [x] antenna   

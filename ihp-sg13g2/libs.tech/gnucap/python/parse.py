@@ -34,7 +34,12 @@ def split_nested_sweep(
 
     return split_data_list, inner_sweep_arr, outer_sweep_arr
 
+def split_mc_trials(data_arr: np.ndarray, col_idx: int = 0) -> List[np.ndarray]:
+    if data_arr.size == 0:
+        return []
 
+    idx_trial_start = np.flatnonzero(np.diff(data_arr[:, col_idx]) < 0) + 1
+    return np.array(np.split(data_arr, idx_trial_start))
 
 
 

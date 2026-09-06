@@ -1,0 +1,12 @@
+
+module tb_svaricaphv_tran(G1, G2);
+    inout G1, G2;
+    electrical G1, G2, W;
+    ground gnd;
+
+    vsource #(.dc(0.0)) VW(W, gnd);
+    vpulse #(.val0(-2.5), .val1(2.5), .td(1u), .rise(10u), .fall(100p)) VG1(G1, gnd);
+    vpulse #(.val0(-2.5), .val1(2.5), .td(1u), .rise(10u), .fall(100p)) VG2(G2, gnd);
+
+    sg13_hv_svaricap #(.l(0.3u), .w(3.74u)) C1(G2, W, G1, gnd);
+endmodule

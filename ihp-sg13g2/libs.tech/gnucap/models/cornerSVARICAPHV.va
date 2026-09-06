@@ -1,0 +1,92 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// SVARICAPHV corner modules
+//
+// Adapted from `ngspice/models/cornerMOSHV.lib`
+//
+// Modifications:
+// - Extracted svaricaphv parameters into standalone corner file
+// - Removed mismatch corners, mismatch is implemented through paramset
+//   overloading rather than corner selection
+// - Renamed statistical _norm constants to _nom and added _sig constant
+// - Fixed statistical scaling at the reference default num_sigmas = 1
+//******************************************************************************
+
+(* desc = "Typical High-Voltage SVaricap corner (tt: typical n, typical p)" *)
+module svaricaphv_tt();
+    localparam real sg13g2_hv_svaricap_vfbo = 1.0;
+    localparam real sg13g2_hv_svaricap_toxo = 1.0;
+    localparam real sg13g2_hv_svaricap_dlq = 1.0;
+    localparam real sg13g2_hv_svaricap_dwq = 1.0;
+endmodule
+
+(* desc = "Worst-case High-Voltage SVaricap corner (ss: slow n, slow p)" *)
+module svaricaphv_ss();
+    localparam real sg13g2_hv_svaricap_vfbo = 0.8;
+    localparam real sg13g2_hv_svaricap_toxo = 1.04;
+    localparam real sg13g2_hv_svaricap_dlq = 1.05;
+    localparam real sg13g2_hv_svaricap_dwq = 1.05;
+endmodule
+
+(* desc = "Best-case High-Voltage SVaricap corner (ff: fast n, fast p)" *)
+module svaricaphv_ff();
+    localparam real sg13g2_hv_svaricap_vfbo = 1.2;
+    localparam real sg13g2_hv_svaricap_toxo = 0.96;
+    localparam real sg13g2_hv_svaricap_dlq = 0.90;
+    localparam real sg13g2_hv_svaricap_dwq = 0.90;
+endmodule
+
+(* desc = "Slow/Fast High-Voltage SVaricap corner (sf: slow n, fast p)" *)
+module svaricaphv_sf();
+    localparam real sg13g2_hv_svaricap_vfbo = 0.8;
+    localparam real sg13g2_hv_svaricap_toxo = 1.02;
+    localparam real sg13g2_hv_svaricap_dlq = 1.1;
+    localparam real sg13g2_hv_svaricap_dwq = 1.1;
+endmodule
+
+(* desc = "Fast/Slow High-Voltage SVaricap corner (fs: fast n, slow p)" *)
+module svaricaphv_fs();
+    localparam real sg13g2_hv_svaricap_vfbo = 1.2;
+    localparam real sg13g2_hv_svaricap_toxo = 0.98;
+    localparam real sg13g2_hv_svaricap_dlq = 0.90;
+    localparam real sg13g2_hv_svaricap_dwq = 0.90;
+endmodule
+
+(* desc = "Typical statistical High-Voltage SVaricap corner (tt)" *)
+module svaricaphv_tt_stat();
+    (* desc = "Random seed (currently unused)" *)
+    parameter integer seed = 0;
+
+    // Nominal values
+    localparam real sg13g2_hv_svaricap_vfbo_nom = 1.0;
+    localparam real sg13g2_hv_svaricap_toxo_nom = 1.0;
+    localparam real sg13g2_hv_svaricap_dlq_nom  = 1.0;
+    localparam real sg13g2_hv_svaricap_dwq_nom  = 1.0;
+    // Standard deviations
+    localparam real sg13g2_hv_svaricap_vfbo_sig = 0.0400 * sg13g2_hv_svaricap_vfbo_nom;
+    localparam real sg13g2_hv_svaricap_toxo_sig = 0.0133 * sg13g2_hv_svaricap_toxo_nom;
+    localparam real sg13g2_hv_svaricap_dlq_sig  = 0.1000 * sg13g2_hv_svaricap_dlq_nom;
+    localparam real sg13g2_hv_svaricap_dwq_sig  = 0.1000 * sg13g2_hv_svaricap_dwq_nom;
+    // Add global process variation
+    localparam real sg13g2_hv_svaricap_vfbo = $rdist_normal(1, sg13g2_hv_svaricap_vfbo_nom, sg13g2_hv_svaricap_vfbo_sig, "global");
+    localparam real sg13g2_hv_svaricap_toxo = $rdist_normal(2, sg13g2_hv_svaricap_toxo_nom, sg13g2_hv_svaricap_toxo_sig, "global");
+    localparam real sg13g2_hv_svaricap_dlq  = $rdist_normal(3, sg13g2_hv_svaricap_dlq_nom,  sg13g2_hv_svaricap_dlq_sig,  "global");
+    localparam real sg13g2_hv_svaricap_dwq  = $rdist_normal(4, sg13g2_hv_svaricap_dwq_nom,  sg13g2_hv_svaricap_dwq_sig,  "global");
+endmodule
