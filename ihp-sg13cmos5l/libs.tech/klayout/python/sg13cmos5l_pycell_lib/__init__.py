@@ -71,6 +71,9 @@ moduleNames = [
         'pnpMPA_code',         # Symlink - Parasitic PNP (tbd.3 - enabled for discussion)
         'cap_cmomi_code',      # MoM capacitor (M1-M4 thin-metal stack)
         'cap_cmomf_code',      # MoM fringe capacitor (M1-M4 thin-metal stack)
+        # TBD
+        'chipText_code',       # Symlink - chipText
+        
 ]
 
 def getProcessNames():

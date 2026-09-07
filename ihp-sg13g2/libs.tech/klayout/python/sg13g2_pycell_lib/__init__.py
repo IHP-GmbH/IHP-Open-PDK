@@ -76,7 +76,8 @@ moduleNames = [
         'moscap_p_code',
         'pnpMPA_code',
         'isolbox_code',
-        'schottky_code'
+        'schottky_code',
+        'chipText_code'
 ]
 
 def getProcessNames():
