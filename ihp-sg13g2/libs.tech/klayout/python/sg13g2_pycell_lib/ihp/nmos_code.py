@@ -19,14 +19,14 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
-from .thermal import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
+from .thermal import *
 from .utility_functions import *
 
-import math
 
-class nmos(DloGen):
-
+class nmos(DeviceBase):
     @classmethod
     def defineParamSpecs(cls, specs):
         techparams = specs.tech.getTechParams()
@@ -53,13 +53,25 @@ class nmos(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.w  = Numeric(params['w'])*1e6
         self.l  = Numeric(params['l'])*1e6
         self.ng = int(params['ng'])
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        # return [GuardRingType.NONE, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.PSUB]
+
+    def genDeviceLayout(self):
         w  = self.w
         ng = self.ng
         l  = self.l
@@ -213,4 +225,3 @@ class nmos(DloGen):
         # now finish drawing the diffusion
         xdiff_end = xcont_end+cont_Activ_overRec
         dbCreateRect(self, ndiff_layer, Box(xdiff_beg, ydiff_beg+diffoffset, xdiff_end, ydiff_end+diffoffset))
-

@@ -17,12 +17,15 @@
 ########################################################################
 __version__ = '$Revision: #3 $'
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 import math
 
-class SVaricap(DloGen):
+
+class SVaricap(DeviceBase):
 
     @classmethod
     def defineParamSpecs(cls, specs): 
@@ -49,6 +52,7 @@ class SVaricap(DloGen):
         specs('Nx', 1, 'Choose the columns number', RangeConstraint(1, 10))
         specs('bn', 'sub!', 'Bulk node connection')
 #endif
+        super().defineParamSpecs(specs)
 
     def setupParams(self, params):
         # process parameter values entered by user
@@ -57,10 +61,19 @@ class SVaricap(DloGen):
         self.l = Numeric(params['l'])
         self.w = Numeric(params['w'])
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.NWELL]
+
+    def genDeviceLayout(self):
         l = Numeric(self.l)*1e6
         w = Numeric(self.w)*1e6
-        NX = self.Nx;
+        NX = self.Nx
 
         activ = Layer('Activ', 'drawing')         # layer 1
         gate = Layer('GatPoly', 'drawing')        # layer 1
