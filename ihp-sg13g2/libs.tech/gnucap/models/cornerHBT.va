@@ -1,0 +1,140 @@
+//#######################################################################
+//
+// Copyright 2023 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//#######################################################################
+
+// typical corner
+module hbt_typ();
+    // vbic
+    localparam real vbic_cje = 1.0;
+    localparam real vbic_cjc = 1.0;
+    localparam real vbic_cjcp = 1.0;
+    localparam real vbic_is = 1.0;
+    localparam real vbic_ibei = 1.0;
+    localparam real vbic_re = 1.0;
+    localparam real vbic_rcx = 1.0;
+    localparam real vbic_rbx = 1.0;
+    localparam real vbic_tf = 1.0;
+    // sgp_mpa
+    localparam real sgp_mpa_cje = 1.0;
+    localparam real sgp_mpa_cjc = 1.0;
+    localparam real sgp_mpa_is = 1.0;
+    localparam real sgp_mpa_bf = 1.0;
+    localparam real sgp_mpa_re = 1.0;
+    localparam real sgp_mpa_rb = 1.0;
+    localparam real sgp_mpa_rc = 1.0;
+endmodule
+
+// typical stat corner
+module hbt_typ_stat();
+    parameter integer seed = 0; // TODO: inf for upper integer bounds not working
+    localparam real num_sigmas = 1.0;
+    // vbic nominal values
+    localparam real vbic_cje_nom  = 1.0;
+    localparam real vbic_cjc_nom  = 1.0;
+    localparam real vbic_cjcp_nom = 1.0;
+    localparam real vbic_is_nom   = 1.0;
+    localparam real vbic_ibei_nom = 1.0;
+    localparam real vbic_re_nom   = 1.0;
+    localparam real vbic_rcx_nom  = 1.0;
+    localparam real vbic_rbx_nom  = 1.0;
+    localparam real vbic_tf       = 1.0;
+    // vbic std
+    localparam real vbic_cje_sig  = 0.058 * vbic_cje_nom  / num_sigmas;
+    localparam real vbic_cjc_sig  = 0.043 * vbic_cjc_nom  / num_sigmas;
+    localparam real vbic_cjcp_sig = 0.037 * vbic_cjcp_nom / num_sigmas;
+    localparam real vbic_is_sig   = 0.087 * vbic_is_nom   / num_sigmas;
+    localparam real vbic_ibei_sig = 0.11  * vbic_ibei_nom / num_sigmas;
+    localparam real vbic_re_sig   = 0.09  * vbic_re_nom   / num_sigmas;
+    localparam real vbic_rcx_sig  = 0.069 * vbic_rcx_nom  / num_sigmas;
+    localparam real vbic_rbx_sig  = 0.041 * vbic_rbx_nom  / num_sigmas;
+    // vbic process-variation
+    localparam real vbic_cje     = $rdist_normal(seed + 1, vbic_cje_nom,  vbic_cje_sig,  "global");
+    localparam real vbic_cjc     = $rdist_normal(seed + 2, vbic_cjc_nom,  vbic_cjc_sig,  "global");
+    localparam real vbic_cjcp    = $rdist_normal(seed + 3, vbic_cjcp_nom, vbic_cjcp_sig, "global");
+    localparam real vbic_is      = $rdist_normal(seed + 4, vbic_is_nom,   vbic_is_sig,   "global");
+    localparam real vbic_ibei    = $rdist_normal(seed + 5, vbic_ibei_nom, vbic_ibei_sig, "global");
+    localparam real vbic_re  = $rdist_normal(seed + 6, vbic_re_nom,   vbic_re_sig,   "global");
+    localparam real vbic_rcx = $rdist_normal(seed + 7, vbic_rcx_nom,  vbic_rcx_sig,  "global");
+    localparam real vbic_rbx = $rdist_normal(seed + 8, vbic_rbx_nom,  vbic_rbx_sig,  "global");
+    // pnpMPA nominal values
+    localparam real sgp_mpa_cje_nom = 1.0;
+    localparam real sgp_mpa_cjc_nom = 1.0;
+    localparam real sgp_mpa_is_nom = 1.0;
+    localparam real sgp_mpa_bf_nom = 1.0;
+    localparam real sgp_mpa_re_nom = 1.0;
+    localparam real sgp_mpa_rb_nom = 1.0;
+    localparam real sgp_mpa_rc_nom = 1.0;
+    // pnpMPA std
+    localparam real sgp_mpa_cje_sig = 0.015 * sgp_mpa_cje_nom / num_sigmas;
+    localparam real sgp_mpa_cjc_sig = 0.007 * sgp_mpa_cjc_nom / num_sigmas;
+    localparam real sgp_mpa_is_sig  = 0.043 * sgp_mpa_is_nom  / num_sigmas;
+    localparam real sgp_mpa_bf_sig  = 0.079 * sgp_mpa_bf_nom  / num_sigmas;
+    localparam real sgp_mpa_re_sig  = 0.016 * sgp_mpa_re_nom  / num_sigmas;
+    localparam real sgp_mpa_rb_sig  = 0.008 * sgp_mpa_rb_nom  / num_sigmas;
+    localparam real sgp_mpa_rc_sig  = 0.017 * sgp_mpa_rc_nom  / num_sigmas;
+    // pnpMPA process-variation
+    localparam real sgp_mpa_cje = $rdist_normal(seed + 9,  sgp_mpa_cje_nom, sgp_mpa_cje_sig, "global");
+    localparam real sgp_mpa_cjc = $rdist_normal(seed + 10, sgp_mpa_cjc_nom, sgp_mpa_cjc_sig, "global");
+    localparam real sgp_mpa_is =  $rdist_normal(seed + 11, sgp_mpa_is_nom,  sgp_mpa_is_sig,  "global");
+    localparam real sgp_mpa_bf =  $rdist_normal(seed + 12, sgp_mpa_bf_nom,  sgp_mpa_bf_sig,  "global");
+    localparam real sgp_mpa_re =  $rdist_normal(seed + 13, sgp_mpa_re_nom,  sgp_mpa_re_sig,  "global");
+    localparam real sgp_mpa_rb =  $rdist_normal(seed + 14, sgp_mpa_rb_nom,  sgp_mpa_rb_sig,  "global");
+    localparam real sgp_mpa_rc =  $rdist_normal(seed + 15, sgp_mpa_rc_nom,  sgp_mpa_rc_sig,  "global");
+endmodule
+
+// best-case corner
+module hbt_bcs();
+    // vbic
+    localparam real vbic_cje = 0.83;
+    localparam real vbic_cjc = 0.87;
+    localparam real vbic_cjcp = 0.89;
+    localparam real vbic_is = 1.26;
+    localparam real vbic_ibei = 0.67;
+    localparam real vbic_re = 0.73;
+    localparam real vbic_rcx = 0.79;
+    localparam real vbic_rbx = 0.88;
+    localparam real vbic_tf = 0.89;
+    // sgp_mpa
+    localparam real sgp_mpa_cje = 0.955;
+    localparam real sgp_mpa_cjc = 0.98;
+    localparam real sgp_mpa_is = 1.13;
+    localparam real sgp_mpa_bf = 1.24;
+    localparam real sgp_mpa_re = 0.952;
+    localparam real sgp_mpa_rb = 0.975;
+    localparam real sgp_mpa_rc = 0.95;
+endmodule
+
+// worst-case corner
+module hbt_wcs();
+    localparam real vbic_cje = 1.17;
+    localparam real vbic_cjc = 1.13;
+    localparam real vbic_cjcp = 1.11;
+    localparam real vbic_is = 0.74;
+    localparam real vbic_ibei = 1.33;
+    localparam real vbic_re = 1.27;
+    localparam real vbic_rcx = 1.21;
+    localparam real vbic_rbx = 1.12;
+    localparam real vbic_tf = 1.11;
+
+    localparam real sgp_mpa_cje = 1.045;
+    localparam real sgp_mpa_cjc = 1.02;
+    localparam real sgp_mpa_is = 0.87;
+    localparam real sgp_mpa_bf = 0.76;
+    localparam real sgp_mpa_re = 1.048;
+    localparam real sgp_mpa_rb = 1.025;
+    localparam real sgp_mpa_rc = 1.05;
+endmodule

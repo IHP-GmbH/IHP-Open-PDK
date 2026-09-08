@@ -1,0 +1,1276 @@
+
+`define VERSION     1
+`define SUBVERSION  3
+`define REVISION    0
+`define e       4
+
+//
+//  Verilog-A definition of VBIC
+//
+//  Version:  1.3
+//  Revision: 1.0
+//
+//   1. Functions redefined to work properly in Verilog-A, previously
+//      they were substituted by special code to generate .va files
+//      without function calls.
+//   2. Noise declarations added, consistent with 1.1.5 version.
+//   3. qb and qbp calculations protected from having argument of the
+//      square-root go less than zero (this required very unusual
+//      conditions and parameters to occur, and needless to say
+//      this happened some times).
+//   4. Parameter names changed to lower case, this is what they are
+//      in simulator implementations.
+//   5. log mapped to ln, this was done in generated code, but in
+//      Verilog-A log is log_10, not log_e.
+//   6. The avalanche function was modified to protect against
+//      numerical problems for forward and low reverse bias.
+//   7. Hard limits on the local temperature were added. This is
+//      required to avoid numerical problems.
+//   8. The excess phase network has been defined in a simpler
+//      manner, but is exactly equivalent to the previous version.
+//      It is now done without an inductor. This is the transformation:
+//      Itzf-V(xf2)-j*w*C*V(xf1)=0
+//      j*w*L*V(xf2)+V(xf2)-V(xf1)=0
+//      where C=TD and L=TD/3 is what was done.
+//      Itzf=V(xf2)+j*w*TD*V(xf1)
+//      V(xf1)=j*w*(TD/3)*V(xf2)+V(xf2)
+//      node xf1: two VCCS (Itzf, V(xf2)) plus TD capacitor
+//      node xf2: one VCCS (V(xf1)), TD/3 capacitor, 1Ohm resistor
+//   9. gmin added explicitly
+//  10. pnjmaxi added explicitly, diode type currents linearized
+//      for values greater than pnjmaxi
+//  11. Fixed implementation of shrink factors
+//  12. Base kink current model for SiGe added, per A. Sadovnikov
+//  13. Temperature dependence added for Early voltages, a linear
+//      TC only was necessary, from data.
+//  14. Quasi-neutral base recombination current model added.
+//  15. Temperature dependence added to the thermal resistance.
+//  16. IBM avalanche modifications for high breakdown devices
+//      added, per D. Sheridan, this is Igcx.
+//
+
+`include "disciplines.vams"
+`include "cmcGeneralMacrosAndDefines.va"
+`include "cmcStandardModelMacros.va"
+
+//
+//  The original VBIC values of the parameters below differ from the
+//  NIST2004 values, shifting to the NIST2004 values changes simulation
+//  slightly so the original values are retained for backward compatibility.
+//
+
+`define  KB_VBIC  1.380662e-23    // Boltzmann constant (J/K)
+`define  QQ_VBIC  1.602189e-19    // mag. of electronic charge (C)
+
+`define CONSTroot2 1.41421356237309504880
+
+`define NPN +1
+`define PNP -1
+
+`ifdef insideADMS
+    `define INITIAL_MODEL @(initial_model)
+    `define INITIAL_INSTANCE @(initial_instance)
+`else
+    `define INITIAL_MODEL @(initial_step)
+    `define INITIAL_INSTANCE
+`endif
+
+//
+//  Normalized depletion charge with reach-through, which causes the capacitance to
+//  become constant when the reverse bias on the junction reaches vrt. As this is used
+//  for base charge calculation it is referenced so that its value is zero at a junction
+//  voltage of zero.
+//
+//  Outputs:
+//           qj         junction charge
+//  Inputs:
+//           v          voltage across the junction
+//           p          built-in voltage of the junction
+//           m          grading coefficient of the junction
+//           fc         linearization factor, model is linearized for v>fc*p
+//           aj         smoothing parameter, if <=0 a the model is regional
+//           vrt        reach-through voltage at which the capacitance becomes constant
+//           art        smoothing parameter for reach-through (not used for aj<=0)
+//           blockName  name for the begin/end block (must be unique)
+//
+
+`define qjrt_z(qj,v,p,m,fc,aj,vrt,art,blockName) \
+    begin : blockName \
+        real dv0, dvh, pwq, qlo, qhi, vn0, vnl0, vl0, qlo0, vn, vnl, vl, sel, crt, cmx, cl, ql, mv0, q0, dv, mv; \
+        dv0   = -p*fc; \
+        if (aj<=0.0) begin \
+            dvh =  v+dv0; \
+            if (dvh>0.0) begin \
+                pwq = pow((1.0-fc),(-1.0-m)); \
+                qlo = p*(1.0-pwq*(1.0-fc)*(1.0-fc))/(1.0-m); \
+                qhi = dvh*(1.0-fc+0.5*m*dvh/p)*pwq; \
+            end else begin \
+                if ((vrt>0.0)&&(v<-vrt)) begin \
+                    qlo = p*(1.0-pow((1.0+vrt/p),(1.0-m))*(1.0-((1.0-m)*(v+vrt))/(p+vrt)))/(1.0-m); \
+                end else begin \
+                    qlo = p*(1.0-pow((1.0-v/p),(1.0-m)))/(1.0-m); \
+                end \
+                qhi = 0.0; \
+            end \
+            qj  = qlo+qhi; \
+        end else begin \
+            if ((vrt>0.0)&&(art>0.0)) begin \
+                vn0  =  (vrt+dv0)/(vrt-dv0); \
+                vnl0 =  2.0*vn0/(sqrt((vn0-1.0)*(vn0-1)+4*aj*aj)+sqrt((vn0+1.0)*(vn0+1)+4*art*art)); \
+                vl0  =  0.5*(vnl0*(vrt-dv0)-vrt-dv0); \
+                qlo0 =  p*(1.0-pow((1.0-vl0/p),(1.0-m)))/(1.0-m); \
+                vn   =  (2*v+vrt+dv0)/(vrt-dv0); \
+                vnl  =  2.0*vn/(sqrt((vn-1.0)*(vn-1)+4*aj*aj)+sqrt((vn+1.0)*(vn+1)+4*art*art)); \
+                vl   =  0.5*(vnl*(vrt-dv0)-vrt-dv0); \
+                qlo  =  p*(1.0-pow((1.0-vl/p),(1.0-m)))/(1.0-m); \
+                sel  =  0.5*(vnl+1.0); \
+                crt  =  pow((1.0+vrt/p),(-m)); \
+                cmx  =  pow((1.0+dv0/p),(-m)); \
+                cl   =  (1.0-sel)*crt+sel*cmx; \
+                ql   =  (v-vl+vl0)*cl; \
+                qj   =  ql+qlo-qlo0; \
+            end else begin \
+                mv0  =  sqrt(dv0*dv0+4*aj*aj); \
+                vl0  = -0.5*(dv0+mv0); \
+                q0   = -p*pow((1.0-vl0/p),(1.0-m))/(1.0-m); \
+                dv   =  v+dv0; \
+                mv   =  sqrt(dv*dv+4*aj*aj); \
+                vl   =  0.5*(dv-mv)-dv0; \
+                qlo  = -p*pow((1.0-vl/p),(1.0-m))/(1.0-m); \
+                qj   =  qlo+pow((1.0-fc),(-m))*(v-vl+vl0)-q0; \
+            end \
+        end \
+    end
+
+//
+//  Avalanche multiplication factor for the base-collector junction
+//
+//  Outputs:
+//           avalm      the avalanche multiplication factor
+//
+//  Inputs:
+//           v          the voltage across the junction
+//           p          the built-in potential of the junction
+//           m          the grading factor for the junction
+//           av1        first  avalanche multiplication parameter
+//           av2        second avalanche multiplication parameter
+//           vmaxExp    maximum voltage for exponential evaluation, linearize past that
+//           blockName  name for the begin/end block (must be unique)
+//
+//  vminm is defined so that the magnitude of the
+//  exponential argument will not exceed roughly 50,
+//  to prevent numerical evaluation problems (for extreme
+//  biases that may arise from NR)
+//
+
+`define avalm(avalm,v,p,m,av1,av2,vmaxExp,blockName) \
+    begin : blockName \
+        real vminm, vl, mac1, expi, expl; \
+        vminm = pow((0.02*(av2+1.0)),(1.0/(1.01-m))); \
+        vl    = 0.5*(sqrt((p-v-vminm)*(p-v-vminm)+0.01)+(p-v-vminm))+vminm; \
+        mac1  = -av2*pow(vl,(m-1.0)); \
+        if (mac1<vmaxExp) begin \
+            expi    =  exp(mac1); \
+        end else begin \
+            expl    =  exp(vmaxExp); \
+            expi    =  expl*(1.0+(mac1-vmaxExp)); \
+        end \
+        avalm = av1*vl*expi; \
+    end
+
+//
+//  The excess-phase and self-heating models are always included
+//  in the VBIC model definition (but can be turned off by setting
+//  model and/or instance parameters appropriately), the only options
+//  are 3- or 4-terminal versions.
+//
+
+//`define threeTerminal
+
+//
+//  Start of VBIC model code
+//
+
+`ifdef threeTerminal
+    `ifdef __XYCE__
+        module vbic13_va(c,b,e);
+    `else
+        module vbic13(c,b,e);
+    `endif
+    inout       c,b,e;                           // external nodes
+    electrical  c,b,e;
+    thermal     dt;                              // self-heating local temperature rise node
+    electrical  cx,ci,bx,bi,ei,bp,xf1,xf2;       // internal nodes
+    `undef fourTerminal
+`else
+    `ifdef fiveTerminal
+        `ifdef __XYCE__
+            module vbic13_5t_va(c,b,e,s,dt);
+        `else
+            module vbic13_5t(c,b,e,s,dt);
+        `endif
+        inout       c,b,e,s,dt;                      // external nodes
+        electrical  c,b,e,s;
+        thermal     dt;                              // self-heating temperature rise node
+        electrical  cx,ci,bx,bi,ei,bp,si,xf1,xf2;    // internal nodes
+        `define fourTerminal
+    `else
+        `ifdef __XYCE__
+            module vbic13_4t_va(c,b,e,s);
+        `else
+            module vbic13_4t(c,b,e,s);
+        `endif
+        inout       c,b,e,s;                         // external nodes
+        electrical  c,b,e,s;
+        thermal     dt;                              // self-heating local temperature rise node
+        electrical  cx,ci,bx,bi,ei,bp,si,xf1,xf2;    // internal nodes
+        `define fourTerminal
+    `endif
+`endif
+
+`ifdef __XYCE__
+    // limiter for Rth This is a very simplistic limiter function that
+    // prevents the change in a thermal "voltage" from swinging by more
+    // than 5 degrees per step
+    analog function real limRTH;
+        input orig, old;
+        real  orig,old;
+        real  t0,t1,retval;
+
+        begin
+            t0=orig-old;
+            t1=abs(t0);
+            retval=orig;
+            if (t1>5.0) begin
+                if (t0>0)
+                    retval=old+5.0;
+                else
+                    retval=old-5.0;
+            end
+            limRTH=retval;
+        end
+    endfunction
+`endif
+
+//
+//  Branch definitions
+//
+
+branch (b ,e )        b_be;            //           base-emit
+branch (b ,c )        b_bc;            //           base-coll
+branch (bi,ei)        b_bei;           // intrinsic base-emit
+branch (bx,ei)        b_bex;           // extrinsic base-emit
+branch (bi,ci)        b_bci;           // intrinsic base-coll
+branch (bi,cx)        b_bcx;           // extrinsic base-coll
+branch (bx,cx)        b_bxcx;          // extrinsic avalanche
+branch (ci,ei)        b_cei;           // intrinsic coll-emit
+branch (ei,ci)        b_eci;           // intrinsic emit-coll
+branch (bx,bp)        b_bep;           // parasitic base-emit
+branch (e ,ei)        b_re;            // emit resistance
+branch (c ,cx)        b_rcx;           // coll resistance, extrinsic
+branch (cx,ci)        b_rci;           // coll resistance, intrinsic
+branch (b ,bx)        b_rbx;           // base resistance, extrinsic
+branch (bx,bi)        b_rbi;           // base resistance, intrinsic
+branch (bp,cx)        b_rbp;           // base resistance, parasitic
+`ifdef fourTerminal
+    branch (si,bp)        b_bcp;           // parasitic base-coll
+    branch (bx,si)        b_cep;           // parasitic coll-emit
+    branch (s ,si)        b_rs;            // subs resistance
+`endif
+branch (dt)           b_rth;           // local thermal branch
+branch (dt)           b_ith;           // local thermal branch
+branch (xf1)          b_xf1;
+branch (xf1)          c_xf1;
+branch (xf2)          b_xf2;
+branch (xf2)          c_xf2;
+
+//
+//  Instance model parameters
+//
+
+`IPM
+`IPRnb( trise     ,   0.0     ,"degC"                    , "local temperature delta to ambient (before self-heating)")
+`IPIsw( sw_noise  ,   1       ,""                        , "switch for including noise:   0=no and 1=yes")
+`IPIsw( sw_et     ,   1       ,""                        , "switch for self-heating:      0=no and 1=yes")
+
+//
+//  Special model parameters, some may be simulator global parameters
+//
+
+`MPRnb( npn       ,   0.0     ,""                        , "npn transistor type")
+`MPRnb( pnp       ,   0.0     ,""                        , "pnp transistor type")
+`MPIty( type      ,   1       ,""                        , "transistor type: +1=npn and -1=pnp (overriden by npn or pnp)")
+
+`MPRoc( scale     ,   1.0     ,""          ,   0.0,   1.0, "scale  factor for instance geometries")
+`MPRco( shrink    ,   0.0     ,"%"         ,   0.0, 100.0, "shrink percentage for instance geometries")
+`MPRcc( tmin      ,-100.0     ,"degC"      ,-250.0,  27.0, "minimum ambient temperature")
+`MPRcc( tmax      , 500.0     ,"degC"      ,  27.0,1000.0, "maximum ambient temperature")
+`MPRco( gmin      ,   1.0e-12 ,"S"         ,   0.0,   inf, "minimum conductance")
+`MPRoo( pnjmaxi   ,   1.0     ,"A"         ,   0.0,   inf, "current at which to linearize diode currents")
+`MPRoo( maxexp    ,   1.0e22  ,""          ,   0.0,   inf, "argument at which to linearize general exponentials")
+
+//
+//  General model parameters
+//
+
+`MPRcc( tnom      ,  27.0     ,"degC"      ,-250.0,1000.0, "nominal (reference) temperature")
+`MPRcc( tminclip  ,-100.0     ,"degC"      ,-250.0,  27.0, "clip minimum temperature")
+`MPRcc( tmaxclip  , 500.0     ,"degC"      ,  27.0,1000.0, "clip maximum temperature")
+
+//
+//  Parameter definitions
+//
+
+//
+//  Resistance parameters
+//
+
+`MPRco( rcx       ,   0.0     ,"Ohm"       ,   0.0,   inf, "extrinsic collector resistance")
+`MPRco( rci       ,   0.0     ,"Ohm"       ,   0.0,   inf, "intrinsic collector resistance")
+`MPRco( vo        ,   0.0     ,"V"         ,   0.0,   inf, "epi drift saturation voltage")
+`MPRco( gamm      ,   0.0     ,""          ,   0.0,   inf, "epi doping parameter")
+`MPRco( hrcf      ,   0.0     ,""          ,   0.0,   inf, "high current collector resistance factor")
+`MPRco( rbx       ,   0.0     ,"Ohm"       ,   0.0,   inf, "extrinsic base resistance")
+`MPRco( rbi       ,   0.0     ,"Ohm"       ,   0.0,   inf, "intrinsic base resistance")
+`MPRco( re        ,   0.0     ,"Ohm"       ,   0.0,   inf, "extrinsic emitter resistance")
+`MPRco( rs        ,   0.0     ,"Ohm"       ,   0.0,   inf, "extrinsic substrate resistance")
+`MPRco( rbp       ,   0.0     ,"Ohm"       ,   0.0,   inf, "parasitic transistor base resistance")
+
+//
+//  Main transistor and parasitic transistor transport current parameters
+//
+
+`MPRoo( is        ,   1.0e-16 ,"A"         ,   0.0,   inf, "transport saturation current")
+`MPRoo( isrr      ,   1.0     ,""          ,   0.0,   inf, "ratio of is(reverse) to is(forward)")
+`MPRoo( nf        ,   1.0     ,""          ,   0.0,   inf, "fwd emission coefficient (ideality factor)")
+`MPRoo( nr        ,   1.0     ,""          ,   0.0,   inf, "rev emission coefficient (ideality factor)")
+`MPIsw( qbm       ,   0       ,""                        , "base charge model selection switch: 0=GP and 1=SGP")
+`MPRco( isp       ,   0.0     ,"A"         ,   0.0,   inf, "parasitic transport saturation current")
+`MPRcc( wsp       ,   1.0     ,""          ,   0.0,   1.0, "partitioning of Iccp between Vbep and Vbci")
+`MPRoo( nfp       ,   1.0     ,""          ,   0.0,   inf, "parasitic emission coeff (ideality factor)")
+
+//
+//  Depletion, epi, and overlap capacitance parameters
+//
+
+`MPRco( fc        ,   0.9     ,""          ,   0.0,   1.0, "forward bias depletion capacitance limit")
+`MPRco( cbeo      ,   0.0     ,"F"         ,   0.0,   inf, "extrinsic b-e overlap capacitance")
+`MPRco( cje       ,   0.0     ,"F"         ,   0.0,   inf, "zero-bias b-e depletion capacitance")
+`MPRoo( pe        ,   0.75    ,"V"         ,   0.0,   inf, "b-e built-in potential")
+`MPRoo( me        ,   0.33    ,""          ,   0.0,   1.0, "b-e grading coefficient")
+`MPRnb( aje       ,  -0.5     ,""                        , "b-e capacitance smoothing factor")
+`MPRco( cbco      ,   0.0     ,"F"         ,   0.0,   inf, "extrinsic b-c overlap capacitance")
+`MPRco( cjc       ,   0.0     ,"F"         ,   0.0,   inf, "zero-bias b-c depletion capacitance")
+`MPRoo( pc        ,   0.75    ,"V"         ,   0.0,   inf, "b-c built-in potential")
+`MPRoo( mc        ,   0.33    ,""          ,   0.0,   1.0, "b-c grading coefficient")
+`MPRnb( ajc       ,  -0.5     ,""                        , "b-c capacitance smoothing factor")
+`MPRco( vrt       ,   0.0     ,"V"         ,   0.0,   inf, "reach-through voltage for Cbc limiting")
+`MPRoo( art       ,   0.1     ,""          ,   0.0,   inf, "smoothing parameter for reach-through")
+`MPRco( qco       ,   0.0     ,"C"         ,   0.0,   inf, "epi charge parameter")
+`MPRco( cjep      ,   0.0     ,"F"         ,   0.0,   inf, "zero-bias extrinsic b-c depletion capacitance")
+`MPRco( cjcp      ,   0.0     ,"F"         ,   0.0,   inf, "zero-bias extrinsic c-s depletion capacitance")
+`MPRoo( ps        ,   0.75    ,"V"         ,   0.0,   inf, "c-s built-in potential")
+`MPRoo( ms        ,   0.33    ,""          ,   0.0,   1.0, "c-s grading coefficient")
+`MPRnb( ajs       ,  -0.5     ,""                        , "c-s capacitance smoothing factor")
+`MPRco( ccso      ,   0.0     ,"F"         ,   0.0,   inf, "extrinsic c-s overlap capacitance")
+
+//
+//  Junction current parameters
+//
+
+`MPRco( ibei      ,   1.0e-18 ,"A"         ,   0.0,   inf, "ideal b-e saturation current")
+`MPRcc( wbe       ,   1.0     ,""          ,   0.0,   1.0, "partitioning of Ibe/Ibex and Qbe/Qbex")
+`MPRoo( nei       ,   1.0     ,""          ,   0.0,   inf, "ideal b-e emission coefficient")
+`MPRcc( qnibeir   ,   0.0     ,""          ,   0.0,   1.0, "ideal b-e quasi-neutral base recombination parameter")
+`MPRco( iben      ,   0.0     ,"A"         ,   0.0,   inf, "non-ideal b-e saturation current")
+`MPRoo( nen       ,   2.0     ,""          ,   nei,   inf, "non-ideal b-e emission coefficient")
+`MPRco( ibci      ,   1.0e-16 ,"A"         ,   0.0,   inf, "ideal b-c saturation current")
+`MPRoo( nci       ,   1.0     ,""          ,   0.0,   inf, "ideal b-c emission coefficient")
+`MPRco( ibcn      ,   0.0     ,"A"         ,   0.0,   inf, "non-ideal b-c saturation current")
+`MPRoo( ncn       ,   2.0     ,""          ,   nci,   inf, "non-ideal b-c emission coefficient")
+`MPRco( ibeip     ,   0.0     ,"A"         ,   0.0,   inf, "ideal parasitic b-e saturation current")
+`MPRco( ibenp     ,   0.0     ,"A"         ,   0.0,   inf, "non-ideal parasitic b-e saturation current")
+`MPRco( ibcip     ,   0.0     ,"A"         ,   0.0,   inf, "ideal parasitic b-c saturation current")
+`MPRoo( ncip      ,   1.0     ,""          ,   0.0,   inf, "ideal parasitic b-c emission coefficient")
+`MPRco( ibcnp     ,   0.0     ,"A"         ,   0.0,   inf, "non-ideal parasitic b-c saturation current")
+`MPRoo( ncnp      ,   2.0     ,""          ,  ncip,   inf, "non-ideal parasitic b-c emission coefficient")
+
+//
+//  Early voltages, knee currents, transit time, and excess phase parameters
+//
+
+`MPRco( vef       ,   0.0     ,"V"         ,   0.0,   inf, "forward Early voltage (zero=infinite)")
+`MPRco( ver       ,   0.0     ,"V"         ,   0.0,   inf, "reverse Early voltage (zero=infinite)")
+`MPRco( ikf       ,   0.0     ,"A"         ,   0.0,   inf, "forward knee current  (zero=infinite)")
+`MPRoo( nkf       ,   0.5     ,""          ,   0.0,   1.0, "high current beta roll-off parameter")
+`MPRco( ikr       ,   0.0     ,"A"         ,   0.0,   inf, "reverse knee current  (zero=infinite)")
+`MPRco( ikp       ,   0.0     ,"A"         ,   0.0,   inf, "parasitic knee current  (zero=infinite)")
+`MPRco( tf        ,   0.0     ,"s"         ,   0.0,   inf, "forward transit time")
+`MPRco( qtf       ,   0.0     ,""          ,   0.0,   inf, "variation of tf with base-width modulation")
+`MPRco( xtf       ,   0.0     ,""          ,   0.0,   inf, "tf bias dependence coefficient")
+`MPRco( vtf       ,   0.0     ,"V"         ,   0.0,   inf, "tf coefficient of Vbci dependence")
+`MPRco( itf       ,   0.0     ,"A"         ,   0.0,   inf, "tf coefficient of Ic dependence")
+`MPRco( tr        ,   0.0     ,"s"         ,   0.0,   inf, "reverse transit time")
+`MPRco( td        ,   0.0     ,"s"         ,   0.0,   inf, "forward excess-phase delay time")
+
+//
+//  Avalanche (weak impact ionization) and breakdown parameters
+//
+
+`MPRco( avc1      ,   0.0     ,"/V"        ,   0.0,   inf, "b-c   weak avalanche parameter 1")
+`MPRco( avc2      ,   0.0     ,""          ,   0.0,   inf, "b-c   weak avalanche parameter 2")
+`MPRco( avcx1     ,   0.0     ,"/V"        ,   0.0,   inf, "bx-cx weak avalanche parameter 1")
+`MPRco( avcx2     ,   0.0     ,""          ,   0.0,   inf, "bx-cx weak avalanche parameter 2")
+`MPRoc( mcx       ,   0.33    ,""          ,   0.0,   1.0, "bx-cx grading coefficient for avalanche")
+`MPRco( vbbe      ,   0.0     ,"V"         ,   0.0,   inf, "b-e   breakdown voltage")
+`MPRoo( nbbe      ,   1.0     ,""          ,   0.0,   inf, "b-e   breakdown emission coefficient")
+`MPRoo( ibbe      ,   1.0e-06 ,"A"         ,   0.0,   inf, "b-e   breakdown current")
+`MPRnb( tvbbe1    ,   0.0     ,"/C"                      , "linear temperature coefficient of vbbe")
+`MPRnb( tvbbe2    ,   0.0     ,"/C^2"                    , "quadratic temperature coefficient of vbbe")
+`MPRnb( tnbbe     ,   0.0     ,"/C"                      , "temperature coefficient of nbbe")
+
+//
+//  SiGe base current kink parameters
+//
+
+`MPRco( vpte      ,   0.0     ,"V"         ,   0.0,   inf, "SiGe base current kink voltage")
+`MPRco( ibk0      ,   0.0     ,"A"         ,   0.0,   inf, "SiGe base current kink current reference")
+`MPRoo( abk       ,   1.0     ,""          ,   0.0,   inf, "SiGe base current kink exponent")
+`MPRco( bbk       ,   0.0     ,"A"         ,   0.0,   inf, "SiGe base current kink current factor")
+
+//
+//  Noise model parameters
+//
+
+`MPRco( kfn       ,   0.0     ,""          ,   0.0,   inf, "b-e flicker noise constant")
+`MPRoo( afn       ,   1.0     ,""          ,   0.0,   inf, "b-e flicker noise current exponent")
+`MPRoo( bfn       ,   1.0     ,""          ,   0.0,   inf, "b-e flicker noise 1/f exponent")
+
+//
+//  Self-heating model parameters
+//
+
+`MPRco( rth       ,   0.0     ,"C/W"       ,   0.0,   inf, "thermal resistance")
+`MPRco( cth       ,   0.0     ,"J/C"       ,   0.0,   inf, "thermal capacitance")
+
+//
+//  Temperature dependence model parameters
+//
+
+`MPRnb( xre       ,   0.0     ,""                        , "temperature exponent of re")
+`MPRnb( xrb       ,   0.0     ,""                        , "temperature exponent of rbx and rbi")
+`MPRnb( xrbi      ,   0.0     ,""                        , "temperature exponent of rbi (overrides xrb)")
+`MPRnb( xrbx      ,   0.0     ,""                        , "temperature exponent of rbx (overrides xrb)")
+`MPRnb( xrc       ,   0.0     ,""                        , "temperature exponent of rci and rcx and rbp")
+`MPRnb( xrci      ,   0.0     ,""                        , "temperature exponent of rci (overrides xrc)")
+`MPRnb( xrcx      ,   0.0     ,""                        , "temperature exponent of rcx (overrides xrc)")
+`MPRnb( xrbp      ,   0.0     ,""                        , "temperature exponent of rbp (overrides xrc)")
+`MPRnb( xrs       ,   0.0     ,""                        , "temperature exponent of rs")
+`MPRnb( xvo       ,   0.0     ,""                        , "temperature exponent of vo")
+`MPRnb( ea        ,   1.12    ,"V"                       , "activation energy for is")
+`MPRnb( eaie      ,   1.12    ,"V"                       , "activation energy for ibei")
+`MPRnb( eaic      ,   1.12    ,"V"                       , "activation energy for ibci and ibeip")
+`MPRnb( eais      ,   1.12    ,"V"                       , "activation energy for ibcip")
+`MPRnb( eane      ,   1.12    ,"V"                       , "activation energy for iben")
+`MPRnb( eanc      ,   1.12    ,"V"                       , "activation energy for ibcn and ibenp")
+`MPRnb( eans      ,   1.12    ,"V"                       , "activation energy for ibcnp")
+`MPRnb( eap       ,   1.12    ,"V"                       , "activation energy for isp")
+`MPRnb( dear      ,   0.0     ,"V"                       , "delta activation energy for isrr")
+`MPRnb( xis       ,   3.0     ,""                        , "temperature exponent of is")
+`MPRnb( xii       ,   3.0     ,""                        , "temperature exponent of ibei, ibci, ibeip, ibcip")
+`MPRnb( xin       ,   3.0     ,""                        , "temperature exponent of iben, ibcn, ibenp, ibcnp")
+`MPRnb( xisr      ,   0.0     ,""                        , "temperature exponent for isrr")
+`MPRnb( xikf      ,   0.0     ,""                        , "temperature exponent of ikf")
+`MPRnb( tavc      ,   0.0     ,"/C"                      , "temperature exponent of avc2")
+`MPRnb( tavcx     ,   0.0     ,"/C"                      , "temperature exponent of avcx2")
+`MPRnb( tnf       ,   0.0     ,"/C"                      , "temperature exponent of nf and nr")
+`MPRnb( tcvef     ,   0.0     ,"/C"                      , "temperature exponent of vef")
+`MPRnb( tcver     ,   0.0     ,"/C"                      , "temperature exponent of ver")
+`MPRnb( tcrth     ,   0.0     ,"/C"                      , "temperature exponent of rth")
+
+//
+//  Supported aliases for parameters
+//
+
+`ALIAS(dtemp,trise)
+`ALIAS(dta,trise)
+`ALIAS(tref,tnom)
+
+real is_t,isrr_t,ikf_t,ibei_t,ibci_t,isp_t,iben_t,ibcn_t;
+real ibeip_t,ibenp_t,ibcip_t,ibcnp_t;
+real rcx_t,rci_t,rbx_t,rbi_t,re_t,rs_t,rbp_t,rth_t;
+real pe_t,pc_t,ps_t;
+real cje_t,cjc_t,cjep_t,cjcp_t;
+real nf_t,nr_t,avc2_t,avcx2_t,vbbe_t,nbbe_t,gamm_t,vo_t,ebbe_t,vef_t,ver_t;
+real tdevC,tdevK,tiniK,rT,dT;
+real Ivef,Iver,Iikf,Iikr,Iikp,Ivo,Ihrcf,Ivtf,Iitf,sltf;
+real Gcx,Gci,Gbx,Gbi,Ge,Gbp,Gs,Gth;
+real maxvIfi,maxvIri,maxvIp,maxvIbbe;
+real maxvIbei,maxvIben,maxvIbci,maxvIbcn,maxvIbeip,maxvIbenp,maxvIbcip,maxvIbcnp;
+
+real vtv,Ifi,Iri,Itzf,Itzr,q1z,q1,q2,qb,Ifp,Irp,Iccp,q2p,qbp;
+real Ibe,Ibex,Ibcj,Ibc,Ibep,Ibcp,Igc,Igcx,avalf;
+real Ircx,Irci,Irbx,Irbi,Ire,Irbp,Irs;
+real Kbci,Kbcx,rKp1,Iohm,derf;
+real arg,expi,expn,expx,afac;
+real VmaxExp;
+real qdbe,qdbex,qdbc,qdbep,qdbcp;
+
+real sgIf,rIf,mIf,tff;
+real Qbe,Qbex,Qbc,Qbcx,Qbep,Qbcp,Qbeo,Qbco;
+real Vxf1,Vxf2,Ixf1,Ixf2,Qxf1,Qxf2,Itxf;
+real dt_et,Ith,power,Irth,Qcth;
+real Vbei,Vbci,Vbex,Vbep,Vbcp,Vbcx,Vbxcx,Bvbe;
+real Vbe,Vbc,Vrcx,Vrci,Vrbx,Vrbi,Vre,Vrbp,Vrs,Vcei,Vcep;
+
+real VBICtype;
+
+real scaleFac, shrinkL, gminMod, imaxMod, mMod;
+//real ic,ib,ie,isub,powerT,powerD,Vce;
+//real Ircx_Vrcx,Irci_Vrci,Irbx_Vrbx,Irbi_Vrbi,Irbp_Vrbp,Ire_Vre,Irs_Vrs;
+//real tauTh,gci_eff,Iibk,Ibk,VcbFac;
+real Iibk,Ibk,VcbFac;
+
+real tVCrit;
+
+
+analog begin : analogBlock
+
+
+    //
+    //  Code independent of bias or instance parameters
+    //
+
+    `INITIAL_MODEL
+    begin : initializeModel
+        `SCALE
+        `SHRINKL
+        `GMIN
+        if ($param_given(pnjmaxi)) begin
+            imaxMod  =  pnjmaxi;
+        end else begin
+            imaxMod  = $simparam("pnjmaxi",1.0);
+        end
+
+        if (`TESTGIVEN(npn)) begin
+            VBICtype = `NPN;
+        end else if (`TESTGIVEN(pnp)) begin
+            VBICtype = `PNP;
+        end else if (`TESTGIVEN(type)) begin
+            VBICtype = type;
+        end else begin
+            VBICtype = `NPN;
+        end
+
+        VmaxExp  =  ln(maxexp);
+        Iikr     =  ikr  >0.0    ? 1.0/ikr    : 0.0;
+        Iikp     =  ikp  >0.0    ? 1.0/ikp    : 0.0;
+        Ihrcf    =  hrcf >0.0    ? 1.0/hrcf   : 0.0;
+        Ivtf     =  vtf  >0.0    ? 1.0/vtf    : 0.0;
+        Iitf     =  itf  >0.0    ? 1.0/itf    : 0.0;
+        sltf     =  itf  >0.0    ? 0.0        : 1.0;
+        tiniK    = `TABS_NIST2004+tnom;
+    end // initializeModel
+
+
+    //
+    //  Code independent of bias but dependent on instance parameters
+    //
+
+    `INITIAL_INSTANCE
+    begin : initializeInstance
+        `MFACTOR_DEC
+        tdevC    = $temperature+trise-`TABS_NIST2004;
+        if (tdevC<tmin) begin
+            $strobe("WARNING: ambient temperature is lower than allowed minimum");
+        end
+        if (tdevC>tmax) begin
+            $strobe("WARNING: ambient temperature is higher than allowed maximum");
+        end
+        `CLIPB1p0(tdevC,tdevC,tminclip,tmaxclip)
+        tdevK    =  tdevC+`TABS_NIST2004;
+        vtv      = `KB_VBIC*tdevK/`QQ_VBIC;
+        rT       =  tdevK/tiniK;
+
+        tVCrit = $vt($temperature)*ln($vt($temperature)/(`CONSTroot2*is));
+
+        //
+        //  Voltages at which to linearize exponentials, these are calculated at tnom and do not
+        //  take self-heating into account, which is OK as they are supposed to be well above
+        //  the normal operating range and are not precise quantities, but prevent explosion
+        //  of exponentials during iteration, when large voltages may be encountered prior to convergence.
+        //
+
+        if (ibbe>0.0) begin
+            maxvIbbe =  nbbe*vtv*ln(exp(-vbbe/(nbbe*vtv))+imaxMod/ibbe);
+        end else begin
+            maxvIbbe =  0.0;
+        end
+        is_t     =  is   *pow(rT,(xis /nf))  *exp(-ea  *(1.0-rT)/(vtv*nf  ));
+        if (is_t>0.0) begin
+            if (ikf>0.0&&imaxMod>ikf) begin
+                maxvIfi  =  nf*vtv*ln(1.0+pow((0.5*imaxMod*pow((4.0/ikf),nkf)),(1.0/(1.0-nkf)))/is_t);
+            end else begin
+                maxvIfi  =  nf*vtv*ln(1.0+imaxMod/is_t);
+            end
+        end else begin
+            maxvIfi  =  0.0;
+        end
+        isrr_t   =  isrr *pow(rT,(xisr/nr))  *exp(-dear*(1.0-rT)/(vtv*nr  ));
+        if (is_t>0.0&&isrr_t>0.0) begin
+            if (ikr>0.0&&imaxMod>ikr) begin
+                maxvIri  =  nr*vtv*ln(1.0+pow((0.5*imaxMod*pow((4.0/ikr),nkf)),(1.0/(1.0-nkf)))/(is_t*isrr_t));
+            end else begin
+                maxvIri  =  nr*vtv*ln(1.0+imaxMod/(is_t*isrr_t));
+            end
+        end else begin
+            maxvIri  =  0.0;
+        end
+        isp_t    =  isp  *pow(rT,(xis /nfp)) *exp(-eap *(1.0-rT)/(vtv*nfp ));
+        if (isp_t>0.0) begin
+            if (ikp>0.0&&imaxMod>ikp) begin
+                maxvIp   =  nfp*vtv*ln(1.0+imaxMod*imaxMod*Iikp/(isp_t));
+            end else begin
+                maxvIp   =  nfp*vtv*ln(1.0+imaxMod/isp_t);
+            end
+        end else begin
+            maxvIp   =  0.0;
+        end
+        ibei_t   =  ibei *pow(rT,(xii /nei)) *exp(-eaie*(1.0-rT)/(vtv*nei ));
+        if (ibei_t>0.0) begin
+            maxvIbei =  nei*vtv*ln(1.0+imaxMod/ibei_t);
+        end else begin
+            maxvIbei =  0.0;
+        end
+        iben_t   =  iben *pow(rT,(xin /nen)) *exp(-eane*(1.0-rT)/(vtv*nen ));
+        if (iben_t>0.0) begin
+            maxvIben =  nen*vtv*ln(1.0+imaxMod/iben_t);
+        end else begin
+            maxvIben =  0.0;
+        end
+        ibci_t   =  ibci *pow(rT,(xii /nci)) *exp(-eaic*(1.0-rT)/(vtv*nci ));
+        if (ibci_t>0.0) begin
+            maxvIbci =  nci*vtv*ln(1.0+imaxMod/ibci_t);
+        end else begin
+            maxvIbci =  0.0;
+        end
+        ibcn_t   =  ibcn *pow(rT,(xin /ncn)) *exp(-eanc*(1.0-rT)/(vtv*ncn ));
+        if (ibcn_t>0.0) begin
+            maxvIbcn =  ncn*vtv*ln(1.0+imaxMod/ibcn_t);
+        end else begin
+            maxvIbcn =  0.0;
+        end
+        ibeip_t  =  ibeip*pow(rT,(xii /nci)) *exp(-eaic*(1.0-rT)/(vtv*nci ));
+        if (ibeip_t>0.0) begin
+            maxvIbeip=  nci*vtv*ln(1.0+imaxMod/ibeip_t);
+        end else begin
+            maxvIbeip=  0.0;
+        end
+        ibenp_t  =  ibenp*pow(rT,(xin /ncn)) *exp(-eanc*(1.0-rT)/(vtv*ncn ));
+        if (ibenp_t>0.0) begin
+            maxvIbenp=  ncn*vtv*ln(1.0+imaxMod/ibenp_t);
+        end else begin
+            maxvIbenp=  0.0;
+        end
+        ibcip_t  =  ibcip*pow(rT,(xii /ncip))*exp(-eais*(1.0-rT)/(vtv*ncip));
+        if (ibcip_t>0.0) begin
+            maxvIbcip=  ncip*vtv*ln(1.0+imaxMod/ibcip_t);
+        end else begin
+            maxvIbcip=  0.0;
+        end
+        ibcnp_t  =  ibcnp*pow(rT,(xin /ncnp))*exp(-eans*(1.0-rT)/(vtv*ncnp));
+        if (ibcnp_t>0.0) begin
+            maxvIbcnp=  ncnp*vtv*ln(1.0+imaxMod/ibcnp_t);
+        end else begin
+            maxvIbcnp=  0.0;
+        end
+    end // initializeInstance
+
+    //
+    //  DC bias dependent quantities
+    //
+
+    begin : evaluateStatic
+
+        //
+        //  Temperature mappings
+        //  (as they depend on self-heating they need to be in the evaluateStatic
+        //  and not the initializeInstance block)
+        //
+`ifdef __NGSPICE__
+        dt_et    = $limit(Temp(b_rth),"limitlog",100);
+`else
+    `ifdef __XYCE__
+        dt_et    = $limit(Temp(b_rth),"limRTH");
+    `else
+        dt_et    =  Temp(b_rth);
+    `endif
+`endif
+        tdevC    = $temperature+trise+dt_et-`TABS_NIST2004;
+        `CLIPB1p0(tdevC,tdevC,tminclip,tmaxclip)
+        tdevK    =  tdevC+`TABS_NIST2004;
+        vtv      = `KB_VBIC*tdevK/`QQ_VBIC;
+        rT       =  tdevK/tiniK;
+        dT       =  tdevK-tiniK;
+
+        //
+        //  Temperature mappings for VBIC
+        //
+
+        ikf_t    =  ikf*pow(rT,xikf);
+        if (`TESTGIVEN(xrcx)) begin
+            rcx_t    =  rcx*pow(rT,xrcx);
+        end else begin
+            rcx_t    =  rcx*pow(rT,xrc);
+        end
+        if (`TESTGIVEN(xrci)) begin
+            rci_t    =  rci*pow(rT,xrci);
+        end else begin
+            rci_t    =  rci*pow(rT,xrc);
+        end
+        if (`TESTGIVEN(xrbx)) begin
+            rbx_t    =  rbx*pow(rT,xrbx);
+        end else begin
+            rbx_t    =  rbx*pow(rT,xrb);
+        end
+        if (`TESTGIVEN(xrbi)) begin
+            rbi_t    =  rbi*pow(rT,xrbi);
+        end else begin
+            rbi_t    =  rbi*pow(rT,xrb);
+        end
+        re_t     =  re*pow(rT,xre);
+        rs_t     =  rs*pow(rT,xrs);
+        if (`TESTGIVEN(xrbp)) begin
+            rbp_t    =  rbp*pow(rT,xrbp);
+        end else begin
+            rbp_t    =  rbp*pow(rT,xrc);
+        end
+        rth_t    =  rth*(1.0+dT*tcrth);
+        is_t     =  is   *pow(rT,(xis /nf))  *exp(-ea  *(1.0-rT)/(vtv*nf  ));
+        isrr_t   =  isrr *pow(rT,(xisr/nr))  *exp(-dear*(1.0-rT)/(vtv*nr  ));
+        isp_t    =  isp  *pow(rT,(xis /nfp)) *exp(-eap *(1.0-rT)/(vtv*nfp ));
+        ibei_t   =  ibei *pow(rT,(xii /nei)) *exp(-eaie*(1.0-rT)/(vtv*nei ));
+        iben_t   =  iben *pow(rT,(xin /nen)) *exp(-eane*(1.0-rT)/(vtv*nen ));
+        ibci_t   =  ibci *pow(rT,(xii /nci)) *exp(-eaic*(1.0-rT)/(vtv*nci ));
+        ibcn_t   =  ibcn *pow(rT,(xin /ncn)) *exp(-eanc*(1.0-rT)/(vtv*ncn ));
+        ibeip_t  =  ibeip*pow(rT,(xii /nci)) *exp(-eaic*(1.0-rT)/(vtv*nci ));
+        ibenp_t  =  ibenp*pow(rT,(xin /ncn)) *exp(-eanc*(1.0-rT)/(vtv*ncn ));
+        ibcip_t  =  ibcip*pow(rT,(xii /ncip))*exp(-eais*(1.0-rT)/(vtv*ncip));
+        ibcnp_t  =  ibcnp*pow(rT,(xin /ncnp))*exp(-eans*(1.0-rT)/(vtv*ncnp));
+        nf_t     =  nf*(1.0+dT*tnf);
+        nr_t     =  nr*(1.0+dT*tnf);
+        avc2_t   =  avc2*(1.0+dT*tavc);
+        avcx2_t  =  avcx2*(1.0+dT*tavcx);
+        vbbe_t   =  vbbe*(1.0+dT*(tvbbe1+dT*tvbbe2));
+        nbbe_t   =  nbbe*(1.0+dT*tnbbe);
+        `psibi(pe_t,pe,eaie,vtv,rT,pePsibiBlock)
+        `psibi(pc_t,pc,eaic,vtv,rT,pcPsibiBlock)
+        `psibi(ps_t,ps,eais,vtv,rT,psPsibiBlock)
+        cje_t    =  cje*pow(pe/pe_t,me);
+        cjc_t    =  cjc*pow(pc/pc_t,mc);
+        cjep_t   =  cjep*pow(pc/pc_t,mc);
+        cjcp_t   =  cjcp*pow(ps/ps_t,ms);
+        gamm_t   =  gamm*pow(rT,xis)*exp(-ea*(1.0-rT)/vtv);
+        vo_t     =  vo*pow(rT,xvo);
+        ebbe_t   =  exp(-vbbe_t/(nbbe_t*vtv));
+        vef_t    =  vef*(1.0+dT*tcvef);
+        ver_t    =  ver*(1.0+dT*tcver);
+
+        //
+        //  Parameter mappings
+        //
+
+        Gcx      =  rcx_t>1.0e-3 ? 1.0/rcx_t  : 1.0e3;
+        Gci      =  rci_t>1.0e-3 ? 1.0/rci_t  : 1.0e3;
+        Gbx      =  rbx_t>1.0e-3 ? 1.0/rbx_t  : 1.0e3;
+        Gbi      =  rbi_t>1.0e-3 ? 1.0/rbi_t  : 1.0e3;
+        Ge       =  re_t >1.0e-3 ? 1.0/re_t   : 1.0e3;
+        Gbp      =  rbp_t>1.0e-3 ? 1.0/rbp_t  : 1.0e3;
+        Gs       =  rs_t >1.0e-3 ? 1.0/rs_t   : 1.0e3;
+        Gth      =  rth_t>1.0e-3 ? 1.0/rth_t  : 1.0e3;
+        Ivef     =  vef_t>0.0    ? 1.0/vef_t  : 0.0;
+        Iver     =  ver_t>0.0    ? 1.0/ver_t  : 0.0;
+        Iikf     =  ikf_t>0.0    ? 1.0/ikf_t  : 0.0;
+        Ivo      =  vo_t >0.0    ? 1.0/vo_t   : 0.0;
+
+        //
+        //  Branch voltages
+        //
+
+`ifdef __NGSPICE__
+        if (type == `NPN) begin
+            Vbei     =  $limit(V(bi,ei), "pnjlim", vtv, tVCrit);
+            Vbex     =  $limit(V(bx,ei), "pnjlim", vtv, tVCrit);
+            Vbci     =  $limit(V(bi,ci), "pnjlim", vtv, tVCrit);
+            Vbcx     =  $limit(V(bi,cx), "pnjlim", vtv, tVCrit);
+            Vbxcx    =  $limit(V(bx,cx), "pnjlim", vtv, tVCrit);
+            Vbep     =  $limit(V(bx,bp), "pnjlim", vtv, tVCrit);
+        end else begin
+            Vbei     =  $limit(V(ei,bi), "pnjlim", vtv, tVCrit);
+            Vbex     =  $limit(V(ei,bx), "pnjlim", vtv, tVCrit);
+            Vbci     =  $limit(V(ci,bi), "pnjlim", vtv, tVCrit);
+            Vbcx     =  $limit(V(cx,bi), "pnjlim", vtv, tVCrit);
+            Vbxcx    =  $limit(V(cx,bx), "pnjlim", vtv, tVCrit);
+            Vbep     =  $limit(V(bp,bx), "pnjlim", vtv, tVCrit);
+        end
+        Vbe      =  $limit(V(b_be), "pnjlim", vtv, tVCrit);
+`else
+`ifdef __XYCE__
+        Vbei     =  $limit(V(b_bei),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbex     =  $limit(V(b_bex),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbci     =  $limit(V(b_bci),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbcx     =  $limit(V(b_bcx),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbxcx    =  $limit(V(b_bxcx),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbep     =  $limit(V(b_bep),"typedpnjlim_new",$vt,tVCrit,VBICtype);
+        Vbe      =  $limit(V(b_be),"dummy",$vt,tVCrit);
+`else
+        Vbei     =  VBICtype*V(b_bei);
+        Vbex     =  VBICtype*V(b_bex);
+        Vbci     =  VBICtype*V(b_bci);
+        Vbcx     =  VBICtype*V(b_bcx);
+        Vbxcx    =  VBICtype*V(b_bxcx);
+        Vbep     =  VBICtype*V(b_bep);
+        Vbe      =           V(b_be);
+`endif
+`endif
+        Vcei     =  VBICtype*V(b_cei);
+        Vbc      =           V(b_bc);
+        Vrcx     =           V(b_rcx);
+        Vrci     =  VBICtype*V(b_rci);
+        Vrbx     =           V(b_rbx);
+        Vrbi     =           V(b_rbi);
+        Vre      =           V(b_re);
+        Vrbp     =           V(b_rbp);
+`ifdef fourTerminal
+            Vbcp     =  VBICtype*V(b_bcp);
+            Vcep     =  VBICtype*V(b_cep);
+            Vrs      =           V(b_rs);
+`endif
+        Vxf1     =           V(b_xf1);
+        Vxf2     =           V(b_xf2);
+
+        //
+        //  Depletion charges used in DC as well as AC
+        //
+
+        `qj_z(qdbe,Vbei,pe_t,me,fc,aje,qdbeBlock)
+        `qjrt_z(qdbc,Vbci,pc_t,mc,fc,ajc,vrt,art,qdbcBlock)
+
+        //
+        //  Transport current of the main transistor
+        //
+
+        afac     =  1.0/(nf_t*vtv);
+        `expLinA(expi,Vbei,maxvIfi,afac)
+        Ifi      =  is_t*(expi-1.0);
+        afac     =  1.0/(nr_t*vtv);
+        `expLinA(expi,Vbci,maxvIri,afac)
+        Iri      =  is_t*isrr_t*(expi-1.0);
+        q1z      =  1.0+qdbe*Iver+qdbc*Ivef-1.0e-4;
+        q1       =  0.5*(sqrt(q1z*q1z+1.0e-8)+q1z)+1.0e-4;
+        q2       =  Ifi*Iikf+Iri*Iikr;
+        if (qbm<0.5) begin
+            arg      =  pow(q1,1.0/nkf)+4.0*q2;
+            if (arg>1.0e-8) begin
+                qb       =  0.5*(q1+pow(arg,nkf));
+            end else begin
+                qb       =  0.5*(q1+pow(1.0e-8,nkf));
+            end
+        end else begin
+            arg      =  1.0+4.0*q2;
+            if (arg>1.0e-8) begin
+                qb       =  0.5*q1*(1.0+pow(arg,nkf));
+            end else begin
+                qb       =  0.5*q1*(1.0+pow(1.0e-8,nkf));
+            end
+        end
+        Itzr     =  Iri/qb;
+        Itzf     =  Ifi/qb;
+        Itxf     =  Vxf2;
+
+        //
+        //  Transport current of the parasitic transistor
+        //
+
+        if (isp>0.0) begin
+            afac     =  1.0/(nfp*vtv);
+            `expLinA(expi,Vbep,maxvIp,afac)
+            `expLinA(expx,Vbci,maxvIp,afac)
+            Ifp      =  isp_t*(wsp*expi+(1.0-wsp)*expx-1.0);
+            q2p      =  Ifp*Iikp;
+            arg      =  1.0+4.0*q2p;
+            if (arg>1.0e-8) begin
+                qbp      =  0.5*(1.0+sqrt(arg));
+            end else begin
+                qbp      =  0.5*(1.0+sqrt(1.0e-8));
+            end
+`ifdef fourTerminal
+                `expLinA(expi,Vbcp,maxvIp,afac)
+                Irp      =  isp_t*(expi-1.0);
+                Iccp     =  (Ifp-Irp)/qbp;
+`endif
+        end else begin
+            Ifp      =  0.0;
+            qbp      =  1.0;
+`ifdef fourTerminal
+                Iccp     =  0.0;
+`endif
+        end
+
+        //
+        //  Diode-like currents for the main transistor
+        //  (includes exponential-like breakdown for base-emitter)
+        //  and base-emitter of parasitic transistor
+        //
+        //  The quasi-neutral base recombination is a component of Ibei for
+        //  the intrinsic transistor only.
+        //
+
+        if (wbe==1.0) begin
+            afac     =  1.0/(nei*vtv);
+            `expLinA(expi,Vbei,maxvIbei,afac)
+            afac     =  1.0/(nen*vtv);
+            `expLinA(expn,Vbei,maxvIben,afac)
+            if (qnibeir>0.0) begin
+                Ibe      =  ibei_t*(1.0+qnibeir*(q1-1.0))*(expi-1.0)+iben_t*(expn-1.0);
+            end else begin
+                Ibe      =  ibei_t*(expi-1.0)+iben_t*(expn-1.0);
+            end
+            if (vbbe>0.0) begin
+                Bvbe     = -vbbe_t-Vbei;
+                afac     =  1.0/(nbbe_t*vtv);
+                `expLinA(expx,Bvbe,maxvIbbe,afac)
+                Ibe      =  Ibe-ibbe*(expx-ebbe_t);
+            end
+            Ibex     =  0.0;
+        end else if (wbe==0.0) begin
+            Ibe      =  0.0;
+            afac     =  1.0/(nei*vtv);
+            `expLinA(expi,Vbex,maxvIbei,afac)
+            afac     =  1.0/(nen*vtv);
+            `expLinA(expn,Vbex,maxvIben,afac)
+            Ibex     =  ibei_t*(expi-1.0)+iben_t*(expn-1.0);
+            if (vbbe>0.0) begin
+                Bvbe     = -vbbe_t-Vbei;
+                afac     =  1.0/(nbbe_t*vtv);
+                `expLinA(expx,Bvbe,maxvIbbe,afac)
+                Ibex     =  Ibex-ibbe*(expx-ebbe_t);
+            end
+        end else begin
+            afac     =  1.0/(nei*vtv);
+            `expLinA(expi,Vbei,maxvIbei,afac)
+            afac     =  1.0/(nen*vtv);
+            `expLinA(expn,Vbei,maxvIben,afac)
+            if (qnibeir>0.0) begin
+                Ibe      =  wbe*(ibei_t*(1.0+qnibeir*(q1-1.0))*(expi-1.0)+iben_t*(expn-1.0));
+            end else begin
+                Ibe      =  wbe*(ibei_t*(expi-1.0)+iben_t*(expn-1.0));
+            end
+            if (vbbe>0.0) begin
+                Bvbe     = -vbbe_t-Vbei;
+                afac     =  1.0/(nbbe_t*vtv);
+                `expLinA(expx,Bvbe,maxvIbbe,afac)
+                Ibe      =  Ibe-wbe*ibbe*(expx-ebbe_t);
+            end
+            afac     =  1.0/(nei*vtv);
+            `expLinA(expi,Vbex,maxvIbei,afac)
+            afac     =  1.0/(nen*vtv);
+            `expLinA(expn,Vbex,maxvIben,afac)
+            Ibex     =  (1.0-wbe)*(ibei_t*(expi-1.0)+iben_t*(expn-1.0));
+            if (vbbe>0.0) begin
+                Bvbe     = -vbbe_t-Vbei;
+                afac     =  1.0/(nbbe_t*vtv);
+                `expLinA(expx,Bvbe,maxvIbbe,afac)
+                Ibex     =  Ibex-(1.0-wbe)*ibbe*(expx-ebbe_t);
+            end
+        end
+        afac     =  1.0/(nci*vtv);
+        `expLinA(expi,Vbci,maxvIbci,afac)
+        afac     =  1.0/(ncn*vtv);
+        `expLinA(expn,Vbci,maxvIbcn,afac)
+        Ibcj     =  ibci_t*(expi-1.0)+ibcn_t*(expn-1.0);
+        if ((ibeip>0.0)||(ibenp>0.0)) begin
+            afac     =  1.0/(nci*vtv);
+            `expLinA(expi,Vbep,maxvIbeip,afac)
+            afac     =  1.0/(ncn*vtv);
+            `expLinA(expn,Vbep,maxvIbenp,afac)
+            Ibep     =  ibeip_t*(expi-1.0)+ibenp_t*(expn-1.0);
+        end else begin
+            Ibep    =  0.0;
+        end
+
+        //
+        //  Base pushout charge factors
+        //
+
+        arg      =  Vbci/vtv;
+        `expLin(expi,arg,VmaxExp)
+        arg      =  Vbcx/vtv;
+        `expLin(expx,arg,VmaxExp)
+        Kbci     =  sqrt(1.0+gamm_t*expi);
+        Kbcx     =  sqrt(1.0+gamm_t*expx);
+
+        //
+        //  Resistance branch currents
+        //
+
+        Ircx     =  Vrcx*Gcx;
+        rKp1     =  (Kbci+1.0)/(Kbcx+1.0);
+        Iohm     =  (Vrci+vtv*(Kbci-Kbcx-ln(rKp1)))*Gci;
+        derf     =  Ivo*Iohm/(Gci*(1.0+0.5*Ivo*Ihrcf*sqrt(Vrci*Vrci+0.01)));
+        Irci     =  Iohm/sqrt(1+derf*derf);
+        Irbx     =  Vrbx*Gbx;
+        Irbi     =  Vrbi*qb*Gbi;
+        Ire      =  Vre*Ge;
+        Irbp     =  Vrbp*qbp*Gbp;
+`ifdef fourTerminal
+            Irs      =  Vrs*Gs;
+`endif
+
+        //
+        //  Avalanche current, IBM modification is Igcx
+        //
+
+        if (avc1>0.0) begin
+            `avalm(avalf,Vbci,pc_t,mc,avc1,avc2_t,VmaxExp,igcBlock)
+            Igc      =  (Itxf-Itzr-Ibcj)*avalf;
+        end else begin
+            Igc      =  0.0;
+        end
+        if (avcx1>0.0) begin
+            `avalm(avalf,Vbxcx,0.0,mcx,avcx1,avcx2_t,VmaxExp,igcxBlock)
+            Igcx     =  -Ircx*avalf;    // negative sign is because current flows cx to bx
+        end else begin
+            Igcx     =  0.0;
+        end
+
+        //
+        //  Base current kink for SiGe BJTs, from A. Sadovnikov
+        //
+
+        if (bbk>0.0&&ibk0>0.0) begin
+            if (vpte>0.0) begin
+                VcbFac   =  1.0-Vbci/vpte-0.1;
+                VcbFac   =  0.1+0.5*(VcbFac+sqrt(VcbFac*VcbFac+1.0e-4));
+                Iibk     =  ibk0*VcbFac;
+            end else begin
+                Iibk     =  ibk0;
+            end
+            Ibk      =  bbk*pow((Itzf/Iibk-1.0),abk);
+        end else begin
+            Ibk      =  0.0;
+        end
+        Ibc      =  Ibcj-Igc-Ibk;
+
+`ifdef fourTerminal
+
+            //
+            //  Diode-like current for base-collector of parasitic transistor
+            //
+
+            if ((ibcip>0.0)||(ibcnp>0.0)) begin
+                afac     =  1.0/(ncip*vtv);
+                `expLinA(expi,Vbcp,maxvIbcip,afac)
+                afac     =  1.0/(ncnp*vtv);
+                `expLinA(expn,Vbcp,maxvIbcnp,afac)
+                Ibcp     =  ibcip_t*(expi-1.0)+ibcnp_t*(expn-1.0);
+            end else begin
+                Ibcp     =  0.0;
+            end
+`endif
+
+        //
+        //  Thermal network elements
+        //
+
+`ifdef threeTerminal
+            power    =  (Ibe*Vbei+Ibc*Vbci+(Itxf-Itzr)*Vcei+Ibex*Vbex+Ibep*Vbep+Ircx*Vrcx+Irci*Vrci+Irbx*Vrbx+Irbi*Vrbi+Ire*Vre+Irbp*Vrbp);
+`else
+            power    =  (Ibe*Vbei+Ibc*Vbci+(Itxf-Itzr)*Vcei+Ibex*Vbex+Ibep*Vbep+Irs*Vrs+Ibcp*Vbcp+Iccp*Vcep+Ircx*Vrcx+Irci*Vrci+Irbx*Vrbx+Irbi*Vrbi+Ire*Vre+Irbp*Vrbp);
+`endif
+        Ith      = -sw_et*power;   // negative as it flows dt->0
+        Irth     =  dt_et*Gth;
+
+        //
+        //  Excess phase elements
+        //
+
+        Ixf1     =  Vxf2-Itzf;
+        Ixf2     =  Vxf2-Vxf1;
+
+        //
+        //  Add gmin current to diode-like branches
+        //
+
+        Ibe      =  Ibe  + gminMod * Vbei;
+        Ibex     =  Ibex + gminMod * Vbex;
+        Ibep     =  Ibep + gminMod * Vbep;
+        Ibc      =  Ibc  + gminMod * Vbci;
+        Igcx     =  Igcx + gminMod * Vbxcx;
+`ifdef fourTerminal
+            Ibcp     =  Ibcp + gminMod * Vbcp;
+`endif
+
+        //
+        //  Flip polarity if needed and handle multiplicity
+        //  (resistors, apart from Irci, do not depend on polarity)
+        //
+
+        Ibe     =  VBICtype * `MFACTOR_USE * Ibe;
+        Ibex    =  VBICtype * `MFACTOR_USE * Ibex;
+        Itzf    =  VBICtype * `MFACTOR_USE * Itzf;
+        Itxf    =  VBICtype * `MFACTOR_USE * Itxf;
+        Itzr    =  VBICtype * `MFACTOR_USE * Itzr;
+        Ibc     =  VBICtype * `MFACTOR_USE * Ibc;
+        Igcx    =  VBICtype * `MFACTOR_USE * Igcx;
+        Ibep    =  VBICtype * `MFACTOR_USE * Ibep;
+        Ircx    =             `MFACTOR_USE * Ircx;
+        Irci    =  VBICtype * `MFACTOR_USE * Irci;
+        Irbx    =             `MFACTOR_USE * Irbx;
+        Irbi    =             `MFACTOR_USE * Irbi;
+        Ire     =             `MFACTOR_USE * Ire;
+        Irbp    =             `MFACTOR_USE * Irbp;
+`ifdef fourTerminal
+            Ibcp    =  VBICtype * `MFACTOR_USE * Ibcp;
+            Iccp    =  VBICtype * `MFACTOR_USE * Iccp;
+            Irs     =             `MFACTOR_USE * Irs;
+`endif
+        Ith     =             `MFACTOR_USE * Ith;
+        Irth    =             `MFACTOR_USE * Irth;
+    end // evaluateStatic
+
+    //
+    //  Charge elements
+    //
+
+    begin : evaluateDynamic
+
+        //
+        //  Depletion charges used in AC only
+        //
+
+`ifdef fourTerminal
+            if (cjcp>0.0) begin
+                `qj_z(qdbcp,Vbcp,ps_t,ms,fc,ajs,qdbcpBlock)
+            end else begin
+                qdbcp    =  0.0;
+            end
+`endif
+        `qj_z(qdbex,Vbex,pe_t,me,fc,aje,qdbexBlock)
+        `qjrt_z(qdbep,Vbep,pc_t,mc,fc,ajc,vrt,art,qdbepBlock)
+
+        //
+        //  Transit time
+        //
+
+        sgIf    =  Ifi>0.0?1.0:0.0;
+        rIf     =  Ifi*sgIf*Iitf;
+        mIf     =  rIf/(rIf+1.0);
+        arg     =  Vbci*Ivtf/1.44;
+        `expLin(expi,arg,VmaxExp)
+        tff     =  tf*(1.0+qtf*q1)*(1.0+xtf*expi*(sltf+mIf*mIf)*sgIf);
+
+        Qbe     =  cje_t*qdbe*wbe+tff*Ifi/qb;
+        Qbex    =  cje_t*qdbex*(1.0-wbe);
+        Qbc     =  cjc_t*qdbc+tr*Iri+qco*Kbci;
+        Qbcx    =  qco*Kbcx;
+        Qbep    =  cjep_t*qdbep+tr*Ifp;
+`ifdef fourTerminal
+            Qbcp    =  cjcp_t*qdbcp+ccso*Vbcp;
+`endif
+        Qbeo    =  Vbe*cbeo;
+        Qbco    =  Vbc*cbco;
+        Qcth    =  dt_et*cth;
+        Qxf1    =  td*Vxf1;
+        Qxf2    =  td*Vxf2*`oneThird;
+
+        //
+        //  Flip polarity if needed and handle multiplicity
+        //
+
+        Qbe     =  VBICtype * `MFACTOR_USE * Qbe;
+        Qbex    =  VBICtype * `MFACTOR_USE * Qbex;
+        Qbc     =  VBICtype * `MFACTOR_USE * Qbc;
+        Qbcx    =  VBICtype * `MFACTOR_USE * Qbcx;
+        Qbep    =  VBICtype * `MFACTOR_USE * Qbep;
+        Qbeo    =             `MFACTOR_USE * Qbeo;
+        Qbco    =             `MFACTOR_USE * Qbco;
+`ifdef fourTerminal
+            Qbcp    =  VBICtype * `MFACTOR_USE * Qbcp;
+`endif
+        Qcth    =             `MFACTOR_USE * Qcth;
+    end // evaluateDynamic
+
+    //
+    //  Branch contributions to VBIC, separated into static (DC) and dynamic (ddt) elements
+    //
+
+    begin : loadStatic
+        I(b_bei) <+ Ibe;
+        I(b_bex) <+ Ibex;
+        I(b_cei) <+ Itxf;
+        I(b_eci) <+ Itzr;
+        I(b_bci) <+ Ibc;
+        I(b_bxcx)<+ Igcx;
+        I(b_bep) <+ Ibep;
+        I(b_rcx) <+ Ircx;
+        I(b_rci) <+ Irci;
+        I(b_rbx) <+ Irbx;
+        I(b_rbi) <+ Irbi;
+        I(b_re)  <+ Ire;
+        I(b_rbp) <+ Irbp;
+`ifdef fourTerminal
+            I(b_bcp) <+ Ibcp;
+            I(b_cep) <+ Iccp;
+            I(b_rs)  <+ Irs;
+`endif
+        I(b_xf1) <+ Ixf1;
+        I(b_xf2) <+ Ixf2;
+        Pwr(b_rth) <+ Irth;
+        Pwr(b_ith) <+ Ith;
+    end // loadStatic
+
+    begin : loadDynamic
+        I(b_bei) <+ ddt(Qbe);
+        I(b_bex) <+ ddt(Qbex);
+        I(b_bci) <+ ddt(Qbc);
+        I(b_bcx) <+ ddt(Qbcx);
+        I(b_bep) <+ ddt(Qbep);
+        I(b_be)  <+ ddt(Qbeo);
+        I(b_bc)  <+ ddt(Qbco);
+`ifdef fourTerminal
+            I(b_bcp) <+ ddt(Qbcp);
+`endif
+        I(c_xf1) <+ ddt(Qxf1);
+        I(c_xf2) <+ ddt(Qxf2);
+        Pwr(b_rth) <+ ddt(Qcth);
+    end // loadDynamic
+
+    //
+    //  Noise contributions
+    //
+
+    begin : noise
+        if (sw_noise) begin
+            I(b_bei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibe),"Ibei shot noise");
+            I(b_bei) <+ flicker_noise(`MFACTOR_USE*kfn*pow(abs(Ibe/`MFACTOR_USE),afn),bfn,"Ibei flicker noise");
+            I(b_bex) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibex),"Ibex shot noise");
+            I(b_bex) <+ flicker_noise(`MFACTOR_USE*kfn*pow(abs(Ibex/`MFACTOR_USE),afn),bfn,"Ibex flicker noise");
+            I(b_cei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Itzf),"transport current shot noise");
+            I(b_bep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibep),"Ibep shot noise");
+            I(b_bep) <+ flicker_noise(`MFACTOR_USE*`MFACTOR_USE*kfn*pow(abs(Ibep/`MFACTOR_USE),afn),bfn,"Ibep flicker noise");
+            I(b_rcx) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gcx,"rcx thermal noise");
+            I(b_rci) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*((abs(Irci)+1.0e-10*Gci)/(abs(Vrci)+1.0e-10)),"rci thermal noise");
+            I(b_rbx) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gbx,"rbx thermal noise");
+            I(b_rbi) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*qb*Gbi,"rbi thermal noise");
+            I(b_re)  <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Ge,"re thermal noise");
+            I(b_rbp) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*qbp*Gbp,"rbp thermal noise");
+`ifdef fourTerminal
+                I(b_cep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Iccp),"parasitic transport current shot noise");
+                I(b_rs)  <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gs,"rs thermal noise");
+`endif
+        end
+    end // noise
+
+end // analogBlock
+endmodule

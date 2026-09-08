@@ -1,0 +1,26 @@
+load mgsim
+
+verilog
+// include testbench and corner modules
+`include ../../../models/cornerHBT.va
+`include ./tb_dc_hbt_13g2v.va
+
+// clamp initial voltage limits to improve HBT DC convergence. Gnucap expands
+// these bounds towards the accepted operating points during the sweep
+options vmin=-1.0 vmax=1.0
+// Homotopy iteration limit
+options itl6 = 10000
+
+
+// instantiate best-case corner and testbench modules
+hbt_bcs corner_hbt();
+tb_dc_hbt_13g2v #(.vce(vce), .ib(ib), .El(1.0)) tb(b, c);
+
+// declare sweep parameters
+parameter real vce = 0.01;
+parameter real ib = 0.5u;
+
+// run nested DC sweep
+print dc i(tb.vb_src) i(tb.vce_src) iter(0)
+dc vce 0.01 1.5 0.01 ib 0.5u 5u 0.5u basic
+status notime
