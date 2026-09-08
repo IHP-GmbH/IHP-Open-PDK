@@ -36,9 +36,11 @@ VENV := $(TOP_DIR)/actions_venv/bin/activate
 # Paths are relative to the PDK directory. Make runs in the repository root,
 # so every use below is either prefixed with $(PDK_DIR) or reached after the
 # `cd $(PDK_DIR)` that skip-unless performs.
-DRC_TESTS  := libs.tech/klayout/tech/drc/testing
-LVS_TESTS  := libs.tech/klayout/tech/lvs/testing
-SRAM_TESTS := libs.qa/sram
+DRC_TESTS   := libs.tech/klayout/tech/drc/testing
+LVS_TESTS   := libs.tech/klayout/tech/lvs/testing
+SRAM_TESTS  := libs.qa/sram
+# sg13g2 -> sg13g2_tests, sg13cmos5l -> sg13cmos5l_tests
+PCELL_TESTS := libs.tech/klayout/$(PDK:ihp-%=%)_tests
 
 LVS_MAKE = $(MAKE) --no-print-directory -C $(PDK_DIR)/$(LVS_TESTS)
 
@@ -151,6 +153,54 @@ test-SRAM: env
 	  echo "Validating $(PDK_NAME) SRAM views and Verilog models"; \
 	  python3 $(SRAM_TESTS)/validate_sram.py)
 
+#=================================
+# ------ PCELL FUNCTIONAL ---------
+#=================================
+
+# Functional PCell checks living in each PDK's <pdk>_tests directory. Every
+# target skips (report+succeed) on a PDK that does not carry that test file, so
+# the same target list is safe for every PDK in CI. The KLayout-driven ones run
+# headless (klayout -zz -r) with a fresh KLAYOUT_HOME so a salt-installed IHP PDK
+# in the user's ~/.klayout cannot shadow the technology under test, and from a
+# throwaway working directory because pycell_test.py writes an SG13_dev.gds next
+# to the CWD.
+
+.ONESHELL:
+test-PCell-lib: env
+	$(call skip-unless,$(PCELL_TESTS)/pycell_test.py,\
+	  echo "Building the $(PDK_NAME) PCell library"; \
+	  cd "$$(mktemp -d)"; \
+	  KLAYOUT_HOME="$$(mktemp -d)" KLAYOUT_PATH=$(PDK_DIR)/libs.tech/klayout \
+	    klayout -zz -r $(PDK_DIR)/$(PCELL_TESTS)/pycell_test.py)
+
+.ONESHELL:
+test-PCell-concurrency: env
+	$(call skip-unless,$(PCELL_TESTS)/pycell_concurrency_test.py,\
+	  echo "Running the $(PDK_NAME) PCell concurrency test"; \
+	  python3 $(PDK_DIR)/$(PCELL_TESTS)/pycell_concurrency_test.py)
+
+.ONESHELL:
+test-PCell-drc: env
+	$(call skip-unless,$(PCELL_TESTS)/pycell_drc_test.py,\
+	  echo "Running the $(PDK_NAME) PCell DRC test"; \
+	  cd "$$(mktemp -d)"; \
+	  KLAYOUT_HOME="$$(mktemp -d)" KLAYOUT_PATH=$(PDK_DIR)/libs.tech/klayout \
+	    klayout -zz -r $(PDK_DIR)/$(PCELL_TESTS)/pycell_drc_test.py)
+
+.ONESHELL:
+test-PCell-native: env
+	$(call skip-unless,$(PCELL_TESTS)/native_pcell_test.py,\
+	  echo "Running the $(PDK_NAME) native PCell test"; \
+	  cd "$$(mktemp -d)"; \
+	  KLAYOUT_HOME="$$(mktemp -d)" KLAYOUT_PATH=$(PDK_DIR)/libs.tech/klayout \
+	    klayout -zz -r $(PDK_DIR)/$(PCELL_TESTS)/native_pcell_test.py)
+
+.ONESHELL:
+test-PCell-sprintf: env
+	$(call skip-unless,$(PCELL_TESTS)/sprintf_test.py,\
+	  echo "Running the $(PDK_NAME) sprintf regression"; \
+	  python3 $(PDK_DIR)/$(PCELL_TESTS)/sprintf_test.py)
+
 #==========================
 # --------- HELP ----------
 #==========================
@@ -171,6 +221,13 @@ help::
 	@echo "... test-LVS-cells             (Run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
 	@echo "... test-SRAM                  (Validate SRAM views and Verilog models        )"
+	@echo "... test-PCell-lib             (Build the PCell library headless              )"
+	@echo "... test-PCell-concurrency     (Load the PCell library from many processes    )"
+	@echo "... test-PCell-drc             (DRC-clean every PCell                         )"
+	@echo "... test-PCell-native          (Check the native (non-python) PCells          )"
+	@echo "... test-PCell-sprintf         (sprintf helper regression                     )"
 
 .PHONY: lint lint_python test-DRC-main test-DRC-cells test-LVS-main \
-        test-LVS-cells test-LVS-switch test-SRAM help
+        test-LVS-cells test-LVS-switch test-SRAM \
+        test-PCell-lib test-PCell-concurrency test-PCell-drc \
+        test-PCell-native test-PCell-sprintf help

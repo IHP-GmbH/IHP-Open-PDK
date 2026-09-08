@@ -1,0 +1,63 @@
+# ==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+# ==========================================================================
+
+# Reusable runner for the KLayout-based test classes (DRC, LVS, PCell). One
+# matrix leg per affected PDK; each leg sets up the pinned KLayout and runs the
+# given make targets for that PDK. `make` reports+succeeds (skip-unless in
+# ihp-common/pdk.mk) on any target a PDK does not carry, so the same target list
+# is safe for every PDK.
+#
+# Callers pass `matrix` from detect-affected-pdks.yml and only invoke this when
+# at least one PDK is affected (`any == 'true'`), so the matrix is never empty.
+
+name: pdk-run
+
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        description: "JSON matrix (from detect-affected-pdks) of PDKs to run."
+        required: true
+        type: string
+      targets:
+        description: "Space-separated make targets to run for each PDK."
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(inputs.matrix) }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up KLayout
+        uses: ./.github/actions/setup-klayout
+
+      - name: Run make targets (${{ matrix.pdk }})
+        # -k (keep-going): run every target and still exit non-zero if any
+        # failed, so one failing target does not hide the result of the rest
+        # (e.g. a failing test-LVS-main must not skip test-LVS-cells).
+        run: |
+          make -k ${{ inputs.targets }} PDK=${{ matrix.pdk }}
