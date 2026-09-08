@@ -412,19 +412,19 @@ logger.info('Starting cumulative antenna ratio calculations')
 
 # Define the sequence of layers with metadata
 layers = [
-  [:metal1_drw,    'm1_ratio',  'm'],
-  [:via1_drw,      'v1_ratio',  'v'],
-  [:metal2_drw,    'm2_ratio',  'm'],
-  [:via2_drw,      'v2_ratio',  'v'],
-  [:metal3_drw,    'm3_ratio',  'm'],
-  [:via3_drw,      'v3_ratio',  'v'],
-  [:metal4_drw,    'm4_ratio',  'm'],
-  [:via4_drw,      'v4_ratio',  'v'],
-  [:metal5_drw,    'm5_ratio',  'm'],
-  [:topvia1_drw,   'tv1_ratio', 'v'],
-  [:topmetal1_drw, 'tm1_ratio', 'm'],
-  [:topvia2_drw,   'tv2_ratio', 'v'],
-  [:topmetal2_drw, 'tm2_ratio', 'm']
+  [:metal1_drw,    'm1_ratio',  'm1_has_diode',  'm'],
+  [:via1_drw,      'v1_ratio',  'v1_has_diode',  'v'],
+  [:metal2_drw,    'm2_ratio',  'm2_has_diode',  'm'],
+  [:via2_drw,      'v2_ratio',  'v2_has_diode',  'v'],
+  [:metal3_drw,    'm3_ratio',  'm3_has_diode',  'm'],
+  [:via3_drw,      'v3_ratio',  'v3_has_diode',  'v'],
+  [:metal4_drw,    'm4_ratio',  'm4_has_diode',  'm'],
+  [:via4_drw,      'v4_ratio',  'v4_has_diode',  'v'],
+  [:metal5_drw,    'm5_ratio',  'm5_has_diode',  'm'],
+  [:topvia1_drw,   'tv1_ratio', 'tv1_has_diode', 'v'],
+  [:topmetal1_drw, 'tm1_ratio', 'tm1_has_diode', 'm'],
+  [:topvia2_drw,   'tv2_ratio', 'tv2_has_diode', 'v'],
+  [:topmetal2_drw, 'tm2_ratio', 'tm2_has_diode', 'm']
 ]
 
 # Container for all antenna ratios
@@ -433,7 +433,7 @@ antenna_ratios = {}
 # Start with contact → metal1
 previous = :cont_drw
 
-layers.each do |layer, ratio_name, var|
+layers.each do |layer, ratio_name, diode_name, var|
   logger.info("Evaluating #{layer} ratio")
 
   # Connect previous layer to current
@@ -442,22 +442,17 @@ layers.each do |layer, ratio_name, var|
   # Compute ratio and store in hash
   antenna_ratios[ratio_name] = evaluate_nets(
     gate,
-    { var => eval(layer.to_s) },
-    "put('#{ratio_name}', area(#{var}) / area)"
+    { var => eval(layer.to_s), 'd' => diode },
+    "put('#{ratio_name}', area(#{var}) / area); put('#{diode_name}', area(d) > 0.16 ? 1 : 0)"
   )
 
   previous = layer
 end
 
-# diode existence flag
-logger.info('Evaluating diode presence')
-diode_presence = evaluate_nets(gate, { 'd' => diode }, "put('has_diode', area(d) > 0.16 ? 1 : 0)")
-
 # Create a base layer with all individual ratios and the diode flag
 logger.info('Creating base layer with all individual ratios and diode flag')
-ar_all_layers = (antenna_ratios.values.reduce(:+) + diode_presence).merged_props
+ar_all_layers = antenna_ratios.values.reduce(:+).merged_props
 antenna_ratios.values.each(&:forget)
-diode_presence.forget
 
 # ====================================
 # -------------- Ant.b/e -------------
@@ -473,19 +468,20 @@ ant_e_ratio = drc_rules['Ant_e'].to_f
 
 # Define the cumulative steps
 steps = [
-  { met_name: 'Metal1',    ratio: "m1_ratio" },
-  { met_name: 'Metal2',    ratio: "sum_m1_m2",  add: "m2_ratio" },
-  { met_name: 'Metal3',    ratio: "sum_m1_m3",  add: "m3_ratio" },
-  { met_name: 'Metal4',    ratio: "sum_m1_m4",  add: "m4_ratio" },
-  { met_name: 'Metal5',    ratio: "sum_m1_m5",  add: "m5_ratio" },
-  { met_name: 'TopMetal1', ratio: "sum_m1_tm1", add: "tm1_ratio" },
-  { met_name: 'TopMetal2', ratio: "sum_m1_tm2", add: "tm2_ratio" }
+  { met_name: 'Metal1',    diode_name: "m1_has_diode",  ratio: "m1_ratio" },
+  { met_name: 'Metal2',    diode_name: "m2_has_diode",  ratio: "sum_m1_m2",  add: "m2_ratio" },
+  { met_name: 'Metal3',    diode_name: "m3_has_diode",  ratio: "sum_m1_m3",  add: "m3_ratio" },
+  { met_name: 'Metal4',    diode_name: "m4_has_diode",  ratio: "sum_m1_m4",  add: "m4_ratio" },
+  { met_name: 'Metal5',    diode_name: "m5_has_diode",  ratio: "sum_m1_m5",  add: "m5_ratio" },
+  { met_name: 'TopMetal1', diode_name: "tm1_has_diode", ratio: "sum_m1_tm1", add: "tm1_ratio" },
+  { met_name: 'TopMetal2', diode_name: "tm2_has_diode", ratio: "sum_m1_tm2", add: "tm2_ratio" }
 ].freeze
 
 # Loop through each step
 steps.each_with_index do |step, idx|
   met_name  = step[:met_name]
   ratio = step[:ratio]
+  diode_name = step[:diode_name]
 
   # Add cumulative expression if defined
   if step[:add]
@@ -500,13 +496,13 @@ steps.each_with_index do |step, idx|
 
   # Ant.b check (no diode)
   logger.info("Executing Ant.b_#{met_name}")
-  ant_b = ar_all_layers.selected_if("(value('has_diode') == 0 && value('#{ratio}') >= #{ant_b_ratio})")
+  ant_b = ar_all_layers.selected_if("(value('#{diode_name}') == 0 && value('#{ratio}') >= #{ant_b_ratio})")
   ant_b.output("Ant.b_#{met_name}", "7.1 Ant.b_#{met_name}: Max. ratio of cumulative #{met_name} area to connected Gate area (without protection diode) = #{ant_b_ratio}.")
   ant_b.forget
 
   # Ant.e check (with diode)
   logger.info("Executing Ant.e_#{met_name}")
-  ant_e = ar_all_layers.selected_if("(value('has_diode') == 1 && value('#{ratio}') >= #{ant_e_ratio})")
+  ant_e = ar_all_layers.selected_if("(value('#{diode_name}') == 1 && value('#{ratio}') >= #{ant_e_ratio})")
   ant_e.output("Ant.e_#{met_name}", "7.1 Ant.e_#{met_name}: Max. ratio of cumulative #{met_name} area to connected Gate area (with protection diode) = #{ant_e_ratio}.")
   ant_e.forget
 end
@@ -526,18 +522,19 @@ ant_f_ratio = drc_rules['Ant_f'].to_f
 
 # Define the cumulative steps for vias
 via_steps = [
-  { via_name: 'Via1',    ratio: "sum_v1",     add: "v1_ratio", first: true },
-  { via_name: 'Via2',    ratio: "sum_v1_v2",  add: "v2_ratio" },
-  { via_name: 'Via3',    ratio: "sum_v1_v3",  add: "v3_ratio" },
-  { via_name: 'Via4',    ratio: "sum_v1_v4",  add: "v4_ratio" },
-  { via_name: 'TopVia1', ratio: "sum_v1_tv1", add: "tv1_ratio" },
-  { via_name: 'TopVia2', ratio: "sum_v1_tv2", add: "tv2_ratio" }
+  { via_name: 'Via1',    diode_name: "v1_has_diode",  ratio: "sum_v1",     add: "v1_ratio", first: true },
+  { via_name: 'Via2',    diode_name: "v2_has_diode",  ratio: "sum_v1_v2",  add: "v2_ratio" },
+  { via_name: 'Via3',    diode_name: "v3_has_diode",  ratio: "sum_v1_v3",  add: "v3_ratio" },
+  { via_name: 'Via4',    diode_name: "v4_has_diode",  ratio: "sum_v1_v4",  add: "v4_ratio" },
+  { via_name: 'TopVia1', diode_name: "tv1_has_diode", ratio: "sum_v1_tv1", add: "tv1_ratio" },
+  { via_name: 'TopVia2', diode_name: "tv2_has_diode", ratio: "sum_v1_tv2", add: "tv2_ratio" }
 ].freeze
 
 # Loop through each via step
 via_steps.each_with_index do |step, idx|
   via_name  = step[:via_name]
   ratio = step[:ratio]
+  diode_name = step[:diode_name]
 
   # Build cumulative ratio
   if step[:first]
@@ -559,13 +556,13 @@ via_steps.each_with_index do |step, idx|
 
   # Ant.d check (no diode)
   logger.info("Executing Ant.d_#{via_name}")
-  ant_d = ar_all_layers.selected_if("(value('has_diode') == 0 && value('#{ratio}') >= #{ant_d_ratio})")
+  ant_d = ar_all_layers.selected_if("(value('#{diode_name}') == 0 && value('#{ratio}') >= #{ant_d_ratio})")
   ant_d.output("Ant.d_#{via_name}", "7.1 Ant.d_#{via_name}: Max. ratio of cumulative #{via_name} area to connected Gate area (without protection diode) = #{ant_d_ratio}.")
   ant_d.forget
 
   # Ant.f check (with diode)
   logger.info("Executing Ant.f_#{via_name}")
-  ant_f = ar_all_layers.selected_if("(value('has_diode') == 1 && value('#{ratio}') >= #{ant_f_ratio})")
+  ant_f = ar_all_layers.selected_if("(value('#{diode_name}') == 1 && value('#{ratio}') >= #{ant_f_ratio})")
   ant_f.output("Ant.f_#{via_name}", "7.1 Ant.f_#{via_name}: Max. ratio of cumulative #{via_name} area to connected Gate area (with protection diode) = #{ant_f_ratio}.")
   ant_f.forget
 end
