@@ -450,7 +450,7 @@ def run_test_case(
         if len(pattern_results) > 0:
             # db to gds conversion
             marker_output, runset_analysis = convert_results_db_to_gds(
-                pattern_results[0], rules_tested
+                pattern_results[0], rules_tested, layout_path
             )
 
             # Generating merged testcase for violated rules
@@ -833,7 +833,72 @@ def draw_polygons(polygon_data, cell, lay_num, lay_dt, path_width):
         logging.error(f"# Unknown type: {tag} ignored")
 
 
-def convert_results_db_to_gds(results_database: str, rules_tested: list):
+def check_golden_marker_coverage(golden_layout, rule_data_type_map: list):
+    """
+    Warns when a golden fixture was generated against a different rule set.
+
+    A rule is identified by its position in the marker datatype, and that
+    position is assigned by first appearance among the rules that actually
+    violate. Nothing in the fixture records which rule owns which datatype, so
+    a golden whose datatypes do not match the ones this run reads was generated
+    against a deck that has since changed.
+
+    This only catches a change in the set of datatypes. A deck that swaps one
+    rule for another in the same position, or reorders two of them, leaves the
+    set identical and is invisible here; keeping a fixture honest still needs it
+    regenerated whenever the deck's rule set moves.
+
+    Parameters
+    ----------
+    golden_layout : str or Path
+        Path to the golden testcase the run was performed on.
+    rule_data_type_map : list of str
+        Rules that violated in this run, in the order they were assigned
+        datatypes.
+    """
+    if golden_layout is None or not Path(golden_layout).is_file():
+        return
+
+    golden = klayout.db.Layout()
+    golden.read(str(golden_layout))
+    golden_dts = {
+        golden.get_info(li).datatype
+        for li in golden.layer_indexes()
+        if golden.get_info(li).layer == GOLDEN_LAY_NUM
+    }
+
+    # The analysis runset reads exactly datatypes 1..N, so comparing the two sets
+    # rather than their sizes also catches a 0-based or non-contiguous fixture.
+    expected = set(range(1, len(rule_data_type_map) + 1))
+    if golden_dts == expected:
+        return
+
+    unread = sorted(golden_dts - expected)
+    missing = sorted(expected - golden_dts)
+    detail = []
+    if unread:
+        detail.append(
+            f"datatypes {unread} sit outside the range this run reads, so those markers are never compared"
+        )
+    if missing:
+        detail.append(
+            f"datatypes {missing} are read but absent from the fixture, so every violation of the rule in "
+            "each of those positions lands in viol_not_golden whether or not it is a real failure"
+        )
+    logging.warning(
+        f"{Path(golden_layout).name} carries markers on layer {GOLDEN_LAY_NUM} for datatypes "
+        f"{sorted(golden_dts)}, while this run produced {len(rule_data_type_map)} violating rules "
+        f"({', '.join(rule_data_type_map)}) and reads datatypes {sorted(expected)}: "
+        f"{'; '.join(detail)}. A rule is identified only by its position, so this check "
+        "cannot see a fixture whose rules were reordered or substituted without changing the count, and "
+        "a matching count is not on its own evidence that the pairing is right. Regenerate the fixture "
+        "with gen_golden.py."
+    )
+
+
+def convert_results_db_to_gds(
+    results_database: str, rules_tested: list, golden_layout=None
+):
     """
     Parses a KLayout .lyrdb result file and generates:
     - A GDSII file with polygons drawn for violated rules.
@@ -845,6 +910,9 @@ def convert_results_db_to_gds(results_database: str, rules_tested: list):
         Path to the KLayout results .lyrdb file.
     rules_tested : list of str
         List of rule names expected to be tested in this run.
+    golden_layout : str or Path, optional
+        Golden testcase the run was performed on, used to check that its
+        markers can still be paired with this run.
 
     Returns
     -------
@@ -922,23 +990,29 @@ full_chip = extent.sized(0.0)
 
     lib.write_gds(output_gds_path)
 
-    # Generate marker inputs and analysis
-    sorted_rules = sorted(rule_data_type_map)
-    rule_layer_map = {rule: idx + 1 for idx, rule in enumerate(sorted_rules)}
-    all_rules = set(sorted_rules) | set(rules_tested)
+    # Generate marker inputs and analysis.
+    # The datatype that identifies a rule is assigned above by first appearance
+    # in the results database, so it has to be read back the same way. Sorting
+    # here instead would pair each marker with whichever rule name happens to
+    # sort into that position.
+    rule_layer_map = {rule: idx + 1 for idx, rule in enumerate(rule_data_type_map)}
+    check_golden_marker_coverage(golden_layout, rule_data_type_map)
+    all_rules = set(rule_data_type_map) | set(rules_tested)
 
     for rule in all_rules:
         lay_dt = rule_layer_map.get(rule)
-        if lay_dt:
-            golden_marker = f"rule_{rule.replace('.', '_')}_golden"
-            viol_marker = f"rule_{rule.replace('.', '_')}_viol"
-            analysis_rules.append(
-                f"{golden_marker} = input({GOLDEN_LAY_NUM}, {lay_dt})\n"
-            )
-            analysis_rules.append(f"{viol_marker} = input({VIOL_LAY_NUM}, {lay_dt})\n")
+        if lay_dt is None:
+            # The rule is expected by the testcase but produced no violations in
+            # this run, so it has no marker layer to compare against.
+            continue
+
+        golden_marker = f"rule_{rule.replace('.', '_')}_golden"
+        viol_marker = f"rule_{rule.replace('.', '_')}_viol"
+        analysis_rules.append(f"{golden_marker} = input({GOLDEN_LAY_NUM}, {lay_dt})\n")
+        analysis_rules.append(f"{viol_marker} = input({VIOL_LAY_NUM}, {lay_dt})\n")
 
         # Output checks if not both golden and tested
-        if not (rule in sorted_rules and rule in rules_tested):
+        if not (rule in rule_data_type_map and rule in rules_tested):
             for tag, src, ref in [
                 ("viol_not_golden", viol_marker, golden_marker),
                 ("golden_not_viol", golden_marker, viol_marker),
