@@ -89,7 +89,15 @@ if { $::env(STD_CELL_LIBRARY) eq "sg13g2_stdcell_hv" } {
         }
     }
     set ::env(STA_CORNERS) [join $_hv_corners " "]
-    set ::env(DEFAULT_CORNER) "nom_typ_3p30V_25C"
+    # Default to typical, but only if it is actually one of the corners
+    # that exist -- the loop above deliberately tolerates a partial
+    # install, and naming a DEFAULT_CORNER outside STA_CORNERS would break
+    # any step that assumes the default is usable.
+    if { [lsearch -exact $_hv_corners "nom_typ_3p30V_25C"] >= 0 } {
+        set ::env(DEFAULT_CORNER) "nom_typ_3p30V_25C"
+    } elseif { [llength $_hv_corners] > 0 } {
+        set ::env(DEFAULT_CORNER) [lindex $_hv_corners 0]
+    }
     unset _hv_corners _pat _hv _io _hvlib _iolib
 }
 # <<< sg13g2_stdcell_hv corners

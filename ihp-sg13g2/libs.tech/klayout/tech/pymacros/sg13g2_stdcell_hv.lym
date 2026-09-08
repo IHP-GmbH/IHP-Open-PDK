@@ -23,9 +23,10 @@
 # can be placed like any PCell/library cell. Layer display comes from the
 # IHP sg13g2 technology as usual.
 #
-# The GDS is found relative to this file (../../gds/), so a checkout works
-# without configuration; SG13G2_HV_HOME overrides the location if the
-# macro is copied elsewhere (e.g. into ~/.klayout/pymacros).
+# The GDS is found relative to this file, so a checkout works without
+# configuration. SG13G2_HV_HOME overrides the location if the macro is
+# copied elsewhere (e.g. into ~/.klayout/pymacros); it may be either the
+# sg13g2_stdcell_hv directory or the PDK root holding libs.ref/.
 
 import os
 import pya
@@ -44,9 +45,14 @@ def _find_gds():
                                        LIB_NAME + ".gds"))
     except NameError:
         pass
+    # SG13G2_HV_HOME may name either the library directory (the one holding
+    # gds/) or the PDK root; both are tried, because the variable's name
+    # says neither and guessing wrong fails silently.
     home = os.environ.get("SG13G2_HV_HOME")
     if home:
         candidates.append(os.path.join(home, "gds", LIB_NAME + ".gds"))
+        candidates.append(os.path.join(home, "libs.ref", LIB_NAME,
+                                       "gds", LIB_NAME + ".gds"))
     for c in candidates:
         c = os.path.normpath(c)
         if os.path.isfile(c):
@@ -57,7 +63,8 @@ def _find_gds():
 _gds = _find_gds()
 if _gds is None:
     print("sg13g2_stdcell_hv.lym: library GDS not found "
-          "(set SG13G2_HV_HOME to the repository root)")
+          "(set SG13G2_HV_HOME to the sg13g2_stdcell_hv directory "
+          "or to the PDK root that contains libs.ref/)")
 else:
     _lib = pya.Library()
     _lib.description = ("IHP SG13G2 thick-oxide (3.3 V) standard cells, "
