@@ -41,12 +41,19 @@ if TABLES.include?('metalnfiller') || BEOL
     metalfiller_no = metalfiller_start_index + index
 
     # Rule MFil.c: Min. Metal(n):filler space to Metal(n)  is 0.42 um
+    # sep() only catches exterior spacing; overlap (filler inside drawing) is
+    # geometrically a zero-distance violation of the same rule, so the .and()
+    # intersection is emitted under the same rule name.
     logger.info("Executing rule M#{metalfiller_no}Fil.c")
     mfil_c_value = drc_rules['MFil_c'].to_f
-    mnfil_c_l = metal_layer.sep(metalfiller_lay, mfil_c_value.um, euclidian)
-    mnfil_c_l.output("M#{metalfiller_no}Fil.c",
-                   "5.18. M#{metalfiller_no}Fil.c : Min. Metal#{metalfiller_no}:filler space to Metal#{metalfiller_no} is #{mfil_c_value} um")
-    mnfil_c_l.forget
+    mnfil_c_sep = metal_layer.sep(metalfiller_lay, mfil_c_value.um, euclidian)
+    mnfil_c_ovl = metal_layer.and(metalfiller_lay)
+    mnfil_c_sep.output("M#{metalfiller_no}Fil.c",
+                       "5.18. M#{metalfiller_no}Fil.c : Min. Metal#{metalfiller_no}:filler space to Metal#{metalfiller_no} is #{mfil_c_value} um")
+    mnfil_c_ovl.output("M#{metalfiller_no}Fil.c",
+                       "5.18. M#{metalfiller_no}Fil.c : Min. Metal#{metalfiller_no}:filler space to Metal#{metalfiller_no} is #{mfil_c_value} um")
+    mnfil_c_sep.forget
+    mnfil_c_ovl.forget
 
     next if PRECHECK_DRC
 

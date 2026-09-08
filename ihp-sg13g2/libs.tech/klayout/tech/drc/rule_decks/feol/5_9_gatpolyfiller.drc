@@ -35,13 +35,20 @@ if TABLES.include?('gatpolyfiller') || FEOL
   end
 
   # Rule GFil.d: Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is 1.1 um
+  # sep() only catches exterior spacing; overlap with any of the above layers
+  # is a zero-distance violation of the same rule, so the .and() intersection
+  # is emitted under the same rule name.
   logger.info('Executing rule GFil.d')
   gfil_d_value = drc_rules['GFil_d'].to_f
-  gfil_d = gfil_d_g.sep(gatpoly_filler, gfil_d_value.um, euclidian)
-  gfil_d.output('GFil.d',
-                "5.9. GFil.d : Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is #{gfil_d_value} um")
+  gfil_d_sep = gfil_d_g.sep(gatpoly_filler, gfil_d_value.um, euclidian)
+  gfil_d_ovl = gfil_d_g.and(gatpoly_filler)
+  gfil_d_sep.output('GFil.d',
+                    "5.9. GFil.d : Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is #{gfil_d_value} um")
+  gfil_d_ovl.output('GFil.d',
+                    "5.9. GFil.d : Min. GatPoly:filler space to Activ, GatPoly, Cont, pSD, nSD:block, SalBlock is #{gfil_d_value} um")
   gfil_d_g.forget
-  gfil_d.forget
+  gfil_d_sep.forget
+  gfil_d_ovl.forget
 
   unless PRECHECK_DRC
     # Rule GFil.e: Min. GatPoly:filler space to NWell, nBuLay is 1.10 um
