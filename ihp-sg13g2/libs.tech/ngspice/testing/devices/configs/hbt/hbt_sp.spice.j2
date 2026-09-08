@@ -1,0 +1,71 @@
+* =========================================================================================
+* Copyright 2025 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* =========================================================================================
+*
+* Milestone M4 -- HBT small-signal AC 2-port Y-parameter extraction.
+* Two AC analyses recover the full Y matrix at the fixed (cold or hot) bias point:
+*   run 1: V1 (base) AC=1, V2 (collector) AC=0  -> Y11 = -i(Vb),  Y21 = -i(Vc)
+*   run 2: V1 (base) AC=0, V2 (collector) AC=1  -> Y12 = -i(Vb),  Y22 = -i(Vc)
+* (current INTO a node = -i(source), matching the DC template's sign convention).
+* Vectors do not persist across a second `ac` run (new plot), so each column is written
+* to its own file immediately after its analysis.
+
+*********
+*Sources*
+*********
+Vb b 0 DC {{ "%.6g"|format(vb|float) }} AC 1
+Vc c 0 DC {{ "%.6g"|format(vc|float) }} AC 0
+Ve e 0 DC {{ "%.6g"|format(ve|float) }} AC 0
+
+*********
+*Circuit*
+*********
+X1 c b e 0 {{ device_subckt }}
++ we={{ "%.4f"|format((W|default(0.12))|float) }}u
++ le={{ "%.4f"|format((L|default(0.96))|float) }}u
++ Nx={{ (Nx|default(1))|int }}
++ m={{ (M|default(1))|int }}
+
+* ============================================================================================
+* ----------------------------------------- ANALYSIS -----------------------------------------
+* ============================================================================================
+
+.temp {{ TEMP|default(27) }}
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  ac dec {{ ac_dec|default(20) }} {{ f_start }} {{ f_stop }}
+  let y11 = -i(Vb)
+  let y21 = -i(Vc)
+  wrdata {{ out_col1 }} real(y11) imag(y11) real(y21) imag(y21)
+
+  alter Vb ac = 0
+  alter Vc ac = 1
+  ac dec {{ ac_dec|default(20) }} {{ f_start }} {{ f_stop }}
+  let y12 = -i(Vb)
+  let y22 = -i(Vc)
+  wrdata {{ out_col2 }} real(y12) imag(y12) real(y22) imag(y22)
+.endc
+
+* ============================================================================================
+* ------------------------------------- CIR/MODELS-SETUP -------------------------------------
+* ============================================================================================
+
+.lib {{ model_corner_lib }} {{ corner }}
+
+.end
