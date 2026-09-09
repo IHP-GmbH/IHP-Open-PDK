@@ -276,10 +276,7 @@ proc CbTap {param} {
             if {$w < $minW} {
                 set w $minW
                 if {$param == A} {
-                    set l [CbRoundm [expr $A/$w] $SG13_GRID]
-                }
-                if{$param == A} {
-                    set l [CbRoundm [expr $A/$w] $SG13_GRID]
+                    set l [CbRoundm [expr {$A/$w}] $SG13_GRID]
                     CbMessage "l <= ${l} required for given area"
                     return 0
                 }
