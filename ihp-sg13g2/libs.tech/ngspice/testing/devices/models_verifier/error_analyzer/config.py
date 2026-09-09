@@ -62,6 +62,10 @@ class MetricSpec:
         outside the window are excluded from the pass/fail comparison (not counted).
         This is a flat, characteristic-agnostic window; see RangeChecker.mqa_ranges for
         the per-characteristic (keyed by input_data stem) equivalent used by HBT configs.
+      noise_floor: measurement/simulation noise floor of the metric (same unit as the
+        values, e.g. the verifier's `clip_curr` for currents). A point whose measured
+        value AND both envelope bounds all sit at/below the floor carries no information
+        (sign of pA noise is random) and is counted as in-bounds instead of out-of-bounds.
     """
 
     name: str
@@ -73,3 +77,4 @@ class MetricSpec:
     min_limit: Optional[float] = None
     max_limit: Optional[float] = None
     valid_range: Optional[dict] = None
+    noise_floor: Optional[float] = None

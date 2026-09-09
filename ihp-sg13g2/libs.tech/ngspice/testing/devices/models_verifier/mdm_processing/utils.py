@@ -188,6 +188,39 @@ def parse_header_inputs(header_lines: List[str]) -> Set[str]:
     }
 
 
+def parse_header_sync(header_lines: List[str]) -> Dict[str, Tuple[float, float, str]]:
+    """
+    Extract IC-CAP SYNC'd inputs from the ICCAP_INPUTS section.
+
+    An input declared as ``<slave> V <node> ... SYNC <ratio> <offset> <master>`` is not an
+    independent bias: IC-CAP drives it as ``slave = ratio * master + offset`` at every
+    point of the master's sweep, e.g. ``vc ... SYNC 1 0 vb`` (forward Gummel at VCB = 0)
+    or ``vc ... SYNC 1 -0.5 vb`` (VCB = -0.5 V). The data block then lists the slave as a
+    regular column, but for the SIMULATION the slave must be tied to the master, not held
+    at a constant.
+
+    Args:
+        header_lines: Lines from the file header.
+
+    Returns:
+        ``{slave_name: (ratio, offset, master_name)}`` -- empty when nothing is SYNC'd.
+    """
+    input_lines, _ = extract_section(header_lines, "ICCAP_INPUTS", "ICCAP_OUTPUTS")
+    sync: Dict[str, Tuple[float, float, str]] = {}
+    for line in input_lines:
+        toks = line.strip().split()
+        if not toks or toks[0].startswith("!") or "SYNC" not in toks:
+            continue
+        i = toks.index("SYNC")
+        try:
+            ratio, offset, master = float(toks[i + 1]), float(toks[i + 2]), toks[i + 3]
+        except (IndexError, ValueError):
+            logging.warning("Could not parse SYNC spec in header line: %r", line.strip())
+            continue
+        sync[toks[0]] = (ratio, offset, master)
+    return sync
+
+
 def parse_design_parameters(
     header_lines: List[str], device_type: str
 ) -> Dict[str, Union[float, str]]:

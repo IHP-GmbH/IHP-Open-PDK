@@ -551,6 +551,38 @@ never committed.
 
 ---
 
+## Bias Fidelity and Current-Sign Conventions
+
+Three framework rules keep the simulated bias and the compared quantities faithful to the
+measurement:
+
+- **IC-CAP `SYNC` inputs.** An MDM input declared as `vc ... SYNC 1 <offset> vb` is driven
+  point-by-point as `vc = vb + offset` (forward Gummel at constant VCB: `fg_vcb0`,
+  `fg_vcbm05`, `fg_vcb05`, ...). The parser keeps the master (`vb`) as the sweep variable
+  and records the relation for the slave (`sync 1 <offset> vb` in the compact sweep table);
+  the DC runner then renders the slave's source **tied to the master node**
+  (`Vc c b <offset>`) instead of a constant. Only ratio 1 between two node voltages is
+  supported; anything else is reported as a simulation error. (Before this, the slave was
+  held at 0 V and every constant-VCB Gummel sweep was simulated with VBE = 0.)
+- **Sweeps that cross 0 V run as two segments from 0 V outward** (e.g. `-1..1.04 V` becomes
+  `0..-1` and `0..1.04`); the runner concatenates the two output files. Starting a DC sweep
+  at an extreme bias (VBE = VCB = -1 V with the substrate at 0 V) can fail to converge.
+- **A corner that aborts part-way keeps the points that did converge.** The runner logs a
+  `WARNING` naming the file, block, corner and the simulated range instead of dropping the
+  whole characteristic for every corner; the measured/simulated merge is an inner join, so
+  points without a simulated value are simply not compared (visible as a lower `n_points`).
+- **Sign-preserving current clipping.** `clip_curr` floors `|I|` while keeping the sign
+  (`-3e-13 -> -clip_curr`). Currents that are negative by convention (PMOS drain current,
+  NMOS source current, pnp base/collector currents, HBT reverse-mode base current) are
+  therefore compared for real instead of collapsing onto the floor on both sides. Points
+  where the measured value and both corner bounds all sit at the floor are scored as
+  agreement ("unmeasurably small" on both sides), so the random sign of pA noise does not
+  produce failures (`n_floor` in `full_results.csv` counts them).
+- **`design_param_overrides`** (per-device YAML, optional) forces design-parameter columns
+  (`Nx`, `W`, `L`, `M`) to declared values on both the DC and the S-param path, e.g. when an
+  MDM `REMARKS` field disagrees with the documented MQA variant
+  (`configs/hbt/npn13g2l/npn13g2l.yaml`: `Nx: 4`). Overrides are logged as warnings.
+
 ## Continuous Integration
 
 `.github/workflows/device-testing.yml` runs three jobs on every push/PR:

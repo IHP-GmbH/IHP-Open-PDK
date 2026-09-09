@@ -30,6 +30,7 @@ from models_verifier.mdm_processing.utils import (
     parse_data_block,
     parse_design_parameters,
     parse_header_inputs,
+    parse_header_sync,
     infer_step,
     derive_master_setup_type_from_filename,
     derive_sweep_var,
@@ -66,6 +67,8 @@ class MdmParser:
         self.output_columns: List[str] = []
         self.compact_rows: List[Dict[str, object]] = []
         self.block_metadata: Dict[int, Dict] = {}
+        # IC-CAP SYNC'd inputs: {slave: (ratio, offset, master)} -- see utils.parse_header_sync.
+        self.sync_vars: Dict[str, tuple] = {}
 
         if self.device_type not in {"mos", "pnpmpa", "hbt"}:
             raise ValueError(f"Unsupported device type: {device_type}")
@@ -112,6 +115,7 @@ class MdmParser:
 
             # Parse header
             input_vars = parse_header_inputs(header_lines)
+            self.sync_vars = parse_header_sync(header_lines)
             design_params = parse_design_parameters(header_lines, self.device_type)
 
             if self.device_type != "mos":
@@ -119,7 +123,8 @@ class MdmParser:
             if self.device_type == "pnpmpa":
                 design_params["A"], design_params["P"] = get_dut_params(self.filepath)
 
-            self.input_columns = list(input_vars)
+            # Sorted for a deterministic column / `input_vars` order across runs.
+            self.input_columns = sorted(input_vars)
 
             # Process blocks
             block_dfs: List[pd.DataFrame] = []
@@ -176,7 +181,11 @@ class MdmParser:
     ) -> None:
         """Construct a compact row summarizing a block sweep."""
         sweep_var = block_df.columns[0]
-        sweep_vals = pd.to_numeric(block_df.iloc[:, 0], errors="coerce").dropna()
+        # If the first data column is a SYNC'd slave (e.g. "vc" driven as vb+offset), the
+        # real independent sweep is its master: use the master as the sweep variable.
+        if sweep_var in self.sync_vars and self.sync_vars[sweep_var][2] in block_df.columns:
+            sweep_var = self.sync_vars[sweep_var][2]
+        sweep_vals = pd.to_numeric(block_df[sweep_var], errors="coerce").dropna()
 
         start = float(sweep_vals.iloc[0]) if not sweep_vals.empty else None
         stop = float(sweep_vals.iloc[-1]) if not sweep_vals.empty else None
@@ -185,9 +194,24 @@ class MdmParser:
         row = {"block_id": block_id, "block_index": idx, **design_params}
         sweep_str = "" if start is None or stop is None else f"{start:.16g} {stop:.16g} {step:.16g}"
 
-        for name in input_vars:
+        for name in sorted(input_vars):
             if name == sweep_var:
                 row[name] = sweep_str
+            elif name in self.sync_vars:
+                ratio, offset, master = self.sync_vars[name]
+                if master == sweep_var:
+                    # The slave follows the swept master point-by-point (IC-CAP SYNC).
+                    # Keep the master as the sweep variable and hand the relation to the
+                    # DC runner, which ties the slave's source to the master NODE
+                    # (e.g. `Vc c b -0.5`) instead of holding it at a constant -- the
+                    # latter silently simulated fg_vcb0/fg_vcbm05/... with VBE = 0.
+                    row[name] = f"sync {ratio:.16g} {offset:.16g} {master}"
+                else:
+                    master_val = self.block_metadata[idx].get(master, None)
+                    try:
+                        row[name] = ratio * float(master_val) + offset
+                    except (TypeError, ValueError):
+                        row[name] = self.block_metadata[idx].get(name, None)
             else:
                 val = self.block_metadata[idx].get(name, None)
                 if val is None or str(val).lower() == sweep_var.lower():

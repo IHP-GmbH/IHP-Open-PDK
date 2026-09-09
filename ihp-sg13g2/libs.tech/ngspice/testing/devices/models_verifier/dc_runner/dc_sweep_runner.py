@@ -98,6 +98,29 @@ class DcSweepRunner:
         df.columns = [c.strip().lower() for c in df.columns]
         return df
 
+    @staticmethod
+    def _read_sweep_outputs(out_path: Path, out_path_2: Optional[Path], vcol: str) -> Optional[pd.DataFrame]:
+        """
+        Read the wrdata output of one corner. When the sweep was split into two segments
+        from 0 V outward (see `sweep_split`), concatenate both files, drop the duplicated
+        0 V point and sort by the sweep value. Missing/empty files are tolerated (a
+        partially simulated sweep still yields the points that converged).
+        """
+        parts = []
+        for p in (out_path, out_path_2):
+            if p is None:
+                continue
+            d = read_wrdata_df(p)
+            if d is not None and not d.empty:
+                parts.append(d)
+        if not parts:
+            return None
+        df = pd.concat(parts, ignore_index=True)
+        if vcol in df.columns:
+            df[vcol] = pd.to_numeric(df[vcol], errors="coerce")
+            df = df.drop_duplicates(subset=[vcol], keep="first").sort_values(vcol).reset_index(drop=True)
+        return df
+
     def _save_netlist(
         self, netlist_text: str, corner: str, block_id: str, input_data: str
     ) -> None:
@@ -395,6 +418,15 @@ class DcSweepRunner:
 
         sweep_src, sweep_node = sweep_config[sweep_var]
 
+        # A sweep whose range crosses 0 V is simulated as two monotone segments from 0 V
+        # outward (see the DC templates' `sweep_split` branch): starting a DC sweep at an
+        # extreme bias can fail to converge and previously lost the whole characteristic.
+        sweep_split = (sweep_start < 0.0 < sweep_stop) or (sweep_stop < 0.0 < sweep_start)
+        step_mag = abs(sweep_step) if sweep_step else abs(sweep_stop - sweep_start)
+        sweep_step_to_start = -step_mag if sweep_start < 0 else step_mag
+        sweep_step_to_stop = -step_mag if sweep_stop < 0 else step_mag
+        n_expected = int(round(abs(sweep_stop - sweep_start) / step_mag)) + 1 if step_mag else 1
+
         # -----------------
         # Helpers
         # -----------------
@@ -412,10 +444,36 @@ class DcSweepRunner:
         else:
             bias_conditions = get_topology_params(row, sweep_var)
             input_vars_str = row.get("input_vars", "")
+            input_var_names: List[str] = []
             if input_vars_str and pd.notna(input_vars_str):
-                for var in [v.strip().lower() for v in str(input_vars_str).split(",")]:
+                input_var_names = [v.strip().lower() for v in str(input_vars_str).split(",") if v.strip()]
+                for var in input_var_names:
                     if len(var) == 2 and var.startswith("i"):
                         bias_conditions[var] = float(row.get(var) or 0.0)
+            # IC-CAP SYNC'd inputs (mdm_processing/utils.py::parse_header_sync): the parser
+            # hands a slave that follows the swept master as "sync <ratio> <offset> <master>".
+            # The template then references the slave's source to a unity-gain VCVS copy of
+            # the master node (`Evc_sync vc_sync 0 b 0 1` + `Vc c vc_sync <offset>` for a
+            # forward Gummel at constant VCB) instead of a fixed voltage, so the simulation
+            # reproduces the measurement's point-by-point bias while every terminal source
+            # still carries only its own current. Only ratio == 1 between two
+            # node voltages is supported; anything else is reported as an error, not guessed.
+            sync: Dict[str, Dict[str, str]] = {}
+            for var in input_var_names:
+                val = row.get(var)
+                if not (isinstance(val, str) and val.strip().lower().startswith("sync")):
+                    continue
+                parts = val.split()
+                try:
+                    ratio, offset, master = float(parts[1]), float(parts[2]), parts[3].lower()
+                except (IndexError, ValueError):
+                    return idx, None, f"Malformed SYNC spec for '{var}': {val!r}"
+                if abs(ratio - 1.0) > 1e-12:
+                    return idx, None, f"SYNC ratio {ratio} for '{var}' is unsupported (only ratio 1)"
+                if not (len(var) == 2 and var[0] == "v" and len(master) == 2 and master[0] == "v"):
+                    return idx, None, f"SYNC of '{var}' to '{master}' is unsupported (node voltages only)"
+                sync[var] = {"master_node": master[1], "offset": f"{offset:.16g}"}
+            bias_conditions["sync"] = sync
             bias_conditions["output_vars"] = output_vars
 
         # -----------------
@@ -441,7 +499,10 @@ class DcSweepRunner:
         for corner in corners:
             netlist_path = Path(f"{run_base}_{corner}.cir")
             out_path = Path(f"{run_base}_{corner}.csv")
+            out_path_2 = Path(f"{run_base}_{corner}_seg2.csv")
             log_path = Path(f"{run_base}_{corner}.log")
+            for stale in (out_path, out_path_2):
+                stale.unlink(missing_ok=True)
 
             ctx = {
                 "model_corner_lib": str(corner_lib_path),
@@ -455,6 +516,10 @@ class DcSweepRunner:
                 "sweep_start": f"{sweep_start:.16g}",
                 "sweep_stop": f"{sweep_stop:.16g}",
                 "sweep_step": f"{sweep_step:.16g}",
+                "sweep_split": sweep_split,
+                "sweep_step_to_start": f"{sweep_step_to_start:.16g}",
+                "sweep_step_to_stop": f"{sweep_step_to_stop:.16g}",
+                "out_path_2": str(out_path_2),
                 **{k: (f"{v:.16g}" if isinstance(v, float) else str(v)) for k, v in params.items()},
                 **bias_conditions,
             }
@@ -472,14 +537,25 @@ class DcSweepRunner:
 
             # Run simulation
             rc = sim_netlist_ngspice(netlist_path, log_path)
-            if rc != 0:
-                logging.debug(f"ngspice failed for row {idx}, corner {corner} (rc={rc}). See log: {log_path}")
-                return idx, None, f"[{log_path}] ngspice failed"
 
-            df = read_wrdata_df(out_path)
+            df = self._read_sweep_outputs(out_path, out_path_2 if sweep_split else None, vcol)
             if df is None or df.empty:
-                logging.debug(f"Empty or missing wrdata output for row {idx}, corner {corner}. See log: {log_path}")
-                return idx, None, f"[{corner}] Empty or missing wrdata output"
+                logging.debug(f"ngspice failed for row {idx}, corner {corner} (rc={rc}). See log: {log_path}")
+                return idx, None, f"[{log_path}] ngspice failed (rc={rc}), no output"
+            if rc != 0 or len(df) < n_expected:
+                # ngspice aborted part-way (typically a non-convergent extreme bias such
+                # as VBE=1.04 V at VCE=2 V in a corner). Keep the points that did simulate
+                # -- the merge with the measured data is an inner join, so missing points
+                # are simply not compared -- and say so loudly instead of dropping the
+                # whole characteristic for every corner.
+                logging.warning(
+                    "ngspice %s for %s corner %s: %d of %d sweep points simulated "
+                    "(sweep values %s..%s); see %s",
+                    f"rc={rc}" if rc != 0 else "incomplete",
+                    str(row.get("input_data", "")) + f" block {block_id}",
+                    corner, len(df), n_expected,
+                    df[vcol].min(), df[vcol].max(), log_path,
+                )
 
             # Extract outputs
             try:

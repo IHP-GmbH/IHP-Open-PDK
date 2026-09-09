@@ -24,19 +24,19 @@
 {% if ie is defined %}Ie 0 e {{ ie }}{% endif %}
 
 {# Voltage sources based on sweep source #}
-{% if sweep_var == "Vcb" %}
+{% if sweep_var|lower == "vcb" %}
 Vc  c 0 0
 Vb  b c 0
     {% set ve_val = VE|default(0) %}
     {% if ie is not defined %}Ve e 0 {{ ve_val }}{% endif %}
 
-{% elif sweep_var == "Vbe" %}
+{% elif sweep_var|lower == "vbe" %}
 Vb  b 0 0
 Ve  e b 0
     {% set vc_val = VC|default(0) %}
     {% if ic is not defined %}Vc c 0 {{ vc_val }}{% endif %}
 
-{% elif sweep_var == "Vce" %}
+{% elif sweep_var|lower == "vce" %}
 Vc  c 0 0
 Ve  e c 0
     {% set vb_val = VB|default(0) %}
@@ -46,11 +46,29 @@ Ve  e c 0
     {% set vb_val = VB|default(0) %}
     {% set vc_val = VC|default(0) %}
     {% set ve_val = VE|default(0) %}
-    {% if ib is not defined %}Vb b 0 {{ vb_val }}
+    {# `sync` (from the DC runner) lists IC-CAP SYNC'd node voltages that follow the swept
+       master point-by-point (e.g. vc = vb + 0 for a forward Gummel at VCB=0). The slave's
+       source is referenced to a unity-gain VCVS copy of the master node -- NOT to the
+       master node itself, which would route the slave's terminal current through the
+       master's source and corrupt `-i(Vmaster)` (IB would read IB+IC). #}
+    {% set sync = sync|default({}) %}
+    {% if ib is not defined %}
+    {% if "vb" in sync %}Evb_sync vb_sync 0 {{ sync["vb"].master_node }} 0 1
+Vb b vb_sync {{ sync["vb"].offset }}
+    {% else %}Vb b 0 {{ vb_val }}
     {% endif %}
-    {% if ic is not defined %}Vc c 0 {{ vc_val }}
     {% endif %}
-    {% if ie is not defined %}Ve e 0 {{ ve_val }}
+    {% if ic is not defined %}
+    {% if "vc" in sync %}Evc_sync vc_sync 0 {{ sync["vc"].master_node }} 0 1
+Vc c vc_sync {{ sync["vc"].offset }}
+    {% else %}Vc c 0 {{ vc_val }}
+    {% endif %}
+    {% endif %}
+    {% if ie is not defined %}
+    {% if "ve" in sync %}Eve_sync ve_sync 0 {{ sync["ve"].master_node }} 0 1
+Ve e ve_sync {{ sync["ve"].offset }}
+    {% else %}Ve e 0 {{ ve_val }}
+    {% endif %}
     {% endif %}
 {% endif %}
 
@@ -71,14 +89,24 @@ X1 c b e {{ device_subckt }} a= {{ A }} p= {{ P }} m={{ (M|default(1))|int }}
   set wr_singlescale
   set wr_vecnames
 
-  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
-
+{% macro dump(path) %}
   let ic = -i(Vc)
   let ib = -i(Vb)
   let ie = -i(Ve)
-
-  wrdata {{ out_path }} v({{ sweep_node }}) {% for var in output_vars %}{% if var.startswith('v') %}v({{ var[1:] }}){% else %}{{ var }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
-
+  wrdata {{ path }} v({{ sweep_node }}) {% for var in output_vars %}{% if var.startswith('v') %}v({{ var[1:] }}){% else %}{{ var }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+{% endmacro %}
+{% if sweep_split|default(false) %}
+  * Sweep range crosses 0 V: run two monotone segments from 0 V outward (a DC sweep that
+  * starts at an extreme bias can fail to converge and would otherwise take the whole
+  * characteristic with it). The runner concatenates both output files.
+  dc {{ sweep_src }} 0 {{ sweep_start }} {{ sweep_step_to_start }}
+{{ dump(out_path) }}
+  dc {{ sweep_src }} 0 {{ sweep_stop }} {{ sweep_step_to_stop }}
+{{ dump(out_path_2) }}
+{% else %}
+  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+{{ dump(out_path) }}
+{% endif %}
   quit
 .endc
 

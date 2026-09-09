@@ -333,12 +333,28 @@ class RangeChecker:
                 "percentage_oob": 0.0,
                 "passed": True,
                 "n_excluded": n_excluded,
+                "n_floor": 0,
             }, []
 
         # Identify out-of-bounds points
         oob_mask = ~target_values[valid_mask].between(
             lower_bound[valid_mask], upper_bound[valid_mask]
         )
+        # Noise-floor agreement: when the measured value AND both envelope bounds all sit
+        # at/below the metric's noise floor (|I| <= clip_curr, kept sign-preserving by the
+        # verifier), measurement and model agree that the quantity is unmeasurably small.
+        # The sign of such pA-level noise is random, so these points must not count as
+        # out-of-bounds (nor be dropped from the denominator -- they are agreements).
+        n_floor = 0
+        if spec.noise_floor:
+            floor = float(spec.noise_floor) * 1.05  # slack covers the +-corner_tolerance
+            floor_agree = (
+                (target_values[valid_mask].abs() <= floor)
+                & (lower_bound[valid_mask].abs() <= floor)
+                & (upper_bound[valid_mask].abs() <= floor)
+            )
+            n_floor = int(floor_agree.sum())
+            oob_mask &= ~floor_agree
         oob_count = int(oob_mask.sum())
         percent_oob = 100.0 * oob_count / total_count
         passed = threshold.check(oob_count, total_count)
@@ -366,6 +382,7 @@ class RangeChecker:
             "percentage_oob": percent_oob,
             "passed": bool(passed),
             "n_excluded": n_excluded,
+            "n_floor": n_floor,
         }
 
         return report_row, failure_records

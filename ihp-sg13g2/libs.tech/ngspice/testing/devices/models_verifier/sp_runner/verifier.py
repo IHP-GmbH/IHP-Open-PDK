@@ -128,6 +128,13 @@ class SparamVerifier(MdmVerifier):
 
         data = parse_sparam_mdm(mdm_path)
         geom = self._geom_from_design(data.design_params)
+        # Same config-declared design-parameter overrides as the DC path (e.g. Nx).
+        overrides = self.config.get("design_param_overrides") or {}
+        for name, value in overrides.items():
+            if name in geom:
+                logging.warning("S-param %s: overriding %s=%s -> %s (design_param_overrides)",
+                                metric, name, geom[name], value)
+                geom[name] = float(value)
         temp = data.temp
 
         meas_rows: List[Dict] = []

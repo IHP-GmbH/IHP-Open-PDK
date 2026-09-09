@@ -34,16 +34,19 @@ UNIT_MULTIPLIERS = {
     "k": 1e3,
 }
 
+# pnpMPA DUT geometries: a in m^2, p in m. The pnpMPA subckt scales its model card with
+# dev_a = a*1e12 (um^2) and dev_p = p*1e6 (um), so 1 um^2 must be written as 1e-12.
+# Reference: libs.doc/meas/pnpMPA/doc ("DUT7 (W x L = 1 x 2 um^2)" -> a=2e-12, p=6e-6).
 DUTS = {
-    "DUT1": {"a": 20e-6, "p": 24e-6},
-    "DUT2": {"a": 10e-6, "p": 22e-6},
-    "DUT4": {"a": 5e-6, "p": 12e-6},
-    "DUT6": {"a": 4e-6, "p": 8e-6},
-    "DUT7": {"a": 2e-6, "p": 6e-6},
-    "DUT8": {"a": 2e-6, "p": 6e-6},
-    "DUT10": {"a": 1e-6, "p": 4e-6},
-    "DUT11": {"a": 1.36e-6, "p": 5.36e-6},
-    "DUT12": {"a": 0.68e-6, "p": 3.36e-6},
+    "DUT1": {"a": 20e-12, "p": 24e-6},
+    "DUT2": {"a": 10e-12, "p": 22e-6},
+    "DUT4": {"a": 5e-12, "p": 12e-6},
+    "DUT6": {"a": 4e-12, "p": 8e-6},
+    "DUT7": {"a": 2e-12, "p": 6e-6},
+    "DUT8": {"a": 2e-12, "p": 6e-6},
+    "DUT10": {"a": 1e-12, "p": 4e-6},
+    "DUT11": {"a": 1.36e-12, "p": 5.36e-6},
+    "DUT12": {"a": 0.68e-12, "p": 3.36e-6},
 }
 
 CASES = [

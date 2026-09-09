@@ -25,6 +25,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -157,6 +158,16 @@ class MdmVerifier:
         if not compact_by_type:
             raise VerificationError("No sweep data discovered in MDM directory.")
 
+        # Optional config-declared design-parameter overrides (e.g. `Nx: 4` when the MDM
+        # REMARKS disagree with the documented MQA variant). Applied to BOTH the compact
+        # (simulation) and full (measured/merge) tables so results stay self-consistent.
+        overrides = self.config.get("design_param_overrides") or {}
+        if overrides:
+            logging.warning("Applying design_param_overrides from config: %s", overrides)
+            for by_type in (full_by_type, compact_by_type):
+                for key in list(by_type):
+                    by_type[key] = self._apply_design_overrides(by_type[key], overrides)
+
         # Configure DC runner
         runner = DcSweepRunner(
             template_path=Path(self.config["dc_template_path"]),
@@ -202,6 +213,36 @@ class MdmVerifier:
 
         return merged_parts
 
+    @staticmethod
+    def _apply_design_overrides(df: pd.DataFrame, overrides: Dict[str, object]) -> pd.DataFrame:
+        """
+        Force device design parameters (columns such as `Nx`, `W`, `L`, `M`) to the values
+        declared under `design_param_overrides` in the config. Column names are matched
+        case-insensitively; a missing column is created.
+        """
+        if df is None or df.empty or not overrides:
+            return df
+        df = df.copy()
+        lower_map = {str(c).lower(): c for c in df.columns}
+        for name, value in overrides.items():
+            col = lower_map.get(str(name).lower(), str(name))
+            df[col] = value
+        return df
+
+    @staticmethod
+    def _clip_current_sign_preserving(values: pd.Series, clip_curr: float) -> pd.Series:
+        """
+        Floor |I| at `clip_curr` while KEEPING the sign: -3e-13 -> -clip_curr, +2e-3 -> +2e-3.
+
+        A plain `clip(lower=clip_curr)` collapsed every NEGATIVE current (PMOS drain
+        current, NMOS source current, pnp base/collector currents, HBT reverse-mode base
+        current) to the floor on BOTH the measured and the simulated side, so those
+        comparisons passed vacuously. NaN is preserved.
+        """
+        vals = pd.to_numeric(values, errors="coerce")
+        sign = np.where(vals < 0, -1.0, 1.0)
+        return pd.Series(sign * np.maximum(vals.abs(), clip_curr), index=values.index)
+
     def _build_range_checker(self) -> RangeChecker:
         """
         Construct and configure the range checker.
@@ -225,6 +266,10 @@ class MdmVerifier:
                 valid_range=m.get("valid_range"),
                 min_limit=m.get("min"),
                 max_limit=m.get("max"),
+                # Currents are floored at clip_curr (sign-preserving, see clean_results):
+                # give the checker the same floor so meas/model agreement "both below
+                # the floor" is not scored as a sign mismatch.
+                noise_floor=self.clip_curr if str(m["name"]).lower().startswith("i") else None,
             )
             for m in self.config["metrics"]
         ]
@@ -266,7 +311,7 @@ class MdmVerifier:
                 if col.startswith("i") and ("_sim" in col or "_meas" in col)
             ]
             for col in current_cols:
-                df[col] = df[col].clip(lower=self.clip_curr)
+                df[col] = self._clip_current_sign_preserving(df[col], self.clip_curr)
             logging.debug(f"Clipped currents are: {current_cols}")
             try:
                 df.to_csv(fpath, index=False)
