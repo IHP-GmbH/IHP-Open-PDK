@@ -41,6 +41,19 @@ device_type: "hbt"
 # Specific device name inside the PDK
 device_name: "npn13g2l"
 
+# ----------------------------------------------------
+# Design-parameter override (applied to BOTH the DC and the S-param path)
+# ----------------------------------------------------
+# The MDM headers of the default MQA variant npn13g2l_T01 carry REMARKS "Nx=5", but
+#   - the MQA PDF (slide 3) defines this default variant as npn13g2l_le=2.5_Nx=4 (T01),
+#   - the model card (sg13g2_hbt_mod.lib) states "Valid numbers: Nx = 1 - 4" for npn13G2l,
+#   - simulated with Nx=5, measured IC and CjE sit at 0.80 / 0.81 of the typical model,
+#     i.e. exactly the 4/5 expected from a mislabelled emitter count (npn13g2 and
+#     npn13g2v, whose REMARKS agree with the PDF, sit at 1.00-1.15).
+# Nx=4 is therefore used for the simulation. Remove this block if IHP confirms Nx=5.
+design_param_overrides:
+  Nx: 4
+
 # ==============================================================
 # Run Configuration
 # ==============================================================
