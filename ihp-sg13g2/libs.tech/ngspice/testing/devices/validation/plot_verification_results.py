@@ -81,6 +81,26 @@ def format_panel_title(block: pd.DataFrame, out_name: str, device_type_hint: str
     right = " — " + " | ".join(filter(None, [t_str] + parts)) if (t_str or parts) else ""
     return left + right
 
+def ensure_sweep_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    DC `combined_results/*.csv` carry `sweep_var`, `output_vars` and `block_id`. The HBT
+    S-parameter tables (`sparam/combined_results/*.csv`: cje / cjc / ft versus bias) have
+    `output_vars` and `block_id` but no `sweep_var`; infer it as the node-voltage column
+    that changes the most, so those files plot exactly like the DC ones.
+    """
+    df = df.copy()
+    if "sweep_var" not in df.columns:
+        bias = [c for c in ("vb", "vg", "vc", "vd", "ve", "vs") if c in df.columns]
+        if bias:
+            df["sweep_var"] = max(bias, key=lambda c: df[c].nunique())
+    if "output_vars" not in df.columns:
+        df["output_vars"] = ",".join(sorted(c[:-5] for c in df.columns if c.endswith("_meas")))
+    if "block_id" not in df.columns:
+        src = df["input_data"].astype(str) if "input_data" in df.columns else pd.Series(["block"] * len(df))
+        idx = df["block_index"].astype(str) if "block_index" in df.columns else pd.Series(["0"] * len(df))
+        df["block_id"] = src + "_" + idx
+    return df
+
 # ---------------------------
 # Main Plotting Routine
 # ---------------------------
@@ -230,6 +250,7 @@ def main():
     for csv_file in sorted(csv_dir.glob("*.csv")):
         print(f"\n📂 Processing CSV: {csv_file.name}")
         df = pd.read_csv(csv_file)
+        df = ensure_sweep_columns(df)
         csv_fig_dir = output_dir / csv_file.stem
         csv_fig_dir.mkdir(parents=True, exist_ok=True)
         plot_blocks_comparison(df, csv_fig_dir)

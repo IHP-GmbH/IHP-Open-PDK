@@ -146,6 +146,54 @@ eda-mos:
 	@for dev in $(MOS_DEVICES); do $(MAKE) eda-$$dev; done
 
 # ------------------------
+# Figures: measured vs simulated plots (validation/plot_verification_results.py)
+# ------------------------
+# One PNG per measured block and output variable, drawn from
+# models_results/<device>/combined_results/*.csv (run `make test-<device>` first). HBT
+# devices also get their S-param figures from models_results/<device>/sparam/. Figures
+# go to $(FIG_DIR)/<device>/ (gitignored); override with `make plot-all FIG_DIR=<dir>`.
+PLOT_BIN = python3 validation/plot_verification_results.py
+FIG_DIR ?= figures
+
+NMOS_LV_OUT  = models_results/nmos_lv
+PMOS_LV_OUT  = models_results/pmos_lv
+NMOS_HV_OUT  = models_results/nmos_hv
+PMOS_HV_OUT  = models_results/pmos_hv
+PNP_MPA_OUT  = models_results/pnp_mpa
+NPN13G2_OUT  = models_results/hbt_npn13g2
+NPN13G2L_OUT = models_results/hbt_npn13g2l
+NPN13G2V_OUT = models_results/npn13g2v
+
+define run_plot
+	@echo ">>> Plotting $(1): $(2)/combined_results -> $(FIG_DIR)/$(1) ..."
+	@$(PLOT_BIN) $(2)/combined_results $(FIG_DIR)/$(1)
+	@if [ -d $(2)/sparam/combined_results ]; then \
+		echo ">>> Plotting $(1) S-parameters -> $(FIG_DIR)/$(1)_sparam ..."; \
+		$(PLOT_BIN) $(2)/sparam/combined_results $(FIG_DIR)/$(1)_sparam; \
+	fi
+endef
+
+plot-nmos_lv:   ; $(call run_plot,nmos_lv,$(NMOS_LV_OUT))
+plot-pmos_lv:   ; $(call run_plot,pmos_lv,$(PMOS_LV_OUT))
+plot-nmos_hv:   ; $(call run_plot,nmos_hv,$(NMOS_HV_OUT))
+plot-pmos_hv:   ; $(call run_plot,pmos_hv,$(PMOS_HV_OUT))
+plot-pnp_mpa:   ; $(call run_plot,pnp_mpa,$(PNP_MPA_OUT))
+plot-npn13g2:   ; $(call run_plot,npn13g2,$(NPN13G2_OUT))
+plot-npn13g2l:  ; $(call run_plot,npn13g2l,$(NPN13G2L_OUT))
+plot-npn13g2v:  ; $(call run_plot,npn13g2v,$(NPN13G2V_OUT))
+
+plot-mos:
+	@for dev in $(MOS_DEVICES); do $(MAKE) plot-$$dev; done
+
+plot-hbt:
+	@for dev in $(HBT_DEVICES); do $(MAKE) plot-$$dev; done
+
+plot-pnp:
+	@for dev in $(PNP_DEVICES); do $(MAKE) plot-$$dev; done
+
+plot-all: plot-mos plot-hbt plot-pnp
+
+# ------------------------
 # Help message
 # ------------------------
 help:
@@ -167,6 +215,8 @@ help:
 	@echo "   waive-hbt-sparam  - Snapshot current Failed S-param rows into waivers/sparam/*.yaml (3 HBT devices)"
 	@echo "   eda-mos           - MOS error EDA + ML clustering + report ($(MOS_DEVICES))"
 	@echo "   eda-<device>      - EDA for a single MOS device (e.g. make eda-nmos_lv)"
+	@echo "   plot-<device>     - Measured-vs-simulated figures for one device into $(FIG_DIR)/<device>/ (e.g. make plot-npn13g2)"
+	@echo "   plot-hbt / plot-pnp / plot-mos / plot-all - Figures for a device group (FIG_DIR=<dir> to redirect)"
 	@echo
 	@echo " Examples:"
 	@echo "   make test-all"
@@ -174,3 +224,4 @@ help:
 	@echo "   make test-pmos_lv"
 	@echo "   make waive-all"
 	@echo "   make eda-mos"
+	@echo "   make plot-npn13g2"

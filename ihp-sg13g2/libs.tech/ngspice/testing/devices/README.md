@@ -28,6 +28,7 @@
       - [`3. combined_results/`](#3-combined_results)
       - [`4. final_reports/`](#4-final_reports)
         - [Example Output logs — nmos\_lv](#example-output-logs--nmos_lv)
+    - [Generating figures](#generating-figures)
   - [Waiver / Baseline Workflow](#waiver--baseline-workflow)
     - [How waiving works](#how-waiving-works)
     - [Generating and reviewing waivers](#generating-and-reviewing-waivers)
@@ -161,7 +162,7 @@ declared) is unaffected.
  ┗ 📜 README.md            Documentation for SG13G2 models testing (this file)  
 ```
 
-Two directories are **generated at run time and gitignored** (never committed): `models_results/<device>/` (Makefile `test-*`/`test-*-sparam` targets) and `eda_report/<device>/` (`eda-*` targets) — see [Output Results](#output-results), [HBT S-Parameter Characteristics](#hbt-s-parameter-characteristics-cje-cjc-ft), and [MOS Error EDA](#mos-error-eda-ml-clustering--report) below.
+Three directories are **generated at run time and gitignored** (never committed): `models_results/<device>/` (Makefile `test-*`/`test-*-sparam` targets), `figures/<device>/` (`plot-*` targets) and `eda_report/<device>/` (`eda-*` targets) — see [Output Results](#output-results), [HBT S-Parameter Characteristics](#hbt-s-parameter-characteristics-cje-cjc-ft), and [MOS Error EDA](#mos-error-eda-ml-clustering--report) below.
 
 ---
 
@@ -403,6 +404,27 @@ Measured       7704     6920      784     249960      13612        10.18       5
 Typical        7704     7663       41     249960        248         0.53       0.10  
 =========================================  
 ```
+
+### Generating figures
+
+`validation/plot_verification_results.py` draws one PNG per measured block and output
+variable from a `combined_results/` folder: the measured points (green), the typical-corner
+simulation (blue dashed) and the best/worst-case envelope (shaded); points outside the
+envelope are marked with an `x` and annotated with their coordinates. The Makefile wraps it
+per device and per group:
+
+```bash
+make test-npn13g2    # writes models_results/hbt_npn13g2/combined_results/ (and sparam/ after test-npn13g2-sparam)
+make plot-npn13g2    # -> figures/npn13g2/<characteristic>/{passed,failed/{meas,tt,both}}/<block_id>_<output>_<sweep>.png
+make plot-hbt        # all three HBTs; S-parameter figures go to figures/<device>_sparam/
+make plot-all        # every device; FIG_DIR=<dir> redirects the output
+```
+
+The `passed` / `failed` folder split is the raw envelope check over the **whole** sweep: it
+applies neither the MQA bias windows nor the waivers, so a figure filed under `failed/meas`
+can still belong to a `Passed` row in `final_reports/full_results.csv` (there, points
+outside the window are excluded). The CSV reports are the verdict; the figures are for
+looking at the curves. `figures/` is gitignored.
 
 ---
 
