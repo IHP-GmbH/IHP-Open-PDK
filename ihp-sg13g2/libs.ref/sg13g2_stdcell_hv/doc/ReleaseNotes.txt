@@ -86,9 +86,14 @@ Important Notes:
 
 3. Verilog:
 ==========================================================================================
-- sg13g2_stdcell_hv.v deliberately ships no copy of the shared ihp_* UDP
-  primitives; use the PDK's sg13g2_udp.v alongside it, exactly as for the
-  thin-oxide library. Loading two copies would collide.
+- sg13g2_stdcell_hv.v instantiates six shared ihp_* user-defined
+  primitives (ihp_dff_r, ihp_dff_sr_1, ihp_latch, ihp_latch_r, ihp_mux2,
+  ihp_mux4) and defines none of them. The install therefore places
+  sg13g2_udp.v in verilog/ as a SYMLINK to the thin-oxide library's copy,
+  so the cellset elaborates on its own -- verified with iverilog, zero
+  unresolved modules -- while remaining one file rather than a second copy
+  that could drift. Include exactly one of the two: the primitives carry
+  the same ihp_* names in both libraries, so loading both collides.
 
 4. LibreLane:
 ==========================================================================================

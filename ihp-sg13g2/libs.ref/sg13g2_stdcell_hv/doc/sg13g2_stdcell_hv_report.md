@@ -98,8 +98,11 @@ All netlist views are re-emitted from one internal model by
   synchronised to the drawn layout.
 * **`cdl/`** — the same subcircuits as `M`-cards with `*.PININFO`, the LVS
   reference; compared field-by-field against SPICE by `verify_sch.py`.
-* **`verilog/`** — 84 modules; deliberately no copy of `sg13g2_udp.v` (the
-  `ihp_*` UDPs are shared — a second copy would collide).
+* **`verilog/`** — 84 modules, plus `sg13g2_udp.v` as a **symlink** to the
+  thin-oxide library's copy, so the view elaborates on its own. A second
+  *copy* of the shared `ihp_*` UDPs would collide whenever both libraries
+  are read, and could drift; one file cannot do either. A flow that reads
+  both libraries still includes exactly one `*_udp.v`.
 * **`sym/`, `sch/`** — two tool front-ends over the same netlist.
   **xschem**: 84 symbols (thin-oxide drawn geometry, thick-oxide netlist
   prefix, `$::SG13G2_HV_SCH` resolution) and 84 schematics plus a generated
