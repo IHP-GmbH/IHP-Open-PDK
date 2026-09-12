@@ -21,7 +21,7 @@ so both libraries coexist in one netlist.
 |---|---|---|
 | SPICE netlist (`spice/`) | 84 cells, 920 devices | verified against 3 independent views |
 | CDL netlist (`cdl/`) | 84 cells + 2 tie cells | LVS reference, all 84 cells match |
-| Verilog (`verilog/`) | 84 modules | shared `ihp_*` UDPs, deliberately not duplicated |
+| Verilog (`verilog/`) | 84 modules + `sg13g2_udp.v` | elaborates standalone; the shared `ihp_*` UDPs are linked, not duplicated |
 | xschem symbols / schematics | 84 + gallery sheet | netlist-equivalence proven |
 | Qucs-S symbols / schematics | 84 + 84 XML + 45 shared .sym | retarget of the thin-oxide views, gated against the SPICE netlist |
 | GDS layout (`gds/`) | **84 cells** (66 retargeted + 18 per-cell generated) | **DRC clean, LVS clean** |
