@@ -47,44 +47,42 @@ class chipText(DloGen):
 
         LayerList = self.Layers.split()
 
-        Poly  = self.definePoints()
-        poly  = PointList()
-        poly2 = PointList()
+        Poly = self.definePoints()
 
         # 40 - because it is default character size
-        mag = Size/40.0
-        letSpc = Numeric(self.letSpc)*mag
+        mag = Size / 40.0
+        letSpc = Numeric(self.letSpc) * mag
         # a space advances by one character cell (glyphs are 25 units wide)
-        spaceWidth = 25*mag
+        spaceWidth = 25 * mag
 
         # write down text for every layer in the list
-        for layer in LayerList :
+        for layer in LayerList:
             x = 0
             y = 0
-            for ch in Text :
-                if ch == ' ' :
-                    x += spaceWidth+letSpc
+            for ch in Text:
+                if ch == ' ':
+                    x += spaceWidth + letSpc
                     continue
-                if ch == '\n' :
+                if ch == '\n':
                     continue
 
-                if ch in Poly :
+                if ch in Poly:
                     poly = Poly[ch]
-                else :
+                else:
                     poly = PointList([Point(0, 0), Point(25, 0), Point(25, 5), Point(0, 5)])
 
                 poly2 = PointList()
 
-                for xy in poly :
+                for xy in poly:
                     # Move origin
-                    xneu = xy.x*mag+x
-                    yneu = xy.y*mag+y
+                    xneu = xy.x * mag + x
+                    yneu = xy.y * mag + y
                     poly2.insert(0, Point(xneu, yneu))
 
                 curChar = dbCreatePolygon(self, Layer(layer, 'drawing'), poly2)
 
                 x_max = max(p.x for p in curChar.getPoints())
-                x = x_max+letSpc
+                x = x_max + letSpc
 
     def definePoints(self):
         # glyph outlines on a 40 unit high grid, listed as (x, y) tuples
