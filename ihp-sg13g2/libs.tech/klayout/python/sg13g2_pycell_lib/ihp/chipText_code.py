@@ -25,13 +25,13 @@ from .utility_functions import *
 class chipText(DloGen):
 
     @classmethod
-    def defineParamSpecs(self, specs): 
-        # define parameters and default values   
+    def defineParamSpecs(self, specs):
+        # define parameters and default values
         specs('Height', '50', 'Height')
         specs('letSpc', '2', 'letSpc')
         specs('Layers', 'TopMetal1', 'Layers')
         specs('Text', 'Text', 'Text')
-        
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -44,44 +44,44 @@ class chipText(DloGen):
         Size = round(Numeric(self.Height))
         # no lower-case letters
         Text = self.Text.upper()
-        
+
         LayerList = self.Layers.split()
-        
+
         Poly  = self.definePoints()
         poly  = PointList()
         poly2 = PointList()
-        
+
         # 40 - because it is default character size
         mag = Size/40.0
-        
+
         # write down text for every layer in the list
         for layer in LayerList :
             x = 0
             y = 0
             for ch in Text :
                 if ch != ' ' and ch != '\n' :
-                    
+
                     if ch in Poly :
                         poly = Poly[ch]
                     else :
                         poly = PointList([Point(0, 0), Point(25, 0), Point(25, 5), Point(0, 5)])
-                    
+
                     poly2 = PointList()
-                    
+
                     for xy in poly :
                         # Move origin
                         xneu = xy.x*mag+x
                         yneu = xy.y*mag+y
                         poly2.insert(0, Point(xneu, yneu))
-                        
+
                     curChar = dbCreatePolygon(self, Layer(layer, 'drawing'), poly2)
-                
+
                 x_max = max(p.x for p in curChar.getPoints())
                 x = x_max+Numeric(self.letSpc)*mag
-                
+
     def definePoints(self):
         poly = dict()
-        
+
         poly['0'] = PointList([Point(25, 34), Point(19, 40), Point(14, 40), Point(14, 35), Point(16, 35), Point(20, 31), Point(20, 28), Point(10, 18), Point(14, 14), Point(18, 18), Point(20, 18), Point(20, 9), Point(16, 5),
                                Point(9, 5), Point(5, 9), Point(5, 31), Point(9, 35), Point(11, 35), Point(11, 40), Point(6, 40), Point(0, 34), Point(0, 6), Point(6, 0), Point(19, 0), Point(25, 6)])
 
@@ -176,6 +176,6 @@ class chipText(DloGen):
         poly['_'] = PointList([Point(0, 0), Point(25, 0), Point(25, 5), Point(0, 5)])
 
         poly['-'] = PointList([Point(0, 18), Point(25, 18), Point(25, 23), Point(0, 23)])
-        
+
         return poly
 
