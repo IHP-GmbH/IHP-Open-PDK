@@ -28,7 +28,7 @@ class chipText(DloGen):
     def defineParamSpecs(self, specs):
         # define parameters and default values
         specs('Height', '50', 'Height')
-        specs('letSpc', '2', 'letSpc')
+        specs('letSpc', '2', 'Letter spacing')
         specs('Layers', 'TopMetal1', 'Layers')
         specs('Text', 'Text', 'Text')
 
