@@ -80,6 +80,57 @@ Signed-off-by: Jane Doe <jane.doe@example.com>
 * Commits are rebased on the target branch; do not merge the target branch
   into your feature branch.
 
+## Repository structure and multi-PDK rules
+
+This repository hosts several PDKs (`ihp-sg13g2`, `ihp-sg13cmos5l`) next
+to each other. Each PDK is shipped on its own: packagers such as Ciel
+archive one `ihp-<pdk>` directory and install it as `$PDK`, without the
+rest of the repository. The rules below exist so that a change in one
+place cannot silently break a packaged PDK.
+
+### Layout
+
+* Every PDK follows the
+  [open-pdks format](https://github.com/fossi-foundation/open-pdks#open-pdks-format):
+  `libs.doc`, `libs.qa`, `libs.ref/<library>/<format>/` and
+  `libs.tech/<tool>/`. Add a new tool as a directory under `libs.tech`;
+  do not add new top-level directories to a PDK.
+* A PDK directory contains only what a user of that PDK needs. Files that
+  serve this repository but not the PDK itself (build rules, CI helpers,
+  cross-PDK tests) live in the repository root or in `ihp-common`.
+* `ihp-common` holds content shared by more than one PDK. It mirrors the
+  PDK layout but is deliberately not a PDK and must never be installable
+  as `$PDK`; see [ihp-common/README.md](ihp-common/README.md).
+* There is one `Makefile`, in the repository root. Shared regression
+  targets go to `ihp-common/pdk.mk`, PDK-specific ones to `Makefile.<pdk>`.
+  PDK directories carry no build system.
+
+### Sharing content between PDKs
+
+* Do not copy files from one PDK into another. Content that is identical
+  in several PDKs is moved to `ihp-common` and linked from each PDK.
+  Content that differs stays in the PDK that owns it.
+* Do not add new symlinks from one PDK into another. A PDK that needs a
+  file from another PDK is the signal that the file belongs in
+  `ihp-common`. The existing links from `ihp-sg13cmos5l` into `ihp-sg13g2`
+  are a leftover of the merge and are being migrated; do not extend them.
+* Symlinks are relative and point into `ihp-common` (or within the same
+  PDK). Absolute paths and links to gitignored build products are not
+  accepted; CI rejects every broken link.
+* A change to `ihp-common` or to a file that other PDKs link to affects
+  every PDK. Run the regression of each affected PDK
+  (`make test-... PDK=ihp-<pdk>`) and name the tested PDKs in the pull
+  request.
+
+### Repository-wide files
+
+* `versions.txt` pins one version per tool for the whole repository; a
+  PDK cannot require a different tool version.
+* Git submodules are registered under the PDK that uses them, or under
+  `ihp-common` when several PDKs do. Bump a submodule in its own commit.
+* User-visible changes get a `CHANGELOG.md` entry that names the affected
+  PDK.
+
 ## Community Guidelines
 
 This project follows [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
