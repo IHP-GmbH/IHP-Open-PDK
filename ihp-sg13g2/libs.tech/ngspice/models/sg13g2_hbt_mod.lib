@@ -44,6 +44,29 @@
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 
@@ -54,27 +77,27 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 + vce_max = 1.6
 + tnom = 27
 + cbeo = '8.00E-16*(Nx*0.25)**0.975'
-+ cje = '8.418E-15*(Nx*0.25)**0.975*vbic_cje'
++ cje = '8.418E-15*(Nx*0.25)**0.975*vbic_cje*cje_fac_mm'
 + pe = 0.92
 + me = 0.12
 + aje = -0.50
 + wbe = 1.00
 + cbco = '2.36E-15*(Nx*0.25)'
-+ cjc = '1.53E-15*(Nx*0.25)*vbic_cjc'
++ cjc = '1.53E-15*(Nx*0.25)*vbic_cjc*cjc_fac_mm'
 + pc = 0.558
 + mc = 0.12
 + ajc = -0.50
-+ cjep = '3.56E-15*(Nx*0.25)*vbic_cjc'
-+ cjcp = '4.56E-15*(Nx*0.25)**0.8*vbic_cjcp'
++ cjep = '3.56E-15*(Nx*0.25)*vbic_cjc*cjc_fac_mm'
++ cjcp = '4.56E-15*(Nx*0.25)**0.8*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.46
 + ms = 0.23
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '4.81E-17*(Nx*0.25)*vbic_is'
++ is = '4.81E-17*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.018
-+ ibei = '1.9E-19*(Nx*0.25)*vbic_ibei'
++ ibei = '1.9E-19*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.066
 + iben = '4.00E-16*(Nx*0.25)'
 + nen = 2.00
@@ -95,20 +118,20 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 + ikp = '.00E-04*(Nx*0.25)'
 + ibeip = '4.00E-19*(Nx*0.25)'
 + ibenp = '2.00E-14*(Nx*0.25)'
-+ re = '7.13E+00*(4/Nx)**1*vbic_re'
-+ rcx = '1.3E+01*(4/Nx)**1*vbic_rcx'
++ re = '7.13E+00*(4/Nx)**1*vbic_re*re_fac_mm'
++ rcx = '1.3E+01*(4/Nx)**1*vbic_rcx*rcx_fac_mm'
 + rci = '1.29E+01*(4/Nx)**1'
 + qco = 1.00E-18
 + vo = 0.80
 + gamm = 2.25E-14
 + hrcf = 1000
-+ rbx = '6.93E+00*(4/Nx)**0.95*vbic_rbx'
-+ rbi = '2.20E+01*(4/Nx)**0.95*vbic_rbx'
++ rbx = '6.93E+00*(4/Nx)**0.95*vbic_rbx*rbx_fac_mm'
++ rbi = '2.20E+01*(4/Nx)**0.95*vbic_rbx*rbx_fac_mm'
 + rbp = '5.5*(4/Nx)'
 + rs = 1
 + avc1 = 2.40
 + avc2 = 10.81
-+ tf = '2.08E-13*vbic_tf*((temper+273)/300)**0.7'
++ tf = '2.08E-13*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 10.0
 + vtf = 20.0
@@ -152,6 +175,29 @@ Rt t 0 R = 1e9
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 
@@ -162,27 +208,27 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 + vce_max = 1.6
 + tnom = 27
 + cbeo = '8.00E-16*(Nx*0.25)**0.975'
-+ cje = '8.418E-15*(Nx*0.25)**0.975*vbic_cje'
++ cje = '8.418E-15*(Nx*0.25)**0.975*vbic_cje*cje_fac_mm'
 + pe = 0.92
 + me = 0.12
 + aje = -0.50
 + wbe = 1.00
 + cbco = '2.36E-15*(Nx*0.25)'
-+ cjc = '1.53E-15*(Nx*0.25)*vbic_cjc'
++ cjc = '1.53E-15*(Nx*0.25)*vbic_cjc*cjc_fac_mm'
 + pc = 0.558
 + mc = 0.12
 + ajc = -0.50
-+ cjep = '3.56E-15*(Nx*0.25)*vbic_cjc'
-+ cjcp = '4.56E-15*(Nx*0.25)**0.8*vbic_cjcp'
++ cjep = '3.56E-15*(Nx*0.25)*vbic_cjc*cjc_fac_mm'
++ cjcp = '4.56E-15*(Nx*0.25)**0.8*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.46
 + ms = 0.23
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '4.81E-17*(Nx*0.25)*vbic_is'
++ is = '4.81E-17*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.018
-+ ibei = '1.9E-19*(Nx*0.25)*vbic_ibei'
++ ibei = '1.9E-19*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.066
 + iben = '4.00E-16*(Nx*0.25)'
 + nen = 2.00
@@ -203,20 +249,20 @@ Qnpn13G2 c b e s1 t npn13G2_NX_vbic dtemp=dtemp m=1
 + ikp = '.00E-04*(Nx*0.25)'
 + ibeip = '4.00E-19*(Nx*0.25)'
 + ibenp = '2.00E-14*(Nx*0.25)'
-+ re = '7.13E+00*(4/Nx)**1*vbic_re'
-+ rcx = '1.3E+01*(4/Nx)**1*vbic_rcx'
++ re = '7.13E+00*(4/Nx)**1*vbic_re*re_fac_mm'
++ rcx = '1.3E+01*(4/Nx)**1*vbic_rcx*rcx_fac_mm'
 + rci = '1.29E+01*(4/Nx)**1'
 + qco = 1.00E-18
 + vo = 0.80
 + gamm = 2.25E-14
 + hrcf = 1000
-+ rbx = '6.93E+00*(4/Nx)**0.95*vbic_rbx'
-+ rbi = '2.20E+01*(4/Nx)**0.95*vbic_rbx'
++ rbx = '6.93E+00*(4/Nx)**0.95*vbic_rbx*rbx_fac_mm'
++ rbi = '2.20E+01*(4/Nx)**0.95*vbic_rbx*rbx_fac_mm'
 + rbp = '5.5*(4/Nx)'
 + rs = 1
 + avc1 = 2.40
 + avc2 = 10.81
-+ tf = '2.08E-13*vbic_tf*((temper+273)/300)**0.7'
++ tf = '2.08E-13*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 10.0
 + vtf = 20.0
@@ -280,6 +326,29 @@ Rt t 0 R = 1e9
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 
@@ -290,27 +359,27 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 + vce_max = 1.6
 + tnom = 27
 + cbeo = '1.92E-15*(El/2.5)**0.85*(Nx*0.25)**0.95'
-+ cje = '2.166E-14*(El/2.5)**0.85*(Nx*0.25)**0.95*vbic_cje'
++ cje = '2.166E-14*(El/2.5)**0.85*(Nx*0.25)**0.95*vbic_cje*cje_fac_mm'
 + pe = 0.92
 + me = 0.12
 + aje = -0.50
 + wbe = 1.00
 + cbco = '6.33E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
-+ cjc = '3.83E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjc = '3.83E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
 + pc = 0.558
 + mc = 0.12
 + ajc = -0.50
-+ cjep = '7.77E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
-+ cjcp = '8.36E-15*(El/2.5)**0.55*(Nx*0.25)**0.8*vbic_cjcp'
++ cjep = '7.77E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
++ cjcp = '8.36E-15*(El/2.5)**0.55*(Nx*0.25)**0.8*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.46
 + ms = 0.23
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '7.50E-17*(El/2.5)**0.85*(Nx*0.25)*vbic_is'
++ is = '7.50E-17*(El/2.5)**0.85*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.004
-+ ibei = '2.01E-19*(El/2.5)**0.85*(Nx*0.25)*vbic_ibei'
++ ibei = '2.01E-19*(El/2.5)**0.85*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.035
 + iben = '1.20E-15*(El/2.5)**0.85*(Nx*0.25)'
 + nen = 2.00
@@ -331,20 +400,20 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 + ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
 + ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
 + ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
-+ re = '3.19E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
-+ rcx = '3.90E+00*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ re = '3.19E+00*(2.5/El)*(4/Nx)**0.88*vbic_re*re_fac_mm'
++ rcx = '3.90E+00*(2.5/El)*(4/Nx)**0.9*vbic_rcx*rcx_fac_mm'
 + rci = '7.50E+00*(2.5/El)**0.85*(4/Nx)**1'
 + qco = 1.00E-18
 + vo = 0.80
 + gamm = 3.00E-14
 + hrcf = 1000
-+ rbx = '2.54E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
-+ rbi = '7.26E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
++ rbx = '2.54E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx*rbx_fac_mm'
++ rbi = '7.26E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx*rbx_fac_mm'
 + rbp = '15.0*(2.5/El)**0.7*(4/Nx)'
 + rs = '1*(2.5/El)*(4/Nx)'
 + avc1 = 2.40
 + avc2 = 10.81
-+ tf = '2.31E-13*(El/2.5)**0.15*vbic_tf*((temper+273)/300)**0.7'
++ tf = '2.31E-13*(El/2.5)**0.15*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 10.0
 + vtf = 20.0
@@ -386,6 +455,29 @@ Rt t 0 R = 1e9
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 
@@ -396,27 +488,27 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 + vce_max = 1.6
 + tnom = 27
 + cbeo = '1.92E-15*(El/2.5)**0.85*(Nx*0.25)**0.95'
-+ cje = '2.166E-14*(El/2.5)**0.85*(Nx*0.25)**0.95*vbic_cje'
++ cje = '2.166E-14*(El/2.5)**0.85*(Nx*0.25)**0.95*vbic_cje*cje_fac_mm'
 + pe = 0.92
 + me = 0.12
 + aje = -0.50
 + wbe = 1.00
 + cbco = '6.33E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
-+ cjc = '3.83E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjc = '3.83E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
 + pc = 0.558
 + mc = 0.12
 + ajc = -0.50
-+ cjep = '7.77E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
-+ cjcp = '8.36E-15*(El/2.5)**0.55*(Nx*0.25)**0.8*vbic_cjcp'
++ cjep = '7.77E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
++ cjcp = '8.36E-15*(El/2.5)**0.55*(Nx*0.25)**0.8*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.46
 + ms = 0.23
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '7.50E-17*(El/2.5)**0.85*(Nx*0.25)*vbic_is'
++ is = '7.50E-17*(El/2.5)**0.85*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.004
-+ ibei = '2.01E-19*(El/2.5)**0.85*(Nx*0.25)*vbic_ibei'
++ ibei = '2.01E-19*(El/2.5)**0.85*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.035
 + iben = '1.20E-15*(El/2.5)**0.85*(Nx*0.25)'
 + nen = 2.00
@@ -437,20 +529,20 @@ Qnpn13G2l c b e s1 t npn13G2l_NX_vbic dtemp=dtemp m=1
 + ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
 + ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
 + ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
-+ re = '3.19E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
-+ rcx = '3.90E+00*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ re = '3.19E+00*(2.5/El)*(4/Nx)**0.88*vbic_re*re_fac_mm'
++ rcx = '3.90E+00*(2.5/El)*(4/Nx)**0.9*vbic_rcx*rcx_fac_mm'
 + rci = '7.50E+00*(2.5/El)**0.85*(4/Nx)**1'
 + qco = 1.00E-18
 + vo = 0.80
 + gamm = 3.00E-14
 + hrcf = 1000
-+ rbx = '2.54E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
-+ rbi = '7.26E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx'
++ rbx = '2.54E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx*rbx_fac_mm'
++ rbi = '7.26E+00*(2.5/El)**0.7*(4/Nx)*vbic_rbx*rbx_fac_mm'
 + rbp = '15.0*(2.5/El)**0.7*(4/Nx)'
 + rs = '1*(2.5/El)*(4/Nx)'
 + avc1 = 2.40
 + avc2 = 10.81
-+ tf = '2.31E-13*(El/2.5)**0.15*vbic_tf*((temper+273)/300)**0.7'
++ tf = '2.31E-13*(El/2.5)**0.15*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 10.0
 + vtf = 20.0
@@ -515,6 +607,29 @@ Rt t 0 R = 1e9
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 
@@ -525,27 +640,27 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 + vce_max = 2.2
 + tnom = 27
 + cbeo = '2.28E-15*(El/2.5)**0.94*(Nx*0.25)**0.95'
-+ cje = '2.594E-14*(El/2.5)**0.94*(Nx*0.25)**0.95*vbic_cje'
++ cje = '2.594E-14*(El/2.5)**0.94*(Nx*0.25)**0.95*vbic_cje*cje_fac_mm'
 + pe = 0.88
 + me = 0.13
 + aje = -0.50
 + wbe = 1.00
 + cbco = '4.37E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
-+ cjc = '2.52E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjc = '2.52E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
 + pc = 0.397
 + mc = 0.09
 + ajc = -0.50
-+ cjep = '6.48E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
-+ cjcp = '7.60E-15*(El/2.5)**0.65*(Nx*0.25)**0.5*vbic_cjcp'
++ cjep = '6.48E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
++ cjcp = '7.60E-15*(El/2.5)**0.65*(Nx*0.25)**0.5*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.31
 + ms = 0.16
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '1.22E-16*(El/2.5)**0.8*(Nx*0.25)*vbic_is'
++ is = '1.22E-16*(El/2.5)**0.8*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.016
-+ ibei = '3.02E-19*(El/2.5)**0.925*(Nx*0.25)*vbic_ibei'
++ ibei = '3.02E-19*(El/2.5)**0.925*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.043
 + iben = '1.44E-15*(El/2.5)**0.925*(Nx*0.25)'
 + nen = 2.00
@@ -566,20 +681,20 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 + ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
 + ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
 + ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
-+ re = '3.30E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
-+ rcx = '1.30E+01*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ re = '3.30E+00*(2.5/El)*(4/Nx)**0.88*vbic_re*re_fac_mm'
++ rcx = '1.30E+01*(2.5/El)*(4/Nx)**0.9*vbic_rcx*rcx_fac_mm'
 + rci = '1.53E+02*(2.5/El)**0.9*(4/Nx)'
 + qco = 1.00E-18
 + vo = 2.40
 + gamm = 3.30E-12
 + hrcf = 1000
-+ rbx = '1.54E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
-+ rbi = '6.60E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
++ rbx = '1.54E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx*rbx_fac_mm'
++ rbi = '6.60E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx*rbx_fac_mm'
 + rbp = '6.5*(2.5/El)**0.75*(4/Nx)'
 + rs = '1*(2.5/El)*(4/Nx)'
 + avc1 = 2.40
 + avc2 = 17.14
-+ tf = '4.10E-13*(El/2.5)**0*vbic_tf*((temper+273)/300)**0.7'
++ tf = '4.10E-13*(El/2.5)**0*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 60.0
 + vtf = 20.0
@@ -621,6 +736,29 @@ Rt t 0 R = 1e9
 +El=le*1e6
 +selft=1
 +sw_nqs=0
++mm_ok=0
++m=1
+
+.param is_mm  ='agauss(1, 0.038, (mm_ok != 1 ? 0 : 1))'
+.param ibei_mm='agauss(1, 0.130, (mm_ok != 1 ? 0 : 1))'
+.param iben_mm='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cje_mm ='agauss(1, 0.017, (mm_ok != 1 ? 0 : 1))'
+.param cjc_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param cjcp_mm='agauss(1, 0.028, (mm_ok != 1 ? 0 : 1))'
+.param re_mm  ='agauss(1, 0.055, (mm_ok != 1 ? 0 : 1))'
+.param rcx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param rbx_mm ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param tf_mm  ='agauss(1, 0.010, (mm_ok != 1 ? 0 : 1))'
+.param is_fac_mm  ='1+mm_ok*(is_mm  -1)/sqrt(m*Nx)'
+.param ibei_fac_mm='1+mm_ok*(ibei_mm-1)/sqrt(m*Nx)'
+.param iben_fac_mm='1+mm_ok*(iben_mm-1)/sqrt(m*Nx)'
+.param cje_fac_mm ='1+mm_ok*(cje_mm -1)/sqrt(m*Nx)'
+.param cjc_fac_mm ='1+mm_ok*(cjc_mm -1)/sqrt(m*Nx)'
+.param cjcp_fac_mm='1+mm_ok*(cjcp_mm-1)/sqrt(m*Nx)'
+.param re_fac_mm  ='1+mm_ok*(re_mm  -1)/sqrt(m*Nx)'
+.param rcx_fac_mm ='1+mm_ok*(rcx_mm -1)/sqrt(m*Nx)'
+.param rbx_fac_mm ='1+mm_ok*(rbx_mm -1)/sqrt(m*Nx)'
+.param tf_fac_mm  ='1+mm_ok*(tf_mm  -1)/sqrt(m*Nx)'
 
 Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 
@@ -631,27 +769,27 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 + vce_max = 2.2
 + tnom = 27
 + cbeo = '2.28E-15*(El/2.5)**0.94*(Nx*0.25)**0.95'
-+ cje = '2.594E-14*(El/2.5)**0.94*(Nx*0.25)**0.95*vbic_cje'
++ cje = '2.594E-14*(El/2.5)**0.94*(Nx*0.25)**0.95*vbic_cje*cje_fac_mm'
 + pe = 0.88
 + me = 0.13
 + aje = -0.50
 + wbe = 1.00
 + cbco = '4.37E-15*(El/2.5)**0.85*(Nx*0.25)**0.975'
-+ cjc = '2.52E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
++ cjc = '2.52E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
 + pc = 0.397
 + mc = 0.09
 + ajc = -0.50
-+ cjep = '6.48E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc'
-+ cjcp = '7.60E-15*(El/2.5)**0.65*(Nx*0.25)**0.5*vbic_cjcp'
++ cjep = '6.48E-15*(El/2.5)**0.85*(Nx*0.25)**0.975*vbic_cjc*cjc_fac_mm'
++ cjcp = '7.60E-15*(El/2.5)**0.65*(Nx*0.25)**0.5*vbic_cjcp*cjcp_fac_mm'
 + ps = 0.31
 + ms = 0.16
 + ajs = -0.50
 + fc = 0.80
 + vef = 189
 + ver = 5.3
-+ is = '1.22E-16*(El/2.5)**0.8*(Nx*0.25)*vbic_is'
++ is = '1.22E-16*(El/2.5)**0.8*(Nx*0.25)*vbic_is*is_fac_mm'
 + nf = 1.016
-+ ibei = '3.02E-19*(El/2.5)**0.925*(Nx*0.25)*vbic_ibei'
++ ibei = '3.02E-19*(El/2.5)**0.925*(Nx*0.25)*vbic_ibei*ibei_fac_mm'
 + nei = 1.043
 + iben = '1.44E-15*(El/2.5)**0.925*(Nx*0.25)'
 + nen = 2.00
@@ -672,20 +810,20 @@ Qnpn13G2v c b e s1 t npn13G2v_NX_vbic dtemp=dtemp m=1
 + ikp = '1.00E-04*(El/2.5)*(Nx*0.25)'
 + ibeip = '4.00E-19*(El/2.5)*(Nx*0.25)'
 + ibenp = '2.00E-14*(El/2.5)*(Nx*0.25)'
-+ re = '3.30E+00*(2.5/El)*(4/Nx)**0.88*vbic_re'
-+ rcx = '1.30E+01*(2.5/El)*(4/Nx)**0.9*vbic_rcx'
++ re = '3.30E+00*(2.5/El)*(4/Nx)**0.88*vbic_re*re_fac_mm'
++ rcx = '1.30E+01*(2.5/El)*(4/Nx)**0.9*vbic_rcx*rcx_fac_mm'
 + rci = '1.53E+02*(2.5/El)**0.9*(4/Nx)'
 + qco = 1.00E-18
 + vo = 2.40
 + gamm = 3.30E-12
 + hrcf = 1000
-+ rbx = '1.54E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
-+ rbi = '6.60E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx'
++ rbx = '1.54E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx*rbx_fac_mm'
++ rbi = '6.60E+00*(2.5/El)**0.75*(4/Nx)*vbic_rbx*rbx_fac_mm'
 + rbp = '6.5*(2.5/El)**0.75*(4/Nx)'
 + rs = '1*(2.5/El)*(4/Nx)'
 + avc1 = 2.40
 + avc2 = 17.14
-+ tf = '4.10E-13*(El/2.5)**0*vbic_tf*((temper+273)/300)**0.7'
++ tf = '4.10E-13*(El/2.5)**0*vbic_tf*((temper+273)/300)**0.7*tf_fac_mm'
 + qtf = 1.00E-18
 + xtf = 60.0
 + vtf = 20.0
