@@ -16,6 +16,7 @@
 #
 ########################################################################
 __version__ = '$Revision: #3 $'
+
 from cni.dlo import *
 from .device_base_code import DeviceBase
 from .geometry import *
@@ -23,6 +24,7 @@ from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 import math
+from typing import List
 
 
 class SVaricap(DeviceBase):

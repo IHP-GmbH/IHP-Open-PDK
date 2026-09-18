@@ -25,6 +25,7 @@ from .thermal import *
 from .utility_functions import *
 
 import math
+from typing import List
 
 
 class nmosHV(DeviceBase):

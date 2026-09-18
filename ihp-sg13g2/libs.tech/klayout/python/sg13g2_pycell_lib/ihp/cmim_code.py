@@ -23,6 +23,8 @@ from .geometry import *
 from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
+from typing import List
+
 
 class cmim(DeviceBase):
 

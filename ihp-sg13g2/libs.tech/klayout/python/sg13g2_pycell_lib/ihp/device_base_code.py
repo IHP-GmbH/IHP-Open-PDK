@@ -27,6 +27,8 @@ from .geometry import *
 from .guard_ring_code import generate_guard_ring, GuardRingType
 from .utility_functions import *
 
+from typing import List
+
 
 class DeviceBase(DloGen):
     @classmethod
