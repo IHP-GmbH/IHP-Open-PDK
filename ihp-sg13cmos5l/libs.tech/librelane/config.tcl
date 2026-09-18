@@ -88,8 +88,14 @@ set ::env(SYNTH_EXCLUDED_CELL_FILE) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/libr
 # Default PNR Exclude List
 set ::env(PNR_EXCLUDED_CELL_FILE) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/pnr_exclude.cells"
 
-# Open-RCX Rules File
-set ::env(RCX_RULES) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/IHP_rcx_patterns.rules"
+# OpenRCX Rules File
+
+# Generated with FasterCap from the CMOS5L layer stack, see
+# libs.tech/librelane/openrcx/README.md
+set ::env(RCX_RULESETS) [dict create]
+dict set ::env(RCX_RULESETS) "nom_*" "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/openrcx/sg13cmos5l.TYP.rcx.model"
+dict set ::env(RCX_RULESETS) "min_*" "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/openrcx/sg13cmos5l.MIN.rcx.model"
+dict set ::env(RCX_RULESETS) "max_*" "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/openrcx/sg13cmos5l.MAX.rcx.model"
 
 # Extra PDN configs
 # CMOS5L: M1-M4-TM1 (no Metal5, no TopMetal2)
