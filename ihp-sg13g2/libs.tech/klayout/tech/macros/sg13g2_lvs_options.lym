@@ -49,6 +49,7 @@ module SG13G2LVSOptions
     'run_dir' => '',
     'no_net_names' => false,
     'spice_comments' => false,
+    'tap_ap_compare' => false,
     'net_only' => false,
     'no_simplify' => false,
     'no_series_res' => false,
@@ -256,6 +257,11 @@ module SG13G2LVSOptions
       options['spice_comments'],
       'Emit detailed comments in extracted netlist.'
     )
+    @widgets[:tap_ap_compare] = create_check_box(
+      'Compare Tap A/P',
+      options['tap_ap_compare'],
+      'Compare A and P parameters for ntap1/ptap1 tap devices. Disabled by default.'
+    )
     @widgets[:no_series_res] = create_check_box(
       'Disable Series Res Merge',
       options['no_series_res'],
@@ -356,6 +362,7 @@ module SG13G2LVSOptions
       'Case-sensitive implicit net patterns. Use only when some nets are intentionally connected at higher hierarchy.'
     )
     comparison_layout.addRow('Implicit Nets:', @widgets[:implicit_nets_adv])
+    comparison_layout.addRow('', @widgets[:tap_ap_compare])
 
     netlist_ops_group = RBA::QGroupBox.new('Netlist Formatting')
     netlist_ops_layout = RBA::QFormLayout.new(netlist_ops_group)
@@ -641,6 +648,7 @@ module SG13G2LVSOptions
     options['implicit_nets'] = @widgets[:implicit_nets_adv].text.to_s
     options['no_net_names'] = @widgets[:no_net_names].checked
     options['spice_comments'] = @widgets[:spice_comments].checked
+    options['tap_ap_compare'] = @widgets[:tap_ap_compare].checked
     options['no_series_res'] = @widgets[:no_series_res].checked
     options['no_parallel_res'] = @widgets[:no_parallel_res].checked
     options['combine_devices'] = @widgets[:combine_devices].checked
