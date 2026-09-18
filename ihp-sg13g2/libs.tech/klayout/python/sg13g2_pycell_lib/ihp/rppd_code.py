@@ -18,10 +18,9 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
-from .res_base_code import *
-from .thermal import *
 from .geometry import *
 from .guard_ring_code import GuardRingType
+from .res_base_code import *
 from .thermal import *
 from .utility_functions import *
 
