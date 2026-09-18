@@ -1,0 +1,1 @@
+../../../../ihp-common/libs.tech/librelane/openrcx/gen_rcx_model.sh
