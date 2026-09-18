@@ -24,6 +24,7 @@ from .guard_ring_code import GuardRingType
 from .utility_functions import *
 
 import math
+from typing import List
 
 class inductors(DeviceBase):
 

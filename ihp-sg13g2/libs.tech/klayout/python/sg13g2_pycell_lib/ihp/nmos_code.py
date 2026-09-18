@@ -25,6 +25,8 @@ from .guard_ring_code import GuardRingType
 from .thermal import *
 from .utility_functions import *
 
+from typing import List
+
 
 class nmos(DeviceBase):
     @classmethod
