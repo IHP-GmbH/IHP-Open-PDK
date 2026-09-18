@@ -1,0 +1,28 @@
+load mgsim
+load vams/vsine.so
+load ../../../plugins/gnucap/
+load ../../../plugins/models/
+
+verilog
+`include ../../../models/cornerMOSCAP.va
+`include ./tb_moscap_pmos_mc.va
+// TODO: get constants from Gnucap
+`include ../capacitor/consts.params
+
+options numdgt=9
+
+moscap_tt corner_moscap();
+tb_moscap_pmos_mc #(.mm_ok(1)) tb(outp);
+
+// TODO: store Cn as vector once supported
+.sweep 200 run 1 200
+  reseed
+  store ac v(outp)
+  dc > /dev/null
+  ac dec 1e3 1e6 1e9 basic > /dev/null
+  // infer capacitance from the low-pass -3 dB cutoff
+  measure fcutp = cross(probe="v(outp)" cross=0.707 fall first) > /dev/null
+  // TODO: braces required to parse RHS as expression and not literal
+  parameter Cp = {1.0 / (M_TWO_PI * fcutp * 1e5)}
+  eval Cp
+go

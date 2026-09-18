@@ -24,9 +24,11 @@
 ## TODOs
 
 - test setting multiplicity via $mfactor during device instantiation
-- decide which resistor, capacitor, inductor primitives to use 
+- decide which resistor, capacitor, inductor primitives to use for parasitics 
 - improve performance of ngspice mc tests  
 - built pipline that compiles devices to osdi 
 
-
-
+- Clean up test harness
+  - `make check` should write stdout and stderr to an intermediate log file
+  - test cases should write regression data explicitly to an output file
+  - delete the log file if the test passes
