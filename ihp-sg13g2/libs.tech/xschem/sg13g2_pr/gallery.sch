@@ -1,9 +1,8 @@
-v {xschem version=3.4.8RC file_version=1.3}
+v {xschem version=3.4.6 file_version=1.2}
 G {}
 K {}
 V {}
 S {}
-F {}
 E {}
 T {HBT Devices} 30 -1720 0 0 0.6 0.6 {}
 T {HBT Devices w/  
@@ -23,6 +22,7 @@ T {Isolation box} 20 -390 0 0 0.6 0.6 {}
 T {MiM capacitor} 20 -180 0 0 0.6 0.6 {}
 T {MoM capacitor} 20 -260 0 0 0.6 0.6 {}
 T {PNP lateral device} 20 -100 0 0 0.6 0.6 {}
+T {Inductors} 640 -390 0 0 0.6 0.6 {}
 C {sg13g2_pr/bondpad.sym} 400 -520 0 0 {name=X1
 model=bondpad
 spiceprefix=X
@@ -274,3 +274,23 @@ m=1
 model=sg13_moscap_p
 spiceprefix=X
 }
+C {sg13g2_pr/inductor.sym} 860 -370 0 0 {name=L3
+m=1
+value=1n
+footprint=1206
+device=inductor
+spiceprefix=X
+w=10e-6
+s=10e-6
+d=222e-6
+nr_r=2}
+C {sg13g2_pr/inductor3.sym} 1010 -370 0 0 {name=L4
+m=1
+value=1n
+footprint=1206
+device=inductor3
+spiceprefix=X
+w=10e-6
+s=10e-6
+d=222e-6
+nr_r=2}
