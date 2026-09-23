@@ -39,6 +39,15 @@ else:
             return str(self.value)
 
 
+# Single source of truth for the minimum guard-ring span, in micrometers.
+# Matches the lower bound used by the existing Magic guard-ring helper.
+# Both the standalone `guard_ring` PCell (via RangeConstraint, enforced by
+# KLayout's native PCellParameterDeclaration) and `generate_guard_ring()`
+# (called directly by DeviceBase.genLayout() with computed w/h, bypassing
+# param specs) must respect this value.
+MIN_GUARD_RING_SPAN_UM = 0.6
+
+
 class GuardRingType(StrEnum):
     NONE = 'none'
     NWELL = 'nwell'
@@ -60,6 +69,12 @@ def generate_guard_ring(dlo_gen: DloGen,
                         h: float,
                         x_center: float,
                         y_center: float):
+    if w < MIN_GUARD_RING_SPAN_UM or h < MIN_GUARD_RING_SPAN_UM:
+        raise ValueError(
+            f"generate_guard_ring: width/height must be >= "
+            f"{MIN_GUARD_RING_SPAN_UM}um (got w={w}um, h={h}um)"
+        )
+    
     dlo_gen.grid = dlo_gen.tech.getGridResolution()
     techparams = dlo_gen.tech.getTechParams()
 
@@ -259,8 +274,8 @@ class guard_ring(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
         specs('type', 'nwell', 'Guard Ring Type', ChoiceConstraint(['nwell', 'psub']))  # 'dnwell'
-        specs('w', '3.05u', 'Width')
-        specs('h', '3.05u', 'Height')
+        specs('w', '3.05u', 'Width', RangeConstraint(MIN_GUARD_RING_SPAN_UM * 1e-6, None))
+        specs('h', '3.05u', 'Height', RangeConstraint(MIN_GUARD_RING_SPAN_UM * 1e-6, None))
 
     def setupParams(self, params):
         # process parameter values entered by user
