@@ -36,7 +36,9 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 |rppd               |Polysilicon resistor of a sheet resistance of 7 $\Omega / \square$                                                                         |
 |rhigh              |Polysilicon resistor of a high sheet resistance of 1360 $\Omega / \square$                                                                 |
 |ntap1              |N-well difussion conntact resistance  of 262 $\Omega$                                                                                      |
-|ptap1              |P-well (substrate) difussion conntact resistance  of 262 $\Omega$                                                                          |
+|ptap1              |P-well (substrate) difussion guard ring                                                                                                    |
+|ntap1_ring         |N-well diffusion contact resistance  of 262 $\Omega$                                                                                       |
+|ptap1_ring         |P-well (substrate) diffusion guard ring                                                                                                    |
 |cap_cmim           |Metal-Insulator-Metal capacitor                                                                                                            |
 |cap_cpara          |Parasitic capacitor symbol attached to a model (used only for parasitics extraction)                                                       |
 |cap_rfcmim         |Metal-Insulator-Metal capacitor model for RF                                                                                               |
