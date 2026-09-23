@@ -653,43 +653,17 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
     label c2 c m$mmaxidx
     port make
 
-    # Extract the layout parasitic
-    extract do local
-    extract all
-
-    # Read the SPICE subcircuit and get the capacitor value
-    set capvalaF 0
-    set cname [cellname list self]
-    set f [open ${cname}.ext]
-    while {true} {
-	gets $f line
-	if {[eof $f]} {
-	    break
-	}
-	if {[string first cap $line 0] == 0} {
-	    set llist [split $line]
-	    set capvalaF [lindex $llist 3]
-	    break
-	}
-    }
-    close $f
-
-    # Value of the device in the .ext file should be in fF, as opposed to
-    # the parasitic value in aF, so convert from aF to fF.  Note also that
-    # the MoM cap geometry makes the actual value about 11% higher than
-    # computed from wire parasitics, so this is added in.  This 11% includes
-    # corner effects, so corner computations are not enabled in this extraction.
-    set value [* $capvalaF 1.11e-3]
-   
-    # The extraction file is no longer needed
-    file delete ${cname}.ext
+    # NOTE:  Previously the value was determined by parasitic extraction.
+    # More recently, the device has been incorporated into the PDK with
+    # a proper device model, and so is modeled in SPICE, with only the
+    # parameters needing to be passed to the model.
 
     # Set a property on this cell so that the entire cell extracts as an
     # ideal (unmodeled) capacitor component.  Note that handling the
     # capacitor this way loses the parasitic to substrate.
 
     if {$value != 0} {
-	set propstr [format "devcap None 0 0 1 1 %.4f c1 0 0 c2 0 0" $value]
+	set propstr [format "csubckt cap_cmomf 0 0 1 1 w=%.3fu l=%.3fu mmin=%d mmax=%d subblock=%d mm_ok=1 c1 0 0 c2 0 0" $w $l $mminidx $mmaxidx $subblock]
 	property string device $propstr
     }
 
