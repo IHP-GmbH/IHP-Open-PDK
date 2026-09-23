@@ -163,6 +163,9 @@ PURGE_NETS = bool_check?($purge_nets)
 
 logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
 
+# PURGE_DEVICES
+PURGE_DEVICES = bool_check?($purge_devices)
+
 # SIMPLIFY
 SIMPLIFY = !bool_check?($no_simplify)
 
@@ -462,6 +465,9 @@ apply_netlist_options = lambda do |target_netlist, label|
 
   log_option_action.call(label, 'purge_nets', PURGE_NETS)
   target_netlist.purge_nets if PURGE_NETS
+
+  log_option_action.call(label, 'purge_devices', PURGE_DEVICES)
+  target_netlist.purge_devices if PURGE_DEVICES
 end
 
 if NET_ONLY

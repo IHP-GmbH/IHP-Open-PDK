@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Fill Activ/GatPoly</description>
+ <version>0.1</version>
+ <category>filler</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>filler</group-name>
+ <menu-path>sg13cmos5l_menu&gt;end("SG13CMOS5L PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+  # Automatic filler generation script for Active/GatPoly
+  # SG13CMOS5L PDK: CMOS-only, M1-M4-TM1 metal stack
+
+  # Active layers
+  Activ = source.input("1/0")
+  Activ_filler = source.input("1/22")
+  Activ_nofill = source.input("1/23")
+
+  # GatPoly layers
+  GatPoly = source.input("5/0")
+  GatPoly_filler = source.input("5/22")
+  GatPoly_nofill = source.input("5/23")
+
+  # Other layers used in fill exclusion
+  Cont = source.input("6/0")
+  nSD_block = source.input("7/21")
+  pSD = source.input("14/0")
+  SalBlock = source.input("28/0")
+  NWell = source.input("31/0")
+  PWell_block = source.input("46/21")
+  EdgeSeal = source.input("39/0")
+
+  # Fill exclusion area
+
+  cellframe1 = EdgeSeal.holes
+
+  ##########################################################################
+  # CREATE DUMMY FILL PATTERNS FOR ALL LEVELS
+  ##########################################################################
+
+  # Active fill pattern
+  act_fill = fill_pattern("Act_FILL_CELL")
+  width = 3.4
+  length = 3.4
+  spacing_h = width + 1.6
+  spacing_v = length + 1.6
+  offset_h = 0
+  offset_v = 2.5
+  act_fill.shape(1, 22, box(0, 0, width, length))
+
+  # GatPoly fill pattern
+  gp_fill = fill_pattern("GatP_FILL_CELL")
+  gp_width = 5
+  gp_length = 1.4
+  gp_spacing_h = gp_width + 5
+  gp_spacing_v = gp_length + 1.1
+  gp_offset_h = 5
+  gp_offset_v = 0
+  gp_fill.shape(5, 22, box(0, 0, gp_width, gp_length))
+
+  act_fill.origin(-0.8, 0)
+  act_fill.dim(5, 3.4)
+
+  gp_fill.origin(0, -1)
+  gp_fill.dim(5, 3.4)
+
+  ##########################################################################
+  # CREATE Activ FILLER
+  ##########################################################################
+
+  extent_all_layers = source.extent
+  Activ_cpy=Activ.dup
+  Poly_cpy=GatPoly.dup
+  Cnt_cpy=Cont.dup
+  NWell_cpy_out=NWell.dup
+  NWell_cpy_in=NWell.dup
+  PWell_block_cpy_out=PWell_block.dup
+  PWell_block_cpy_in=PWell_block.dup
+
+  sep=1.1                                     ### AFil.c
+  Poly_cpy.size(sep,sep, "square_limit")
+  Cnt_cpy.size(sep,sep, "square_limit")
+  AFil_c = Poly_cpy | Cnt_cpy
+
+  sep=0.42                                    ### AFil.c1
+  Activ_cpy.size(sep,sep, "square_limit")
+  AFil_c1 = Activ_cpy
+
+  sep=1.0                                     ### AFil.d
+  NWell_cpy_out.size(sep, sep, "square_limit")
+  NWell_cpy_in.size(-sep, -sep, "square_limit")
+  AFil_d = NWell_cpy_out - NWell_cpy_in
+
+  sep=1.5                                     ### AFil.i
+  PWell_block_cpy_out.size(sep, sep, "square_limit")
+  PWell_block_cpy_in.size(-sep, -sep, "square_limit")
+  AFil_i = PWell_block_cpy_out - PWell_block_cpy_in
+
+  exclLayAct = AFil_c | AFil_c1 | AFil_d | AFil_i | Activ_nofill
+
+  ##########################################################################
+  # CREATE GatPoly FILLER
+  ##########################################################################
+
+  Activ_gp_cpy=Activ.dup
+  Poly_filler_cpy=GatPoly_filler.dup
+  Poly_gp_cpy=GatPoly.dup
+  Cnt_gp_cpy=Cont.dup
+  NWell_gp_cpy=NWell.dup
+  NWell_gp_cpy2=NWell.dup
+  pSD_cpy = pSD.dup
+  nSD_block_cpy = nSD_block.dup
+  SalBlock_cpy = SalBlock.dup
+
+  sep=0.8                                     ###GFil.c
+  Poly_filler_cpy.size(sep, sep, "square_limit")
+  GFil_c = Poly_filler_cpy
+
+  sep=1.1                                     ###GFil.d
+  Activ_gp_cpy.size(sep, sep, "square_limit")
+  Poly_gp_cpy.size(sep, sep, "square_limit")
+  Cnt_gp_cpy.size(sep, sep, "square_limit")
+  pSD_cpy.size(sep, sep, "square_limit")
+  nSD_block_cpy.size(sep, sep, "square_limit")
+  SalBlock_cpy.size(sep, sep, "square_limit")
+  GFil_d = Activ_gp_cpy | Poly_gp_cpy | Cnt_gp_cpy | pSD_cpy | nSD_block_cpy | SalBlock_cpy
+
+  sep=1.1                                     ###GFil.e
+  NWell_gp_cpy.size(sep, sep, "square_limit")
+  NWell_gp_cpy2.size(-sep, -sep, "square_limit")
+  GFil_e = NWell_gp_cpy - NWell_gp_cpy2
+
+  exclLayGatP = GFil_c | GFil_d | GFil_e | GatPoly_nofill
+
+  ActoutGatP = exclLayGatP - exclLayAct
+  GatPoutAct = exclLayAct - exclLayGatP
+
+
+  # perform fill
+  #vstep=spacing_v
+  #hstep=spacing_h
+
+  org_x = 2000.0
+  org_y = org_x
+  (cellframe1-exclLayAct-exclLayGatP).fill(act_fill, hstep(spacing_h, offset_v), vstep(offset_h, spacing_v))
+  (cellframe1-exclLayGatP-exclLayAct).fill(gp_fill, hstep(gp_spacing_h, gp_offset_v), vstep(gp_offset_h, gp_spacing_v))
+</text>
+</klayout-macro>

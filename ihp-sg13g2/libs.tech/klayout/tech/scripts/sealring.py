@@ -114,8 +114,12 @@ except NameError:
 try:
     length
 except NameError:
-    print("Missing length argument. Please define '-rd length=<length>'")
-    sys.exit(1)
+    try:
+        length = height
+        print("The 'height' argument is deprecated. Please define '-rd length=<length>' instead.")
+    except NameError:
+        print("Missing length argument. Please define '-rd length=<length>'")
+        sys.exit(1)
 
 try:
     output

@@ -4,9 +4,148 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased] - 2026-09-01
+
+### Added
+
+#### New Devices / PyCells
+- `cap_cmomf`: new metal fringe MoM capacitor PCell for KLayout ([#1093](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1093))
+- `cap_mom`: interdigitated MoM capacitor for SG13G2 KLayout ([#1049](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1049))
+- `cap_cmomi`: computed capacitance display, feed-aware C estimation, live coerce callback, and density fill exclusion ([#1076](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1076), [#1108](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1108))
+- MOSCAP (MOS capacitor) PCell initial version ([#1050](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1050))
+- `cmim` KLayout PCell: added labels
+- HBT test structures GDS: initial version
+- pnpMPA measurement test structures GDS ([#1009](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1009))
+- RF MOSFET PyCells: initial version
+- `NoFillerStack` PCell: initial version
+- `ptap1` PCell: initial version
+- PDK modules: initial integration of PDK extensions in Xschem and KLayout
+
+#### LVS
+- KLayout LVS: `--disable_tap_extraction` option ([#1032](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1032))
+- KLayout LVS: `--purge-devices` CLI parameter; `PURGE` conditional honored in `rfmos_model_mapping.lvs` ([#1105](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1105))
+
+#### SRAM
+- SRAM: automated cross-view validation
+- SRAM: new macro `RM_IHPSG13_1P_2048x32_c2_bm_bist` ([#1029](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1029))
+- SRAM: updated `RM_IHPSG13_2P_64x22_c2` macro ([#1028](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1028))
+- SRAM: added `1P_8192x32_c4` macro
+- SRAM: added BIST macro `RM_IHPSG13_1P_512x32_c2_bm_bist` ([#429](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/429))
+- SRAM: add timescale in `64x16` ([#1104](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1104))
+
+#### Tools / Infrastructure
+- Regression test for `sprintf` utility function ([#1120](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1120))
+- gnucap: statistics reporting ([#998](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/998))
+- Bug report issue template ([#1019](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1019))
+- KLayout scripts: added copyright header
+- AWS Palace: added `gds2palace` submodule
+- ITF file: initial version
+- DRM: added version 0.4
+- IO cells: added datasheets
+- Qucs-S: schematics for standard cells ([#939](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/939))
+- GDSFactory: added README and integration guide ([#691](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/691))
+- LibreLane: standalone DRC support ([#728](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/728))
+- Added Schottky diode (`SBD`) symbol and documentation ([#682](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/682))
+- npn13G2 symbols: updated ([#902](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/902))
+
+### Changed
+
+#### Devices / PyCells
+- Sealring KLayout script: renamed `height` parameter to `length` (backward-compatible deprecation path) ([#1110](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1110), [#1127](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1127))
+- `cap_cmomi` LVS: terminals made equivalent, dropped marker flags ([#1084](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1084))
+- RPPD PyCell: handle EXTBlock notch spacing separately ([#1002](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1002))
+- `sprintf` utility function simplified and crash fixed ([#1120](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1120))
+- `svaricap`: `nwell-psub` diode `vj` parameter adjusted for 125 °C transient simulation ([#1102](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1102))
+- Poly resistor `rhigh`: aligned corner and global statistical parameter to process specification ([#1081](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1081))
+- pmos/pmosHV: removed `Substrate.drw` 40/0 layer ([#942](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/942))
+- KLayout layer property file: reverted `Text.drw` layer to white
+- `rsil`: removed unsupported `b` (bends) parameter ([#944](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/944))
+- `svaricap`: updates to PyCell and symbol ([#941](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/941))
+- `rfcmim`: added `m` multiplier parameter in Xschem symbol ([#979](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/979))
+- xschem: `mm_ok` flag introduced across sg13g2_pr symbols ([#993](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/993))
+- `pnpMPA` xschem symbol: changed default `w` to align with tech file value
+
+#### LVS / DRC
+- KLayout LVS: removed unconditional global device purging from rule deck ([#1105](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1105), [#1126](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1126))
+- KLayout LVS: inductor metal stack now configurable per PDK ([#1068](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1068))
+- KLayout LVS: metal resistors mapped to `R` prefix ([#1046](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1046))
+- KLayout DRC: removed irrelevant off-grid checks ([#1025](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1025))
+- KLayout DRC: `latchUp` flag set to true by default
+- KLayout DRC: JSON-based override of defaults ([#900](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/900))
+- KLayout LVS: via handling refactored to support `cmos5l_ihp` ([#1039](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1039))
+- DRC: `LU.b` – report portions of N+Activ beyond 20 µm max space ([#949](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/949))
+- Magic LVS: added inductors recognition ([#873](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/873))
+
+#### Simulation / Tools
+- Xschem: parallel-simulation scripts run through Tcl's `exec` ([#1118](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1118))
+- Palace submodule bumped to upstream HEAD for scikit-rf 2.0 fix ([#1040](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1040))
+- gnucap: `make check` properly builds before running tests ([#1077](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1077))
+- LibreLane: updated variables in shared SCL and CSL config files ([#999](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/999))
+- LibreLane: `PAD_SPICE_MODELS` points to correct `sg13g2_io.spice` path ([#1095](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1095))
+- LibreLane: updated tracks configuration ([#892](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/892))
+- LibreLane: Magic filler flow added ([#883](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/883))
+- Standard cell symlinks changed from absolute to relative paths ([#1097](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1097))
+- Standard cells relocated into `libs.ref` with updated Xschem view selection ([#1031](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1031))
+- PCell preprocessor: each process gets its own preprocessing directory ([#1090](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1090))
+- KLayout tech file: added comprehensive list of grid values ([#1044](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1044))
+- LEF tech: fixed pitch values ([#890](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/890))
+- KLayout version centralized in `versions.txt` ([#983](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/983))
+- KLayout PCells: tech association fix ([#930](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/930), [#943](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/943))
+- Xschem path: appended `xschem/` to `XSCHEM_LIBRARY_PATH`
+- Qucs-S: individual XMLs for standard cells ([#904](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/904))
+- Xschem: improved evaluation precision ([#907](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/907))
+- Parallelization improvements in simulation scripts ([#629](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/629))
+
+### Fixed
+
+#### LVS / DRC
+- KLayout LVS: fixed LVS testing regression (#1126)
+- LVS: fixed SBD under CMIM issue; added testcase ([#1030](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1030))
+- KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
+- KLayout DRC: fixed filler space/notch violations ([#924](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/924))
+- KLayout DRC: fixed Metal density min/max values
+
+#### Extraction / Magic
+- Magic: fixed `cap_rfcmim` missing substrate terminal extraction ([#1111](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1111))
+- Magic: corrected metal surround around `contbar` contacts in resistors; simplified `Cntb` DRC checks ([#973](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/973))
+- Magic: fixed incorrect GDS read-in of devices marked by text tags ([#970](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/970))
+- Magic: fixed SPICE import for subcell references ([#889](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/889))
+- Magic: fixed SCR1 DRC errors ([#867](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/867))
+- Magic: fixed BJT extraction issues ([#863](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/863))
+- Magic: fixed mimcap extraction ([#851](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/851), [#853](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/853))
+- Magic: fixed metal fill generation ([#881](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/881), [#908](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/908))
+- Magic: fixed LibreLane startup script incompatibility
+
+#### PyCells
+- Isolbox PyCell: fixed `diode_layer` parameter evaluation ([#1071](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1071))
+- MOSCAP PyCell: fixed callback issue ([#1088](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1088))
+- RPPD PyCell: fixed EXTB.b DRC violation ([#997](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/997))
+- rhigh PyCell: fixed pSD.b and EXTB.b space violations in devices with bends
+- rppd/rhigh PyCells: handle large poly spacing and even-number bends ([#988](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/988))
+- rfcmim Qucs-S symbol fix ([#992](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/992))
+- Sealring PCell: fixed corruption caused by compound scaling factor in NLCB ([#1064](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1064))
+- nmos clamp: fix applied ([#600](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/600))
+- Primitive GDS: rolled back incorrect `idiode*` removal
+
+#### Simulation / Tests
+- Ngspice Monte Carlo tests fix ([#1061](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1061))
+- Fixed tkinter requirements ([#1015](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1015))
+- npn13G2 annotation fix ([#621](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/621))
+- rhigh: fix poly resistor model ([#742](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/742))
+
+---
+
 ## [Unreleased] - 2024-10-14
 
 ### Added
+- Added the SG13CMOS5L process node, a CMOS-only variant of SG13G2 with a reduced metal stack
+    - DRC: aligned the rule deck with SG13G2, added maximal rules and standalone deck support, fixed density and windowed checks, and expanded QA coverage
+    - LVS: added rule deck infrastructure, forbidden layer detection and device exclusions
+    - Magic/Netgen: added tech files, SRAM support, and improved rule handling and version requirements
+    - xschem/ngspice/Xyce: added xschem symbols and launcher support, and integrated the CMOS5L device models
+    - Libraries: added IO and standard cell assets, symbols, LEF/GDS and layer mappings for CMOS5L
+    - LibreLane/CI: integrated the LibreLane flow, adjusted the CI commands and set up RTL-to-GDS validation
+    - See the `# SG13CMOS5L Process Node` section of the README for the list of supported devices
 - Xschem install script: added Python shebang line
 - Qucs-S install script: added Python shebang line
 - Qucs-s install script: added checking for qucs-s binary
@@ -196,5 +335,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - KLayout DRC: removed obsolete deck file (now we have min and max in separate files)
 
 [unreleased]: https://github.com///compare/v0.1.0..HEAD
-
-<!-- generated by git-cliff -->

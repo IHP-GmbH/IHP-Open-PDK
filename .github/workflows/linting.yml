@@ -20,22 +20,53 @@ name: Python Code Linting
 on:
   pull_request:
     paths:
-      - 'ihp-sg13g2/libs.tech/klayout/tech/drc/**'
-      - 'ihp-sg13g2/libs.tech/klayout/tech/lvs/**'
+      - 'ihp-*/libs.tech/klayout/tech/drc/**'
+      - 'ihp-*/libs.tech/klayout/tech/lvs/**'
+      - 'ihp-*/libs.tech/klayout/python/*_pycell_lib/**'
       - 'versions.txt'
       - 'requirements.txt'
+      - '.flake8'
+      - '.github/workflows/linting.yml'
   workflow_dispatch:
 
 jobs:
   lint_python:
     runs-on: ubuntu-latest
+
+    # One leg per PDK so a failure names the PDK it came from. The repo-wide
+    # `make lint-all` still lints every ihp-* at once for local use.
+    strategy:
+      fail-fast: false
+      matrix:
+        pdk: [ihp-sg13g2, ihp-sg13cmos5l]
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Lint with flake8
         run: |
-          make lint_python
+          make lint_python PDK=${{ matrix.pdk }}
+      - name: Check for non-ASCII characters in PCell libraries
+        run: |
+          SEARCH_ROOT="${{ matrix.pdk }}/libs.tech/klayout/python"
+          DIRS=$(find "$SEARCH_ROOT" -mindepth 2 -maxdepth 2 -type d -path '*_pycell_lib/ihp')
+
+          if [ -z "$DIRS" ]; then
+            echo "ERROR: no '*_pycell_lib/ihp' directory found under '$SEARCH_ROOT'" >&2
+            exit 1
+          fi
+
+          echo "$DIRS"
+
+          MATCHES=$(echo "$DIRS" | xargs grep -rnP --include='*.py' '[^\x00-\x7F]' || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: forbidden non-ASCII characters found in ${{ matrix.pdk }} PCell library:" >&2
+            echo "$MATCHES" >&2
+            exit 1
+          fi
+          echo "OK: no forbidden characters in ${{ matrix.pdk }} PCell library"
 
   klayout_version_consistency:
     runs-on: ubuntu-latest

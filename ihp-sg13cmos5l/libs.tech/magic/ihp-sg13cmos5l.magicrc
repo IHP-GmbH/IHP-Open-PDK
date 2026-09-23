@@ -1,0 +1,64 @@
+########################################################################
+#
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
+puts stdout "Sourcing design .magicrc for technology ihp-sg13cmos5l ..."
+
+# Put grid on 0.005 pitch.  This is important, as some commands don't
+# rescale the grid automatically (such as lef read?).
+
+set scalefac [tech lambda]
+if {[lindex $scalefac 1] < 2} {
+    scalegrid 1 2
+}
+
+# drc off
+drc euclidean on
+# Change this to a fixed number for repeatable behavior with GDS writes
+# e.g., "random seed 12345"
+catch {random seed}
+
+# Turn off the scale option on ext2spice or else it conflicts with the
+# scale in the model files.
+ext2spice scale off
+
+# Allow override of PDK path from environment variable PDK_ROOT
+# "file nativename" guards against a local PDK_ROOT with "~" in the name
+#if {[catch {set PDK_ROOT [file nativename $env(PDK_ROOT)]}]} {
+#    set PDK_ROOT /usr/share/pdk
+#}
+
+# loading technology
+tech load [file dirname [file normalize [info script]]]/ihp-sg13cmos5l.tech
+
+# halt on error
+if {[tech name] != "ihp-sg13cmos5l"} {quit -noprompt}
+
+# load device generator
+source [file dirname [file normalize [info script]]]/ihp-sg13cmos5l.tcl
+
+# load bind keys (optional)
+# source [file dirname [file normalize [info script]]]/ihp-sg13cmos5l-BindKeys
+
+# set units to microns
+# units microns
+
+# set sg13cmos5l standard power, ground, and substrate names
+set VDD VDD
+set GND VSS
+set SUB sub!
+

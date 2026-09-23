@@ -1,0 +1,222 @@
+
+##################### save and display MOSFET parameters #####################
+
+# writes the .save instructions for given FET instance
+proc write_save_lines {type model schpath spiceprefix instname} {
+  global sch_expand
+  if {[regexp {[pn]mos} $type]} {
+    set m n$model
+    set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
+
+    append sch_expand(savelist) ".save $devpath\[ids\]\n"
+    append sch_expand(savelist) ".save $devpath\[gm\]\n"
+    append sch_expand(savelist) ".save $devpath\[gds\]\n"
+    append sch_expand(savelist) ".save $devpath\[vth\]\n"
+    append sch_expand(savelist) ".save $devpath\[vgs\]\n"
+    append sch_expand(savelist) ".save $devpath\[vdss\]\n"
+    append sch_expand(savelist) ".save $devpath\[vds\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgg\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgsol\]\n"
+    append sch_expand(savelist) ".save $devpath\[cgdol\]\n"
+  }
+  
+}
+############ sch_expand
+# This proc traverses the hierarchy and prints all instances in design.
+proc sch_expand {{only_subckts 1} {all_hierarchy 1} {pattern {.*}}} {
+  global sch_expand keep_symbols
+  set sch_expand(savelist) {}
+  set sch_expand(only_subckts) $only_subckts
+  set sch_expand(all_hierarchy) $all_hierarchy
+  set sch_expand(startpath) [string length [xschem get sch_path]]
+  set save_keep $keep_symbols
+  set keep_symbols 1
+  xschem unselect_all
+  xschem set no_draw 1 ;# disable screen update
+  xschem set no_undo 1 ;# disable undo
+
+  hier_sch_expand 0 $only_subckts $all_hierarchy $pattern
+
+  xschem set no_draw 0
+  xschem set no_undo 0
+  set keep_symbols $save_keep
+  return {}
+}
+
+# recursive procedure used by sch_expand
+proc hier_sch_expand {{level 0} {only_subckts 0} {all_hierarchy 1} {pattern {.*}}} {
+  global nolist_libs sch_expand
+
+  set schpath [string range [xschem get sch_path] $sch_expand(startpath) end]
+  set instances  [xschem get instances]
+  for {set i 0} { $i < $instances} { incr i} {
+    set instname [xschem getprop instance $i name]
+    # puts "hier_sch_expand: instname=$instname schpath=$schpath"
+    set symbol [xschem getprop instance $i cell::name]
+    set spiceprefix [xschem getprop instance $i spiceprefix]
+    set model [xschem translate $instname @model]
+    set abs_symbol [abs_sym_path $symbol]
+    set type [xschem getprop symbol $symbol type]
+
+    if {$only_subckts && ($type ne {subcircuit})} { continue }
+    set skip 0
+    foreach j $nolist_libs {
+      if {[regexp $j $abs_symbol]} {
+        set skip 1
+        break
+      }
+    }
+    if {$skip} { continue }
+    if {$type ne {subcircuit} && ![regexp $pattern $symbol]} {
+      continue
+    }
+
+    write_save_lines $type $model $schpath $spiceprefix $instname
+ 
+    if {$type eq {subcircuit} && $all_hierarchy} {
+      set ninst [lindex [split [xschem expandlabel $instname] { }] 1]
+      for {set n 1} {$n <= $ninst} { incr n} {
+        if {$n == 1} {
+          xschem select instance $i
+          set res [xschem descend $n 2]
+          # ensure previous descend was successful
+          if {$res} {
+            incr level
+          } else { ;# descended into a blank schematic. Go back.
+            xschem go_back 2
+            puts "Can not descend into $instname"
+            break
+          }
+        }
+        if {$n > 1} {
+          xschem change_sch_path $n
+        }
+        set dp [hier_sch_expand $level $only_subckts 1 $pattern]
+        if {$n == $ninst} {
+          xschem go_back 2
+          incr level -1
+        }
+      }
+    }
+  }
+  return 1
+}
+############ /sch_expand
+
+# generate the .save lines to save all MOS parameters
+proc save_params {} {
+  global sch_expand
+  sch_expand 0 1 {[pn]mos}
+  set fet_list $sch_expand(savelist)
+  return "* Place this .save file with a .include line in your testbench\n\n$fet_list"
+}
+
+# displays mos parameters simulation data , used in symbol annotate_fet_params.sym
+proc display_fet_params {instname} {
+  set txt {}
+  set schpath [xschem get sim_sch_path]
+  set symbol [xschem getprop instance $instname cell::name]
+  set spiceprefix [xschem getprop instance $instname spiceprefix]
+  set model [xschem translate $instname @model]
+  set type [xschem getprop symbol $symbol type]
+
+  if {[regexp {[pn]mos} $type]} {
+    set m n$model
+    set devpath [string tolower @n.$schpath$spiceprefix$instname.$m]
+
+    append txt "ids   = [to_eng [xschem raw value i($devpath\[ids\]) -1]]\n"
+    append txt "gm    = [to_eng [xschem raw value $devpath\[gm\] -1]]\n"
+    append txt "gds   = [to_eng [xschem raw value $devpath\[gds\] -1]]\n"
+    append txt "vth   = [to_eng [xschem raw value v($devpath\[vth\]) -1]]\n"
+    append txt "vgs   = [to_eng [xschem raw value v($devpath\[vgs\]) -1]]\n"
+    append txt "vdss  = [to_eng [xschem raw value v($devpath\[vdss\]) -1]]\n"
+    append txt "vds   = [to_eng [xschem raw value v($devpath\[vds\]) -1]]\n"
+    append txt "cgg   = [to_eng [xschem raw value $devpath\[cgg\] -1]]\n"
+    set pi 3.141592654
+    set gm [xschem raw value $devpath\[gm\] -1]
+    set cgg [xschem raw value $devpath\[cgg\] -1]
+    set cgdol [xschem raw value $devpath\[cgdol\] -1]
+    set cgsol [xschem raw value $devpath\[cgsol\] -1]
+    set ids [xschem raw value i($devpath\[ids\]) -1]
+    if {[catch { expr $gm / $ids} gmid]} {
+      set gmid {}
+    }
+    if {[catch { expr $gm / 2 / $pi / ($cgg + $cgdol + $cgsol)} ft]} {
+      set ft {}
+    }
+    append txt "ft    = [to_eng ${ft}]\n"
+    append txt "gm/id = [to_eng [expr $gmid]]\n"
+  }
+  return $txt
+}
+
+
+
+# these commands are executed when xschem has completed initialization.
+# add a SKY130 menu entry
+proc menupdk {} {
+  global has_x netlist_dir
+  if { [info exists has_x] } {
+    set topwin [xschem get top_path]
+
+    # insert before the 'Netlist' menu
+    $topwin.menubar insert Netlist cascade -label IHP -menu $topwin.menubar.ihp
+    menu $topwin.menubar.ihp -tearoff 0
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Create FET .save file} -command {
+      mkdir -p $netlist_dir
+      write_data [save_params] $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+      textwindow $netlist_dir/[file rootname [file tail [xschem get current_name]]].save
+    }
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add Ngspice models symbol} -command {
+      xschem place_symbol devices/simulator_commands_shown.sym {
+name=Libs_Ngspice
+simulator=ngspice
+only_toplevel=false
+value="
+.lib cornerMOSlv.lib mos_tt
+.lib cornerMOShv.lib mos_tt
+.lib cornerRES.lib res_typ
+.lib cornerDIO.lib dio_tt
+"
+      }
+    }
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add Xyce models symbol} -command {
+      xschem place_symbol devices/simulator_commands_shown.sym {
+name=Libs_Xyce
+simulator=xyce
+only_toplevel=false
+value="tcleval(
+.lib $::MODELS_XYCE/cornerMOSlv.lib mos_tt
+.lib $::MODELS_XYCE/cornerMOShv.lib mos_tt
+.lib $::MODELS_XYCE/cornerRES.lib res_typ
+.lib $::MODELS_XYCE/cornerDIO.lib dio_tt
+)"
+      }
+    }
+
+    ## Create one entry
+    $topwin.menubar.ihp add command -label {Add FET param annotator} -command {
+      proc get_sel_inst_name {} {
+        set selset [lindex [xschem selected_set] 0]
+        if {$selset ne {}} {
+          set name [xschem getprop instance $selset name]
+          xschem place_symbol sg13g2_pr/annotate_fet_params.sym "name=annot1 ref=$name"
+        } else {
+          xschem place_symbol sg13g2_pr/annotate_fet_params.sym
+        }
+      }
+      get_sel_inst_name
+    }
+
+  }
+}
+
+# execute menupdk when xschem initialization is completed
+append postinit_commands "menupdk\n"
+
+##################### /save and display MOSFET parameters #####################

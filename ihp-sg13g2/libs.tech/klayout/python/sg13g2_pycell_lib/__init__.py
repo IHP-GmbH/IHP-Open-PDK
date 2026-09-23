@@ -77,6 +77,7 @@ moduleNames = [
         'pnpMPA_code',
         'isolbox_code',
         'schottky_code',
+        'chipText_code',
         'lvsres_code'
 ]
 

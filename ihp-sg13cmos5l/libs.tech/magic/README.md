@@ -1,0 +1,326 @@
+# IHP SG13CMOS5L Open PDK technology files
+
+For use with the Magic VLSI
+layout tool and Netgen LVS tool
+
+## Notes and guidelines
+
+**Installation**:
+
+The tech files for magic are integrated into the IHP Open PDK
+and will be installed where the PDK is installed.  The location
+of the top level directory (for this repository, IHP-Open-PDK)
+is represented by the shell environment variable `$PDK_ROOT`.  For
+the purposes of this document, the location of the IHP Open PDK
+will be assumed to be `$PDK_ROOT`.
+
+**Requirements**:
+
+There is a minimum version of magic required to run correctly
+with the IHP Open PDK.  This minimum version is stated in the
+tech file (`ihp-sg13cmos5l.tech`) in the "version" section.  As
+of the beta pre-release of magic/netgen support for IHP SG13CMOS5L,
+the minimum required version of magic is 8.3.573 (version dated
+November 3, 2025).  Earlier versions of magic can be used by
+commenting out the "requires" line from the tech file, but some
+tech file contents may not be recognized or may not work correctly.
+
+**Starting magic**:
+
+The correct way to start magic and have it correctly set up for
+use with the IHP Open PDK is to invoke the startup script:
+
+    magic -d XR -rcfile ${PDK_ROOT}/ihp-sg13cmos5l/libs.tech/magic/ihp-sg13cmos5l.magicrc
+
+The `-d XR` invokes the Cairo 2D hardware-accelerated graphics.
+Either `XR` or `OGL` (OpenGL) are preferred for the quality of
+rendering.
+
+## Using magic with IHP SG13CMOS5L
+
+Most layers in magic follow historical naming conventions and drawing
+styles common to magic tech files.  Polysilicon (GatPoly) is referred
+to as "poly" and is drawn in solid red.  Diffusion (Activ) is automatically
+split into derived layers representing N, P, N+, and P+ types ("ndiff",
+"pdiff", "nsd", and "psd", respectively, with N-types drawn in green and
+P-types drawn in brown).
+
+Contacts are drawn as a contact area which is automatically filled with
+contact cuts during GDS output.  All device types recognized for device
+extraction are represented by unique layers (e.g., "nmos" or "pres" or
+"mimcap").  Layers in diffusion and polysilicon are drawn on the same
+"plane" and do not overlap;  overlap areas are replaced by derived types
+representing the area of the overlap (e.g., "nmos" is the intersection of
+"poly" and "ndiff").  Contact areas include any required surrounding
+material out to the distance that is required on both top and bottom
+metal layers.  DRC rule violation descriptions incorporate all IHP rules
+that comprise the magic rule (e.g., "(V1.a + 2 * M2.c)" for via1 minimum
+width).
+
+Most layers that are implant types or ID marker layers are not drawn
+explicitly in magic but are auto-generated on GDS output.  Among these
+are nSD block, pSD, SalBlock, and ThickGateOx.  These mask layers are
+inferred from their use in specific device types.  Mask layers can be
+viewed in magic using the "cif see" command.  Mask layer names also
+follow historical naming conventions in magic and are in all capital
+letters;  most are only slight variations of the names used in the
+klayout mapping (e.g., SBLK instead of SalBlock;  THKOX instead of
+ThickGateOx;  DIFF instead of Activ).
+
+DRC error reports have text for each DRC error that includes the rule
+as specified in the document `SG13CMOS5L_os_layout_rules.pdf`.  Note that
+there is not always a one-to-one mapping between Magic layout and
+documented DRC rules.  For example, contact cut spacing rules are not
+checked because contact cut spacing is guaranteed correct by design.
+However, contact areas may not partially overlap between subcells
+due to the automatic placement of cuts.
+
+Some device layouts with complicated automatic generation of implant
+layers require that the device layout adhere strictly to the
+generated cell layout in the PDK (the pymacro layouts in klayout)
+or else unexpected DRC errors may result when automatically
+generating mask layers for GDS.  These devices include the bipolar
+transistor, ESD devices, and varactor capacitor.
+
+A list of essential layer names in magic vs. IHP documentation is as
+follows (this list is not exhaustive):
+
+| IHP layer name or combination     | magic layer name |
+|-----------------------------------|------------------|
+| Activ + pSD + NWell               | pdiff            |
+| Activ + pSD                       | psd              |
+| Activ + NWell                     | nsd              |
+| Activ                             | ndiff            |
+| Activ + pSD + NWell + ThickGateOx | hvpdiff          |
+| Activ + pSD + ThickGateOx         | hvpsd            |
+| Activ + NWell + ThickGateOx       | hvnsd            |
+| Activ + ThickGateOx               | hvndiff          |
+| NWell                             | nwell            |
+| GatPoly                           | poly             |
+| GatPoly + Cont                    | pc               |
+| Metal1                            | metal1           |
+| Metal2                            | metal2           |
+| Metal3                            | metal3           |
+| Metal4                            | metal4           |
+| TopMetal1                         | metal5           |
+
+Layers which are not available in the Open PDK are not represented
+in the magic tech file, and will generate an error message when
+read from a GDS file.  Magic will not generate any of these layers
+in GDS output (unless GDS is designated "readonly" and copied
+directly from a file to output, bypassing processing in magic).
+
+A list of essential mask names in magic vs. IHP documentation is as
+follows (this list is not exhaustive).  Note that mask names do not
+exist in GDS output, which defines only numerical designations for
+each layer;  however, each GDS layer is mapped to a name in the
+IHP documentation and in the klayout layout technology file, and
+in magic, these are CIF format name equivalents to GDS layers:
+
+| IHP documented layer name | magic CIF layer name |
+|---------------------------|----------------------|
+| Activ                     | DIFF                 |
+| NWell                     | NWELL                |
+| nSD.block                 | NSDBLOCK             |
+| pSD                       | PSD                  |
+| ThickGateOx               | THKOX                |
+| SalBlock                  | SBLK                 |
+| ExtBlock                  | EXTBLOCK             |
+| prBoundary                | BOUND                |
+| Cont                      | CONT                 |
+| Passiv                    | GLASS                |
+| Metal1                    | MET1                 |
+| Metal2                    | MET2                 |
+| Metal3                    | MET3                 |
+| Metal4                    | MET4                 |
+| TopMetal1                 | MET5                 |
+| Via1                      | VIA1                 |
+| Via2                      | VIA2                 |
+| Via3                      | VIA3                 |
+| TopVia1                   | VIA4                 |
+
+## DRC styles
+
+Magic has an interactive DRC engine that detects and flags DRC
+errors during layout.  Because the full set of DRC rules is
+computationally expensive to compute in real time during layout
+creation, magic defines different DRC "styles", corresponding
+roughly to levels.  The DRC styles are as follows (and follow
+usual naming conventions in magic):
+
+- `drc(full)`: Complete set of DRC rules. Fine for use with small layouts.
+
+- `drc(fast)`: Limited set of DRC rules, good for reasonably quick checking of large layouts.
+			
+- `drc(routing)`: DRC rules limited to metal layer rules only.  Good for working with large digital standard cell layouts.
+
+The `drc(full)` style must always be used for final sign-off of
+a design.  The best practice, especially for an open PDK in
+active development, is to use magic DRC for interactive layout
+work, and klayout DRC results for final sign-off of the design
+layout.
+
+## Device extraction
+
+As of the initial release version of the magic tech file, the list
+of devices in layout vs. device models in ngspice is not entirely
+consistent, as some devices are awaiting a merge of additional
+updates to the open PDK.  A list of extracted devices follows.
+Note that in some cases, such as the ESD transistors in the
+clamps, the presence of silicide block produces device behavior
+that is a significant departure from the extracted device type.
+
+There are two styles of device extraction.  When using magic
+with netgen, always use the default style for both LVS and
+simulation extraction:
+
+	extract style ngspice()
+
+There is an extract style that is equivalent to what klayout
+produces for LVS netlists, using low-level SPICE component
+identifiers for what are actually subcircuit devices.  This
+style is
+
+	extract style ngspice(lvs)
+
+It is not recommended for use with the magic/netgen LVS flow.
+
+| devices recognized by magic          | device type extracted |
+|--------------------------------------|-----------------------|
+| pfet                                 | sg13_lv_pmos          |
+| nfet                                 | sg13_lv_nmos          |
+| hvpfet                               | sg13_hv_pmos          |
+| hvnfet                               | sg13_hv_nmos          |
+| hvnmosesd (nmoscl_2, nmoscl_4)       | sg13_hv_nmos          |
+| pnp (base layer)                     | pnpMPA                |
+| pdiode                               | dpantenna             |
+| ndiode                               | dantenna              |
+| nres                                 | rsil                  |
+| pres                                 | rppd                  |
+| xres                                 | rhigh                 |
+| ptap1				       | ptap1		       |
+| ntap1				       | ntap1		       |
+
+| Devices not extracted                                                            |
+|----------------------------------------------------------------------------------|
+| diodevdd_2kv, diodevdd_4kv, diodevss_2kv, diodevss_4kv (no diode identifier)     |
+| inductor (requires additional information provided by the device generator)      |
+| iprobe, diffstbprobe (insufficient information and no device model)              |
+| SVaricap (no device model)                                                       |
+
+"RF" versions of MOSFET devices are not separate device models but are enabled
+by passing parameter "rfmode" to the device model.  This parameter passing
+is not yet handled by magic.
+
+The lateral PNP device is not specifically a device in SG13CMOS5L, but as
+the only difference is the depth of the nwell under the device, the behavior
+of the device should be similar.  The magic tech file makes use of the bipolar
+ID marker layer (used to identify NPN bipolars in the SG13G2 process) to mark
+the location of lateral PNP devices in SG13CMOS5L.
+
+**Undocumented device extraction**:
+
+The following resistor devices are extracted but do not have device models,
+and so are extracted as ideal SPICE components with value estimated from
+known sheet resistance values.  The correct handling of these devices is
+waiting on a merge of a pull request enabling a model called "lvsres".
+
+| device       | description                               |
+|--------------|-------------------------------------------|
+| rm1          | metal1 resistor (net breaker)             |
+| rm2          | metal2 resistor (net breaker)             |
+| rm3          | metal3 resistor (net breaker)             |
+| rm4          | metal4 resistor (net breaker)             |
+| rm5          | metal5 (TopMetal1) resistor (net breaker) |
+| hvndiffres   | drain extension resistor on ESD nFETs     |
+
+SVaricap is a subcircuit, but the underlying device model is an
+sg13_hv_svaricap.  The SVaricap subcircuit contains two of
+these.  Since the SVaricap model simply instantiates a number of
+sg13_hv_svaricap devices, the extracted SVaricap subcircuit will
+simulate correctly, even though the SVaricap model is not
+directly instantiated.  Note that SVaricap is not specifically
+a device in SG13CMOS5L, but with the only difference being the
+depth of the nwell, the device behavior should be similar.
+
+| device           | description                           |
+|------------------|---------------------------------------|
+| sg13_hv_svaricap | varactor				   |
+
+**Ignored devices**:
+
+| device      | description                                         |
+|-------------|-----------------------------------------------------|
+| pvaractor   | parasitic device formed at the ends of SVaricap     |
+
+## Fill pattern generation
+
+Fill pattern generation is implemented as an alternative "cif ostyle"
+in the magic tech file.  It is only marginally useful in an
+interactive layout session;  generally, it is meant to be used with
+the standalone python script "generate_fill.py".  Running the python
+script (run without arguments to get a usage statement) on a magic or
+GDS database of a chip top level (including seal ring) will produce
+a compressed GDS file containing a overlay cell with the fill
+patterns.  The fill pattern GDS must be integrated with the chip top
+level (the script does not do this) by including the fill patterns
+into the top level layout, with the origins aligned.
+
+If the intention is to pre-fill an area of layout, magic can do this
+with the command "cif ostyle patternfill()", placing the cursor box
+around the area to be filled, and typing, e.g., "cif paint MET1FILL
+met1fill".  Each fill layer must be generated individually.
+
+Python script usage:
+
+	generate_fill.py <layout_name> [-keep] [-test] [-dist]
+
+	where:
+		<layout_name> is the path to the GDS file to be filled.
+
+	If '-keep' is specified, then keep the generation script.
+	If '-test' is specified, then create but do not run the generation script.
+	If '-dist' is specified, then run distributed (multi-processing).
+
+## Seal ring generation
+
+Seal ring generation is implemented as a python script "generate_seal.py"
+which is separate from the Tcl-based device generators for modeled
+devices.
+
+Python script usage:
+
+	generate_seal.py <width> [<height> [<extra_separation>]]
+
+	where:
+		<width> and <height> are the padframe dimensions, in microns.
+		<extra_separation> is the distance from padframe to seal ring
+		in addition to the 5.4um absolute minimum.
+
+## Auxiliary DRC checks
+
+Not all DRC rules are implemented directly by magic's DRC checker.
+The two main exceptions are density and antenna rules.  Density rules
+are only meaningful if done on an entire top-level layout, after
+running pattern generation.  If the final design (including fill
+patterns) is saved as a .mag file or GDS file, then the script
+"check_density.py" will perform the entire set of density rule
+checks.
+
+Python script usage:
+
+	check_density.py [<layout_file_name>] [-keep] [-debug]
+
+	where:
+		<layout_file_name> is the path to the .gds or .mag file to be checked.
+
+	If '-keep' is specified, then keep the check script.
+	If '-debug' is specified, then print diagnostic information.
+
+Antenna violations can be checked by extracting the layout and
+then using the command "antennacheck [run]".  It is generally
+preferable to run the command "antennacheck debug" prior to the
+command "antennacheck", so that detailed output for each error is
+printed to the terminal output.  Otherwise, all errors are in the
+form of feedback entries which can be queried with "feedback find"
+or written to a file with "feedback save <filename>".

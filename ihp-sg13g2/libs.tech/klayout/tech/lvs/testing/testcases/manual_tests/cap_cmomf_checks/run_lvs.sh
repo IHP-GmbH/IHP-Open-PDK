@@ -149,31 +149,39 @@ run_case "11_coexists_with_cap_cmomi" \
   "cmomf_coexist.gds" "cmomf_coexist" "coexist.cdl" "PASS"
 
 # The same missing-device perturbation as case 2, on the hierarchical unit
-# layout, in deep mode. Case 2 catches it. This one does NOT, and the PASS is
-# the finding rather than the behaviour anyone wants: every cap here sits in a
-# sub-cell with no net crossing its boundary, the layout netlist comes out
-# empty, and compare then has no pair left to compare and returns true. The
-# .lvsdb still carries the device abstract, so extraction is not what fails.
+# layout, in deep mode: three caps drawn, two declared. Case 2 catches it flat
+# and this catches it deep.
 #
-# cap_cmomi empties the same way on the same construction, so the hole belongs
-# to neither device. That was observed on the ihp-sg13cmos5l side, where both
-# devices have a deep case; nothing in this tree demonstrates it for cap_cmomi.
-# It is tracked as ihp-sg13cmos5l#91, and that
-# PDK refuses the vacuous half of it in its own sg13cmos5l.lvs by counting the
-# devices on both sides; this one has no such guard. Read this case together
-# with case 13, the same hierarchy wired to the top, which compares for real.
+# It did not always. Every cap here sits in a sub-cell with no net crossing its
+# boundary, and the layout netlist used to come out empty, leaving compare with
+# no pair to compare and returning true -- a match that verified nothing. This
+# case existed to record that hole and expected PASS because of it.
+#
+# The hole closed with 5fecb0f1 ("Honor PURGE conditional in
+# rfmos_model_mapping.lvs") and 6ff43baf ("Remove global purging from rule
+# deck"). Those stopped apply_rfmos_model_mapping from calling purge_devices
+# and purge on every run, and it was that unconditional purge which swept the
+# sub-circuits away and emptied the netlist. The extraction now keeps all three
+# caps, so the comparison is real and reports the missing device.
+#
+# The same construction empties cap_cmomi, tracked as ihp-sg13cmos5l#91; that
+# PDK guards the vacuous half in its own sg13cmos5l.lvs by counting devices on
+# both sides. This deck still has no such guard, so if a future change empties
+# the netlist again this case goes back to reporting a match. Read it together
+# with case 13, the same hierarchy wired to the top, which compares for real by
+# construction.
 #
 # The layout is referenced across from the unit testcase rather than copied, so
 # the flat and deep runs cannot drift apart.
-run_case "12_deep_empty_extraction_unreported" \
+run_case "12_deep_missing_device_reported" \
   "../../unit/cap_devices/layout/cap_cmomf_hier.gds" "cap_cmomf_hier" \
-  "hier_deep_missing.cdl" "PASS" "deep"
+  "hier_deep_missing.cdl" "FAIL" "deep"
 
 # The same hierarchy as case 12, with one Metal5 route in the top cell joining
 # the two sub-cells, so a net crosses a cell boundary and the sub-circuits keep
-# a pin. Deep extracts both caps and the comparison is real. This case is what
-# makes case 12 mean anything: on its own, case 12 would keep reporting a match
-# even if deep extraction broke outright, and the suite would stay green.
+# a pin. Deep extracts both caps and the comparison is real by construction
+# rather than by the extraction happening to keep them, which is why this case
+# stays even now that case 12 compares for real too.
 run_case "13_deep_wired_hierarchy" \
   "cmomf_hier_wired.gds" "cmomf_hier_wired" "hier_wired.cdl" "PASS" "deep"
 

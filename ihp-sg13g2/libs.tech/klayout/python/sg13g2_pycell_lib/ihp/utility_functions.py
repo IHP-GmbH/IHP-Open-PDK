@@ -18,7 +18,6 @@
 
 import math
 from math import sqrt
-from io import StringIO
 
 from cni.dlo import Tech, Numeric
 from cni.dlo import Orientation, Location, Layer
@@ -170,9 +169,7 @@ def zerop(value):
 # sprintf
 #***********************************************************************************************************************
 def sprintf(fmt, *args):
-    buf = StringIO.StringIO()
-    buf.write(fmt % args)
-    return buf.getvalue()
+    return fmt % args
 
 #***********************************************************************************************************************
 # strcat
