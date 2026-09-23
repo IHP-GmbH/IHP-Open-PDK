@@ -663,7 +663,7 @@ proc sg13cmos5l::cap_draw_interdigitated {parameters} {
     # capacitor this way loses the parasitic to substrate.
 
     if {$value != 0} {
-	set propstr [format "csubckt cap_cmomf 0 0 1 1 w=%.3fu l=%.3fu mmin=%d mmax=%d, subblock=%d mm_ok=1 c1 0 0 c2 0 0" $w $l $mminidx $mmaxidx $subblock]
+	set propstr [format "csubckt cap_cmomf 0 0 1 1 w=%.3fu l=%.3fu mmin=%d mmax=%d subblock=%d mm_ok=1 c1 0 0 c2 0 0" $w $l $mminidx $mmaxidx $subblock]
 	property string device $propstr
     }
 

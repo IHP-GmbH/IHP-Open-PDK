@@ -261,25 +261,30 @@ lappend devices cap_cmomi
 # Do not allow parallel combination of capacitors unless all valid
 # parameters match.  The device value depends on geometry and the number
 # of layers used, all of which must be specified for each device.  
-# However, neither device model defines the capacitance to substrate, so
-# the two pins are effectively permutable.
+# However, the cap_cmomf device model does not define the capacitance to
+# substrate, so the two pins are effectively permutable.  cap_cmomi
+# terminals are not permutable.
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
-	permute "-circuit1 $dev" 1 2
+	if {$dev == "cap_cmomf"} {
+	    permute "-circuit1 $dev" 1 2
+	}
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	property "-circuit1 $dev" tolerance {mmin 0} {mmax 0} {subblock 0}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mm_ok feed
+	property "-circuit1 $dev" delete mm_ok
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	permute "-circuit2 $dev" 1 2
+	if {$dev == "cap_cmomf"} {
+	    permute "-circuit2 $dev" 1 2
+	}
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	property "-circuit2 $dev" tolerance {mmin 0} {mmax 0} {subblock 0}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mm_ok feed
+	property "-circuit2 $dev" delete mm_ok
     }
 }
 

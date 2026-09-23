@@ -267,14 +267,14 @@ proc sg13cmos5l::diode_check {parameters} {
 #------------------------------------------------------------------
 
 proc sg13cmos5l::dantenna_defaults {} {
-    return {w 0.78 l 0.78 area 0.6084 peri 1.8 \
+    return {w 0.78 l 0.78 area 0.6084 peri 3.12 \
 	nx 1 ny 1 dummy 0 lmin 0.78 wmin 0.78 class diode \
 	elc 1 erc 1 etc 1 ebc 1 doverlap 0 doports 1 \
 	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
 }
 
 proc sg13cmos5l::dpantenna_defaults {} {
-    return {w 0.78 l 0.78 area 0.6084 peri 1.8 \
+    return {w 0.78 l 0.78 area 0.6084 peri 3.12 \
 	nx 1 ny 1 dummy 0 lmin 0.78 wmin 0.78 class diode \
 	elc 1 erc 1 etc 1 ebc 1 doverlap 0 doports 1 \
 	full_metal 1 vias 1 viagb 0 viagt 0 viagl 0 viagr 0}
