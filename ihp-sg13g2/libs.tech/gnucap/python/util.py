@@ -19,3 +19,11 @@ def align_time_series(
     v_interp_arr = interp1d(t_arr, v_arr, kind=kind)(t_ref_arr)
 
     return v_interp_arr
+
+def round_significant(values: np.ndarray, digits: int) -> np.ndarray:
+
+    rounded = values.copy()
+    nonzero = rounded != 0
+    scale = 10 ** np.floor(np.log10(np.abs(rounded[nonzero])))
+    rounded[nonzero] = np.round(rounded[nonzero] / scale, digits - 1) * scale
+    return rounded
