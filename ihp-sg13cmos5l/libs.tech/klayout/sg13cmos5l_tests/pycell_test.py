@@ -151,11 +151,11 @@ top.insert(pya.DCellInstArray(pcellCapMomf, pya.DTrans(pya.DVector(0, 110))))
 top.insert(pya.DCellInstArray(pcellCapMomfM2M4, pya.DTrans(pya.DVector(10, 110))))
 
 # Row 11: Guard rings (standalone and device option)
-top.insert(pya.DCellInstArray(pcellGuardRingNwell, pya.DTrans(pya.DVector(0, 110))))
-top.insert(pya.DCellInstArray(pcellGuardRingPsub, pya.DTrans(pya.DVector(10, 110))))
-top.insert(pya.DCellInstArray(pcellNmosGuarded, pya.DTrans(pya.DVector(20, 110))))
-top.insert(pya.DCellInstArray(pcellPmosGuarded, pya.DTrans(pya.DVector(30, 110))))
-top.insert(pya.DCellInstArray(pcellSVaricapGuarded, pya.DTrans(pya.DVector(40, 110))))
+top.insert(pya.DCellInstArray(pcellGuardRingNwell, pya.DTrans(pya.DVector(0, 125))))
+top.insert(pya.DCellInstArray(pcellGuardRingPsub, pya.DTrans(pya.DVector(10, 125))))
+top.insert(pya.DCellInstArray(pcellNmosGuarded, pya.DTrans(pya.DVector(20, 125))))
+top.insert(pya.DCellInstArray(pcellPmosGuarded, pya.DTrans(pya.DVector(30, 125))))
+top.insert(pya.DCellInstArray(pcellSVaricapGuarded, pya.DTrans(pya.DVector(40, 125))))
 
 # Large structures
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 0))))
