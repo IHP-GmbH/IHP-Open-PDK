@@ -191,6 +191,12 @@ def generate_guard_ring(dlo_gen: DloGen,
                 else:
                     y1 = y2 + cont_space
 
+    def draw_label(label: Tuple[Layer, str],
+                   label_point: Point):
+        label_lyr, label_txt = label
+        dbCreateLabel(dlo_gen, label_lyr, label_point, label_txt, 'centerCenter',
+                     'R0', Font.EURO_STYLE, cont_size)
+
     def draw_ring(lyr: Layer,
                   xl: float, yb: float, xr: float, yt: float,
                   width: float,
@@ -202,10 +208,8 @@ def generate_guard_ring(dlo_gen: DloGen,
         box_right  = Box(xr - width - over, yb + width + over, xr + over,         yt - width - over)
 
         if label is not None:
-            label_lyr, label_txt = label
             label_point = box_bottom.getCenter()
-            dbCreateLabel(dlo_gen, label_lyr, label_point, label_txt, 'centerCenter',
-                          'R0', Font.EURO_STYLE, cont_size)
+            draw_label(label, label_point)
 
         mlist = ulist[Rect]()
         mlist += [
@@ -216,12 +220,19 @@ def generate_guard_ring(dlo_gen: DloGen,
         ]
         dbLayerOrList(lyr, mlist)
 
-    def draw_well_box(lyr: Layer, xl: float, yb: float, xr: float, yt: float, over: float):
+    def draw_well_box(lyr: Layer,
+                      xl: float, yb: float, xr: float, yt: float,
+                      over: float,
+                      label: Optional[Tuple[Layer, str]] = None):
         box = Box(xl - over, yb - over, xr + over, yt + over)
         dbCreateRect(dlo_gen, lyr, box)
 
-    draw_contacted_ring(xl, yb, xr, yt, wguard_met1)
+        if label is not None:
+            label_point = box.getCenter()
+            draw_label(label, label_point)
 
+    draw_contacted_ring(xl, yb, xr, yt, wguard_met1)
+    
     if guard_ring_type == 'nwell':
         if nbulay_available:
             draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over))
