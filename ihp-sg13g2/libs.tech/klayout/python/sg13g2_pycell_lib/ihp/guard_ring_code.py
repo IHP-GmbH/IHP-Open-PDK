@@ -91,7 +91,8 @@ def generate_guard_ring(dlo_gen: DloGen,
     met1 = Layer('Metal1', 'drawing')
     met1_pin = Layer('Metal1','pin')
     text = Layer('TEXT', 'drawing')
-
+    nwell_text_layer = Layer('NWell', 'label')
+    
     #*************************************************************************
     #*
     #* Generic Design Rule Definitions
@@ -235,11 +236,11 @@ def generate_guard_ring(dlo_gen: DloGen,
     
     if guard_ring_type == 'nwell':
         if nbulay_available:
-            draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over))
+            draw_well_box(nwell, xl, yb, xr, yt, max(nbulay_over, ndiff_over), label=(nwell_text_layer, 'well'))
             draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
             draw_ring(nbulay, xl, yb, xr, yt, wguard_active, nbulay_over)
         else:
-            draw_well_box(nwell, xl, yb, xr, yt, ndiff_over)
+            draw_well_box(nwell, xl, yb, xr, yt, ndiff_over, label=(nwell_text_layer, 'well'))
             draw_ring(activ, xl, yb, xr, yt, wguard_active, 0.0, label=(text, 'well'))
 
     # elif guard_ring_type == 'dnwell':
