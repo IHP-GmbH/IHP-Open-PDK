@@ -37,6 +37,49 @@ SUPPORTED_TC_EXT = "gds"
 SUPPORTED_SPICE_EXT = "cdl"
 SUPPORTED_SW_EXT = "yaml"
 
+METAL_RES_LAYER_BY_MODEL = {
+    "res_metal1": "Metal1",
+    "res_metal2": "Metal2",
+    "res_metal3": "Metal3",
+    "res_metal4": "Metal4",
+    "res_metal5": "Metal5",
+    "res_topmetal1": "TopMetal1",
+    "res_topmetal2": "TopMetal2",
+}
+
+
+def validate_metal_resistor_netlist(netlist_path, device_name):
+    """Check the external model and layer generated for an internal metal-resistor alias."""
+    expected_layer = METAL_RES_LAYER_BY_MODEL.get(device_name)
+    if expected_layer is None:
+        return True
+
+    try:
+        with open(netlist_path, "r") as netlist_file:
+            device_lines = [
+                line.strip()
+                for line in netlist_file
+                if line.lstrip().upper().startswith("R")
+            ]
+    except OSError as exc:
+        logging.error("Cannot inspect extracted netlist %s: %s", netlist_path, exc)
+        return False
+
+    expected_tokens = {"lvsres", f"layer={expected_layer}"}
+    invalid_lines = [
+        line for line in device_lines if not expected_tokens.issubset(set(line.split()))
+    ]
+    if not device_lines or invalid_lines:
+        logging.error(
+            "%s extracted netlist must generate every resistor as 'lvsres layer=%s'; got: %s",
+            device_name,
+            expected_layer,
+            invalid_lines or "no resistor cards",
+        )
+        return False
+
+    return True
+
 
 def parse_existing_devices(rule_deck_path, output_path, target_device_group=None):
     """
@@ -293,6 +336,12 @@ def run_test_case(
     else:
         logging.error("Klayout LVS run failed, there is no log file is generated")
         exit(1)
+
+    extracted_netlist = os.path.join(output_loc, f"{device_name}_extracted.cir")
+    if device_status == "Passed" and not validate_metal_resistor_netlist(
+        extracted_netlist, device_name
+    ):
+        device_status = "Failed"
 
     return device_status
 

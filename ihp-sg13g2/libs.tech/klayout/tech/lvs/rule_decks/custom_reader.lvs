@@ -19,6 +19,13 @@
 
 #=========== CUSTOM READER ===========
 
+class InvalidLvsresLayer < ArgumentError; end
+
+# lvsres w/o metal type is kept as a separate schematic device class. This lets the
+# netlist load complete and turns the missing layer into a normal LVS device
+# mismatch instead of aborting KLayout from the SPICE reader.
+LVSRES_MISSING_LAYER_MODEL = 'lvsres_missing_layer'
+
 # Custom reader for subcircuit models
 class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Cleanup sch for R, C elements
@@ -86,6 +93,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   # Accepted resistor forms:
   # 2T (metal resistor)
+  # - Rm2 net3 net4 lvsres layer=Metal1 l=1.5u w=5u R=20k
+  # - Rm1 net1 net2 20k $[lvsres] layer=Metal1 l=1u w=5u
+  # Legacy layer-specific model names remain accepted:
   # - Rm2 net3 net4 res_metal1 l=1.5u w=5u R=20k
   # - Rm1 net1 net2 20k $[res_metal1] l=1u w=5u
   # - Rm1 net1 net2 3.6m $[res_topmetal1] l=1u w=5u
@@ -160,8 +170,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     model = canonical_res_model_name(fields[model_idx])
     rest = fields.drop(model_idx + 1)
     value = resistor_value_field?(rest.first) ? rest.shift : '0'
+    model, rest = translate_lvsres_model(model, rest)
 
-    if metal_res_model?(model)
+    if metal_res_model?(model) || model == LVSRES_MISSING_LAYER_MODEL
       # Form: Rm1 n1 n2 20k res_metal1 ...
       if model_idx >= 3 && resistor_value_field?(fields[model_idx - 1])
         prefix = fields.take(model_idx - 3)
@@ -205,11 +216,41 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   # Usage : used to detect resistor model position in netlist line.
   def resistor_model_field?(field)
     model = canonical_res_model_name(field)
-    RES_DEV.include?(model) || metal_res_model?(model)
+    RES_DEV.include?(model) || metal_res_model?(model) || model == 'lvsres'
   end
 
   def metal_res_model?(model)
-    model.start_with?('res_metal') || model.start_with?('res_topmetal')
+    METAL_RES_LAYER_BY_MODEL.key?(model.to_s.downcase)
+  end
+
+  # Translate the `lvsres layer=<metal>` form to the layer-specific
+  # internal model used by extraction. A missing layer becomes an
+  # unmatched device class so it is reported as an LVS violation.
+  # Duplicate and unsupported layer values remain malformed input.
+  def translate_lvsres_model(model, rest)
+    return [model, rest] unless model == 'lvsres'
+
+    layer_fields = rest.select { |field| field.split('=', 2).first.to_s.casecmp('layer').zero? }
+    if layer_fields.size > 1
+      raise InvalidLvsresLayer, 'lvsres accepts exactly one layer parameter'
+    end
+
+    if layer_fields.empty?
+      unless @warned_missing_lvsres_layer
+        $logger.warn('lvsres has no layer=<metal>; reporting it as an unmatched LVS device.') if defined?($logger) && $logger
+        @warned_missing_lvsres_layer = true
+      end
+      return [LVSRES_MISSING_LAYER_MODEL, rest]
+    end
+
+    layer_name = layer_fields.first.split('=', 2)[1].to_s.delete_prefix('"').delete_suffix('"')
+    internal_model = METAL_RES_MODEL_BY_LAYER[layer_name.downcase]
+    unless internal_model
+      supported = METAL_RES_LAYER_BY_MODEL.values.join(', ')
+      raise InvalidLvsresLayer, "Unsupported lvsres layer '#{layer_name}'; expected one of: #{supported}"
+    end
+
+    [internal_model, rest.reject { |field| layer_fields.include?(field) }]
   end
 
   # Input : one resistor field candidate.
@@ -253,6 +294,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
     line = clean_sch(line, element) if element == 'C' || element == 'R'
 
     super
+  rescue InvalidLvsresLayer
+    raise
   rescue StandardError
     case element
     when 'C'
@@ -424,6 +467,8 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
       DeviceCustomRes.new(model, 2, 1)
     elsif num_nets == 2 && model.downcase.include?('tap')
       CustomTap.new
+    elsif num_nets == 2 && (metal_res_model?(model) || model == LVSRES_MISSING_LAYER_MODEL)
+      RES2.new
     elsif num_nets == 2
       RBA::DeviceClassResistor.new
     elsif num_nets == 3
