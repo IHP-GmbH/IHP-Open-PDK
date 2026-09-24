@@ -107,7 +107,7 @@ def generate_guard_ring(dlo_gen: DloGen,
     met1_pin = Layer('Metal1','pin')
     text = Layer('TEXT', 'drawing')
     nwell_text_layer = Layer('NWell', 'label')
-    sub_layer = Layer('Substrate', 'label')
+    sub_layer = Layer('Substrate', 'drawing')
     
     #*************************************************************************
     #*
