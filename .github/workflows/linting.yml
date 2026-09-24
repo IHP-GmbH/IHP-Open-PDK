@@ -1,4 +1,4 @@
-#==========================================================================
+# ==========================================================================
 # Copyright 2024 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,33 +13,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
-#==========================================================================
+# ==========================================================================
+
+# Python linting, per affected PDK, plus a PDK-independent klayout version
+# consistency check. `detect` picks the PDKs to lint (see .github/pdk-ci.yml);
+# the version check always runs; the always-run `gate` is the required check.
+# No KLayout needed here, so this does not use the pdk-run runner.
 
 name: Python Code Linting
 
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
+  push:
+    branches: [dev]
   pull_request:
-    paths:
-      - 'ihp-*/libs.tech/klayout/tech/drc/**'
-      - 'ihp-*/libs.tech/klayout/tech/lvs/**'
-      - 'ihp-*/libs.tech/klayout/python/*_pycell_lib/**'
-      - 'versions.txt'
-      - 'requirements.txt'
-      - '.flake8'
-      - '.github/workflows/linting.yml'
+  merge_group:
   workflow_dispatch:
 
-jobs:
-  lint_python:
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
+  pull-requests: read
 
-    # One leg per PDK so a failure names the PDK it came from. The repo-wide
-    # `make lint-all` still lints every ihp-* at once for local use.
+jobs:
+  detect:
+    uses: ./.github/workflows/detect-affected-pdks.yml
+    with:
+      test_class: lint
+
+  lint_python:
+    needs: detect
+    if: ${{ needs.detect.outputs.any == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # One leg per affected PDK so a failure names the PDK it came from. The
+    # repo-wide `make lint-all` still lints every ihp-* at once for local use.
     strategy:
       fail-fast: false
-      matrix:
-        pdk: [ihp-sg13g2, ihp-sg13cmos5l]
-
+      matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +83,11 @@ jobs:
           echo "OK: no forbidden characters in ${{ matrix.pdk }} PCell library"
 
   klayout_version_consistency:
+    # PDK-independent: versions.txt and requirements.txt are shared by every PDK,
+    # so this always runs and feeds the gate directly.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Check klayout pin in requirements.txt matches versions.txt
@@ -97,3 +115,36 @@ jobs:
             exit 1
           fi
           echo "OK: klayout version is consistent ($VERSIONS_TXT)"
+
+  ci_selftest:
+    # The CI routing (affected_pdks.py + pdk-ci.yml) decides what every other
+    # gate runs, so it is tested and kept honest here on every PR: unit tests for
+    # the closure, flake8 over the scripts, and the repo-invariant checks (the
+    # pdk map matches the tree, cross-PDK symlinks match depends_on). Without
+    # this, a bad edit to the routing fails open (empty matrix, green gates).
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint and self-test the CI scripts
+        run: |
+          python3 -m pip install --quiet pyyaml flake8
+          flake8 --config=.flake8 .github/scripts
+          python3 .github/scripts/test_affected_pdks.py
+          python3 .github/scripts/check_repo_invariants.py
+
+  gate:
+    name: Lint gate
+    if: ${{ always() }}
+    needs: [detect, lint_python, klayout_version_consistency, ci_selftest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate result
+        run: |
+          echo "detect=${{ needs.detect.result }} lint=${{ needs.lint_python.result }} version=${{ needs.klayout_version_consistency.result }}"
+          if echo "${{ needs.detect.result }} ${{ needs.lint_python.result }} ${{ needs.klayout_version_consistency.result }}" \
+             | grep -qE "failure|cancelled"; then
+            echo "::error::Linting failed"; exit 1
+          fi
+          echo "Linting passed (or no affected PDK for this change)."

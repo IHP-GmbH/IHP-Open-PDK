@@ -1,5 +1,5 @@
 # ==========================================================================
-# Copyright 2024 IHP PDK Authors
+# Copyright 2026 IHP PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # ==========================================================================
 
-# LVS regression, per affected PDK. See drc_regression.yml and .github/pdk-ci.yml
-# for how `detect` decides which PDKs run and why the `gate` job is the required
-# check.
+# PCell functional tests, per affected PDK. Runs the headless KLayout PCell
+# checks that live in each PDK's *_tests directory (library build, concurrent
+# load, PCell-DRC, native PCells, sprintf). Tests a PDK does not carry are
+# reported and skipped by make (skip-unless in ihp-common/pdk.mk), so the same
+# target list is safe for every PDK.
 
-name: LVS Regression Testing
+name: PCell Functional Tests
 
 concurrency:
   group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
@@ -40,27 +42,27 @@ jobs:
   detect:
     uses: ./.github/workflows/detect-affected-pdks.yml
     with:
-      test_class: lvs
+      test_class: pcell
 
-  lvs:
+  pcell:
     needs: detect
     if: ${{ needs.detect.outputs.any == 'true' }}
     uses: ./.github/workflows/pdk-run.yml
     with:
       matrix: ${{ needs.detect.outputs.matrix }}
-      targets: "test-LVS-main test-LVS-SVS test-LVS-cmomi-checks test-LVS-cmomf-checks test-LVS-cells"
+      targets: "test-PCell-lib test-PCell-concurrency test-PCell-drc test-PCell-native test-PCell-sprintf"
 
   gate:
-    name: LVS gate
+    name: PCell gate
     if: ${{ always() }}
-    needs: [detect, lvs]
+    needs: [detect, pcell]
     runs-on: ubuntu-latest
     steps:
       - name: Aggregate result
         run: |
-          echo "detect=${{ needs.detect.result }} lvs=${{ needs.lvs.result }}"
-          if echo "${{ needs.detect.result }} ${{ needs.lvs.result }}" \
+          echo "detect=${{ needs.detect.result }} pcell=${{ needs.pcell.result }}"
+          if echo "${{ needs.detect.result }} ${{ needs.pcell.result }}" \
              | grep -qE "failure|cancelled"; then
-            echo "::error::LVS regression failed"; exit 1
+            echo "::error::PCell functional tests failed"; exit 1
           fi
-          echo "LVS regression passed (or no affected PDK for this change)."
+          echo "PCell functional tests passed (or no affected PDK for this change)."
