@@ -324,3 +324,21 @@ proc svaricap_drc {instance symbol model w l Nx} {
 
   return $res
 }
+
+# IHP SG13G2 lvsres layer checks
+proc lvsres_drc {instance layer r w l } {
+  set res {}
+  regsub {u$} $w {} w
+  regsub {u$} $l {} l
+  regsub {r$} $l {} r
+    
+  set allowed_layers {Metal1 Metal2 Metal3 Metal4 Metal5 TopMetal1 TopMetal2}
+  
+  if {[lsearch -exact $allowed_layers $layer] < 0} {
+        append res "$instance: invalid layer=${layer}. \n"
+        append res "->Allowed layers: [join $allowed_layers {, }]" \n
+    }
+  
+  #puts "$instance $symbol $layer $r $w $l"
+  return $res
+}
