@@ -35,7 +35,7 @@ class DeviceBase(DloGen):
     def defineParamSpecs(cls, specs):
         choices = [c.value for c in cls.validGuardRingTypes()]
         specs('guardRingType', 'none', 'Guard Ring Type', ChoiceConstraint(choices))
-        specs('guardRingDistance', '1u', 'Guard Ring Distance')
+        specs('guardRingDistance', '1u', 'Guard Ring Distance', RangeConstraint(0, None))
 
     def setupParams(self, params):
         # process parameter values entered by user
