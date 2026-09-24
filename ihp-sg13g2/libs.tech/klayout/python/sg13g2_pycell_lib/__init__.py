@@ -77,7 +77,8 @@ moduleNames = [
         'pnpMPA_code',
         'isolbox_code',
         'schottky_code',
-        'chipText_code'
+        'chipText_code',
+        'lvsres_code'
 ]
 
 def getProcessNames():
@@ -282,4 +283,3 @@ class SG13G2_NativePCellLib(pya.Library):
 # instantiate and register the libraries
 PyCellLib()
 SG13G2_NativePCellLib()
-

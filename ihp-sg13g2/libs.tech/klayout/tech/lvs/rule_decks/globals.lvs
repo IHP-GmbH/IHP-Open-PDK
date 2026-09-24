@@ -80,6 +80,29 @@ CUSTOM_READER = %w[M C R Q L D].freeze
 # List of poly-resistors
 RES_DEV = ['rsil', 'rppd', 'rhigh']
 
+# Metal resistors keep layer-specific device classes internally so KLayout can
+# distinguish them without string-valued device parameters. The SPICE writer
+# maps these aliases to `lvsres layer=<metal>`.
+METAL_RES_LAYER_BY_MODEL = {
+  'res_metal1' => 'Metal1',
+  'res_metal2' => 'Metal2',
+  'res_metal3' => 'Metal3',
+  'res_metal4' => 'Metal4',
+  'res_metal5' => 'Metal5',
+  'res_topmetal1' => 'TopMetal1',
+  'res_topmetal2' => 'TopMetal2'
+}.freeze
+
+METAL_RES_MODEL_BY_LAYER = {
+  'metal1' => 'res_metal1',
+  'metal2' => 'res_metal2',
+  'metal3' => 'res_metal3',
+  'metal4' => 'res_metal4',
+  'metal5' => 'res_metal5',
+  'topmetal1' => 'res_topmetal1',
+  'topmetal2' => 'res_topmetal2'
+}.freeze
+
 # RF MOS extraction models should be mapped to these base MOS model names.
 RF_TO_BASE_MOS_MODEL = {
   'rfnmos' => 'sg13_lv_nmos',
