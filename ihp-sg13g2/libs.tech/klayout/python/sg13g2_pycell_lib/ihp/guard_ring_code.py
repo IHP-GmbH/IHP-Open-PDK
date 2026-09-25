@@ -39,13 +39,24 @@ else:
             return str(self.value)
 
 
-# Single source of truth for the minimum guard-ring span, in micrometers.
-# Matches the lower bound used by the existing Magic guard-ring helper.
-# The standalone `guard_ring` PCell declares it as a RangeConstraint, but
-# KLayout does not enforce min/max values on string parameters, so the
-# actual check happens in `generate_guard_ring()` (which is also called
-# directly by DeviceBase.genLayout() with computed w/h).
-MIN_GUARD_RING_SPAN_UM = 0.6
+def min_guard_ring_span(techparams: dict) -> float:
+    """
+    Single source of truth for the minimum guard-ring width/height, in micrometers,
+    so that each of the four sides of the ring still gets at least one contact.
+
+    The standalone `guard_ring` PCell declares it as a RangeConstraint, but
+    KLayout does not enforce min/max values on string parameters, so the
+    actual check happens in `generate_guard_ring()` (which is also called
+    directly by DeviceBase.genLayout() with computed w/h).
+    """
+    cont_size = techparams['Cnt_a']
+    cont_space = techparams['Cnt_b']
+    cont_min_act_encl = techparams['Cnt_c']
+    wguard_active = cont_size + 2 * cont_min_act_encl
+
+    # the left/right contacts keep cont_space to the bottom/top contacts,
+    # which end cont_min_act_encl before the inner edge of the ring
+    return GridFix(2 * (wguard_active - cont_min_act_encl + cont_space) + cont_size)
 
 
 class GuardRingType(StrEnum):
@@ -69,14 +80,15 @@ def generate_guard_ring(dlo_gen: DloGen,
                         h: float,
                         x_center: float,
                         y_center: float):
-    if w < MIN_GUARD_RING_SPAN_UM or h < MIN_GUARD_RING_SPAN_UM:
-        raise ValueError(
-            f"generate_guard_ring: width/height must be >= "
-            f"{MIN_GUARD_RING_SPAN_UM}um (got w={w}um, h={h}um)"
-        )
-    
     dlo_gen.grid = dlo_gen.tech.getGridResolution()
     techparams = dlo_gen.tech.getTechParams()
+
+    min_span = min_guard_ring_span(techparams)
+    if w < min_span or h < min_span:
+        raise ValueError(
+            f"generate_guard_ring: width/height must be >= "
+            f"{min_span}um (got w={w}um, h={h}um)"
+        )
 
     #*************************************************************************
     #*
@@ -115,6 +127,7 @@ def generate_guard_ring(dlo_gen: DloGen,
     #*
     #*************************************************************************
 
+    epsilon = techparams['epsilon1']         # for rounding purposes
     cont_size = techparams['Cnt_a']          # Cont width
     cont_space = techparams['Cnt_b']         # Min. Cont space
     cont_min_act_encl = techparams['Cnt_c']  # Min. Activ enclosure of Cont
@@ -164,12 +177,14 @@ def generate_guard_ring(dlo_gen: DloGen,
         #       we want to create the gap in the middle
 
         def num_contacts_and_remainder(available_span: float) -> Tuple[int, float]:
-            min_contacts = math.floor(available_span / (cont_size + cont_space))
+            # NOTE: epsilon keeps floating point noise from dropping a contact
+            #       when the span fits exactly (e.g. at the minimum guard ring size)
+            min_contacts = math.floor(available_span / (cont_size + cont_space) + epsilon)
             min_span = min_contacts * cont_size + (min_contacts - 2) * cont_space
             max_span = min_span + cont_size + cont_space
             num_contacts: int
             remainder: float
-            if available_span - max_span >= cont_space:
+            if available_span - max_span >= cont_space - epsilon:
                 remainder = available_span - max_span
                 num_contacts = min_contacts + 1
             else:
@@ -273,9 +288,12 @@ def generate_guard_ring(dlo_gen: DloGen,
 class guard_ring(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
+        techparams = specs.tech.getTechParams()
+        min_span = min_guard_ring_span(techparams) * 1e-6
+
         specs('type', 'nwell', 'Guard Ring Type', ChoiceConstraint(['nwell', 'psub']))  # 'dnwell'
-        specs('w', '3.05u', 'Width', RangeConstraint(MIN_GUARD_RING_SPAN_UM * 1e-6, None))
-        specs('h', '3.05u', 'Height', RangeConstraint(MIN_GUARD_RING_SPAN_UM * 1e-6, None))
+        specs('w', '3.05u', 'Width', RangeConstraint(min_span, None))
+        specs('h', '3.05u', 'Height', RangeConstraint(min_span, None))
 
     def setupParams(self, params):
         # process parameter values entered by user
