@@ -41,10 +41,10 @@ else:
 
 # Single source of truth for the minimum guard-ring span, in micrometers.
 # Matches the lower bound used by the existing Magic guard-ring helper.
-# Both the standalone `guard_ring` PCell (via RangeConstraint, enforced by
-# KLayout's native PCellParameterDeclaration) and `generate_guard_ring()`
-# (called directly by DeviceBase.genLayout() with computed w/h, bypassing
-# param specs) must respect this value.
+# The standalone `guard_ring` PCell declares it as a RangeConstraint, but
+# KLayout does not enforce min/max values on string parameters, so the
+# actual check happens in `generate_guard_ring()` (which is also called
+# directly by DeviceBase.genLayout() with computed w/h).
 MIN_GUARD_RING_SPAN_UM = 0.6
 
 
