@@ -30,12 +30,15 @@ from .utility_functions import *
 from typing import List
 
 
+MIN_GUARD_RING_DISTANCE_UM = 0.6
+
+
 class DeviceBase(DloGen):
     @classmethod
     def defineParamSpecs(cls, specs):
         choices = [c.value for c in cls.validGuardRingTypes()]
         specs('guardRingType', 'none', 'Guard Ring Type', ChoiceConstraint(choices))
-        specs('guardRingDistance', '1u', 'Guard Ring Distance', RangeConstraint(0, None))
+        specs('guardRingDistance', '1u', 'Guard Ring Distance', RangeConstraint(MIN_GUARD_RING_DISTANCE_UM * 1e-6, None))
 
     def setupParams(self, params):
         # process parameter values entered by user
