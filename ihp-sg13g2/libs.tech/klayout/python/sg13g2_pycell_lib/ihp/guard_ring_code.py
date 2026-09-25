@@ -249,7 +249,8 @@ def generate_guard_ring(dlo_gen: DloGen,
             dbCreateRect(dlo_gen, lyr, box_right),
         ]
         dbLayerOrList(lyr, mlist)
-        for shape in mlist:
+        # NOTE: dbLayerOrList already destroys the first shape
+        for shape in mlist[1:]:
             dbDeleteObject(shape)
 
     def draw_well_box(lyr: Layer,
