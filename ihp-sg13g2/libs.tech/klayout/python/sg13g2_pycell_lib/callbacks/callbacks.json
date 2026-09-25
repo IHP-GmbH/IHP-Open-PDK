@@ -28,7 +28,8 @@
         "inductor_cb.tcl",
         "isolbox_cb.tcl",
         "res_cb.tcl",
-        "mos_cb.tcl"
+        "mos_cb.tcl",
+        "guard_ring_cb.tcl"
     ],
     "callbackDefinition": {
         "callbackList": [
@@ -43,7 +44,22 @@
                 ]
             },
             {
-                "devices": ["cmim", "rfcmim"],
+                "devices": ["cmim"],
+                "callbacks": [
+                    {
+                        "callback": "CbCap",
+                        "pcellParameters": ["C", "w", "l", "Calculate"],
+                        "usePcellParameterAsArgument": "true"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["rfcmim"],
                 "callbacks": [
                     {
                         "callback": "CbCap",
@@ -69,6 +85,11 @@
                         "callback": "CbSVaricap_wl",
                         "pcellParameters": ["w", "l"],
                         "usePcellParameterAsArgument": "true"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -79,6 +100,11 @@
                         "callback": "CbDiode",
                         "pcellParameters": ["w", "l", "a", "p", "Calculate"],
                         "usePcellParameterAsArgument": "true"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -119,6 +145,11 @@
                         "callback": "inductor_d",
                         "pcellParameters": ["d"],
                         "usePcellParameterAsArgument": "false"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -154,6 +185,11 @@
                         "callback": "CbRes",
                         "pcellParameters": ["R", "w", "l", "ps", "Calculate"],
                         "usePcellParameterAsArgument": "true"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -165,6 +201,11 @@
                         "pcellParameters": ["R", "w", "l", "b", "ps", "Calculate", "Recommendation"],
                         "parameterMappings": ["Recommendation➜Calculate"],
                         "usePcellParameterAsArgument": "true"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -184,6 +225,11 @@
                     {
                         "callback": "NLCB_mos_l",
                         "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
                         "usePcellParameterAsArgument": "no"
                     }
                 ]
@@ -205,6 +251,11 @@
                         "callback": "NLCB_mos_l",
                         "pcellParameters": ["l"],
                         "usePcellParameterAsArgument": "no"
+                    },
+                    {
+                        "callback": "CbGuardRingDistance",
+                        "pcellParameters": ["guardRingDistance"],
+                        "usePcellParameterAsArgument": "no"
                     }
                 ]
             },
@@ -219,6 +270,16 @@
                     {
                         "callback": "NLCB_l",
                         "pcellParameters": ["l"],
+                        "usePcellParameterAsArgument": "no"
+                    }
+                ]
+            },
+            {
+                "devices": ["guard_ring"],
+                "callbacks": [
+                    {
+                        "callback": "CbGuardRingSize",
+                        "pcellParameters": ["w", "h"],
                         "usePcellParameterAsArgument": "no"
                     }
                 ]
