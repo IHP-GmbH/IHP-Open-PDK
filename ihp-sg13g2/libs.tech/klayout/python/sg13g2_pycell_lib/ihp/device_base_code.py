@@ -45,8 +45,9 @@ class DeviceBase(DloGen):
         self.guardRingType     = GuardRingType(params['guardRingType'])
         self.guardRingDistance = Numeric(params['guardRingDistance'])*1e6
 
-        # NOTE: KLayout does not enforce the RangeConstraint on string parameters,
-        #       so reject too small distances before any geometry is generated
+        # NOTE: KLayout does not enforce the RangeConstraint on string parameters.
+        #       The CbGuardRingDistance callback (guard_ring_cb.tcl) normally corrects
+        #       too small distances, this is the fallback when callbacks are unavailable
         if self.guardRingType != GuardRingType.NONE and \
            self.guardRingDistance < MIN_GUARD_RING_DISTANCE_UM:
             raise ValueError(

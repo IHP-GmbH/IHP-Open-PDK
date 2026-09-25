@@ -45,9 +45,10 @@ def min_guard_ring_span(techparams: dict) -> float:
     so that each of the four sides of the ring still gets at least one contact.
 
     The standalone `guard_ring` PCell declares it as a RangeConstraint, but
-    KLayout does not enforce min/max values on string parameters, so the
-    actual check happens in `generate_guard_ring()` (which is also called
-    directly by DeviceBase.genLayout() with computed w/h).
+    KLayout does not enforce min/max values on string parameters. The
+    CbGuardRingSize callback (guard_ring_cb.tcl) normally corrects too small
+    values, the fallback check happens in `generate_guard_ring()` (which is
+    also called directly by DeviceBase.genLayout() with computed w/h).
     """
     cont_size = techparams['Cnt_a']
     cont_space = techparams['Cnt_b']
