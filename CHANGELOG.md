@@ -99,6 +99,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 #### LVS / DRC
+- KLayout LVS: RF MOS devices keep their layout geometry. They are now compared as the extracted `rf*` device classes, the netlist reader maps base models with `rfmode=1` to them. `rfmos_model_mapping.lvs`, which replaced them by new devices without device abstract, is removed
 - KLayout LVS: fixed LVS testing regression (#1126)
 - LVS: fixed SBD under CMIM issue; added testcase ([#1030](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1030))
 - KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
