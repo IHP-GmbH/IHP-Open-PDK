@@ -63,6 +63,15 @@ pcellSVaricap = layout.create_cell("SVaricap", "SG13_dev", {})
 pcellEsd = layout.create_cell("esd", "SG13_dev", {})
 pcellIsolbox = layout.create_cell("isolbox", "SG13_dev", {})
 
+# Guard rings (standalone cell, both types; nwell also covers the nBuLay ring)
+pcellGuardRingNwell = layout.create_cell("guard_ring", "SG13_dev", {"type": "nwell"})
+pcellGuardRingPsub = layout.create_cell("guard_ring", "SG13_dev", {"type": "psub"})
+
+# Devices with guard ring option enabled (via DeviceBase)
+pcellNmosGuarded = layout.create_cell("nmos", "SG13_dev", {"l": "0.35u", "w": "6u", "ng": 3, "guardRingType": "psub"})
+pcellPmosGuarded = layout.create_cell("pmos", "SG13_dev", {"l": "0.35u", "w": "6u", "ng": 3, "guardRingType": "nwell"})
+pcellSVaricapGuarded = layout.create_cell("SVaricap", "SG13_dev", {"guardRingType": "nwell"})
+
 top = layout.create_cell("TOP")
 top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(4, 0))))
@@ -94,6 +103,11 @@ top.insert(pya.DCellInstArray(pcellSealring, pya.DTrans(pya.DVector(160, -190)))
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 60))))
 top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(40, 120))))
 top.insert(pya.DCellInstArray(pcellIsolbox, pya.DTrans(pya.DVector(20, 140))))
+top.insert(pya.DCellInstArray(pcellGuardRingNwell, pya.DTrans(pya.DVector(86, 25))))
+top.insert(pya.DCellInstArray(pcellGuardRingPsub, pya.DTrans(pya.DVector(93, 25))))
+top.insert(pya.DCellInstArray(pcellNmosGuarded, pya.DTrans(pya.DVector(100, 25))))
+top.insert(pya.DCellInstArray(pcellPmosGuarded, pya.DTrans(pya.DVector(115, 25))))
+top.insert(pya.DCellInstArray(pcellSVaricapGuarded, pya.DTrans(pya.DVector(130, 25))))
 
 output = "SG13_dev.gds"
 layout.write(output)
