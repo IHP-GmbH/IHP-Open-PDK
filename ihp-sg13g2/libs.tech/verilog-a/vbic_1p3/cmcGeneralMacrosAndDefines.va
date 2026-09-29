@@ -1,0 +1,275 @@
+
+//
+//  This file contains standard macro and constant definitions for use across compact models.
+//
+//  NOTE: macros that can be embedded in expressions to not include a trailing ";" termination
+//        whereas those that are to be used stand-alone do. If you add an extra ";" to the latter
+//        this is an error as NULL statements are not legal in Verilog-AMS.
+//  NOTE: macros that use local variables explicitly declare these, so no module
+//        level variables have to be declared to use the macros. This makes the
+//        macros stand-alone, but requires block names to passed as macro arguments
+//        as local variables can only be declared in named blocks in Verilog-AMS.
+//        The block names must be unique within a module.
+//
+
+//
+//  If you are using the Cadence Spectre (c) simulator for versions that do
+//  not support the $mfactor hierarchical system parameter, you must make sure
+//  that the line below is NOT commented out and that __SPECTRE__ is defined.
+//  This makes the handling of he multiplicity factor work for this simulator.
+//
+
+//`define __SPECTRE__
+
+//
+//  Release:  N.N.N
+//  Date:     DATE
+//  Comments: From split of r3_cmc macrosAndDefines_cmc.va into separate functional include files.
+//
+
+`ifdef haveIncludededCmcGeneralMacrosAndDefines
+`else
+    `define haveIncludededCmcGeneralMacrosAndDefines
+
+    //
+    //  Physical constants and other generally useful numbers
+    //
+
+    `define TABS_NIST2004     273.15                 // (NIST2004) 0C in K
+    `define QQ_NIST2004       1.60217653e-19         // (NIST2004) mag. of electronic charge (C)
+    `define KB_NIST2004       1.3806505e-23          // (NIST2004) Boltzmann constant (J/K)
+    `define EPS0_NIST2004     8.854187817e-12        // (NIST2004) Electric constant (F/m)
+    `define EPS_OX            3.45313324863e-11      // EPS0_NIST2004*3.90 (F/m)
+    `define EPS_SI            1.035939974589e-10     // EPS0_NIST2004*11.7 (F/m)
+    `define oneSixth          0.1666666666666667
+    `define oneThird          0.3333333333333333
+    `define twoThirds         0.6666666666666667
+    `define sqrtTwo           1.414213562373095
+    `define inv_sqrtTwo       0.7071067811865475
+    `define egTsividis(Eg,t_K) \
+        if (t_K<300.0) begin \
+            Eg = 1.17850-t_K*(9.025e-05-t_K*3.05e-07); \
+        end else begin \
+            Eg = 1.20595-t_K*2.7325e-04; \
+        end
+
+    //
+    //  Clipping macros, these smoothly limit to lower, upper, or both lower and upper
+    //  limits. Rather than using a sqrt or log-exp form, which affects values
+    //  everywhere, these use a conditional form that is continuous in function
+    //  and derivative. If a value is not clipped then no exp() evaluation occurs.
+    //  Smooth limiting is preferable to hard limiting (although latter can still
+    //  be useful for enforcing parameter limits) for bias dependent quantities
+    //  as derivatives do not become zero or have discontinuities.
+    //
+
+    `define CLIPL0p1(XCLIP,X,LOWER) \
+        if (X<(LOWER+0.1)) begin \
+            XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+    `define CLIPU0p1(XCLIP,X,UPPER) \
+        if (X>(UPPER-0.1)) begin \
+            XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+    `define CLIPB0p1(XCLIP,X,LOWER,UPPER) \
+        if (X<(LOWER+0.1)) begin \
+            XCLIP    =  LOWER+0.1*exp(10.0*(X-LOWER)-1.0); \
+        end else if (X>(UPPER-0.1)) begin \
+            XCLIP    =  UPPER-0.1*exp(10.0*(UPPER-X)-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+    `define CLIPL1p0(XCLIP,X,LOWER) \
+        if (X<(LOWER+1.0)) begin \
+            XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+    `define CLIPU1p0(XCLIP,X,UPPER) \
+        if (X>(UPPER-1.0)) begin \
+            XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+    `define CLIPB1p0(XCLIP,X,LOWER,UPPER) \
+        if (X<(LOWER+1.0)) begin \
+            XCLIP    =  LOWER+exp(X-LOWER-1.0); \
+        end else if (X>(UPPER-1.0)) begin \
+            XCLIP    =  UPPER-exp(UPPER-X-1.0); \
+        end else begin \
+            XCLIP    =  X; \
+        end
+
+    //
+    //  Hard clamping and sqrt clamping macros
+    //
+
+    `define MAX(x,y)            ((x)>(y)?(x):(y))
+    `define MIN(x,y)            ((x)<(y)?(x):(y))
+    `define CLAMP(val,min,max) `MIN(max,`MAX(val,min))
+    `define MAXA(x,y,a)         (0.5*((x)+(y)+sqrt(((x)-(y))*((x)-(y))+(a))))
+    `define MINA(x,y,a)         (0.5*((x)+(y)-sqrt(((x)-(y))*((x)-(y))+(a))))
+
+    `ifdef insideADMS
+        `ifdef notInsideADMS
+            `undef  notInsideADMS
+        `endif
+    `else
+        `define notInsideADMS
+    `endif
+    `ifdef __VAMS_COMPACT_MODELING__
+        `ifdef not__VAMS_COMPACT_MODELING__
+            `undef  not__VAMS_COMPACT_MODELING__
+        `endif
+    `else
+        `define not__VAMS_COMPACT_MODELING__
+    `endif
+
+    //
+    //  Conditional definitions of macros so that the code will work with
+    //  Verilog-AMS 2.1 and 2.2/ADMS. The "des" description argument is intended to
+    //  be a short description, the "inf" information argument is intended to be
+    //  a detailed description (e.g. for display as part of on-line help).
+    //
+    //  MPR      model    parameter real
+    //  MPI      model    parameter integer
+    //  IPR      instance parameter real
+    //  IPI      instance parameter integer
+    //  IPM      instance parameter mFactor (multiplicity, implicit for LRM2.2)
+    //  OPP      operating point parameter, includes units and description for printing
+    //
+    //  There are some issues with passing range directives with some compilers,
+    //  so for each parameter declaration there are multiple versions:
+    //
+    //  cc       closed lower bound, closed upper bound
+    //  co       closed lower bound, open   upper bound
+    //  oc       open   lower bound, closed upper bound
+    //  oo       open   lower bound, open   upper bound
+    //  nb       no bounds
+    //  sw       switch (integer only, values  0=false  and  1=true)
+    //  ty       switch (integer only, values -1=n-type and +1=p-type)
+    //
+
+    `ifdef __VAMS_COMPACT_MODELING__
+        `define ALIAS(alias,paramName) aliasparam alias = paramName;
+        `define OPP(nam,uni,des)               (*units=uni,                             desc=des*)           real    nam;
+        `define MPRcc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from[lwr:upr];
+        `define MPRco(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from[lwr:upr);
+        `define MPRoc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from(lwr:upr];
+        `define MPRoo(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def from(lwr:upr);
+        `define MPRnb(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter real    nam=def;
+        `define MPIcc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[lwr:upr];
+        `define MPIco(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[lwr:upr);
+        `define MPIoc(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from(lwr:upr];
+        `define MPIoo(nam,def,uni,lwr,upr,des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from(lwr:upr);
+        `define MPInb(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def;
+        `define MPIsw(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[  0:  1];
+        `define MPIty(nam,def,uni,        des) (*units=uni,                  ask="yes", desc=des*) parameter integer nam=def from[ -1:  1] exclude 0;
+        `define IPRcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from[lwr:upr];
+        `define IPRco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from[lwr:upr);
+        `define IPRoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from(lwr:upr];
+        `define IPRoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def from(lwr:upr);
+        `define IPRnb(nam,def,uni,        des) (*units=uni, type="instance", ask="yes", desc=des*) parameter real    nam=def;
+        `define IPIcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from[lwr:upr];
+        `define IPIco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from[lwr:upr);
+        `define IPIoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from(lwr:upr];
+        `define IPIoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from(lwr:upr);
+        `define IPInb(nam,def,uni,        des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def;
+        `define IPIsw(nam,def,uni,        des) (*units=uni, type="instance", ask="yes", desc=des*) parameter integer nam=def from[  0:  1];
+        `ifdef insideADMS
+            `define IPM                        (*units="" , type="instance", ask="yes", desc="multiplicity factor"*) parameter real m=1.0 from(0.0:inf);
+        `else // notInsideADMS
+            `ifdef __SPECTRE__
+                `define IPM parameter real (* integer inherited_mfactor; *) m = 1.0 from(0.0:inf];
+            `else
+                `ifdef __OPENVAF__
+                    `define IPM (*units="" , type="instance", ask="yes", desc="multiplicity factor"*) parameter real m=1.0 from(0.0:inf);
+                `else
+                    `define IPM
+                `endif
+            `endif
+        `endif
+        `define TESTGIVEN(paramName) $param_given(paramName)
+        `define GIVEN(paramName,variable,true,false) \
+            if ($param_given(paramName)) begin \
+                variable = true; \
+            end else begin \
+                variable = false; \
+            end
+        `define SCALE \
+            if ($param_given(scale)) begin \
+                scaleFac =  scale; \
+            end else begin \
+                scaleFac = $simparam("scale",1.0); \
+            end
+        `define SHRINKL \
+            if ($param_given(shrink)) begin \
+                shrinkL  =  1.0-0.01*shrink; \
+            end else begin \
+                shrinkL  =  1.0-0.01*$simparam("shrink",0.0); \
+            end
+        `define GMIN \
+            if ($param_given(gmin)) begin \
+                gminMod  =  gmin; \
+            end else begin \
+                gminMod  = $simparam("gmin",1.0e-12); \
+            end
+        `define IMAX \
+            if ($param_given(imax)) begin \
+                imaxMod  =  imax; \
+            end else begin \
+                imaxMod  = $simparam("imax",1.0); \
+            end
+        `ifdef __SPECTRE__
+            `define MFACTOR_DEC mMod     = m;
+            `define MFACTOR_USE mMod
+        `else
+            `define MFACTOR_DEC mMod     = $mfactor;
+            `ifdef __OPENVAF__
+                `define MFACTOR_USE m
+            `else
+                `define MFACTOR_USE 1.0
+            `endif
+        `endif
+    `else // not__VAMS_COMPACT_MODELING__
+        `define ALIAS(alias,paramName)
+        `define OPP(nam,uni,des) real nam;
+        `define MPRcc(nam,def,uni,lwr,upr,des) parameter real    nam=def from[lwr:upr];
+        `define MPRco(nam,def,uni,lwr,upr,des) parameter real    nam=def from[lwr:upr);
+        `define MPRoc(nam,def,uni,lwr,upr,des) parameter real    nam=def from(lwr:upr];
+        `define MPRoo(nam,def,uni,lwr,upr,des) parameter real    nam=def from(lwr:upr);
+        `define MPRnb(nam,def,uni,        des) parameter real    nam=def;
+        `define MPIcc(nam,def,uni,lwr,upr,des) parameter integer nam=def from[lwr:upr];
+        `define MPIco(nam,def,uni,lwr,upr,des) parameter integer nam=def from[lwr:upr);
+        `define MPIoc(nam,def,uni,lwr,upr,des) parameter integer nam=def from(lwr:upr];
+        `define MPIoo(nam,def,uni,lwr,upr,des) parameter integer nam=def from(lwr:upr);
+        `define MPInb(nam,def,uni,        des) parameter integer nam=def;
+        `define MPIsw(nam,def,uni,        des) parameter integer nam=def from[  0:  1];
+        `define MPIty(nam,def,uni,        des) parameter integer nam=def from[ -1:  1] exclude 0;
+        `define IPRcc(nam,def,uni,lwr,upr,des) parameter real    nam=def from[lwr:upr];
+        `define IPRco(nam,def,uni,lwr,upr,des) parameter real    nam=def from[lwr:upr);
+        `define IPRoc(nam,def,uni,lwr,upr,des) parameter real    nam=def from(lwr:upr];
+        `define IPRoo(nam,def,uni,lwr,upr,des) parameter real    nam=def from(lwr:upr);
+        `define IPRnb(nam,def,uni,        des) parameter real    nam=def;
+        `define IPIcc(nam,def,uni,lwr,upr,des) parameter integer nam=def from[lwr:upr];
+        `define IPIco(nam,def,uni,lwr,upr,des) parameter integer nam=def from[lwr:upr);
+        `define IPIoc(nam,def,uni,lwr,upr,des) parameter integer nam=def from(lwr:upr];
+        `define IPIoo(nam,def,uni,lwr,upr,des) parameter integer nam=def from(lwr:upr);
+        `define IPInb(nam,def,uni,        des) parameter integer nam=def;
+        `define IPIsw(nam,def,uni,        des) parameter integer nam=def from[  0:  1];
+        `define IPM                            parameter real      m=1.0 from(0.0:inf);
+        `define TESTGIVEN(paramName) 1
+        `define GIVEN(paramName,variable,true,false) variable = true;
+        `define SCALE   scaleFac =  scale;
+        `define SHRINKL shrinkL  =  1.0-0.01*shrink;
+        `define GMIN    gminMod  =  gmin;
+        `define IMAX    imaxMod  =  imax;
+        `define MFACTOR_DEC mMod =  m;
+        `define MFACTOR_USE mMod
+    `endif // __VAMS_COMPACT_MODELING
+
+`endif // haveIncludededCmcGeneralMacrosAndDefines

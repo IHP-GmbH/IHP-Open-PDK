@@ -1,0 +1,24 @@
+// load modelgen plugins
+load mgsim
+
+verilog
+// include testbench
+include ./tb_cap_cmomf.va
+include ./consts.params
+
+options numdgt=9
+
+// instantiate the testbench module
+tb_cap_cmomf tb(out1);
+
+// run ac
+dc
+print ac v(out1)
+store ac v(out1)
+ac dec 1e3 1e6 1e9 basic
+// measure the -3 dB cutoff frequency
+measure fcut1 = cross(probe="v(out1)" cross=0.707 rise first)
+// approximate capacitance from cutoff frequency
+// TODO: braces required to parse RHS as expression and not literal
+parameter C1 = {1.0 / (M_TWO_PI * fcut1 * 1e5)}
+eval C1

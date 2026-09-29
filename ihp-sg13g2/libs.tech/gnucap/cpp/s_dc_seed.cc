@@ -566,6 +566,7 @@ void DCOP::sweep_recursive(int Nest)
       outdata(*_sweepval[Nest], ofPRINT | ofSTORE | ofKEEP);
       itl = OPT::DCXFER;
     }else{
+      _sim->clear_limit();
       sweep_recursive(Nest);
     }
   } while (next(Nest));

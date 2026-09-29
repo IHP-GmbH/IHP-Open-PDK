@@ -1,0 +1,113 @@
+//******************************************************************************
+//                                                                             *
+// Library:      SG13G2_dev                                                    *
+// Technologies: SG13G2                                                        *
+//                                                                             *
+// Model:        PSP 103.6                                                     *
+// Revision:     200310                                                        *
+//                                                                             *
+//******************************************************************************
+//                                                                             *
+// Copyright 2026 IHP PDK Authors                                              *
+//                                                                             *
+// Licensed under the Apache License, Version 2.0 (the "License");             *
+// you may not use this file except in compliance with the License.            *
+// You may obtain a copy of the License at                                     *
+//                                                                             *
+//     https://www.apache.org/licenses/LICENSE-2.0                             *
+//                                                                             *
+// Unless required by applicable law or agreed to in writing, software         *
+// distributed under the License is distributed on an "AS IS" BASIS,           *
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
+// See the License for the specific language governing permissions and         *
+// limitations under the License.                                              *
+//                                                                             *
+//******************************************************************************
+//******************************************************************************
+//                                                                             *
+//                                                                             *
+//              C O M M O N    SG 13  M O S     M O D E L S                    *
+//                                                                             *
+//                                                                             *
+//******************************************************************************
+//
+// NOTE: do not include this file directly in the netlist, use models.typ, .bcs or .wcs only
+//
+//
+//
+//******************************************************************************
+// MOS capacitors
+//******************************************************************************
+
+//******************************************************************************
+// Verilog-A MOSCAP device modules
+// Ported from `ngspice/models/sg13g2_moscap_mod.lib`
+//
+// Modifications:
+// - Fixed values for SPICE instance parameter ngcon, delvto, and factuo are
+//   assigned in the paramsets.
+// - SWSOA parameter is set to zero in paramset TODO: user settable?
+// - pre_layout, rfmode and mm_ok parameters are forwarded to paramset
+//
+// (c) Lukas Deutz 2026
+//******************************************************************************
+
+//******************************************************************************
+// NMOS MOSCAP
+//******************************************************************************
+
+(* desc="SG13G2 NMOS MOSCAP module" *)
+module sg13_moscap_n(g, sub);
+    inout g, sub;
+    electrical g, sub;
+    (* desc="Device width", units="m" *)
+    parameter real w = 1.0u from [1u:30u];
+    (* desc="Device length", units="m" *)
+    parameter real l = 1.0u from [1u:30u];
+    (* desc="Instance multiplicity" *)
+    parameter real m = 1.0 from (0:1e99); // TOOD: 1e99->inf once fixed
+    (* desc="Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:1];
+    (* desc="Number of fingers" *)
+    parameter integer ng = 1 from [1:1e99); // TOOD: 1e99->inf once fixed
+    (* desc="Select psp103 RF/NQS model (not supported yet)" *)
+    parameter integer rfmode = 0 from [0:0];
+    (* desc="Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    localparam real as = w * 0.34e-6;
+    localparam real ad = w * 0.34e-6;
+    localparam real ps = 2 * (w + 0.34e-6);
+    localparam real pd = 2 * (w + 0.34e-6);
+    // TODO: linebreak when supported
+    sg13g2_moscap_n_psp #(.w(w), .l(l), .nf(ng), .mult(m), .pre_layout(pre_layout), .rfmode(rfmode), .mm_ok(mm_ok), .as(as), .ad(ad), .ps(ps), .pd(pd)) Nsg13_moscap_n(sub, g, sub, sub);
+endmodule
+
+//******************************************************************************
+// PMOS MOSCAP
+//******************************************************************************
+
+(* desc="SG13G2 PMOS MOSCAP module" *)
+module sg13_moscap_p(g, nw);
+    inout g, nw;
+    electrical g, nw;
+    (* desc="Device width", units="m" *)
+    parameter real w = 1.0u from [1u:30u];
+    (* desc="Device length, units="m" *)
+    parameter real l = 1.0u from [1u:30u];
+    (* desc="Instance multiplicity" *)
+    parameter real m = 1.0 from (0:1e99); // TOOD: 1e99->inf once fixed
+    (* desc="Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:1];
+    (* desc="Number of fingers" *)
+    parameter integer ng = 1 from [1:199); // TOOD: 1e99->inf once fixed
+    (* desc="Select psp103 RF/NQS model (not supported yet)" *)
+    parameter integer rfmode = 0 from [0:0];
+    (* desc="Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    localparam real as = w * 0.34e-6;
+    localparam real ad = w * 0.34e-6;
+    localparam real ps = 2 * (w + 0.34e-6);
+    localparam real pd = 2 * (w + 0.34e-6);
+    // TODO: linebreak when supported
+    sg13g2_moscap_p_psp #(.w(w), .l(l), .nf(ng), .mult(m), .pre_layout(pre_layout), .rfmode(rfmode), .mm_ok(mm_ok), .as(as), .ad(ad), .ps(ps), .pd(pd)) Nsg13_moscap_p(nw, g, nw, nw);
+endmodule

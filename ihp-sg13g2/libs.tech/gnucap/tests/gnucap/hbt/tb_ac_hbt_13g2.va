@@ -1,0 +1,22 @@
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+// load models plugins
+load vams/vsine.so
+load ../../../plugins/models/sg13g2_hbt_paramset.so
+// include hbt wrapper modules
+include ../../../models/sg13g2_hbt_module.va
+
+module tb_ac_hbt_13g2(vc, vb);
+    // ports
+    inout vc, vb;
+    electrical vc, vb;
+    // internal nodes
+    electrical vcc, vin;
+    ground gnd;
+
+    vsource #(.dc(5.0)) vce(vcc, gnd);
+    resistor #(.r(40k)) r1(vcc, vc);
+    vsine #(.mag(1m), .dc(0.8)) vce1(vin, gnd);
+    resistor #(.r(33k)) r2(vb, vin);
+    npn13G2 #(.Nx(1), .mm_ok(0), .selft(0)) q1(vc, vb, gnd, gnd);
+endmodule

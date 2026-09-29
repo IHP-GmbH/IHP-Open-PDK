@@ -1,0 +1,22 @@
+// load modelgen simulation plugin
+load mgsim
+load ../../../plugins/models/
+
+verilog
+`include ../../../models/cornerMOSCAP.va
+`include tb_moscap_nmos_tran.va
+
+// use gear integration method to suppress ringing
+options method=gear
+
+moscap_tt corner_moscap();
+tb_moscap_nmos_tran tb(g);
+
+print tran v(g) i(tb.V1)
+tran 0.1n 410n basic
+
+
+
+
+
+

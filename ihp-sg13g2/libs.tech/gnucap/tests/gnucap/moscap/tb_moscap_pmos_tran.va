@@ -1,0 +1,11 @@
+`include ../../../models/sg13g2_moscap_module.va
+
+module tb_moscap_pmos_tran(g);
+    inout g;
+    ground gnd;
+    electrical vdd;
+
+    vpulse #(.val0(0.0), .val1(2.4), .td(10n), .rise(400n)) V1(g, gnd);
+    vsource #(.dc(1.2)) V2(vdd, gnd);
+    sg13_moscap_p #(.w(1.0u), .l(1.0u), .m(1)) C1(g, vdd);
+endmodule
