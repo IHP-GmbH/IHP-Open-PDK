@@ -33,11 +33,17 @@ if TABLES.include?('topmetal2filler') || BEOL
   end
 
   # Rule TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is 3 um
+  # sep() only catches exterior spacing; overlap (filler inside drawing) is
+  # geometrically a zero-distance violation of the same rule, so the .and()
+  # intersection is emitted under the same rule name.
   logger.info('Executing rule TM2Fil.c')
   tm2fil_c_value = drc_rules['TM2Fil_c'].to_f
-  tm2fil_c_l = topmetal2_drw.sep(topmetal2_filler, tm2fil_c_value.um, euclidian)
-  tm2fil_c_l.output('TM2Fil.c', "5.26. TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is #{tm2fil_c_value} um")
-  tm2fil_c_l.forget
+  tm2fil_c_sep = topmetal2_drw.sep(topmetal2_filler, tm2fil_c_value.um, euclidian)
+  tm2fil_c_ovl = topmetal2_drw.and(topmetal2_filler)
+  tm2fil_c_sep.output('TM2Fil.c', "5.26. TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is #{tm2fil_c_value} um")
+  tm2fil_c_ovl.output('TM2Fil.c', "5.26. TM2Fil.c : Min. TopMetal2:filler space to TopMetal2 is #{tm2fil_c_value} um")
+  tm2fil_c_sep.forget
+  tm2fil_c_ovl.forget
 
   unless PRECHECK_DRC
     # Rule TM2Fil.a1: Max. TopMetal2:filler width
