@@ -1,0 +1,47 @@
+# filler_polyres_overlap_check.drc
+#
+# Standalone optional check. Not wired into run_drc.py, precheck_drc or maximal.
+# Flags GatPoly:filler (5/22) overlapping or too close to PolyRes.drawing (128/0),
+# which is the scenario reported in issue #917.
+#
+# Why this lives outside the main decks:
+#   sg13g2_beol.lyd25 declares GatPoly = input(5,0) | PolyRes and Rsil =
+#   PolyRes - Rhigh - Rppd, so PolyRes is part of the physical poly silicon in
+#   the 2.5D stackup; filler on PolyRes is a poly short. SG13G2_os_layout_rules.pdf
+#   Rev. 0.4 (ihp-sg13g2/libs.doc/doc/SG13G2_os_layout_rules.pdf) does not list
+#   PolyRes in GFil.d or Gat.b, so extending the official decks requires a DRM
+#   update. Until that happens, this deck is an opt-in sanity check and nothing
+#   more.
+#
+# Usage:
+#   klayout -b -r filler_polyres_overlap_check.drc \
+#       -rd input=<layout.gds[.gz]> -rd report=<out.lyrdb>
+#
+# Proposed final path if accepted upstream:
+#   ihp-sg13g2/libs.tech/klayout/tech/drc/rule_decks/optional/filler_polyres_overlap_check.drc
+
+raise 'no input layout (pass -rd input=<path>)' unless $input
+
+report_path = $report || 'filler_polyres_overlap.lyrdb'
+
+source($input)
+report 'Filler over PolyRes, extended check (issue #917)', report_path
+
+gatpoly_filler = input(5, 22)
+polyres_drw    = input(128, 0)
+
+puts "[info] GatPoly.filler polygons (5/22): #{gatpoly_filler.count}"
+puts "[info] PolyRes.drawing polygons (128/0): #{polyres_drw.count}"
+
+# A. Overlap; a real poly short per the 2.5D stackup
+overlap = gatpoly_filler & polyres_drw
+puts "[info] Overlap polygons (filler on PolyRes): #{overlap.count}"
+overlap.output('GatPolyFil.PolyRes.overlap',
+               'GatPoly:filler overlaps PolyRes.drawing; physical poly short per D25 (GatPoly = 5/0 | PolyRes)')
+
+# B. Proximity; mirrors GFil.d intent (1.10 um) extended to PolyRes.
+#    Uses sep(), so it catches external edge pairs only, not overlap (A covers that).
+near = polyres_drw.sep(gatpoly_filler, 1.10.um, euclidian)
+puts "[info] Proximity edge pairs (<1.10 um): #{near.count}"
+near.output('GatPolyFil.PolyRes.sep',
+            'GatPoly:filler closer than 1.10 um to PolyRes.drawing (GFil.d intent, extended)')
