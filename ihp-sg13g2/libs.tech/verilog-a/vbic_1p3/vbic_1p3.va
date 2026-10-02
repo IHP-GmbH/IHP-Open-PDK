@@ -2,7 +2,7 @@
 `define VERSION     1
 `define SUBVERSION  3
 `define REVISION    0
-`define e       4
+`define LEVEL       4
 
 //
 //  Verilog-A definition of VBIC
@@ -301,6 +301,15 @@ branch (xf2)          c_xf2;
 `MPRnb( pnp       ,   0.0     ,""                        , "pnp transistor type")
 `MPIty( type      ,   1       ,""                        , "transistor type: +1=npn and -1=pnp (overriden by npn or pnp)")
 
+//
+//  Effective polarity as a genuine parameter (not an analog-block variable),
+//  so it can be used to guard $limit() calls that need a compile-time
+//  constant branch condition, and directly wherever the sign of the
+//  device polarity is needed (currents, charges, junction voltages).
+//  Precedence: npn=1 overrides pnp=1 overrides type.
+//
+parameter integer VBICtype = (npn > 0.5) ? `NPN : ((pnp > 0.5) ? `PNP : type);
+
 `MPRoc( scale     ,   1.0     ,""          ,   0.0,   1.0, "scale  factor for instance geometries")
 `MPRco( shrink    ,   0.0     ,"%"         ,   0.0, 100.0, "shrink percentage for instance geometries")
 `MPRcc( tmin      ,-100.0     ,"degC"      ,-250.0,  27.0, "minimum ambient temperature")
@@ -523,8 +532,6 @@ real dt_et,Ith,power,Irth,Qcth;
 real Vbei,Vbci,Vbex,Vbep,Vbcp,Vbcx,Vbxcx,Bvbe;
 real Vbe,Vbc,Vrcx,Vrci,Vrbx,Vrbi,Vre,Vrbp,Vrs,Vcei,Vcep;
 
-real VBICtype;
-
 real scaleFac, shrinkL, gminMod, imaxMod, mMod;
 //real ic,ib,ie,isub,powerT,powerD,Vce;
 //real Ircx_Vrcx,Irci_Vrci,Irbx_Vrbx,Irbi_Vrbi,Irbp_Vrbp,Ire_Vre,Irs_Vrs;
@@ -550,16 +557,6 @@ analog begin : analogBlock
             imaxMod  =  pnjmaxi;
         end else begin
             imaxMod  = $simparam("pnjmaxi",1.0);
-        end
-
-        if (`TESTGIVEN(npn)) begin
-            VBICtype = `NPN;
-        end else if (`TESTGIVEN(pnp)) begin
-            VBICtype = `PNP;
-        end else if (`TESTGIVEN(type)) begin
-            VBICtype = type;
-        end else begin
-            VBICtype = `NPN;
         end
 
         VmaxExp  =  ln(maxexp);
@@ -798,7 +795,7 @@ analog begin : analogBlock
         //
 
 `ifdef __NGSPICE__
-        if (type == `NPN) begin
+        if (VBICtype == `NPN) begin
             Vbei     =  $limit(V(bi,ei), "pnjlim", vtv, tVCrit);
             Vbex     =  $limit(V(bx,ei), "pnjlim", vtv, tVCrit);
             Vbci     =  $limit(V(bi,ci), "pnjlim", vtv, tVCrit);
@@ -1252,21 +1249,21 @@ analog begin : analogBlock
 
     begin : noise
         if (sw_noise) begin
-            I(b_bei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibe),"Ibei shot noise");
+            I(b_bei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibe/`MFACTOR_USE),"Ibei shot noise");
             I(b_bei) <+ flicker_noise(`MFACTOR_USE*kfn*pow(abs(Ibe/`MFACTOR_USE),afn),bfn,"Ibei flicker noise");
-            I(b_bex) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibex),"Ibex shot noise");
+            I(b_bex) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibex/`MFACTOR_USE),"Ibex shot noise");
             I(b_bex) <+ flicker_noise(`MFACTOR_USE*kfn*pow(abs(Ibex/`MFACTOR_USE),afn),bfn,"Ibex flicker noise");
-            I(b_cei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Itzf),"transport current shot noise");
-            I(b_bep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibep),"Ibep shot noise");
-            I(b_bep) <+ flicker_noise(`MFACTOR_USE*`MFACTOR_USE*kfn*pow(abs(Ibep/`MFACTOR_USE),afn),bfn,"Ibep flicker noise");
+            I(b_cei) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Itzf/`MFACTOR_USE),"transport current shot noise");
+            I(b_bep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Ibep/`MFACTOR_USE),"Ibep shot noise");
+            I(b_bep) <+ flicker_noise(`MFACTOR_USE*kfn*pow(abs(Ibep/`MFACTOR_USE),afn),bfn,"Ibep flicker noise");
             I(b_rcx) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gcx,"rcx thermal noise");
-            I(b_rci) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*((abs(Irci)+1.0e-10*Gci)/(abs(Vrci)+1.0e-10)),"rci thermal noise");
+            I(b_rci) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*((abs(Irci/`MFACTOR_USE)+1.0e-10*Gci)/(abs(Vrci)+1.0e-10)),"rci thermal noise");
             I(b_rbx) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gbx,"rbx thermal noise");
             I(b_rbi) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*qb*Gbi,"rbi thermal noise");
             I(b_re)  <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Ge,"re thermal noise");
             I(b_rbp) <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*qbp*Gbp,"rbp thermal noise");
 `ifdef fourTerminal
-                I(b_cep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Iccp),"parasitic transport current shot noise");
+                I(b_cep) <+ white_noise  (`MFACTOR_USE*2*`QQ_VBIC*abs(Iccp/`MFACTOR_USE),"parasitic transport current shot noise");
                 I(b_rs)  <+ white_noise  (`MFACTOR_USE*4*`KB_VBIC*tdevK*Gs,"rs thermal noise");
 `endif
         end
