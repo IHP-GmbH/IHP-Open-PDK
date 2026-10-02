@@ -1,0 +1,179 @@
+# OpenRCX process stack for SG13G2 (input to `gen_solver_patterns`).
+#
+# MAX RC corner (high R and C), derived from the TYP file with the process spec
+# tables: sheet resistance and line width delta (3.1, 3.2) min/max,
+# dielectric gaps scaled to the plate capacitance min/max (3.7). Metal
+# thickness at target (no tolerance specified).
+# Layer stack from SG13G2_os_process_spec.pdf Rev. 1.2, Fig. 1.1.1/1.1.2
+# (resistivity from ../../parasitics/itf/sg13g2_typ.itf, min width and
+# spacing from the tech LEF).
+# Units: um, ohm*um.
+#   CONDUCTOR distance   = gap to the top of the conductor below
+#                          (Metal1: to the substrate surface)
+#   DIELECTRIC next_met N = dielectrics filling that gap below metal N
+#   DIELECTRIC met N      = dielectrics at the level of metal N
+#   resistivity           = RPSQ * thickness (Al metallization)
+# Dielectric names follow OpenROAD's convention (m<N>_<k> at metal level N,
+# no 'm' in substrate/passivation names), which the FasterCap converter
+# script parses. The ITF layer name is given as a comment.
+#
+# Used to validate the FasterCap flow against IHP's IHP_rcx_patterns.rules
+# before trusting the CMOS5L result (see ../../../../ihp-sg13cmos5l/libs.tech/
+# librelane/openrcx/README.md).
+
+CONDUCTOR Metal1 {
+        distance 0.8949
+        thickness 0.42
+        min_width 0.16
+        min_spacing 0.18
+        resistivity 0.0567
+        width_delta +0.016
+}
+CONDUCTOR Metal2 {
+        distance 0.4478
+        thickness 0.49
+        min_width 0.20
+        min_spacing 0.21
+        resistivity 0.05047
+        width_delta +0.024
+}
+CONDUCTOR Metal3 {
+        distance 0.4478
+        thickness 0.49
+        min_width 0.20
+        min_spacing 0.21
+        resistivity 0.05047
+        width_delta +0.024
+}
+CONDUCTOR Metal4 {
+        distance 0.4478
+        thickness 0.49
+        min_width 0.20
+        min_spacing 0.21
+        resistivity 0.05047
+        width_delta +0.024
+}
+CONDUCTOR Metal5 {
+        distance 0.4478
+        thickness 0.49
+        min_width 0.20
+        min_spacing 0.21
+        resistivity 0.05047
+        width_delta +0.034
+}
+CONDUCTOR TopMetal1 {
+        distance 0.7049
+        thickness 2.0
+        min_width 1.64
+        min_spacing 1.64
+        resistivity 0.042
+        width_delta +0.100
+}
+CONDUCTOR TopMetal2 {
+        distance 2.322
+        thickness 3.0
+        min_width 2.0
+        min_spacing 2.0
+        resistivity 0.0435
+        width_delta +0.140
+}
+
+DIELECTRIC p1_1 {  # fox
+        epsilon 3.95
+        thickness 0.3442
+        next_met 1
+}
+DIELECTRIC m1_1 {  # ILD0 nitride
+        epsilon 6.5
+        thickness 0.04302
+        next_met 1
+}
+DIELECTRIC m1_2 {  # ILD0 oxide
+        epsilon 4.1
+        thickness 0.5077
+        next_met 1
+}
+DIELECTRIC m1_3 {  # ox1
+        epsilon 4.1
+        thickness 0.42
+        met 1
+}
+
+DIELECTRIC m2_1 {  # ox1
+        epsilon 4.1
+        thickness 0.4478
+        next_met 2
+}
+DIELECTRIC m2_2 {  # ox2
+        epsilon 4.1
+        thickness 0.49
+        met 2
+}
+
+DIELECTRIC m3_1 {  # ox2
+        epsilon 4.1
+        thickness 0.4478
+        next_met 3
+}
+DIELECTRIC m3_2 {  # ox3
+        epsilon 4.1
+        thickness 0.49
+        met 3
+}
+
+DIELECTRIC m4_1 {  # ox3
+        epsilon 4.1
+        thickness 0.4478
+        next_met 4
+}
+DIELECTRIC m4_2 {  # ox4
+        epsilon 4.1
+        thickness 0.49
+        met 4
+}
+
+DIELECTRIC m5_1 {  # ox4
+        epsilon 4.1
+        thickness 0.4478
+        next_met 5
+}
+DIELECTRIC m5_2 {  # ox5
+        epsilon 4.1
+        thickness 0.49
+        met 5
+}
+
+DIELECTRIC m6_1 {  # ox5
+        epsilon 4.1
+        thickness 0.7049
+        next_met 6
+}
+DIELECTRIC m6_2 {  # oxTopMetal1
+        epsilon 4.1
+        thickness 2.0
+        met 6
+}
+
+DIELECTRIC m7_1 {  # oxTopMetal1
+        epsilon 4.1
+        thickness 2.322
+        next_met 7
+}
+DIELECTRIC m7_2 {  # oxTopMetal2
+        epsilon 4.1
+        thickness 3.0
+        met 7
+}
+
+DIELECTRIC pass_1 {  # oxTopMetal2
+        epsilon 4.1
+        thickness 1.5
+}
+DIELECTRIC pass_2 {  # nitTop
+        epsilon 6.6
+        thickness 0.4
+}
+DIELECTRIC air_1 {  # air
+        epsilon 1.0
+        thickness 5.0
+}
