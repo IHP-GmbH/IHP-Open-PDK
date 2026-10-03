@@ -73,8 +73,10 @@ def add_via_testcases(layout: pya.Layout,
 
     region = pya.Region()
 
-    from sg13g2_pycell_lib.sg13_tech_info import TechInfo
-    via_names = [via.name for via in TechInfo.instance().vias]
+    from cni.tech import Tech
+    from sg13g2_pycell_lib.sg13_tech_info import TechInfoFactory
+    tech_info = TechInfoFactory.tech_info_for_tech(Tech.get("SG13_dev"))
+    via_names = [via.name for via in tech_info.vias]
     for via in via_names:
         for nx, ny in ((1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (1, 2), (4, 2), (5, 2), (1, 4), (2, 4), (2, 5)):
             inst = add_cell_and_instance(
