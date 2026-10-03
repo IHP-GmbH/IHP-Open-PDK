@@ -1,0 +1,98 @@
+* =========================================================================================
+* Copyright 2025 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* =========================================================================================
+
+*********
+*Sources*
+*********
+
+{# Current sources if defined #}
+{% if ib is defined %}Ib 0 b {{ ib }}{% endif %}
+{% if ic is defined %}Ic 0 c {{ ic }}{% endif %}
+{% if ie is defined %}Ie 0 e {{ ie }}{% endif %}
+
+{# Voltage sources based on sweep source #}
+{% if sweep_var == "Vcb" %}
+Vc  c 0 0
+Vb  b c 0
+    {% set ve_val = VE|default(0) %}
+    {% if ie is not defined %}Ve e 0 {{ ve_val }}{% endif %}
+
+{% elif sweep_var == "Vbe" %}
+Vb  b 0 0
+Ve  e b 0
+    {% set vc_val = VC|default(0) %}
+    {% if ic is not defined %}Vc c 0 {{ vc_val }}{% endif %}
+
+{% elif sweep_var == "Vce" %}
+Vc  c 0 0
+Ve  e c 0
+    {% set vb_val = VB|default(0) %}
+    {% if ib is not defined %}Vb b 0 {{ vb_val }}{% endif %}
+
+{% else %}
+    {% set vb_val = VB|default(0) %}
+    {% set vc_val = VC|default(0) %}
+    {% set ve_val = VE|default(0) %}
+    {% if ib is not defined %}Vb b 0 {{ vb_val }}
+    {% endif %}
+    {% if ic is not defined %}Vc c 0 {{ vc_val }}
+    {% endif %}
+    {% if ie is not defined %}Ve e 0 {{ ve_val }}
+    {% endif %}
+{% endif %}
+
+*********
+*Circuit*
+*********
+
+X1 c b e 0 {{ device_subckt }}
++ we={{ "%.4f"|format((W|default(0.12))|float) }}u
++ le={{ "%.4f"|format((L|default(0.96))|float) }}u
++ Nx={{ (Nx|default(1))|int }}
++ m={{ (M|default(1))|int }}
+
+* ============================================================================================
+* ----------------------------------------- ANALYSIS -----------------------------------------
+* ============================================================================================
+
+.temp {{ TEMP|default(27) }}
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  dc {{ sweep_src }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+
+  let ic = -i(Vc)
+  let ib = -i(Vb)  
+  let ie = -i(Ve)
+
+  wrdata {{ out_path }} v({{ sweep_node }}) {% for var in output_vars %}{% if var.startswith('v') %}v({{ var[1:] }}){% else %}{{ var }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+
+.endc
+
+* ============================================================================================
+* ------------------------------------- CIR/MODELS-SETUP -------------------------------------
+* ============================================================================================
+
+**************************
+*including files & models*
+**************************
+
+.lib {{ model_corner_lib }} {{ corner }}  
+
+.end
