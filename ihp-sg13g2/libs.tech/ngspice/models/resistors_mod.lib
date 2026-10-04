@@ -17,19 +17,19 @@
 *#######################################################################
 
 **ptap1 (TIE SUB)
-* In order to have consistency between the netlisted device format 
+* In order to have consistency between the netlisted device format
 * the w and l parameters are defined but not used.
 * The value of R is calculated by schematic capture tool.
-.subckt ptap1 1 2 
+.subckt ptap1 1 2
 .param R=262.8 w=0.78e-6 l=0.78e-6
 R1 1 2 R=R
 .ends ptap1
 
 **ntap1 (TIE WELL)
-* In order to have consistency between the netlisted device format 
+* In order to have consistency between the netlisted device format
 * the w and l parameters are defined but not used.
 * The value of R is calculated by schematic capture tool.
-.subckt ntap1 1 2 
+.subckt ntap1 1 2
 .param R=262.8 w=0.78e-6 l=0.78e-6
 R1 1 2 R=R
 .ends ntap1
@@ -69,7 +69,10 @@ NR1 1 bn 2 dt rmod_rsil L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
-+sw_mman=0
++sw_mman='(mm_ok != 1 ? 0 : 1)'
++nsmm_rsh='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_w='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_l='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
 
 .model rmod_rsil r3_cmc
 +rsh=rsh_rsil
@@ -95,12 +98,15 @@ NR1 1 bn 2 dt rmod_rsil L=leff W=weff m=m
 +kfn=2.812e-12
 +afn=1.607
 +bfn=1.267
-+nsig_rsh='agauss(0, 1, 1)' ; global number of standard deviations for rsh
-+nsig_w='agauss(0, 1, 1)'   ; global number of standard deviations for w
-+nsig_l='agauss(0, 1, 1)'   ; global number of standard deviations for l
-+sig_rsh=drsh_rsil          ; global relative standard deviation for rsh [%]
-+sig_w=dw_rsil              ; global absolute standard deviation for w [um]
-+sig_l=dl_rsil              ; global absolute standard deviation for l [um]
++nsig_rsh=nsig_rsh_rsil
++nsig_w=nsig_w_rsil
++nsig_l=nsig_l_rsil
++sig_rsh=drsh_rsil
++sig_w=dw_rsil
++sig_l=dl_rsil
++smm_rsh=rsh_rsil_mm
++smm_w=dw_rsil_mm
++smm_l=dl_rsil_mm
 
 .ends rsil
 
@@ -131,7 +137,10 @@ NR1 1 bn 2 dt rmod_rhigh L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
-+sw_mman=0
++sw_mman='(mm_ok != 1 ? 0 : 1)'
++nsmm_rsh='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_w='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_l='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
 
 .model rmod_rhigh r3_cmc
 +rsh=rsh_rhigh
@@ -157,12 +166,15 @@ NR1 1 bn 2 dt rmod_rhigh L=leff W=weff m=m
 +kfn=5.205e-10
 +afn=1.935
 +bfn=0.9086
-+nsig_rsh='agauss(0, 1, 1)' ; global number of standard deviations for rsh
-+nsig_w='agauss(0, 1, 1)'   ; global number of standard deviations for w
-+nsig_l='agauss(0, 1, 1)'   ; global number of standard deviations for l
-+sig_rsh=drsh_rhigh         ; global relative standard deviation for rsh [%]
-+sig_w=dw_rhigh             ; global absolute standard deviation for w [um]
-+sig_l=dl_rhigh             ; global absolute standard deviation for l [um]
++nsig_rsh=nsig_rsh_rhigh
++nsig_w=nsig_w_rhigh
++nsig_l=nsig_l_rhigh
++sig_rsh=drsh_rhigh
++sig_w=dw_rhigh
++sig_l=dl_rhigh
++smm_rsh=rsh_rhigh_mm
++smm_w=dw_rhigh_mm
++smm_l=dl_rhigh_mm
 
 .ends rhigh
 
@@ -191,7 +203,10 @@ NR1 1 bn 2 dt res_rppd L=leff W=weff m=m
 +c1=1 c2=1
 +trise=trise
 +sw_et=sw_et
-+sw_mman=0
++sw_mman='(mm_ok != 1 ? 0 : 1)'
++nsmm_rsh='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_w='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
++nsmm_l='agauss(0, 1, (mm_ok != 1 ? 0 : 1))'
 
 .model res_rppd r3_cmc
 +rsh=rsh_rppd
@@ -216,11 +231,14 @@ NR1 1 bn 2 dt res_rppd L=leff W=weff m=m
 +kfn=4.601e-11
 +afn=1.886
 +bfn=0.9963
-+nsig_rsh='agauss(0, 1, 1)' ; global number of standard deviations for rsh
-+nsig_w='agauss(0, 1, 1)'   ; global number of standard deviations for w
-+nsig_l='agauss(0, 1, 1)'   ; global number of standard deviations for l
-+sig_rsh=drsh_rppd          ; global relative standard deviation for rsh [%]
-+sig_w=dw_rppd              ; global absolute standard deviation for w [um]
-+sig_l=dl_rppd              ; global absolute standard deviation for l [um]
++nsig_rsh=nsig_rsh_rppd
++nsig_w=nsig_w_rppd
++nsig_l=nsig_l_rppd
++sig_rsh=drsh_rppd
++sig_w=dw_rppd
++sig_l=dl_rppd
++smm_rsh=rsh_rppd_mm
++smm_w=dw_rppd_mm
++smm_l=dl_rppd_mm
 
 .ends rppd
