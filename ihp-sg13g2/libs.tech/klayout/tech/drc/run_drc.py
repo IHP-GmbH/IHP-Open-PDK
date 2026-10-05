@@ -358,6 +358,58 @@ def get_run_top_cell_name(args, layout_path: str):
     return topcell
 
 
+def apply_precheck_scope(args):
+    """
+    Restricts a --precheck_drc run to the SG13 minimum layout rule set.
+
+    The minimum rule set has no extra, offgrid, angle or antenna rules, so those
+    decks are switched off here. Non-minimum rules inside the table and density
+    decks are gated by the precheck_drc switch in the decks themselves.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments, updated in place.
+    """
+    if not args.precheck_drc:
+        return
+
+    if args.antenna_only:
+        logging.error(
+            "--antenna_only cannot be combined with --precheck_drc: "
+            "antenna rules are not part of the minimum rule set."
+        )
+        exit(1)
+
+    if args.antenna:
+        logging.warning(
+            "--antenna is ignored with --precheck_drc: "
+            "antenna rules are not part of the minimum rule set."
+        )
+
+    if args.no_density:
+        logging.warning(
+            "--no_density skips the density rules of the minimum rule set, "
+            "so this precheck run is incomplete."
+        )
+
+    geometry_tables = sorted({"offgrid", "angle"} & set(args.table or []))
+    if geometry_tables:
+        logging.warning(
+            f"Table(s) {', '.join(geometry_tables)} are not part of the minimum "
+            "rule set and run no checks with --precheck_drc."
+        )
+
+    args.antenna = False
+    args.disable_extra_rules = True
+    args.no_offgrid = True
+    args.no_angle = True
+    logging.info(
+        "PreCheck DRC: running the minimum rule set only "
+        "(extra, offgrid, angle and antenna rules disabled)."
+    )
+
+
 def generate_klayout_switches(arguments, layout_path: str) -> dict:
     """
     Parses the input arguments and prepares a dictionary of switches for the KLayout DRC run.
@@ -787,6 +839,9 @@ def main(run_dir: Path, args):
     # Check layout file path and extension
     layout_path = check_layout_path(args.path)
 
+    # Limit a precheck run to the minimum rule set
+    apply_precheck_scope(args)
+
     # Generate KLayout run switches from arguments
     switches = generate_klayout_switches(args, layout_path)
 
@@ -870,7 +925,8 @@ def parse_args():
     parser.add_argument(
         "--precheck_drc",
         action="store_true",
-        help="Run a minimal set of DRC checks typically required for foundry prechecks.",
+        help="Run only the SG13 minimum layout rule set required for foundry prechecks. "
+        "Implies --disable_extra_rules, --no_offgrid and --no_angle; antenna rules are not run.",
     )
     parser.add_argument(
         "--no_feol", action="store_true", help="Disable all FEOL-related DRC checks."
