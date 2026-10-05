@@ -61,7 +61,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
             [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid] [--no_angle]
+            [--antenna_only] [--no_offgrid] [--no_angle] [--precheck_drc]
 ```
 
 **Example:**
@@ -94,6 +94,8 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --antenna_only        Run only antenna rules.
   --no_offgrid          Disable offgrid rule checks.
   --no_angle            Disable angle rule checks.
+  --precheck_drc        Run only the SG13 minimum layout rule set required for foundry prechecks.
+                        Implies --disable_extra_rules, --no_offgrid and --no_angle; antenna rules are not run.
 ```
 
 > **ℹ️ Note**  
@@ -216,7 +218,7 @@ Upon executing the DRC, the result database will appear on your layout interface
 The current SG13G2 DRC rules are categorized as follows:
 
 - **PreCheck Rule Set** – Refer to the [README](docs/precheck_rules.md):  
-  This set contains the essential DRC rules that are required for baseline verification. All rules in this category have been thoroughly verified, tested, and optimized for performance. This rule set is intended for foundry precheck purposes.
+  This set contains the SG13G2 minimum layout rules required for foundry prechecks. Run it with `--precheck_drc`; only these rules are checked, so extra, offgrid, angle and antenna rules are skipped.
 
 - **Main Rule Set** – Refer to the [README](docs/main_rules.md):  
   This set includes rules that were not previously implemented. It also incorporates essential DRC rules already available in the [PreCheck Rule Set](docs/precheck_rules.md).

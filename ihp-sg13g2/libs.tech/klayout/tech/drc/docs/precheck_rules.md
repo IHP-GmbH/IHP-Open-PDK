@@ -1,3 +1,9 @@
+# PreCheck Rule Set
+
+Rules checked by `run_drc.py --precheck_drc`. This is the SG13G2 minimum layout rule set (Rev. 1.2) plus
+M5.j, M5.k and forbidden.NoDRC. IHP confirmed these three are missing from Rev. 1.2 by mistake; the next
+revision of the rule set adds them.
+
 |Rule              |Description                                                                                    |Value |
 |------------------|-----------------------------------------------------------------------------------------------|------|
 |Act.a             |5.5.  Act.a Min. Activ width                                                                   |0.15  |
@@ -15,8 +21,6 @@
 |GFil.g            |5.9.  GFil.g Min. global GatPoly density [%]                                                   |15    |
 |Cnt.a             |5.14.  Cnt.a Min. and max. Cont width                                                          |0.16  |
 |Cnt.b             |5.14.  Cnt.b Min. Cont space                                                                   |0.18  |
-|CntB.a            |5.15.  CntB.a Min. and max. ContBar width                                                       |0.16  |
-|CntB.a1           |5.15.  CntB.a1 Min. ContBar length                                                              |0.34  |
 |M1.a              |5.16.  M1.a Min. Metal1 width                                                                  |0.16  |
 |M1.b              |5.16.  M1.b Min. Metal1 space or notch                                                         |0.18  |
 |M1.j              |5.16.  M1.j Min. global Metal1 density [%]                                                     |35    |
@@ -76,12 +80,15 @@
 |TM2Fil.c          |5.26.  TM2Fil.c Min. TopMetal2:filler space to TopMetal2                                       |3     |
 |Pas.a             |5.27.  Pas.a Min. Passiv width                                                                 |2.1   |
 |Pas.b             |5.27.  Pas.b Min. Passiv space or notch                                                        |3.5   |
+|Pad.m             |6.9.  Pad.m SBumpPad and CuPillarPad in same layout not allowed                                |-     |
 |Padb.a            |6.9.  Padb.a SBumpPad size                                                                     |60    |
 |Padb.b            |6.9.  Padb.b Min. SBumpPad space                                                               |70    |
 |Padb.c            |6.9.  Padb.c Min. TopMetal2 (within dfpad) enclosure of SBumpPad                               |10    |
+|Padb.f            |6.9.  Padb.f Allowed passivation opening shape (Octagon, Circle)                               |-     |
 |Padc.a            |6.9.  Padc.a CuPillarPad size                                                                  |35    |
 |Padc.b            |6.9.  Padc.b Min. CuPillarPad space                                                            |40    |
 |Padc.c            |6.9.  Padc.c Min. TopMetal2 (within dfpad) enclosure of CuPillarPad                            |7.5   |
+|Padc.f            |6.9.  Padc.f Allowed passivation opening shape (Circle)                                        |-     |
 |Seal.l            |6.10.  Seal.l No structures outside sealring boundary allowed                                  |-     |
 |Seal.n            |6.10.  seal.n Sealring must be enclosed by an unbroken Passiv ring                             |-     |
 |Pin.a             |7.4.  Pin.a Min. Activ enclosure of Activ:pin                                                  |0     |
