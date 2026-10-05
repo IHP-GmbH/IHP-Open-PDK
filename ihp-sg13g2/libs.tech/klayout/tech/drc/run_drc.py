@@ -393,6 +393,12 @@ def apply_precheck_scope(args):
             "so this precheck run is incomplete."
         )
 
+    if args.density_sanity:
+        logging.warning(
+            "--density_sanity is ignored with --precheck_drc: "
+            "density sanity markers are not part of the minimum rule set."
+        )
+
     geometry_tables = sorted({"offgrid", "angle"} & set(args.table or []))
     if geometry_tables:
         logging.warning(
@@ -401,12 +407,13 @@ def apply_precheck_scope(args):
         )
 
     args.antenna = False
+    args.density_sanity = False
     args.disable_extra_rules = True
     args.no_offgrid = True
     args.no_angle = True
     logging.info(
         "PreCheck DRC: running the minimum rule set only "
-        "(extra, offgrid, angle and antenna rules disabled)."
+        "(extra, offgrid, angle, antenna and density sanity checks disabled)."
     )
 
 
