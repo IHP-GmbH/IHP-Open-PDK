@@ -44,6 +44,8 @@
 |Cnt.e            |5.14.  Cnt.e Min. Cont on GatPoly space to Activ                                                                            |0.14      
 |Cnt.g1           |5.14.  Cnt.g1 Min. pSD space to Cont on nSD-Activ                                                                           |0.09      
 |Cnt.g2           |5.14.  Cnt.g2 Min. pSD overlap of Cont on pSD-Activ                                                                         |0.09      
+|CntB.a           |5.15.  CntB.a Min. and max. ContBar width                                                                                   |0.16      
+|CntB.a1          |5.15.  CntB.a1 Min. ContBar length                                                                                          |0.34      
 |CntB.b1          |5.15.  CntB.b1 Min. ContBar space with common run > 5 µm                                                                    |0.36      
 |CntB.h1          |5.15.  CntB.h1 Min. Metal1 enclosure of ContBar                                                                             |0.05      
 |M1.a             |5.16.  M1.a Min. Metal1 width                                                                                               |0.16      
