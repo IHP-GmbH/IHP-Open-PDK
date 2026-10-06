@@ -25,7 +25,8 @@
 #    measured, neither is re-derived:
 #      - the drawn counts come out of the generated GDS (bars and teeth on the
 #        bottom metal, at the 0.89 / 0.84 unit-cell pitch),
-#      - the billed counts come out of the OSDI binary under ngspice.  With
+#      - the billed counts come out of the Verilog-A, compiled here to an OSDI
+#        and run under ngspice (this PDK does not track the binary).  With
 #        feed='none' the modelled capacitance is pure active area, so dividing
 #        C(w) by the one-pitch step C(w+0.89) - C(w) returns the row count the
 #        model used, and the same trick in x returns the column count.
@@ -51,13 +52,14 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KLAYOUT_DIR = os.path.dirname(HERE)                       # libs.tech/klayout
 PDK_ROOT = os.path.dirname(os.path.dirname(KLAYOUT_DIR))  # <pdk>
-OSDI = os.path.join(PDK_ROOT, "libs.tech", "ngspice", "osdi", "cap_cmomi.osdi")
+VA = os.path.join(PDK_ROOT, "libs.tech", "verilog-a", "cap_cmomi", "cap_cmomi.va")
 TECH_NAME = "sg13cmos5l"
 
 UC_X, UC_Y = 0.84, 0.89       # unit cell pitch in um
@@ -190,7 +192,21 @@ def _measure():
 
 # ------------------------------------------------------------- model-side probe
 
-def _billed_counts(run_dir):
+def _build_osdi(run_dir):
+    """Compile the tracked Verilog-A, since this PDK ships no OSDI binary."""
+    compiler = shutil.which("openvaf-r") or shutil.which("openvaf")
+    if compiler is None:
+        raise SystemExit("no Verilog-A compiler found: install openvaf-r or openvaf")
+    out = os.path.join(run_dir, "cap_cmomi.osdi")
+    p = subprocess.run([compiler, "-D__NGSPICE__", "-o", out, VA],
+                       capture_output=True, text=True, timeout=600)
+    if p.returncode != 0 or not os.path.isfile(out):
+        sys.stderr.write(p.stdout + p.stderr)
+        raise SystemExit(f"{os.path.basename(compiler)} could not build {VA}")
+    return out
+
+
+def _billed_counts(run_dir, osdi):
     """Row and column counts the compact model bills, read back from the OSDI.
 
     feed='none' has no feed term, so the modelled capacitance is proportional to
@@ -214,7 +230,7 @@ def _billed_counts(run_dir):
     with open(tb, "w") as f:
         f.write("\n".join(lines) + "\n")
 
-    cmds = [f"osdi {OSDI}", f"source {tb}", f"ac lin 1 {FMEAS} {FMEAS}"]
+    cmds = [f"osdi {osdi}", f"source {tb}", f"ac lin 1 {FMEAS} {FMEAS}"]
     for i in range(len(probes)):
         cmds += [f"let c{i} = -imag(v{i}#branch)/({2 * math.pi}*{FMEAS})*1e15",
                  f"print c{i}"]
@@ -267,7 +283,7 @@ def _orchestrate():
     if "error" in drawn:
         sys.stderr.write(drawn["error"] + "\n")
         return 1
-    billed_rows, billed_cols = _billed_counts(run_dir)
+    billed_rows, billed_cols = _billed_counts(run_dir, _build_osdi(run_dir))
 
     # The billed counts are a ratio of two printed capacitances, so they land
     # near an integer rather than on it.  Being wrong by a whole row is the

@@ -101,11 +101,11 @@ export PDK=ihp-sg13cmos5l
 ```
 
 The Ngspice testbenches need the OSDI objects that the model cards reference.
-`libs.tech/ngspice/osdi/` symlinks them from `ihp-sg13g2`, where they are a build
-product rather than a tracked file, so build them once:
+They are a build product in `libs.tech/ngspice/osdi/` rather than a tracked
+file, so build them once (and again after editing a `.va`):
 
 ```bash
-cd $PDK_ROOT/ihp-sg13g2/libs.tech/verilog-a && ./openvaf-compile-va.sh
+cd $PDK_ROOT/ihp-sg13cmos5l/libs.tech/verilog-a && ./openvaf-compile-va.sh
 ```
 
 For plotting, create a virtual environment from the top-level `gnucap/` directory:
