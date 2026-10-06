@@ -52,7 +52,8 @@ test-cap-cmomf-sweep: env
 # compiled model bills, measuring each side independently, and pins a digest of
 # the drawn polygons so a model change cannot move the layout. The consistency
 # test asks every artifact that states the capacitance for the same device and
-# compares it against the OSDI a designer's simulation actually runs.
+# compares it against the OSDI a designer's simulation actually runs. Both
+# compile that OSDI from the Verilog-A here, since this PDK does not track it.
 #
 # Skips rather than fails when a tool is missing, like test-gnucap, so DRC/LVS
 # work is not blocked by an absent simulator.
@@ -66,6 +67,10 @@ test-cap-cmomi-model:
 	    exit 0; \
 	  fi; \
 	done; \
+	if ! command -v openvaf-r >/dev/null 2>&1 && ! command -v openvaf >/dev/null 2>&1; then \
+	  echo "Skipping: no Verilog-A compiler installed"; \
+	  exit 0; \
+	fi; \
 	cd $(CMOS5L_TESTS) && \
 	python3 cap_cmomi_geometry_test.py && \
 	python3 cap_cmomi_consistency_test.py
@@ -101,23 +106,22 @@ test-gnucap:
 	elif [ ! -d "$$PDK_ROOT/ihp-sg13g2" ]; then \
 	  echo "Skipping: no ihp-sg13g2 under PDK_ROOT=$$PDK_ROOT"; \
 	  echo "  (this directory is symlinked into it, see libs.tech/gnucap/README.md)"; \
-	elif [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/psp103.osdi" ]; then \
-	  echo "Skipping: the OSDI objects are not built"; \
-	  echo "  cd \$$PDK_ROOT/ihp-sg13g2/libs.tech/verilog-a && ./openvaf-compile-va.sh"; \
-	  echo "  (they are a gitignored build product of the sibling PDK, so the"; \
-	  echo "   osdi/ symlinks here dangle until that runs, and the Ngspice half"; \
-	  echo "   would fail on its first test)"; \
-	elif [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/cap_cmomi.osdi" ] || \
-	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomi.lib" ] || \
-	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/cap_cmomf.osdi" ] || \
+	elif [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomi.lib" ] || \
 	     [ ! -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/models/cap_cmomf.lib" ]; then \
 	  echo "Skipping: the installed ihp-sg13cmos5l predates the MoM capacitors"; \
 	  echo "  git -C \$$PDK_ROOT/ihp-sg13cmos5l pull"; \
-	  echo "  (unlike the OSDI above these two are tracked files, so a pull is the"; \
-	  echo "   fix rather than a build. The Ngspice capacitor test resolves them"; \
-	  echo "   through \$$PDK_ROOT/\$$PDK, i.e. the installed PDK and not this"; \
-	  echo "   working tree, so a checkout older than that merge fails on an"; \
+	  echo "  (the Ngspice capacitor test resolves these model cards through"; \
+	  echo "   \$$PDK_ROOT/\$$PDK, i.e. the installed PDK and not this working"; \
+	  echo "   tree, so a checkout older than that merge fails on an"; \
 	  echo "   'Error opening osdi lib' that does not name the cause)"; \
+	elif missing=$$(for o in psp103 psp103_nqs r3_cmc mosvar cap_cmomi cap_cmomf; do \
+	       [ -e "$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/ngspice/osdi/$$o.osdi" ] || printf ' %s' $$o; \
+	     done); [ -n "$$missing" ]; then \
+	  echo "Skipping: the OSDI objects are not built (missing:$$missing)"; \
+	  echo "  cd \$$PDK_ROOT/ihp-sg13cmos5l/libs.tech/verilog-a && ./openvaf-compile-va.sh"; \
+	  echo "  (they are a gitignored build product, so a checkout has none until"; \
+	  echo "   that runs, and the Ngspice half would fail on its first test with"; \
+	  echo "   an 'Error opening osdi lib' that does not name the cause)"; \
 	else \
 	  echo "Running Gnucap regression for SG13CMOS5L devices"; \
 	  PDK=ihp-sg13cmos5l $(MAKE) -C $(PDK_DIR)/libs.tech/gnucap check; \
