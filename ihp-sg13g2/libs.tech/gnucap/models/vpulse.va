@@ -29,12 +29,10 @@ module vpulse(p, n);
             end
         end
 
-        if (analysis("static")) begin
-            if ($param_given(dc)) begin
-                vrect = dc;
-            end else begin
-                vrect = val0;
-            end
+        if (analysis("dc") && $param_given(dc)) begin
+            vrect = dc;
+        end else if (analysis("static")) begin
+            vrect = val0;
         end
 
         v = transition(vrect, 0., rise, fall);
