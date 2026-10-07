@@ -24,7 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### LVS
 - KLayout LVS: `--disable_tap_extraction` option ([#1032](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1032))
 - KLayout LVS: `--purge-devices` CLI parameter; `PURGE` conditional honored in `rfmos_model_mapping.lvs` ([#1105](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1105))
-- KLayout LVS: parallel RF + plain fingers no longer merge under simplify. On `dev` that gave a false match, so some layouts may now fail LVS ([#1246](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1246))
 
 #### SRAM
 - SRAM: automated cross-view validation
@@ -101,6 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### LVS / DRC
 - KLayout LVS: RF MOS devices keep their layout geometry. They are now compared as the extracted `rf*` device classes, the netlist reader maps base models with `rfmode=1` to them. `rfmos_model_mapping.lvs`, which replaced them by new devices without device abstract, is removed ([#1246](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1246))
+- KLayout LVS: parallel RF + plain fingers no longer merge under simplify. Previously this gave a false match, so some layouts may now fail LVS ([#1246](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1246))
 - KLayout LVS: fixed LVS testing regression (#1126)
 - LVS: fixed SBD under CMIM issue; added testcase ([#1030](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1030))
 - KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
