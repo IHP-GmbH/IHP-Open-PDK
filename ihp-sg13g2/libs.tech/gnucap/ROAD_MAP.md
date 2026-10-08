@@ -14,10 +14,10 @@
     - [ ] mos_var (psp)
 
 - [x] diode (sp_diode)
-   - [x] antina   
+   - [x] antenna   
    - [x] esd 
-   - [x] dschottky_nb1 
-   - [x] isobox 
+   - [x] dschottky_nbl1 
+   - [x] isolbox 
 
 - [ ] mosfets
   - [X] moslv (psp103)
