@@ -55,7 +55,7 @@ def plot_test_dio_antenna_dc(show: bool = False) -> None:
 
     step = 100
 
-    rel_abs_err_vmda = pointwise_rel_err(i1_gc, i1_sp)
+    rel_abs_err_vmda = pointwise_rel_err(i1_sp, i1_gc)
     ax10.semilogy(v_gc[::step], rel_abs_err_vmda[::step], "-", color="b", linewidth=1.0)
     ax10.set_xlabel("Bias voltage [V]", fontsize=12)
     ax10.set_ylabel(r"$\varepsilon_{\mathrm{rel}}$", fontsize=12)
@@ -68,7 +68,7 @@ def plot_test_dio_antenna_dc(show: bool = False) -> None:
     ax01.grid(True, alpha=0.3)
     ax01.legend()
 
-    rel_abs_err_vmda = pointwise_rel_err(i2_gc, i2_sp)
+    rel_abs_err_vmda = pointwise_rel_err(i2_sp, i2_gc)
     ax11.semilogy(v_gc[::step], rel_abs_err_vmda[::step], "-", color="r", linewidth=1.5)
     ax11.set_xlabel("Bias voltage [V]", fontsize=12)
     ax11.set_ylabel(r"$\varepsilon_{\mathrm{rel}}$", fontsize=12)
@@ -128,13 +128,13 @@ def plot_test_dio_antenna_temp(show: bool = False) -> None:
     ax01.grid(True, alpha=0.3)
     ax01.legend()
 
-    rel_error_vd = pointwise_rel_err(vd_gc, vd_sp)
+    rel_error_vd = pointwise_rel_err(vd_sp, vd_gc)
     ax10.semilogy(temp_gc, rel_error_vd, "-", color="b", linewidth=1.5)
     ax10.set_ylabel(r"$\varepsilon_{\mathrm{rel}}$", fontsize=12)
     ax10.set_xlabel("Temperature [°C]", fontsize=12)
     ax10.grid(True, alpha=0.3)
 
-    rel_error_vdp = pointwise_rel_err(vdp_gc, vdp_sp)
+    rel_error_vdp = pointwise_rel_err(vdp_sp, vdp_gc)
     ax11.semilogy(temp_gc, rel_error_vdp, "-", color="r", linewidth=1.5)
     ax11.set_ylabel(r"$\varepsilon_{\mathrm{rel}}$", fontsize=12)
     ax11.set_xlabel("Temperature [°C]", fontsize=12)
