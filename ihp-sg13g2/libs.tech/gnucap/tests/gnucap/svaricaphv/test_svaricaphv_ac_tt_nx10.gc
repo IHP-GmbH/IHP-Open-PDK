@@ -1,0 +1,22 @@
+load mgsim
+
+load models/ngspice46/dio.so
+load ../../../plugins/models/sg13g2_svaricaphv_paramset.so
+load vams/vsine.so
+
+spice
+
+.include ../../../models/paramsets/diode_dsubw.lib
+
+.verilog
+
+`include ../../../models/sg13g2_svaricaphv_module.va
+`include ../../../models/cornerSVARICAPHV.va
+`include ./tb_svaricaphv_ac.va
+
+svaricaphv_tt corner_svaricaphv();
+tb_svaricaphv_ac #(.Nx(10)) tb();
+
+dc
+print ac ir(tb.VG2) ii(tb.VG2)
+ac lin 100 1e9 100e9 basic

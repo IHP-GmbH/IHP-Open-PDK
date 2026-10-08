@@ -16,9 +16,11 @@ ref_dir_sp = tests_dir_sp / "svaricaphv" / "ref"
 assert ref_dir_gc.exists()
 assert ref_dir_sp.exists()
 
-def plot_test_svaricaphv_tran(corner: str, show: bool = False):
+def plot_test_svaricaphv_tran(corner: str, show: bool = False, nx: int = 1):
 
     test_name = f"test_svaricaphv_tran_{corner}"
+    if nx != 1:
+        test_name += f"_nx{nx}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     filepath_sp = ref_dir_sp / (test_name + ".sp.out")
@@ -46,7 +48,7 @@ def plot_test_svaricaphv_tran(corner: str, show: bool = False):
     ax0 = plt.subplot(gs[0])
     ax1 = plt.subplot(gs[1], sharex=ax0)
 
-    plt.suptitle(f"sg13_hv_svaricap - transient ramp ({corner.upper()} corner)", fontsize=14)
+    plt.suptitle(f"sg13_hv_svaricap - transient ramp ({corner.upper()} corner, Nx={nx})", fontsize=14)
 
     ax0.plot(t_gc, vg1_gc, "-", color="blue", linewidth=2, label="Gnucap")
     ax0.plot(t_sp, v_sp, "--", color="orange", linewidth=1.5, label="Ngspice")
@@ -68,9 +70,11 @@ def plot_test_svaricaphv_tran(corner: str, show: bool = False):
 
     plt.close(fig)
 
-def plot_test_svaricaphv_ac(corner: str, show=False):
+def plot_test_svaricaphv_ac(corner: str, show=False, nx: int = 1):
 
     test_name = "test_svaricaphv_ac_" + corner
+    if nx != 1:
+        test_name += f"_nx{nx}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     filepath_sp = ref_dir_sp / (test_name + ".sp.out")
@@ -102,7 +106,7 @@ def plot_test_svaricaphv_ac(corner: str, show=False):
     ax_ii = ax_ir.twinx()
     ax_cap = plt.subplot(gs[1], sharex=ax_ir)
 
-    plt.suptitle("sg13g2_hv_svaricap — AC", fontsize=14)
+    plt.suptitle(f"sg13g2_hv_svaricap — AC ({corner.upper()} corner, Nx={nx})", fontsize=14)
 
     ax_ir.semilogx(f_gc, ir_gc * 1e6, "-",  color="blue",   linewidth=2,   label="Gnucap")
     ax_ir.semilogx(f_sp, ir_sp * 1e6, "--", color="black",  linewidth=1.5, label="Ngspice")
@@ -243,6 +247,62 @@ def plot_test_svaricaphv_mc_mm_ac(corner: str, show: bool = False):
 
     plt.close(fig)
 
+def plot_test_mosvar_tran_multiplicity(show: bool = False):
+
+    test_name = "test_mosvar_tran_multiplicity"
+    filepath_gc = ref_dir_gc / (test_name + ".gc.out")
+    filepath_sp = ref_dir_sp / (test_name + ".sp.out")
+
+    data_gc_str = filter_data(
+        filepath_gc,
+        ("#", "parameter", "open circuit", "Gnucap", "iterations:", "transient", "nodes:", "dctran"),
+    )
+    data_gc = pd.read_csv(StringIO(data_gc_str), sep=r"\s+", header=None, engine="python").values
+    data_sp = pd.read_csv(filepath_sp, sep=r"\s+").values
+
+    assert data_gc.shape[1] == 11
+    assert data_sp.shape[1] == 11
+    assert np.allclose(data_gc[:, 1:6], data_gc[:, 1, None], atol=1e-6)
+    assert np.allclose(data_sp[:, 1:6], data_sp[:, 1, None], atol=1e-6)
+
+    t_gc = data_gc[:, 0] / 1e-6
+    t_sp = data_sp[:, 0] / 1e-6
+
+    fig = plt.figure(figsize=(10, 8))
+    gs = plt.GridSpec(2, 1, hspace=0.3)
+    ax_v = plt.subplot(gs[0])
+    ax_i = plt.subplot(gs[1], sharex=ax_v)
+
+    plt.suptitle("Isolated MOSVAR — multiplicity versus parallel unit devices (TT)", fontsize=14)
+    ax_v.plot(t_gc, data_gc[:, 1], "-", color="blue", linewidth=2, label="Gnucap")
+    ax_v.plot(t_sp, data_sp[:, 1], "--", color="black", linewidth=1.5, label="Ngspice")
+    ax_v.set_ylabel("Gate voltage [V]", fontsize=12)
+    ax_v.legend()
+    ax_v.grid(True, alpha=0.3)
+
+    cases = [
+        (1, "Single unit", "blue"),
+        (2, "Multiplicity 2", "red"),
+        (10, "Multiplicity 10", "green"),
+        (2, "2 parallel units", "purple"),
+        (10, "10 parallel units", "orange"),
+    ]
+    for col, (multiplicity, label, color) in enumerate(cases, start=6):
+        ax_i.plot(t_gc, data_gc[:, col] * 1e9 / multiplicity, "-", color=color,
+            linewidth=2, label=f"Gnucap: {label}")
+        ax_i.plot(t_sp, data_sp[:, col] * 1e9 / multiplicity, "--", color="black",
+            linewidth=1.5, label=f"Ngspice: {label}")
+    ax_i.set_ylabel("Current / multiplicity [nA]", fontsize=12)
+    ax_i.legend(fontsize=9, ncol=2)
+    ax_i.grid(True, alpha=0.3)
+    ax_i.set_xlabel("Time [us]", fontsize=12)
+
+    plt.savefig(svaricaphv_fig_dir / (test_name + ".png"), dpi=300)
+    if show:
+        plt.show()
+    plt.close(fig)
+
+
 def main():
 
     for corner in ["tt", "ss", "ff", "sf", "fs"]:
@@ -251,6 +311,11 @@ def main():
         plot_test_svaricaphv_mc_mm_ac(corner)
 
     plot_test_svaricaphv_mc_stat_ac()
+
+    for nx in [2, 10]:
+        plot_test_svaricaphv_ac("tt", nx=nx)
+
+    plot_test_svaricaphv_tran("tt", nx=2)
 
     print("Finished plotting svaricaphv!")
 
