@@ -138,7 +138,7 @@ def plot_test_esd_nmos_cl_dc(show: bool = False, rfmode: bool = False) -> None:
     axes_err = [plt.subplot(gs[1, c], sharex=axes_iv[c]) for c in range(2)]
 
     plt.suptitle(
-        "ESD NMOS clamp I-V curves" if rfmode else "ESD NMOS (RF) clamp I-V curves",
+        "ESD NMOS clamp I-V curves" if not rfmode else "ESD NMOS (RF) clamp I-V curves",
         fontsize=14,
     )
 
