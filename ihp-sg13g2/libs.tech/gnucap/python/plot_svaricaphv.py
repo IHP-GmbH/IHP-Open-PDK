@@ -252,6 +252,8 @@ def main():
 
     plot_test_svaricaphv_mc_stat_ac()
 
+    print("Finished plotting svaricaphv!")
+
 if __name__ == "__main__":
 
     main()
