@@ -9,7 +9,8 @@ MODELS = \
 	psp103 \
 	cap_cmomi \
 	cap_cmomf \
-	vbic_1p3
+	vbic_1p3 \
+	mosvar
 
 
 MGFLAGS = -I $(shell gnucap-conf --includedir) -I . \
@@ -20,14 +21,16 @@ OSDI_DIR = ../plugins/osdi
 
 TARGETS = \
 	idc \
+	vpulse \
 	resistor_paramset \
 	capacitor_paramset \
 	sg13g2_moscap_paramset \
+	sg13g2_svaricaphv_paramset \
 	sg13g2_moslv_paramset \
 	sg13g2_moslv_rf_paramset \
 	sg13g2_moshv_paramset \
 	sg13g2_moshv_rf_paramset \
-	sg13g2_hbt_paramset \
+	sg13g2_hbt_paramset
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
 
@@ -63,27 +66,35 @@ PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
 CMOMI_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomi)
 CMOMF_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomf)
 VBIC_SRC   := $(call va_sources,$(IHP_VERILOG_DIR)/vbic_1p3)
+MOSVAR_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/mosvar)
 
+RES_PARAMSETS = $(wildcard paramsets/resistor_*.va)
+CAPACITOR_PARAMSETS = $(wildcard paramsets/capacitor_*.va)
+SVARICAPHV_PARAMSETS = paramsets/sg13g2_svaricaphv.va
 HBT_PARAMSETS = $(wildcard paramsets/sg13g2_hbt_*.va)
 MOSCAP_PARAMSETS = $(wildcard paramsets/sg13g2_moscap_*.va)
+MOSLV_PARAMSETS = $(wildcard paramsets/sg13g2_moslv_*.va)
+MOSHV_PARAMSETS = $(wildcard paramsets/sg13g2_moshv_*.va)
 
-$(TARGET_DIR)/resistor_paramset.cc:        resistor.va discipline.h $(R3CMC_SRC)
-$(TARGET_DIR)/capacitor_paramset.cc:       capacitor.va $(CMOMI_SRC) $(CMOMF_SRC)
-$(TARGET_DIR)/sg13g2_moscap_paramset.cc:   discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moslv_paramset.cc:    discipline.h $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc: discipline.h $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moshv_paramset.cc:    discipline.h $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc: discipline.h $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_hbt_paramset.cc:      $(HBT_PARAMSETS) $(VBIC_SRC)
+$(TARGET_DIR)/resistor_paramset.cc:          resistor.va discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
+$(TARGET_DIR)/capacitor_paramset.cc:         capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
+$(TARGET_DIR)/sg13g2_svaricaphv_paramset.cc: capacitor.va $(MOSVAR_SRC) $(SVARICAPHV_PARAMSETS)
+$(TARGET_DIR)/sg13g2_moscap_paramset.cc:     discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
+$(TARGET_DIR)/sg13g2_moslv_paramset.cc:      discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
+$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc:   discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
+$(TARGET_DIR)/sg13g2_moshv_paramset.cc:      discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
+$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc:   discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
+$(TARGET_DIR)/sg13g2_hbt_paramset.cc:        $(HBT_PARAMSETS) $(VBIC_SRC)
 
-resistor_paramset.dump.va:        resistor.va discipline.h $(R3CMC_SRC)
-capacitor_paramset.dump.va:       capacitor.va $(CMOMI_SRC) $(CMOMF_SRC)
-sg13g2_moscap_paramset.dump.va:   discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-sg13g2_moslv_paramset.dump.va:    discipline.h $(PSP103_SRC)
-sg13g2_moslv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
-sg13g2_moshv_paramset.dump.va:    discipline.h $(PSP103_SRC)
-sg13g2_moshv_rf_paramset.dump.va: discipline.h $(PSP103_SRC)
-sg13g2_hbt_paramset.dump.va:      $(HBT_PARAMSETS) $(VBIC_SRC)
+resistor_paramset.dump.va:          resistor.va discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
+capacitor_paramset.dump.va:         capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
+sg13g2_moscap_paramset.dump.va:     discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
+sg13g2_svaricaphv_paramset.dump.va: capacitor.va $(MOSVAR_SRC) $(SVARICAPHV_PARAMSETS)
+sg13g2_moslv_paramset.dump.va:      discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
+sg13g2_moslv_rf_paramset.dump.va:   discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
+sg13g2_moshv_paramset.dump.va:      discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
+sg13g2_moshv_rf_paramset.dump.va:   discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
+sg13g2_hbt_paramset.dump.va:        $(HBT_PARAMSETS) $(VBIC_SRC)
 
 # Naming the generated C++ as explicit targets above would make it permanent:
 # GNU make only treats a file as intermediate, and deletes it after the build,

@@ -1,0 +1,106 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// SG13G2 ESD diode clamp modules
+//
+// Adapted from ngspice/models/sg13g2_esd.lib
+//
+// Modifications:
+// - Moved inline diodevdd and dsub model declarations into paramsets/diode_esd.va
+//******************************************************************************
+
+(* desc = "SG13G2 diodevdd_2kv PAD-VDD 2 kV ESD clamp" *)
+module diodevdd_2kv(VDD, PAD, VSS);
+    inout VDD, PAD, VSS;
+    electrical VDD, PAD, VSS;
+
+    (* desc = "Forward diode area scale factor" *)
+    parameter real DEV_A = 35 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Forward diode perimeter scale factor" *)
+    parameter real DEV_P = 58.08 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode area scale factor" *)
+    parameter real sub_A = 224.9559 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode perimeter scale factor" *)
+    parameter real sub_P = 81.12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter integer m = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    diodevdd_mod #(.area(DEV_A), .pj(DEV_P), .m(m)) D_PAD(PAD, VDD);
+    dsub_2kv_mod #(.area(sub_A), .pj(sub_P), .m(m)) D_SUB(VSS, VDD);
+endmodule
+
+(* desc = "SG13G2 diodevdd_4kv PAD-VDD 4 kV ESD clamp" *)
+module diodevdd_4kv(VDD, PAD, VSS);
+    inout VDD, PAD, VSS;
+    electrical VDD, PAD, VSS;
+
+    (* desc = "Forward diode area scale factor" *)
+    parameter real DEV_A = 70 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Forward diode perimeter scale factor" *)
+    parameter real DEV_P = 116.2 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode area scale factor" *)
+    parameter real sub_A = 381.0339 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode perimeter scale factor" *)
+    parameter real sub_P = 90.32 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter integer m = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    diodevdd_mod #(.area(DEV_A), .pj(DEV_P), .m(m)) D_PAD(PAD, VDD);
+    dsub_4kv_mod #(.area(sub_A), .pj(sub_P), .m(m)) D_SUB(VSS, VDD);
+endmodule
+
+(* desc = "SG13G2 diodevss_2kv VSS-PAD 2 kV ESD clamp" *)
+module diodevss_2kv(VDD, PAD, VSS);
+    inout VDD, PAD, VSS;
+    electrical VDD, PAD, VSS;
+
+    (* desc = "Forward diode area scale factor" *)
+    parameter real DEV_A = 35 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Forward diode perimeter scale factor" *)
+    parameter real DEV_P = 58.08 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode area scale factor" *)
+    parameter real sub_A = 224.9559 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode perimeter scale factor" *)
+    parameter real sub_P = 81.12 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter integer m = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    diodevss_mod #(.area(DEV_A), .pj(DEV_P), .m(m)) D_PAD(VSS, PAD);
+    dsub_2kv_mod #(.area(sub_A), .pj(sub_P), .m(m)) D_SUB(VSS, VDD);
+endmodule
+
+(* desc = "SG13G2 diodevss_4kv VSS-PAD 4 kV ESD clamp" *)
+module diodevss_4kv(VDD, PAD, VSS);
+    inout VDD, PAD, VSS;
+    electrical VDD, PAD, VSS;
+
+    (* desc = "Forward diode area scale factor" *)
+    parameter real DEV_A = 70 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Forward diode perimeter scale factor" *)
+    parameter real DEV_P = 116.2 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode area scale factor" *)
+    parameter real sub_A = 381.0339 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Substrate diode perimeter scale factor" *)
+    parameter real sub_P = 90.32 from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter integer m = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    diodevss_mod #(.area(DEV_A), .pj(DEV_P), .m(m)) D_PAD(VSS, PAD);
+    dsub_4kv_mod #(.area(sub_A), .pj(sub_P), .m(m)) D_SUB(VSS, VDD);
+endmodule

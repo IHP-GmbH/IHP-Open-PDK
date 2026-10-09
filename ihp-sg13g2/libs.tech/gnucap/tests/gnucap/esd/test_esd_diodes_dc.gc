@@ -1,0 +1,22 @@
+load mgsim
+
+load models/ngspice46/dio.so
+
+spice
+
+* TODO: including files through models/diode_models.lib does not work
+.include ../../../models/paramsets/diode_esd.lib
+
+.verilog
+
+`include ../../../models/sg13g2_esd_module.va
+`include ./tb_esd_diodes_dc.va
+
+parameter real vb = 0.0;
+
+tb_esd_diodes_dc #(.vb(vb)) tb();
+
+print dc i(tb.Vmda1) i(tb.Vmda2) i(tb.Vmda3) i(tb.Vmda4) \
+    i(tb.Vmda5) i(tb.Vmda6) i(tb.Vmda7) i(tb.Vmda8) iter(0)
+dc vb -20.7 3 1m basic
+status notime
