@@ -294,24 +294,24 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
 
   private
 
-  # Prepare MOS model+params for comparison.
+  # Prepare MOS model+params for comparison, in the device classes of the layout
+  # extraction, which extracts RF MOS devices as classes of their own (rfnmos, ...).
   # Supports both input netlist styles:
   # - old RF model names (rfnmos/rfpmos/...) without rfmode
   # - base model names with explicit rfmode
   def map_mos_model(model, params)
     map_params = (params || {}).dup
     model_key = model.to_s.downcase
-    rfmode_raw = map_params['RFMODE'] || map_params['rfmode']
+    rfmode_raw = [map_params.delete('RFMODE'), map_params.delete('rfmode')].compact.first
     rfmode = RFMODE_TO_BINARY.call(rfmode_raw)
-    mapped = RF_TO_BASE_MOS_MODEL.fetch(model_key, model_key)
+    base = RF_TO_BASE_MOS_MODEL.fetch(model_key, model_key)
 
     # rf* naming implies RF mode when rfmode is not provided explicitly.
-    if RF_TO_BASE_MOS_MODEL.key?(model_key) && rfmode.nil?
-      rfmode = 1
+    if rfmode.nil?
+      rfmode = RF_TO_BASE_MOS_MODEL.key?(model_key) ? 1 : 0
     end
 
-    map_params['RFMODE'] = rfmode unless rfmode.nil?
-    map_params.delete('rfmode')
+    mapped = rfmode == 1 ? BASE_TO_RF_MOS_MODEL.fetch(base, base) : base
 
     [mapped, map_params]
   end
@@ -377,10 +377,9 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   end
 
   # Create MOS4 device class.
+  # NOTE: no rfmode parameter, RF mode is given by the class (see map_mos_model)
   def create_mos
-    mos_class = RBA::DeviceClassMOS4Transistor.new
-    mos_class.add_parameter(RBA::DeviceParameterDefinition.new('rfmode', 'rf mode', 0, true))
-    mos_class
+    RBA::DeviceClassMOS4Transistor.new
   end
 
   # Create a capacitor device class.
@@ -567,7 +566,6 @@ class CustomReader < RBA::NetlistSpiceReaderDelegate
   def map_mos_params(device, params)
     device.set_parameter('W', (params['W'] || 0.0) * (params['M'] || 1.0) * 1e6)
     device.set_parameter('L', (params['L'] || 0.0) * 1e6)
-    device.set_parameter('rfmode', RFMODE_TO_BINARY.call(params['RFMODE']) || 0.0)
   end
 
   # Map parameters for a BJT device.
