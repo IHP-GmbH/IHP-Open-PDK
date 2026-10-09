@@ -1,0 +1,207 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+# ==============================================================
+# PDK Models Setup
+# ==============================================================
+# Define the paths to measurement data and PDK model libraries
+# ==============================================================
+
+# Path to measured device model directory (raw measurement data)
+# Default MQA variant: Nx=8 (T03).
+mdm_dir: "../../../../libs.doc/meas/HBT/npn13g2_T03"
+
+# Path to the PDK-provided model library (corner definitions)
+corner_lib_path: "../../../../libs.tech/ngspice/models/cornerHBT.lib"
+
+# ==============================================================
+# Device Configuration
+# ==============================================================
+# Specify device type and name to clearly identify which
+# transistor or component this configuration applies to
+# ==============================================================
+
+# Device category (e.g. hbt, mos, resistor, capacitor, etc.)
+device_type: "hbt"
+
+# Specific device name inside the PDK
+device_name: "npn13g2"
+
+# ==============================================================
+# Run Configuration
+# ==============================================================
+# Control how simulations are run and how many resources are used
+# ==============================================================
+
+# Path to the DC analysis template (Jinja2 format)
+dc_template_path: "configs/hbt/hbt_dc.spice.j2"
+
+# Maximum number of workers (parallel jobs).
+# Set based on your system CPU cores.
+max_workers: 8
+
+# ==============================================================
+# Output and Validation Settings
+# ==============================================================
+
+# ----------------------------------------------------
+# Validation Threshold Configuration
+# ----------------------------------------------------
+# threshold_percent_oob defines the **maximum allowed percentage (%) of points**
+# that can fall **outside the valid model envelope** (out-of-bound, OOB)
+# for each sweep or test condition.
+#
+# This parameter controls the overall pass/fail criteria for each dataset:
+# - If the fraction of OOB points ≤ threshold → the sweep passes.
+# - If the fraction of OOB points > threshold → the sweep fails.
+#
+# Example:
+#   Total sweep points = 200
+#   Out-of-bound points = 1
+#   threshold_percent_oob = 0.5
+#
+#   (1 / 200) × 100 = 0.5% <= 5% → PASS
+#
+#   If 2 points were out of bounds → (1%) > 0.5% → FAIL
+
+threshold_percent_oob: 0.5
+
+# ----------------------------------------------------
+# Corner Envelope Tolerance Configuration
+# ----------------------------------------------------
+# corner_tolerance_percent defines the **relative tolerance percentage**
+# added to the FF/SS simulation envelopes to account for expected
+# statistical process variation (based on σ-level confidence).
+#
+# The value represents the percentage of samples expected to fall
+# *outside* the FF/SS limits for a given σ coverage:
+#
+#   - 1σ → 100 - 68.27 = 31.73%
+#   - 2σ → 100 - 95.45 = 4.55%
+#   - 3σ → 100 - 99.73 = 0.27%
+#   - 4σ → 100 - 99.9937 = 0.0063%
+#   - 5σ → 100 - 99.99994 = 0.00006%
+#   - 6σ → 100 - 99.9999998 = 0.0000002%
+#
+# Example:
+#   If corner_tolerance_percent = 0.27
+#   - Effective FF bound = FF_sim_value × (1 + 0.0027)
+#   - Effective SS bound = SS_sim_value × (1 - 0.0027)
+#
+# This means the FF and SS bounds are extended by ±0.27% of their values.
+#
+corner_tolerance_percent: 0.27
+
+
+# ==============================================================
+# Metrics Definitions
+# ==============================================================
+# Naming convention:
+#   *_meas = measured value
+#   *_sim_* = simulated values (typ/bcs/Wcs = corners)
+# ==============================================================
+
+metrics:
+  - name: "ib"       # Base current
+    meas: "ib_meas"
+    tt: "ib_sim_hbt_typ"
+    ss: "ib_sim_hbt_bcs"
+    ff: "ib_sim_hbt_Wcs"
+
+  - name: "ic"       # Collector current
+    meas: "ic_meas"
+    tt: "ic_sim_hbt_typ"
+    ss: "ic_sim_hbt_bcs"
+    ff: "ic_sim_hbt_Wcs"
+
+  - name: "vb"       # Base voltage
+    meas: "vb_meas"
+    tt: "vb_sim_hbt_typ"
+    ss: "vb_sim_hbt_bcs"
+    ff: "vb_sim_hbt_Wcs"
+
+# ==============================================================
+# MQA Valid Bias Windows
+# ==============================================================
+# Restricts model-vs-measurement comparison to the PDF MQA valid bias windows, per
+# characteristic (matched EXACTLY against the normalized `input_data` MDM filename,
+# e.g. "fg_vcb0_RF.mdm" -> "fg_vcb0") x metric. Bias vars (vbe/vce/...) are derived
+# from NODE voltages (VBE=vb-ve, VCE=vc-ve). "_all" applies to every metric of that
+# characteristic. Characteristics not listed here (fg_vcb05, fg_vcbm05, fo_ib, ro_vc0)
+# are left ungated (current/legacy behavior). Values in volts, T = 27 degC.
+mqa_ranges:
+  fg_vcb0:                 # forward Gummel @ VCB=0
+    ib: {vbe: [0.7, 0.8]}
+    ic: {vbe: [0.6, 0.96]}
+  fg_vce:                  # forward Gummel @ VCE
+    ib: {vce: [0.5, 1.5], vbe: [0.7, 0.8]}
+    ic: {vce: [0.5, 1.5], vbe: [0.6, 0.96]}
+  fo_vb:                   # output, IC vs VCE @ VBE=const
+    _all: {vce: [0.2, 1.5], vbe: [0.7, 0.9]}
+
+# ==============================================================
+# S-parameter Characteristics (Milestone M4): CjE, CjC, fT
+# ==============================================================
+# New RF metrics extracted from the deembedded S-parameters (S_deemb columns) of the
+# spar_* MDM files: S->Y (scikit-rf) reduced to a scalar CjE/CjC/fT per bias point; the
+# simulated side runs an ngspice AC 2-port Y extraction of the HBT subckt at the same node
+# biases and applies the SAME extraction. Run via `make test-npn13g2-sparam`
+# (python -m models_verifier.sp_runner.verifier --config <this file>). Consumed ONLY by
+# the S-param verifier; the DC pipeline above ignores these keys.
+sp_template_path: "configs/hbt/hbt_sp.spice.j2"
+
+# Measured file (stem, no .mdm) supplying each characteristic's bias grid.
+sparam_files:
+  cje: spar_vb           # cold, VCB=0
+  cjc: spar_vc           # cold
+  ft: spar_vcb025        # hot, VCB=0.25 V
+
+sparam_metrics:
+  - name: "cje"          # emitter (base-emitter) junction capacitance [F]
+    meas: "cje_meas"
+    tt: "cje_sim_hbt_typ"
+    ss: "cje_sim_hbt_bcs"
+    ff: "cje_sim_hbt_Wcs"
+  - name: "cjc"          # collector (base-collector) junction capacitance [F]
+    meas: "cjc_meas"
+    tt: "cjc_sim_hbt_typ"
+    ss: "cjc_sim_hbt_bcs"
+    ff: "cjc_sim_hbt_Wcs"
+  - name: "ft"           # transit frequency [Hz]
+    meas: "ft_meas"
+    tt: "ft_sim_hbt_typ"
+    ss: "ft_sim_hbt_bcs"
+    ff: "ft_sim_hbt_Wcs"
+
+# MQA valid bias windows for the S-param characteristics (keyed by normalized MDM stem ->
+# metric -> {bias_var: [min, max]}; bias vars derived from NODE voltages: VBE=vb-ve,
+# VCB=vc-vb). CjC's PDF window VBC in [-1.5, 0.5] V is expressed as vcb in [-0.5, 1.5] V.
+# T = 27 degC.
+sparam_mqa_ranges:
+  spar_vb:
+    cje: {vbe: [-1.5, 0.5]}
+  spar_vc:
+    cjc: {vcb: [-0.5, 1.5]}
+  spar_vcb025:
+    ft: {vbe: [0.7, 0.96]}
+
+# ==============================================================
+# Output Paths
+# ==============================================================
+# Directory where processed results will be stored
+# ==============================================================
+
+output_dir: "models_results/hbt_npn13g2"
