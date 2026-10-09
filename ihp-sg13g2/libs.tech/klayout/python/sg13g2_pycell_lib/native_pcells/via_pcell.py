@@ -46,10 +46,10 @@ class ViaPCell(pya.PCellDeclarationHelper):
         self.param("ny", self.TypeInt, "ny", default=1)
 
         # Optional plane sizes
-        self.param("w_bottom", self.TypeDouble, "Bottom width [µm]",  default=0.0)
-        self.param("h_bottom", self.TypeDouble, "Bottom height [µm]", default=0.0)
-        self.param("w_top",    self.TypeDouble, "Top width [µm]",     default=0.0)
-        self.param("h_top",    self.TypeDouble, "Top height [µm]",    default=0.0)
+        self.param("w_bottom", self.TypeDouble, "Bottom width [um]",  default=0.0)
+        self.param("h_bottom", self.TypeDouble, "Bottom height [um]", default=0.0)
+        self.param("w_top",    self.TypeDouble, "Top width [um]",     default=0.0)
+        self.param("h_top",    self.TypeDouble, "Top height [um]",    default=0.0)
 
     def dump_params(self):
         params = []
