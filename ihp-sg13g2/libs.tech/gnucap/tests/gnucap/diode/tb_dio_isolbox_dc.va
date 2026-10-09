@@ -1,0 +1,12 @@
+
+module tb_dio_isolbox_dc(isosub, nwell);
+    inout isosub, nwell;
+    electrical isosub, nwell;
+    parameter real ib = 0;
+    parameter real l = 3u;
+    parameter real w = 3u;
+
+    ground gnd;
+    idc #(.dc(ib)) I0(gnd, isosub);
+    isolbox #(.l(l), .w(w)) XD1(isosub, nwell, gnd);
+endmodule
