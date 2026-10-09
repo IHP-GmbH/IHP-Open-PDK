@@ -1,0 +1,1 @@
+../../../../../ihp-sg13g2/libs.ref/sg13g2_stdcell/sch/xschem/sg13g2_ebufn_4.sch
