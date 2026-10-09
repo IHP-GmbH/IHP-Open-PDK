@@ -1,0 +1,16 @@
+# Make sure we don't ignore sub-directories in the root .gitignore
+!cdl/
+!doc/
+!gds/
+!lib/
+!spice/
+!verilog/
+
+# ...and the views inside them. `!spice/` above only re-includes the
+# directory; the root .gitignore's `*.spice` rule still excludes the file
+# within it, so a newly added spice view is silently dropped by
+# `git add`. sg13cmos5l_stdcell's own spice view predates that rule and is
+# already tracked, which is why this only shows up when a library adds a
+# new one -- here sg13cmos5l_stdcell_hv. Mirrors ihp-sg13g2/libs.ref/
+# .gitignore, added for the same reason in IHP-Open-PDK#1103.
+!*.spice
