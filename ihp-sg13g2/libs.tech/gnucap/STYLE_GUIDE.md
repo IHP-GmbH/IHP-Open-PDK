@@ -59,7 +59,7 @@ Its interior follows a fixed three-block order, separated by blank `//` lines:
 
 ## Organization and responsibilities
 
-- Use `models/` directory for device modules and corner definitions: 
+- Use `models/` for device modules and `models/corners/` for corner definitions:
   - Device modules (`<device_name>_module.va`): connect primitive instances into 
     composite PDK devices and expose their ports and parameters for use in 
     circuits and testbenches.

@@ -23,7 +23,10 @@ gnucap/
 ├── Makefile             # Top-level entry point: build, test, clean
 ├── gnucap.mk            # Gnucap Makefile configuration
 ├── models/              # Verilog-A model library
-│   └── Makefile         # Builds Verilog-A model plugins
+│   ├── Makefile         # Builds Verilog-A model plugins
+│   ├── corners/         # Process-corner definitions
+│   │   └── corner*.va   # Device-family corner modules
+│   └── paramsets/       # Device-specific paramset sources
 ├── cpp/                 # C++ source for Gnucap simulator plugins
 │   └── Makefile         # Builds Gnucap simulator plugins
 ├── tests/               # Test suite
