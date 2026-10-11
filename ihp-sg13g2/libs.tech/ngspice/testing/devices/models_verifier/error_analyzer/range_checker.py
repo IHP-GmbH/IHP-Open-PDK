@@ -44,6 +44,12 @@ _NODE_BIAS_PAIRS: Dict[str, Tuple[str, str]] = {
     "vbs": ("vb", "vs"),
 }
 
+# Node-voltage columns that place a failing point on its curve (MOS: vg vd vb vs; BJT: vb vc
+# ve vs; junction C-V files sweep a terminal difference: vbe vbc vce). Copied into
+# failed_results.csv and fingerprinted by the exceptions (waivers/waiver.py): the swept bias must
+# be one of them, so that an exception records which points failed or were not simulated.
+BIAS_COLUMNS: Tuple[str, ...] = ("vg", "vd", "vb", "vs", "vc", "ve", "vbe", "vbc", "vce")
+
 # Strip a trailing MDM extension/suffix to obtain the "characteristic" stem used to key
 # `RangeChecker.mqa_ranges`, e.g. "fg_vcb0_RF.mdm" -> "fg_vcb0". Matched exactly (not a
 # prefix match) so "fg_vcb0" never matches "fg_vcb05".
@@ -76,6 +82,12 @@ class RangeChecker:
         # dataclass contract.
         self._window_defs: Dict[Tuple[str, str], dict] = {}
         self._window_excluded: Dict[Tuple[str, str], int] = {}
+        # After analyze(): per input row and metric, the acceptance band and whether the point was
+        # judged (inside the bias window, all values present): columns <metric>_band_lo,
+        # <metric>_band_hi, <metric>_judged, aligned with the analysed rows. The verifier writes them
+        # into combined_results so that figures show exactly what was checked.
+        self.bands: pd.DataFrame = pd.DataFrame()
+        self._band_parts: Dict[str, List[pd.DataFrame]] = {}
 
     @staticmethod
     def _apply_tolerance_to_bounds(
@@ -320,6 +332,23 @@ class RangeChecker:
             valid_mask = pre_window_mask
             n_excluded = 0
 
+        # Measured points (inside the window) without a simulated target value or band: the
+        # simulation did not give them (e.g. a corner that did not converge at the end of a
+        # sweep). A row with such points never passes: they are listed with the failing points
+        # (deviation empty), so an exception records which points were missing. A row
+        # with only such points is a framework error ("Failed (not simulated)",
+        # MdmVerifier._apply_waivers).
+        measured = (pd.to_numeric(group_df[spec.meas], errors="coerce")
+                    if spec.meas and spec.meas in group_df.columns else target_values)
+        in_window = window_mask if window_mask is not None else pd.Series(True, index=group_df.index)
+        missing_mask = measured.notna() & in_window & ~pre_window_mask
+        n_missing = int(missing_mask.sum())
+
+        if target_type == "meas" or not spec.meas:
+            self._band_parts.setdefault(spec.name, []).append(pd.DataFrame(
+                {f"{spec.name}_band_lo": lower_bound, f"{spec.name}_band_hi": upper_bound,
+                 f"{spec.name}_judged": valid_mask}, index=group_df.index))
+
         total_count = int(valid_mask.sum())
 
         if total_count == 0:
@@ -334,6 +363,7 @@ class RangeChecker:
                 "passed": True,
                 "n_excluded": n_excluded,
                 "n_floor": 0,
+                "n_missing": n_missing,
             }, []
 
         # Identify out-of-bounds points
@@ -357,9 +387,10 @@ class RangeChecker:
             oob_mask &= ~floor_agree
         oob_count = int(oob_mask.sum())
         percent_oob = 100.0 * oob_count / total_count
-        passed = threshold.check(oob_count, total_count)
+        passed = threshold.check(oob_count, total_count) and n_missing == 0
 
-        # Generate detailed failure records
+        # Detailed failure records: the out-of-bounds and the missing points, in row order
+        oob_mask = oob_mask.reindex(group_df.index, fill_value=False)
         failure_records = self._get_failure_rep(
             group_df,
             group_tuple,
@@ -368,8 +399,7 @@ class RangeChecker:
             target_values,
             lower_bound,
             upper_bound,
-            valid_mask,
-            oob_mask,
+            oob_mask | missing_mask,
         )
 
         report_row = {
@@ -383,6 +413,7 @@ class RangeChecker:
             "passed": bool(passed),
             "n_excluded": n_excluded,
             "n_floor": n_floor,
+            "n_missing": n_missing,
         }
 
         return report_row, failure_records
@@ -396,7 +427,6 @@ class RangeChecker:
         target_values: pd.Series,
         lower_bound: pd.Series,
         upper_bound: pd.Series,
-        valid_mask: pd.Series,
         out_of_bounds_mask: pd.Series,
     ) -> List[Dict]:
         """
@@ -419,10 +449,9 @@ class RangeChecker:
             Series of lower bounds for the metric values.
         upper_bound : pd.Series
             Series of upper bounds for the metric values.
-        valid_mask : pd.Series (bool)
-            Boolean mask marking valid entries among the target values.
         out_of_bounds_mask : pd.Series (bool)
-            Boolean mask marking which entries are outside the allowed bounds.
+            Boolean mask marking which entries are outside the allowed bounds, or were
+            measured but not simulated (their deviation is then empty).
 
         Returns
         -------
@@ -435,8 +464,7 @@ class RangeChecker:
         if not out_of_bounds_mask.any():
             return []
 
-        # Restrict mask to valid entries only
-        mask = valid_mask & out_of_bounds_mask
+        mask = out_of_bounds_mask
 
         # Select only failing entries
         vals = target_values[mask]
@@ -464,7 +492,7 @@ class RangeChecker:
         # families may have "vs"; MOS additionally has "vg" (which HBT never does), so
         # simply checking column presence naturally attaches the right set without
         # needing a device_type flag here.
-        for bias_col in ("vg", "vd", "vb", "vs", "vc", "ve"):
+        for bias_col in BIAS_COLUMNS:
             if bias_col in group_dataframe.columns:
                 failure_data[bias_col] = pd.to_numeric(
                     group_dataframe.loc[mask, bias_col], errors="coerce"
@@ -479,6 +507,14 @@ class RangeChecker:
             "upper_bound": ub.astype(float).to_numpy(),
             "deviation": deviation.astype(float),
         })
+
+        # The simulated tt/ss/ff values and the measured value of each failing point, whichever
+        # target failed: the exceptions (waivers/waiver.py) fingerprint the simulated values.
+        for label, column in (("tt", spec.tt), ("ss", spec.ss), ("ff", spec.ff), ("meas", spec.meas)):
+            if column and column in group_dataframe.columns:
+                failure_data[f"{label}_value"] = pd.to_numeric(
+                    group_dataframe.loc[mask, column], errors="coerce"
+                ).astype(float).to_numpy()
 
         # Return as list of dicts (records format)
         return pd.DataFrame(failure_data).to_dict("records")
@@ -511,6 +547,7 @@ class RangeChecker:
         # analyze() on the same RangeChecker instance don't accumulate stale counts.
         self._window_defs = {}
         self._window_excluded = {}
+        self._band_parts = {}
 
         report_rows = []
         detailed_failures = []
@@ -571,6 +608,11 @@ class RangeChecker:
 
         self._log_window_summary()
 
+        bands = [pd.concat(parts) for parts in self._band_parts.values()]
+        self.bands = pd.concat(bands, axis=1).reindex(df.index) if bands else pd.DataFrame(index=df.index)
+        for column in [c for c in self.bands.columns if c.endswith("_judged")]:
+            self.bands[column] = self.bands[column].eq(True)
+
         return report_df, detailed_failures_df
 
     def _log_window_summary(self) -> None:
@@ -611,12 +653,11 @@ class RangeChecker:
         """
         Save both summary and detailed failure reports to CSV files.
 
-        Milestone M2: when `report_df` carries a `status` column (`Passed` /
-        `Passed (Waived)` / `Failed`, set by
-        `models_verifier.py::MdmVerifier._apply_waivers`), the per (metric, target)
-        summary additionally reports `n_passed` / `n_waived` / `n_failed` sweep
-        counts. Absent `status` (e.g. a caller using `RangeChecker` standalone),
-        behavior is identical to before Milestone M2.
+        When `report_df` carries the `status` column set by `MdmVerifier._apply_waivers`, the
+        per (metric, target) summary also counts the curves: `n_passed`, `n_failed` (ALL
+        failures, waived ones included), `n_waived` (of which waived), `n_failed_new` (the
+        ones that make the run exit 1) and `n_not_judged` (any other status). A waiver means
+        "reviewed", not "good".
         """
         if report_df.empty:
             return
@@ -627,27 +668,17 @@ class RangeChecker:
         )
 
         if "status" in report_df.columns:
-            status_counts = (
-                report_df.groupby(["metric", "target", "status"])
-                .size()
-                .unstack(fill_value=0)
-                .reset_index()
-            )
-            for col in ("Passed", "Passed (Waived)", "Failed"):
-                if col not in status_counts.columns:
-                    status_counts[col] = 0
-            status_counts = status_counts.rename(
-                columns={
-                    "Passed": "n_passed",
-                    "Passed (Waived)": "n_waived",
-                    "Failed": "n_failed",
-                }
-            )
-            summary = summary.merge(
-                status_counts[["metric", "target", "n_passed", "n_waived", "n_failed"]],
-                on=["metric", "target"],
-                how="left",
-            )
+            status = report_df["status"].astype(str)
+            counts = report_df.assign(
+                n_passed=(status == "Passed").astype(int),
+                n_failed=status.str.startswith("Failed").astype(int),
+                n_waived=status.str.startswith("Failed (waived").astype(int),
+                n_failed_new=status.isin(["Failed (new)", "Failed (not simulated)"]).astype(int),
+                n_not_judged=~(status.eq("Passed") | status.str.startswith("Failed")),
+            ).groupby(["metric", "target"], as_index=False)[
+                ["n_passed", "n_failed", "n_waived", "n_failed_new", "n_not_judged"]
+            ].sum()
+            summary = summary.merge(counts, on=["metric", "target"], how="left")
 
         summary["percentage_oob"] = np.where(
             summary["n_points"] > 0,
@@ -666,8 +697,11 @@ class RangeChecker:
         summary.to_csv(results_summary_path, index=False)
 
         if not detailed_failures_df.empty:
+            # Sorted by the stable curve key (block_id is a new uuid every run), so two runs of
+            # the same toolchain give the same file.
+            order = [c for c in ("input_data", "block_index", "metric", "target") if c in detailed_failures_df.columns]
             detailed_failures_df_sorted = detailed_failures_df.sort_values(
-                "block_id", ascending=True
+                order or ["block_id"], kind="mergesort"
             )
             detailed_failures_df_sorted.to_csv(failed_results_path, index=False)
             logging.info(f"Detailed failure report saved to: {failed_results_path}")

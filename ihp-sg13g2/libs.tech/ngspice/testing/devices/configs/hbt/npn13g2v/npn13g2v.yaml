@@ -168,7 +168,13 @@ sp_template_path: "configs/hbt/hbt_sp.spice.j2"
 sparam_files:
   cje: spar_vb           # cold, VCB=0
   cjc: spar_vc           # cold
-  ft: spar_vcb05         # hot, VCB=0.5 V
+  # hot: the MQA file (VCB = 0.5 V) and every other genuine de-embedded constant-VCB file.
+  # VCB = 1.0 / 1.5 V come from the *_deemb files: the S_deemb of spar_vcb10 and spar_vcb15 is a
+  # copy of spar_vcb05's. spar_vcb20 is not used: it was measured at VCB = 0.25 V (ICCAP_VAR).
+  ft: [spar_vcb05, spar_vcb0, spar_vcb10_deemb, spar_vcb15_deemb, spar_vcbm05]
+
+# Files whose S_deemb is a copy of spar_vcb05's (left out of the copy check of spar_vcb05).
+sparam_copied_deemb: [spar_vcb10, spar_vcb15]
 
 sparam_metrics:
   - name: "cje"          # emitter (base-emitter) junction capacitance [F]
@@ -197,6 +203,17 @@ sparam_mqa_ranges:
   spar_vc:
     cjc: {vcb: [-0.5, 1.5]}
   spar_vcb05:
+    ft: {vbe: [0.75, 0.83]}
+  # the other fT files, judged in the same VBE window as the MQA file
+  spar_vcb0:
+    ft: {vbe: [0.75, 0.83]}
+  spar_vcb10_deemb:
+    ft: {vbe: [0.75, 0.83]}
+  spar_vcb15_deemb:
+    ft: {vbe: [0.75, 0.83]}
+  spar_vcbm05:
+    ft: {vbe: [0.75, 0.83]}
+  spar_vce_deemb:          # fT file of the npn13g2v test structures without spar_vcb05
     ft: {vbe: [0.75, 0.83]}
 
 # ==============================================================

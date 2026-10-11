@@ -50,6 +50,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from models_verifier.models_verifier import resolve_output_dir
 from validation.plot_verification_results import outside_mask, split_sim_columns
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ DEV_ROOT = Path(__file__).resolve().parents[2]
 MOS_METRICS: List[str] = ["id", "is", "ib", "ig"]
 
 # Makefile-target device key -> config YAML (kept in sync with the Makefile's
-# `*_CONFIG` variables and `models_verifier/waivers/generate.py::DEVICE_CONFIGS`).
+# `CONFIG_<case>` variables).
 DEVICE_CONFIGS: Dict[str, Path] = {
     "nmos_lv": DEV_ROOT / "configs/mos/nmos_lv/sg13_lv_nmos.yaml",
     "pmos_lv": DEV_ROOT / "configs/mos/pmos_lv/sg13_lv_pmos.yaml",
@@ -210,7 +211,8 @@ def compute_error_features(device: str) -> pd.DataFrame:
     """
     cfg = load_device_config(device)
     clip_curr = float(cfg.get("clip_curr", DEFAULT_CLIP_CURR))
-    out_dir = DEV_ROOT / cfg["output_dir"]
+    # Same folder as the verifier: output_dir under $RESULTS_ROOT (one folder per toolchain).
+    out_dir = DEV_ROOT / resolve_output_dir(cfg["output_dir"])
     combined_dir = out_dir / "combined_results"
     if not combined_dir.is_dir():
         raise FileNotFoundError(

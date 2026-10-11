@@ -121,7 +121,7 @@ class MdmParser:
             if self.device_type != "mos":
                 design_params["MASTER_SETUP_TYPE"] = derive_master_setup_type_from_filename(self.filepath)
             if self.device_type == "pnpmpa":
-                design_params["A"], design_params["P"] = get_dut_params(self.filepath)
+                design_params.update(get_dut_params(self.filepath))
 
             # Sorted for a deterministic column / `input_vars` order across runs.
             self.input_columns = sorted(input_vars)

@@ -16,17 +16,19 @@ Each configuration file provides the necessary parameters for:
 ```
 📁 configs  
  ┣ 📁 mos/  
- ┃ ┣ 📜 sg13_lv_nmos.yaml  
- ┃ ┣ 📜 sg13_lv_pmos.yaml  
- ┃ ┣ 📜 sg13_hv_nmos.yaml  
- ┃ ┗ 📜 sg13_hv_pmos.yaml  
+ ┃ ┣ 📁 nmos_lv, pmos_lv, nmos_hv, pmos_hv   one config per device (DC + C-V tier)  
+ ┃ ┣ 📜 dc_template.spice.j2      transistor DC sweep  
+ ┃ ┣ 📜 diode_template.spice.j2   junction-diode structures (di_bd_*, di_bs_*)  
+ ┃ ┗ 📜 cv_template.spice.j2      capacitance meter (C-V tier)  
  ┣ 📁 hbt/  
- ┃ ┣ 📜 sg13g2_npn13g2.yaml  
- ┃ ┣ 📜 sg13g2_npn13g2l.yaml  
- ┃ ┗ 📜 sg13g2_npn13g2v.yaml  
- ┣ 📁 pnp/  
- ┃ ┗ 📜 sg13_pnp_mpa.yaml  
- ┗ 📜 TEMPLATE.yaml  
+ ┃ ┣ 📁 npn13g2, npn13g2l, npn13g2v   one config per device (its MQA test structure; DC + S-parameters)  
+ ┃ ┣ 📁 variants              the other test structures of each device (base_config + a few keys)  
+ ┃ ┣ 📜 hbt_dc.spice.j2  
+ ┃ ┗ 📜 hbt_sp.spice.j2  
+ ┗ 📁 pnp_mpa/  
+   ┣ 📜 pnpmpa.yaml            DC (14 DUTs) + C-V tier (DUT16 array)  
+   ┣ 📜 pnpMPA_dc.spice.j2  
+   ┗ 📜 pnpMPA_cv.spice.j2  
 ```
 
 Each folder corresponds to a **device category**, and each YAML file inside represents a **specific device configuration**.
@@ -66,10 +68,10 @@ then the FF and SS bounds will be expanded by ±0.27% around their nominal value
 
 | Variable | Description | Example |
 |-----------|--------------|----------|
-| **clip_curr** | Minimum current value (in Amperes) used to exclude extremely small or noisy data points during comparison. | `1e-11` |
+| **clip_curr** | Current floor (A): measured and simulated currents below it are floored to ±clip_curr (sign kept); a point where the measurement and both band edges sit at the floor counts as agreement (`n_floor`). | `1e-11` |
 
 **Example:**  
-Currents below 1e-11 A are ignored during validation.
+Currents below 1e-11 A are compared as ±1e-11 A (sign kept); a point at the floor on both sides is an agreement.
 
 ---
 
@@ -80,6 +82,25 @@ Currents below 1e-11 A are ignored during validation.
 | **max_workers** | Number of parallel threads or workers used for validation tasks. | `8` |
 
 This helps speed up processing across multiple sweeps or corners.
+
+---
+
+### 5. Keys added for the test structures, diodes, S-parameters and C-V tier
+
+| Key | Description |
+|---|---|
+| **base_config** | Path of another config read first; this config's top-level keys replace the base's as a whole (`design_param_overrides: {}` drops the base's overrides). Used by `hbt/variants/`. |
+| **setup_templates** | `{measurement group: template}`: a netlist template for one group instead of `dc_template_path` (MOS: the junction diodes). |
+| **exclude_patterns** | Substrings of file names left out before parsing (pnpMPA: DUT3, the CBC/CBE templates and "single" files); every dropped file is logged. |
+| **sparam_files** | `{metric: file stem or list of stems}`; each file is its own curve, judged in its `sparam_mqa_ranges` window. |
+| **sparam_self_deembed** | `{stem: {open: <dummy stem>, short: <dummy stem>}}`: open-short de-embed the raw S of this file with the folder's dummies (its IC-CAP S_deemb is a copy). |
+| **sparam_copied_deemb** | Stems whose S_deemb is a known copy of another file's: never judged with it, left out of the copy check of the others. A judged file whose S_deemb equals another file's stops the run. |
+| **sparam_allow_raw** | Stems without S_deemb whose raw S may be judged (otherwise such a file stops the run). |
+| **cv_template_path**, **cv_subckt_pins**, **cv_freq_hz** | C-V netlist, the subcircuit's pin order, the meter frequency (1 MHz assumed). |
+| **cv_setups** | `{group: {high: [...], low: [...], float: [...], float_to: pin, sign: -1}}`: meter terminals per measurement group (see `models_verifier/cv_runner/cv_sweep_runner.py`). |
+| **cv_metrics** | Metric columns of the C-V tier, like `metrics`. |
+| **cv_file_overrides** | `{file-name substring: {design parameter: value}}`: corrections of wrong header values for the C-V tier (logged per file). |
+| **cv_waivers_dir**, **sparam_waivers_dir**, **waivers_dir** | Exception folders of the C-V, S-parameter and DC tiers. |
 
 ---
 

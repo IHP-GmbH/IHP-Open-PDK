@@ -1,0 +1,30 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+# HBT test structure npn13g2l_T03: npn13g2l, geometry from the file headers (Nx in REMARKS is right here).
+# Everything not set here comes from the device config (base_config): templates, metrics,
+# MQA windows. Own result folder and own exception files, so its failures never mix with
+# the device's main test structure.
+base_config: "configs/hbt/npn13g2l/npn13g2l.yaml"
+mdm_dir: "../../../../libs.doc/meas/HBT/npn13g2l_T03"
+output_dir: "models_results/npn13g2l_T03"
+waivers_dir: "waivers/variants/npn13g2l_T03"
+sparam_waivers_dir: "waivers/variants/npn13g2l_T03/sparam"
+
+# The device config forces Nx=4 for T01; this structure uses its header value.
+# Emitter length 5.0 um: outside the validity stated in the npn13G2l model card
+# (sg13g2_hbt_mod.lib: El = 1 - 2.5 um), so its failures include extrapolation of the model.
+design_param_overrides: {}

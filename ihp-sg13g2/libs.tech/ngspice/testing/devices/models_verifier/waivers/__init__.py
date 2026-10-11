@@ -15,9 +15,9 @@
 # =========================================================================================
 
 """
-Milestone M2 -- waiver / baseline system.
+Exact-value curve exceptions ("waivers"), schema 2.
 
-`waiver.py`   : load + evaluate per-device YAML waiver files (`waivers/<device>.yaml`).
-`generate.py` : snapshot a device's CURRENT (non-waived) failures into that YAML file
-                (`python -m models_verifier.waivers.generate --device <d>`).
+`waiver.py`   : the exception file of one device and the exact-match rule.
+`generate.py` : write the new failures of a finished run into that file
+                (`python -m models_verifier.waivers.generate --config <yaml> [--tier ...]`).
 """

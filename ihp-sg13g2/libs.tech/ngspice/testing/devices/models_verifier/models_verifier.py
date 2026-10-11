@@ -30,15 +30,64 @@ import pandas as pd
 import yaml
 
 from models_verifier.dc_runner.dc_sweep_runner import DcSweepRunner
-from models_verifier.dc_runner.helper import SIM_TYPE_MAP, expand_env
+from models_verifier.dc_runner.helper import SIM_TYPE_MAP, expand_env, ngspice_binary
 from models_verifier.error_analyzer.config import MetricSpec, Threshold, Tolerance
 from models_verifier.error_analyzer.range_checker import RangeChecker
 from models_verifier.mdm_processing.aggregator import MdmDirectoryAggregator
-from models_verifier.waivers.waiver import WaiverStore, make_key
+from models_verifier.run_record import (
+    exception_toolchain,
+    ngspice_version,
+    osdi_files_in,
+    toolchain_id,
+    toolchain_mismatch,
+    write_toolchain_txt,
+)
+from models_verifier.waivers.waiver import (
+    FAILED_NEW,
+    NO_POINTS,
+    NOT_SIMULATED,
+    PASSED,
+    UNWAIVED_STATUSES,
+    ExceptionStore,
+    curve_key,
+    index_failing_points,
+    points_fingerprint,
+)
 
 
 class ConfigError(Exception):
     """Raised when configuration loading or validation fails."""
+
+
+def read_config(config_path: Path) -> Dict:
+    """
+    Read a device config YAML and expand ${VAR} and ~ in its strings.
+
+    A config may name a `base_config` (path relative to the framework root): the base is read
+    first and the config's own top-level keys replace the base's. A key is replaced as a whole,
+    e.g. `design_param_overrides: {}` drops the base's overrides. Used for the HBT test-structure
+    variants, which differ from their device config only in a few keys.
+    """
+    config = yaml.safe_load(Path(config_path).read_text()) or {}
+    base = config.pop("base_config", None)
+    if base:
+        merged = read_config(Path(base))
+        merged.update(config)
+        config = merged
+    return expand_env(config)
+
+
+def resolve_output_dir(raw: str) -> Path:
+    """
+    `output_dir` from the config, with $RESULTS_ROOT (set by the Makefile, one folder per
+    toolchain) replacing a leading "models_results" folder, e.g. "models_results/nmos_lv" +
+    RESULTS_ROOT=models_results/ng47-ovr-b4517ad -> models_results/ng47-ovr-b4517ad/nmos_lv.
+    """
+    path = Path(raw)
+    root = os.environ.get("RESULTS_ROOT")
+    if root and path.parts and path.parts[0] == "models_results":
+        path = Path(root).joinpath(*path.parts[1:])
+    return path
 
 
 class VerificationError(Exception):
@@ -64,8 +113,21 @@ class MdmVerifier:
         self.device_type: str = self.config["device_type"]
         self.clip_curr: float = float(self.config.get("clip_curr", 1e-12))
 
-        self.output_dir = Path(self.config["output_dir"])
+        self.output_dir = resolve_output_dir(self.config["output_dir"])
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Toolchain of this run (tools/toolchain.py, exported by the Makefile). Devices with
+        # Verilog-A models (`osdi_path`) keep exceptions per full toolchain ID, the others per
+        # ngspice version only (see run_record.py).
+        self.toolchain: str = toolchain_id()
+        self.exception_key: str = exception_toolchain(self.toolchain, bool(self.config.get("osdi_path")))
+        self.ngspice_bin: str = ngspice_binary()
+        # Exceptions no failing row of the run used (filled by _apply_waivers, listed for review).
+        self.stale_exceptions: List[Tuple[str, str, str, str]] = []
+        self.absent_exceptions: List[Tuple[str, str, str, str]] = []   # their curve is not in the run
+        # Blocks whose simulation failed completely: (group, block index, message). Any makes the
+        # run exit 1 (a framework error is never waived).
+        self.simulation_errors: List[Tuple[str, int, str]] = []
 
         self._configure_logging()
 
@@ -78,14 +140,16 @@ class MdmVerifier:
         timestamp = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
         log_path = self.output_dir / f"models_verifier_{timestamp}.log"
 
+        # force: main() configured the console already; without it the log file stayed empty
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             handlers=[
                 logging.FileHandler(log_path),
-                logging.StreamHandler(sys.stdout),
+                logging.StreamHandler(),          # stderr, as configured by main()
             ],
-            format="%(asctime)s | %(levelname)-7s | %(message)s",
-            datefmt="%d-%b-%Y %H:%M:%S",
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            force=True,
         )
 
     def _load_config(self, config_path: Path) -> Dict:
@@ -93,8 +157,7 @@ class MdmVerifier:
         if not config_path or not config_path.exists():
             raise ConfigError(f"Config YAML '{config_path}' not found.")
 
-        config = yaml.safe_load(config_path.read_text())
-        config = expand_env(config)
+        config = read_config(config_path)
 
         required = [
             "mdm_dir",
@@ -108,6 +171,14 @@ class MdmVerifier:
         missing = [k for k in required if not config.get(k)]
         if missing:
             raise ConfigError(f"Missing required config keys: {missing}")
+        for group, template in (config.get("setup_templates") or {}).items():
+            if not Path(template).exists():
+                raise ConfigError(f"setup_templates: template of '{group}' not found: {template}")
+        if "$" in str(config.get("osdi_path", "")):
+            raise ConfigError(
+                f"osdi_path '{config['osdi_path']}' uses an unset environment variable: run through "
+                "the Makefile (make test-<case> TOOLCHAIN=<id>), which exports OSDI_DIR."
+            )
 
         # Defaults
         config.setdefault("max_workers", max(1, os.cpu_count()))
@@ -153,6 +224,7 @@ class MdmVerifier:
             output_dir=csv_stage_dir,
             create_csvs=create_csvs,
             device_type=self.device_type,
+            exclude_patterns=self.config.get("exclude_patterns") or [],
         )
         full_by_type, compact_by_type = aggregator.aggregate()
         if not compact_by_type:
@@ -167,6 +239,10 @@ class MdmVerifier:
             for by_type in (full_by_type, compact_by_type):
                 for key in list(by_type):
                     by_type[key] = self._apply_design_overrides(by_type[key], overrides)
+
+        # Optional netlist template per measurement group (config `setup_templates`), e.g. the
+        # MOS junction diodes, which need a different circuit than the transistor sweeps.
+        setup_templates = {k: Path(v) for k, v in (self.config.get("setup_templates") or {}).items()}
 
         # Configure DC runner
         runner = DcSweepRunner(
@@ -188,8 +264,8 @@ class MdmVerifier:
 
             for setup_type, compact_df in compact_by_type.items():
                 sim_type = SIM_TYPE_MAP.get(setup_type, "current")
-                # TODO: Support capacitor sims for FETs
-                if sim_type == "cap":
+                if sim_type == "cap":       # judged by the C-V tier (make test-<case>-cv)
+                    logging.info("Capacitance group %s: judged by the C-V tier, not here", setup_type)
                     continue
 
                 logging.info(f"Processing simulation setup: {setup_type}")
@@ -197,9 +273,10 @@ class MdmVerifier:
                     continue
 
                 try:
-                    sim_df, errors = runner.run(compact_df)
+                    sim_df, errors = runner.run(compact_df, setup_templates.get(setup_type))
                     if errors:
-                        logging.warning(f"Simulation errors for {setup_type}: {errors}")
+                        logging.error(f"Simulation errors for {setup_type}: {errors}")
+                        self.simulation_errors += [(str(setup_type), int(i), str(m)) for i, m in errors]
 
                     merged = runner.merge_with_clean(sim_df, full_by_type[setup_type])
                     if not merged.empty:
@@ -207,6 +284,7 @@ class MdmVerifier:
 
                 except Exception as e:
                     logging.error(f"Failed setup {setup_type}: {e}", exc_info=True)
+                    self.simulation_errors.append((str(setup_type), -1, f"whole group failed: {e}"))
 
         if not merged_parts:
             raise VerificationError("No merged sim-vs-measured rows produced.")
@@ -285,126 +363,185 @@ class MdmVerifier:
 
     def clean_results(self, dataframes: List[pd.DataFrame]) -> None:
         """
-        Save one CSV file per run setup type, dropping the master_setup_type column,
-        and clip current values for columns starting with 'i' and containing '_sim' or '_meas'.
-        Mutates the original DataFrames in place.
+        Floor every current column (name starting with "i", measured or simulated) at clip_curr,
+        keeping its sign, in place. Runs before the range check, so the check and the written
+        combined_results see the same values.
         """
-        output_dir = self.output_dir / "combined_results"
-        output_dir.mkdir(parents=True, exist_ok=True)
-
         for df in dataframes:
-            if df.empty:
-                logging.warning("Skipping empty DataFrame in results saving.")
-                continue
-
-            setup_type = str(df.at[df.index[0], "master_setup_type"])
-            safe_name = setup_type.replace(" ", "_").replace("/", "-")
-            fpath = output_dir / f"{safe_name}.csv"
-
-            # Drop metadata column in-place
-            if "master_setup_type" in df.columns:
-                df.drop(columns=["master_setup_type"], inplace=True)
-
-            # Clip currents for all matching columns (in-place)
-            current_cols = [
-                col for col in df.columns
-                if col.startswith("i") and ("_sim" in col or "_meas" in col)
-            ]
+            current_cols = [col for col in df.columns
+                            if col.startswith("i") and ("_sim" in col or "_meas" in col)]
             for col in current_cols:
                 df[col] = self._clip_current_sign_preserving(df[col], self.clip_curr)
             logging.debug(f"Clipped currents are: {current_cols}")
-            try:
-                df.to_csv(fpath, index=False)
-            except Exception as e:
-                logging.error("Failed to save results for setup '%s': %s", setup_type, e)
 
-    # -------------------------------------------------------------------------
-    # Milestone M2 -- waiver / baseline application
-    # -------------------------------------------------------------------------
-
-    def _apply_waivers(self, report_df: pd.DataFrame, waiver_store: WaiverStore) -> pd.DataFrame:
+    def write_combined_results(self, frames: List[pd.DataFrame], bands: pd.DataFrame) -> None:
         """
-        Classify every `report_df` row's `status` (`Passed` / `Passed (Waived)` /
-        `Failed`) and flip `passed` False->True for rows covered by a still-valid
-        waiver.
+        Write combined_results/<group>.csv, one per frame (= measurement group): the measured and
+        simulated columns plus, for every metric judged in the group, the band and the judged flag
+        the range checker used (<metric>_band_lo, <metric>_band_hi, <metric>_judged). `bands` is
+        aligned with pd.concat(frames, ignore_index=True).
+        """
+        output_dir = self.output_dir / "combined_results"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        start = 0
+        for df in frames:
+            part = bands.iloc[start:start + len(df)]
+            start += len(df)
+            metrics = [c[: -len("_band_lo")] for c in part.columns
+                       if c.endswith("_band_lo") and part[c].notna().any()]
+            band_cols = [f"{m}{suffix}" for m in metrics for suffix in ("_band_lo", "_band_hi", "_judged")]
+            table = pd.concat([df.reset_index(drop=True), part[band_cols].reset_index(drop=True)], axis=1)
+            group = str(table["master_setup_type"].iloc[0])
+            path = output_dir / f"{group.replace(' ', '_').replace('/', '-')}.csv"
+            table.drop(columns=["master_setup_type"]).to_csv(path, index=False)
 
-        The stable waiver key is `(device, input_data, block_index, metric, target)`
-        -- NOT `block_id` (a per-run uuid4, see `mdm_processing/parser.py`). A row is
-        waived only when its key has a waiver entry AND the current `percentage_oob`
-        is no worse than the entry's snapshot (+ margin); a WORSE regression than the
-        snapshot stays `Failed` even if a waiver entry exists for that key (see
-        `WaiverEntry.allows` / `WaiverStore.is_waived`).
+    # -------------------------------------------------------------------------
+    # Exceptions (waivers/waiver.py) and reports
+    # -------------------------------------------------------------------------
+
+    def _start_run(self) -> None:
+        """
+        Begin a pipeline run: remove the results of an earlier run (so a crash never leaves old
+        reports or tables behind for the generator, the figures or the EDA), reset the error list,
+        record the toolchain.
+        """
+        for folder in ("final_reports", "combined_results", "run_data", "netlists"):
+            shutil.rmtree(self.output_dir / folder, ignore_errors=True)
+        self.simulation_errors = []
+        self._record_toolchain()
+
+    def _record_toolchain(self) -> None:
+        """
+        Check that the ngspice binary and the OSDI model belong to the toolchain ID, then write
+        `<output_dir>/toolchain.txt`: toolchain ID, exception key, ngspice, OSDI files.
+        """
+        osdi_path = self.config.get("osdi_path")
+        version = ngspice_version(self.ngspice_bin)
+        problem = toolchain_mismatch(self.toolchain, version, osdi_path)
+        if problem:
+            raise VerificationError(problem)
+        osdi_files = osdi_files_in(str(Path(osdi_path).parent)) if osdi_path else []
+        path = write_toolchain_txt(self.output_dir, self.device_name, self.toolchain, self.exception_key,
+                                   self.ngspice_bin, version, osdi_files)
+        logging.info("Toolchain %s (exception key %s) recorded in %s", self.toolchain, self.exception_key, path)
+
+    def _apply_waivers(
+        self, report_df: pd.DataFrame, detailed_failures: pd.DataFrame, store: ExceptionStore
+    ) -> pd.DataFrame:
+        """
+        Set the `status` of every judged row (see waivers/waiver.py):
+
+            Passed                                  the row passed the band check
+            Failed (waived, auto, pending review)   failed; the run reproduces its exception exactly
+            Failed (waived, approved)               the same, for an exception the reviewer approved
+            Failed (new)                            failed without an exactly matching exception
+            Failed (not simulated)                  measured points but no simulated values (error)
+            No points                               no measured point in the bias window: not judged
+
+        `passed` stays as the band check decided: waived rows remain failures in every report.
+        The fingerprint of each failing row's points goes into `points_sha256` (the generator
+        copies it). Exceptions no failing row used are kept in `self.stale_exceptions`.
         """
         report_df = report_df.copy()
-        if report_df.empty:
-            report_df["status"] = pd.Series(dtype=object)
-            return report_df
-
+        keys = ["input_data", "block_index", "metric", "target"]
+        if set(keys) <= set(report_df.columns) and report_df.duplicated(subset=keys).any():
+            dup = report_df[report_df.duplicated(subset=keys, keep=False)][keys].head(5).to_dict("records")
+            raise VerificationError(f"two rows share a curve key (file names must be unique per case): {dup}")
+        points = index_failing_points(detailed_failures)
         statuses: List[str] = []
-        new_passed: List[bool] = []
-        n_waived = 0
-
+        fingerprints: List[str] = []
+        self._n_changed_logged = 0
         for row in report_df.itertuples(index=False):
-            if bool(row.passed):
-                statuses.append("Passed")
-                new_passed.append(True)
-                continue
-
-            key = make_key(
-                self.device_name,
-                getattr(row, "input_data", None),
-                getattr(row, "block_index", None),
-                row.metric,
-                row.target,
-            )
-            if waiver_store.is_waived(key, float(row.percentage_oob)):
-                statuses.append("Passed (Waived)")
-                new_passed.append(True)
-                n_waived += 1
+            fingerprint = ""
+            if int(row.n_points) == 0 and int(getattr(row, "n_missing", 0) or 0) > 0:
+                status = NOT_SIMULATED
+            elif int(row.n_points) == 0:
+                # no measured point inside the bias window of this metric: nothing was judged
+                status = NO_POINTS
+            elif bool(row.passed):
+                status = PASSED
             else:
-                statuses.append("Failed")
-                new_passed.append(False)
+                key = curve_key(getattr(row, "input_data", None), getattr(row, "block_index", None),
+                                row.metric, row.target)
+                fingerprint = points_fingerprint(points.get(key, []), store.sig_digits)
+                status = store.status_of(key, self.exception_key, int(row.n_points),
+                                         int(row.n_out_of_bounds), fingerprint)
+                if status == FAILED_NEW:
+                    self._log_changed_exception(store, key, row, fingerprint, points.get(key, []))
+            statuses.append(status)
+            fingerprints.append(fingerprint)
+        report_df["status"] = pd.Series(statuses, index=report_df.index, dtype=object)
+        report_df["points_sha256"] = pd.Series(fingerprints, index=report_df.index, dtype=object)
+        self.stale_exceptions = store.stale_keys(report_df, self.exception_key)
+        self.absent_exceptions = store.absent_keys(report_df, self.exception_key)
 
-        report_df["status"] = statuses
-        report_df["passed"] = new_passed
-
+        n_failed = sum(s.startswith("Failed") for s in statuses)
+        n_new = sum(s in UNWAIVED_STATUSES for s in statuses)
         logging.info(
-            "Waiver application: %d row(s) waived (Passed (Waived)) out of %d "
-            "originally-failing row(s), using %d loaded waiver entr%s for device '%s'.",
-            n_waived,
-            statuses.count("Passed (Waived)") + statuses.count("Failed"),
-            len(waiver_store),
-            "y" if len(waiver_store) == 1 else "ies",
-            self.device_name,
+            "Exceptions (%s, key %s): %d failing row(s), %d waived by an exact match, %d new; "
+            "%d stale exception(s); %d loaded.",
+            store.path, self.exception_key, n_failed, n_failed - n_new, n_new,
+            len(self.stale_exceptions), len(store),
         )
         return report_df
 
+    def _log_changed_exception(self, store: ExceptionStore, key, row, fingerprint: str, points: List[dict],
+                               max_rows: int = 10, max_points: int = 12) -> None:
+        """
+        A failing row that has an exception for this toolchain but does not match it: log what
+        changed and its failing points (bias and tt / ss / ff with 12 significant digits), so the
+        difference can be read from a CI log. At most `max_rows` rows per run.
+        """
+        why = store.difference(key, self.exception_key, int(row.n_points), int(row.n_out_of_bounds), fingerprint)
+        if why is None or self._n_changed_logged >= max_rows:
+            return
+        self._n_changed_logged += 1
+        logging.warning("Curve %s no longer matches its exception (%s): %s", "/".join(key), self.exception_key, why)
+        for p in points[:max_points]:
+            sim = " ".join(f"{k}={float(v):.12g}" for k, v in p["sim"].items() if v is not None and pd.notna(v))
+            bias = " ".join(f"{k}={float(v):.12g}" for k, v in sorted(p["bias"].items()))
+            logging.warning("    point %s: %s", bias, sim)
+
     def _write_new_failures(self, report_df: pd.DataFrame, path: Path) -> None:
         """
-        Write `final_reports/new_failures.csv`: every row whose `status` is still
-        `Failed` after waiver application (i.e. NEW or WORSE-than-baselined
-        sim-vs-measurement diffs). Always written (empty / headers-only when there are
-        no such rows) so downstream tooling/CI can rely on the file existing.
+        Write `final_reports/new_failures.csv` (rows "Failed (new)" / "Failed (not simulated)", the
+        ones that make the run exit 1) and, next to it, `stale_exceptions.csv` (exceptions no
+        failing row used) and `simulation_errors.csv` (blocks whose simulation failed). All are
+        always written, with headers only when empty.
         """
         cols = [
             "device", "input_data", "block_index", "metric", "target", "block_id",
             "n_points", "n_out_of_bounds", "percentage_oob", "n_excluded", "status",
         ]
-
         if report_df.empty or "status" not in report_df.columns:
-            failed = pd.DataFrame(columns=cols)
+            new = pd.DataFrame(columns=cols)
         else:
-            failed = report_df[report_df["status"] == "Failed"].copy()
-            failed.insert(0, "device", self.device_name)
-            failed = failed.reindex(columns=cols)
-
+            new = report_df[report_df["status"].isin(UNWAIVED_STATUSES)].copy()
+            new.insert(0, "device", self.device_name)
+            new = new.reindex(columns=cols)
         path.parent.mkdir(parents=True, exist_ok=True)
-        failed.to_csv(path, index=False)
+        new.to_csv(path, index=False)
 
-        if failed.empty:
-            logging.info(f"No new (non-waived) failures -- {path} written with headers only.")
+        stale = pd.DataFrame(self.stale_exceptions, columns=["input_data", "block_index", "metric", "target"])
+        stale.insert(0, "toolchain", self.exception_key)
+        absent = set(map(tuple, self.absent_exceptions))
+        stale["reason"] = ["curve not in this run (exit 1)" if tuple(map(str, k)) in absent
+                           else "passes or not judged now" for k in self.stale_exceptions]
+        stale.to_csv(path.parent / "stale_exceptions.csv", index=False)
+        # row: row of the group's compact table (-1: the whole group or file)
+        pd.DataFrame(self.simulation_errors, columns=["group", "row", "message"]).to_csv(
+            path.parent / "simulation_errors.csv", index=False)
+
+        if new.empty:
+            logging.info(f"No new failures -- {path} written with headers only.")
         else:
-            logging.warning(f"{len(failed)} new/regressed failure row(s) written to {path}")
+            logging.warning(f"{len(new)} new failure row(s) written to {path}")
+        if self.absent_exceptions:
+            logging.error("%d exception(s) name a curve that is not in this run (lost coverage): %s",
+                          len(self.absent_exceptions), "; ".join("/".join(k) for k in self.absent_exceptions[:5]))
+        if self.stale_exceptions:
+            logging.warning("%d exception(s) no longer needed (row passes): %s", len(self.stale_exceptions),
+                            path.parent / "stale_exceptions.csv")
 
     def gen_summary_stats(
         self,
@@ -413,198 +550,101 @@ class MdmVerifier:
         threshold: float = 0.0,
         tolerance_rel: float = 0.0,
         targets: Optional[List[str]] = None,
-        final_summary_path: str = None,
+        final_summary_path: Optional[Path] = None,
     ) -> Dict[str, float]:
         """
-        Generate overall failure statistics from range-check results and optionally
-        write a Markdown summary file.
+        Count the judged curves per target, log the table and write `final_summary.md`.
 
-        Args:
-            report_df: DataFrame with columns
-                ['target', 'percentage_oob', 'n_out_of_bounds', 'passed', 'n_points'],
-                plus an optional Milestone M2 `status` column
-                (`Passed`/`Passed (Waived)`/`Failed`) -- when present, `passed` is
-                already True for waived rows (see `_apply_waivers`) so
-                `total_fail_rate_cases_pct` only counts NON-waived `Failed` rows, and
-                the per-target breakdown additionally reports a `Waived` count.
-            detailed_failures_df: DataFrame with detailed failure points.
-            threshold: Threshold for percentage-based out-of-bound detection.
-            targets: List of targets to include (defaults to ["meas", "tt"]).
-            final_summary_path:Path to write summary file.
-
-        Returns:
-            Dictionary with:
-                - total_fail_rate_cases_pct: overall % of failed (non-waived) sweeps
-                - total_fail_rate_points_pct: overall % of failed simulation points
+        A waiver means "reviewed", not "good": waived curves are counted as FAILED. The column
+        "of which waived" shows how many failures have an exactly matching exception and "new"
+        how many do not (including rows that were not simulated); only those make the run exit 1
+        (`n_failed_new` in the result).
+        Rows with any other status (e.g. "Informative", "No points") are not judged: they are
+        left out of the curve counts and shown in their own column.
         """
-        if report_df.empty:
-            raise ValueError("`report_df` is empty — cannot generate summary statistics.")
+        targets = targets or ["meas", "tt"]
+        rows = report_df[report_df["target"].isin(targets)]
+        names = {"meas": "Measured", "tt": "Typical"}
 
-        if targets is None:
-            targets = ["meas", "tt"]
+        md = [
+            "# Summary report\n",
+            f"- **Device:** {self.device_name}",
+            f"- **Toolchain:** {self.toolchain} (exceptions key `{self.exception_key}`)",
+            f"- **Targets analyzed:** {', '.join(targets)}",
+            f"- **Out-of-bound threshold:** {threshold:.2f}% of the points of a curve",
+            f"- **Corner tolerance margin:** ±{tolerance_rel:.2f}% (widens the ss..ff band)",
+            f"- **Clipped current threshold:** {self.clip_curr:.2e} A",
+            "- **Waived curves count as failures** (a waiver means reviewed, not good).\n",
+            "| Target | Curves | Passed | Failed | of which waived | new | Not judged | Points "
+            "| Failed points | Fail % (curves) | Fail % (points) |",
+            "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|",
+        ]
+        logging.info("%-10s %8s %8s %8s %8s %8s %10s %10s %10s", "Target", "Curves", "Passed", "Failed",
+                     "Waived", "New", "NotJudged", "Points", "FailPts")
 
-        logging.info("\n========== RANGE-CHECK SUMMARY ANALYSIS STARTED ==========")
-        logging.info(f"Targets included: {targets}")
-        logging.info(f"OOB detection threshold: {threshold:.2f}%")
-        # Log the relative corner tolerance used to expand FF/SS bounds
-        logging.info(
-            f"Applying corner tolerance margin: ±{tolerance_rel:.2f}% "
-            f"(expands FF/SS simulation envelopes)"
-        )
-        logging.info(f"Clipped current threshold: {self.clip_curr:.2e} A\n")
-
-        # Filter for selected targets
-        target_report = report_df[report_df["target"].isin(targets)].copy()
-        if target_report.empty:
-            logging.warning(f"No matching entries found for targets {targets}")
-            return {
-                "total_fail_rate_cases_pct": 0.0,
-                "total_fail_rate_points_pct": 0.0,
-            }
-
-        # Initialize accumulators
-        total_sweeps_all = 0
-        total_failed_sweeps_all = 0
-        total_waived_sweeps_all = 0
-        total_points_all = 0
-        total_failed_points_all = 0
-        name_map = {"meas": "Measured", "tt": "Typical"}
-        has_status = "status" in target_report.columns
-
-        # Prepare Markdown output
-        md_lines = []
-        md_lines.append("# 📊 Summary Report\n")
-        md_lines.append(f"- **Targets analyzed:** {', '.join(targets)}")
-        md_lines.append(f"- **Out-of-bound threshold:** {threshold:.2f}%")
-        md_lines.append(f"- **Corner tolerance margin:** ±{tolerance_rel:.2f}% (expands FF/SS simulation envelopes)")
-        md_lines.append(f"- **Clipped current threshold:** {self.clip_curr:.2e} A\n")
-        if has_status:
-            md_lines.append(
-                "| Target | Sweeps | Pass | Passed (Waived) | Fail | Total Points | Failed Points "
-                "| Fail % (Cases) | Fail % (Points) |"
-            )
-            md_lines.append(
-                "|:--------|--------:|------:|-----------------:|------:|--------------:|---------------:"
-                "|----------------:|----------------:|"
-            )
-        else:
-            md_lines.append(
-                "| Target | Sweeps | Pass | Fail | Total Points | Failed Points "
-                "| Fail % (Cases) | Fail % (Points) |"
-            )
-            md_lines.append(
-                "|:--------|--------:|------:|------:|--------------:|---------------:"
-                "|----------------:|----------------:|"
-            )
-
-        # Console header
-        if has_status:
-            header = (
-                f"{'Target':<10} {'Sweeps':>8} {'Pass':>8} {'Waived':>8} {'Fail':>8} "
-                f"{'TotPts':>10} {'FailPts':>10} {'Fail%Cases':>12} {'Fail%Pts':>10}"
-            )
-        else:
-            header = (
-                f"{'Target':<10} {'Sweeps':>8} {'Pass':>8} {'Fail':>8} "
-                f"{'TotPts':>10} {'FailPts':>10} {'Fail%Cases':>12} {'Fail%Pts':>10}"
-            )
-        logging.info(header)
-        logging.info("-" * len(header))
-
+        totals = {"n_curves": 0, "n_failed": 0, "n_waived": 0, "n_failed_new": 0, "n_not_judged": 0,
+                  "n_points": 0, "n_oob": 0, "n_missing": 0}
+        per_target: Dict[str, Dict[str, int]] = {}
         for target in targets:
-            subset = target_report[target_report["target"] == target]
-            if subset.empty:
-                logging.warning(f"No data for target '{target}' — skipping.")
+            sub = rows[rows["target"] == target]
+            if sub.empty:
                 continue
-
-            total_sweeps = len(subset)
-            # `passed` is already True for waived rows (see _apply_waivers), so
-            # failed_sweeps here only counts NON-waived "Failed" rows.
-            passed_sweeps = int(subset["passed"].sum())
-            failed_sweeps = total_sweeps - passed_sweeps
-            waived_sweeps = int((subset["status"] == "Passed (Waived)").sum()) if has_status else 0
-            total_points_t = int(subset["n_points"].sum())
-            failed_points_t = int(subset["n_out_of_bounds"].sum())
-
-            if not detailed_failures_df.empty:
-                failed_points_t += len(detailed_failures_df[detailed_failures_df["target"] == target])
-
-            fail_rate_cases = (failed_sweeps / total_sweeps) * 100 if total_sweeps else 0
-            fail_rate_points = (failed_points_t / total_points_t) * 100 if total_points_t else 0
-
-            # Log to console
-            tname = name_map.get(target, target.upper())
-            if has_status:
-                logging.info(
-                    f"{tname:<10} "
-                    f"{total_sweeps:>8d} "
-                    f"{passed_sweeps:>8d} "
-                    f"{waived_sweeps:>8d} "
-                    f"{failed_sweeps:>8d} "
-                    f"{total_points_t:>10d} "
-                    f"{failed_points_t:>10d} "
-                    f"{fail_rate_cases:>12.2f} "
-                    f"{fail_rate_points:>10.2f}"
-                )
-            else:
-                logging.info(
-                    f"{tname:<10} "
-                    f"{total_sweeps:>8d} "
-                    f"{passed_sweeps:>8d} "
-                    f"{failed_sweeps:>8d} "
-                    f"{total_points_t:>10d} "
-                    f"{failed_points_t:>10d} "
-                    f"{fail_rate_cases:>12.2f} "
-                    f"{fail_rate_points:>10.2f}"
-                )
-
-            # Add to Markdown table
-            if has_status:
-                md_lines.append(
-                    f"| {tname} | {total_sweeps} | {passed_sweeps - waived_sweeps} | {waived_sweeps} | "
-                    f"{failed_sweeps} | {total_points_t} | {failed_points_t} | "
-                    f"{fail_rate_cases:.2f}% | {fail_rate_points:.2f}% |"
-                )
-            else:
-                md_lines.append(
-                    f"| {tname} | {total_sweeps} | {passed_sweeps} | {failed_sweeps} | "
-                    f"{total_points_t} | {failed_points_t} | {fail_rate_cases:.2f}% | {fail_rate_points:.2f}% |"
-                )
-
-            # Totals
-            total_sweeps_all += total_sweeps
-            total_failed_sweeps_all += failed_sweeps
-            total_waived_sweeps_all += waived_sweeps
-            total_points_all += total_points_t
-            total_failed_points_all += failed_points_t
-
-        # Compute overall rates
-        total_fail_rate_cases_pct = (
-            (total_failed_sweeps_all / total_sweeps_all) * 100 if total_sweeps_all else 0
-        )
-        total_fail_rate_points_pct = (
-            (total_failed_points_all / total_points_all) * 100 if total_points_all else 0
-        )
-        if has_status:
-            md_lines.append(
-                f"\n**Totals:** {total_sweeps_all} sweeps, "
-                f"{total_sweeps_all - total_failed_sweeps_all - total_waived_sweeps_all} Passed, "
-                f"{total_waived_sweeps_all} Passed (Waived), {total_failed_sweeps_all} Failed."
+            judged = sub["status"].astype(str).eq(PASSED) | sub["status"].astype(str).str.startswith("Failed")
+            not_judged = int((~judged).sum())
+            sub = sub[judged]
+            status = sub["status"].astype(str)
+            t = {
+                "n_curves": len(sub),
+                "n_failed": int(status.str.startswith("Failed").sum()),
+                "n_waived": int(status.str.startswith("Failed (waived").sum()),
+                "n_failed_new": int(status.isin(UNWAIVED_STATUSES).sum()),
+                "n_not_judged": not_judged,
+                "n_points": int(sub["n_points"].sum()),
+                "n_oob": int(sub["n_out_of_bounds"].sum()),
+                # measured points the simulation did not give (their curves are failed); counted
+                # on the measured target only, so a point is not counted again for the tt target
+                "n_missing": (int(sub["n_missing"].fillna(0).sum())
+                              if "n_missing" in sub and target == "meas" else 0),
+            }
+            per_target[target] = t
+            for k in totals:
+                totals[k] += t[k]
+            pct_curves = 100.0 * t["n_failed"] / t["n_curves"] if t["n_curves"] else 0.0
+            pct_points = 100.0 * t["n_oob"] / t["n_points"] if t["n_points"] else 0.0
+            name = names.get(target, target.upper())
+            md.append(
+                f"| {name} | {t['n_curves']} | {t['n_curves'] - t['n_failed']} | {t['n_failed']} | "
+                f"{t['n_waived']} | {t['n_failed_new']} | {t['n_not_judged']} | {t['n_points']} | "
+                f"{t['n_oob']} | {pct_curves:.2f}% | {pct_points:.2f}% |"
             )
-            logging.info(
-                f"TOTALS: {total_sweeps_all} sweeps | "
-                f"Passed={total_sweeps_all - total_failed_sweeps_all - total_waived_sweeps_all} | "
-                f"Passed (Waived)={total_waived_sweeps_all} | Failed={total_failed_sweeps_all}"
-            )
-        final_summary_path.write_text("\n".join(md_lines))
-        logging.info(f"Summary written to: {final_summary_path}")
+            logging.info("%-10s %8d %8d %8d %8d %8d %10d %10d %10d", name, t["n_curves"],
+                         t["n_curves"] - t["n_failed"], t["n_failed"], t["n_waived"], t["n_failed_new"],
+                         t["n_not_judged"], t["n_points"], t["n_oob"])
 
-        # Return minimal metrics
-        return {
-            "total_fail_rate_cases_pct": total_fail_rate_cases_pct,
-            "total_fail_rate_points_pct": total_fail_rate_points_pct,
-            "total_waived_sweeps": float(total_waived_sweeps_all),
-        }
+        # The verification result is the measured target; the typical target (tt inside the ss..ff
+        # band) is a check of the model corners and is reported on its own.
+        m = per_target.get("meas", {k: 0 for k in totals})
+        tt = per_target.get("tt")
+        md.append(
+            f"\n**Totals (measured target):** {m['n_curves']} curves, {m['n_curves'] - m['n_failed']} passed, "
+            f"{m['n_failed']} failed ({m['n_waived']} of them waived, {m['n_failed_new']} new); "
+            f"{m['n_not_judged']} not judged; {m['n_missing']} measured point(s) not simulated (per judged metric)."
+            + (f" Typical target: {tt['n_failed']} of {tt['n_curves']} curves failed ({tt['n_failed_new']} new)."
+               if tt else "")
+            + f" Exceptions: {len(self.stale_exceptions)} stale, {len(self.absent_exceptions)} for curves not in this run."
+        )
+        logging.info("TOTALS: %d curves | passed %d | failed %d (waived %d, new %d) | stale exceptions %d",
+                     totals["n_curves"], totals["n_curves"] - totals["n_failed"], totals["n_failed"],
+                     totals["n_waived"], totals["n_failed_new"], len(self.stale_exceptions))
+        if final_summary_path is not None:
+            Path(final_summary_path).write_text("\n".join(md) + "\n")
+            logging.info(f"Summary written to: {final_summary_path}")
+
+        result = {k: float(v) for k, v in totals.items()}
+        result["total_fail_rate_cases_pct"] = (
+            100.0 * totals["n_failed"] / totals["n_curves"] if totals["n_curves"] else 0.0
+        )
+        return result
 
     # -------------------------------------------------------------------------
     # Main runner
@@ -614,74 +654,63 @@ class MdmVerifier:
         self, waivers_dir: Optional[Path] = None
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
         """
-        Run aggregate -> simulate -> range-check -> waiver-apply -> report-write, and
-        return `(full_res, detailed_failures, stats)`.
-
-        Factored out of `run_verification()` so the waiver generator
-        (`models_verifier/waivers/generate.py::snapshot_device`) can reuse the exact
-        same pipeline (including waiver application, so it snapshots only rows that
-        are STILL `Failed` after any already-existing waiver file is applied) without
-        duplicating the aggregate/simulate/range-check logic.
+        Run aggregate -> simulate -> range-check -> exceptions -> reports, and return
+        `(full_res, detailed_failures, stats)`.
 
         Args:
-            waivers_dir: Directory containing `<device_name>.yaml` waiver files.
+            waivers_dir: Directory containing the `<device_name>.yaml` exception files.
                 Defaults to `config["waivers_dir"]` or `./waivers` (relative to cwd,
                 i.e. `$DEV/waivers` under the documented run recipe).
         """
         logging.info("Starting verification of device: %s", self.device_name)
+        self._start_run()
 
         # Aggregate and simulate
         logging.info("Aggregating MDM data and running DC simulations ...")
         merged_dfs = self._aggregate_and_simulate()
         self.clean_results(merged_dfs)
 
-        # PreProcessing for merged results
-        merged_df = pd.concat(merged_dfs, ignore_index=True)
         range_checker = self._build_range_checker()
-
-        logging.info("Running range checking on merged results ...")
-        full_res, detailed_failures = range_checker.analyze(merged_df)
-
-        # --- Milestone M2: waiver / baseline application -----------------------
-        if waivers_dir is None:
-            waivers_dir = Path(self.config.get("waivers_dir", "waivers"))
-        waiver_store = WaiverStore.load(self.device_name, waivers_dir)
-        full_res = self._apply_waivers(full_res, waiver_store)
-        # -------------------------------------------------------------------------
-
-        reports_dir = self.output_dir / "final_reports"
-        reports_dir.mkdir(parents=True, exist_ok=True)
-
-        full_results = reports_dir / "full_results.csv"
-        results_summary = reports_dir / "results_summary.csv"
-        final_summary = reports_dir / "final_summary.md"
-        failed_results = reports_dir / "failed_results.csv"
-        new_failures = reports_dir / "new_failures.csv"
-
-        logging.info(f"- Full report: {full_results}")
-        full_res.to_csv(full_results, index=False)
-
-        # Milestone M2: NEW/WORSE (non-waived) failures, always written.
-        self._write_new_failures(full_res, new_failures)
-
-        # Summary and failures
-        range_checker.summarize_to_csv(
-            full_res, detailed_failures, results_summary, failed_results
-        )
-
-        stats = self.gen_summary_stats(
-            full_res,
-            detailed_failures,
+        full_res, detailed_failures, stats = self._check_and_report(
+            merged_dfs, range_checker,
+            waivers_dir or Path(self.config.get("waivers_dir", "waivers")),
             threshold=self.config.get("threshold_percent_oob", 0),
             tolerance_rel=self.config.get("corner_tolerance_percent", 0.0),
-            targets=["meas", "tt"],
-            final_summary_path=final_summary,
         )
-        # Cleanup netlists (passed includes waived rows -- see _apply_waivers)
+        # Remove the netlists of passing blocks (failing ones, waived or not, are kept).
         range_checker.cleanup_passed_netlists(
             self.output_dir / "netlists", full_res, dry_run=False
         )
 
+        return full_res, detailed_failures, stats
+
+    def _check_and_report(
+        self, frames: List[pd.DataFrame], checker: RangeChecker, waivers_dir: Path,
+        threshold: float, tolerance_rel: float,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, float]]:
+        """
+        The common end of every pipeline (DC, S-parameters, C-V): range-check the frames, write
+        combined_results with the band columns, apply the exceptions of `waivers_dir`, and write
+        final_reports (full_results, new_failures, stale_exceptions, simulation_errors,
+        results_summary, failed_results, final_summary). Returns (full_res, detailed_failures, stats).
+        """
+        logging.info("Running range checking ...")
+        full_res, detailed_failures = checker.analyze(pd.concat(frames, ignore_index=True))
+        self.write_combined_results(frames, checker.bands)
+
+        # Exceptions: a failing row is waived only on an exact reproduction (waivers/waiver.py).
+        store = ExceptionStore.load(self.device_name, waivers_dir)
+        full_res = self._apply_waivers(full_res, detailed_failures, store)
+
+        reports_dir = self.output_dir / "final_reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        full_res.to_csv(reports_dir / "full_results.csv", index=False)
+        self._write_new_failures(full_res, reports_dir / "new_failures.csv")
+        checker.summarize_to_csv(full_res, detailed_failures,
+                                 reports_dir / "results_summary.csv", reports_dir / "failed_results.csv")
+        stats = self.gen_summary_stats(full_res, detailed_failures, threshold=threshold,
+                                       tolerance_rel=tolerance_rel, targets=["meas", "tt"],
+                                       final_summary_path=reports_dir / "final_summary.md")
         return full_res, detailed_failures, stats
 
     def run_verification(self) -> int:
@@ -689,19 +718,30 @@ class MdmVerifier:
         Run the full verification pipeline.
 
         Returns:
-            Exit code (0 = success, 1 = failures detected). Only NON-waived `Failed`
-            rows count as failures (Milestone M2): a device whose current diffs are
-            all covered by `waivers/<device_name>.yaml` exits 0.
+            Exit code: 1 when any row is "Failed (new)" or "Failed (not simulated)" or a block
+            could not be simulated, else 0. Waived rows are still failures in the reports, but
+            they do not change the exit code.
         """
         _full_res, _detailed_failures, stats = self._run_pipeline()
+        return self._exit_code(stats)
 
-        # Return non-zero if there are failing (non-waived) cases
-        if stats["total_fail_rate_cases_pct"] > 0:
-            logging.warning("Verification completed with FAILURES detected.")
+    def _exit_code(self, stats: Dict[str, float]) -> int:
+        """1 if the run has new failures (no exactly matching exception) or simulation errors, else 0."""
+        if self.simulation_errors:
+            logging.error("%d block(s) could not be simulated (final_reports/simulation_errors.csv).",
+                          len(self.simulation_errors))
             return 1
-        else:
-            logging.info("Verification completed successfully with NO FAILURES.")
-            return 0
+        if self.absent_exceptions:
+            logging.error("%d exception(s) name a curve missing from this run (final_reports/stale_exceptions.csv).",
+                          len(self.absent_exceptions))
+            return 1
+        if stats["n_failed_new"] > 0:
+            logging.warning("Verification finished with %d NEW failure(s) (%d failure(s) in total).",
+                            int(stats["n_failed_new"]), int(stats["n_failed"]))
+            return 1
+        logging.info("Verification finished: no new failures (%d failure(s) in total, all waived).",
+                     int(stats["n_failed"]))
+        return 0
 
 
 # -------------------------------------------------------------------------

@@ -167,7 +167,14 @@ sp_template_path: "configs/hbt/hbt_sp.spice.j2"
 sparam_files:
   cje: spar_vb           # cold, VCB=0
   cjc: spar_vc           # cold
-  ft: spar_vcb025        # hot, VCB=0.25 V
+  # hot: the MQA file (VCB = 0.25 V) and every other genuine de-embedded constant-VCB file
+  ft: [spar_vcb025, spar_vcb0, spar_vcb05, spar_vcb10, spar_vcbm05]
+
+# spar_vcb10's IC-CAP S_deemb is a copy of spar_vcb05's (identical values; the raw S differ):
+# its raw S is de-embedded again here with the folder's open/short dummies (open-short,
+# models_verifier/sp_runner/deembed.py), which reproduces IC-CAP's S_deemb of the genuine files.
+sparam_self_deembed:
+  spar_vcb10: {open: dummy_open_D54, short: dummy_short_D64}
 
 sparam_metrics:
   - name: "cje"          # emitter (base-emitter) junction capacitance [F]
@@ -197,6 +204,15 @@ sparam_mqa_ranges:
     cjc: {vcb: [-0.5, 1.5]}
   spar_vcb025:
     ft: {vbe: [0.7, 0.96]}
+  # the other constant-VCB fT files, judged in the same VBE window as the MQA file
+  spar_vcb0:
+    ft: {vbe: [0.7, 0.96]}
+  spar_vcb05:
+    ft: {vbe: [0.7, 0.96]}
+  spar_vcb10:
+    ft: {vbe: [0.7, 0.96]}
+  spar_vcbm05:
+    ft: {vbe: [0.7, 0.96]}
 
 # ==============================================================
 # Output Paths
@@ -204,4 +220,4 @@ sparam_mqa_ranges:
 # Directory where processed results will be stored
 # ==============================================================
 
-output_dir: "models_results/hbt_npn13g2"
+output_dir: "models_results/npn13g2"

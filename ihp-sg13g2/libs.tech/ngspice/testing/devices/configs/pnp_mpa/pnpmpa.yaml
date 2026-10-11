@@ -23,6 +23,16 @@
 # Path to measured device model directory (raw measurement data)
 mdm_dir: "../../../../libs.doc/meas/pnpMPA"
 
+# Measurement files left out (substrings of the file name):
+#   _DUT3.mdm     DUT3 (emitter 2 x 5 um): measured IC is 5 % of the area/perimeter scaling of the
+#                 other 14 DUTs (IB 1.9x): defective or mis-measured device.
+#   _Vorlage.mdm  CBC/CBE "Bhi_Vorlage" templates: no geometry in the header, CBE values with 11
+#                 significant digits (simulated, not measured).
+#   _single_      CBC/CBE "single" files: the DUT16 array data divided by 12000 (ratio 11956-12051
+#                 at every point), no measurement of their own.
+# Every other DUT needs a geometry in models_verifier/constants.py (DUTS); an unknown DUT stops the run.
+exclude_patterns: ["_DUT3.mdm", "_Vorlage.mdm", "_single_"]
+
 # Path to the PDK-provided model library (corner definitions)
 corner_lib_path: "../../../../libs.tech/ngspice/models/cornerHBT.lib"
 
@@ -136,6 +146,31 @@ metrics:
     tt: "vb_sim_hbt_typ"
     ss: "vb_sim_hbt_bcs"
     ff: "vb_sim_hbt_Wcs"
+
+# ==============================================================
+# C-V tier (make test-pnp_mpa-cv): CBE / CBC of the DUT16 array
+# ==============================================================
+# One AC analysis at cv_freq_hz per bias point (models_verifier/cv_runner/); normal check.
+# DUT16 = 12000 cells of 0.64 x 10 um (geometry per cell in constants.DUTS, m = 12000 below).
+cv_template_path: "configs/pnp_mpa/pnpMPA_cv.spice.j2"
+cv_subckt_pins: [c, b, e]             # pin order of the pnpMPA subcircuit
+cv_freq_hz: 1.0e6                     # not recorded in the files
+# cbe: B high, E low, C AC ground. cbc: B high, C low, E AC ground. The CBC file's vbc runs from
+# +0.5 to -3 V; read as V(B) - V(C) its end would forward-bias the base-collector junction by 3 V,
+# so it is the reverse bias, V(B) = -vbc (sign -1). The model agrees with that reading (0.99-1.00
+# over the reverse range; 20-3000x off with V(B) = +vbc). At the forward end (vbc = 0.5 V, DUT16
+# 1.1e-8 F measured vs 5e-10 F simulated) the card has no diffusion capacitance, so those points
+# cannot match.
+cv_setups:
+  cbe: {high: [b], low: [e]}
+  cbc: {high: [b], low: [c], sign: -1}
+cv_metrics:
+  - {name: cbe, meas: cbe_meas, tt: cbe_sim_hbt_typ, ss: cbe_sim_hbt_bcs, ff: cbe_sim_hbt_Wcs}
+  - {name: cbc, meas: cbc_meas, tt: cbc_sim_hbt_typ, ss: cbc_sim_hbt_bcs, ff: cbc_sim_hbt_Wcs}
+cv_file_overrides:                    # (keys: substrings of the file names; each must match a file)
+  CBC_pnpMPA_DUT16: {M: 12000}
+  CBE_pnpMPA_DUT16: {M: 12000}
+cv_waivers_dir: "waivers/cv"
 
 # ==============================================================
 # Output Paths

@@ -440,20 +440,21 @@ def derive_master_setup_type_from_filename(file_path: Path) -> str:
     return "_".join(parts[:2]) if len(parts) >= 2 else parts[0]
 
 
-def get_dut_params(file_path: Path) -> Tuple[float, float]:
+def get_dut_params(file_path: Path) -> Dict[str, float]:
     """
-    Get (a, p) parameters for a DUT from filename.
+    Geometry of a pnpMPA DUT from the last "_"-separated part of the file name ("..._DUT7.mdm").
 
-    Args:
-        file_path: Path to DUT file.
-
-    Returns:
-        Tuple (a, p). Defaults to (2e-12, 6e-6) if DUT not recognized.
+    Returns {"A", "P", "AC", "PC"} (emitter area/perimeter, n-well area/perimeter; see
+    constants.DUTS). An unknown DUT raises ValueError: guessing a geometry would compare the
+    measurement with the wrong device.
     """
     parts = _split_filename_parts(file_path)
     dut_name = parts[-1].upper() if parts else "UNKNOWN"
-    params = DUTS.get(dut_name, {"a": 2e-12, "p": 6e-6})
-    return params["a"], params["p"]
+    if dut_name not in DUTS:
+        raise ValueError(f"No pnpMPA geometry for '{dut_name}' ({Path(file_path).name}); "
+                         f"add it to constants.DUTS or exclude the file (config exclude_patterns).")
+    geo = DUTS[dut_name]
+    return {"A": geo["a"], "P": geo["p"], "AC": geo["ac"], "PC": geo["pc"]}
 
 
 def derive_sweep_var(sweep_var: str, volt_name: str) -> str:

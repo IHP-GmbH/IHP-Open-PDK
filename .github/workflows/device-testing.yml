@@ -1,341 +1,174 @@
-name: Device Testing (matrix)
+# Device model tests (ihp-sg13g2/libs.tech/ngspice/testing/devices): measured vs simulated.
+#
+# Thin by design: every step calls a script or a make target that runs the same way locally.
+#   plan        job matrices from toolchain.lock (tools/ci_matrix.py)
+#   ngspice     build each pinned ngspice version once, cached (tools/toolchain.py build ngspice)
+#   openvaf     build each pinned OpenVAF-Reloaded commit once and compile PSP103 with it, cached
+#   unit-tests  framework unit tests and the HBT de-embedding check (no simulation)
+#   tests       one job per toolchain and make target; a job fails on NEW failures (no exactly
+#               matching exception in waivers/), simulation errors, or exceptions whose curve is
+#               missing. The job summary has the counts per run (waived curves counted as failures),
+#               every new failure and the toolchain record; every failure is in the uploaded
+#               final_reports.
+# Caches are keyed on toolchain.lock, tools/ci_setup.sh and the runner image name (ubuntu-24.04,
+# the `runs-on` of every job), so a pin change
+# (or `cache_version` in toolchain.lock) rebuilds them; an edit of tools/toolchain.py does not
+# (hashFiles() is only allowed inside steps, so each cache key spells it out).
+
+name: Device Testing
 
 on:
   push:
+    branches: [device_models_testing]
   pull_request:
+    paths:
+      - "ihp-sg13g2/libs.tech/ngspice/testing/devices/**"
+      - "ihp-sg13g2/libs.tech/ngspice/models/**"
+      - "ihp-sg13g2/libs.tech/verilog-a/**"
+      - ".github/workflows/device-testing.yml"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # (not MV / DEV: libtool reads $MV as its move command when ngspice is built)
+  DEV_DIR: ihp-sg13g2/libs.tech/ngspice/testing/devices
+  TOOLCHAIN_ROOT: /home/runner/toolchains
+
+# bash -eo pipefail for every step (a failing command inside a pipe fails the step)
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      NGSPICE_VERSION: "44.2"
-      NGSPICE_PREFIX: "${{ github.workspace }}/.cache/ngspice" # cache-friendly
-      OPENVAF_VERSION: "23_5_0"
-      OPENVAF_HOME: "${{ github.workspace }}/.cache/openvaf"
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      ngspice: ${{ steps.matrix.outputs.ngspice }}
+      openvaf: ${{ steps.matrix.outputs.openvaf }}
+      tests: ${{ steps.matrix.outputs.tests }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          submodules: recursive
-          fetch-depth: 0
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - id: matrix
+        run: python3 "$DEV_DIR/tools/ci_matrix.py" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Python
-        id: py
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Cache pip downloads
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-v1
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libx11-dev libxaw7-dev libxmu-dev libxpm-dev \
-            libreadline-dev libfftw3-dev \
-            bison flex libtool automake autoconf \
-            pkg-config git wget ca-certificates
-
-      - name: Restore ngspice cache
-        id: cache-ngspice
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.NGSPICE_PREFIX }}
-          key: ngspice-${{ runner.os }}-${{ env.NGSPICE_VERSION }}
-
-      - name: Build & install ngspice (with OSDI)
-        if: ${{ ! (steps.cache-ngspice.outputs.cache-hit) }}
-        run: |
-          set -euxo pipefail
-          mkdir -p "${NGSPICE_PREFIX}"
-          cd /tmp
-          wget -O "ngspice-${NGSPICE_VERSION}.tar.gz" \
-            "https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/${NGSPICE_VERSION}/ngspice-${NGSPICE_VERSION}.tar.gz"
-          tar -xf "ngspice-${NGSPICE_VERSION}.tar.gz"
-          mkdir -p "ngspice-${NGSPICE_VERSION}/build"
-          cd "ngspice-${NGSPICE_VERSION}/build"
-          ../configure \
-            --prefix="${NGSPICE_PREFIX}" \
-            --enable-osdi \
-            --enable-xspice \
-            --with-readline=yes \
-            --disable-debug \
-            --with-x
-          make -j"$(nproc)"
-          make install
-
-      - name: Add ngspice to PATH
-        run: echo "${NGSPICE_PREFIX}/bin" >> "$GITHUB_PATH"
-
-      - name: Verify ngspice
-        run: |
-          which ngspice
-          ngspice -v
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r ihp-sg13g2/libs.tech/ngspice/testing/devices/requirements.txt
-
-      - name: Setup PYTHONPATH
-        run: |
-          echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> "$GITHUB_ENV"
-
-      - name: Restore OpenVAF cache
-        id: cache-openvaf
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.OPENVAF_HOME }}
-          key: openvaf-${{ runner.os }}-${{ env.OPENVAF_VERSION }}
-
-      - name: Download OpenVAF (if not cached)
-        if: ${{ ! (steps.cache-openvaf.outputs.cache-hit) }}
-        run: |
-          set -euxo pipefail
-          mkdir -p "${OPENVAF_HOME}"
-          cd "${OPENVAF_HOME}"
-          wget "https://openva.fra1.cdn.digitaloceanspaces.com/openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz"
-          tar -xzf "openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz"
-          rm -f "openvaf_${OPENVAF_VERSION}_linux_amd64.tar.gz"
-          chmod +x openvaf
-
-      - name: Add OpenVAF to PATH
-        run: echo "${OPENVAF_HOME}" >> "$GITHUB_PATH"
-
-      - name: Verify OpenVAF
-        run: |
-          which openvaf
-          openvaf --version
-
-      - name: Restore OSDI cache
-        id: cache-osdi
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi
-          key: osdi-${{ runner.os }}-${{ env.OPENVAF_VERSION }}-${{ hashFiles('ihp-sg13g2/libs.tech/verilog-a/**') }}
-
-      - name: Build OSDI files from Verilog-A (if cache miss)
-        if: ${{ ! (steps.cache-osdi.outputs.cache-hit) }}
-        run: |
-          set -euxo pipefail
-          cd ${{ github.workspace }}/ihp-sg13g2/libs.tech/verilog-a
-          chmod +x openvaf-compile-va.sh
-          ./openvaf-compile-va.sh
-
-      - name: Verify OSDI files were created
-        run: ls -la ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi/
-
-  tests:
-    needs: build
-    runs-on: ubuntu-latest
+  ngspice:
+    needs: plan
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        case:
-          [
-            nmos_lv,
-            pmos_lv,
-            nmos_hv,
-            pmos_hv,
-            pnp_mpa,
-            npn13g2,
-            npn13g2l,
-            npn13g2v,
-            npn13g2-sparam,
-            npn13g2l-sparam,
-            npn13g2v-sparam,
-          ]
-    name: device=${{ matrix.case }}
-    env:
-      NGSPICE_VERSION: "44.2"
-      NGSPICE_PREFIX: "${{ github.workspace }}/.cache/ngspice"
-      OPENVAF_VERSION: "23_5_0"
-      OPENVAF_HOME: "${{ github.workspace }}/.cache/openvaf"
+        version: ${{ fromJSON(needs.plan.outputs.ngspice) }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - id: cache
+        uses: actions/cache@v4
         with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Setup Python
-        id: py
+          path: ${{ env.TOOLCHAIN_ROOT }}/ngspice-${{ matrix.version }}
+          key: ngspice-${{ matrix.version }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+      - if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-
-      - name: Cache pip downloads
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-v1
-
-      - name: Install runtime dependencies
+          python-version: "3.14"
+      - if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libx11-6 libxaw7 libxmu6 libxpm4 \
-            libreadline8 libfftw3-dev \
-            ca-certificates
+          pip install -r "$DEV_DIR/requirements.lock"
+          $DEV_DIR/tools/ci_setup.sh ngspice
+          python3 "$DEV_DIR/tools/toolchain.py" build ngspice ${{ matrix.version }}
 
-      - name: Restore ngspice cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.NGSPICE_PREFIX }}
-          key: ngspice-${{ runner.os }}-${{ env.NGSPICE_VERSION }}
-
-      - name: Add ngspice to PATH
-        run: echo "${NGSPICE_PREFIX}/bin" >> "$GITHUB_PATH"
-
-      - name: Restore OpenVAF cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.OPENVAF_HOME }}
-          key: openvaf-${{ runner.os }}-${{ env.OPENVAF_VERSION }}
-
-      - name: Add OpenVAF to PATH
-        run: echo "${OPENVAF_HOME}" >> "$GITHUB_PATH"
-
-      - name: Verify OpenVAF
-        run: |
-          which openvaf
-          openvaf --version
-
-      - name: Restore OSDI cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi
-          key: osdi-${{ runner.os }}-${{ env.OPENVAF_VERSION }}-${{ hashFiles('ihp-sg13g2/libs.tech/verilog-a/**') }}
-
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r ihp-sg13g2/libs.tech/ngspice/testing/devices/requirements.txt
-
-      - name: Setup PYTHONPATH
-        run: |
-          echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> "$GITHUB_ENV"
-
-      - name: check toolchain
-        run: |
-          which ngspice
-          ngspice -v
-          ls -la ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi/
-
-      - name: Run param test for this device
-        working-directory: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices
-        run: make test-${{ matrix.case }}
-
-  eda:
-    needs: build
-    runs-on: ubuntu-latest
-    name: MOS error EDA (analysis, non-blocking)
-    env:
-      NGSPICE_VERSION: "44.2"
-      NGSPICE_PREFIX: "${{ github.workspace }}/.cache/ngspice"
-      OPENVAF_VERSION: "23_5_0"
-      OPENVAF_HOME: "${{ github.workspace }}/.cache/openvaf"
+  openvaf:
+    needs: plan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        commit: ${{ fromJSON(needs.plan.outputs.openvaf) }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Setup Python
-        id: py
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Cache pip downloads
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - id: openvaf
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-v1
-
-      - name: Install runtime dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libx11-6 libxaw7 libxmu6 libxpm4 \
-            libreadline8 libfftw3-dev \
-            ca-certificates
-
-      - name: Restore ngspice cache
+          path: ${{ env.TOOLCHAIN_ROOT }}/openvaf-r-${{ matrix.commit }}
+          key: openvaf-${{ matrix.commit }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+      - id: osdi
         uses: actions/cache@v4
         with:
-          path: ${{ env.NGSPICE_PREFIX }}
-          key: ngspice-${{ runner.os }}-${{ env.NGSPICE_VERSION }}
+          path: ${{ env.DEV_DIR }}/osdi_build/ovr-${{ matrix.commit }}
+          key: osdi-${{ matrix.commit }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh', 'ihp-sg13g2/libs.tech/verilog-a/psp103/**') }}
+      # OpenVAF is only needed to compile the models: nothing to do when their cache hit.
+      - if: steps.osdi.outputs.cache-hit != 'true'
+        run: $DEV_DIR/tools/ci_setup.sh llvm
+      - if: steps.osdi.outputs.cache-hit != 'true' && steps.openvaf.outputs.cache-hit != 'true'
+        run: python3 "$DEV_DIR/tools/toolchain.py" build openvaf ${{ matrix.commit }}
+      - if: steps.osdi.outputs.cache-hit != 'true'
+        run: python3 "$DEV_DIR/tools/toolchain.py" osdi ${{ matrix.commit }}
 
-      - name: Add ngspice to PATH
-        run: echo "${NGSPICE_PREFIX}/bin" >> "$GITHUB_PATH"
-
-      - name: Restore OpenVAF cache
-        uses: actions/cache@v4
+  unit-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          path: ${{ env.OPENVAF_HOME }}
-          key: openvaf-${{ runner.os }}-${{ env.OPENVAF_VERSION }}
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - run: make -C "$DEV_DIR" unit-tests
+      - run: make -C "$DEV_DIR" check-deembedding RESULTS_ROOT=models_results/checks
 
-      - name: Add OpenVAF to PATH
-        run: echo "${OPENVAF_HOME}" >> "$GITHUB_PATH"
-
-      - name: Restore OSDI cache
-        uses: actions/cache@v4
+  tests:
+    needs: [plan, ngspice, openvaf]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.tests) }}
+    name: ${{ matrix.target }} (${{ matrix.toolchain }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          path: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi
-          key: osdi-${{ runner.os }}-${{ env.OPENVAF_VERSION }}-${{ hashFiles('ihp-sg13g2/libs.tech/verilog-a/**') }}
-
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r ihp-sg13g2/libs.tech/ngspice/testing/devices/requirements.txt
-
-      - name: Setup PYTHONPATH
-        run: |
-          echo "PYTHONPATH=${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices" >> "$GITHUB_ENV"
-
-      - name: check toolchain
-        run: |
-          which ngspice
-          ngspice -v
-          ls -la ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/osdi/
-
-      # EDA reads models_results/<device>/combined_results/*.csv, which is generated
-      # (gitignored, not committed) by the DC verifier run -- produce it here so the
-      # EDA job is self-contained and doesn't depend on the `tests` matrix job.
-      - name: Generate MOS combined results (EDA input)
-        working-directory: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices
-        continue-on-error: true
-        run: make test-mos
-
-      # EDA is analysis/reporting, not a pass/fail gate: a failure here must not turn
-      # the overall workflow red, but should still be visible (annotation + partial
-      # artifact upload) rather than silently swallowed.
-      - name: Run MOS error EDA (ML clustering + report)
-        id: eda
-        working-directory: ${{ github.workspace }}/ihp-sg13g2/libs.tech/ngspice/testing/devices
-        continue-on-error: true
-        run: make eda-mos
-
-      - name: Surface EDA failures (non-blocking)
-        if: steps.eda.outcome == 'failure'
-        run: echo "::warning::make eda-mos failed -- see the 'Run MOS error EDA' step log and the eda-report artifact (if any) for details."
-
-      - name: Upload EDA report artifact
-        if: always()
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - run: $DEV_DIR/tools/ci_setup.sh ngspice
+      - id: ids
+        run: python3 "$DEV_DIR/tools/toolchain.py" ids ${{ matrix.toolchain }} >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.TOOLCHAIN_ROOT }}/ngspice-${{ steps.ids.outputs.ngspice }}
+          key: ngspice-${{ steps.ids.outputs.ngspice }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+          fail-on-cache-miss: true
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.DEV_DIR }}/osdi_build/ovr-${{ steps.ids.outputs.openvaf }}
+          key: osdi-${{ steps.ids.outputs.openvaf }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh', 'ihp-sg13g2/libs.tech/verilog-a/psp103/**') }}
+          fail-on-cache-miss: true
+      - run: make -C "$DEV_DIR" ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }}
+      - if: always()
+        run: python3 "$DEV_DIR/tools/ci_summary.py" "$DEV_DIR/models_results/${{ matrix.toolchain }}" --title "${{ matrix.target }} on ${{ matrix.toolchain }}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: eda-report-mos
-          path: ihp-sg13g2/libs.tech/ngspice/testing/devices/eda_report/
+          name: reports-${{ matrix.target }}-${{ matrix.toolchain }}
+          path: |
+            ${{ env.DEV_DIR }}/models_results/${{ matrix.toolchain }}/**/final_reports/
+            ${{ env.DEV_DIR }}/models_results/${{ matrix.toolchain }}/**/toolchain.txt
           if-no-files-found: warn

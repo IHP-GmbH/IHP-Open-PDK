@@ -26,8 +26,10 @@ mdm_dir: "../../../../libs.doc/meas/MOS/SG13_pmosXm1Y3"
 # Path to the PDK-provided model library (corner definitions)
 corner_lib_path: "../../../../libs.tech/ngspice/models/cornerMOSlv.lib"
 
-# Path to the compiled OSDI model file for MOSFETs
-osdi_path: "../../../../libs.tech/ngspice/osdi/psp103_nqs.osdi"
+# Compiled PSP103 model of the selected toolchain (`make osdi`, tools/toolchain.py): the Makefile
+# exports OSDI_DIR, and .spiceinit loads psp103.osdi / psp103_nqs.osdi from there. Its presence
+# also marks the device as using a Verilog-A model (exceptions are kept per full toolchain ID).
+osdi_path: "${OSDI_DIR}/psp103.osdi"
 
 # ==============================================================
 # Device Configuration
@@ -50,6 +52,14 @@ device_name: "sg13_lv_pmos"
 
 # Path to the DC analysis template (Jinja2 format)
 dc_template_path: "configs/mos/dc_template.spice.j2"
+
+# Templates for measurement groups that need another circuit than the transistor sweep:
+# the junction-diode structures (one junction only; see the template's header).
+setup_templates:
+  di_bd_area: "configs/mos/diode_template.spice.j2"
+  di_bd_perim: "configs/mos/diode_template.spice.j2"
+  di_bs_area: "configs/mos/diode_template.spice.j2"
+  di_bs_perim: "configs/mos/diode_template.spice.j2"
 
 # Maximum number of workers (parallel jobs).
 # Set based on your system CPU cores.
@@ -148,6 +158,52 @@ metrics:
     tt: "ig_sim_mos_tt"
     ss: "ig_sim_mos_ss"
     ff: "ig_sim_mos_ff"
+
+# ==============================================================
+# C-V tier (make test-<case>-cv): capacitance-meter measurements
+# ==============================================================
+# Simulated with one AC analysis at cv_freq_hz per bias point (models_verifier/cv_runner/);
+# judged with the normal check (ss..ff band + corner_tolerance_percent, threshold_percent_oob).
+# Results go to <output_dir>/cv/, exceptions to waivers/cv/.
+cv_template_path: "configs/mos/cv_template.spice.j2"
+cv_subckt_pins: [d, g, s, b]          # pin order of the PDK subcircuit
+cv_freq_hz: 1.0e6                     # not recorded in the files; PSP103 gives the same C at 0.1-10 MHz
+
+# Meter terminals per measurement group (high: bias + AC; low: AC current read; other pins AC
+# ground). Taken from the headers and confirmed by simulation:
+#   c_bd_* / c_bs_*  the header COMMENT says "S/D-Low", but counting S as well doubles C: only the
+#                    junction of the group (D or S) is the meter input.
+#   c_d_g            PIN_H "15+5": S/D and B are driven together with the vd sweep, G is LOW.
+#   c_oxide          the sweep value is V(B) - V(G); the structure has no S/D contacts, so S/D
+#                    are floating for AC and follow B for DC.
+cv_setups:
+  c_bd_area:  {high: [b], low: [d]}
+  c_bd_perim: {high: [b], low: [d]}
+  c_bs_area:  {high: [b], low: [s]}
+  c_bs_perim: {high: [b], low: [s]}
+  c_g_ds:     {high: [g], low: [d, s]}
+  c_g_dsb:    {high: [g], low: [d, s, b]}
+  c_d_g:      {high: [d, s, b], low: [g]}
+  c_oxide:    {high: [b], low: [g], float: [d, s], float_to: b}
+cv_metrics:
+  - {name: cbd,    meas: cbd_meas,    tt: cbd_sim_mos_tt,    ss: cbd_sim_mos_ss,    ff: cbd_sim_mos_ff}
+  - {name: cbs,    meas: cbs_meas,    tt: cbs_sim_mos_tt,    ss: cbs_sim_mos_ss,    ff: cbs_sim_mos_ff}
+  - {name: cg_sd,  meas: cg_sd_meas,  tt: cg_sd_sim_mos_tt,  ss: cg_sd_sim_mos_ss,  ff: cg_sd_sim_mos_ff}
+  - {name: cg_sdb, meas: cg_sdb_meas, tt: cg_sdb_sim_mos_tt, ss: cg_sdb_sim_mos_ss, ff: cg_sdb_sim_mos_ff}
+  - {name: cd_g,   meas: cd_g_meas,   tt: cd_g_sim_mos_tt,   ss: cd_g_sim_mos_ss,   ff: cd_g_sim_mos_ff}
+  - {name: cox,    meas: cox_meas,    tt: cox_sim_mos_tt,    ss: cox_sim_mos_ss,    ff: cox_sim_mos_ff}
+
+# Header corrections (per file-name substring). The gate C-V headers of these structures say
+# L = 250 nm; with it the simulation of Cgds1/Cgdsb1 is 2.05x and of Cgds3/Cgdsb3 0.025x the
+# measurement (measurement / simulation 0.49 and ~40). With the
+# lengths of the matching Cbdsg1/Cbdsg3 structures (130 nm / 10 um) all four agree within
+# 0.86-1.15, so the headers are taken as wrong (same structures as Cbdsg1/3).
+cv_file_overrides:
+  Cgds1_S351B_11: {L: 130.0e-9}
+  Cgdsb1_S351B_11: {L: 130.0e-9}
+  Cgds3_S351B_13: {L: 10.0e-6}
+  Cgdsb3_S351B_13: {L: 10.0e-6}
+cv_waivers_dir: "waivers/cv"
 
 # ==============================================================
 # Output Paths

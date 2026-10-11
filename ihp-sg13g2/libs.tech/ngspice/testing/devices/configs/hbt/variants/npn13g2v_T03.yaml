@@ -1,0 +1,36 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+# HBT test structure npn13g2v_T03: npn13g2v, geometry from the file headers (Nx in REMARKS).
+# Everything not set here comes from the device config (base_config): templates, metrics,
+# MQA windows. Own result folder and own exception files, so its failures never mix with
+# the device's main test structure.
+base_config: "configs/hbt/npn13g2v/npn13g2v.yaml"
+mdm_dir: "../../../../libs.doc/meas/HBT/npn13g2v_T03"
+output_dir: "models_results/npn13g2v_T03"
+waivers_dir: "waivers/variants/npn13g2v_T03"
+sparam_waivers_dir: "waivers/variants/npn13g2v_T03/sparam"
+
+# This folder has no spar_vcb05 (the MQA fT file of the device). fT is judged on the genuine
+# de-embedded file closest to VCB = 0.5 V in the MQA window VBE 0.75-0.83 V: spar_vce_deemb
+# (VCE = 1.5 V, so VCB = 0.67-0.75 V there), plus the constant-VCB files. VCB = 1.0 V comes from
+# spar_vcb10_deemb: the plain spar_vcb10 has fT ~110 GHz (the VCB = 0.5 V value) and a
+# de-embedded/raw fT ratio of 1.01-1.08 instead of ~1.10, i.e. its S_deemb looks copied.
+sparam_files:
+  cje: spar_vb
+  cjc: spar_vc
+  ft: [spar_vce_deemb, spar_vcb0, spar_vcb10_deemb, spar_vcbm05]
+sparam_copied_deemb: [spar_vcb10]

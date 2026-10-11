@@ -141,9 +141,15 @@ class DcSweepRunner:
     # Main entry
     # -------------------------------------------------------------------------
 
-    def run(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Tuple[int, str]]]:
+    def run(
+        self, df: pd.DataFrame, template_path: Optional[Path] = None
+    ) -> Tuple[pd.DataFrame, List[Tuple[int, str]]]:
         """
         Execute sweeps in parallel.
+        Args:
+            df: compact sweep table of one measurement group.
+            template_path: netlist template for this group (config `setup_templates`);
+                defaults to the runner's template.
         Returns:
             sim_df: concatenated simulation results
             errors: list of (row_idx, error_message)
@@ -160,7 +166,7 @@ class DcSweepRunner:
             dict(
                 idx=int(idx),
                 row_dict=row.to_dict(),
-                template_path=str(self.template_path),
+                template_path=str(template_path or self.template_path),
                 corner_lib_path=str(self.corner_lib_path),
                 osdi_path=str(self.osdi_path),
                 device_name=self.device_name,
@@ -220,26 +226,29 @@ class DcSweepRunner:
 
         for bid, sim_block in sim_results_df.groupby("block_id"):
             if bid not in clean_groups:
-                logging.warning(f"Block_id '{bid}' in sim, not in clean. Skipping.")
-                continue
+                raise ValueError(f"block '{bid}' was simulated but is not in the measured data")
             cblock = clean_groups[bid].copy()
             if sim_block.empty or cblock.empty:
                 continue
 
             sweep_var = sim_block["sweep_var"].iloc[0]
             if sweep_var not in cblock.columns:
-                logging.warning(
-                    f"Sweep var '{sweep_var}' missing in clean for block '{bid}'. Skipping."
-                )
-                continue
+                # the block would never be judged: stop the group (recorded as a simulation error)
+                raise ValueError(f"sweep variable '{sweep_var}' missing in the measured block '{bid}'")
 
             sim_block = sim_block.rename(columns={"sweep_value": sweep_var})
 
+            # Match measured and simulated points on the sweep value rounded to 9 decimals (a DC
+            # sweep through 0 V gives e.g. 1.1e-16 instead of 0; "+ 0.0" turns -0.0 into 0.0), and
+            # keep every measured point: a point the simulation did not give has empty simulated
+            # columns and is counted as n_missing by the range checker instead of disappearing.
+            cblock[sweep_var] = pd.to_numeric(cblock[sweep_var], errors="coerce").round(9) + 0.0
+            sim_block[sweep_var] = pd.to_numeric(sim_block[sweep_var], errors="coerce").round(9) + 0.0
             merged = pd.merge(
                 cblock,
                 sim_block,
                 on=["block_id", sweep_var],
-                how="inner",
+                how="left",
                 suffixes=("", "_sim_dup"),
             )
             if merged.empty:
@@ -392,10 +401,8 @@ class DcSweepRunner:
                 "M": safe_float(row.get("m"), 1),
             })
         elif device_type == "pnpmpa":
-            params.update({
-                "A": safe_float(row.get("a"), 2e-5),
-                "P": safe_float(row.get("p"), 2.4e-5),
-            })
+            # Emitter and n-well geometry of the DUT (constants.DUTS); no defaults on purpose.
+            params.update({key: float(row[key.lower()]) for key in ("A", "P", "AC", "PC")})
         elif device_type == "hbt":
             params.update({
                 "M": safe_float(row.get("m"), 1),
@@ -419,8 +426,10 @@ class DcSweepRunner:
         sweep_src, sweep_node = sweep_config[sweep_var]
 
         # A sweep whose range crosses 0 V is simulated as two monotone segments from 0 V
-        # outward (see the DC templates' `sweep_split` branch): starting a DC sweep at an
+        # outward (the `sweep_split` branch of the HBT and pnpMPA templates): starting a DC sweep at an
         # extreme bias can fail to converge and previously lost the whole characteristic.
+        # Templates without that branch (MOS dc and diode) run the sweep in one piece; the
+        # second file is then absent and only the first is read.
         sweep_split = (sweep_start < 0.0 < sweep_stop) or (sweep_stop < 0.0 < sweep_start)
         step_mag = abs(sweep_step) if sweep_step else abs(sweep_stop - sweep_start)
         sweep_step_to_start = -step_mag if sweep_start < 0 else step_mag
@@ -545,9 +554,9 @@ class DcSweepRunner:
             if rc != 0 or len(df) < n_expected:
                 # ngspice aborted part-way (typically a non-convergent extreme bias such
                 # as VBE=1.04 V at VCE=2 V in a corner). Keep the points that did simulate
-                # -- the merge with the measured data is an inner join, so missing points
-                # are simply not compared -- and say so loudly instead of dropping the
-                # whole characteristic for every corner.
+                # and say so loudly instead of dropping the whole characteristic for every
+                # corner; the measured points without a simulated value fail their curve
+                # (n_missing, see the range checker).
                 logging.warning(
                     "ngspice %s for %s corner %s: %d of %d sweep points simulated "
                     "(sweep values %s..%s); see %s",
@@ -559,7 +568,9 @@ class DcSweepRunner:
 
             # Extract outputs
             try:
-                part_data = {"sweep_value": pd.to_numeric(df[vcol], errors="coerce")}
+                # rounded so that the corners line up (and match the measured points, see
+                # _link_sim_to_clean) even where the sweep value is a tiny float near 0 V
+                part_data = {"sweep_value": pd.to_numeric(df[vcol], errors="coerce").round(9) + 0.0}
                 for var in output_vars:
                     if var in df.columns:
                         part_data[f"{var}_sim_{corner}"] = pd.to_numeric(df[var], errors="coerce")

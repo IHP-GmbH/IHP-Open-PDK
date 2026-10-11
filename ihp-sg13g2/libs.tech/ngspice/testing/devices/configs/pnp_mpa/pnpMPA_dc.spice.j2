@@ -76,7 +76,8 @@ Ve e ve_sync {{ sync["ve"].offset }}
 *Circuit*
 *********
 
-X1 c b e {{ device_subckt }} a= {{ A }} p= {{ P }} m={{ (M|default(1))|int }}
+* emitter area / perimeter (a, p) and n-well area / perimeter (ac, pc) of the DUT
+X1 c b e {{ device_subckt }} a= {{ A }} p= {{ P }} ac= {{ AC }} pc= {{ PC }} m={{ (M|default(1))|int }}
 
 * ============================================================================================
 * ----------------------------------------- ANALYSIS -----------------------------------------
@@ -101,6 +102,10 @@ X1 c b e {{ device_subckt }} a= {{ A }} p= {{ P }} m={{ (M|default(1))|int }}
   * characteristic with it). The runner concatenates both output files.
   dc {{ sweep_src }} 0 {{ sweep_start }} {{ sweep_step_to_start }}
 {{ dump(out_path) }}
+  * reset: the second segment starts from a fresh circuit. ngspice-46 otherwise fails at its
+  * first point when the first segment aborted; ngspice-47 gives the same numbers with or
+  * without it.
+  reset
   dc {{ sweep_src }} 0 {{ sweep_stop }} {{ sweep_step_to_stop }}
 {{ dump(out_path_2) }}
 {% else %}

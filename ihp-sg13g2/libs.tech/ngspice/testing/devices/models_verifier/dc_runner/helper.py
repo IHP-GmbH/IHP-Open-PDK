@@ -66,9 +66,14 @@ DEVICE_SWEEP_MAPS = {
 }
 
 
+def ngspice_binary() -> str:
+    """ngspice executable: $NGSPICE_BIN (set by the Makefile per toolchain), else `ngspice` on PATH."""
+    return os.environ.get("NGSPICE_BIN") or "ngspice"
+
+
 def sim_netlist_ngspice(netlist_path: Path, log_path: Path) -> int:
     proc = subprocess.run(
-        ["ngspice", "-b", "-o", str(log_path), str(netlist_path)],
+        [ngspice_binary(), "-b", "-o", str(log_path), str(netlist_path)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
         text=True,

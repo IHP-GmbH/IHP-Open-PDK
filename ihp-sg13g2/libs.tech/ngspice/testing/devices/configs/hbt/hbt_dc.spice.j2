@@ -106,6 +106,10 @@ X1 c b e 0 {{ device_subckt }}
   * concatenates both output files.
   dc {{ sweep_src }} 0 {{ sweep_start }} {{ sweep_step_to_start }}
 {{ dump(out_path) }}
+  * reset: the second segment starts from a fresh circuit. ngspice-46 otherwise fails at its
+  * first point when the first segment aborted (npn13g2l bcs); ngspice-47 gives the same
+  * numbers with or without it.
+  reset
   dc {{ sweep_src }} 0 {{ sweep_stop }} {{ sweep_step_to_stop }}
 {{ dump(out_path_2) }}
 {% else %}

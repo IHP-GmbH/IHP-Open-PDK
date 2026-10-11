@@ -15,213 +15,166 @@
 # =========================================================================================
 
 """
-Milestone M2 -- waiver generator.
+Auto-waive generator: turn the "Failed (new)" rows of a FINISHED run into schema-2 exceptions
+(see waivers/waiver.py). It reads the run's reports and does not simulate anything.
 
-Snapshots a device's CURRENT (non-waived) `Failed` range-check rows into
-`waivers/<device_name>.yaml`, so a subsequent `make test-<device>` treats today's known
-sim-vs-measurement gaps as baselined (`Passed (Waived)`) while any NEW or WORSE
-deviation still fails (see `models_verifier/waivers/waiver.py`).
+    python -m models_verifier.waivers.generate --config <device yaml> [--tier dc|sparam|cv]
 
-Reuses the full aggregate -> simulate -> range-check -> waiver-apply pipeline via
-`MdmVerifier._run_pipeline()` (see `models_verifier/models_verifier.py`) -- no
-simulation/parsing logic is duplicated here.
+Inputs, in <results> = the config's output_dir under $RESULTS_ROOT (plus "sparam" / "cv"):
+    final_reports/full_results.csv     one row per curve x metric x target, with its status and
+                                       the fingerprint of its failing points (points_sha256)
+    final_reports/failed_results.csv   every failing point (for the worst point of each record)
+    final_reports/simulation_errors.csv blocks that could not be simulated: must be empty
+    toolchain.txt                      the toolchain that produced the run
+Output: <waivers_dir>/<device_name>.yaml, where waivers_dir is the config's `waivers_dir`
+(dc), `sparam_waivers_dir` or `cv_waivers_dir`.
 
-Usage (from `$DEV`, with `PYTHONPATH=$PWD`):
-    python -m models_verifier.waivers.generate --device nmos_lv
-    python -m models_verifier.waivers.generate --device all   # all 8 devices
-
-Also wired to `make waive-all` in the Makefile.
+Rules
+    - Every "Failed (new)" row gets a record for the run's toolchain (rows already recorded
+      exactly are skipped). A new entry is "auto-waived"; its first_waived date is today, or the
+      date of the old schema-1 entry. "Failed (not simulated)" rows are errors, never recorded.
+    - Existing entries and the records of other toolchains are kept; nothing is dropped. (A
+      run lists exceptions whose row now passes in final_reports/stale_exceptions.csv.)
+    - An entry the reviewer rejected is not touched: its row keeps failing.
+    - An approved entry whose values changed, or that gets a record for a new toolchain, goes
+      back to "auto-waived", because those values have not been reviewed. The generator never
+      sets "approved".
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
-import math
 import sys
+from collections import Counter
 from datetime import date
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import pandas as pd
-import yaml
 
-from models_verifier.waivers.waiver import DEFAULT_MARGIN_PP
+from models_verifier.models_verifier import read_config, resolve_output_dir
+from models_verifier.run_record import UNREGISTERED, read_toolchain_txt
+from models_verifier.waivers.waiver import (
+    APPROVED,
+    AUTO_WAIVED,
+    FAILED_NEW,
+    REJECTED,
+    WAIVED_STATUSES,
+    ExceptionStore,
+    curve_key,
+    index_failing_points,
+    toolchain_record,
+)
 
-# $DEV root (two levels up from this file: models_verifier/waivers/generate.py -> $DEV).
-_DEV_ROOT = Path(__file__).resolve().parents[2]
-
-# Maps the Makefile-style device key (matches `ALL_DEVICES` in the Makefile) to its
-# config YAML. Kept in sync with the Makefile's `*_CONFIG` variables.
-DEVICE_CONFIGS: Dict[str, Path] = {
-    "nmos_lv": _DEV_ROOT / "configs/mos/nmos_lv/sg13_lv_nmos.yaml",
-    "pmos_lv": _DEV_ROOT / "configs/mos/pmos_lv/sg13_lv_pmos.yaml",
-    "nmos_hv": _DEV_ROOT / "configs/mos/nmos_hv/sg13_hv_nmos.yaml",
-    "pmos_hv": _DEV_ROOT / "configs/mos/pmos_hv/sg13_hv_pmos.yaml",
-    "pnp_mpa": _DEV_ROOT / "configs/pnp_mpa/pnpmpa.yaml",
-    "npn13g2": _DEV_ROOT / "configs/hbt/npn13g2/npn13g2.yaml",
-    "npn13g2l": _DEV_ROOT / "configs/hbt/npn13g2l/npn13g2l.yaml",
-    "npn13g2v": _DEV_ROOT / "configs/hbt/npn13g2v/npn13g2v.yaml",
+# tier -> (results subfolder, config key of the exception folder, its default)
+TIERS = {
+    "dc": ("", "waivers_dir", "waivers"),
+    "sparam": ("sparam", "sparam_waivers_dir", "waivers/sparam"),
+    "cv": ("cv", "cv_waivers_dir", "waivers/cv"),
 }
 
-DEFAULT_WAIVERS_DIR = _DEV_ROOT / "waivers"
+DEFAULT_REASON = "auto-waived from a run, pending review"
+DOCUMENTATION = "every failing point: final_reports/failed_results.csv of the run; figures: make plot-<case>"
 
 
-def _max_deviation(
-    detailed_failures_df: pd.DataFrame,
-    input_data: object,
-    block_index: object,
-    metric: object,
-    target: object,
-) -> float:
-    """Max |deviation| among point-level failures matching this row's key, or 0.0."""
-    if detailed_failures_df is None or detailed_failures_df.empty or "deviation" not in detailed_failures_df.columns:
-        return 0.0
-
-    df = detailed_failures_df
-    mask = (df["metric"].astype(str) == str(metric)) & (df["target"].astype(str) == str(target))
-    if "input_data" in df.columns:
-        mask &= df["input_data"].astype(str) == ("" if pd.isna(input_data) else str(input_data))
-    if "block_index" in df.columns:
-        mask &= df["block_index"].astype(str) == ("" if pd.isna(block_index) else str(block_index))
-
-    sub = df[mask]
-    if sub.empty:
-        return 0.0
-    return float(sub["deviation"].abs().max())
-
-
-def _round_sig(value: float, sig: int = 10) -> float:
-    """
-    Round to `sig` significant figures (not decimal places): plain `round(x, 6)` would
-    zero out small-magnitude current deviations (e.g. ~1e-9 A), which are common here
-    since `metric` values are frequently currents. 0.0 rounds to 0.0.
-    """
-    if value == 0.0 or not math.isfinite(value):
-        return float(value)
-    return float(round(value, -int(math.floor(math.log10(abs(value)))) + (sig - 1)))
-
-
-def _yaml_value(v: object) -> Optional[object]:
-    """Coerce a pandas scalar to a plain, YAML-safe Python value (or None)."""
-    if v is None or (isinstance(v, float) and pd.isna(v)):
-        return None
-    if isinstance(v, (int,)) or (hasattr(v, "item") and not isinstance(v, str)):
-        try:
-            item = v.item() if hasattr(v, "item") else v
-            if isinstance(item, float) and item.is_integer():
-                return int(item)
-            return item
-        except Exception:
-            return v
-    return v
-
-
-def snapshot_device(
-    device: str,
-    waivers_dir: Path = DEFAULT_WAIVERS_DIR,
-    margin: float = DEFAULT_MARGIN_PP,
-) -> Path:
-    """
-    Run the full verification pipeline for `device` and write its current `Failed`
-    rows into `waivers/<device_name>.yaml`. Returns the written path.
-    """
-    if device not in DEVICE_CONFIGS:
-        raise SystemExit(
-            f"Unknown device '{device}'. Known devices: {sorted(DEVICE_CONFIGS)}"
-        )
-
-    # Local import to avoid a circular import at module load time (models_verifier.py
-    # also lives in this package and does not import waivers/generate.py).
-    from models_verifier.models_verifier import MdmVerifier
-
-    config_path = DEVICE_CONFIGS[device]
-    verifier = MdmVerifier(config_path)
-    full_res, detailed_failures, _stats = verifier._run_pipeline(waivers_dir=waivers_dir)
-
-    if "status" in full_res.columns:
-        failed = full_res[full_res["status"] == "Failed"]
-    else:  # defensive; _run_pipeline always adds "status"
-        failed = full_res[~full_res["passed"].astype(bool)]
-
-    today = date.today().isoformat()
-    waiver_entries = []
-    for row in failed.itertuples(index=False):
-        input_data = getattr(row, "input_data", None)
-        block_index = getattr(row, "block_index", None)
-        metric = row.metric
-        target = row.target
-        percentage_oob = float(row.percentage_oob)
-        deviation_max = _max_deviation(detailed_failures, input_data, block_index, metric, target)
-
-        waiver_entries.append(
-            {
-                "input_data": _yaml_value(input_data),
-                "block_index": _yaml_value(block_index),
-                "metric": str(metric),
-                "target": str(target),
-                "reason": f"baseline snapshot {today}",
-                "snapshot_percentage_oob": _round_sig(percentage_oob, 10),
-                "snapshot_deviation_max": _round_sig(deviation_max, 10),
-                "margin": margin,
-                "date": today,
+def update_exceptions(store: ExceptionStore, full_res: pd.DataFrame, failures: pd.DataFrame,
+                      toolchain: str, today: str, reason: str = DEFAULT_REASON) -> Dict[str, int]:
+    """Add or refresh the record of `toolchain` for every "Failed (new)" row (rules in the module doc)."""
+    points = index_failing_points(failures)
+    counts: Counter = Counter()
+    for row in full_res[full_res["status"] == FAILED_NEW].itertuples(index=False):
+        key = curve_key(getattr(row, "input_data", None), getattr(row, "block_index", None),
+                        row.metric, row.target)
+        fingerprint = str(row.points_sha256)
+        if store.status_of(key, toolchain, row.n_points, row.n_out_of_bounds, fingerprint) in WAIVED_STATUSES:
+            counts["already recorded"] += 1      # e.g. the generator run twice on the same run
+            continue
+        entry = store.entries.get(key)
+        if entry is None:
+            input_data, block_index, metric, target = key
+            entry = store.entries[key] = {
+                "curve": {"input_data": input_data,
+                          "block_index": int(block_index) if block_index.isdigit() else block_index,
+                          "metric": metric, "target": target},
+                "status": AUTO_WAIVED,
+                "reason": reason,
+                "first_waived": store.legacy_dates.get(key) or today,
+                "documentation": DOCUMENTATION,
+                "toolchains": {},
             }
-        )
+            counts["added"] += 1
+        elif entry.get("status") == REJECTED:
+            counts["rejected, left failing"] += 1
+            continue
+        else:
+            if entry.get("status") == APPROVED:
+                change = "values changed on" if toolchain in (entry.get("toolchains") or {}) else "new toolchain"
+                entry["status"] = AUTO_WAIVED
+                # the reviewer's reason stays; the withdrawal is noted next to it
+                entry["withdrawn"] = f"{change} {toolchain} ({today}): approval needs renewal"
+                counts["approval withdrawn"] += 1
+            counts["updated"] += 1
+        records = entry.get("toolchains") or {}
+        records[toolchain] = toolchain_record(row.n_points, row.n_out_of_bounds, fingerprint,
+                                              points.get(key, []), store.sig_digits)
+        entry["toolchains"] = dict(sorted(records.items()))
+    return dict(counts)
 
-    waivers_dir = Path(waivers_dir)
-    waivers_dir.mkdir(parents=True, exist_ok=True)
-    out_path = waivers_dir / f"{verifier.device_name}.yaml"
 
-    doc = {
-        "device": verifier.device_name,
-        "generated": today,
-        "margin_default": margin,
-        "waivers": waiver_entries,
-    }
-    out_path.write_text(yaml.safe_dump(doc, sort_keys=False, default_flow_style=False))
+def results_dir_of(config: dict, tier: str) -> Path:
+    """Where the run of this config and tier wrote its reports."""
+    subdir = TIERS[tier][0]
+    base = resolve_output_dir(config["output_dir"])
+    return base / subdir if subdir else base
 
-    logging.info(
-        "Wrote %d waiver entr%s to %s (device key '%s' -> device_name '%s')",
-        len(waiver_entries), "y" if len(waiver_entries) == 1 else "ies",
-        out_path, device, verifier.device_name,
-    )
-    return out_path
+
+def waive_run(config_path: Path, tier: str = "dc", reason: str = DEFAULT_REASON) -> Path:
+    """Update the exception file of one device from its finished run; return the file path."""
+    config = read_config(Path(config_path))
+    results = results_dir_of(config, tier)
+    reports = results / "final_reports"
+    if not (reports / "full_results.csv").exists() or not (results / "toolchain.txt").exists():
+        raise SystemExit(f"No finished run in {results}: run `make test-<case>` first.")
+    if len(pd.read_csv(reports / "simulation_errors.csv")):
+        raise SystemExit(f"{results} has simulation errors (final_reports/simulation_errors.csv): "
+                         "fix them; failures of an incomplete run are never recorded.")
+
+    run = read_toolchain_txt(results)
+    device = config["device_name"]
+    if run.get("device") != device:
+        raise SystemExit(f"{results}/toolchain.txt is for device '{run.get('device')}', not '{device}'.")
+    toolchain = run["exception_key"]
+    if toolchain == UNREGISTERED:
+        raise SystemExit(f"{results} was not run through a registered toolchain (make ... TOOLCHAIN=<id>).")
+
+    _subdir, dir_key, default_dir = TIERS[tier]
+    store = ExceptionStore.load(device, Path(config.get(dir_key) or default_dir))
+    # File names stay text ("007" is not 7); floats are read back exactly (round trip).
+    read = dict(dtype={"input_data": str, "points_sha256": str}, float_precision="round_trip")
+    full_res = pd.read_csv(reports / "full_results.csv", **read)
+    failed_path = reports / "failed_results.csv"
+    failures = pd.read_csv(failed_path, **read) if failed_path.exists() else pd.DataFrame()
+
+    counts = update_exceptions(store, full_res, failures, toolchain, date.today().isoformat(), reason)
+    path = store.save()
+    logging.info("%s (%s, toolchain %s): %s -> %d exception(s) in %s",
+                 device, tier, toolchain, counts or "nothing to add", len(store), path)
+    return path
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="models_verifier.waivers.generate",
-        description="Snapshot a device's current Failed range-check rows into waivers/<device>.yaml.",
+        description="Write the new failures of a finished run into the device's exception file.",
     )
-    parser.add_argument(
-        "--device", "-d",
-        required=True,
-        help=f"Device key, one of: {sorted(DEVICE_CONFIGS)} or 'all'.",
-    )
-    parser.add_argument(
-        "--waivers-dir",
-        type=Path,
-        default=DEFAULT_WAIVERS_DIR,
-        help="Directory to write waivers/<device>.yaml into (default: $DEV/waivers).",
-    )
-    parser.add_argument(
-        "--margin",
-        type=float,
-        default=DEFAULT_MARGIN_PP,
-        help=f"Margin in percentage points added on top of the snapshot (default: {DEFAULT_MARGIN_PP}).",
-    )
+    parser.add_argument("--config", "-c", type=Path, required=True, help="Device config YAML.")
+    parser.add_argument("--tier", choices=sorted(TIERS), default="dc", help="Which run: dc (default), sparam or cv.")
+    parser.add_argument("--reason", default=DEFAULT_REASON, help="Reason written into NEW entries.")
     args = parser.parse_args()
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-    devices = list(DEVICE_CONFIGS) if args.device == "all" else [args.device]
-    for dev in devices:
-        snapshot_device(dev, waivers_dir=args.waivers_dir, margin=args.margin)
-
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
+                        datefmt="%Y-%m-%d %H:%M:%S")
+    waive_run(args.config, args.tier, args.reason)
     return 0
 
 

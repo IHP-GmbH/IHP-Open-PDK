@@ -28,6 +28,10 @@ It runs **measurement-vs-simulation comparisons** using ngspice, aggregates resu
  ┃ ┣ 📜 parser.py            Reads MDM files into DataFrames.
  ┃ ┣ 📜 aggregator.py        Combines MDM blocks into compact/merged views.
  ┃ ┗ 📜 utils.py             Utility helpers for parsing and cleaning data.
+ ┣ 📁 waivers                Exact-value curve exceptions (schema 2).
+ ┃ ┣ 📜 waiver.py            Exception file of one device, exact-match rule, statuses.
+ ┃ ┗ 📜 generate.py          Writes the new failures of a finished run into the file.
+ ┣ 📜 run_record.py          Toolchain of a run (toolchain.txt) and the exception key.
  ┗ 📜 README.md              Documentation (this file).
 ```
 
@@ -45,6 +49,13 @@ It runs **measurement-vs-simulation comparisons** using ngspice, aggregates resu
 
 * **`error_analyzer/`**
   Applies tolerance thresholds (percentage or count of out-of-range points). Generates pass/fail reports.
+
+* **`waivers/`**
+  Exact-value exceptions: a failing curve is waived only when the run reproduces its stored
+  failing points (per toolchain); waived curves are still failures in every report.
+
+* **`run_record.py`**
+  Reads the toolchain of the run (`$TOOLCHAIN`, set by the Makefile) and writes `toolchain.txt`.
 
 * **`constants.py`**
   Stores shared device mappings and case definitions used by verifier flows.

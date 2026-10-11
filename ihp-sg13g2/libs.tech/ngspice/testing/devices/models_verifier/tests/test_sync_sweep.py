@@ -93,7 +93,7 @@ def _render(template: str, **ctx) -> str:
         model_corner_lib="cornerHBT.lib", corner="hbt_typ", TEMP="27", device_subckt="npn13g2",
         out_path="out.csv", sweep_src="Vb", sweep_node="b", sweep_start="0.6",
         sweep_stop="0.8", sweep_step="0.1", W="0.07", L="0.9", Nx="8", M="1",
-        A="2e-12", P="6e-6", output_vars=["ib", "ic"],
+        A="2e-12", P="6e-6", AC="13.328e-12", PC="14.64e-6", output_vars=["ib", "ic"],
     )
     base.update(ctx)
     return env.get_template(tpl_path.name).render(**base)

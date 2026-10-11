@@ -19,11 +19,10 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-import re
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Sequence, Tuple, Union
 from tqdm import tqdm
 import pandas as pd
 
@@ -98,12 +97,16 @@ class MdmDirectoryAggregator:
         output_dir: Optional[Union[str, Path]] = None,
         create_csvs: bool = False,
         device_type: Literal["mos", "pnpmpa", "hbt"] = "mos",
+        exclude_patterns: Optional[Sequence[str]] = None,
     ):
         self.input_dir = Path(input_dir)
         self.recursive = recursive
         self.output_dir = Path(output_dir) if output_dir is not None else None
         self.create_csvs = create_csvs
         self.device_type = device_type
+        # Config `exclude_patterns`: plain substrings matched against the file NAME (not the
+        # path); a file containing any of them is dropped before parsing (e.g. "_DUT3.mdm").
+        self.exclude_patterns: List[str] = [str(p) for p in (exclude_patterns or []) if str(p)]
 
         if not self.input_dir.exists() or not self.input_dir.is_dir():
             raise NotADirectoryError(f"Input path must be a directory: {self.input_dir}")
@@ -137,7 +140,7 @@ class MdmDirectoryAggregator:
         ]
         design_params_map = {
             "mos": ["W", "L", "AD", "AS", "PD", "PS", "NF", "M"],
-            "pnpmpa": ["A", "P"],
+            "pnpmpa": ["A", "P", "AC", "PC"],
             "hbt": ["W", "L", "M", "Nx"],
         }
         design_params = design_params_map.get(device_type.lower(), [])
@@ -196,7 +199,8 @@ class MdmDirectoryAggregator:
         self, path: Path
     ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
-        Parse one .mdm file into (full_df, compact_df).
+        Parse one .mdm file into (full_df, compact_df). A file that cannot be parsed raises
+        MdmParseError naming it: `aggregate()` collects them and stops the run.
         """
         try:
             parser = MdmParser(path, device_type=self.device_type)
@@ -218,12 +222,8 @@ class MdmDirectoryAggregator:
 
             return tuple(results)
 
-        except (FileNotFoundError, ValueError, MdmParseError) as e:
-            logger.warning(f"Skip {path}: {e}")
-            return None, None
         except Exception as e:
-            logger.exception(f"Unexpected error parsing {path}: {e}")
-            return None, None
+            raise MdmParseError(f"{path.name}: {e}") from e
 
     # -------------------------------------------------------------------------------------
     # File I/O
@@ -265,16 +265,17 @@ class MdmDirectoryAggregator:
         Find all `.mdm` files under input_dir, applying device-specific filters.
         """
         iterator = self.input_dir.rglob("*.mdm") if self.recursive else self.input_dir.glob("*.mdm")
-        is_pnp = self.device_type.lower() == "pnpmpa"
-        skip_duts = {3, 5, 9, 13, 14, 15}
-        dut_re = re.compile(r"(?i)dut(\d+)")
-
-        return sorted(
+        candidates = sorted(
             p for p in iterator
             if p.is_file()
             and not p.name.lower().startswith(("dummy", "spar", "contact", "ftfmax", "h21gu"))
-            and not (is_pnp and (m := dut_re.search(p.name)) and int(m.group(1)) in skip_duts)
         )
+        kept = [p for p in candidates if not any(pat in p.name for pat in self.exclude_patterns)]
+        if len(kept) < len(candidates):
+            dropped = sorted(set(p.name for p in candidates) - set(p.name for p in kept))
+            logger.info("exclude_patterns %s dropped %d of %d MDM files: %s",
+                        self.exclude_patterns, len(dropped), len(candidates), ", ".join(dropped))
+        return kept
 
     # -------------------------------------------------------------------------------------
     # Main aggregation
@@ -292,16 +293,26 @@ class MdmDirectoryAggregator:
         logger.info(f"Found {len(mdm_files)} MDM files...")
 
         frames_full, frames_compact = [], []
+        parse_errors: List[str] = []
 
         # Process all .mdm files in parallel with progress bar
         with ProcessPoolExecutor(max_workers=max(1, os.cpu_count())) as ex:
             futures = {ex.submit(self._process_one, f): f for f in mdm_files}
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing MDM files"):
-                full_df, compact_df = future.result()
+                try:
+                    full_df, compact_df = future.result()
+                except MdmParseError as e:
+                    parse_errors.append(str(e))
+                    continue
                 if full_df is not None and not full_df.empty:
                     frames_full.append(full_df)
                 if compact_df is not None and not compact_df.empty:
                     frames_compact.append(compact_df)
+
+        # A file that cannot be read is a framework error: stop instead of judging the rest.
+        if parse_errors:
+            raise MdmParseError(f"{len(parse_errors)} MDM file(s) could not be parsed (exclude them in the "
+                                f"config, exclude_patterns, if intended): " + "; ".join(sorted(parse_errors)))
 
         # Build grouped DataFrames
         full_by_type = self.build_by_type(frames_full)

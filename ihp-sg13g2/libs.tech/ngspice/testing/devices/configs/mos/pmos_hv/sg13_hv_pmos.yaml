@@ -26,8 +26,10 @@ mdm_dir: "../../../../libs.doc/meas/MOS/SG13_pmosHVXm1Y3"
 # Path to the PDK-provided model library (corner definitions)
 corner_lib_path: "../../../../libs.tech/ngspice/models/cornerMOShv.lib"
 
-# Path to the compiled OSDI model file for MOSFETs
-osdi_path: "../../../../libs.tech/ngspice/osdi/psp103_nqs.osdi"
+# Compiled PSP103 model of the selected toolchain (`make osdi`, tools/toolchain.py): the Makefile
+# exports OSDI_DIR, and .spiceinit loads psp103.osdi / psp103_nqs.osdi from there. Its presence
+# also marks the device as using a Verilog-A model (exceptions are kept per full toolchain ID).
+osdi_path: "${OSDI_DIR}/psp103.osdi"
 
 # ==============================================================
 # Device Configuration
@@ -50,6 +52,14 @@ device_name: "sg13_hv_pmos"
 
 # Path to the DC analysis template (Jinja2 format)
 dc_template_path: "configs/mos/dc_template.spice.j2"
+
+# Templates for measurement groups that need another circuit than the transistor sweep:
+# the junction-diode structures (one junction only; see the template's header).
+setup_templates:
+  di_bd_area: "configs/mos/diode_template.spice.j2"
+  di_bd_perim: "configs/mos/diode_template.spice.j2"
+  di_bs_area: "configs/mos/diode_template.spice.j2"
+  di_bs_perim: "configs/mos/diode_template.spice.j2"
 
 # Maximum number of workers (parallel jobs).
 # Set based on your system CPU cores.
@@ -148,6 +158,42 @@ metrics:
     tt: "ig_sim_mos_tt"
     ss: "ig_sim_mos_ss"
     ff: "ig_sim_mos_ff"
+
+# ==============================================================
+# C-V tier (make test-<case>-cv): capacitance-meter measurements
+# ==============================================================
+# Simulated with one AC analysis at cv_freq_hz per bias point (models_verifier/cv_runner/);
+# judged with the normal check (ss..ff band + corner_tolerance_percent, threshold_percent_oob).
+# Results go to <output_dir>/cv/, exceptions to waivers/cv/.
+cv_template_path: "configs/mos/cv_template.spice.j2"
+cv_subckt_pins: [d, g, s, b]          # pin order of the PDK subcircuit
+cv_freq_hz: 1.0e6                     # not recorded in the files; PSP103 gives the same C at 0.1-10 MHz
+
+# Meter terminals per measurement group (high: bias + AC; low: AC current read; other pins AC
+# ground). Taken from the headers and confirmed by simulation:
+#   c_bd_* / c_bs_*  the header COMMENT says "S/D-Low", but counting S as well doubles C: only the
+#                    junction of the group (D or S) is the meter input.
+#   c_d_g            PIN_H lists S/D and B ("5+19" nmos_hv, "5+17" pmos_hv): driven together with the vd sweep,
+#                    G is LOW.
+#   c_oxide          not judged here: the HV c_oxide files hold only zeros (data finding).
+cv_setups:
+  c_bd_area:  {high: [b], low: [d]}
+  c_bd_perim: {high: [b], low: [d]}
+  c_bs_area:  {high: [b], low: [s]}
+  c_bs_perim: {high: [b], low: [s]}
+  c_g_ds:     {high: [g], low: [d, s]}
+  c_g_dsb:    {high: [g], low: [d, s, b]}
+  c_d_g:      {high: [d, s, b], low: [g]}
+# c_oxide is not judged: every capacitance value in the HV c_oxide file is 0 (no data).
+cv_metrics:
+  - {name: cbd,    meas: cbd_meas,    tt: cbd_sim_mos_tt,    ss: cbd_sim_mos_ss,    ff: cbd_sim_mos_ff}
+  - {name: cbs,    meas: cbs_meas,    tt: cbs_sim_mos_tt,    ss: cbs_sim_mos_ss,    ff: cbs_sim_mos_ff}
+  - {name: cg_sd,  meas: cg_sd_meas,  tt: cg_sd_sim_mos_tt,  ss: cg_sd_sim_mos_ss,  ff: cg_sd_sim_mos_ff}
+  - {name: cg_sdb, meas: cg_sdb_meas, tt: cg_sdb_sim_mos_tt, ss: cg_sdb_sim_mos_ss, ff: cg_sdb_sim_mos_ff}
+  - {name: cd_g,   meas: cd_g_meas,   tt: cd_g_sim_mos_tt,   ss: cd_g_sim_mos_ss,   ff: cd_g_sim_mos_ff}
+  - {name: cox,    meas: cox_meas,    tt: cox_sim_mos_tt,    ss: cox_sim_mos_ss,    ff: cox_sim_mos_ff}
+
+cv_waivers_dir: "waivers/cv"
 
 # ==============================================================
 # Output Paths

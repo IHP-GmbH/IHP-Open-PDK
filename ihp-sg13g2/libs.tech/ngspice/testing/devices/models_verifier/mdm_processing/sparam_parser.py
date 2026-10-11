@@ -80,7 +80,9 @@ logger = logging.getLogger(__name__)
 _NODES = ("B", "C", "E", "S")
 
 # Which 2-port S set to consume. Primary path uses the already open/short deembedded
-# columns; fall back to the raw measured S if deembedded columns are absent (documented).
+# columns; a file without them yields the raw measured S, which the S-parameter verifier
+# accepts only for files listed in the config's `sparam_allow_raw`. `parse_sparam_mdm(...,
+# s_column="S")` reads the raw set on purpose (e.g. to de-embed it again).
 _PREFERRED_S = "S_deemb"
 _FALLBACK_S = "S"
 
@@ -148,8 +150,10 @@ class SparamData:
 class SparamMdmParser:
     """Parser for a single frequency-domain S-parameter `.mdm` file."""
 
-    def __init__(self, filepath: Path):
+    def __init__(self, filepath: Path, s_column: Optional[str] = None):
         self.filepath = Path(filepath)
+        # None: S_deemb, else raw S. A name ("S" or "S_deemb"): only that column set.
+        self.s_column = s_column
         if not self.filepath.is_file():
             raise FileNotFoundError(f"S-param MDM not found: {self.filepath}")
 
@@ -232,10 +236,10 @@ class SparamMdmParser:
             return None
         freq = arr[:, columns.index("freq")]
 
-        # Prefer the deembedded S set; fall back to raw S if not present.
-        s_source = _PREFERRED_S
-        s_idx = self._s_column_indices(columns, _PREFERRED_S)
-        if s_idx is None:
+        # The requested S set, else the deembedded one with the raw set as fallback.
+        s_source = self.s_column or _PREFERRED_S
+        s_idx = self._s_column_indices(columns, s_source)
+        if s_idx is None and self.s_column is None:
             s_idx = self._s_column_indices(columns, _FALLBACK_S)
             s_source = _FALLBACK_S
         if s_idx is None:
@@ -295,7 +299,7 @@ class SparamMdmParser:
             raise SparamParseError(f"No bias blocks parsed from {self.filepath}")
 
         sources = {bp.s_source for bp in bias_points}
-        if _FALLBACK_S in sources and _PREFERRED_S not in sources:
+        if self.s_column is None and _FALLBACK_S in sources and _PREFERRED_S not in sources:
             logger.warning(
                 "%s: consumed RAW '%s' columns (no '%s' present) -- results are NOT "
                 "deembedded.", self.filepath.name, _FALLBACK_S, _PREFERRED_S,
@@ -309,6 +313,6 @@ class SparamMdmParser:
         )
 
 
-def parse_sparam_mdm(filepath: Path) -> SparamData:
-    """Convenience wrapper: parse one S-parameter MDM file."""
-    return SparamMdmParser(filepath).parse()
+def parse_sparam_mdm(filepath: Path, s_column: Optional[str] = None) -> SparamData:
+    """Parse one S-parameter MDM file (`s_column`: see SparamMdmParser)."""
+    return SparamMdmParser(filepath, s_column).parse()
