@@ -48,7 +48,7 @@ moduleNames = [
         'nmos_code',
         'pmos_code',
         # Additional devices for SG13CMOS5L PDK
-        'SVaricap_code',   # Symlink - no modification needed
+        'SVaricap_code',   # Modified - ThickGateOx replaces nBuLay
         'rsil_code',       # Symlink - silicided resistor
         'rppd_code',       # Symlink - p+ poly resistor
         'rhigh_code',      # Symlink - high-R poly resistor
@@ -71,6 +71,10 @@ moduleNames = [
         'pnpMPA_code',         # Symlink - Parasitic PNP (tbd.3 - enabled for discussion)
         'cap_cmomi_code',      # MoM capacitor (M1-M4 thin-metal stack)
         'cap_cmomf_code',      # MoM fringe capacitor (M1-M4 thin-metal stack)
+        # TBD
+        'chipText_code',       # Symlink - chipText
+        
+        'guard_ring_code',     # Symlink - standalone guard ring cell
 ]
 
 def getProcessNames():

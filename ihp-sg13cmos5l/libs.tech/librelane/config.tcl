@@ -44,7 +44,7 @@ set ::env(CELL_CDLS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBR
 set ::env(PAD_LEFS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lef/sg13cmos5l_io.lef"
 set ::env(PAD_GDS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/gds/sg13cmos5l_io.gds"
 set ::env(PAD_VERILOG_MODELS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v"
-set ::env(PAD_SPICE_MODELS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/spice/sg13cmos5l_io.spi"
+set ::env(PAD_SPICE_MODELS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/spice/sg13cmos5l_io.spice"
 set ::env(PAD_CDLS) "$::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/cdl/sg13cmos5l_io.cdl"
 
 # Klayout setup

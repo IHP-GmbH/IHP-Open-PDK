@@ -161,7 +161,8 @@ make -C cpp measure_mean
 
 Each Gnucap test case `tests/gnucap/<testdir>/*.gc` writes its output to 
 `tests/gnucap/<testdir>/check/*.gc.out`. The output is diffed against the reference 
-data in `tests/gnucap/<testdir>/ref/*.gc.out` for regression testing.
+data in `tests/gnucap/<testdir>/ref/*.gc.out` for regression testing. If a test
+crashes prematurely, a log is saved in `tests/gnucap/<testdir>/check/*.gc.log`.
 
 Each Gnucap test case has an equivalent Ngspice test case in 
 `tests/ngspice/<testdir>/*.sp`, which writes its output to 
@@ -171,9 +172,10 @@ comparison and cross-validation.
 
 Test results are reported as:
 
-- `PASS` -> no diff 
-- `FAIL` -> diff detected; see `tests/gnucap/<testdir>/check/*.gc.diff`
-- `MISS` -> no reference file found
+- `PASS`  -> no diff 
+- `FAIL`  -> diff detected; see `tests/gnucap/<testdir>/check/*.gc.diff`
+- `CRASH` -> test crashed; see `tests/gnucap/<testdir>/check/*.gc.log`
+- `MISS`  -> no reference file found
 
 ### Run All Tests
 

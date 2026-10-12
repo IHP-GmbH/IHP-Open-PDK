@@ -83,25 +83,12 @@ class bondpad(DloGen):
         passEncl    = self.passEncl
         hwquota     = self.hwquota
         shape       = self.shape
+        fill        = self.fill != 'nil'
+        stack       = self.stack != 'nil'
+        FlipChip    = self.FlipChip != 'no'
         topMetal    = self.topMetal
         bottomMetal = self.bottomMetal
-        
-        if self.fill == 'nil' :
-            fill = False
-        else :
-            fill = True
-        if self.stack == 'nil' :
-            stack = False
-        else :
-            stack = True
-        if self.FlipChip == 'no' :
-            FlipChip = False
-        else :
-            FlipChip = True
-        if self.addFillerEx == 'nil' :
-            addFillerEx = False
-        else :
-            addFillerEx = True
+        addFillerEx = self.addFillerEx != 'nil'
 
         grid = techparams['grid']
         Vn_size = techparams['Vn_a']
@@ -287,8 +274,8 @@ class bondpad(DloGen):
                         y = y+d
                 #  for metal
                 
-                if fill == 't' :
-                    dbDeleteObject(car(idmask))
+                if fill:
+                    dbDeleteObject(idmask)
             # if stack
         else :
             if shape == 'square' :
