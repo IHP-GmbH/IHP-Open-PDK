@@ -121,6 +121,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### PyCells
 - Isolbox PyCell: fixed `diode_layer` parameter evaluation ([#1071](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1071))
 - MOSCAP PyCell: fixed callback issue ([#1088](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1088))
+- Inductor PCells: fixed empty cell (`invalid bareword "30u"`) for a width outside `Wmin`..30u; `w` is now clamped as intended
 - RPPD PyCell: fixed EXTB.b DRC violation ([#997](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/997))
 - rhigh PyCell: fixed pSD.b and EXTB.b space violations in devices with bends
 - rppd/rhigh PyCells: handle large poly spacing and even-number bends ([#988](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/988))
