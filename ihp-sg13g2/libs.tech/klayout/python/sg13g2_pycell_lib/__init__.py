@@ -78,6 +78,7 @@ moduleNames = [
         'isolbox_code',
         'schottky_code',
         'chipText_code',
+        'guard_ring_code',
         'lvsres_code'
 ]
 

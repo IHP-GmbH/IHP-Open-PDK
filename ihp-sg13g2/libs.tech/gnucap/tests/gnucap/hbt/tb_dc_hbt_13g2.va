@@ -1,0 +1,22 @@
+load ../../../plugins/gnucap/s_dc_seed.so
+
+load ../../../plugins/models/sg13g2_hbt_paramset.so
+load ../../../plugins/models/idc.so
+include ../../../models/sg13g2_hbt_module.va
+
+module tb_dc_hbt_13g2(b, c);
+    // ports
+    inout b, c;
+    electrical b, c;
+    // testbench parameters
+    parameter real vce = 0.0;
+    parameter real ib = 0.0;
+    parameter integer Nx = 1 from [1:10];
+
+    ground gnd;
+
+    vsource #(.dc(vce)) vce_src(c, gnd);
+    idc #(.dc(ib)) ib_src(gnd, b_probe);
+    vsource #(.dc(0.0)) vb_src(b_probe, b);
+    npn13G2 #(.Nx(Nx), .mm_ok(0)) q1(c, b, gnd, gnd);
+endmodule
