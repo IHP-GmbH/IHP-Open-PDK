@@ -56,15 +56,15 @@ proc NLCB_mos_w {} {
         hiGetAttention
         hiGetAttention
         CbMessage "WARNING: wrong width: using ng times minimum width ${tmpWminS}!!"
-        iPDK_setParamValue w [Ftos [expr $tmpWmin*$tmpng*1e6] 3]u $cellId 
+        iPDK_setParamValue w [FtosNoScale [expr $tmpWmin*$tmpng*1e6] 3]u $cellId
         set tmpw  [Stof [iPDK_getParamValue w $cellId]]
     }
     
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
     set tmpw [GridFix [expr ($tmpw/$tmpng*1.0e6)*$tmpng]]
     
-    iPDK_setParamValue w  [Ftos $tmpw 3]u $cellId
-    iPDK_setParamValue ws [Ftos [expr $tmpw/$tmpng] 3]u $cellId
+    iPDK_setParamValue w  [FtosNoScale $tmpw 3]u $cellId
+    iPDK_setParamValue ws [FtosNoScale [expr $tmpw/$tmpng] 3]u $cellId
 }
 
 #******************************************************************************************************
@@ -86,7 +86,7 @@ proc NLCB_mos_ng {} {
     iPDK_setParamValue ng [expr int($tmpng)] $cellId
 
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
-    iPDK_setParamValue ws [Ftos [expr 1e6*$tmpw/$tmpng] 3]u $cellId
+    iPDK_setParamValue ws [FtosNoScale [expr 1e6*$tmpw/$tmpng] 3]u $cellId
 
     NLCB_mos_w
 }
@@ -104,7 +104,7 @@ proc NLCB_mos_l {} {
         hiGetAttention
         hiGetAttention
         CbMessage "WARNING: wrong length: using maximum length 10u!!"
-        iPDK_setParamValue l [Ftos [expr $tmpLmax*1e6] 3]u $cellId
+        iPDK_setParamValue l [FtosNoScale [expr $tmpLmax*1e6] 3]u $cellId
         #set tmpl [Stof [iPDK_getParamValue l $cellId]]
     }
     

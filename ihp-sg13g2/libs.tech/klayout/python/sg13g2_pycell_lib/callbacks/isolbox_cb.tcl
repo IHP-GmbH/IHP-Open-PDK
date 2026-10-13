@@ -54,9 +54,9 @@ proc isol_w {} {
     set perim [expr 2*($tmpw+$tmpl)]
     set tmpw  [GridFix [expr ($tmpw*1.0e6)]]
 
-    iPDK_setParamValue w [Ftos $tmpw 3]u $cellId
-    iPDK_setParamValue a [Ftos [GridFix [expr ($area*1.0e12)]] 6]p $cellId
-    iPDK_setParamValue p [Ftos [GridFix [expr ($perim*1.0e6)]] 6]u $cellId
+    iPDK_setParamValue w [FtosNoScale $tmpw 3]u $cellId
+    iPDK_setParamValue a [FtosNoScale [GridFix [expr ($area*1.0e12)]] 6]p $cellId
+    iPDK_setParamValue p [FtosNoScale [GridFix [expr ($perim*1.0e6)]] 6]u $cellId
 }
 
 #************************************************************************************************************************
@@ -93,9 +93,9 @@ proc isol_l {} {
     set perim [expr 2*($tmpw+$tmpl)]
     set tmpl  [GridFix [expr ($tmpl*1.0e6)]]
 
-    iPDK_setParamValue l [Ftos $tmpl 3]u $cellId
-    iPDK_setParamValue a [Ftos [GridFix [expr ($area*1.0e12)]] 6]p $cellId
-    iPDK_setParamValue p [Ftos [GridFix [expr ($perim*1.0e6)]] 6]u $cellId
+    iPDK_setParamValue l [FtosNoScale $tmpl 3]u $cellId
+    iPDK_setParamValue a [FtosNoScale [GridFix [expr ($area*1.0e12)]] 6]p $cellId
+    iPDK_setParamValue p [FtosNoScale [GridFix [expr ($perim*1.0e6)]] 6]u $cellId
 }
 
 #************************************************************************************************************************
@@ -128,8 +128,8 @@ proc isol_well {} {
 
     iPDK_setParamValue Wmin $tmpminw $cellId
     iPDK_setParamValue Lmin $tmpminl $cellId
-    iPDK_setParamValue a [Ftos [expr   ($tmpw*$tmpl)] 3]p $cellId
-    iPDK_setParamValue p [Ftos [expr 2*($tmpw+$tmpl)] 3]u $cellId
+    iPDK_setParamValue a [FtosNoScale [expr   ($tmpw*$tmpl)] 3]p $cellId
+    iPDK_setParamValue p [FtosNoScale [expr 2*($tmpw+$tmpl)] 3]u $cellId
 
     isol_w
     isol_l
