@@ -1,6 +1,6 @@
 # PreCheck Rule Set
 
-Rules checked by `run_drc.py --precheck_drc`. This is the SG13G2 minimum layout rule set (Rev. 1.2) plus
+Rules checked by `run_drc.py --minimum_drc`. This is the SG13G2 minimum layout rule set (Rev. 1.2) plus
 M5.j, M5.k and forbidden.NoDRC. IHP confirmed these three are missing from Rev. 1.2 by mistake; the next
 revision of the rule set adds them.
 

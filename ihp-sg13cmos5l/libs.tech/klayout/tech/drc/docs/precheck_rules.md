@@ -1,6 +1,6 @@
 # PreCheck Rule Set
 
-Rules checked by `run_drc.py --precheck_drc`. This is the SG13G2 precheck rule set
+Rules checked by `run_drc.py --minimum_drc`. This is the SG13G2 precheck rule set
 (`ihp-sg13g2/libs.tech/klayout/tech/drc/docs/precheck_rules.md`) without the rules for layers that
 SG13CMOS5L does not have (Metal5, Via4, TopVia2, TopMetal2, solder bump and copper pillar pads),
 plus the CMOS5L.FORB checks, which reject those layers and the HBT and MIM layers.

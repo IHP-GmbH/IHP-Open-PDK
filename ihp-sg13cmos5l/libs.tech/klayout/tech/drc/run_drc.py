@@ -361,44 +361,53 @@ def get_run_top_cell_name(args, layout_path: str):
     return topcell
 
 
-def apply_precheck_scope(args):
+def apply_minimum_drc_scope(args):
     """
-    Restricts a --precheck_drc run to the SG13 minimum layout rule set.
+    Restricts a --minimum_drc run to the SG13 minimum layout rule set.
 
     The minimum rule set has no extra, offgrid, angle or antenna rules, so those
     decks are switched off here. Non-minimum rules inside the table and density
     decks are gated by the precheck_drc switch in the decks themselves.
+
+    --precheck_drc is a deprecated alias of --minimum_drc.
 
     Parameters
     ----------
     args : argparse.Namespace
         Parsed command-line arguments, updated in place.
     """
-    if not args.precheck_drc:
+    if args.precheck_drc:
+        logging.warning(
+            "--precheck_drc is deprecated and will be removed in a future release, "
+            "use --minimum_drc instead."
+        )
+        args.minimum_drc = True
+
+    if not args.minimum_drc:
         return
 
     if args.antenna_only:
         logging.error(
-            "--antenna_only cannot be combined with --precheck_drc: "
+            "--antenna_only cannot be combined with --minimum_drc: "
             "antenna rules are not part of the minimum rule set."
         )
         exit(1)
 
     if args.antenna:
         logging.warning(
-            "--antenna is ignored with --precheck_drc: "
+            "--antenna is ignored with --minimum_drc: "
             "antenna rules are not part of the minimum rule set."
         )
 
     if args.no_density:
         logging.warning(
             "--no_density skips the density rules of the minimum rule set, "
-            "so this precheck run is incomplete."
+            "so this minimum DRC run is incomplete."
         )
 
     if args.density_sanity:
         logging.warning(
-            "--density_sanity is ignored with --precheck_drc: "
+            "--density_sanity is ignored with --minimum_drc: "
             "density sanity markers are not part of the minimum rule set."
         )
 
@@ -406,7 +415,7 @@ def apply_precheck_scope(args):
     if geometry_tables:
         logging.warning(
             f"Table(s) {', '.join(geometry_tables)} are not part of the minimum "
-            "rule set and run no checks with --precheck_drc."
+            "rule set and run no checks with --minimum_drc."
         )
 
     args.antenna = False
@@ -415,7 +424,7 @@ def apply_precheck_scope(args):
     args.no_offgrid = True
     args.no_angle = True
     logging.info(
-        "PreCheck DRC: running the minimum rule set only "
+        "Minimum DRC: running the minimum rule set only "
         "(extra, offgrid, angle, antenna and density sanity checks disabled)."
     )
 
@@ -468,7 +477,7 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
 
     # Optional switches
     switches["run_mode"] = arguments.run_mode if arguments.run_mode else "deep"
-    switches["precheck_drc"] = "true" if arguments.precheck_drc else "false"
+    switches["precheck_drc"] = "true" if arguments.minimum_drc else "false"
     switches["disable_extra_rules"] = "true" if arguments.disable_extra_rules else "false"
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
@@ -812,8 +821,8 @@ def main(run_dir: Path, args):
     # Check layout file path and extension
     layout_path = check_layout_path(args.path)
 
-    # Limit a precheck run to the minimum rule set
-    apply_precheck_scope(args)
+    # Limit a --minimum_drc run to the minimum rule set
+    apply_minimum_drc_scope(args)
 
     # Generate KLayout run switches from arguments
     switches = generate_klayout_switches(args, layout_path)
@@ -831,7 +840,7 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--precheck_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
+            [--minimum_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--no_angle] [--no_recommended]
     """
@@ -896,10 +905,15 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--precheck_drc",
+        "--minimum_drc",
         action="store_true",
         help="Run only the SG13 minimum layout rule set required for foundry prechecks. "
         "Implies --disable_extra_rules, --no_offgrid and --no_angle; antenna rules are not run.",
+    )
+    parser.add_argument(
+        "--precheck_drc",
+        action="store_true",
+        help="Deprecated alias of --minimum_drc, to be removed in a future release.",
     )
     parser.add_argument(
         "--no_feol", action="store_true", help="Disable all FEOL-related DRC checks."
