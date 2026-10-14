@@ -61,7 +61,7 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
             [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
             [--density_thr=<density_threads>] [--density_only] [--antenna]
-            [--antenna_only] [--no_offgrid] [--no_angle] [--minimum_drc]
+            [--antenna_only] [--no_offgrid] [--no_angle] [--minimum_drc | --min_drc]
 ```
 
 **Example:**
@@ -94,7 +94,8 @@ The `run_drc.py` script takes your gds to run DRC rule decks with switches to se
   --antenna_only        Run only antenna rules.
   --no_offgrid          Disable offgrid rule checks.
   --no_angle            Disable angle rule checks.
-  --minimum_drc         Run only the SG13 minimum layout rule set required for foundry prechecks.
+  --minimum_drc, --min_drc
+                        Run only the SG13 minimum layout rule set required for foundry prechecks.
                         Implies --disable_extra_rules, --no_offgrid and --no_angle; antenna rules are not run.
   --precheck_drc        Deprecated alias of --minimum_drc, to be removed in a future release.
 ```

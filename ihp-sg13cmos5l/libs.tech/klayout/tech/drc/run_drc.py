@@ -840,8 +840,8 @@ def parse_args():
     run_drc.py --path=<file_path>
             [--table=<table_name>]... [--mp=<num_cores>] [--run_dir=<run_dir_path>]
             [--topcell=<topcell_name>] [--run_mode=<mode>] [--drc_json=<json_path>]
-            [--minimum_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity] [--no_density]
-            [--density_thr=<density_threads>] [--density_only] [--antenna]
+            [--minimum_drc | --min_drc] [--disable_extra_rules] [--no_feol] [--no_beol] [--density_sanity]
+            [--no_density] [--density_thr=<density_threads>] [--density_only] [--antenna]
             [--antenna_only] [--no_offgrid] [--no_angle] [--no_recommended]
     """
 
@@ -906,6 +906,7 @@ def parse_args():
 
     parser.add_argument(
         "--minimum_drc",
+        "--min_drc",
         action="store_true",
         help="Run only the SG13 minimum layout rule set required for foundry prechecks. "
         "Implies --disable_extra_rules, --no_offgrid and --no_angle; antenna rules are not run.",
