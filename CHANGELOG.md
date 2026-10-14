@@ -96,6 +96,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Xschem: improved evaluation precision ([#907](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/907))
 - Parallelization improvements in simulation scripts ([#629](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/629))
 
+### Deprecated
+
+#### LVS / DRC
+- KLayout DRC: `run_drc.py --precheck_drc`, replaced by `--minimum_drc`. It still works, with a warning, and will be removed in a future release ([#1261](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1261))
+
 ### Fixed
 
 #### LVS / DRC
