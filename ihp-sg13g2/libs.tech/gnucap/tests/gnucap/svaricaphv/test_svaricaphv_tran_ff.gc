@@ -1,0 +1,24 @@
+load mgsim
+load models/ngspice46/dio.so
+load ../../../plugins/models/sg13g2_svaricaphv_paramset.so
+load ../../../plugins/models/vpulse.so
+
+spice
+.include ../../../models/paramsets/diode_dsubw.lib
+
+.verilog
+
+`include ../../../models/sg13g2_svaricaphv_module.va
+`include ../../../models/cornerSVARICAPHV.va
+`include ./tb_svaricaphv_tran.va
+
+// suppress ringing and at voltage ramp-onset
+options method=euler
+// Reduce floating-point roundoff error in current probe (TODO: fix in Gnucap?)
+options short=5e-2
+
+svaricaphv_ff corner_svaricaphv();
+tb_svaricaphv_tran tb(G1, G2);
+
+print tran v(G1) v(G2) i(tb.VG2)
+tran 1n 11u  basic
