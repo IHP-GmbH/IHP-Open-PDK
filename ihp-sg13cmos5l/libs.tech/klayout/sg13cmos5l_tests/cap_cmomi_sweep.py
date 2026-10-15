@@ -48,10 +48,15 @@ TECH_NAME = "sg13cmos5l"
 
 # Rules that fire on any bare device cell because the surroundings are absent:
 # an isolated capacitor has no Activ, no GatPoly and no TopMetal1 anywhere, so
-# the global density rules have nothing to measure. Anything outside this set
-# is a real violation of the device itself.
+# the global density rules have nothing to measure -- both their minimum (Mn.j)
+# and maximum (Mn.k) sides. Which side a config trips depends on its bounding
+# box and the KLayout version (e.g. same_min pushes M3/M4 over the maximum),
+# so tolerate the whole family. Anything outside this set is a real violation
+# of the device itself.
 DRC_EXPECTED_VIOLATIONS = {
-    "AFil.g", "GFil.g", "TM1.c", "M1.j", "M2.j", "M3.j", "M4.j",
+    "AFil.g", "GFil.g", "TM1.c",
+    "M1.j", "M2.j", "M3.j", "M4.j",
+    "M1.k", "M2.k", "M3.k", "M4.k",
 }
 
 # name -> pcell params. 'two_terminal' marks feeds that must extract as a cap.
