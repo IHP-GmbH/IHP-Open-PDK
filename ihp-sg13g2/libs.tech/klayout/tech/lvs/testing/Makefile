@@ -57,6 +57,28 @@ test-LVS-SVS:
 	@bash testcases/manual_tests/svs_testss/run_lvs.sh
 
 #=================================
+# ----- test-LVS-cmomi-checks ----
+#=================================
+
+# Explicit target, so it does not fall through to the test-LVS-% pattern rule
+# above and get handed to run_regression.py as a device group.
+.ONESHELL:
+test-LVS-cmomi-checks:
+	@echo "========== SG13G2 cap_cmomi LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomi_checks/run_lvs.sh
+
+#=================================
+# ----- test-LVS-cmomf-checks ----
+#=================================
+
+# Same reasoning as the cmomi target above: explicit, so it does not fall
+# through to the test-LVS-% pattern rule.
+.ONESHELL:
+test-LVS-cmomf-checks:
+	@echo "========== SG13G2 cap_cmomf LVS Checks =========="
+	@bash testcases/manual_tests/cap_cmomf_checks/run_lvs.sh
+
+#=================================
 # -------- test-LVS-switch -------
 #=================================
 
@@ -94,6 +116,8 @@ help:
 	@echo "... test-LVS-main              (To run LVS for all devices                       )"
 	@echo "... test-LVS-stdcells          (To run LVS for all standard cells                )"
 	@echo "... test-LVS-SVS               (To run manual SVS regression: 1 PASS + 2 FAIL     )"
+	@echo "... test-LVS-cmomi-checks      (To run the cap_cmomi detection-limit checks      )"
+	@echo "... test-LVS-cmomf-checks      (To run the cap_cmomf detection-limit checks      )"
 	@echo "... test-LVS-switch            (To run simple LVS switching test                 )"
 	@echo "... test-LVS-<device>          (To run LVS for specific device group             )"
 	@echo "... list-devices               (To list all available device groups              )"

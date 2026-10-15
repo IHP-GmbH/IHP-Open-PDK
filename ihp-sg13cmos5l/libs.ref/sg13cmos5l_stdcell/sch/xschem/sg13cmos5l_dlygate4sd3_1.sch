@@ -1,0 +1,1 @@
+../../../../../ihp-sg13g2/libs.ref/sg13g2_stdcell/sch/xschem/sg13g2_dlygate4sd3_1.sch

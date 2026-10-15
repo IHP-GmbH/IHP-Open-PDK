@@ -1,0 +1,24 @@
+// load model plugins
+load vams/vsine.so
+load ../../../plugins/models/capacitor_paramset.so
+
+module tb_cap_cmomf(out1);
+    // external port for probing
+    inout out1;
+    electrical out1;
+    // internal nodes
+    electrical in1;
+    ground gnd;
+    // cmomf is the metal-fringe MoM-cap paramset (over the
+    // behavioural cap_cmomf module) in capacitor_paramset.so. Unlike cmomi it
+    // is 2-terminal: cap_cmomf has no SUB node, because no substrate-coupling
+    // fit exists for this geometry.
+    //
+    // Same R-C shape and the same 5u x 5u M1..M5 device as the cmomi
+    // testbench, so the two numbers are directly comparable: the fringe cap is
+    // the denser of the pair at this size (1.592 against 1.36 fF/um2), and the
+    // corner sits correspondingly lower.
+    vsine #(.mag(1), .dc(0.0)) V1(in1, gnd);
+    cmomf #(.w(5u), .l(5u), .mmin(1), .mmax(5)) C1(out1, in1);
+    resistor #(.r(100k)) R1(out1, gnd);
+endmodule

@@ -396,17 +396,15 @@ drc
 # CONTBAR
 #-------------------------------------------------------------
 
- # This rule is violated in all example cells.
- # surround pbc,sdic m1 50 absence_illegal \
- #	"Metal enclosure of ContBar < %d (CntB.h1)"
+ # Note: BJTs and Schottky diode are exempted from this rule, so
+ # it does not include pbc or sdic.
 
- variants (full)
- cifmaxwidth contbar_enclosure_error 0 bend_illegal \
-	"Metal enclosure of ContBar < 0.05um (CntB.h1)"
- cifwidth contbar 160 "ContBar width < 0.16um (CntB.a)"
- cifspacing contbar contbar 280 touching_illegal \
-	"ContBar spacing < 0.28um (CntB.b)"
- variants *
+ exception CONTBAR
+ surround allcont *m1 50 absence_illegal \
+ 	"Metal enclosure of ContBar < %d (CntB.h1)"
+ spacing allcont allcont 280 touching_illegal \
+	"ContBar spacing < %d (CntB.b)"
+ exception none
 
 #-------------------------------------------------------------
 # METAL1 -

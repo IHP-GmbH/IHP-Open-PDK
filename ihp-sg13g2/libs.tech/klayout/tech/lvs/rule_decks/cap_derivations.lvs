@@ -26,7 +26,14 @@ logger.info('Starting CAP DERIVATIONS')
 rfmimcap_exc = ind_drw.join(ind_pin)
 
 # === MIMCAP ===
-mimcap_exclude = pwell_block.join(rfmimcap_exc)
+# An RFCMIM sits entirely inside a PWellBlock region (surrounded by a ptap ring), while a
+# regular CMIM has no PWellBlock association. Select the RF well as the PWellBlock that fully
+# encloses a MIM marker, using containment (`covering`) instead of mere interaction. This keeps
+# an unrelated device beneath the MIM (for example a Schottky diode and its PWellBlock, which
+# only partially underlaps the cap) from being mistaken for an RFCMIM and from carving the
+# regular CMIM plate. See IHP-Open-PDK issue #958.
+rfmim_area = pwell_block.covering(mim_drw)
+mimcap_exclude = rfmim_area.join(rfmimcap_exc)
 mim_top = mim_drw.overlapping(topmetal1_con)
 mim_btm = mim_drw.and(metal5_con)
 mim_via = vmim_drw.join(topvia1_drw).and(mim_drw)
@@ -38,7 +45,6 @@ cmim_btm = mim_btm.covering(cmim_top)
 cmim_dev = mim_drw.covering(cmim_top).and(cmim_btm)
 
 # === rfcmim ===
-rfmim_area = pwell_block.interacting(mim_drw)
 rfmim_top = mim_top.and(rfmim_area).not(rfmimcap_exc)
 rfmim_btm = mim_btm.and(rfmim_area).covering(rfmim_top)
 rfmim_dev = mim_drw.covering(rfmim_top).and(rfmim_btm)
@@ -64,3 +70,46 @@ varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
 varicap_poly_port = gatpoly.interacting(varicap_core)
 varicap_ports = varicap_poly_port.join(varicap_diff_port)
 varicap_dev_mk = nwell_drw.sized(1.um).covering(varicap_core).interacting(varicap_ports)
+
+# === moscap ===
+nmoscap_cap_exc = emwind_drw.join(emwihv_drw)
+                  .join(salblock_drw).join(polyres_drw)
+                  .join(extblock_drw).join(res_drw)
+                  .join(activ_mask).join(recog_diode)
+                  .join(recog_esd).join(ind_drw)
+                  .join(ind_pin).join(substrate_drw)
+
+pmoscap_cap_exc = emwind_drw.join(emwihv_drw)
+                  .join(salblock_drw).join(polyres_drw)
+                  .join(extblock_drw).join(res_drw)
+                  .join(activ_mask).join(recog_diode)
+                  .join(recog_esd).join(ind_drw)
+                  .join(ind_pin).join(substrate_drw)
+
+nmoscap_exc = pwell_block.join(nwell_holes).join(nmoscap_cap_exc)
+nmoscap_exc = nmoscap_exc.join(trans_drw).join(nsd_block)
+nmoscap_patt = glob_to_case_insensitive_glob("moscap_n")
+nmoscap_text = text_drw.texts(nmoscap_patt)
+moscap_gate_text = text_drw.texts(glob_to_case_insensitive_glob("G*"))
+nmoscap_sub_text = text_drw.texts(glob_to_case_insensitive_glob("SUB*"))
+pmoscap_nw_text = text_drw.texts(glob_to_case_insensitive_glob("NW*"))
+nmoscap_core = nactiv.and(gatpoly).not(thickgateox_drw).interacting(nmoscap_text)
+nmoscap_core = nmoscap_core.not(nmoscap_exc)
+nmoscap_dev_mk = nmoscap_core.sized(1.5.um).merged
+nmoscap_poly_port = gatpoly.interacting(nmoscap_dev_mk)
+nmoscap_diff_port = pactiv.not(gatpoly).interacting(nmoscap_dev_mk)
+nmoscap_bulk_port = metal1.interacting(nmoscap_diff_port).interacting(nmoscap_dev_mk)
+nmoscap_ports = nmoscap_poly_port.join(nmoscap_diff_port).join(nmoscap_bulk_port)
+
+pmoscap_exc = pwell.join(pwell_block).join(nwell_holes).join(pmoscap_cap_exc)
+pmoscap_exc = pmoscap_exc.join(trans_drw)
+pmoscap_patt = glob_to_case_insensitive_glob("moscap_p")
+pmoscap_text = text_drw.texts(pmoscap_patt)
+pmoscap_core = activ.and(gatpoly).and(psd_drw).inside(nwell_drw)
+                   .not(thickgateox_drw).interacting(pmoscap_text)
+pmoscap_core = pmoscap_core.not(pmoscap_exc)
+pmoscap_dev_mk = pmoscap_core.sized(1.5.um).merged
+pmoscap_poly_port = gatpoly.interacting(pmoscap_dev_mk)
+pmoscap_diff_port = nactiv.and(nwell_drw).not(gatpoly).interacting(pmoscap_dev_mk)
+pmoscap_bulk_port = metal1.interacting(pmoscap_diff_port).interacting(pmoscap_dev_mk)
+pmoscap_ports = pmoscap_poly_port.join(pmoscap_diff_port).join(pmoscap_bulk_port)

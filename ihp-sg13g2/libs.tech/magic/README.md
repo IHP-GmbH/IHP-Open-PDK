@@ -220,6 +220,7 @@ It is not recommended for use with the magic/netgen LVS flow.
 | inductor (requires additional information provided by the device generator)      |
 | iprobe, diffstbprobe (insufficient information and no device model)              |
 | SVaricap (no device model)                                                       |
+| sg13_moscap_n, sg13_moscap_p (not supported by Magic extraction)                 |
 
 "RF" versions of MOSFET devices are not separate device models but are enabled
 by passing parameter "rfmode" to the device model.  This parameter passing

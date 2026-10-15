@@ -163,6 +163,9 @@ PURGE_NETS = bool_check?($purge_nets)
 
 logger.info("Selected PURGE_NETS option: #{PURGE_NETS}")
 
+# PURGE_DEVICES
+PURGE_DEVICES = bool_check?($purge_devices)
+
 # SIMPLIFY
 SIMPLIFY = !bool_check?($no_simplify)
 
@@ -177,6 +180,14 @@ logger.info("Selected SERIES_RES option: #{SERIES_RES}")
 PARALLEL_RES = !bool_check?($no_parallel_res)
 
 logger.info("Selected PARALLEL_RES option: #{PARALLEL_RES}")
+
+# DISABLE_TAP_EXTRACTION
+# false (default): extract ntap1/ptap1 as devices (schematic must contain matching taps).
+# true: skip ntap/ptap device extraction so taps are not required in the schematic,
+#       aligning with Magic+Netgen LVS.
+DISABLE_TAP_EXTRACTION = bool_check?($disable_tap_extraction)
+
+logger.info("Selected DISABLE_TAP_EXTRACTION option: #{DISABLE_TAP_EXTRACTION}")
 
 # === RUN MODE ===
 case $run_mode
@@ -332,6 +343,8 @@ else
   #==================================
 
   # %include rule_decks/cap_derivations.lvs
+  # %include rule_decks/cap_cmomi_derivations.lvs
+  # %include rule_decks/cap_cmomf_derivations.lvs
 
   #================================
   # ------ ESD DERIVATIONS --------
@@ -422,10 +435,6 @@ else
   # %include rule_decks/tap_extraction.lvs
 end
 
-# RF MOS model mapping
-logger.info('Starting SG13G2 LVS RF MOS Model Mapping')
-# %include rule_decks/rfmos_model_mapping.lvs
-
 #==================================================
 # ------------ COMPARISON PREPARATIONS ------------
 #==================================================
@@ -452,6 +461,9 @@ apply_netlist_options = lambda do |target_netlist, label|
 
   log_option_action.call(label, 'purge_nets', PURGE_NETS)
   target_netlist.purge_nets if PURGE_NETS
+
+  log_option_action.call(label, 'purge_devices', PURGE_DEVICES)
+  target_netlist.purge_devices if PURGE_DEVICES
 end
 
 if NET_ONLY

@@ -26,12 +26,14 @@ logger.info('Starting Inductor CONNECTIONS')
 # ind2
 connect(ind2_ports, ind_pin)
 connect(ind_pin, ind_text)
-connect(ind_pin, topmetal2_con)
+# One connect per layer: connectivity is defined between layer objects, so a
+# joined layer would be a third object connected to neither of its operands.
+ind_wind_con.each { |ind_wind_layer| connect(ind_pin, ind_wind_layer) }
 connect(ind2_sub, pwell)
 connect(ind2_sub, nwell_drw)
 
 # ind3
 connect(ind3_ports, ind_pin)
-connect(ind_pin, topmetal1_con)
+ind_cross_con.each { |ind_cross_layer| connect(ind_pin, ind_cross_layer) }
 connect(ind3_sub, pwell)
 connect(ind3_sub, nwell_drw)

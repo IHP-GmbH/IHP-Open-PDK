@@ -63,7 +63,7 @@ value="tcleval(
 .lib $::SG13G2_MODELS_XYCE/cornerMOShv.lib mos_tt
 .lib $::SG13G2_MODELS_XYCE/cornerHBT.lib hbt_typ
 .lib $::SG13G2_MODELS_XYCE/cornerRES.lib res_typ
-.lib $::SG13G2_MODELS_XYCE/cornerDIO.lib dio_typ
+.lib $::SG13G2_MODELS_XYCE/cornerDIO.lib dio_tt
 )"
       }
 C {devices/intuitive_interface_cheatsheet.sym} 1520 -1090 0 0 {name=x43}

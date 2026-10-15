@@ -17,6 +17,7 @@
 //		Generated on Wed Aug 27 13:11:34 2025		
 //
 // ------------------------------------------------------ 
+`timescale 1ns/10ps
 `celldefine
 module RM_IHPSG13_2P_512x32_c2_bm_bist (
     A_CLK,
@@ -90,6 +91,41 @@ module RM_IHPSG13_2P_512x32_c2_bm_bist (
     input [31:0] B_BIST_DIN;
     input [31:0] B_BIST_BM;
 
+// ---- Simulation-only check: A_DLY must be tied high ----------------------
+`ifndef SYNTHESIS
+    initial begin
+      #0; // check at t=0 (after elaboration)
+      if (A_DLY !== 1'b1) begin
+        $display("%m ERROR: A_DLY must be tied to 1'b1 (saw %b) at time %0t.", A_DLY, $time);
+        $stop; // use $finish if you prefer to exit completely
+      end
+    end
+
+    always @(A_DLY) begin
+      if (A_DLY !== 1'b1) begin
+        $display("%m ERROR: A_DLY must remain 1'b1 (observed %b) at time %0t.", A_DLY, $time);
+        $stop;
+      end
+    end
+`endif
+
+// ---- Simulation-only check: B_DLY must be tied high ----------------------
+`ifndef SYNTHESIS
+    initial begin
+      #0; // check at t=0 (after elaboration)
+      if (B_DLY !== 1'b1) begin
+        $display("%m ERROR: B_DLY must be tied to 1'b1 (saw %b) at time %0t.", B_DLY, $time);
+        $stop; // use $finish if you prefer to exit completely
+      end
+    end
+
+    always @(B_DLY) begin
+      if (B_DLY !== 1'b1) begin
+        $display("%m ERROR: B_DLY must remain 1'b1 (observed %b) at time %0t.", B_DLY, $time);
+        $stop;
+      end
+    end
+`endif
 
 `ifdef FUNCTIONAL  //  functional //
 

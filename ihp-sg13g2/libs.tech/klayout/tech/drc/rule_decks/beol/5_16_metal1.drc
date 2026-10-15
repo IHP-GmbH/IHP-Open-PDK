@@ -44,9 +44,9 @@ if TABLES.include?('metal1') || BEOL
     # than 0.3 µm and the parallel run is more than 1.0 µm is 0.22 um
     logger.info('Executing rule M1.e')
     m1_e_value = drc_rules['M1_e'].to_f
-    m1_e_width = drc_rules['M1_e_w'].to_f / 2
+    m1_e_width = drc_rules['M1_e_w'].to_f
     m1_e_length = drc_rules['M1_e_cr'].to_f
-    m1_e_l1 = metal1_drw.sized(-1 * m1_e_width.um).sized(m1_e_width.um)
+    m1_e_l1 = metal1_drw.sized(-0.5 * m1_e_width.um).sized(0.5 * m1_e_width.um)
     m1_e_l = metal1_drw.sep(m1_e_l1, m1_e_value.um, projection_limits(m1_e_length.um + 0.001.um, nil))
     m1_e_l.output('M1.e',
                 "5.16. M1.e Min. space of Metal1 lines if, at least one line is wider than #{m1_e_width} µm and the parallel run is more than #{m1_e_length} µm is #{m1_e_value} um")
@@ -57,9 +57,9 @@ if TABLES.include?('metal1') || BEOL
     # than 10.0 µm and the parallel run is more than 10.0 µm is 0.60 um
     logger.info('Executing rule M1.f')
     m1_f_value = drc_rules['M1_f'].to_f
-    m1_f_width = drc_rules['M1_f_w'].to_f / 2
+    m1_f_width = drc_rules['M1_f_w'].to_f
     m1_f_length = drc_rules['M1_f_cr'].to_f
-    m1_f_l1 = metal1_drw.sized(-1 * m1_f_width.um).sized(m1_f_width.um)
+    m1_f_l1 = metal1_drw.sized(-0.5 * m1_f_width.um).sized(0.5 * m1_f_width.um)
     m1_f_l = metal1_drw.sep(m1_f_l1, m1_f_value.um, projection_limits(m1_f_length.um + 0.001.um, nil))
     m1_f_l.output('M1.f',
                 "5.16. M1.f Min. space of Metal1 lines if, at least one line is wider than #{m1_f_width} µm and the parallel run is more than #{m1_f_length} µm is #{m1_f_value} um")

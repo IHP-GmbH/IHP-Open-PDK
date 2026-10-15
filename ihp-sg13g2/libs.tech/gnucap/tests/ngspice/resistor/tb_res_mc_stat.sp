@@ -58,7 +58,7 @@ dowhile run < mc_runs
   let v5_vec[run] = {$opplot}.v(n5)
   let v6_vec[run] = {$opplot}.v(n6)
 
-  destroy all
+  destroy $opplot
   let run = run + 1
 end
 

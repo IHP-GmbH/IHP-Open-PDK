@@ -43,9 +43,20 @@ PREFIX_MAP = {
   'rppd' => 'R',
   'rhigh' => 'R',
   'lvsres' => 'R',
+  'res_metal1' => 'R',
+  'res_metal2' => 'R',
+  'res_metal3' => 'R',
+  'res_metal4' => 'R',
+  'res_metal5' => 'R',
+  'res_topmetal1' => 'R',
+  'res_topmetal2' => 'R',
   'sg13_hv_svaricap' => 'C',
+  'sg13_moscap_n' => 'C',
+  'sg13_moscap_p' => 'C',
   'cap_cmim' => 'C',
   'rfcmim' => 'C',
+  'cap_cmomi' => 'C',
+  'cap_cmomf' => 'C',
   'diodevss_4kv' => 'D',
   'diodevss_2kv' => 'D',
   'diodevdd_4kv' => 'D',
@@ -69,13 +80,20 @@ CUSTOM_READER = %w[M C R Q L D].freeze
 # List of poly-resistors
 RES_DEV = ['rsil', 'rppd', 'rhigh']
 
-# RF MOS extraction models should be mapped to these base MOS model names.
+# RF MOS devices are extracted and compared as device classes of their own (rfnmos, ...),
+# while the simulation models only know the base MOS model with rfmode=1.
+# The netlist reader and the SPICE writer map between the two.
+#
+# NOTE: the extracted devices must not be replaced by devices of the base class,
+#       as newly created devices have no device abstract, i.e. no layout geometry.
 RF_TO_BASE_MOS_MODEL = {
   'rfnmos' => 'sg13_lv_nmos',
   'rfnmoshv' => 'sg13_hv_nmos',
   'rfpmos' => 'sg13_lv_pmos',
   'rfpmoshv' => 'sg13_hv_pmos'
 }.freeze
+
+BASE_TO_RF_MOS_MODEL = RF_TO_BASE_MOS_MODEL.invert.freeze
 
 # SPICE writer output map
 MOS_OUTPUT_MODEL_MAP = {
@@ -89,7 +107,7 @@ MOS_OUTPUT_MODEL_MAP = {
   'rfpmoshv' => ['sg13_hv_pmos', 1]
 }.freeze
 
-# Used by reader/writer/mapping to convert rfmode values to binary.
+# Used by reader/writer to convert rfmode values to binary.
 RFMODE_TO_BINARY = lambda do |value|
   next nil if value.nil?
 

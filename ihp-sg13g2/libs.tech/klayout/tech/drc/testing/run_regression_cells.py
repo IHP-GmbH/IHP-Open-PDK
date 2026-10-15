@@ -281,6 +281,82 @@ def extract_violated_rules(log_content: str) -> set[str]:
 # Test discovery (libs.ref)
 # ==============================
 
+def _discover_merged_libs(libref_root: str, add_test) -> None:
+    """Add a testcase per topcell of each merged io/pr/stdcell GDS."""
+    # ---- Merged libraries (io/pr/stdcell)
+    for lib_name, relpath in MERGED_GDS:
+        gds = os.path.join(libref_root, relpath)
+        if not os.path.isfile(gds):
+            logging.error(f"[DISCOVERY] Missing merged GDS for {lib_name}: {gds}")
+            continue
+
+        try:
+            topcells = gdstk_list_topcells(gds)
+        except Exception as e:
+            logging.error(f"[DISCOVERY] Failed to read topcells for {lib_name} ({gds}): {e}")
+            continue
+
+        if not topcells:
+            logging.error(f"[DISCOVERY] No topcells found in {lib_name} GDS: {gds}")
+            continue
+
+        # Special handling for IO: if only one topcell exists, run on 1st-level children
+        if lib_name == "sg13g2_io" and len(topcells) == 1:
+            io_wrapper = topcells[0]
+            try:
+                first_level = gdstk_list_first_level_cells(gds, io_wrapper)
+            except Exception as e:
+                logging.error(
+                    f"[DISCOVERY] {lib_name}: failed to get 1st-level cells from wrapper '{io_wrapper}' ({gds}): {e}"
+                )
+                continue
+
+            if not first_level:
+                logging.error(
+                    f"[DISCOVERY] {lib_name}: wrapper top cell '{io_wrapper}' has no direct child references in {gds}."
+                )
+                continue
+
+            logging.info(
+                f"[DISCOVERY] {lib_name}: found 1 wrapper topcell '{io_wrapper}' in {os.path.basename(gds)}; "
+                f"running {len(first_level)} first-level cells instead."
+            )
+            for c in first_level:
+                add_test(lib_name, c, gds)
+        else:
+            logging.info(f"[DISCOVERY] {lib_name}: found {len(topcells)} topcells in {os.path.basename(gds)}")
+            for c in topcells:
+                add_test(lib_name, c, gds)
+
+
+def _discover_sram(libref_root: str, add_test) -> None:
+    """Add a testcase per topcell of every SRAM GDS in the library."""
+    # ---- SRAM (one or more top cells per file)
+    sram_dir = os.path.join(libref_root, SRAM_GDS_DIR)
+    if not os.path.isdir(sram_dir):
+        logging.error(f"[DISCOVERY] Missing SRAM GDS directory: {sram_dir}")
+    else:
+        sram_files = sorted(Path(sram_dir).glob(f"*.{SUPPORTED_TC_EXT}"))
+        if not sram_files:
+            logging.error(f"[DISCOVERY] No SRAM GDS files found in: {sram_dir}")
+        else:
+            logging.info(f"[DISCOVERY] SRAM: found {len(sram_files)} GDS files.")
+            for gds_path in sram_files:
+                gds = str(gds_path)
+                try:
+                    topcells = gdstk_list_topcells(gds)
+                except Exception as e:
+                    logging.error(f"[DISCOVERY] Failed to read SRAM topcells ({gds}): {e}")
+                    continue
+
+                if not topcells:
+                    logging.error(f"[DISCOVERY] No topcells found in SRAM GDS: {gds}")
+                    continue
+
+                for c in topcells:
+                    add_test("sg13g2_sram", c, gds)
+
+
 def discover_libref_tests(libref_root: str) -> pd.DataFrame:
     """
     Discover all (lib, cell_name, layout_path) testcases from libs.ref.
@@ -328,75 +404,8 @@ def discover_libref_tests(libref_root: str) -> pd.DataFrame:
             }
         )
 
-    # ---- Merged libraries (io/pr/stdcell)
-    for lib_name, relpath in MERGED_GDS:
-        gds = os.path.join(libref_root, relpath)
-        if not os.path.isfile(gds):
-            logging.error(f"[DISCOVERY] Missing merged GDS for {lib_name}: {gds}")
-            continue
-
-        try:
-            topcells = gdstk_list_topcells(gds)
-        except Exception as e:
-            logging.error(f"[DISCOVERY] Failed to read topcells for {lib_name} ({gds}): {e}")
-            continue
-
-        if not topcells:
-            logging.error(f"[DISCOVERY] No topcells found in {lib_name} GDS: {gds}")
-            continue
-
-        # Special handling for IO: if only one topcell exists, run on 1st-level children
-        if lib_name == "sg13g2_io" and len(topcells) == 1:
-            io_wrapper = topcells[0]
-            try:
-                first_level = gdstk_list_first_level_cells(gds, io_wrapper)
-            except Exception as e:
-                logging.error(
-                    f"[DISCOVERY] {lib_name}: failed to get 1st-level cells from wrapper '{io_wrapper}' ({gds}): {e}"
-                )
-                continue
-
-            if not first_level:
-                logging.error(
-                    f"[DISCOVERY] {lib_name}: wrapper top cell '{io_wrapper}' has no direct child references in {gds}."
-                )
-                continue
-
-            logging.info(
-                f"[DISCOVERY] {lib_name}: found 1 wrapper topcell '{io_wrapper}' in {os.path.basename(gds)}; "
-                f"running {len(first_level)} first-level cells instead."
-            )
-            for c in first_level:
-                add_test(lib_name, c, gds)
-        else:
-            logging.info(f"[DISCOVERY] {lib_name}: found {len(topcells)} topcells in {os.path.basename(gds)}")
-            for c in topcells:
-                add_test(lib_name, c, gds)
-
-    # ---- SRAM (one or more top cells per file)
-    sram_dir = os.path.join(libref_root, SRAM_GDS_DIR)
-    if not os.path.isdir(sram_dir):
-        logging.error(f"[DISCOVERY] Missing SRAM GDS directory: {sram_dir}")
-    else:
-        sram_files = sorted(Path(sram_dir).glob(f"*.{SUPPORTED_TC_EXT}"))
-        if not sram_files:
-            logging.error(f"[DISCOVERY] No SRAM GDS files found in: {sram_dir}")
-        else:
-            logging.info(f"[DISCOVERY] SRAM: found {len(sram_files)} GDS files.")
-            for gds_path in sram_files:
-                gds = str(gds_path)
-                try:
-                    topcells = gdstk_list_topcells(gds)
-                except Exception as e:
-                    logging.error(f"[DISCOVERY] Failed to read SRAM topcells ({gds}): {e}")
-                    continue
-
-                if not topcells:
-                    logging.error(f"[DISCOVERY] No topcells found in SRAM GDS: {gds}")
-                    continue
-
-                for c in topcells:
-                    add_test("sg13g2_sram", c, gds)
+    _discover_merged_libs(libref_root, add_test)
+    _discover_sram(libref_root, add_test)
 
     df = pd.DataFrame(tests)
     if df.empty:
@@ -410,8 +419,8 @@ def discover_libref_tests(libref_root: str) -> pd.DataFrame:
     logging.info(f"Discovered total tests: {len(df)}")
 
     by_lib = df.groupby("lib")["cell_name"].nunique().to_dict()
-    for l, n in sorted(by_lib.items()):
-        logging.info(f"  - {l}: {n} cells")
+    for lib, n in sorted(by_lib.items()):
+        logging.info(f"  - {lib}: {n} cells")
 
     ignored_count = (df["ignore_reason"].astype(str).str.len() > 0).sum()
     waived_count = (df["allowed_rules"].astype(str).str.len() > 0).sum()
@@ -586,7 +595,11 @@ def run_all_test_cases(tc_df: pd.DataFrame, drc_dir: str, run_dir: str, num_work
                 continue
 
             allowed_rules_str = str(row.get("allowed_rules", "")).strip()
-            allowed_rules = set(filter(None, [x.strip() for x in allowed_rules_str.split(",")])) if allowed_rules_str else None
+            allowed_rules = (
+                set(filter(None, [x.strip() for x in allowed_rules_str.split(",")]))
+                if allowed_rules_str
+                else None
+            )
 
             if allowed_rules is not None:
                 waiver_reason = str(row.get("waiver_reason", "")).strip()

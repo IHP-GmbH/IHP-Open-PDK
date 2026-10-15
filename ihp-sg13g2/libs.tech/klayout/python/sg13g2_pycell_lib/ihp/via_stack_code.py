@@ -29,9 +29,10 @@ from ..sg13_tech_info import *
 
 
 class via_stack(DloGen):
-
     @classmethod
     def defineParamSpecs(self, specs):
+        self.tech_info = TechInfoFactory.tech_info_for_tech(specs.tech)
+        
         # define parameters and default values
         techparams = specs.tech.getTechParams()
         
@@ -41,14 +42,22 @@ class via_stack(DloGen):
         specs('cdf_version', CDFVersion, 'CDF Version')
 #endif
 
-        specs('b_layer', 'Metal1', 'Bottom layer', ChoiceConstraint(['Activ', 'GatPoly', 'Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']))
-        specs('t_layer', 'Metal2', 'Top layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']))
+        # NOTE: we use TechInfo to support multiple
+        #       layer stack variants {SG13G2, SG13G2_CMOS5L}
+        #       with the same script
+        layer_choices = [t[0] for t in self.tech_info.layer_choices]
+        non_device_layer_choices = [l for l in layer_choices if l not in self.tech_info.device_layer_names]
+        
+        specs('b_layer', 'Metal1', 'Bottom layer', ChoiceConstraint(layer_choices))
+        specs('t_layer', 'Metal2', 'Top layer', ChoiceConstraint(non_device_layer_choices))
         specs('vn_columns', 2, 'Via_n Columns')
         specs('vn_rows', 2, 'Via_n Rows')
         specs('vt1_columns', 1, 'Via_t1 Columns')
         specs('vt1_rows', 1, 'Via_t1 Rows')
-        specs('vt2_columns', 1, 'Via_t2 Columns')
-        specs('vt2_rows', 1, 'Via_t2 Rows')
+        
+        if self.tech_info.has_top_metal2:
+            specs('vt2_columns', 1, 'Via_t2 Columns')
+            specs('vt2_rows', 1, 'Via_t2 Rows')
 
     def setupParams(self, params):
         # process parameter values entered by user
@@ -59,8 +68,10 @@ class via_stack(DloGen):
         self.vn_rows = params['vn_rows']
         self.vt1_columns = params['vt1_columns']
         self.vt1_rows = params['vt1_rows']
-        self.vt2_columns = params['vt2_columns']
-        self.vt2_rows = params['vt2_rows']
+        
+        if 'vt2_columns' in params:
+            self.vt2_columns = params['vt2_columns']
+            self.vt2_rows = params['vt2_rows']
 
     def genLayout(self):
         self.techparams = self.tech.getTechParams()
@@ -79,8 +90,6 @@ class via_stack(DloGen):
 
         epsilon = techparams['epsilon1']
 
-        self.tech_info = TechInfo.instance()
-        
         #*************************************************************************
         #*
         #* Device Specific Design Rule Definitions
@@ -89,13 +98,6 @@ class via_stack(DloGen):
 
         b_layer_name = self.b_layer
         t_layer_name = self.t_layer
-
-        vn_columns = self.vn_columns
-        vn_rows = self.vn_rows
-        vt1_columns = self.vt1_columns
-        vt1_rows = self.vt1_rows
-        vt2_columns = self.vt2_columns
-        vt2_rows = self.vt2_rows
 
         #*************************************************************************
         #*

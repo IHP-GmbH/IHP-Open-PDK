@@ -1,0 +1,59 @@
+*******************************************************************************
+* cap_cmomf - ngspice wrapper around the Verilog-A (OSDI) compact model
+*             (metal fringe MoM capacitor on the g2 stack, Metal1..Metal5)
+*
+* Copyright 2026 IHP PDK Authors
+* Licensed under the Apache License, Version 2.0 (the "License").
+*
+*******************************************************************************
+* *** LOW-FREQUENCY MODEL ONLY -- NOT VALIDATED ON SILICON ***
+* The capacitance density comes from the Magic device generator this device
+* originates from (libs.tech/magic/ihp-sg13cmos5l-cap.tcl in the sibling PDK,
+* contributed by R. Timothy Edwards), using the values it carries after its
+* recalibration against a full 3D OpenEMS analysis.  It is simulation-derived,
+* not foundry silicon data.  Treat the result as an engineering estimate.
+* That generator stops at Metal4, so the Metal4 to Metal5 step is extrapolated
+* and has no measurement behind it at all.
+*******************************************************************************
+*
+* Metal fringe (finger) capacitor on the g2 thin-metal stack: every metal
+* layer from mmin to mmax carries a comb of fingers whose orientation
+* alternates from layer to layer.  It is the fringe-style sibling of cap_cmomi,
+* not a replacement for it: the two have different geometry, different
+* densities and, for now, very different model depth.
+*
+*   C = areacap(mmin, mmax) * w * l
+*     areacap = base + (mmax - mmin) * 0.305   [fF/um^2]
+*     base    = 0.372 fF/um^2 if mmin == 1 (Metal1 is the bottom plate)
+*             = 0.305 fF/um^2 otherwise
+*
+* Unlike cap_cmomi this model is 2-terminal in the Verilog-A as well: there is
+* no substrate node, because no substrate-coupling fit exists for this
+* geometry.  It also has no series R/L and therefore no self-resonance, so it
+* stays capacitive at every frequency.  RF results are optimistic; extract the
+* layout if you need parasitics.  Full rationale in the Verilog-A header,
+* libs.tech/verilog-a/cap_cmomf/cap_cmomf.va.
+*
+* Requires the OSDI object to be loaded first (done in libs.tech/ngspice/.spiceinit):
+*   osdi $PDK_ROOT/$PDK/libs.tech/ngspice/osdi/cap_cmomf.osdi
+* Build it with libs.tech/verilog-a/openvaf-compile-va.sh.
+* Simulator scope: ngspice via OSDI (built with -D__NGSPICE__).  Xyce / gnucap /
+* qucs-s are not wired and would need a separate Verilog-A build per simulator.
+*
+* w,l in metres; mmin/mmax metal indices (1=Metal1 .. 5=Metal5).
+* m: parallel device multiplier (ngspice subckt multiplier).  mm_ok: accepted
+* for interface parity with cap_cmomi but a NO-OP -- cap_cmomf has no
+* characterised mismatch model.
+*******************************************************************************
+* STATISTICAL / CORNER MODELING (known caveat, to address with silicon):
+* cap_cmomf has NO characterised process-corner or mismatch variation, so it
+* returns the same nominal capacitance in every corner (typ/bcs/wcs) and in
+* Monte-Carlo.  This is NOT a claim that the device is corner-stable; the
+* spread is simply not modelled.
+*******************************************************************************
+
+.subckt cap_cmomf PLUS MINUS w=5e-6 l=5e-6 mmin=1 mmax=5 subblock=0 mm_ok=1
+.param m=1
+Ncap PLUS MINUS cap_cmomf_mod w={w} l={l} mmin={mmin} mmax={mmax} subblock={subblock} m={m}
+.model cap_cmomf_mod cap_cmomf
+.ends cap_cmomf

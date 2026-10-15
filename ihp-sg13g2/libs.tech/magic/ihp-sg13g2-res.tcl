@@ -539,7 +539,7 @@ proc sg13g2::res_device {parameters} {
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} \
-		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
+		${end_contact_size} ${end_type} ${end_contact_type} m1 full]]
     }
     popbox
 
@@ -580,7 +580,7 @@ proc sg13g2::res_device {parameters} {
     	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} \
-		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
+		${end_contact_size} ${end_type} ${end_contact_type} m1 full]]
     }
     # Cover the device area with property MASKHINTS_CONTBAR to specify
     # that all contacts in the area are bar contacts
@@ -693,7 +693,7 @@ proc sg13g2::res_snake_device {nf parameters} {
 	}
 	set cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} \
-		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]
+		${end_contact_size} ${end_type} ${end_contact_type} m1 full]
     }
     popbox
 
@@ -810,7 +810,7 @@ proc sg13g2::res_snake_device {nf parameters} {
 	}
 	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact ${cpl} 0 \
 		${end_surround} ${metal_surround} \
-		${end_contact_size} ${end_type} ${end_contact_type} m1 horz]]
+		${end_contact_size} ${end_type} ${end_contact_type} m1 full]]
     }
     popbox
     # Draw portion between resistor end and contact.

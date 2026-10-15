@@ -18,10 +18,15 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
-from .utility_functions import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
+from .utility_functions import *
 
-class cmim(DloGen):
+from typing import List
+
+
+class cmim(DeviceBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -55,13 +60,25 @@ class cmim(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.w = Numeric(params['w']) * 1e6
         self.l = Numeric(params['l']) * 1e6
         self.C = eng_string(CbCapCalc('C', 0, params['l'], params['w'], 'cmim'))
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        # return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.DNWELL, GuardRingType.PSUB]
+        return [GuardRingType.NONE, GuardRingType.NWELL, GuardRingType.PSUB]
+
+    def genDeviceLayout(self):
         self.grid = self.tech.getGridResolution()
         self.techparams = self.tech.getTechParams()
         self.epsilon = self.techparams['epsilon1']
@@ -73,8 +90,23 @@ class cmim(DloGen):
         x2 = self.xcont_cnt
         y1 = self.techparams['Mim_d']-self.techparams['TV1_d']+self.yoffset
         y2 = self.ycont_cnt
+        
+        # Enforce TM1.a independently in X and Y
+        tm1_min = self.techparams['TM1_a']
+
+        tm1_min_x1 = GridFix((self.w - tm1_min) / 2)
+        tm1_min_y1 = GridFix((self.l - tm1_min) / 2)
+        tm1_min_x2 = tm1_min_x1 + tm1_min
+        tm1_min_y2 = tm1_min_y1 + tm1_min
+
+        topMetalBBox = Box(
+            min(x1, tm1_min_x1),
+            min(y1, tm1_min_y1),
+            max(x2, tm1_min_x2),
+            max(y2, tm1_min_y2),
+        )
+        
         caplayerBBox = Box(0, 0, self.w, self.l)
-        topMetalBBox = Box(x1, y1, x2, y2)
         bottomMetalBBox = Box(-self.techparams['Mim_c'], -self.techparams['Mim_c'], self.w + self.techparams['Mim_c'], self.l + self.techparams['Mim_c'])
 
         Rect(Layer('MIM'), caplayerBBox)

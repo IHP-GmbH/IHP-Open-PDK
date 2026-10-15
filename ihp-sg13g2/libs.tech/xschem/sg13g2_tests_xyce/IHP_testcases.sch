@@ -1,4 +1,4 @@
-v {xschem version=3.4.6 file_version=1.2
+v {xschem version=3.4.8RC file_version=1.3
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 L 7 360 -770 360 -100 {}
 L 7 700 -770 700 -100 {}
@@ -71,3 +72,5 @@ C {sg13g2_tests_xyce/dc_ntap1.sym} 180 -460 0 0 {name=x25}
 C {sg13g2_tests_xyce/dc_ptap1.sym} 180 -420 0 0 {name=x26}
 C {sg13g2_tests_xyce/dc_isolbox.sym} 180 -130 0 0 {name=x33}
 C {sg13g2_tests_xyce/dc_schottky.sym} 180 -90 0 0 {name=x34}
+C {sg13g2_tests_xyce/tran_moscap_n.sym} 520 -530 0 0 {name=x35}
+C {sg13g2_tests_xyce/tran_moscap_p.sym} 520 -490 0 0 {name=x36}

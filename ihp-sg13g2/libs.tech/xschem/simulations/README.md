@@ -13,6 +13,8 @@ The test circuits are organized by simulation type and shown in the table below:
 | dc_mos_temp.sch            | Temperature sweep from -40 to 125 of four versions of the mos transistors polarized using constant voltage sources $V_{DS}=1.5$ and $V_{GS}=0.75$. The output drain currents  $I_{D}$ are dumped into a CSV file in the following order: NMOSLV, NMOSHV, PMOSLV, PMOSHV |
 | dc_mos_cs_temp.sch         | Temperature sweep from -40 to 125 of four versions of the mos transistors polarized using constant current source $I_{D}=10\mu$ and shorted gate and drain terminals. The output  $V_{GS}$ voltages are dumped into a CSV file in the following order: NMOSLV, NMOSHV, PMOSLV, PMOSHV |
 | tran_mim_cap.sch           | Transient simulation of a MiM capacitor using current source and reference capacitor model |
+| tran_moscap_n.sch          | Transient capacitance-versus-bias simulation of the N-type MOS capacitor |
+| tran_moscap_p.sch          | Transient capacitance-versus-bias simulation of the P-type MOS capacitor |
 | ac_nmosrf.sch              | A frequency sweep of a Common Source amplifier in two configurations: (1) with rfmode=0 and (2) with rfmode=1. The testcase measures also the output voltage magnitude at 5 GHz using .meas command|
 | ac_mimcap.sch              | MiM cap frequency sweep and measurement of -3dB cut-off frequency  |
 | mc_lv_nmos_cs_loop.sch     | The Monte Carlo operating point ($V_{GS}$) simulations of low voltage nmos transistor polarized using current source 

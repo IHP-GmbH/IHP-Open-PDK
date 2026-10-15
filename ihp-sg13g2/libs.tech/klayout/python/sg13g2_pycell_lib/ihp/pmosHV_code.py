@@ -18,13 +18,17 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .device_base_code import DeviceBase
 from .geometry import *
+from .guard_ring_code import GuardRingType
 from .thermal import *
 from .utility_functions import *
 
 import math
+from typing import List
 
-class pmosHV(DloGen):
+
+class pmosHV(DeviceBase):
 
     @classmethod
     def defineParamSpecs(self, specs):
@@ -54,6 +58,8 @@ class pmosHV(DloGen):
         specs('m', '1', 'Multiplier')
         specs('trise', '', 'Temp rise from ambient')
 
+        super().defineParamSpecs(specs)
+
     def setupParams(self, params):
         # process parameter values entered by user
         self.params = params
@@ -61,7 +67,16 @@ class pmosHV(DloGen):
         self.l = Numeric(params['l'])
         self.ng = Numeric(params['ng'])
 
-    def genLayout(self):
+        super().setupParams(params)
+
+    @classmethod
+    def validGuardRingTypes(cls) -> List[GuardRingType]:
+        """
+        Template method for subclasses to restrict the guard ring types
+        """
+        return [GuardRingType.NONE, GuardRingType.NWELL]
+
+    def genDeviceLayout(self):
         self.grid = self.tech.getGridResolution()
         self.techparams = self.tech.getTechParams()
         self.epsilon = self.techparams['epsilon1']
@@ -226,9 +241,6 @@ class pmosHV(DloGen):
         nwell_offset = max(0, GridFix((contActMin-w)/2+0.5*self.grid))
         dbCreateRect(self, well_layer, Box(xdiff_beg-nwell_pActiv_over, ydiff_beg-nwell_pActiv_over+diffoffset-nwell_offset,
                                            xdiff_end+nwell_pActiv_over, ydiff_end+nwell_pActiv_over+diffoffset+nwell_offset))
-
-        # B-Pin
-        MkPin(self, 'B', 4, Box(xcont_beg-cont_Activ_overRec, ycont_beg-cont_Activ_overRec, xcont_end+cont_Activ_overRec, ycont_beg+cont_size+cont_Activ_overRec), Layer('Substrate', 'drawing'))
 
         # draw Thick Gate Oxide
         

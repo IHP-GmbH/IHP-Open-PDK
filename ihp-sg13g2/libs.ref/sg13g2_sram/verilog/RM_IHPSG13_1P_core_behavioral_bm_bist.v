@@ -15,7 +15,7 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////
-
+`timescale 1ns/10ps
 module SRAM_1P_behavioral_bm_bist (A_ADDR,
                                 A_DIN,
                                 A_BM,

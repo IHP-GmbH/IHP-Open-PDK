@@ -1,0 +1,126 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+$logger = logger
+$unit = dbu
+
+#================================================
+# --------------- CUSTOM DEVICES ----------------
+#================================================
+
+# MOSCAP-custom device class
+class DeviceCustomMOSCAP < RBA::DeviceClassCapacitor
+  def initialize(name)
+    super()
+    clear_parameters
+    clear_terminals
+    clear_equivalent_terminal_ids
+
+    add_parameter(RBA::DeviceParameterDefinition.new('w', 'width', 0, false))
+    add_parameter(RBA::DeviceParameterDefinition.new('l', 'length', 0, false))
+
+    equal_moscap_parameters = RBA::EqualDeviceParameters.new(parameter_id('w'), 0.0, 0.0)
+    equal_moscap_parameters += RBA::EqualDeviceParameters.new(parameter_id('l'), 0.0, 0.0)
+    self.equal_parameters = equal_moscap_parameters
+    self.combiner = nil
+
+    ter1 = add_terminal(RBA::DeviceTerminalDefinition.new('G'))
+    ter2_name = name.to_s.downcase.include?('moscap_p') ? 'NW' : 'SUB'
+    ter2 = add_terminal(RBA::DeviceTerminalDefinition.new(ter2_name))
+    ter1.name = 'G'
+    ter2.name = ter2_name
+  end
+end
+
+class MOSCAPExtractor < RBA::GenericDeviceExtractor
+  def initialize(name)
+    create
+    self.name = name
+    @name = name
+  end
+
+  def setup
+    define_layers
+    @reg_dev = DeviceCustomMOSCAP.new(name)
+    @reg_dev.name = @name
+    register_device_class(@reg_dev)
+  end
+
+  def get_connectivity(_layout, layers)
+    dev = layers[0]
+    gate_port = layers[1]
+    bulk_port = layers[2]
+    dev_mk = layers[3]
+
+    conn = RBA::Connectivity.new
+    conn.connect(dev, dev)
+    conn.connect(dev, dev_mk)
+    conn.connect(gate_port, dev_mk)
+    conn.connect(bulk_port, dev_mk)
+
+    conn
+  end
+
+  def extract_devices(layer_geometry)
+    dev, gate_port, bulk_port, dev_mk = layer_geometry
+    dev_mk.merged.each do |region|
+      region_sel = RBA::Region.new(region).sized((1.0 / $unit).round)
+      bulk_sel = RBA::Region.new(region).sized((12.0 / $unit).round)
+      region_core = dev.interacting(region_sel)
+      region_gate = gate_port.interacting(region_sel)
+      region_bulk = bulk_port.interacting(bulk_sel)
+
+      if region_core.size != 1
+        $logger.info("No. of core regions exist for #{@name} is #{region_core.size}, should be 1")
+      elsif region_gate.size != 1
+        $logger.info("No. of gate ports exist for #{@name} is #{region_gate.size}, should be 1")
+      elsif region_bulk.is_empty?
+        $logger.info("No bulk port exists for #{@name}, should be at least 1")
+      else
+        device = create_device
+        set_device_parameters(device, region_core)
+        define_terminal(device, @reg_dev.terminal_id('G'), 1, region_gate[0])
+        region_bulk.merged.each do |bulk_poly|
+          define_terminal(device, @reg_dev.terminal_id(bulk_terminal_name), 2, bulk_poly)
+        end
+      end
+    end
+  end
+
+  private
+
+  def define_layers
+    define_layer('core', 'core Layer')
+    define_layer('gate_port', 'Gate terminal')
+    define_layer('bulk_port', 'Bulk terminal')
+    define_layer('dev_mk', 'Device Marker')
+  end
+
+  def set_device_parameters(device, core_region)
+    bbox = core_region.bbox
+    width = bbox.height * $unit
+    length = bbox.width * $unit
+    device.set_parameter('w', width)
+    device.set_parameter('l', length)
+  end
+
+  def bulk_terminal_name
+    name.to_s.downcase.include?('moscap_p') ? 'NW' : 'SUB'
+  end
+end

@@ -1,0 +1,55 @@
+*==========================================================================
+* Copyright 2026 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* SPDX-License-Identifier: Apache-2.0
+*==========================================================================
+* Two caps declared against the three-cap hierarchical layout, run in deep mode.
+*
+* This is chain_missing's perturbation applied to cap_cmomf_hier.gds: a device
+* present in the layout and absent from the schematic. The flat case catches it
+* on the comparison, and so does this one.
+*
+* It did not always, and that is why this case exists. In deep mode every cap
+* here sits in a sub-cell with no net crossing that cell's boundary. The layout
+* netlist used to come out empty, compare was left with no pair to compare and
+* returned true, and the run reported a match having verified nothing. The case
+* expected PASS to record that hole. Extraction was never what failed: the
+* .lvsdb carried the device abstract with its terminal geometry, identical to
+* the flat run's, and no marker was ever rejected.
+*
+* What emptied the netlist was apply_rfmos_model_mapping calling purge_devices
+* and purge unconditionally on every run. 5fecb0f1 put those behind the PURGE
+* conditional and 6ff43baf removed them, so the sub-circuits now survive to the
+* comparison and the missing device is reported. Expected FAIL.
+*
+* The hole is not specific to cap_cmomf: cap_cmomi empties the same way on the
+* same construction. That was observed on the ihp-sg13cmos5l side, where both
+* devices have a deep case in their checks suite and the issue is tracked as
+* https://github.com/IHP-GmbH/ihp-sg13cmos5l/issues/91. Nothing in this tree
+* demonstrates it for cap_cmomi, because its suite here has no deep case.
+* ihp-sg13cmos5l answers the vacuous half in its own sg13cmos5l.lvs, which
+* counts the devices on both sides and refuses to call an empty layout netlist
+* a match. This PDK still has no such guard, so a future change that empties
+* the netlist again would silently turn this case back into a green match.
+*
+* Read it together with the wired case, which is the same hierarchy with one
+* Metal5 route in the top cell and compares for real by construction.
+*
+* The layout is the unit testcase's, referenced across rather than copied, so the
+* flat and deep runs cannot drift apart. That unit case runs the same layout in
+* flat mode and must pass.
+.SUBCKT cap_cmomf_hier
+C1 P1 M1 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+C2 P2 M2 cap_cmomf w=5e-06 l=5e-06 mmin=1 mmax=5
+.ENDS cap_cmomf_hier

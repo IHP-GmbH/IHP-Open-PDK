@@ -306,6 +306,106 @@ templates = [
     },
     {
         "regex": re.compile(
+            rf"^.*cap_cmomi(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+))(?=.*feed=(?P<feed>\w+)).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "cmomi",
+        "params": [
+            {
+                "name": "w",
+                "type": "string",
+            },
+            {
+                "name": "l",
+                "type": "string",
+            },
+            {
+                "name": "mmin",
+                "type": "int",
+            },
+            {
+                "name": "mmax",
+                "type": "int",
+            },
+            {
+                "name": "feed",
+                "type": "string",
+            },
+        ],
+        "default_params": {"w": "5.0e-6", "l": "5.0e-6", "mmin": 1, "mmax": 5, "feed": "double"},
+    },
+    {
+        "regex": re.compile(
+            rf"^.*cap_cmomf(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*mmin=(?P<mmin>\d+))(?=.*mmax=(?P<mmax>\d+)).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "cmomf",
+        "params": [
+            {
+                "name": "w",
+                "type": "string",
+            },
+            {
+                "name": "l",
+                "type": "string",
+            },
+            {
+                "name": "mmin",
+                "type": "int",
+            },
+            {
+                "name": "mmax",
+                "type": "int",
+            },
+        ],
+        "default_params": {"w": "5.0e-6", "l": "5.0e-6", "mmin": 1, "mmax": 5},
+    },
+    {
+        "regex": re.compile(
+            rf"^.*sg13_moscap_n(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>[0-9]+))|).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "moscap_n",
+        "params": [
+            {
+                "name": "w",
+                "type": "raw_string",
+            },
+            {
+                "name": "l",
+                "type": "raw_string",
+            },
+            {
+                "name": "m",
+                "type": "int",
+            },
+        ],
+        "default_params": {"w": "1u", "l": "1u", "m": 1},
+    },
+    {
+        "regex": re.compile(
+            rf"^.*sg13_moscap_p(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>[0-9]+))|).*$"
+        ),
+        "pcell_library": "SG13_dev",
+        "pcell_name": "moscap_p",
+        "params": [
+            {
+                "name": "w",
+                "type": "raw_string",
+            },
+            {
+                "name": "l",
+                "type": "raw_string",
+            },
+            {
+                "name": "m",
+                "type": "int",
+            },
+        ],
+        "default_params": {"w": "1u", "l": "1u", "m": 1},
+    },
+    {
+        "regex": re.compile(
             rf"^.*cap_rfcmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*wfeed=(?P<wfeed>{NUMBER})).*$"
         ),
         "pcell_library": "SG13_dev",

@@ -60,6 +60,7 @@ run_lvs.py [--layout=<layout_path>]
            [--topcell=<topcell_name>] [--run_mode=<run_mode>]
            [--no_net_names] [--spice_comments] [--net_only] [--no_simplify]
            [--no_series_res] [--no_parallel_res] [--combine_devices] [--top_lvl_pins]
+           [--disable_tap_extraction]
            [--purge] [--purge_nets] [--ignore_top_ports_mismatch]
            [--implicit_nets=<nets>]
 ```
@@ -93,6 +94,8 @@ run_lvs.py [--layout=<layout_path>]
 - `--no_parallel_res`                 Prevents simplification of parallel resistors for both layout and schematic.
 
 - `--combine_devices`                 Enables device combination for both layout and schematic netlists.
+
+- `--disable_tap_extraction`          Skips `ntap1`/`ptap1` device extraction so taps are not required in the schematic, matching Magic+Netgen LVS behavior. Extraction is enabled by default.
 
 - `--top_lvl_pins`                    Creates pins for top-level circuits in both layout and schematic netlists.
 

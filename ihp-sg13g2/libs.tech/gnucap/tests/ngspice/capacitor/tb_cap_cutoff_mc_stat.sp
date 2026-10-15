@@ -53,7 +53,7 @@ dowhile run < mc_runs
   let C2_vec[run] = {$acplot}.C2
 
   let run = run + 1
-  destroy all
+  destroy $acplot
 end
 
 * write capacitance vectors to file

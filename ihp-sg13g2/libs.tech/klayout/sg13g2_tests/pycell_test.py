@@ -26,9 +26,18 @@
 # KLAYOUT_PATH=$(pwd)/.. klayout ihp-pycells.gds -e
 
 layout = pya.Layout()
+
+# Without a technology the SG13_dev lookup cannot resolve, every create_cell
+# below returns nil and the first DCellInstArray raises an internal error that
+# reads like a broken PCell library. Setting it here is the whole fix.
+layout.technology_name = "sg13g2"
+
 pcellNmos = layout.create_cell("nmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellPmos = layout.create_cell("pmos", "SG13_dev", { "l": 0.350e-6, "w": 6e-6, "ng": 3 })
 pcellCmim = layout.create_cell("cmim", "SG13_dev", {})
+pcellCapMom = layout.create_cell("cmomi", "SG13_dev", { "w": "5.0u", "l": "5.0u", "mmin": 1, "mmax": 5, "feed": "double" })
+pcellCapMomf = layout.create_cell("cmomf", "SG13_dev", { "w": "5.0u", "l": "5.0u", "mmin": 1, "mmax": 5 })
+pcellCapMomfM2M5 = layout.create_cell("cmomf", "SG13_dev", { "w": "5.0u", "l": "5.0u", "mmin": 2, "mmax": 5 })
 pcellSealring = layout.create_cell("sealring", "SG13_dev", {})
 pcellNpn13G2 = layout.create_cell("npn13G2", "SG13_dev", {})
 pcellNpn13G2L = layout.create_cell("npn13G2L", "SG13_dev", {})
@@ -54,6 +63,15 @@ pcellSVaricap = layout.create_cell("SVaricap", "SG13_dev", {})
 pcellEsd = layout.create_cell("esd", "SG13_dev", {})
 pcellIsolbox = layout.create_cell("isolbox", "SG13_dev", {})
 
+# Guard rings (standalone cell, both types; nwell also covers the nBuLay ring)
+pcellGuardRingNwell = layout.create_cell("guard_ring", "SG13_dev", {"type": "nwell"})
+pcellGuardRingPsub = layout.create_cell("guard_ring", "SG13_dev", {"type": "psub"})
+
+# Devices with guard ring option enabled (via DeviceBase)
+pcellNmosGuarded = layout.create_cell("nmos", "SG13_dev", {"l": "0.35u", "w": "6u", "ng": 3, "guardRingType": "psub"})
+pcellPmosGuarded = layout.create_cell("pmos", "SG13_dev", {"l": "0.35u", "w": "6u", "ng": 3, "guardRingType": "nwell"})
+pcellSVaricapGuarded = layout.create_cell("SVaricap", "SG13_dev", {"guardRingType": "nwell"})
+
 top = layout.create_cell("TOP")
 top.insert(pya.DCellInstArray(pcellNmos, pya.DTrans()))
 top.insert(pya.DCellInstArray(pcellPmos, pya.DTrans(pya.DVector(4, 0))))
@@ -64,6 +82,9 @@ top.insert(pya.DCellInstArray(pcellRhigh, pya.DTrans(pya.DVector(36, 0.2))))
 top.insert(pya.DCellInstArray(pcellRppd, pya.DTrans(pya.DVector(38, 0.2))))
 top.insert(pya.DCellInstArray(pcellRsil, pya.DTrans(pya.DVector(40, 0.2))))
 top.insert(pya.DCellInstArray(pcellCmim, pya.DTrans(pya.DVector(43, 0.2))))
+top.insert(pya.DCellInstArray(pcellCapMom, pya.DTrans(pya.DVector(46, 0.2))))
+top.insert(pya.DCellInstArray(pcellCapMomf, pya.DTrans(pya.DVector(46, 8))))
+top.insert(pya.DCellInstArray(pcellCapMomfM2M5, pya.DTrans(pya.DVector(52, 8))))
 top.insert(pya.DCellInstArray(pcellDAntenna, pya.DTrans(pya.DVector(52, -0.3))))
 top.insert(pya.DCellInstArray(pcellDPAntenna, pya.DTrans(pya.DVector(54, 0))))
 top.insert(pya.DCellInstArray(pcellViaStack, pya.DTrans(pya.DVector(56, 0))))
@@ -82,6 +103,11 @@ top.insert(pya.DCellInstArray(pcellSealring, pya.DTrans(pya.DVector(160, -190)))
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 60))))
 top.insert(pya.DCellInstArray(pcellEsd, pya.DTrans(pya.DVector(40, 120))))
 top.insert(pya.DCellInstArray(pcellIsolbox, pya.DTrans(pya.DVector(20, 140))))
+top.insert(pya.DCellInstArray(pcellGuardRingNwell, pya.DTrans(pya.DVector(86, 25))))
+top.insert(pya.DCellInstArray(pcellGuardRingPsub, pya.DTrans(pya.DVector(93, 25))))
+top.insert(pya.DCellInstArray(pcellNmosGuarded, pya.DTrans(pya.DVector(100, 25))))
+top.insert(pya.DCellInstArray(pcellPmosGuarded, pya.DTrans(pya.DVector(115, 25))))
+top.insert(pya.DCellInstArray(pcellSVaricapGuarded, pya.DTrans(pya.DVector(130, 25))))
 
 output = "SG13_dev.gds"
 layout.write(output)

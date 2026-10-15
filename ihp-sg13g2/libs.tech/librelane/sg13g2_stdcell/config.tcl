@@ -1,14 +1,8 @@
 set current_folder [file dirname [file normalize [info script]]]
 
 # Synthesis mapping
- # Latch mapping
+# Latch mapping
 set ::env(SYNTH_LATCH_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/latch_map.v"
-
- # MUX4 mapping
-set ::env(SYNTH_MUX4_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/mux4_map.v"
-
- # MUX2 mapping
-set ::env(SYNTH_MUX_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/mux2_map.v"
 
 # Tri-state buffer mapping
 set ::env(SYNTH_TRISTATE_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/tribuff_map.v"
@@ -16,8 +10,6 @@ set ::env(SYNTH_TRISTATE_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/
 # Placement site for core cells
 # This can be found in the technology lef
 set ::env(PLACE_SITE) "CoreSite"
-set ::env(PLACE_SITE_WIDTH) 0.48
-set ::env(PLACE_SITE_HEIGHT) 3.78
 
 # Welltap and endcap cells
 # There are no endcap and welltie cells in ihp-sg13g2
@@ -26,12 +18,11 @@ set ::env(PLACE_SITE_HEIGHT) 3.78
 #set ::env(ENDCAP_CELL) ""
 
 # defaults (can be overridden by designs):
-set ::env(SYNTH_DRIVING_CELL) "sg13g2_buf_4"
-set ::env(SYNTH_DRIVING_CELL_PIN) "X"
+set ::env(SYNTH_DRIVING_CELL) "sg13g2_buf_4/X"
 set ::env(OUTPUT_CAP_LOAD) "6.0"
-set ::env(SYNTH_MIN_BUF_PORT) "sg13g2_buf_1 A X"
-set ::env(SYNTH_TIEHI_PORT) "sg13g2_tiehi L_HI"
-set ::env(SYNTH_TIELO_PORT) "sg13g2_tielo L_LO"
+set ::env(SYNTH_BUFFER_CELL) "sg13g2_buf_1/A/X"
+set ::env(SYNTH_TIEHI_CELL) "sg13g2_tiehi/L_HI"
+set ::env(SYNTH_TIELO_CELL) "sg13g2_tielo/L_LO"
 
 # Fillcell insertion
 set ::env(FILL_CELLS) "sg13g2_fill_1 sg13g2_fill_2"
@@ -49,10 +40,8 @@ set ::env(CELL_PAD_EXCLUDE) "sg13g2_fill_* sg13g2_decap_*"
 set ::env(PDN_RAIL_WIDTH) 0.44
 
 # CTS
-set ::env(CTS_ROOT_BUFFER) sg13g2_buf_16
+set ::env(CTS_ROOT_BUFFER) "sg13g2_buf_16"
 set ::env(CTS_CLK_BUFFERS) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2"
-
-#set ::env(CTS_CLK_BUFFER_LIST) "sg13g2_buf_8 sg13g2_buf_4 sg13g2_buf_2"
 
 # FIXME: A bit random ... from sky130
 set ::env(MAX_FANOUT_CONSTRAINT) 10

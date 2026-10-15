@@ -1,0 +1,1 @@
+../../../../ihp-sg13g2/libs.tech/xschem/sg13g2_tests_xyce/mc_res_op.sch

@@ -35,11 +35,15 @@ The symbol library can be found in `libs.tech/xschem/sg13g2_pr` and it contains 
 |rsil               |Silicide resistor of a sheet resistance of 7 $\Omega / \square$                                                                            |    
 |rppd               |Polysilicon resistor of a sheet resistance of 7 $\Omega / \square$                                                                         |
 |rhigh              |Polysilicon resistor of a high sheet resistance of 1360 $\Omega / \square$                                                                 |
-|ntap1              |N-well difussion conntact resistance  of 262 $\Omega$                                                                                      |
-|ptap1              |P-well (substrate) difussion conntact resistance  of 262 $\Omega$                                                                          |
+|ntap1              |N-well diffusion contact resistance  of 262 $\Omega$                                                                                       |
+|ptap1              |P-well (substrate) contact resistance  of 262 $\Omega$                                                                                     |
+|ntap1_ring         |N-well diffusion guard ring                                                                                                                |
+|ptap1_ring         |P-well (substrate) guard ring                                                                                                              |
 |cap_cmim           |Metal-Insulator-Metal capacitor                                                                                                            |
 |cap_cpara          |Parasitic capacitor symbol attached to a model (used only for parasitics extraction)                                                       |
 |cap_rfcmim         |Metal-Insulator-Metal capacitor model for RF                                                                                               |
+|moscap_n           |N-type MOS capacitor with G and SUB terminals and W-channel width and L-channel length parameters                                          |
+|moscap_p           |P-type MOS capacitor with G and NW terminals and W-channel width and L-channel length parameters                                           |
 |dantenna           |Antenna diode symbol. This diode is used to protect against low voltage. The anode of the diode should be connected to the ptap1 resistor. |
 |dpantenna          |Antenna diode symbol. This diode is used to protect against high voltage. The cathode of the diode should be connected to the ntap1 resistor.|
 |pnpMPA             |pnp HBT used for band-gap reference circuit                                                                                                |

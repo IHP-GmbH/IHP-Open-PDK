@@ -1152,20 +1152,22 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
 	pwell,space/w error l=l w=w a1=as p1=ps a2=ad p2=pd
 
  # Bipolars
- device msubcircuit npn13g2 npn gec *ndiff space/w error w1=we l1=le
+ # NOTE: Width/Length for the HBTs are swapped when compared to MOSFETs
+ # hence Width(BJT) maps to length, and Length(BJT) maps to width.
+ device msubcircuit npn13g2 npn gec *ndiff space/w error w1=le l1=we
 
  # 2nd layout type of low-voltage HBT bipolar
- device msubcircuit npn13g2l npn nec *ndiff space/w error w1=we l1=le
+ device msubcircuit npn13g2l npn nec *ndiff space/w error w1=le l1=we
 
  # High voltage NPN bipolar
- device msubcircuit npn13g2v npn hvnec *ndiff space/w error w1=we l1=le
+ device msubcircuit npn13g2v npn hvnec *ndiff space/w error w1=le l1=we
 
  # Lateral PNP bipolar
  device msubcircuit pnpMPA pnp *pdiff pwell,space/w a1=a p1=p
 
  # Capacitors
  device csubcircuit cap_cmim *mimcap m5 w=w l=l
- device csubcircuit cap_rfcmim *mimcap m5 +pblock w=w l=l
+ device csubcircuit cap_rfcmim *mimcap m5 space/w +pblock w=w l=l
  # Varactor:  Note that the SVaractor is a complex device incorporating
  # multiple varactor fingers.  This will normally be handled from a
  # generated cell using a "device" property.  In case varactor structures
@@ -1228,13 +1230,13 @@ variants (lvs)
  # device mosfet scr1
 
  # Bipolars
- device bjt npn13g2 npn gec *ndiff space/w error w1=we l1=le
+ device bjt npn13g2 npn gec *ndiff space/w error w1=le l1=we
 
  # 2nd layout type of low-voltage HBT bipolar
- device bjt npn13g2l npn nec *ndiff space/w error w1=we l1=le
+ device bjt npn13g2l npn nec *ndiff space/w error w1=le l1=we
 
  # High voltage NPN bipolar
- device bjt npn13g2v npn hvnec *ndiff space/w error w1=we l1=le
+ device bjt npn13g2v npn hvnec *ndiff space/w error w1=le l1=we
 
  # pnpMPA PNP bipolar
  device bjt pnpMPA pnp *pdiff pwell,space/w a1=a p1=p

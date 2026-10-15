@@ -18,9 +18,10 @@
 __version__ = '$Revision: #3 $'
 
 from cni.dlo import *
+from .geometry import *
+from .guard_ring_code import GuardRingType
 from .res_base_code import *
 from .thermal import *
-from .geometry import *
 from .utility_functions import *
 
 import math
@@ -129,6 +130,7 @@ class rppd(ResistorBase):
         polyover = self.techparams['Cnt_d']        
         psdover1 = self.techparams['pSD_n']
         psdNotch = self.techparams['pSD_b']
+        extBlockNotch = self.techparams['EXTB_b']
         psdover1 = self.techparams['Rppd_b']        
         li_salblock = self.techparams['Sal_e']        
         salover = self.techparams['Sal_c']
@@ -457,15 +459,23 @@ class rppd(ResistorBase):
         MkPin(self, f"MINUS{index}", 2, minus_pin_box, metlayer_pin)
 
         # fill notches in pSD and EXTBlock layers
-        if (self.ps-2.0*psdover < psdNotch) and (self.ps-2.0*psdover > 0.0):
+        psdNotchWidth = self.ps-2.0*psdover
+        extBlockNotchWidth = self.ps-psdover-salover
+        notchXpos1 = xpos1-self.w-self.ps
+
+        if (psdNotchWidth < psdNotch) and (psdNotchWidth > 0.0):
             if stripes > 1:
                 dbCreateRect(self, psdlayer, Box(self.w+psdover, 0, self.w+self.ps-psdover, -li_salblock-poly_cont_len-psdover))
+    
+            if stripes > 2:
+                dbCreateRect(self, psdlayer, Box(notchXpos1+self.w+psdover, ypos2, notchXpos1+self.w+self.ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
+
+        if (extBlockNotchWidth < extBlockNotch) and (extBlockNotchWidth > 0.0):
+            if stripes > 1:
                 dbCreateRect(self, extBlocklayer, Box(self.w+psdover, 0, self.w+self.ps-salover, -li_salblock-poly_cont_len-psdover))
     
             if stripes > 2:
-                xpos1 = xpos1 - self.w - self.ps
-                dbCreateRect(self, psdlayer, Box(xpos1+self.w+psdover, ypos2, xpos1+self.w+self.ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
-                dbCreateRect(self, extBlocklayer, Box(xpos1+self.w+salover, ypos2, xpos1+self.w+self.ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
+                dbCreateRect(self, extBlocklayer, Box(notchXpos1+self.w+salover, ypos2, notchXpos1+self.w+self.ps-psdover, ypos2+dir*(li_salblock+poly_cont_len+psdover)))
                 
         # **************************************************************
         # now draw the label

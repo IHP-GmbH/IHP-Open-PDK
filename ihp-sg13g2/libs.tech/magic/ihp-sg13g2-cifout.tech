@@ -1276,24 +1276,6 @@ style drc
 	grow 150
 	and *pdiff
 
- # Check for 50nm metal surround of ContBar.  ContBar is
- # generated only for certain devices such as resistors,
- # where it can only be distinguished from Cont by
- # detecting the resistor area.
-
- templayer resistors
-	bloat-all nres,pres,xres (*poly)/a
-
- templayer contbar
-	mask-hints CONTBAR
-	and allcont
-
- templayer contbar_enclosure_error pc
-	and resistors
-	or contbar
-	grow 50
-	and-not *m1
-
  # There are no specific rules for seal metal overlap of seal
  # vias, so seal metal width rules can only be calculated by
  # cifdrc rules.
