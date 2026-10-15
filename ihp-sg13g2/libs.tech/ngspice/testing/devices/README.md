@@ -134,9 +134,19 @@ This is configured per metric, per device config YAML, via two independent mecha
     fg_vce:                  # forward Gummel @ VCE
       ib: {vce: [0.5, 1.5], vbe: [0.7, 0.8]}
       ic: {vce: [0.5, 1.5], vbe: [0.6, 0.96]}
-    fo_vb:                   # output, IC vs VCE @ VBE=const
-      _all: {vce: [0.2, 1.5], vbe: [0.7, 0.9]}
+    fo_vb:                   # output, IC vs VCE @ VBE=const (slide 8: I_C only)
+      ic: {vce: [0.2, 1.5], vbe: [0.7, 0.9]}
   ```
+- **`mqa_ranges_only: true`** — the HBTs are checked **only** in the MQA ranges (G. G.
+  Fischer, IHP, "MQA for SiGe HBTs", 2025-12-16): a characteristic or metric without an
+  `mqa_ranges` window is not judged at all (its curves are "No points", counted as *not
+  judged*). Set in the three HBT configs (and so in their variants); without it such a file
+  is judged over its whole sweep. The MQA DC characteristics are `fg_vcb0`, `fg_vce` (I_B and
+  I_C) and `fo_vb` (I_C only, as slide 8 shows it); `fg_vcb05`, `fg_vcb10`, `fg_vcb20`,
+  `fg_vcbm05`, `fo_ib` and `ro_vc0` are not checked.
+- **MOS `valid_range` on `id` / `is`** — `{vds: [0.001, 1000]}` (NMOS) or
+  `{vds: [-1000, -0.001]}` (PMOS): the V_DS = 0 point of the output curves is not judged
+  (no channel current flows; the meter reads g_DS times its voltage offset, median 1-3 nA).
 - **`min_limit` / `max_limit`** — a fixed numeric bound used instead of the FF/SS
   envelope columns (needed for metrics, such as the S-param characteristics below, that
   don't have a natural corner envelope column to compare against).
@@ -525,18 +535,20 @@ draws them) before committing the files; the reviewer sets `approved` or `reject
 
 ## HBT Test Structures
 
-Each HBT device has one MQA test structure in its device config (`npn13g2_T03`,
-`npn13g2l_T01`, `npn13g2v_T01`). The other 11 measured structures are their own cases
-(`make test-<case>`, `test-<case>-sparam`, `test-hbt-variants[-sparam]`), configured in
+Each HBT device has one MQA test structure in its device config (`npn13g2_T03`, Nx = 8;
+`npn13g2l_T01` and `npn13g2v_T01`, Nx = 4, le = 2.5 um). These are the only structures the MQA
+slides list (slides 3-4), and the only HBT structures `test-all`, `waive-all` and the CI judge.
+The other 11 measured structures are not MQA structures; they stay runnable on request as their
+own cases (`make test-<case>`, `test-<case>-sparam`, `test-hbt-variants[-sparam]`), configured in
 `configs/hbt/variants/<case>.yaml` with `base_config` (everything not set there comes from the
 device config) and their own exception folders `waivers/variants/<case>/`:
 
 | case | difference from the device config |
 |---|---|
-| `npn13g2_T00`, `_T01`, `_T02` | fT from `spar_vcb025`, `spar_vcb05` (the only constant-VCB files there) |
+| `npn13g2_T00`, `_T01`, `_T02` | none in effect (the same S-parameter files as the device config: fT on `spar_vcb025` only) |
 | `npn13g2l_T00` | `Nx: 2` (header says 3; with 3 the measured IC is 0.67x the model, with 2 it is 1.00x like the other structures; pending IHP confirmation) |
-| `npn13g2l_T02`, `_T03`, `_T04` | `design_param_overrides: {}` (the header Nx is right; the device config forces Nx = 4 for T01). Emitter length 5.0 um, outside the stated validity of the model card (El = 1 - 2.5 um): their failures include extrapolation |
-| `npn13g2v_T00`, `_T02`, `_T03`, `_T04` | no `spar_vcb05`: fT judged on `spar_vce_deemb` (VCB 0.67-0.75 V inside the MQA window, closest to 0.5 V), `spar_vcb0`, `spar_vcb10_deemb`, `spar_vcbm05` |
+| `npn13g2l_T02`, `_T03`, `_T04` | `design_param_overrides: {}` (the header Nx is right; the device config forces Nx = 4 for T01). Emitter length 5.0 um: the MQA summary (slide 4) gives le = 1-2.5 um for npn13g2l, slide 3 gives 1-5 um |
+| `npn13g2v_T00`, `_T02`, `_T03`, `_T04` | no `spar_vcb05` (the MQA fT file of npn13g2v): no fT check, CjE and CjC only |
 
 ## HBT S-Parameter Characteristics (CjE, CjC, fT)
 
@@ -555,8 +567,10 @@ Milestone M4 adds three RF characteristics for the HBT devices (`npn13g2`, `npn1
 From the deembedded, S→Y converted 2-port (`sp_runner/extract.py`):
 - `CjE = Im(Y11 + Y12) / (2·π·f)` — averaged over the full frequency range.
 - `CjC = -0.5 · Im(Y21 + Y12) / (2·π·f)` — averaged over 0.5–5 GHz.
-- `fT = |H21| · f` — extrapolated to f = 30 GHz assuming an ideal 10 dB/decade H21
-  rolloff.
+- `fT = |H21| · f` at f = 30 GHz (MQA slides 11-12), assuming the ideal single-pole H21
+  rolloff (|H21| · f constant). The simulated AC sweep (20 points per decade) has no point at
+  30 GHz, so |H21| · f is interpolated there linearly in log f; the measured files have a
+  30 GHz point (1 GHz steps), where the interpolation returns the measured value.
 
 Extracted measured CjE/CjC are in the low tens-of-fF range and monotonic in bias; fT
 peaks near the expected PDF value (~350 GHz for npn13g2/npn13g2l, ~110 GHz for
@@ -582,11 +596,13 @@ make test-hbt-sparam            # all three
 make waive-hbt-sparam
 ```
 
-**fT at every measured VCB.** `sparam_files` may list several files per metric; each file is its
-own curve, judged in the device's MQA fT window (`sparam_mqa_ranges`, keyed by file):
-npn13g2 `spar_vcb025` (MQA), `spar_vcb0`, `spar_vcb05`, `spar_vcb10`, `spar_vcbm05`; npn13g2l
-`spar_vcb025` (MQA), `spar_vcb05`; npn13g2v `spar_vcb05` (MQA), `spar_vcb0`, `spar_vcb10_deemb`,
-`spar_vcb15_deemb`, `spar_vcbm05`. fmax is not extracted.
+**fT on the MQA file only.** `sparam_files` may list several files per metric (each file is its
+own curve, judged in its `sparam_mqa_ranges` window); the HBTs list only the MQA fT file:
+npn13g2 and npn13g2l `spar_vcb025` (VCB = 0.25 V), npn13g2v `spar_vcb05` (VCB = 0.5 V). The
+other constant-VCB files are not MQA characteristics and are not checked; the npn13g2v test
+structures T00, T02-T04 have no `spar_vcb05`, so their fT is not checked (only CjE, CjC).
+The fT window of npn13g2 / npn13g2l is VBE 0.7-0.96 V (slide 11; the summary table of slide 4
+gives 0.7-0.9 V). fmax is not extracted.
 
 **Measured data are checked before they are judged:**
 - A judged file whose IC-CAP `S_deemb` is identical to another file's of the folder stops the run

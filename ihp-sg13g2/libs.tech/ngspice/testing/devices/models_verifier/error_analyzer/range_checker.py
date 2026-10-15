@@ -75,6 +75,11 @@ class RangeChecker:
     # When None (default) or when a group's characteristic/metric has no entry, NO
     # filtering happens and behavior is identical to before this feature existed.
     mqa_ranges: Optional[Dict[str, Dict[str, Dict[str, list]]]] = None
+    # MQA-only check (config `mqa_ranges_only: true`, the HBTs): a characteristic / metric with no
+    # `mqa_ranges` window is not judged at all (its curves are "No points"), so only the MQA
+    # characteristics are checked, inside their windows. False (default): such curves are judged
+    # over their whole sweep, as before.
+    mqa_only: bool = False
 
     def __post_init__(self) -> None:
         # Transient per-analyze() bookkeeping used only to emit a single summary log
@@ -243,6 +248,9 @@ class RangeChecker:
         combined_window: Dict[str, list] = {}
 
         char_window = self._resolve_characteristic_window(characteristic, spec.name)
+        if self.mqa_only and not char_window:
+            # not an MQA characteristic / metric: no point is judged
+            return pd.Series(False, index=group_df.index), {}, characteristic
         if char_window:
             combined_window.update(char_window)
         if spec.valid_range:

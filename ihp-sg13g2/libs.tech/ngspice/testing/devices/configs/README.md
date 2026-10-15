@@ -22,7 +22,7 @@ Each configuration file provides the necessary parameters for:
  ┃ ┗ 📜 cv_template.spice.j2      capacitance meter (C-V tier)  
  ┣ 📁 hbt/  
  ┃ ┣ 📁 npn13g2, npn13g2l, npn13g2v   one config per device (its MQA test structure; DC + S-parameters)  
- ┃ ┣ 📁 variants              the other test structures of each device (base_config + a few keys)  
+ ┃ ┣ 📁 variants              the other test structures (not MQA, run on request; base_config + a few keys)  
  ┃ ┣ 📜 hbt_dc.spice.j2  
  ┃ ┗ 📜 hbt_sp.spice.j2  
  ┗ 📁 pnp_mpa/  
@@ -92,6 +92,7 @@ This helps speed up processing across multiple sweeps or corners.
 | **base_config** | Path of another config read first; this config's top-level keys replace the base's as a whole (`design_param_overrides: {}` drops the base's overrides). Used by `hbt/variants/`. |
 | **setup_templates** | `{measurement group: template}`: a netlist template for one group instead of `dc_template_path` (MOS: the junction diodes). |
 | **exclude_patterns** | Substrings of file names left out before parsing (pnpMPA: DUT3, the CBC/CBE templates and "single" files); every dropped file is logged. |
+| **mqa_ranges_only** | `true`: only the characteristics / metrics with an `mqa_ranges` window are judged (inside it); the others are "No points" (not judged). The HBTs: checked only in the MQA ranges. |
 | **sparam_files** | `{metric: file stem or list of stems}`; each file is its own curve, judged in its `sparam_mqa_ranges` window. |
 | **sparam_self_deembed** | `{stem: {open: <dummy stem>, short: <dummy stem>}}`: open-short de-embed the raw S of this file with the folder's dummies (its IC-CAP S_deemb is a copy). |
 | **sparam_copied_deemb** | Stems whose S_deemb is a known copy of another file's: never judged with it, left out of the copy check of the others. A judged file whose S_deemb equals another file's stops the run. |

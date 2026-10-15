@@ -139,9 +139,13 @@ metrics:
 # characteristic (matched EXACTLY against the normalized `input_data` MDM filename,
 # e.g. "fg_vcb0_RF.mdm" -> "fg_vcb0") x metric. Bias vars (vbe/vce/...) are derived
 # from NODE voltages (VBE=vb-ve, VCE=vc-ve). "_all" applies to every metric of that
-# characteristic. Characteristics not listed here (fg_vcb05, fg_vcbm05, fg_vcb10,
-# fg_vcb20, fo_ib, ro_vc0) are left ungated (current/legacy behavior). Values in volts,
-# T = 27 degC.
+# characteristic. The windows are those of the MQA slides (G. G. Fischer, IHP, "MQA for SiGe HBTs", 2025-12-16,
+# slides 4-8). Values in volts; all HBT data are at T = 27 degC, as the MQA asks.
+# mqa_ranges_only: the HBTs are checked ONLY in the MQA ranges: a characteristic not listed
+# here (fg_vcb05, fg_vcb10, fg_vcb20, fg_vcbm05, fo_ib, ro_vc0) is not judged (its curves are
+# "No points"); without it they would be judged over their whole sweep. The fo_vb output curves are
+# judged on I_C only, as slide 8 shows them (their I_B and V_B are not judged).
+mqa_ranges_only: true
 mqa_ranges:
   fg_vcb0:                 # forward Gummel @ VCB=0
     ib: {vbe: [0.7, 0.8]}
@@ -149,8 +153,8 @@ mqa_ranges:
   fg_vce:                  # forward Gummel @ VCE
     ib: {vce: [0.5, 2.5], vbe: [0.7, 0.8]}
     ic: {vce: [0.5, 2.5], vbe: [0.6, 0.84]}
-  fo_vb:                   # output, IC vs VCE @ VBE=const
-    _all: {vce: [0.2, 2.5], vbe: [0.7, 0.85]}
+  fo_vb:                   # output, IC vs VCE @ VBE=const (slide 8: I_C only, I_B not judged)
+    ic: {vce: [0.2, 2.5], vbe: [0.7, 0.85]}
 
 # ==============================================================
 # S-parameter Characteristics (Milestone M4): CjE, CjC, fT
@@ -168,10 +172,9 @@ sp_template_path: "configs/hbt/hbt_sp.spice.j2"
 sparam_files:
   cje: spar_vb           # cold, VCB=0
   cjc: spar_vc           # cold
-  # hot: the MQA file (VCB = 0.5 V) and every other genuine de-embedded constant-VCB file.
-  # VCB = 1.0 / 1.5 V come from the *_deemb files: the S_deemb of spar_vcb10 and spar_vcb15 is a
-  # copy of spar_vcb05's. spar_vcb20 is not used: it was measured at VCB = 0.25 V (ICCAP_VAR).
-  ft: [spar_vcb05, spar_vcb0, spar_vcb10_deemb, spar_vcb15_deemb, spar_vcbm05]
+  # hot: only the MQA file (VCB = 0.5 V, MQA slides 4 and 12); the other VCB files (spar_vcb0,
+  # spar_vcb10_deemb, spar_vcb15_deemb, spar_vcbm05) are not MQA characteristics: not checked
+  ft: spar_vcb05
 
 # Files whose S_deemb is a copy of spar_vcb05's (left out of the copy check of spar_vcb05).
 sparam_copied_deemb: [spar_vcb10, spar_vcb15]
@@ -203,17 +206,6 @@ sparam_mqa_ranges:
   spar_vc:
     cjc: {vcb: [-0.5, 1.5]}
   spar_vcb05:
-    ft: {vbe: [0.75, 0.83]}
-  # the other fT files, judged in the same VBE window as the MQA file
-  spar_vcb0:
-    ft: {vbe: [0.75, 0.83]}
-  spar_vcb10_deemb:
-    ft: {vbe: [0.75, 0.83]}
-  spar_vcb15_deemb:
-    ft: {vbe: [0.75, 0.83]}
-  spar_vcbm05:
-    ft: {vbe: [0.75, 0.83]}
-  spar_vce_deemb:          # fT file of the npn13g2v test structures without spar_vcb05
     ft: {vbe: [0.75, 0.83]}
 
 # ==============================================================

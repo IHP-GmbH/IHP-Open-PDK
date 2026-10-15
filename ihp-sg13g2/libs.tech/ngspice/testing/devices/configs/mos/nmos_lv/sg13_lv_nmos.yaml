@@ -134,18 +134,24 @@ clip_curr: 1e-11   # A
 #   *_sim_* = simulated values (typ/bcs/Wcs = corners)
 # ==============================================================
 
+# valid_range of id and is: the V_DS = 0 point of the output curves (dc_idvd*) is not judged.
+# No channel current flows there; the meter reads g_DS times the offset of the drain / source
+# voltage (median 1-3 nA, up to 1.3 uA in the measurements), not the device (cause MOS-MEAS-VDS0).
+# Only those points leave the check (|V_DS| < 1 mV); no other file has id / is points there.
 metrics:
   - name: "id"   # Drain current
     meas: "id_meas"
     tt: "id_sim_mos_tt"
     ss: "id_sim_mos_ss"
     ff: "id_sim_mos_ff"
+    valid_range: {vds: [0.001, 1000.0]}   # V_DS = 0 not judged (see above)
 
   - name: "is"   # Source current
     meas: "is_meas"
     tt: "is_sim_mos_tt"
     ss: "is_sim_mos_ss"
     ff: "is_sim_mos_ff"
+    valid_range: {vds: [0.001, 1000.0]}   # V_DS = 0 not judged (see above)
 
   - name: "ib"   # Bulk (body) current
     meas: "ib_meas"

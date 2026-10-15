@@ -355,6 +355,7 @@ class MdmVerifier:
             metrics=metrics,
             default_threshold=default_threshold,
             mqa_ranges=self.config.get("mqa_ranges"),
+            mqa_only=bool(self.config.get("mqa_ranges_only", False)),
         )
 
     # -------------------------------------------------------------------------

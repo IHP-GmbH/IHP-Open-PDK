@@ -18,6 +18,8 @@
 Unit tests for configuration and geometry helpers:
   - `base_config`: a variant config replaces whole top-level keys of its device config;
   - every HBT variant config reads, points at an existing folder and has its own exception folders;
+  - the three HBT device configs follow the MQA slides: their MQA structure, only the MQA ranges,
+    fo_vb judged on I_C only;
   - pnpMPA DUT geometry: emitter and n-well per DUT, an unknown DUT raises (no silent default),
     also through the aggregator (a file that cannot be parsed stops the run);
   - a missing `setup_templates` file is a configuration error.
@@ -60,6 +62,19 @@ def test_hbt_variant_configs(monkeypatch):
         assert config["sparam_waivers_dir"] == f"waivers/variants/{path.stem}/sparam"
     assert read_config(ROOT / "configs/hbt/variants/npn13g2l_T00.yaml")["design_param_overrides"] == {"Nx": 2}
     assert read_config(ROOT / "configs/hbt/variants/npn13g2l_T02.yaml")["design_param_overrides"] == {}
+
+
+def test_hbt_configs_follow_mqa(monkeypatch):
+    """MQA slides 3-4 and 8: each device config judges its default structure, only in the MQA
+    ranges, and the output curves fo_vb on I_C only."""
+    monkeypatch.chdir(ROOT)
+    for device, structure in [("npn13g2", "npn13g2_T03"), ("npn13g2l", "npn13g2l_T01"), ("npn13g2v", "npn13g2v_T01")]:
+        config = read_config(ROOT / f"configs/hbt/{device}/{device}.yaml")
+        assert Path(config["mdm_dir"]).name == structure
+        assert config["mqa_ranges_only"] is True
+        assert set(config["mqa_ranges"]) == {"fg_vcb0", "fg_vce", "fo_vb"}
+        assert set(config["mqa_ranges"]["fo_vb"]) == {"ic"}
+        assert set(config["mqa_ranges"]["fg_vcb0"]) == set(config["mqa_ranges"]["fg_vce"]) == {"ib", "ic"}
 
 
 def test_pnpmpa_geometry():

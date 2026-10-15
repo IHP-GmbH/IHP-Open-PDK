@@ -151,12 +151,53 @@ def test_characteristic_stem_exact_match_not_prefix():
     assert checker._resolve_characteristic_window("fg_vcb0", "ib") == {"vbe": [0.7, 0.8]}
 
 
+def test_mqa_only_judges_only_mqa_characteristics():
+    """mqa_only (config `mqa_ranges_only`, the HBTs): a characteristic without an MQA window is not
+    judged at all (n_points 0), an MQA characteristic is judged inside its window as usual."""
+    ranges = {"fg_vcb0": {"ib": {"vbe": [0.7, 0.8]}}}
+    other = _make_group_df().assign(input_data="fo_ib_RF.mdm")     # not an MQA characteristic
+    checker = RangeChecker(metrics=[_make_ib_spec()], default_threshold=Threshold(max_out_of_range_percent=100.0),
+                           mqa_ranges=ranges, mqa_only=True)
+    row = checker.analyze(other)[0].query("target == 'meas'").iloc[0]
+    assert int(row["n_points"]) == 0 and int(row["n_excluded"]) == len(other), row.to_dict()
+    row = checker.analyze(_make_group_df())[0].query("target == 'meas'").iloc[0]
+    assert int(row["n_points"]) == 3 and int(row["n_excluded"]) == 4, row.to_dict()
+    # without mqa_only the same file is judged over its whole sweep
+    checker = RangeChecker(metrics=[_make_ib_spec()], default_threshold=Threshold(max_out_of_range_percent=100.0),
+                           mqa_ranges=ranges)
+    row = checker.analyze(other)[0].query("target == 'meas'").iloc[0]
+    assert int(row["n_points"]) == len(other), row.to_dict()
+
+
+def test_ft_at_30_ghz():
+    """fT = |H21| * f at 30 GHz (MQA): exact for a single-pole H21 on a log grid without a 30 GHz
+    point, the measured value on a grid that has one, NaN when 30 GHz is outside the grid."""
+    import numpy as np
+    from models_verifier.sp_runner.extract import extract_ft
+    ft0 = 300e9
+
+    def y_of(freq, h21):
+        y = np.zeros((len(freq), 2, 2), dtype=complex)
+        y[:, 0, 0] = 1j * 1e-3
+        y[:, 1, 0] = h21 * y[:, 0, 0]
+        return y
+    log_grid = 1e8 * 10 ** (np.arange(0, 60) / 20)              # 20 points per decade, no 30 GHz
+    assert abs(extract_ft(log_grid, y_of(log_grid, ft0 / log_grid)) / ft0 - 1) < 1e-9
+    lin = np.arange(1, 66) * 1e9                                  # 1 GHz steps, as the measured files
+    h21 = ft0 / lin * (1 + 0.01 * np.sin(lin / 1e9))               # a measured value at 30 GHz is kept
+    assert abs(extract_ft(lin, y_of(lin, h21)) - abs(h21[29]) * 30e9) < 1e-3
+    short = np.arange(1, 20) * 1e9
+    assert np.isnan(extract_ft(short, y_of(short, ft0 / short)))
+
+
 def _run_all() -> None:
     tests = [
         test_window_mask_matches_expected_points,
         test_analyze_reports_correct_n_points_and_n_excluded,
         test_no_window_configured_means_no_filtering,
         test_characteristic_stem_exact_match_not_prefix,
+        test_mqa_only_judges_only_mqa_characteristics,
+        test_ft_at_30_ghz,
     ]
     for t in tests:
         t()

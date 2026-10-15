@@ -62,6 +62,8 @@ CONFIG_npn13g2l = configs/hbt/npn13g2l/npn13g2l.yaml
 CONFIG_npn13g2v = configs/hbt/npn13g2v/npn13g2v.yaml
 
 # HBT test structures other than each device's main (MQA) one: configs/hbt/variants/<case>.yaml.
+# The MQA judges only the structures it lists (npn13g2_T03, npn13g2l_T01, npn13g2v_T01), so these
+# are not part of test-all, waive-all or the CI; they run only on request (test-hbt-variants[-sparam]).
 HBT_VARIANTS = npn13g2_T00 npn13g2_T01 npn13g2_T02 \
                npn13g2l_T00 npn13g2l_T02 npn13g2l_T03 npn13g2l_T04 \
                npn13g2v_T00 npn13g2v_T02 npn13g2v_T03 npn13g2v_T04
@@ -71,7 +73,6 @@ MOS_DEVICES  = nmos_lv pmos_lv nmos_hv pmos_hv
 HBT_DEVICES  = npn13g2 npn13g2l npn13g2v
 PNP_DEVICES  = pnp_mpa
 ALL_DEVICES  = $(MOS_DEVICES) $(HBT_DEVICES) $(PNP_DEVICES)
-HBT_CASES    = $(HBT_DEVICES) $(HBT_VARIANTS)
 CV_CASES     = $(MOS_DEVICES) $(PNP_DEVICES)        # cases with a C-V tier (cv_setups in the config)
 
 # The config of a case, or a clear error for an unknown case.
@@ -124,7 +125,7 @@ test-hbt-sparam: ; +@$(call run_all,$(addsuffix -sparam,$(addprefix test-,$(HBT_
 test-hbt-variants:        ; +@$(call run_all,$(addprefix test-,$(HBT_VARIANTS)))
 test-hbt-variants-sparam: ; +@$(call run_all,$(addsuffix -sparam,$(addprefix test-,$(HBT_VARIANTS))))
 test-cv:                  ; +@$(call run_all,$(addsuffix -cv,$(addprefix test-,$(CV_CASES))))
-test-all: ; +@$(call run_all,test-mos test-hbt test-pnp test-hbt-sparam test-hbt-variants test-hbt-variants-sparam test-cv)
+test-all: ; +@$(call run_all,test-mos test-hbt test-pnp test-hbt-sparam test-cv)
 
 # HBT measurement check (no simulation): IC-CAP's de-embedded S of every spar_* file recomputed
 # from its raw S and the folder's OPEN/SHORT dummies, plus copied S_deemb between files.
@@ -152,8 +153,8 @@ waive-%-cv:
 waive-%:
 	@$(WAIVER_GEN) --config $(call config_of,$*) --tier dc --reason "$(WAIVE_REASON)"
 
-waive-all:        ; +@$(call run_all,$(addprefix waive-,$(ALL_DEVICES) $(HBT_VARIANTS)))
-waive-hbt-sparam: ; +@$(call run_all,$(addsuffix -sparam,$(addprefix waive-,$(HBT_CASES))))
+waive-all:        ; +@$(call run_all,$(addprefix waive-,$(ALL_DEVICES)))
+waive-hbt-sparam: ; +@$(call run_all,$(addsuffix -sparam,$(addprefix waive-,$(HBT_DEVICES))))
 waive-cv:         ; +@$(call run_all,$(addsuffix -cv,$(addprefix waive-,$(CV_CASES))))
 
 # ------------------------
@@ -183,7 +184,7 @@ plot-%:
 	@$(PLOT_BIN) --results $(RESULTS_ROOT)/$* --out $(FIG_DIR)/$*
 
 plot-mos: ; +@$(call run_all,$(addprefix plot-,$(MOS_DEVICES)))
-plot-hbt: ; +@$(call run_all,$(addprefix plot-,$(HBT_CASES)))
+plot-hbt: ; +@$(call run_all,$(addprefix plot-,$(HBT_DEVICES)))
 plot-pnp: ; +@$(call run_all,$(addprefix plot-,$(PNP_DEVICES)))
 plot-all: ; +@$(call run_all,plot-mos plot-hbt plot-pnp)
 
@@ -199,10 +200,11 @@ help:
 	@echo
 	@echo " Targets:"
 	@echo "   test-<case>          - Verify one case: $(ALL_DEVICES)"
-	@echo "                          HBT test structures: $(HBT_VARIANTS)"
+	@echo "                          HBT test structures (not MQA, on request): $(HBT_VARIANTS)"
 	@echo "   test-<hbt case>-sparam - HBT S-parameter CjE/CjC/fT check (devices and test structures)"
-	@echo "   test-mos | test-hbt | test-pnp | test-hbt-sparam | test-hbt-variants[-sparam] | test-all"
+	@echo "   test-mos | test-hbt | test-pnp | test-hbt-sparam | test-all"
 	@echo "                          - groups (all run; exit 1 if any failed)"
+	@echo "   test-hbt-variants[-sparam] - the HBT test structures (not MQA; not in test-all)"
 	@echo "   test-<case>-cv       - C-V (capacitance) check: $(CV_CASES); test-cv for all"
 	@echo "   check-deembedding    - HBT S-parameter de-embedding check (no simulation)"
 	@echo "   unit-tests           - Framework unit tests"

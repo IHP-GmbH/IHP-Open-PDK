@@ -25,6 +25,8 @@ Prints GitHub step outputs:
 Targets with Verilog-A models (MOS) run on every toolchain; test-cv also holds the pnpMPA C-V
 case, which therefore runs on every toolchain too (harmless). The other bipolar targets use models
 built into ngspice, so they run once per ngspice version (with the first OpenVAF build of the lock).
+The HBT test structures other than the MQA ones (test-hbt-variants[-sparam]) are not in the CI:
+the MQA judges only the structures it lists (npn13g2_T03, npn13g2l_T01, npn13g2v_T01).
 """
 
 from __future__ import annotations
@@ -35,7 +37,7 @@ from pathlib import Path
 import yaml
 
 OSDI_TARGETS = ["test-nmos_lv", "test-pmos_lv", "test-nmos_hv", "test-pmos_hv", "test-cv"]
-BIPOLAR_TARGETS = ["test-pnp", "test-hbt", "test-hbt-sparam", "test-hbt-variants", "test-hbt-variants-sparam"]
+BIPOLAR_TARGETS = ["test-pnp", "test-hbt", "test-hbt-sparam"]
 
 lock = yaml.safe_load((Path(__file__).resolve().parents[1] / "toolchain.lock").read_text())
 first_openvaf = next(iter(lock["openvaf"]))

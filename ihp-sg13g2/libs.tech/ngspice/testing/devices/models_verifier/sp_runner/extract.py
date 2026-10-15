@@ -28,10 +28,13 @@ Equations (from GOAL_DEV_VER.md "Reference Data" / M4_RECON.md), Y in siemens, f
 
     CjE = Im(Y11 + Y12) / (2*pi*f)                 averaged over ALL frequencies
     CjC = -0.5 * Im(Y21 + Y12) / (2*pi*f)          averaged over 0.5-5 GHz
-    fT  = |H21| * f,  H21 = Y21 / Y11              averaged over ~30 GHz rolloff band
+    fT  = |H21| * f,  H21 = Y21 / Y11              at f = 30 GHz
 
-`fT` uses the ideal single-pole assumption |H21|*f ~ const in the -20 dB/dec rolloff
-region; we average |H21|*f over a band centered on 30 GHz (robust "extrapolate at 30 GHz").
+These are the equations and frequencies of the HBT MQA slides (G. G. Fischer, IHP, "MQA for SiGe
+HBTs", 2025-12-16, slides 9-12). `fT` is "extrapolated at f = 30 GHz" with the ideal single-pole
+assumption |H21|*f ~ const in the -20 dB/dec rolloff: |H21|*f is interpolated at 30 GHz (linear in
+log f), because the simulated AC sweep (20 points per decade) has no point at exactly 30 GHz; the
+measured files have one (1 GHz steps), where the interpolation returns the measured value.
 """
 
 from __future__ import annotations
@@ -42,7 +45,7 @@ import numpy as np
 
 # Frequency bands (Hz).
 _CJC_BAND = (0.5e9, 5.0e9)
-_FT_BAND = (20.0e9, 40.0e9)   # centered on 30 GHz per the extrapolation recipe
+_FT_FREQ = 30.0e9             # MQA: fT = |H21| * f at 30 GHz
 
 METRICS = ("cje", "cjc", "ft")
 
@@ -85,15 +88,19 @@ def extract_cjc(freq: np.ndarray, y: np.ndarray) -> float:
 
 
 def extract_ft(freq: np.ndarray, y: np.ndarray) -> float:
-    """fT (Hz) = mean over ~30 GHz band of |H21| * f, with H21 = Y21 / Y11."""
+    """fT (Hz) = |H21| * f at 30 GHz (interpolated linearly in log f), with H21 = Y21 / Y11;
+    NaN when the frequencies do not reach 30 GHz on both sides."""
     freq = np.asarray(freq, dtype=float)
     with np.errstate(divide="ignore", invalid="ignore"):
         h21 = y[:, 1, 0] / y[:, 0, 0]
     ft_f = np.abs(h21) * freq
-    mask = _band_mask(freq, *_FT_BAND) & np.isfinite(ft_f)
-    if not mask.any():
+    ok = np.isfinite(ft_f) & (freq > 0)
+    f, v = freq[ok], ft_f[ok]
+    order = np.argsort(f)
+    f, v = f[order], v[order]
+    if not len(f) or f[0] > _FT_FREQ or f[-1] < _FT_FREQ:
         return float("nan")
-    return float(np.mean(ft_f[mask]))
+    return float(np.interp(np.log10(_FT_FREQ), np.log10(f), v))
 
 
 _EXTRACTORS = {
