@@ -14,6 +14,8 @@ cross-validates device behavior by comparing Gnucap simulation results against
 reference Ngspice simulations using the existing IHP-Open-PDK Ngspice device 
 library.
 
+See the [Verilog-A/AMS style guide](STYLE_GUIDE.md) for model and test conventions.
+
 ## Directory Structure
 
 ```text
@@ -263,6 +265,5 @@ No. 101135429. Additional funding is made available by the Swiss State
 Secretariat for Education, Research and Innovation (SERI).
 
 For details, see the NLnet project page: <https://nlnet.nl/project/VeriBench/>. 
-
 
 

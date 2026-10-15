@@ -1,16 +1,52 @@
-(* desc="NMOS MOSCAP paramset without mismatch" *)
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// sg13g2 NMOS MOSCAP paramsets (with and without mismatch)
+//
+// Adapted from model declarations in ngspice/models/sg13g2_moscap_parm.lib.
+//******************************************************************************
+
+(* desc = "NMOS MOSCAP paramset without mismatch" *)
 paramset sg13g2_moscap_n_psp PSP103VA
+    (* desc = "Device width", units = "m" *)
     parameter real w = 1.0u from [1u:30u];
+    (* desc = "Device length", units = "m" *)
     parameter real l = 1.0u from [1u:30u];
+    (* desc = "Instance multiplicity" *)
     parameter real mult = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:0];
+    (* desc = "Number of fingers" *)
     parameter integer nf = 1 from [1:inf);
-    parameter integer pre_layout = 1;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select psp103 RF/NQS model (not supported yet)" *)
     parameter integer rfmode = 0 from [0:0];
+    (* desc = "Source diffusion area", units = "m^2" *)
     parameter real as = 0.0;
+    (* desc = "Drain diffusion area", units = "m^2" *)
     parameter real ad = 0.0;
+    (* desc = "Source diffusion perimeter", units = "m" *)
     parameter real ps = 0.0;
+    (* desc = "Drain diffusion perimeter", units = "m" *)
     parameter real pd = 0.0;
+
     .LEVEL = 103.8.2;
     .TYPE = 1;
     .W = w;
@@ -395,19 +431,31 @@ paramset sg13g2_moscap_n_psp PSP103VA
     .VSB_MAX = 1.6;
 endparamset
 
-(* desc="MMOS MOSCAP paramset with mismatch" *)
+(* desc = "NMOS MOSCAP paramset with mismatch" *)
 paramset sg13g2_moscap_n_psp PSP103VA
+    (* desc = "Device width", units = "m" *)
     parameter real w = 1.0u from [1u:30u];
+    (* desc = "Device length", units = "m" *)
     parameter real l = 1.0u from [1u:30u];
+    (* desc = "Instance multiplicity" *)
     parameter real mult = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 1 from [1:1];
+    (* desc = "Number of fingers" *)
     parameter integer nf = 1 from [1:inf);
-    parameter integer pre_layout = 1;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select psp103 RF/NQS model (not supported yet)" *)
     parameter integer rfmode = 0 from [0:0];
+    (* desc = "Source diffusion area", units = "m^2" *)
     parameter real as = 0.0;
+    (* desc = "Drain diffusion area", units = "m^2" *)
     parameter real ad = 0.0;
+    (* desc = "Source diffusion perimeter", units = "m" *)
     parameter real ps = 0.0;
+    (* desc = "Drain diffusion perimeter", units = "m" *)
     parameter real pd = 0.0;
+
     // local mismatch parameters
     localparam real mm_scale = sqrt(mult * l * w * 1.0e12);
     localparam real delvto_sig = 0.0039 / mm_scale;
@@ -416,6 +464,7 @@ paramset sg13g2_moscap_n_psp PSP103VA
     localparam real mm_l = $rdist_normal(2, 0, 2e-9, "instance");
     localparam real mm_delvto = $rdist_normal(3, 0, delvto_sig, "instance");
     localparam real mm_factuo = $rdist_normal(4, 0, factuo_sig, "instance");
+
     .LEVEL = 103.8.2;
     .TYPE = 1;
     .W = w + mm_w;

@@ -49,22 +49,20 @@
 
 
 //******************************************************************************
-// Verilog-A MOSCAP corner modules
-// Ported from `ngspice/models/cornerMOSCAP.lib`
+// MOSCAP corner modules
+//
+// Adapted from `ngspice/models/cornerMOSCAP.lib`
 //
 // Modifications:
-// - removed mismatch corners; mismatch variants are implemented in paramsets
-// - moved global process-variation parameters into statistical corner
-// - changed norm suffix to nom for nominal
-// - dropped num_sigmas parameter
-//
-// (c) Lukas Deutz 2026
+// - Mismatch corners removed; mismatch device variants use paramset overloading
+// - Moved global process-variation parameters into statistical corner
+// - Use nom suffix instead of norm for consistency
+// - Dropped num_sigmas parameter
 //******************************************************************************
-
-
 
 //*************** CORNER_LIB OF sg13g2 MOSCAP TT MODEL ****************
 
+(* desc = "typical MOSCAP corner" *)
 module moscap_tt();
     // nmos
     localparam real sg13g2_moscap_n_vfbo    = 1.0;
@@ -104,9 +102,9 @@ module moscap_tt();
     localparam real sg13g2_moscap_p_cjorgat = 1.0000;
 endmodule
 
-// Typical with statistical
+(* desc = "statistical MOSCAP corner" *)
 module moscap_tt_stat();
-    parameter integer seed = 1 from [0:1000000); // TODO: upper inf not working yet
+    parameter integer seed = 1;
     // nmos nominal
     localparam real sg13g2_moscap_n_vfbo_nom    = 1.0;
     localparam real sg13g2_moscap_n_ctl_nom     = 1.2080;
@@ -144,23 +142,23 @@ module moscap_tt_stat();
     localparam real sg13g2_moscap_n_cjorsti_sig = 0.0267 * abs(sg13g2_moscap_n_cjorsti_nom);
     localparam real sg13g2_moscap_n_cjorgat_sig = 0.0267 * abs(sg13g2_moscap_n_cjorgat_nom);
     // nmos params with global process variation
-    localparam real sg13g2_moscap_n_vfbo    = sg13g2_moscap_n_vfbo_nom     + $rdist_normal(seed + 1 , 0, sg13g2_moscap_n_vfbo_sig,     "global");
-    localparam real sg13g2_moscap_n_ctl     = sg13g2_moscap_n_ctl_nom      + $rdist_normal(seed + 2 , 0, sg13g2_moscap_n_ctl_sig,      "global");
-    localparam real sg13g2_moscap_n_rsw1    = sg13g2_moscap_n_rsw1_nom     + $rdist_normal(seed + 3 , 0, sg13g2_moscap_n_rsw1_sig,     "global");
-    localparam real sg13g2_moscap_n_muew    = sg13g2_moscap_n_muew_nom     + $rdist_normal(seed + 4 , 0, sg13g2_moscap_n_muew_sig,     "global");
-    localparam real sg13g2_moscap_n_dphibo  = sg13g2_moscap_n_dphibo_nom   + $rdist_normal(seed + 5 , 0, sg13g2_moscap_n_dphibo_sig,   "global");
-    localparam real sg13g2_moscap_n_dphibl  = sg13g2_moscap_n_dphibl_nom   + $rdist_normal(seed + 6 , 0, sg13g2_moscap_n_dphibl_sig,   "global");
-    localparam real sg13g2_moscap_n_dphibw  = sg13g2_moscap_n_dphibw_nom   + $rdist_normal(seed + 7 , 0, sg13g2_moscap_n_dphibw_sig,   "global");
-    localparam real sg13g2_moscap_n_dphiblw = sg13g2_moscap_n_dphiblw_nom  + $rdist_normal(seed + 8 , 0, sg13g2_moscap_n_dphiblw_sig,  "global");
-    localparam real sg13g2_moscap_n_themuo  = sg13g2_moscap_n_themuo_nom   + $rdist_normal(seed + 9 , 0, sg13g2_moscap_n_themuo_sig,   "global");
-    localparam real sg13g2_moscap_n_thesatl = sg13g2_moscap_n_thesatl_nom  + $rdist_normal(seed + 10, 0, sg13g2_moscap_n_thesatl_sig,  "global");
-    localparam real sg13g2_moscap_n_thesatw = sg13g2_moscap_n_thesatw_nom  + $rdist_normal(seed + 11, 0, sg13g2_moscap_n_thesatw_sig,  "global");
-    localparam real sg13g2_moscap_n_thesatlw= sg13g2_moscap_n_thesatlw_nom + $rdist_normal(seed + 12, 0, sg13g2_moscap_n_thesatlw_sig, "global");
-    localparam real sg13g2_moscap_n_toxo    = sg13g2_moscap_n_toxo_nom     + $rdist_normal(seed + 13, 0, sg13g2_moscap_n_toxo_sig,     "global");
-    localparam real sg13g2_moscap_n_toxovo  = sg13g2_moscap_n_toxovo_nom   + $rdist_normal(seed + 14, 0, sg13g2_moscap_n_toxovo_sig,   "global");
-    localparam real sg13g2_moscap_n_cjorbot = sg13g2_moscap_n_cjorbot_nom  + $rdist_normal(seed + 15, 0, sg13g2_moscap_n_cjorbot_sig,  "global");
-    localparam real sg13g2_moscap_n_cjorsti = sg13g2_moscap_n_cjorsti_nom  + $rdist_normal(seed + 16, 0, sg13g2_moscap_n_cjorsti_sig,  "global");
-    localparam real sg13g2_moscap_n_cjorgat = sg13g2_moscap_n_cjorgat_nom  + $rdist_normal(seed + 17, 0, sg13g2_moscap_n_cjorgat_sig,  "global");
+    localparam real sg13g2_moscap_n_vfbo    = $rdist_normal(seed + 1,  sg13g2_moscap_n_vfbo_nom,     sg13g2_moscap_n_vfbo_sig,     "global");
+    localparam real sg13g2_moscap_n_ctl     = $rdist_normal(seed + 2,  sg13g2_moscap_n_ctl_nom,      sg13g2_moscap_n_ctl_sig,      "global");
+    localparam real sg13g2_moscap_n_rsw1    = $rdist_normal(seed + 3,  sg13g2_moscap_n_rsw1_nom,     sg13g2_moscap_n_rsw1_sig,     "global");
+    localparam real sg13g2_moscap_n_muew    = $rdist_normal(seed + 4,  sg13g2_moscap_n_muew_nom,     sg13g2_moscap_n_muew_sig,     "global");
+    localparam real sg13g2_moscap_n_dphibo  = $rdist_normal(seed + 5,  sg13g2_moscap_n_dphibo_nom,   sg13g2_moscap_n_dphibo_sig,   "global");
+    localparam real sg13g2_moscap_n_dphibl  = $rdist_normal(seed + 6,  sg13g2_moscap_n_dphibl_nom,   sg13g2_moscap_n_dphibl_sig,   "global");
+    localparam real sg13g2_moscap_n_dphibw  = $rdist_normal(seed + 7,  sg13g2_moscap_n_dphibw_nom,   sg13g2_moscap_n_dphibw_sig,   "global");
+    localparam real sg13g2_moscap_n_dphiblw = $rdist_normal(seed + 8,  sg13g2_moscap_n_dphiblw_nom,  sg13g2_moscap_n_dphiblw_sig,  "global");
+    localparam real sg13g2_moscap_n_themuo  = $rdist_normal(seed + 9,  sg13g2_moscap_n_themuo_nom,   sg13g2_moscap_n_themuo_sig,   "global");
+    localparam real sg13g2_moscap_n_thesatl = $rdist_normal(seed + 10, sg13g2_moscap_n_thesatl_nom,  sg13g2_moscap_n_thesatl_sig,  "global");
+    localparam real sg13g2_moscap_n_thesatw = $rdist_normal(seed + 11, sg13g2_moscap_n_thesatw_nom,  sg13g2_moscap_n_thesatw_sig,  "global");
+    localparam real sg13g2_moscap_n_thesatlw= $rdist_normal(seed + 12, sg13g2_moscap_n_thesatlw_nom, sg13g2_moscap_n_thesatlw_sig, "global");
+    localparam real sg13g2_moscap_n_toxo    = $rdist_normal(seed + 13, sg13g2_moscap_n_toxo_nom,     sg13g2_moscap_n_toxo_sig,     "global");
+    localparam real sg13g2_moscap_n_toxovo  = $rdist_normal(seed + 14, sg13g2_moscap_n_toxovo_nom,   sg13g2_moscap_n_toxovo_sig,   "global");
+    localparam real sg13g2_moscap_n_cjorbot = $rdist_normal(seed + 15, sg13g2_moscap_n_cjorbot_nom,  sg13g2_moscap_n_cjorbot_sig,  "global");
+    localparam real sg13g2_moscap_n_cjorsti = $rdist_normal(seed + 16, sg13g2_moscap_n_cjorsti_nom,  sg13g2_moscap_n_cjorsti_sig,  "global");
+    localparam real sg13g2_moscap_n_cjorgat = $rdist_normal(seed + 17, sg13g2_moscap_n_cjorgat_nom,  sg13g2_moscap_n_cjorgat_sig,  "global");
     // pmos nominal parameter values
     localparam real sg13g2_moscap_p_vfbo_nom    = 1.0;
     localparam real sg13g2_moscap_p_ctl_nom     = 1.9570;
@@ -198,21 +196,21 @@ module moscap_tt_stat();
     localparam real sg13g2_moscap_p_cjorsti_sig = 0.0267 * abs(sg13g2_moscap_p_cjorsti_nom);
     localparam real sg13g2_moscap_p_cjorgat_sig = 0.0267 * abs(sg13g2_moscap_p_cjorgat_nom);
     // pmos params with global process variation
-    localparam real sg13g2_moscap_p_vfbo    = sg13g2_moscap_p_vfbo_nom     + $rdist_normal(seed + 18, 0, sg13g2_moscap_p_vfbo_sig,     "global");
-    localparam real sg13g2_moscap_p_ctl     = sg13g2_moscap_p_ctl_nom      + $rdist_normal(seed + 19, 0, sg13g2_moscap_p_ctl_sig,      "global");
-    localparam real sg13g2_moscap_p_rsw1    = sg13g2_moscap_p_rsw1_nom     + $rdist_normal(seed + 20, 0, sg13g2_moscap_p_rsw1_sig,     "global");
-    localparam real sg13g2_moscap_p_muew    = sg13g2_moscap_p_muew_nom     + $rdist_normal(seed + 21, 0, sg13g2_moscap_p_muew_sig,     "global");
-    localparam real sg13g2_moscap_p_dphibo  = sg13g2_moscap_p_dphibo_nom   + $rdist_normal(seed + 22, 0, sg13g2_moscap_p_dphibo_sig,   "global");
-    localparam real sg13g2_moscap_p_dphibl  = sg13g2_moscap_p_dphibl_nom   + $rdist_normal(seed + 23, 0, sg13g2_moscap_p_dphibl_sig,   "global");
-    localparam real sg13g2_moscap_p_dphibw  = sg13g2_moscap_p_dphibw_nom   + $rdist_normal(seed + 24, 0, sg13g2_moscap_p_dphibw_sig,   "global");
-    localparam real sg13g2_moscap_p_dphiblw = sg13g2_moscap_p_dphiblw_nom  + $rdist_normal(seed + 25, 0, sg13g2_moscap_p_dphiblw_sig,  "global");
-    localparam real sg13g2_moscap_p_themuo  = sg13g2_moscap_p_themuo_nom   + $rdist_normal(seed + 26, 0, sg13g2_moscap_p_themuo_sig,   "global");
-    localparam real sg13g2_moscap_p_thesatl = sg13g2_moscap_p_thesatl_nom  + $rdist_normal(seed + 27, 0, sg13g2_moscap_p_thesatl_sig,  "global");
-    localparam real sg13g2_moscap_p_thesatw = sg13g2_moscap_p_thesatw_nom  + $rdist_normal(seed + 28, 0, sg13g2_moscap_p_thesatw_sig,  "global");
-    localparam real sg13g2_moscap_p_thesatlw= sg13g2_moscap_p_thesatlw_nom + $rdist_normal(seed + 29, 0, sg13g2_moscap_p_thesatlw_sig, "global");
-    localparam real sg13g2_moscap_p_toxo    = sg13g2_moscap_p_toxo_nom     + $rdist_normal(seed + 30, 0, sg13g2_moscap_p_toxo_sig,     "global");
-    localparam real sg13g2_moscap_p_toxovo  = sg13g2_moscap_p_toxovo_nom   + $rdist_normal(seed + 31, 0, sg13g2_moscap_p_toxovo_sig,   "global");
-    localparam real sg13g2_moscap_p_cjorbot = sg13g2_moscap_p_cjorbot_nom  + $rdist_normal(seed + 32, 0, sg13g2_moscap_p_cjorbot_sig,  "global");
-    localparam real sg13g2_moscap_p_cjorsti = sg13g2_moscap_p_cjorsti_nom  + $rdist_normal(seed + 33, 0, sg13g2_moscap_p_cjorsti_sig,  "global");
-    localparam real sg13g2_moscap_p_cjorgat = sg13g2_moscap_p_cjorgat_nom  + $rdist_normal(seed + 34, 0, sg13g2_moscap_p_cjorgat_sig,  "global");
+    localparam real sg13g2_moscap_p_vfbo    = $rdist_normal(seed + 18, sg13g2_moscap_p_vfbo_nom,     sg13g2_moscap_p_vfbo_sig,     "global");
+    localparam real sg13g2_moscap_p_ctl     = $rdist_normal(seed + 19, sg13g2_moscap_p_ctl_nom,      sg13g2_moscap_p_ctl_sig,      "global");
+    localparam real sg13g2_moscap_p_rsw1    = $rdist_normal(seed + 20, sg13g2_moscap_p_rsw1_nom,     sg13g2_moscap_p_rsw1_sig,     "global");
+    localparam real sg13g2_moscap_p_muew    = $rdist_normal(seed + 21, sg13g2_moscap_p_muew_nom,     sg13g2_moscap_p_muew_sig,     "global");
+    localparam real sg13g2_moscap_p_dphibo  = $rdist_normal(seed + 22, sg13g2_moscap_p_dphibo_nom,   sg13g2_moscap_p_dphibo_sig,   "global");
+    localparam real sg13g2_moscap_p_dphibl  = $rdist_normal(seed + 23, sg13g2_moscap_p_dphibl_nom,   sg13g2_moscap_p_dphibl_sig,   "global");
+    localparam real sg13g2_moscap_p_dphibw  = $rdist_normal(seed + 24, sg13g2_moscap_p_dphibw_nom,   sg13g2_moscap_p_dphibw_sig,   "global");
+    localparam real sg13g2_moscap_p_dphiblw = $rdist_normal(seed + 25, sg13g2_moscap_p_dphiblw_nom,  sg13g2_moscap_p_dphiblw_sig,  "global");
+    localparam real sg13g2_moscap_p_themuo  = $rdist_normal(seed + 26, sg13g2_moscap_p_themuo_nom,   sg13g2_moscap_p_themuo_sig,   "global");
+    localparam real sg13g2_moscap_p_thesatl = $rdist_normal(seed + 27, sg13g2_moscap_p_thesatl_nom,  sg13g2_moscap_p_thesatl_sig,  "global");
+    localparam real sg13g2_moscap_p_thesatw = $rdist_normal(seed + 28, sg13g2_moscap_p_thesatw_nom,  sg13g2_moscap_p_thesatw_sig,  "global");
+    localparam real sg13g2_moscap_p_thesatlw= $rdist_normal(seed + 29, sg13g2_moscap_p_thesatlw_nom, sg13g2_moscap_p_thesatlw_sig, "global");
+    localparam real sg13g2_moscap_p_toxo    = $rdist_normal(seed + 30, sg13g2_moscap_p_toxo_nom,     sg13g2_moscap_p_toxo_sig,     "global");
+    localparam real sg13g2_moscap_p_toxovo  = $rdist_normal(seed + 31, sg13g2_moscap_p_toxovo_nom,   sg13g2_moscap_p_toxovo_sig,   "global");
+    localparam real sg13g2_moscap_p_cjorbot = $rdist_normal(seed + 32, sg13g2_moscap_p_cjorbot_nom,  sg13g2_moscap_p_cjorbot_sig,  "global");
+    localparam real sg13g2_moscap_p_cjorsti = $rdist_normal(seed + 33, sg13g2_moscap_p_cjorsti_nom,  sg13g2_moscap_p_cjorsti_sig,  "global");
+    localparam real sg13g2_moscap_p_cjorgat = $rdist_normal(seed + 34, sg13g2_moscap_p_cjorgat_nom,  sg13g2_moscap_p_cjorgat_sig,  "global");
 endmodule

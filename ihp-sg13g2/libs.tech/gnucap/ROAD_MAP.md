@@ -10,15 +10,20 @@
     - [x] cparasitic
     - [x] cap_cmim
     - [x] cap_rfcmim
+    - [x] mos_cap (psp)
+    - [ ] mos_var (psp)
 
-- [ ] diode
+- [ ] diode (sp_diode)
+   - [ ] antina   
+   - [ ] esd 
+   - [ ] dschottky_nb1 
+   - [ ] isobox 
 
 - [ ] mosfets
-  - [X] moslv
-  - [X] moshv
-  - [ ] hbt
-  - [ ] esd
-  - [ ] dschottky_nb1
+  - [X] moslv (psp)
+  - [X] moshv (psp)
+  - [x] hbt (vbic)
+  - [ ] esd clamp (psp) (don't expose parameters)
   - [ ] bondpad
  
 ## TODOs
