@@ -48,12 +48,14 @@ Install:
 
 - [Gnucap](https://codeberg.org/gnucap/gnucap)
 - [gnucap-modelgen-verilog](https://codeberg.org/gnucap/gnucap-modelgen-verilog)
+- [gnucap-models](https://codeberg.org/gnucap/gnucap-models)/ngspice46 models
 - [Ngspice](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/46/)
 - [OpenVAF](https://openvaf.semimod.de), for the OSDI step below
 
 Tested with:
-- Gnucap: `resolve 2026.06.10`
-- gnucap-modelgen-verilog: `gnucap-mg-vams`, same release
+- Gnucap: `476926c`
+- gnucap-modelgen-verilog: `8c0fa01`
+- gnucap-models: `f3ac9b1`
 - Ngspice: `ngspice-46`
 - OpenVAF: `openvaf 23.5.0` (`openvaf-r`)
 
@@ -265,5 +267,3 @@ No. 101135429. Additional funding is made available by the Swiss State
 Secretariat for Education, Research and Innovation (SERI).
 
 For details, see the NLnet project page: <https://nlnet.nl/project/VeriBench/>. 
-
-

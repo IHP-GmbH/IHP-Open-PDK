@@ -1,0 +1,21 @@
+load mgsim
+load models/ngspice46/dio.so
+
+spice
+
+* TODO: include all diode model files through a single top-level file
+.include ../../../models/paramsets/diode_dantenna.lib
+.include ../../../models/paramsets/diode_dpantenna.lib
+
+.verilog
+
+`include ../../../models/diode_module.va
+`include ./tb_dio_antenna_dc.va
+
+tb_dio_antenna_dc #(.v_sup(v_sup)) tb();
+
+parameter real v_sup = 0.0;
+
+print dc i(tb.Vm1) i(tb.Vm2) iter(0)
+dc v_sup -12 1 1m basic
+status notime

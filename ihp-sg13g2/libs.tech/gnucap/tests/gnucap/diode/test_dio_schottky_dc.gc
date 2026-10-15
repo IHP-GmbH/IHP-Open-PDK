@@ -1,0 +1,26 @@
+load mgsim
+load models/ngspice46/dio.so
+load models/ngspice46/bjt.so
+load ../../../plugins/models/idc.so
+load vams/resistor.so
+
+spice
+
+* TODO: include all diode model files through a single top-level file
+.include ../../../models/paramsets/sg13g2_dschottky_nbl1.lib
+
+.verilog
+
+`include ../../../models/cornerDIO.va
+`include ../../../models/sg13g2_dschottky_nbl1_module.va
+`include ./tb_dio_schottky_dc.va
+
+// TODO: corners not supported spice model plugins
+dio_tt corner_dio();
+
+parameter real ib = 0.0;
+tb_dio_schottky_dc #(.ib(ib)) tb(C);
+
+print dc v(C) iter(0)
+dc ib -1m 1m 1u basic
+status notime

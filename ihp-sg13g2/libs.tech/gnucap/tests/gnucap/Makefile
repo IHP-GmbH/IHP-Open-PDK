@@ -15,7 +15,9 @@ TESTDIRS = \
 	moscap \
 	moslv \
 	moshv \
-	hbt
+	hbt \
+	diode \
+	esd
 
 # Discover tests automatically: resistor/*.gc, moslv/*.gc, ...
 ALL_TESTS := $(foreach d, $(TESTDIRS), $(wildcard $(d)/*.gc))
