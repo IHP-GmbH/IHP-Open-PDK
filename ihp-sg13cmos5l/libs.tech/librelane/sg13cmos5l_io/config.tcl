@@ -1,5 +1,17 @@
 set current_folder [file dirname [file normalize [info script]]]
 
+# Technology lib
+set ::env(PAD_LIBS) [dict create]
+dict set ::env(PAD_LIBS) "*_typ_1p20V_25C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_typ_1p2V_3p3V_25C.lib\
+"
+dict set ::env(PAD_LIBS) "*_fast_1p32V_m40C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_fast_1p32V_3p6V_m40C.lib\
+"
+dict set ::env(PAD_LIBS) "*_slow_1p08V_125C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13cmos5l_io/lib/sg13cmos5l_io_slow_1p08V_3p0V_125C.lib\
+"
+
 # Pad IO sites
 set ::env(PAD_SITE_NAME) "sg13cmos5l_ioSite"
 set ::env(PAD_CORNER_SITE_NAME) "sg13cmos5l_cornerSite"
