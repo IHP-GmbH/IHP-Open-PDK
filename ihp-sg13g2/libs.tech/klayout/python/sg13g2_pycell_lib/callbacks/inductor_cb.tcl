@@ -55,9 +55,9 @@ proc inductor_w {} {
     if {$tmpw!="" && $tmpWmin!="" && $tmpWmin>$tmpw} {
         hiGetAttention
         hiGetAttention
-        CbMessage "WARNING: wrong width: using minimum width ${tmpWminS}%s!!"
+        CbMessage "WARNING: wrong width: using minimum width ${tmpWminS}!!"
         iPDK_setParamValue w $tmpWminS $cellId
-        set tmpw $tmpWminS
+        set tmpw $tmpWmin
     }
 
     if {$tmpw!="" && $tmpWmax!="" && $tmpWmax<$tmpw} {
@@ -65,7 +65,7 @@ proc inductor_w {} {
         hiGetAttention
         CbMessage "WARNING: wrong width: using maximum width ${tmpWmaxS}!!"
         iPDK_setParamValue w $tmpWmaxS $cellId
-        set tmpw $tmpWmaxS
+        set tmpw $tmpWmax
     }
 
     set tmps  [Stof [iPDK_getParamValue s $cellId]]
