@@ -131,6 +131,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - rppd/rhigh PyCells: handle large poly spacing and even-number bends ([#988](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/988))
 - rfcmim Qucs-S symbol fix ([#992](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/992))
 - Sealring PCell: fixed corruption caused by compound scaling factor in NLCB ([#1064](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1064))
+- Isolbox, inductor and MOS callbacks: fixed compound scaling factors (e.g. `1.5ku`) written for large values; isolbox no longer falls back to minimum size for `w`/`l` above 1 mm ([#1274](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1274))
 - nmos clamp: fix applied ([#600](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/600))
 - Primitive GDS: rolled back incorrect `idiode*` removal
 
