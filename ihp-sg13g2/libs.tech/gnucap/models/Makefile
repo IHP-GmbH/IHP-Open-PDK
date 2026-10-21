@@ -43,7 +43,7 @@ $(TARGET_DIR)/%.cc: %.vams | $(TARGET_DIR)
 
 # Compile generated C++ to object
 $(TARGET_DIR)/%.o: $(TARGET_DIR)/%.cc
-	${CXX} $(GNUCAP_CPPFLAGS) $(CPPFLAGS) -shared -fPIC ${GNUCAP_CXXFLAGS} ${CXXFLAGS} $< -o $@ -c
+	${CXX} $(GNUCAP_CPPFLAGS) $(CPPFLAGS) -c -fPIC ${GNUCAP_CXXFLAGS} ${CXXFLAGS} $< -o $@
 
 # Link object to shared library
 $(TARGET_DIR)/%.so: $(TARGET_DIR)/%.o
