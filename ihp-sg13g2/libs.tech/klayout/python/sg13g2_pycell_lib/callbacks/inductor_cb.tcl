@@ -44,7 +44,7 @@ proc inductor_w {} {
 
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
     set w [GridFix [expr ($tmpw*5e5)*2]]
-    iPDK_setParamValue w [Ftos $w 3]u $cellId
+    iPDK_setParamValue w [FtosNoScale $w 3]u $cellId
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
 
     set tmpWmaxS 30u
@@ -75,7 +75,7 @@ proc inductor_w {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [FtosNoScale $var 3]u $cellId
 
     inductor_d
     inductor_L
@@ -87,7 +87,7 @@ proc inductor_s {} {
 
     set tmps [Stof [iPDK_getParamValue s $cellId]]
     set s [GridFix [expr $tmps*1e6]]
-    iPDK_setParamValue s [Ftos $s 3]u $cellId
+    iPDK_setParamValue s [FtosNoScale $s 3]u $cellId
     set tmps [Stof [iPDK_getParamValue s $cellId]]
 
     set tmpSmaxS 30u
@@ -118,7 +118,7 @@ proc inductor_s {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [FtosNoScale $var 3]u $cellId
 
     inductor_d
     inductor_L
@@ -167,7 +167,7 @@ proc inductor_nr {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [FtosNoScale $var 3]u $cellId
 
     inductor_d
     inductor_L
@@ -200,7 +200,7 @@ proc inductor_d {} {
 
     set tmpd [Stof [iPDK_getParamValue d $cellId]]
     set d [GridFix [expr ($tmpd*5e5)*2]]
-    iPDK_setParamValue d [Ftos $d 3]u $cellId
+    iPDK_setParamValue d [FtosNoScale $d 3]u $cellId
 
     set tmps [Stof [iPDK_getParamValue s $cellId]]
     set tmpw [Stof [iPDK_getParamValue w $cellId]]

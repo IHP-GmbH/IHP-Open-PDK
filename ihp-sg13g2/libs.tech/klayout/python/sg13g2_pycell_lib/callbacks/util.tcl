@@ -153,6 +153,24 @@ proc Ftos {f {n 3}} {
 }
 
 #******************************************************************************************************
+# float to string without scaling factor. f = float, n=number of digits after comma
+# Use it instead of Ftos where the caller appends the unit itself, e.g. [FtosNoScale $w 3]u.
+# Ftos adds its own scaling factor below 0.09 and above 1000, so 1550 would become "1.55k",
+# and with the appended unit the compound suffix "1.55ku", which Stof and the PCells read as 1550.0.
+
+proc FtosNoScale {f {n 3}} {
+
+    set result [format %0.${n}f $f]
+
+    # remove trailing zeroes
+    while {[string first "." $result] >= 0 && [string range $result end end] == 0 && [string range $result end-1 end-1] != "."} {
+        set result [string range $result 0 end-1]
+    }
+
+    return $result
+}
+
+#******************************************************************************************************
 # round size (in m) to grid (in um), return [m]
 proc CbRoundm {x rgrid} {
     
