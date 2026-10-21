@@ -50,6 +50,8 @@
 // NMOS MOSCAP
 //******************************************************************************
 
+`include "disciplines.vams"
+
 (* desc = "SG13G2 NMOS MOSCAP module" *)
 module sg13_moscap_n(g, sub);
     inout g, sub;
@@ -60,11 +62,11 @@ module sg13_moscap_n(g, sub);
     (* desc = "Device length", units = "m" *)
     parameter real l = 1.0u from [1u:30u];
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Select psp103 RF/NQS model (not supported yet)" *)
     parameter integer rfmode = 0 from [0:0];
     (* desc = "Enable pre-layout parasitic modelling" *)
@@ -75,18 +77,18 @@ module sg13_moscap_n(g, sub);
     localparam real ps = 2 * (w + 0.34e-6);
     localparam real pd = 2 * (w + 0.34e-6);
 
-    sg13g2_moscap_n_psp #( \
-        .w(w), \
-        .l(l), \
-        .nf(ng), \
-        .mult(m), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode), \
-        .mm_ok(mm_ok), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd)) \
+    sg13g2_moscap_n_psp #(
+        .w(w),
+        .l(l),
+        .nf(ng),
+        .mult(m),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode),
+        .mm_ok(mm_ok),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd))
     sg13_moscap_n(sub, g, sub, sub);
 endmodule
 
@@ -104,11 +106,11 @@ module sg13_moscap_p(g, nw);
     (* desc = "Device length", units = "m" *)
     parameter real l = 1.0u from [1u:30u];
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Select psp103 RF/NQS model (not supported yet)" *)
     parameter integer rfmode = 0 from [0:0];
     (* desc = "Enable pre-layout parasitic modelling" *)
@@ -119,17 +121,17 @@ module sg13_moscap_p(g, nw);
     localparam real ps = 2 * (w + 0.34e-6);
     localparam real pd = 2 * (w + 0.34e-6);
 
-    sg13g2_moscap_p_psp #( \
-        .w(w), \
-        .l(l), \
-        .nf(ng), \
-        .mult(m), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode), \
-        .mm_ok(mm_ok), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd)) \
+    sg13g2_moscap_p_psp #(
+        .w(w),
+        .l(l),
+        .nf(ng),
+        .mult(m),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode),
+        .mm_ok(mm_ok),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd))
     sg13_moscap_p(nw, g, nw, nw);
 endmodule

@@ -43,6 +43,8 @@
 //   instantiation via generate. ic_ is now unused.
 //******************************************************************************
 
+`include "disciplines.vams"
+
 (* desc="SG13G2 High-Voltage MOS SVaricap module" *)
 module sg13_hv_svaricap(G1, W, G2, bn);
     inout G1, W, G2, bn;
@@ -96,20 +98,20 @@ module sg13_hv_svaricap(G1, W, G2, bn);
     capacitor #(.c(cic0)) Cic1(G1, W0);
     capacitor #(.c(cic0)) Cic2(G2, W0);
     // MOS Varactor 1
-    sg13g2_hv_svaricap_psp #( \
-        .w(w), \
-        .l(l), \
-        .$mfactor(Nx * Ny), \
-        .dta(trise), \
-        .mm_ok(mm_ok) \
+    sg13g2_hv_svaricap_psp #(
+        .w(w),
+        .l(l),
+        .$mfactor(Nx * Ny),
+        .dta(trise),
+        .mm_ok(mm_ok)
     ) mvcap1(G1, bi1, W0);
     // MOS Varactor 2
-    sg13g2_hv_svaricap_psp #( \
-        .w(w), \
-        .l(l), \
-        .$mfactor(Nx * Ny), \
-        .dta(trise), \
-        .mm_ok(mm_ok) \
+    sg13g2_hv_svaricap_psp #(
+        .w(w),
+        .l(l),
+        .$mfactor(Nx * Ny),
+        .dta(trise),
+        .mm_ok(mm_ok)
     ) mvcap2(G2, bi2, W0);
     // Well Parasitic
     resistor #(.r(rwell)) rww(W, W0);

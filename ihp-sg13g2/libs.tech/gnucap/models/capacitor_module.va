@@ -44,6 +44,8 @@
 // Note: top/bottom plate parasitic capacitance is included by parasiticC extraction!
 // Note: top (Metal3) corresponds to PLUS pin
 
+`include "disciplines.vams"
+
 (* desc="cap_cmim capacitor module" *)
 module cap_cmim(PLUS, MINUS);
     inout PLUS, MINUS;
@@ -85,7 +87,7 @@ module cap_rfcmim(PLUS, MINUS, bn);
     (* desc="Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
     (* desc="Feed line width", units="m" *)
-    parameter real wfeed = 2uc from [1u:30u];
+    parameter real wfeed = 2u from [1u:30u];
     (* desc="Coupling capacitance to substrate", units="F" *)
     parameter real cic0 = 1E-18;
 
@@ -105,9 +107,9 @@ module cap_rfcmim(PLUS, MINUS, bn);
 
     // TODO: use device primitives from LRM annex E instead?
     capacitor #(.c(cic0)) Cic1(PLUS, bn);
-    capacitor #(.c(cic0)) Cic1(MINUS, bn);
-    inductor #(.l(lskin_val)) Lskin(PLUS, n2)
-    resistor #(.r(rskin_val)) Rskin(PLUS, n2)
+    capacitor #(.c(cic0)) Cic2(MINUS, bn);
+    inductor #(.l(lskin_val)) Lskin(PLUS, n2);
+    resistor #(.r(rskin_val)) Rskin(PLUS, n2);
     inductor #(.l(lmim_eff)) Lmim(n2, n3);
     resistor #(.r(rmim_val)) Rmim(n3, n4);
     cap_cmim #(.l(l), .w(w), .mm_ok(mm_ok)) cmim(n4, n5);

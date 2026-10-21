@@ -26,6 +26,8 @@
 // - Changed mod1_pnp paramset base from pnp to bjt with type = -1
 //******************************************************************************
 
+`include "disciplines.vams"
+
 (* desc="SG13G2 schottky_nbl1 Schottky diode" *)
 module schottky_nbl1(A, C, S);
     inout A, C, S;
@@ -33,13 +35,13 @@ module schottky_nbl1(A, C, S);
     electrical n1, n2;
 
     (* desc="Drawn length", units="m" *)
-    parameter real l = 1u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real l = 1u from (0:inf);
     (* desc="Drawn width",  units="m" *)
-    parameter real w = 0.3u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.3u from (0:inf);
     (* desc="Number of columns" *)
-    parameter integer Nx = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer Nx = 1 from [1:inf);
     (* desc="Number of rows" *)
-    parameter integer Ny = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer Ny = 1 from [1:inf);
 
     localparam real scaling = 1e-6;
     localparam real nxy = Nx * Ny;

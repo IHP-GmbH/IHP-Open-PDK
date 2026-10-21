@@ -83,19 +83,21 @@
 // NMOS
 //******************************************************************************
 
+`include "disciplines.vams"
+
 (* desc = "SG13G2 Low-Voltage NMOS module with calculated diffusion geometry, without mismatch" *)
 module sg13_lv_nmos(d, g, s, b);
     inout d, g, s, b;
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.34u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:0];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
@@ -115,20 +117,20 @@ module sg13_lv_nmos(d, g, s, b);
     localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
     localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
 
-    sg13g2_lv_nmos_psp #( \
-        .w(w), \
-        .l(l), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(0.0), \
-        .factuo(1.0), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_nmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_nmos(d, g, s, b);
 endmodule
 
@@ -138,13 +140,13 @@ module sg13_lv_nmos(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.34u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 1 from [1:1];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
@@ -172,20 +174,20 @@ module sg13_lv_nmos(d, g, s, b);
     localparam real delvto = $rdist_normal(2, 0, delvto_sig, "instance");
     localparam real factuo = $rdist_normal(3, 1, factuo_sig, "instance");
 
-    sg13g2_lv_nmos_psp #( \
-        .w(w_mm), \
-        .l(l_mm), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(delvto), \
-        .factuo(factuo), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_nmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_nmos(d, g, s, b);
 endmodule
 
@@ -195,44 +197,44 @@ module sg13_lv_nmos_TODO(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.34u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 0.0 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 0.0 from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 0.0 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 0.0 from [0:inf);
     (* desc = "Enable pre-layout parasitic modelling" *)
     parameter integer pre_layout = 1 from [0:1];
     (* desc = "Select the PSP103 RF/NQS model" *)
     parameter integer rfmode = 0 from [0:1];
 
-    sg13g2_lv_nmos_psp #( \
-        .w(w), \
-        .l(l), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(0.0), \
-        .factuo(1.0), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_nmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_nmos(d, g, s, b);
 endmodule
 
@@ -242,25 +244,25 @@ module sg13_lv_nmos_TODO(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.34u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 1 from [1:1];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 0.0 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 0.0 from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 0.0 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 0.0 from [0:inf);
     (* desc = "Enable pre-layout parasitic modelling" *)
     parameter integer pre_layout = 1 from [0:1];
     (* desc = "Select the PSP103 RF/NQS model" *)
@@ -274,20 +276,20 @@ module sg13_lv_nmos_TODO(d, g, s, b);
     localparam real delvto = $rdist_normal(3, 0, delvto_sig, "instance");
     localparam real factuo = $rdist_normal(4, 1, factuo_sig, "instance");
 
-    sg13g2_lv_nmos_psp #( \
-        .w(w_mm), \
-        .l(l_mm), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(delvto), \
-        .factuo(factuo), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_nmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_nmos(d, g, s, b);
 endmodule
 
@@ -301,13 +303,13 @@ module sg13_lv_pmos(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.28u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:0];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
@@ -327,20 +329,20 @@ module sg13_lv_pmos(d, g, s, b);
     localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
     localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
 
-    sg13g2_lv_pmos_psp #( \
-        .w(w), \
-        .l(l), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(0.0), \
-        .factuo(1.0), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_pmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_pmos(d, g, s, b);
 endmodule
 
@@ -350,13 +352,13 @@ module sg13_lv_pmos(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.28u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 1 from [1:1];
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
@@ -384,20 +386,20 @@ module sg13_lv_pmos(d, g, s, b);
     localparam real delvto = $rdist_normal(3, 0, delvto_sig, "instance");
     localparam real factuo = $rdist_normal(4, 1, factuo_sig, "instance");
 
-    sg13g2_lv_pmos_psp #( \
-        .w(w_mm), \
-        .l(l_mm), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(delvto), \
-        .factuo(factuo), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_pmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_pmos(d, g, s, b);
 endmodule
 
@@ -407,23 +409,23 @@ module sg13_lv_pmos_TODO(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.28u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed;
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:0];
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 0.0 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 0.0 from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 0.0 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 0.0 from [0:inf);
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Enable pre-layout parasitic modelling" *)
@@ -432,20 +434,20 @@ module sg13_lv_pmos_TODO(d, g, s, b);
     parameter integer rfmode = 0 from [0:1];
     localparam real wf_nom = w / ng from [0.15u:10u];
 
-    sg13g2_lv_pmos_psp #( \
-        .w(w), \
-        .l(l), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(0.0), \
-        .factuo(1.0), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_pmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_pmos(d, g, s, b);
 endmodule
 
@@ -455,23 +457,23 @@ module sg13_lv_pmos_TODO(d, g, s, b);
     electrical d, g, s, b;
 
     (* desc = "Device width", units = "m" *)
-    parameter real w = 0.35u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 0.35u from (0:inf);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.28u from [0.13u:10u];
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99);
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Enable mismatch" *)
     parameter integer mm_ok = 1 from [1:1];
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 0.0 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 0.0 from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 0.0 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 0.0 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 0.0 from [0:inf);
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Enable pre-layout parasitic modelling" *)
@@ -488,20 +490,20 @@ module sg13_lv_pmos_TODO(d, g, s, b);
     localparam real delvto = $rdist_normal(3, 0, delvto_sig, "instance");
     localparam real factuo = $rdist_normal(4, 1, factuo_sig, "instance");
 
-    sg13g2_lv_pmos_psp #( \
-        .w(w_mm), \
-        .l(l_mm), \
-        .ng(ng), \
-        .m(m), \
-        .as(as), \
-        .ad(ad), \
-        .ps(ps), \
-        .pd(pd), \
-        .trise(trise), \
-        .delvto(delvto), \
-        .factuo(factuo), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode)) \
+    sg13g2_lv_pmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
     sg13_lv_pmos(d, g, s, b);
 endmodule
 
@@ -517,38 +519,38 @@ module nmoscl_2(VDD, VSS);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.36u from [0.13u:10u];
     (* desc = "Device width", units = "m" *)
-    parameter real w = 168u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 168u from (0:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 58e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 58e-12 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 58e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 58e-12 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 336u from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 336u from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 336u from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 336u from [0:inf);
     (* desc = "Enable pre-layout parasitic modelling" *)
     parameter integer pre_layout = 1 from [0:1];
     (* desc = "Select the PSP103 RF/NQS model" *)
     parameter integer rfmode = 0 from [0:1];
 
-    nmoscl_psp #( \
-        .w(w), \
-        .l(l), \
-        .m(m), \
-        .ng(ng), \
-        .as(as), \
-        .ad(ad), \
-        .pd(pd), \
-        .ps(ps), \
-        .trise(trise), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode) \
+    nmoscl_psp #(
+        .w(w),
+        .l(l),
+        .m(m),
+        .ng(ng),
+        .as(as),
+        .ad(ad),
+        .pd(pd),
+        .ps(ps),
+        .trise(trise),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode)
     ) sg13_lv_nmos(VDD, VSS, VSS, VSS);
 endmodule
 
@@ -560,38 +562,37 @@ module nmoscl_4(VDD, VSS);
     (* desc = "Device length", units = "m" *)
     parameter real l = 0.36u from [0.13u:10u];
     (* desc = "Device width", units = "m" *)
-    parameter real w = 168u from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real w = 168u from (0:inf);
     (* desc = "Instance multiplicity" *)
-    parameter real m = 1.0 from (0:1e99); // TODO: 1e99->inf once fixed
+    parameter real m = 1.0 from (0:inf);
     (* desc = "Number of fingers" *)
-    parameter integer ng = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    parameter integer ng = 1 from [1:inf);
     (* desc = "Temperature offset w.r.t. ambient temperature" *)
     parameter real trise = 0.0;
     (* desc = "Source diffusion area", units = "m^2" *)
-    parameter real as = 114e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real as = 114e-12 from [0:inf);
     (* desc = "Drain diffusion area", units = "m^2" *)
-    parameter real ad = 114e-12 from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ad = 114e-12 from [0:inf);
     (* desc = "Drain diffusion perimeter", units = "m" *)
-    parameter real pd = 672u from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real pd = 672u from [0:inf);
     (* desc = "Source diffusion perimeter", units = "m" *)
-    parameter real ps = 672u from [0:1e99); // TODO: 1e99->inf once fixed
+    parameter real ps = 672u from [0:inf);
     (* desc = "Enable pre-layout parasitic modelling" *)
     parameter integer pre_layout = 1 from [0:1];
     (* desc = "Select the PSP103 RF/NQS model" *)
     parameter integer rfmode = 0 from [0:1];
 
-    nmoscl_psp #( \
-        .w(w), \
-        .l(l), \
-        .m(m), \
-        .ng(ng), \
-        .as(as), \
-        .ad(ad), \
-        .pd(pd), \
-        .ps(ps), \
-        .trise(trise), \
-        .pre_layout(pre_layout), \
-        .rfmode(rfmode) \
+    nmoscl_psp #(
+        .w(w),
+        .l(l),
+        .m(m),
+        .ng(ng),
+        .as(as),
+        .ad(ad),
+        .pd(pd),
+        .ps(ps),
+        .trise(trise),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode)
     ) sg13_lv_nmos(VDD, VSS, VSS, VSS);
 endmodule
-

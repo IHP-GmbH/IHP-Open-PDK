@@ -12,7 +12,18 @@ UTILITY_TARGETS = \
 	idc \
 	vpulse
 
-TARGETS = $(UTILITY_TARGETS)
+MODULE_TARGETS = \
+	capacitor_module \
+	diode_module \
+	sg13g2_dschottky_nbl1_module \
+	sg13g2_esd_module \
+	sg13g2_hbt_module \
+	sg13g2_moscap_module \
+	sg13g2_moshv_module \
+	sg13g2_moslv_module \
+	sg13g2_svaricaphv_module
+
+TARGETS = $(UTILITY_TARGETS) $(MODULE_TARGETS)
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
 
