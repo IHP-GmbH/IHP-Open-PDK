@@ -21,7 +21,6 @@ TARGETS = \
 	sg13g2_hbt
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%_paramset.so)
-
 SOURCES = $(TARGETS:%=%.va)
 
 # Compact models required by each family.
@@ -67,50 +66,7 @@ $(TARGETS:%=$(TARGET_DIR)/%_paramset.cc): $(TARGET_DIR)/%_paramset.cc: %.va | $(
 $(TARGETS:%=%_paramset.dump.va): %_paramset.dump.va: %.va
 	$(MODELGEN_VERILOG) $(MGFLAGS) -o $@ --dump $<
 
-# Sources reached through `include, listed by hand because gnucap-mg-vams has no
-# dependency-output mode. Without them make compares only the paramset file
-# itself, so editing r3_cmc.va, psp103.va, either cap_cmom*.va or discipline.h
-# leaves a stale .so in place and `make check` then validates the previous
-# build instead of the current one. The external model trees are taken wholesale: any of their
-# .include files feeds the compile, and they are third-party sources that change
-# rarely enough that over-triggering costs nothing.
-
-# TODO: generate dynamically from the MODELS_<target> mappings
-va_sources  = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
-R3CMC_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/r3_cmc)
-PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
-CMOMI_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomi)
-CMOMF_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomf)
-VBIC_SRC   := $(call va_sources,$(IHP_VERILOG_DIR)/vbic_1p3)
-MOSVAR_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/mosvar)
-
-RES_PARAMSETS = $(wildcard resistor_*.va)
-CAPACITOR_PARAMSETS = $(wildcard capacitor_*.va)
-HBT_PARAMSETS = $(wildcard sg13g2_hbt_*.va)
-MOSCAP_PARAMSETS = $(wildcard sg13g2_moscap_*.va)
-# RF umbrellas share the device-file prefix but are separate build entry sources.
-MOSLV_PARAMSETS = $(filter-out $(SOURCES),$(wildcard sg13g2_moslv_*.va))
-MOSHV_PARAMSETS = $(filter-out $(SOURCES),$(wildcard sg13g2_moshv_*.va))
-
-$(TARGET_DIR)/resistor_paramset.cc:          ../spice/sp_resistor.va ../discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
-$(TARGET_DIR)/capacitor_paramset.cc:         ../spice/sp_capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
-$(TARGET_DIR)/sg13g2_svaricaphv_paramset.cc: ../spice/sp_capacitor.va $(MOSVAR_SRC)
-$(TARGET_DIR)/sg13g2_moscap_paramset.cc:     ../discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moslv_paramset.cc:      ../discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc:   ../discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moshv_paramset.cc:      ../discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc:   ../discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_hbt_paramset.cc:        $(HBT_PARAMSETS) $(VBIC_SRC)
-
-resistor_paramset.dump.va:          ../spice/sp_resistor.va ../discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
-capacitor_paramset.dump.va:         ../spice/sp_capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
-sg13g2_moscap_paramset.dump.va:     ../discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-sg13g2_svaricaphv_paramset.dump.va: ../spice/sp_capacitor.va $(MOSVAR_SRC)
-sg13g2_moslv_paramset.dump.va:      ../discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-sg13g2_moslv_rf_paramset.dump.va:   ../discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-sg13g2_moshv_paramset.dump.va:      ../discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-sg13g2_moshv_rf_paramset.dump.va:   ../discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-sg13g2_hbt_paramset.dump.va:        $(HBT_PARAMSETS) $(VBIC_SRC)
+include Makefile.deps
 
 # Naming the generated C++ as explicit targets above would make it permanent:
 # GNU make only treats a file as intermediate, and deletes it after the build,
