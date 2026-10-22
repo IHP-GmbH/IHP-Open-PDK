@@ -35,6 +35,6 @@ C {devices/iopin.sym} 330 60 0 0 {name=p2 lab=pad}
 C {devices/iopin.sym} -210 -220 2 0 {name=p3 lab=iovdd}
 C {sg13_hv_pmos.sym} 0 -70 0 0 {name=P0 model=sg13_hv_pmos w=133.2u l=0.6u ng=20 m=1 mm_ok=1}
 C {sg13_hv_pmos.sym} 240 -70 0 0 {name=P1 model=sg13_hv_pmos w=133.2u l=0.6u ng=20 m=1 mm_ok=1}
-C {rppd.sym} -90 -120 2 0 {name=R0 body=sub! model=rppd w=0.5e-6 l=12.9e-6 m=1 b=0 mm_ok=1}
+C {rppd.sym} -90 -120 2 0 {name=R0 body=iovdd model=rppd w=0.5e-6 l=12.9e-6 m=1 b=0 mm_ok=1}
 C {ptap1.sym} -50 80 0 0 {name=R1 model=ptap1 w=8.185e-6 l=8.185e-6}
 C {devices/title-3.sym} -1190 860 0 0 {name=l1 author="IHP PDK AUTHORS"}
