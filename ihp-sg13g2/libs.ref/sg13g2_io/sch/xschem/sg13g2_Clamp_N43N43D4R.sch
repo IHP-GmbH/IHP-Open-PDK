@@ -21,7 +21,7 @@ C {lab_wire.sym} 0 -30 0 0 {name=l2 sig_type=std_logic lab=sub!}
 C {devices/iopin.sym} 100 -160 2 0 {name=p1 lab=pad}
 C {devices/ipin.sym} -160 -30 0 0 {name=p2 lab=gate}
 C {devices/iopin.sym} 60 10 0 0 {name=p3 lab=iovss}
-C {sg13_hv_nmos.sym} -50 -30 0 0 {name=N0<1:172> model=sg13_hv_nmos w=4.4u l=0.6u ng=1 m=1 mm_ok=1}
+C {sg13_hv_nmos.sym} -50 -30 0 0 {name=N0[1:172] model=sg13_hv_nmos w=4.4u l=0.6u ng=1 m=1 mm_ok=1}
 C {dantenna.sym} -120 100 0 0 {name=D0 model=dantenna l=0.48u w=0.48u}
 C {ptap1.sym} -10 70 0 0 {name=R0 model=ptap1 w=8.1e-6 l=8.1e-6}
 C {devices/title-3.sym} -1280 880 0 0 {name=l1 author="IHP PDK AUTHORS"}
