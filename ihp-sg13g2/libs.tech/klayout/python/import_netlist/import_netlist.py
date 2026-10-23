@@ -82,11 +82,18 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
     for key, value in params.items():
         print(f' - {key}: {value}')
 
-    # Get PCell Library
-    lib = pya.Library.library_by_name(lib_name, 'sg13g2')
+    # Get the active layout
+    cellview = pya.CellView().active()
+    layout = cellview.layout()
+    if layout is None:
+        print('Error: Couldn\'t get active layout.')
+        return (0, 0)
+
+    # Get PCell Library of the layout's technology
+    lib = pya.Library.library_by_name(lib_name, layout.technology_name)
 
     if not lib:
-        print(f'Error: Library not found {lib_name}')
+        print(f'Error: Library not found {lib_name} (technology "{layout.technology_name}")')
         return (0, 0)
 
     # The PCell Declaration. This one will create PCell variants.
@@ -94,13 +101,6 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
 
     if not pcell_decl:
         print(f'Error: Pcell not found {pcell_name}')
-        return (0, 0)
-
-    # Get the active layout
-    cellview = pya.CellView().active()
-    layout = cellview.layout()
-    if layout == None:
-        print(f'Error: Couldn\'t get active layout.')
         return (0, 0)
 
     # Get the top cell. Assuming only one top cell exists
@@ -145,6 +145,15 @@ def create_subckt_instance(name, subckt_definitions):
             create_subckt_instance(subckt_inst, subckt_definitions)
 
 def ihp130_import_netlist():
+
+    # The PCell library is looked up by the layout's technology
+    layout = pya.CellView().active().layout()
+    if layout is None:
+        print('Error: Couldn\'t get active layout.')
+        return
+    if not layout.technology_name:
+        print('Error: The active layout has no technology. Set it in File > Layout Properties.')
+        return
 
     # Get the schematic netlist
     netlist_path = pya.FileDialog.ask_open_file_name("Choose the schematic netlist", '.', "SPICE (*.spice)")
