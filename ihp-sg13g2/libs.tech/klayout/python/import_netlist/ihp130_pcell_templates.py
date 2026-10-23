@@ -277,7 +277,7 @@ templates = [
         "params": [
             {
                 "name": "diameter",
-                "type": "string",
+                "type": "raw_string",
             }
         ],
         "default_params": {"diameter": "80u"},
@@ -291,18 +291,18 @@ templates = [
         "params": [
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "m",
                 "type": "int",
             },
         ],
-        "default_params": {"w": "7.0e-6", "l": "7.0e-6", "m": 1},
+        "default_params": {"w": "7.0e-6", "l": "7.0e-6", "m": 1, "Calculate": "C"},
     },
     {
         "regex": re.compile(
@@ -435,11 +435,11 @@ templates = [
         "params": [
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
         ],
         "default_params": {"l": "0.78u", "w": "0.78u"},
@@ -627,11 +627,11 @@ templates = [
         "params": [
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "Nx",
