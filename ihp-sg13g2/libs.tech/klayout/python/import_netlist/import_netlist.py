@@ -37,6 +37,23 @@ SI_MULTIPLIERS = {
     "f": 1e-15,
 }
 
+# Pin declarations written by xschem
+PIN_DIRECTIVES = ('*.iopin', '*.ipin', '*.opin')
+
+# Keys of the user properties stored on device cell instances and pins.
+# They are integers because GDS drops properties with string keys on save.
+PROP_NAME = 1
+PROP_NETS = 2
+PROP_DIRECTION = 3
+
+# Metal1 layers for pins; LVS reads the pin labels from 8/25
+METAL1_DRAWING = pya.LayerInfo(8, 0)
+METAL1_PIN = pya.LayerInfo(8, 2)
+METAL1_TEXT = pya.LayerInfo(8, 25)
+PIN_SIZE_UM = 1.0
+PIN_SPACING_UM = 4.0
+PIN_ROW_Y_UM = -10.0
+
 
 def parse_si_value(value):
     if not isinstance(value, str):
@@ -71,10 +88,14 @@ def normalize_params(params):
     return normalized
 
 
-def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=pya.Trans.R0):
+def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=pya.Trans.R0,
+                          name_spice=None, nets=None):
     """
     Create a new instance of a PCell
     and return its width and height
+
+    With name_spice the PCell is wrapped in a cell of that name and
+    the instance carries the SPICE name and nets as user properties.
     """
 
     print(f"Creating PCell '{pcell_name}' with parameters:")
@@ -118,7 +139,18 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
     height = bbox.height()
     
     # Insert instance
-    top_cell.insert(pya.CellInstArray(pcell_var, offset))
+    if name_spice:
+        # The PCell sits at the origin of a cell named after the SPICE
+        # instance, so it stays editable one level down
+        device_cell = layout.create_cell(name_spice)
+        device_cell.insert(pya.CellInstArray(pcell_var, pya.Trans(-bbox.left, -bbox.bottom)))
+        # Set the properties on insert: set_property() needs editable mode
+        props = [(PROP_NAME, name_spice)]
+        if nets:
+            props.append((PROP_NETS, ' '.join(nets)))
+        top_cell.insert(pya.CellInstArray(device_cell.cell_index(), pos), layout.properties_id(props))
+    else:
+        top_cell.insert(pya.CellInstArray(pcell_var, offset))
     
     return (width, height)
 
@@ -134,7 +166,9 @@ def create_subckt_instance(name, subckt_definitions):
             pcell_inst['pcell_name'],
             pcell_inst['pcell_library'],
             pcell_inst['params'],
-            pya.Trans(current_x, 0)
+            pya.Trans(current_x, 0),
+            name_spice=pcell_inst['name_spice'],
+            nets=pcell_inst['nets'],
         )
         current_x += width + spacing
 
@@ -143,6 +177,28 @@ def create_subckt_instance(name, subckt_definitions):
             print(f'Error: Unknown subckt {subckt_inst}')
         else:
             create_subckt_instance(subckt_inst, subckt_definitions)
+
+
+def create_pin_instance(name, direction, x):
+    """
+    Draw a Metal1 pin with its label in the top cell, below the devices,
+    and return how far (in dbu) to advance x for the next pin
+    """
+    layout = pya.CellView().active().layout()
+    top_cell = layout.top_cell()
+
+    y = int(round(PIN_ROW_Y_UM / layout.dbu))
+    size = int(round(PIN_SIZE_UM / layout.dbu))
+    box = pya.Box(x, y, x + size, y + size)
+
+    prop_id = layout.properties_id([(PROP_NAME, name), (PROP_DIRECTION, direction)])
+    top_cell.shapes(layout.layer(METAL1_DRAWING)).insert(box)
+    top_cell.shapes(layout.layer(METAL1_PIN)).insert(box, prop_id)
+    top_cell.shapes(layout.layer(METAL1_TEXT)).insert(pya.Text(name, pya.Trans(box.center().x, box.center().y)))
+
+    print(f'Creating pin {name} ({direction})')
+    return size + int(round(PIN_SPACING_UM / layout.dbu))
+
 
 def ihp130_import_netlist():
 
@@ -178,7 +234,7 @@ def ihp130_import_netlist():
     netlist_lines = netlist_content.split('\n')
 
     # Subckt data
-    subckt_definitions = {'root': {'subckts': [], 'pcells': [], 'references': 0}}
+    subckt_definitions = {'root': {'subckts': [], 'pcells': [], 'pins': [], 'references': 0}}
     active_subckt = 'root'
 
     # Parameter data
@@ -246,6 +302,14 @@ def ihp130_import_netlist():
 
     # Scan for subckts
     for line in netlist_lines:
+        # Collect pins, e.g. "*.ipin A"; xschem may list a pin twice
+        if line.lower().startswith(PIN_DIRECTIVES):
+            direction, pin = line.split()[:2]
+            pins = subckt_definitions[active_subckt]['pins']
+            if pin not in [p['name'] for p in pins]:
+                pins.append({'name': pin, 'direction': direction.lower().lstrip('*.')})
+            continue
+
         # Ignore comments
         if line.startswith('*'):
             continue
@@ -253,7 +317,11 @@ def ihp130_import_netlist():
         # Find start of subckt definitions
         if line.startswith('.subckt') or line.startswith('.SUBCKT'):
             active_subckt = line.split(' ')[1]
-            subckt_definitions[active_subckt] = {'subckts': [], 'pcells': [], 'references': 0}
+            subckt_definitions[active_subckt] = {'subckts': [], 'pcells': [], 'pins': [], 'references': 0}
+
+        # Find end of subckt definitions
+        if line.startswith('.ends') or line.startswith('.ENDS'):
+            active_subckt = 'root'
 
     # Devices outside of .subckt blocks belong to 'root'
     active_subckt = 'root'
@@ -312,11 +380,19 @@ def ihp130_import_netlist():
               
                 #print(f'Instantiating Pcell with: {params}')
               
-                for _ in range(m):
+                # Nets are the tokens between the instance name and the model,
+                # which is the token right before the first "key=value"
+                tokens = line.split()
+                first_kv = next((k for k, t in enumerate(tokens) if '=' in t), len(tokens))
+                nets = tokens[1:first_kv - 1]
+
+                for i in range(m):
                     subckt_definitions[active_subckt]['pcells'].append({
+                        'name_spice':       tokens[0] if m == 1 else f'{tokens[0]}_{i + 1}',
                         'pcell_name':       template['pcell_name'],
                         'pcell_library':    template['pcell_library'],
                         'params':           params.copy(),
+                        'nets':             nets,
                     })
 
         # Line was handled by template
@@ -335,7 +411,10 @@ def ihp130_import_netlist():
             else:
                 subckt_definitions[subckt]['references'] += 1
 
-    # Instanciate all top-level subckts
+    # Instanciate all top-level subckts and their pins
+    pin_x = 0
     for name in subckt_definitions.keys():
         if subckt_definitions[name]['references'] == 0:
             create_subckt_instance(name, subckt_definitions)
+            for pin in subckt_definitions[name]['pins']:
+                pin_x += create_pin_instance(pin['name'], pin['direction'], pin_x)
