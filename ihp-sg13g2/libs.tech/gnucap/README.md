@@ -248,8 +248,8 @@ make -C tests/ngspice <testdir>/check/<test>.sp.out
 Example:
 
 ```bash
-make -C tests/gnucap resistor/check/tb_res_basic_typ.gc.out
-make -C tests/ngspice resistor/check/tb_res_basic_typ.sp.out
+make -C tests/gnucap resistor/check/test_res_op_typ.gc.out
+make -C tests/ngspice resistor/check/test_res_op_typ.sp.out
 ```
 
 ## Plotting

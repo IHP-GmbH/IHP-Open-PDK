@@ -14,7 +14,7 @@ ref_dir_sp = tests_dir_sp / "hbt" / "ref"
 
 def plot_tb_dc_hbt(device_variant: str, corner: str, show: bool = False):
 
-    test_name = f"tb_dc_hbt_{device_variant}_" + corner
+    test_name = f"test_hbt_{device_variant}_dc_{corner}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
 
@@ -83,7 +83,7 @@ def plot_tb_dc_hbt_13g2v(corner, show: bool = False):
 
 def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
 
-    test_name = f"tb_ac_hbt_13g2_{corner}"
+    test_name = f"test_hbt_13g2_ac_{corner}"
 
     # Load Gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -130,7 +130,7 @@ def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
 
 def plot_tb_dc_mc_mm_hbt(device_variant: str, corner: str, title: str, show: bool = False):
 
-    test_name = f"tb_dc_mc_mm_hbt_{device_variant}_{corner}"
+    test_name = f"test_hbt_{device_variant}_mc_mm_{corner}"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
@@ -168,7 +168,7 @@ def plot_tb_dc_mc_mm_hbt_13g2v(corner: str, show: bool = False):
 
 def plot_tb_dc_mc_stat_hbt(device_variant: str, title: str, show: bool = False):
 
-    test_name = f"tb_dc_mc_stat_hbt_{device_variant}"
+    test_name = f"test_hbt_{device_variant}_mc_stat_typ"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
