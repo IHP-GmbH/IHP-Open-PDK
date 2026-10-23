@@ -179,7 +179,7 @@ def ihp130_import_netlist():
 
     # Subckt data
     subckt_definitions = {'root': {'subckts': [], 'pcells': [], 'references': 0}}
-    active_subckt = None
+    active_subckt = 'root'
 
     # Parameter data
     global_parameters = {}
@@ -255,6 +255,8 @@ def ihp130_import_netlist():
             active_subckt = line.split(' ')[1]
             subckt_definitions[active_subckt] = {'subckts': [], 'pcells': [], 'references': 0}
 
+    # Devices outside of .subckt blocks belong to 'root'
+    active_subckt = 'root'
     for line in netlist_lines:
         # Ignore comments
         if line.startswith('*'):
@@ -269,7 +271,7 @@ def ihp130_import_netlist():
 
         # Find end of subckt definitions
         if line.startswith('.ends') or line.startswith('.ENDS'):
-            active_subckt = None
+            active_subckt = 'root'
 
         #print(f"Searching for match with '{line}'!")
         any_match = False
