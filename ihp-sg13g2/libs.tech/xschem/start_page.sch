@@ -36,6 +36,7 @@ T {Simulation skeleton for xyce} 1190 -470 0 0 0.4 0.4 {}
 T {Ctrl-Click to execute launcher} 440 -180 0 0 0.3 0.3 {layer=11}
 T {.save file can be created with IHP->"Create FET and BIP .save file"} 440 -160 0 0 0.3 0.3 {layer=11}
 T {DEVICE GALLERY} 80 -700 0 0 0.6 0.6 {}
+T {IO CELLS} 80 -580 0 0 0.6 0.6 {}
 C {devices/title.sym} 160 -30 0 0 {name=l5 author="Copyright 2024 IHP PDK Authors"}
 C {devices/launcher.sym} 150 -1140 0 0 {name=h1
 descr="IHP-Open-PDK"
@@ -143,3 +144,4 @@ write <filename>.raw
 "}
 C {sg13g2_pr/gallery.sym} 210 -640 0 0 {name=x4}
 C {sg13g2_test_stdcells/IHP130_stdcells.sym} 210 -750 0 0 {name=x3}
+C {sg13g2_io/sg13g2_io_Gallery.sym} 210 -530 0 0 {name=x5}
