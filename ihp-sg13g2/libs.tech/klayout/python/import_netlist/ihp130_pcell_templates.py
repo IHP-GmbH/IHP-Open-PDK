@@ -271,16 +271,16 @@ templates = [
         },
     },
     {
-        "regex": re.compile(rf"^.*bondpad(?=.*size=(?P<size>{NUMBER})).*$"),
+        "regex": re.compile(rf"^.*bondpad(?=.*size=(?P<diameter>{NUMBER})).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "bondpad",
         "params": [
             {
-                "name": "size",
+                "name": "diameter",
                 "type": "string",
             }
         ],
-        "default_params": {"size": "80u"},
+        "default_params": {"diameter": "80u"},
     },
     {
         "regex": re.compile(
