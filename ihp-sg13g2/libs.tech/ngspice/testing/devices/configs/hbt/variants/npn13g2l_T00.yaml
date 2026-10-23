@@ -1,0 +1,34 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+# HBT test structure npn13g2l_T00: npn13g2l, le = 2.5 um.
+# Everything not set here comes from the device config (base_config): templates, metrics,
+# MQA windows. Own result folder and own exception files, so its failures never mix with
+# the device's main test structure.
+# Not an MQA structure: the MQA (slides 3-4) lists only npn13g2_T03, npn13g2l_T01 and npn13g2v_T01,
+# so this case is not part of test-all or the CI; it runs only on request (make test-<case>).
+base_config: "configs/hbt/npn13g2l/npn13g2l.yaml"
+mdm_dir: "../../../../libs.doc/meas/HBT/npn13g2l_T00"
+output_dir: "models_results/npn13g2l_T00"
+waivers_dir: "waivers/variants/npn13g2l_T00"
+sparam_waivers_dir: "waivers/variants/npn13g2l_T00/sparam"
+
+# The headers give Nx=3, but simulated with Nx=3 the measured IC is 0.67 of the typical model
+# (9 of 14 MQA IC curves fail); with Nx=2 the ratio is 1.00 and all 14 pass, like the other
+# npn13g2l structures. Same header problem as T01 (Nx=5 -> 4, see the device config). Data-based
+# choice, pending IHP confirmation (open question on the npn13g2l Nx labels).
+design_param_overrides:
+  Nx: 2

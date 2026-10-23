@@ -1,0 +1,39 @@
+# =========================================================================================
+# Copyright 2025 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================================
+
+# HBT test structure npn13g2v_T03: npn13g2v, geometry from the file headers (Nx in REMARKS).
+# Everything not set here comes from the device config (base_config): templates, metrics,
+# MQA windows. Own result folder and own exception files, so its failures never mix with
+# the device's main test structure.
+# Not an MQA structure: the MQA (slides 3-4) lists only npn13g2_T03, npn13g2l_T01 and npn13g2v_T01,
+# so this case is not part of test-all or the CI; it runs only on request (make test-<case>).
+base_config: "configs/hbt/npn13g2v/npn13g2v.yaml"
+mdm_dir: "../../../../libs.doc/meas/HBT/npn13g2v_T03"
+output_dir: "models_results/npn13g2v_T03"
+waivers_dir: "waivers/variants/npn13g2v_T03"
+sparam_waivers_dir: "waivers/variants/npn13g2v_T03/sparam"
+
+# This folder has no spar_vcb05, the MQA fT file of the device (MQA slides 4 and 12), so fT is
+# not checked here: the HBTs are checked only on the MQA characteristics (mqa_ranges_only).
+# The plain spar_vcb10 has fT ~110 GHz (the VCB = 0.5 V value) and a de-embedded/raw fT ratio of
+# 1.01-1.08 instead of ~1.10, i.e. its S_deemb looks copied (kept as a data finding).
+sparam_files:
+  cje: spar_vb
+  cjc: spar_vc
+sparam_copied_deemb: [spar_vcb10]
+sparam_metrics:           # no fT: these structures have no spar_vcb05, the MQA fT file of npn13g2v
+  - {name: cje, meas: cje_meas, tt: cje_sim_hbt_typ, ss: cje_sim_hbt_bcs, ff: cje_sim_hbt_Wcs}
+  - {name: cjc, meas: cjc_meas, tt: cjc_sim_hbt_typ, ss: cjc_sim_hbt_bcs, ff: cjc_sim_hbt_Wcs}
