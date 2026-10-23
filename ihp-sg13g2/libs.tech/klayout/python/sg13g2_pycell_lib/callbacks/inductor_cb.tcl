@@ -44,7 +44,7 @@ proc inductor_w {} {
 
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
     set w [GridFix [expr ($tmpw*5e5)*2]]
-    iPDK_setParamValue w [Ftos $w 3]u $cellId
+    iPDK_setParamValue w [TrimFloat $w]u $cellId
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
 
     set tmpWmaxS 30u
@@ -57,7 +57,7 @@ proc inductor_w {} {
         hiGetAttention
         CbMessage "WARNING: wrong width: using minimum width ${tmpWminS}%s!!"
         iPDK_setParamValue w $tmpWminS $cellId
-        set tmpw $tmpWminS
+        set tmpw [Stof $tmpWminS]
     }
 
     if {$tmpw!="" && $tmpWmax!="" && $tmpWmax<$tmpw} {
@@ -65,7 +65,7 @@ proc inductor_w {} {
         hiGetAttention
         CbMessage "WARNING: wrong width: using maximum width ${tmpWmaxS}!!"
         iPDK_setParamValue w $tmpWmaxS $cellId
-        set tmpw $tmpWmaxS
+        set tmpw [Stof $tmpWmaxS]
     }
 
     set tmps  [Stof [iPDK_getParamValue s $cellId]]
@@ -75,7 +75,7 @@ proc inductor_w {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [TrimFloat $var]u $cellId
 
     inductor_d
     inductor_L
@@ -87,7 +87,7 @@ proc inductor_s {} {
 
     set tmps [Stof [iPDK_getParamValue s $cellId]]
     set s [GridFix [expr $tmps*1e6]]
-    iPDK_setParamValue s [Ftos $s 3]u $cellId
+    iPDK_setParamValue s [TrimFloat $s]u $cellId
     set tmps [Stof [iPDK_getParamValue s $cellId]]
 
     set tmpSmaxS 30u
@@ -118,7 +118,7 @@ proc inductor_s {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [TrimFloat $var]u $cellId
 
     inductor_d
     inductor_L
@@ -167,7 +167,7 @@ proc inductor_nr {} {
 
     set var [inductor_minD $tmpw $tmps $tmpnr]
 
-    iPDK_setParamValue Dmin [Ftos $var 3]u $cellId
+    iPDK_setParamValue Dmin [TrimFloat $var]u $cellId
 
     inductor_d
     inductor_L
@@ -200,7 +200,7 @@ proc inductor_d {} {
 
     set tmpd [Stof [iPDK_getParamValue d $cellId]]
     set d [GridFix [expr ($tmpd*5e5)*2]]
-    iPDK_setParamValue d [Ftos $d 3]u $cellId
+    iPDK_setParamValue d [TrimFloat $d]u $cellId
 
     set tmps [Stof [iPDK_getParamValue s $cellId]]
     set tmpw [Stof [iPDK_getParamValue w $cellId]]
