@@ -114,6 +114,7 @@
         'no_offgrid' => false,
         'no_angle' => false,
         'no_recommended' => false,
+        'optional_diag' => false,
       }
 
       defaults.merge(opts)
@@ -150,6 +151,7 @@
       'no_offgrid' => false,
       'no_angle' => false,
       'no_recommended' => false,
+      'optional_diag' => false,
     }
     save_options(yaml_file_path, defaults) rescue nil
     defaults
@@ -275,6 +277,7 @@
     @chk_offgrid = create_check_box("Disable Offgrid Checks", options['no_offgrid'], "Skips offgrid checks.")
     @chk_angle = create_check_box("Disable Angle Checks", options['no_angle'], "Skips angle checks.")
     @chk_recommended = create_check_box("Disable Recommended Checks", options['no_recommended'], "Skips recommended checks.")
+    @chk_optional_diag = create_check_box("Run Optional Diagnostic Decks", options['optional_diag'], "Runs each .drc under rule_decks/optional/ as an opt-in diagnostic pass (e.g. issue #917 filler-over-PolyRes). Not part of precheck_drc or maximal.")
 
     [
       @chk_density,
@@ -284,7 +287,8 @@
       @chk_antenna_only,
       @chk_offgrid,
       @chk_angle,
-      @chk_recommended
+      @chk_recommended,
+      @chk_optional_diag
     ].each { |chk| @checks_layout.addRow("", chk) }
 
     @advanced_layout_setup.addWidget(@runtime_group)
@@ -639,6 +643,7 @@
     options['no_offgrid'] = @chk_offgrid.checked if @chk_offgrid
     options['no_angle'] = @chk_angle.checked if @chk_angle
     options['no_recommended'] = @chk_recommended.checked if @chk_recommended
+    options['optional_diag'] = @chk_optional_diag.checked if @chk_optional_diag
   end
 
  end
