@@ -1,0 +1,118 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+//******************************************************************************
+// SG13G2 Schottky diode and parasitic-device paramsets
+//
+// Adapted from ngspice/models/sg13g2_dschottky_nbl1_mod.lib
+//******************************************************************************
+
+(* desc = "Schottky substrate PNP diode" *)
+paramset mod1_pnp bjt
+    (* desc = "Area scaling factor" *)
+    parameter real area = 1 from (0:inf);
+
+    .type = -1;
+    .area = area;
+    .tnom = 27;
+    .is = 2e-18;
+    .nf = 0.93304;
+    .nr = 0.848;
+    .ikf = 0.0128824955169313;
+    .bf = 0.287719968668579;
+    .rc = 420000;
+    .rb = 408;
+    .kf = 6.704272e-08 * corner_dio.schottky_nbl1_kf;
+    .af = 0.53;
+    .eg = 0.95;
+endparamset
+
+(* desc = "Schottky main diode" *)
+paramset dmain_mod sp_diode
+    (* desc = "Area scaling factor" *)
+    parameter real area = 1 from (0:inf);
+    (* desc = "Junction perimeter", units = "m" *)
+    parameter real pj = 0 from [0:inf);
+
+    .area = area;
+    .pj = pj;
+    .tnom = 27;
+    .is = 3.829e-10 * corner_dio.schottky_nbl1_is;
+    .n = 1.057;
+    .ik = 0.07311;
+    .cj = 8E-16;
+    .cjsw = 0;
+    .mj = 0.569;
+    .vj = 0.4;
+    .eg = 0.450;
+    .xti = 4.633;
+    .kf = 3.16227766016838E-12 * corner_dio.schottky_nbl1_kf;
+    .af = 1.205;
+    .tlevc = 1;
+    .cta = 0.001;
+    .tlev = 1;
+    // imax = 10;
+endparamset
+
+(* desc = "Schottky reverse diode" *)
+paramset drev_mod sp_diode
+    (* desc = "Area scaling factor" *)
+    parameter real area = 1 from (0:inf);
+    (* desc = "Junction perimeter", units = "m" *)
+    parameter real pj = 0 from [0:inf);
+
+    .area = area;
+    .pj = pj;
+    .tnom = 27;
+    .level = 1;
+    .is = 2.707e-10;
+    .n = 16.9;
+    .ik = 1.66e-05;
+    .eg = 6.5;
+    .xti = 4;
+    .kf = 3.43962955648912e-09 * corner_dio.schottky_nbl1_kf;
+    .af = 1.75;
+endparamset
+
+(* desc = "Schottky substrate diode" *)
+paramset dsub_mod sp_diode
+    (* desc = "Area scaling factor" *)
+    parameter real area = 1 from (0:inf);
+    (* desc = "Junction perimeter", units = "m" *)
+    parameter real pj = 0 from [0:inf);
+
+    .area = area;
+    .pj = pj;
+    .tnom = 27;
+    .tlev = 1;
+    .tlevc = 1;
+    .cta = 0.001;
+    .is = 1.141e-16;
+    .rs = 19700;
+    .n = 1;
+    .ik = 5e-07;
+    .cjo = 1.5e-16;
+    .cjsw = 0;
+    .m = 0.6;
+    .vj = 0.5;
+    .eg = 1.17;
+    .xti = 3;
+    .bv = 23;
+    .tcv = -0.00079;
+    .ibv = 1e-15;
+    .nbv = 1;
+endparamset

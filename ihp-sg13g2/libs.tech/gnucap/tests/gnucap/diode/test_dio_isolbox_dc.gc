@@ -1,0 +1,22 @@
+load mgsim
+load models/ngspice46/dio.so
+load ../../../plugins/models/idc.so
+
+spice
+
+* TODO: include all diode model files through a single top-level file
+.include ../../../models/paramsets/diode_isolbox_ddnwpsub.lib
+.include ../../../models/paramsets/diode_isolbox_dpwdnw.lib
+
+.verilog
+
+`include ../../../models/diode_module.va
+`include ./tb_dio_isolbox_dc.va
+
+parameter real ib = 0.0;
+
+tb_dio_isolbox_dc #(.ib(ib)) tb(isosub, nwell);
+
+print dc v(isosub) v(nwell) iter(0)
+dc ib -1m 1m 1u basic
+status notime

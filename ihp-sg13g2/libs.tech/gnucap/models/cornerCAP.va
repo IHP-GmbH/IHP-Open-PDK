@@ -1,6 +1,6 @@
-//#######################################################################
+//******************************************************************************
 //
-// Copyright 2023 IHP PDK Authors
+// Copyright 2026 IHP PDK Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,48 +14,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//#######################################################################
+//******************************************************************************
 
+//******************************************************************************
 // Capacitor corner modules
-// Ported from `ngspice/models/cornerCAP.lib` to Verilog-A
+//
+// Adapted from `ngspice/models/cornerCAP.lib`
+//
 // Modifications:
-// - removed mismatch corners; mismatch device variants are implemented via
-//   paramset overloading
-// - converted cap_carea to SI units
-// (c) Lukas Deutz 2026
+// - Mismatch corners removed; mismatch device variants use paramset overloading
+// - cap_carea converted to SI units (F/m^2)
+//******************************************************************************
 
-// **************** CORNERS OF CAPACITORS ****************
-
-// Typical corner
+(* desc = "typical capacitor corner" *)
 module cap_typ();
     localparam real cap_carea = 1.5E-3; // F/m^2
     localparam real cap_cpara = 1.0;
 endmodule
 
-// Best-case corner
+(* desc = "best-case capacitor corner" *)
 module cap_bcs();
-    localparam cap_carea = 0.9 * 1.5E-3; // F/m^2
-    localparam cap_cpara  = 0.9;
+    localparam real cap_carea = 0.9 * 1.5E-3; // F/m^2
+    localparam real cap_cpara = 0.9;
 endmodule
 
-// Worst-case corner
+(* desc = "worst-case capacitor corner" *)
 module cap_wcs();
-    localparam cap_carea = 1.1 * 1.5E-3; // F/m^2
-    localparam cap_cpara = 1.1;
+    localparam real cap_carea = 1.1 * 1.5E-3; // F/m^2
+    localparam real cap_cpara = 1.1;
 endmodule
 
-// Typical corner global process variation
+(* desc = "statistical capacitor corner" *)
 module cap_typ_stat();
-    parameter integer seed = 1;
+    parameter integer seed = 0;
     localparam real cap_carea_nom = 1.5E-3; // F/m^2
     localparam real cap_cpara_nom  = 1.0;
     localparam real cap_carea_sig = 0.033 * cap_carea_nom;
     localparam real cap_cpara_sig = 0.067 * cap_cpara_nom;
-    localparam real cap_carea = $rdist_normal(3, cap_carea_nom, cap_carea_sig, "global");
-    localparam real cap_cpara = $rdist_normal(4, cap_cpara_nom, cap_cpara_sig, "global");
+    localparam real cap_carea = $rdist_normal(seed + 1, cap_carea_nom, cap_carea_sig, "global");
+    localparam real cap_cpara = $rdist_normal(seed + 2, cap_cpara_nom, cap_cpara_sig, "global");
 endmodule
 
-// Mismatch module
+(* desc = "capacitor mismatch parameters" *)
 module cap_mm();
     localparam real cap_carea_mm = $rdist_normal(1, 1, 0.01, "instance");
 endmodule

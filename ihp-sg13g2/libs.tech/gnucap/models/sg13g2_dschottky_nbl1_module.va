@@ -1,0 +1,69 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// SG13G2 Schottky diode module
+//
+// Adapted from ngspice/models/sg13g2_dschottky_nbl1_mod.lib
+//
+// Modifications:
+// - Moved subckt diode model declarations into paramsets/sg13g2_dschottky_nbl1.va
+// - Changed mod1_pnp paramset base from pnp to bjt with type = -1
+//******************************************************************************
+
+(* desc="SG13G2 schottky_nbl1 Schottky diode" *)
+module schottky_nbl1(A, C, S);
+    inout A, C, S;
+    electrical A, C, S;
+    electrical n1, n2;
+
+    (* desc="Drawn length", units="m" *)
+    parameter real l = 1u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc="Drawn width",  units="m" *)
+    parameter real w = 0.3u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc="Number of columns" *)
+    parameter integer Nx = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+    (* desc="Number of rows" *)
+    parameter integer Ny = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    localparam real scaling = 1e-6;
+    localparam real nxy = Nx * Ny;
+    localparam real area = (nxy * (l * w)) / (scaling * scaling);
+    localparam real ls = ((Nx * (l + 2u)) / scaling) + 0.5;
+    localparam real ws = ((Ny * (w + 1.7u)) / scaling) + 0.5;
+    localparam real area_sub  = ls * ws;
+
+    localparam real rsmain_val = 1360.0 / nxy;
+    localparam real cstray_val = (2.185e-14 / 25) * nxy;
+    localparam real cin_val    = (5e-16 / 5) * Nx;
+    localparam real cdsub_val  = (1.7e-14 / 168) * area_sub;
+    localparam real csub_val   = 6e-16;
+    localparam real rsub_val   = 1e4;
+
+    dmain_mod #(.area(area)) dmain(n1, C);
+    drev_mod  #(.area(area)) drev(C,  n1);
+    dsub_mod  #(.area(area_sub)) dsub(S,  C);
+    mod1_pnp  #(.area(area)) Q1(A, C, S);
+
+    resistor  #(.r(rsmain_val), .tc1(2.975e-3), .tc2(4.630e-6)) Rsmain(A, n1);
+    capacitor #(.c(cstray_val)) Cstray(A,  C);
+    capacitor #(.c(cin_val))    Cin   (A,  S);
+    capacitor #(.c(cdsub_val))  Cdsub (C,  n2);
+    capacitor #(.c(csub_val))   Csub  (n2, S);
+    resistor  #(.r(rsub_val))   Rsub  (n2, S);
+endmodule

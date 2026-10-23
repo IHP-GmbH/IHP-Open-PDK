@@ -1,0 +1,46 @@
+`include "disciplines.vams"
+
+(*desc="vams vpulse"*)
+module vpulse(p, n);
+	output p, n;
+	electrical p, n;
+	parameter real dc    =0.;
+	parameter real mag   =1.;
+	parameter real phase =0.;
+	parameter real val0  =0.;
+	parameter real val1  =1.;
+	parameter real td    =0.;
+	parameter real rise  =0.;
+	parameter real fall  =0.;
+	parameter real width =1.;
+	parameter real period=2.;
+	(*desc="i"*) real i;
+	(*desc="v"*) real v;
+	(*desc="vrect"*) real vrect; // for debugging only.
+
+    analog begin : pulse
+        begin : evt
+            @(timer(td + width + rise, period)) begin
+                vrect = val0;
+            end
+            // Gnucap does not schedule a timer event exactly at transient time zero.
+            @(timer(td == 0. ? 1e-15 : td, period)) begin
+                vrect = val1;
+            end
+        end
+
+        if (analysis("dc") && $param_given(dc)) begin
+            vrect = dc;
+        end else if (analysis("static")) begin
+            vrect = val0;
+        end
+
+        v = transition(vrect, 0., rise, fall);
+        V(p, n) <+ v;
+        // TODO: Pass phase once supported in Gnucap
+        V(p, n) <+ ac_stim("ac", mag);
+
+        v = V(p, n);
+        i = I(p, n);
+    end
+endmodule

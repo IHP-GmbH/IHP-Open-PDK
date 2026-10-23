@@ -23,17 +23,15 @@ SG13CMOS5L process node, a CMOS-only variant with a reduced metal stack.
 
 <p align="center"><img src="https://github.com/IHP-GmbH/IHP-Open-PDK/assets/116548619/647b8465-8138-4d2e-9dfb-ef0b8fc18b25" alt="IHP Logo Image" width="50%"/></p>
 
-# Current status -- Preview
+# Current status -- Early Access (SG13G2) / Preview (SG13CMOS5L)
 
-> **Warning**
+> [!IMPORTANT]
 >
-> IHP is currently treating the existing content as a **preview only**.
+> IHP currently classifies the open source SG13G2 PDK as **early access** and the SG13CMOS5L PDK as **preview only**.
 
-While the SG13G2 process node and the PDK from which this open source
-release was derived have been used to create many designs that have been
-successfully manufactured in significant quantities, the open source PDK
-is not intended to be used for production at this moment. The same applies
-to the SG13CMOS5L process node.
+While the SG13G2 process node and the PDK from which this open source release was derived have been used to create many designs that have been successfully manufactured in significant quantities, the open-source SG13G2 PDK is currently provided under **early access** and is not yet intended for production use.
+
+The open-source SG13CMOS5L PDK remains in **preview** status and is likewise not intended for production use at this time.
 
 # Documentation
 

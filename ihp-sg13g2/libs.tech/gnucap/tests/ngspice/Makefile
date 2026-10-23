@@ -12,10 +12,13 @@ MAKEFLAGS += -B
 TESTDIRS = \
 	resistor \
 	capacitor \
+	svaricaphv \
 	moscap \
 	moslv \
 	moshv \
-	hbt
+	hbt \
+	diode \
+	esd
 
 # Discover tests automatically: resistor/*.sp, moslv/*.sp, ...
 ALL_TESTS := $(foreach d, $(TESTDIRS), $(wildcard $(d)/*.sp))

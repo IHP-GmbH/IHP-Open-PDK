@@ -1,0 +1,131 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// SG13G2 ESD clamp diode paramsets
+//
+// Adapted from ngspice/models/sg13g2_esd.lib
+//******************************************************************************
+
+(* desc = "sg13g2 ESD PAD-VDD clamp diode" *)
+paramset diodevdd sp_diode
+    (* desc = "Area scale factor" *)
+    parameter real area = 1.0 from (0:inf);
+    (* desc = "Perimeter scale factor" *)
+    parameter real pj = 0.0 from [0:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+
+    .area = m * area;
+    .pj = m * pj;
+    .tnom = 27;
+    .level = 1;
+    .is = 4.911e-19;
+    .rs = 289.6;
+    .n = 1.04;
+    .isr = 5.422e-15;
+    .ikf = 10m;
+    .cj0 = 8.716e-16;
+    .m = 0.3294;
+    .vj = 0.6621;
+    .bv = 11.81;
+    .ibv = 4.744e-16;
+    .nbv = 1;
+    .eg = 1.11;
+    .xti = 4;
+endparamset
+
+(* desc = "sg13g2 ESD VSS-PAD clamp diode" *)
+paramset diodevss sp_diode
+    (* desc = "Area scale factor" *)
+    parameter real area = 1.0 from (0:inf);
+    (* desc = "Perimeter scale factor" *)
+    parameter real pj = 0.0 from [0:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+
+    .area = m * area;
+    .pj = m * pj;
+    .tnom = 27;
+    .level = 1;
+    .is = 9.017e-19;
+    .rs = 200;
+    .n = 1.03;
+    .isr = 3.776e-15;
+    .ikf = 175.4u;
+    .cj0 = 9.42e-16;
+    .m = 0.3012;
+    .vj = 0.6684;
+    .bv = 11.28;
+    .ibv = 1e-9;
+    .nbv = 1.324;
+    .eg = 1.17;
+    .xti = 3;
+endparamset
+
+(* desc = "sg13g2 ESD substrate clamp diode, 2 kV" *)
+paramset dsub_2kv sp_diode
+    (* desc = "Area scale factor" *)
+    parameter real area = 1.0 from (0:1e99);
+    (* desc = "Perimeter scale factor" *)
+    parameter real pj = 0.0 from [0:1e99);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:1e99);
+
+    .area = area;
+    .pj = pj;
+    .m = m;
+    .tnom = 27;
+    .level = 1;
+    .is = 1.7e-16;
+    .rs = 4.759;
+    .n = 1;
+    .ikf = 10m;
+    .cj = 99.77e-18;
+    .vj = 0.4547;
+    .bv = 10;
+    .ibv = 1e-19;
+    .xti = 3;
+    .eg = 1.11;
+endparamset
+
+(* desc = "sg13g2 ESD substrate clamp diode 4 kV" *)
+paramset dsub_4kv sp_diode
+    (* desc = "Area scale factor" *)
+    parameter real area = 1.0 from (0:inf);
+    (* desc = "Perimeter scale factor" *)
+    parameter real pj = 0.0 from [0:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+
+    .area = area;
+    .pj = pj;
+    .m = m;
+    .tnom = 27;
+    .level = 1;
+    .is = 1.7e-16;
+    .rs = 4.759;
+    .n = 1;
+    .ikf = 100u;
+    .cj = 99.77e-18;
+    .vj = 0.4547;
+    .bv = 10;
+    .ibv = 0;
+    .xti = 3;
+    .eg = 1.11;
+endparamset

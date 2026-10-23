@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+//******************************************************************************
 //
 // Copyright 2026 IHP PDK Authors
 //
@@ -9,22 +9,24 @@
 //    https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//------------------------------------------------------------------------------
+//******************************************************************************
 
+//******************************************************************************
 // Resistor corner modules
-// Ported from `ngspice/models/cornerRES.lib` to Verilog-A
+//
+// Adapted from ngspice/models/cornerRES.lib
+//
 // Modifications:
-// - removed mismatch corners; mismatch device variants are implemented via
-//   paramset overloading
-// - renamed dw_par_* and mismatch parameter names for consistency
-// (c) Lukas Deutz 2026
+// - Removed mismatch corners; mismatch is implemented in paramsets
+// - Renamed dw_par_* and mismatch parameters for consistency
+//******************************************************************************
 
-// typical corner
+(* desc = "Typical resistor corner" *)
 module res_typ();
     // rsil
     localparam real rsh_rsil = 7.0;
@@ -48,7 +50,7 @@ module res_typ();
     localparam real res_rpara = 1.0;
 endmodule
 
-// best-case corner
+(* desc = "Best-case resistor corner" *)
 module res_bcs();
     // rsil
     localparam real rsh_rsil = 6.02;
@@ -72,7 +74,7 @@ module res_bcs();
     localparam real res_rpara = 1.0;
 endmodule
 
-// worst-case corner
+(* desc = "Worst-case resistor corner" *)
 module res_wcs();
     // rsil
     localparam real rsh_rsil = 7.98;
@@ -96,7 +98,7 @@ module res_wcs();
     localparam real res_rpara = 1.0;
 endmodule
 
-// statistical corner
+(* desc = "Statistical resistor corner" *)
 module res_stat();
     parameter integer seed = 1;
     // rsil
@@ -123,6 +125,7 @@ module res_stat();
     localparam real res_rpara = $rdist_normal(seed+9, res_rpara_nom, res_rpara_sig, "global");
 endmodule
 
+(* desc = "Global-variation sigma parameters" *)
 module res_stat_param();
   // rsil
   localparam real drsh_rsil = 4.67; // % of 1 Sigma
@@ -138,7 +141,7 @@ module res_stat_param();
   localparam real dw_rppd = 0.01; // um of 1 Sigma
 endmodule
 
-// mismatch parameter
+(* desc = "Mismatch sigma parameters and random variables" *)
 module res_mm();
   // rsil
   localparam real drsh_mm_rsil  = 1.7; // local %um of 1 Sigma

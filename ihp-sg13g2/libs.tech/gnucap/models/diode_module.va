@@ -1,0 +1,149 @@
+//******************************************************************************
+//
+// Copyright 2023 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// DIODE device modules
+//
+// Adapted from ngspice/models/diode.lib
+//
+// Modifications:
+// - Inline diode .model cards moved into paramesets paramsets/diode_*.lib
+// - isolbox no forwards parameters l, w, mf and xd to dpwdnw and ddnwpsub
+//   The didoe modules derive aw, pw, ab, pb and xds from these parameters.
+// - ddnwpsub `.if (xds<0.6)` branch was dropped til Gnucap supports conditional
+//   instantiation via generate
+//******************************************************************************
+
+(* desc = "SG13S antenna diode" *)
+module dantenna(anode, cathode);
+    inout anode, cathode;
+    electrical anode, cathode;
+
+    (* desc = "Diode drawn length", units = "m" *)
+    parameter real l = 780n from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Diode drawn width", units = "m" *)
+    parameter real w = 780n from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Number of corners" *)
+    localparam integer DEV_C = 4;
+    (* desc = "Area of diode", units = "um^2" *)
+    localparam real DEV_A = (l * w) / 1e-12;
+    (* desc = "Perimeter of the diode", units = "um" *)
+    localparam real DEV_P = 2 * (l + w) / 1e-6 ;
+
+    darea   #(.area(DEV_A)) D1(anode, cathode);
+    dperim  #(.area(DEV_P)) D2(anode, cathode);
+    dcorner #(.area(DEV_C)) D3(anode, cathode);
+endmodule
+
+(* desc = "SG13S perimeter pantenna diode" *)
+module dpantenna(anode, cathode);
+    inout anode, cathode;
+    electrical anode, cathode;
+
+    (* desc = "Diode drawn length", units = "m" *)
+    parameter real l = 780n from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Diode drawn width", units = "m" *)
+    parameter real w = 780n from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Number of corners" *)
+    localparam integer DEV_C = 4;
+    (* desc = "Area of diode", units = "um^2" *)
+    localparam real DEV_A = (l * w) / 1e-12 from [0:1e99);
+    (* desc = "Perimeter of the diode", units = "um" *)
+    localparam real DEV_P = (l + w) / 0.5e-6 from [0:1e99); // TODO: 1e99->inf once fixed
+
+    dparea   #(.area(DEV_A)) D1(anode, cathode);
+    dpperim  #(.area(DEV_P)) D2(anode, cathode);
+    dpcorner #(.area(DEV_C)) D3(anode, cathode);
+endmodule
+
+(* desc = "SG13{S,G2} isolbox structure" *)
+module isolbox(isosub, NWell, bn);
+    inout isosub, NWell, bn;
+    electrical isosub, NWell, bn;
+
+    (* desc = "Length", units = "m" *)
+    parameter real l = 3u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Width", units = "m" *)
+    parameter real w = 3u from (0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Deep-nwell diffusion depth", units = "m" *)
+    parameter real xd = 0 from [0:3u];
+    (* desc = "Instance multiplicity" *)
+    parameter integer mf = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    dpwdnw   #(.l(l), .w(w), .mf(mf)) xdpwdnw(isosub, NWell);
+    ddnwpsub #(.l(l), .w(w), .xd(xd), .mf(mf)) xdnwpsub(NWell, bn);
+endmodule
+
+(* desc = "dpwdnw deep-N-well to P-substrate isolbox diode " *)
+module dpwdnw(isosub, NWell);
+    inout isosub, NWell;
+    electrical isosub, NWell;
+
+    (* desc = "Length", units = "m" *)
+    parameter real l = 3u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Width", units = "m" *)
+    parameter real w = 3u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Instance multiplicity" *)
+    parameter integer mf = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    localparam real scaling = 1e-6;
+    localparam real aw  = (w - 2.1u) * (l - 2.1u);
+    localparam real pw  = (w + l) * 2 - 8 * 1.05u;
+    localparam real aws = aw / (scaling * scaling);
+    localparam real pws = pw / scaling;
+    localparam real maws = mf * aws;
+    localparam real mpws = mf * pws;
+    localparam real cap_pj = mpws - 3.0;
+
+    dinner_mod      #(.area(maws), .pj(0))      dinner      (isosub, NWell);
+    dinneredge_mod  #(.area(mpws), .pj(mpws))   dinneredge  (isosub, NWell);
+    dinrevl_mod     #(.area(maws), .pj(0))      dinrevl     (NWell, isosub);
+    dinrevlside_mod #(.area(mpws), .pj(0))      dinrevlside (NWell, isosub);
+    dinrevh_mod     #(.area(maws), .pj(0))      dinrevh     (NWell, isosub);
+    dincaparea_mod  #(.area(maws), .pj(cap_pj)) dincaparea  (isosub, NWell);
+endmodule
+
+(* desc = "ddnwpsub P-well to deep-N-well isolbox diode" *)
+module ddnwpsub(NWell, bn);
+    inout NWell, bn;
+    electrical NWell, bn;
+
+    (* desc = "Length", units = "m" *)
+    parameter real l = 3u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Width", units = "m" *)
+    parameter real w = 3u from [0:1e99); // TODO: 1e99->inf once fixed
+    (* desc = "Deep-nwell diffusion depth", units = "m" *)
+    parameter real xd = 0 from [0:3u];
+    (* desc = "Instance multiplicity" *)
+    parameter integer mf = 1 from [1:1e99); // TODO: 1e99->inf once fixed
+
+    localparam real scaling = 1e-6;
+    localparam real ab    = (w * l);
+    localparam real pb    = (w + l) * 2;
+    localparam real abus  = ab / (scaling * scaling);
+    localparam real pbs   = pb / scaling;
+    localparam real xds   = xd / scaling;
+    localparam real mabus = mf * abus;
+    localparam real mpbs  = mf * pbs;
+
+    // TODO: implement xds >= 0.6 branch once Gnucap supports generate
+    dsub_mod          #(.area(mabus), .pj(0))           douter(bn, NWell);
+    dsubedge0_mod     #(.area(mpbs),  .pj(mpbs))        douteredge0 (bn, NWell);
+    doutcapcorner_mod #(.area(1.0e-10), .pj(mf * 14.4)) doutcapcorner (bn, NWell);
+    doutcaparea_mod   #(.area(mabus), .pj(mpbs))        doutcaparea(bn, NWell);
+endmodule

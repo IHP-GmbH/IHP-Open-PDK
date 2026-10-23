@@ -1,9 +1,17 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-def pointwise_rel_err(bm_arr: np.ndarray, arr: np.ndarray, atol: float = 1e-16) -> np.ndarray:
+def pointwise_rel_err(
+        bm_arr: np.ndarray,
+        arr: np.ndarray,
+        atol: float = 1e-16,
+        rtol: float = 1e-6,
+) -> np.ndarray:
     denom = np.maximum(np.abs(bm_arr), np.ones_like(bm_arr) * atol)
-    return np.abs(arr - bm_arr) / denom
+    rel_err = np.abs(arr - bm_arr) / denom
+    zero_threshold = rtol * (np.max(bm_arr) - np.min(bm_arr))
+    rel_err[np.abs(bm_arr) <= zero_threshold] = np.nan
+    return rel_err
 
 def align_time_series(
         t_arr: np.ndarray,

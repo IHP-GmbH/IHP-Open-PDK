@@ -194,12 +194,12 @@ if __name__ == '__main__':
     #    that should be checked in the absence of a PDK_ROOT environment variable,
     #    and/or it should be possible to specify the PDK root directory from the
     #    command line.
-    # 2) This script uses ihp-sg13g2-GDS.tech which exactly represents all layout
+    # 2) This script uses ihp-sg13cmos5l-GDS.tech which exactly represents all layout
     #	 layers without conversion to generated layers, which is preferable for
     #	 doing fill generation.
 
     if os.environ.get('PDK_ROOT'):
-        techfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13g2/libs.tech/magic/ihp-sg13g2-GDS.tech'
+        techfile_path = os.environ.get('PDK_ROOT') + '/ihp-sg13cmos5l/libs.tech/magic/ihp-sg13cmos5l-GDS.tech'
     else:
         print('Unknown path to magic IHP tech file.  Please set $PDK_ROOT')
         sys.exit(1)
@@ -254,6 +254,13 @@ if __name__ == '__main__':
     print('set ybase [lindex $fullbox 1]', file=ofile)
     print('', file=ofile)
 
+    # Avoid placing fill in the area between the chip boundary and the
+    # extent of the tiles on the right and top sides by extending fill
+    # block out to the tile edge.  Use these in place of xmax and ymax
+    # where appropriate.
+    print('set tilexmax [expr {$xtiles * $stepwidth}]', file=ofile)
+    print('set tileymax [expr {$ytiles * $stepheight}]', file=ofile)
+
     # Protect the boundary between the layout border and the seal ring
     # If a seal ring does not exist, then the exclusion area will encompass
     # the entire layout, so ensure that doesn't happen.  Selecting GLASS
@@ -270,21 +277,22 @@ if __name__ == '__main__':
     print('    set sealux [lindex $sealbox 2]', file=ofile)
     print('    set sealuy [lindex $sealbox 3]', file=ofile)
     # Should the fill outer boundary be SEALBOUND or GLASS?
-    print('    select area GLASS', file=ofile)
-    print('    box select', file=ofile)
-    print('    set passivbox [box values]', file=ofile)
+    print('    # select top cell', file=ofile)
+    print('    # select area GLASS', file=ofile)
+    print('    # box select', file=ofile)
+    print('    # set passivbox [box values]', file=ofile)
     # Keep xmin/ymin/xmax/ymax for the entire chip, use passivbox for area inside GLASS 
-    print('    set xmin [lindex $passivbox 0]', file=ofile)
-    print('    set ymin [lindex $passivbox 1]', file=ofile)
-    print('    set xmax [lindex $passivbox 2]', file=ofile)
-    print('    set ymax [lindex $passivbox 3]', file=ofile)
-    print('    box values $xmin $ymin $seallx $ymax', file=ofile)
+    print('    # set xmin [lindex $passivbox 0]', file=ofile)
+    print('    # set ymin [lindex $passivbox 1]', file=ofile)
+    print('    # set xmax [lindex $passivbox 2]', file=ofile)
+    print('    # set ymax [lindex $passivbox 3]', file=ofile)
+    print('    box values $xmin $ymin $seallx $tileymax', file=ofile)
     print('    paint FILLBLOCK; paint DIFFBLOCK', file=ofile)
-    print('    box values $xmin $ymin $xmax $seallx', file=ofile)
+    print('    box values $xmin $ymin $tilexmax $seallx', file=ofile)
     print('    paint FILLBLOCK; paint DIFFBLOCK', file=ofile)
-    print('    box values $sealux $ymin $xmax $ymax', file=ofile)
+    print('    box values $sealux $ymin $tilexmax $tileymax', file=ofile)
     print('    paint FILLBLOCK; paint DIFFBLOCK', file=ofile)
-    print('    box values $xmin $sealuy $xmax $ymax', file=ofile)
+    print('    box values $xmin $sealuy $tilexmax $tileymax', file=ofile)
     print('    paint FILLBLOCK; paint DIFFBLOCK', file=ofile)
     # Block fill in the corners
     print('    box position $seallx $seally', file=ofile)
@@ -300,17 +308,17 @@ if __name__ == '__main__':
     print('    box move sw 21um', file=ofile)
     print('    splitpaint ne FILLBLOCK,DIFFBLOCK', file=ofile)
     # Allow metal fill in the corners outside GLASS
-    print('    box position $xmin $ymin', file=ofile)
-    print('    spliterase sw FILLBLOCK', file=ofile)
-    print('    box position $xmax $ymin', file=ofile)
-    print('    box move w 21um', file=ofile)
-    print('    spliterase se FILLBLOCK', file=ofile)
-    print('    box position $xmin $ymax', file=ofile)
-    print('    box move s 21um', file=ofile)
-    print('    spliterase nw FILLBLOCK', file=ofile)
-    print('    box position $xmax $ymax', file=ofile)
-    print('    box move sw 21um', file=ofile)
-    print('    spliterase ne FILLBLOCK', file=ofile)
+    print('    # box position $xmin $ymin', file=ofile)
+    print('    # spliterase sw FILLBLOCK', file=ofile)
+    print('    # box position $xmax $ymin', file=ofile)
+    print('    # box move w 21um', file=ofile)
+    print('    # spliterase se FILLBLOCK', file=ofile)
+    print('    # box position $xmin $ymax', file=ofile)
+    print('    # box move s 21um', file=ofile)
+    print('    # spliterase nw FILLBLOCK', file=ofile)
+    print('    # box position $xmax $ymax', file=ofile)
+    print('    # box move sw 21um', file=ofile)
+    print('    # spliterase ne FILLBLOCK', file=ofile)
     print('}', file=ofile) 
 
     # Break layout into tiles and process each separately
