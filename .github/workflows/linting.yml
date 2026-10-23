@@ -50,16 +50,16 @@ jobs:
       - name: Check for non-ASCII characters in PCell libraries
         run: |
           SEARCH_ROOT="${{ matrix.pdk }}/libs.tech/klayout/python"
-          DIRS=$(find "$SEARCH_ROOT" -mindepth 2 -maxdepth 2 -type d -path '*_pycell_lib/ihp')
+          DIRS=$(find "$SEARCH_ROOT" -mindepth 1 -maxdepth 1 -type d -name '*_pycell_lib')
 
           if [ -z "$DIRS" ]; then
-            echo "ERROR: no '*_pycell_lib/ihp' directory found under '$SEARCH_ROOT'" >&2
+            echo "ERROR: no '*_pycell_lib' directory found under '$SEARCH_ROOT'" >&2
             exit 1
           fi
 
           echo "$DIRS"
 
-          MATCHES=$(echo "$DIRS" | xargs grep -rnP --include='*.py' '[^\x00-\x7F]' || true)
+          MATCHES=$(echo "$DIRS" | xargs grep -rnP --include='*.py' --include='*.json' '[^\x00-\x7F]' || true)
 
           if [ -n "$MATCHES" ]; then
             echo "ERROR: forbidden non-ASCII characters found in ${{ matrix.pdk }} PCell library:" >&2
