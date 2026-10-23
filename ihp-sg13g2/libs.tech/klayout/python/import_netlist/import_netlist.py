@@ -329,7 +329,7 @@ def ihp130_import_netlist():
             subckt_definitions[active_subckt]['subckts'].append(subckt)
             
             if not subckt in subckt_definitions:
-                print(f'Error: Unknown subckt "{active_subckt}"')
+                print(f'Error: Unknown subckt "{subckt}"')
             else:
                 subckt_definitions[subckt]['references'] += 1
 
