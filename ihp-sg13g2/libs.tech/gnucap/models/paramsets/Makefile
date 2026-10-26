@@ -4,17 +4,7 @@ MODELGEN_VERILOG = gnucap-mg-vams
 OPENVAF = openvaf-r
 IHP_VERILOG_DIR = ../../../verilog-a
 
-MODELS = \
-	r3_cmc \
-	psp103 \
-	cap_cmomi \
-	cap_cmomf \
-	vbic_1p3 \
-	mosvar
-
-
-MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I .. \
-	$(addprefix -I $(IHP_VERILOG_DIR)/, $(MODELS))
+MGFLAGS = -I $(shell gnucap-conf --includedir) -I . -I ..
 
 TARGET_DIR = ../../plugins/models
 OSDI_DIR = ../../plugins/osdi
@@ -34,6 +24,17 @@ PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%_paramset.so)
 
 SOURCES = $(TARGETS:%=%.va)
 
+# Compact models required by each family.
+MODELS_resistor = r3_cmc
+MODELS_capacitor = cap_cmomi cap_cmomf
+MODELS_sg13g2_moscap = psp103
+MODELS_sg13g2_svaricaphv = mosvar
+MODELS_sg13g2_moslv = psp103
+MODELS_sg13g2_moslv_rf = psp103
+MODELS_sg13g2_moshv = psp103
+MODELS_sg13g2_moshv_rf = psp103
+MODELS_sg13g2_hbt = vbic_1p3
+
 # Default target
 all: $(PLUGINS)
 
@@ -51,6 +52,13 @@ $(TARGETS:%=dump-%): dump-%: %_paramset.dump.va
 # Auto-generate convenience targets to build OSDI for each item in TARGETS
 $(TARGETS:%=osdi-%): osdi-%: $(OSDI_DIR)/%_paramset.osdi
 
+# Apply family-specific include paths to both code generation and VA dumps.
+define PARAMSET_FLAGS
+$(TARGET_DIR)/$(1)_paramset.cc $(1)_paramset.dump.va: \
+	MGFLAGS += $(addprefix -I $(IHP_VERILOG_DIR)/,$(MODELS_$(1)))
+endef
+$(foreach target,$(TARGETS),$(eval $(call PARAMSET_FLAGS,$(target))))
+
 # Declare the entry source first so $< remains the build entry source when the
 # included-source prerequisites below are added to these targets.
 $(TARGETS:%=$(TARGET_DIR)/%_paramset.cc): $(TARGET_DIR)/%_paramset.cc: %.va | $(TARGET_DIR)
@@ -67,7 +75,7 @@ $(TARGETS:%=%_paramset.dump.va): %_paramset.dump.va: %.va
 # .include files feeds the compile, and they are third-party sources that change
 # rarely enough that over-triggering costs nothing.
 
-# TODO: generate dynamically from MODELS
+# TODO: generate dynamically from the MODELS_<target> mappings
 va_sources  = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
 R3CMC_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/r3_cmc)
 PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
