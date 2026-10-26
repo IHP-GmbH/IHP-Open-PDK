@@ -1260,8 +1260,18 @@ style drc
  templayer butted_tap_outside butted_tap
 	and-not butted_tap_inside
 
+ # Find sandwiched taps where the length is between 0.3um
+ # and 0.6um.  These escape the "butted_tap_outside"
+ # templayer but are valid taps.
+
+ templayer sandwich_tap_okay *ndiff,*pdiff,*hvndiff,*hvpdiff
+	grow 300
+	shrink 300
+	and butted_tap
+
  templayer butted_tap_okay
 	bloat-all butted_tap_outside butted_tap
+	or sandwich_tap_okay
 
  templayer butted_tap_short butted_tap
 	and-not butted_tap_okay
