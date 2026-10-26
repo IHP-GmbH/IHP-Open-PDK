@@ -24,6 +24,8 @@ gnucap/
 ├── gnucap.mk            # Gnucap Makefile configuration
 ├── models/              # Verilog-A model library
 │   ├── Makefile         # Builds Verilog-A model plugins
+│   ├── spice/           # SPICE-derived implementations retained pending replacement
+│   │   └── sp_{capacitor,resistor}.va
 │   ├── corners/         # Process-corner definitions
 │   │   └── corner*.va   # Device-family corner modules
 │   └── paramsets/       # Family umbrellas and device-specific paramset sources
