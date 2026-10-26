@@ -57,10 +57,6 @@ proc setTechParameters {techParams} {
     global techParameters
 
     set techParameters $techParams
-
-    dict for {key value} $techParams {
-        puts "key=$key value=$value"
-    }
 }
 
 proc cni_setAbutment { value } {
