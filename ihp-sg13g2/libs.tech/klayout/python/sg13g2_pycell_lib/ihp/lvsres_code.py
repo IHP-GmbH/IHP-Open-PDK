@@ -32,7 +32,6 @@ class lvsres(DloGen):
         specs('layer', 'Metal1', 'Layer', ChoiceConstraint(['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1', 'TopMetal2']))
         specs('width', '5u', 'Width')
         specs('length', '1u', 'Length')
-        specs('r', '1u', 'Resistance')
         
     def setupParams(self, params):
         # process parameter values entered by user
