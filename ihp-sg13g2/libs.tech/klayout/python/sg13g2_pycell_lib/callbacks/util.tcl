@@ -20,7 +20,7 @@
 # Rings the bell in the keyboard or terminal
 
 proc hiGetAttention {} {
-    puts -nonewline "\a" 
+    puts -nonewline "\a"
     flush stdout
 }
 
@@ -35,27 +35,27 @@ proc Stoi {value} {
 }
 
 proc GridFix {value} {
-    
+
     global SG13_IGRID
     global SG13_EPSILON
     global SG13_GRID
-    
+
     #fix(x*SG13_IGRID+SG13_EPSILON)*SG13_GRID ; always use "nice" numbers, as 1/grid may be irrational
     return [expr int($value*$SG13_IGRID+$SG13_EPSILON)*$SG13_GRID]
 }
 
 proc Snap {value} {
-    
+
     return [GridFix $value]
 }
 
 proc even {x} {
-    
+
     return [expr ($x%2)==0]
 }
 
 proc odd {x} {
-    
+
     return [expr ($x%2)!=0]
 }
 
@@ -63,9 +63,9 @@ proc odd {x} {
 # print error message in CIW
 
 proc CbError {s} {
-    
+
     global IHP_iPDK_CbMsg
-    
+
     #hiGetAttention() hiGetAttention()
     #hiRaiseWindow(window(1))
 
@@ -77,12 +77,12 @@ proc CbError {s} {
 # float to string. f = float, n=number of digits after comma
 
 proc Ftos {f {n 3}} {
-    
+
     set newf    $f
     set iso     0
-    set suffix  "" 
+    set suffix  ""
     set absnew  [expr abs($newf)]
-    
+
     # block for capturing 0.0
     if {$absnew == 0.0} {
         set iso 0
@@ -139,34 +139,34 @@ proc Ftos {f {n 3}} {
     } ;# case iso
 
     set result [format %0.${n}f $newf]
-    
+
     # remove trailng zeroes
     while {[string range $result end end] == 0 && [string range $result end-1 end-1] != "."} {
         set result [string range $result 0 end-1]
     }
-    
+
     if {$suffix != ""} {
         set result ${result}${suffix}
     }
-     
+
     return $result
 }
 
 #******************************************************************************************************
 # round size (in m) to grid (in um), return [m]
 proc CbRoundm {x rgrid} {
-    
+
     global SG13_EPSILON
 
    # Give Waring, if Value is too big
    if {$x >= 2.1} {
        CbMessage [format "Given Value of %f is too big. Gave me um istead of m?" $x]
    }
-   
+
    return [expr int($x*1.0e6/$rgrid+0.5+$SG13_EPSILON)*$rgrid/1.0e6]
    ;)
 }
-   
+
 #******************************************************************************************************
 # round size (in um) to grid (in um), return [um]
 proc CbRoundum {x rgrid} {
@@ -180,7 +180,7 @@ proc CbRoundum {x rgrid} {
 #with Function "Less (a b)" is a< b (1 - eps) compared or,when "Less(a b c)" is a>b-(c*eps) compared
 
 proc Less {var1 var2} {
-    
+
     global SG13_EPSILON
     set eps $SG13_EPSILON
 
@@ -192,12 +192,12 @@ proc Less {var1 var2} {
 }
 
 proc Less {var1 var2 var3} {
-    
+
     global SG13_EPSILON
     set eps $SG13_EPSILON
-    
+
     set var3 [Stof $var3]
-    
+
     if { $var1 < [expr $var2-($var3*$eps)]} {
         return 1
     } else {
@@ -224,7 +224,7 @@ proc Greater {var1 var2 var3} {
 
     global SG13_EPSILON
     set eps $SG13_EPSILON
-    
+
     set var3 [Stof $var3]
 
     if {$var1 > [expr $var2+$var3*$eps]} {
@@ -247,26 +247,26 @@ proc IsNumberString {str} {
     if {[string is alpha $str_end]} {
         set str1 [string range $str1 0 end-1]
     }
-    
+
     if {$str != ""} {
         if {[string is integer $str1]} {
             set x [Stof $str]
         } else {
             if {[string is double $str1]} {
                 set x [Stof $str]
-            } 
+            }
         }
-    } 
-    
+    }
+
     return $x
 }
 
 proc CbRange {name minval maxval grid args}  {   ;#{info long} {allowzero 0} {beep t}
-    
+
     set info long
     set beep t
     set allowzero 0
-    
+
     if {$args != ""} {
         set arglen [llength $args]
         set i 0
@@ -274,7 +274,7 @@ proc CbRange {name minval maxval grid args}  {   ;#{info long} {allowzero 0} {be
             set n [lindex $args $i]
             set v [lindex $args [incr i]]
             incr i
-            
+
             if {$n == "?info"} {
                 set info $v
             }
@@ -286,19 +286,19 @@ proc CbRange {name minval maxval grid args}  {   ;#{info long} {allowzero 0} {be
             }
         }
     }
-    
+
     set cellId [iPDK_getCurrentInst]
 
     set val [Stof [iPDK_getParamValue $name $cellId]]
-    
+
     set minval [Stof $minval]
     set maxval [Stof $maxval]
     #set grid   [expr $grid]
-    
+
     if {$allowzero != 0 && $val == 0.} {
         return t
     }
-    
+
     if {$val < $minval} {
         if {$info == "short"} {
             set var [Ftos $minval 6]
@@ -314,7 +314,7 @@ proc CbRange {name minval maxval grid args}  {   ;#{info long} {allowzero 0} {be
         }
         set val $minval
     }
-    
+
     if {$val > $maxval} {
         if {$info == "short"} {
             set var [Ftos $maxval 6]
@@ -330,20 +330,28 @@ proc CbRange {name minval maxval grid args}  {   ;#{info long} {allowzero 0} {be
         }
         set val $maxval
     }
-    
+
     if {$grid == 0} {
         set val [Ftos $val 6]
     } else {
         set val [Ftos [expr [GridFix [expr ($val*5e5)]]/5e5] 6]
     }
-    
+
     iPDK_setParamValue $name $val $cellId
 }
 
 proc CbMessage {mess} {
-    
+
     global IHP_iPDK_CbMsg
-    
+
     puts $mess
     set IHP_iPDK_CbMsg $mess
+}
+
+proc TrimFloat {value {precision 3}} {
+    set res [format %.${precision}f $value]
+    set res [string trimright $res 0]
+    set res [string trimright $res .]
+
+    return $res
 }
