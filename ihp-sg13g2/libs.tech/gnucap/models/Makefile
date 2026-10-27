@@ -10,7 +10,7 @@ OSDI_DIR = ../plugins/osdi
 
 MODULE_TARGETS = \
 	capacitors_mod \
-	diodes \
+	diodes_mod \
 	sg13g2_dschottky_nbl1_mod \
 	sg13g2_esd \
 	sg13g2_hbt_mod \
