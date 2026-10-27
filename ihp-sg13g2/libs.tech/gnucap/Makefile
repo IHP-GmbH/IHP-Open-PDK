@@ -27,7 +27,7 @@ clean:
 	@$(MAKE) -C tests clean
 	@# The sub-makes remove their own .so from plugins/models and plugins/gnucap;
 	@# nothing is ever written to plugins/ itself, so only the empty dirs remain.
-	@rmdir plugins/models plugins/gnucap plugins/osdi plugins 2>/dev/null || true
+	@rmdir plugins/models plugins/gnucap plugins/osdi plugins/util plugins 2>/dev/null || true
 
 # Help
 help:

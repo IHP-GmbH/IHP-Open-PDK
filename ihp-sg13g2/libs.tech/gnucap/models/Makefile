@@ -8,10 +8,6 @@ MGFLAGS = -I $(shell gnucap-conf --includedir) -I .
 TARGET_DIR = ../plugins/models
 OSDI_DIR = ../plugins/osdi
 
-UTILITY_TARGETS = \
-	idc \
-	vpulse
-
 MODULE_TARGETS = \
 	capacitor_module \
 	diode_module \
@@ -23,16 +19,19 @@ MODULE_TARGETS = \
 	sg13g2_moslv_module \
 	sg13g2_svaricaphv_module
 
-TARGETS = $(UTILITY_TARGETS) $(MODULE_TARGETS)
+TARGETS = $(MODULE_TARGETS)
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
 
 # Default target
-all: $(PLUGINS) paramsets
+all: $(PLUGINS) paramsets util
 
 # Build paramset plugins in their own directory.
 paramsets:
 	@$(MAKE) -C paramsets
+
+util:
+	@$(MAKE) -C util
 
 # Create target directories if they don't exist
 $(TARGET_DIR):
@@ -74,14 +73,16 @@ clean:
 	rm -f $(TARGETS:%=$(TARGET_DIR)/%.cc)
 	rm -f $(TARGETS:%=$(TARGET_DIR)/%.o)
 	@$(MAKE) -C paramsets clean
+	@$(MAKE) -C util clean
 
 # Help
 help:
 	@echo "Build Verilog-AMS Model Plugins"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all          - Build model and paramset plugins (default)"
+	@echo "  all          - Build model, paramset, and utility plugins (default)"
 	@echo "  paramsets    - Build paramset plugins"
+	@echo "  util         - Build utility plugins"
 	@echo "  clean        - Remove all model and paramset build artifacts"
 	@echo "  <model>      - Build specific model plugin"
 	@echo ""
@@ -90,4 +91,4 @@ help:
 	@echo ""
 	@echo "Build specific paramsets with make -C paramsets <target>."
 
-.PHONY: clean all paramsets $(TARGETS) help
+.PHONY: clean all paramsets util $(TARGETS) help
