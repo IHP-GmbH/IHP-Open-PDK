@@ -111,6 +111,11 @@ def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
     ax0.semilogx(f_gc, gain_gc, c = "blue", label="Gnucap")
     ax0.semilogx(f_sp, gain_sp, c = "orange", ls = "--", label="ngspice")
 
+    ymin, ymax = ax0.get_ylim()
+    if ymax - ymin < 1.0:
+        center = (ymin + ymax) / 2
+        ax0.set_ylim(center - 0.5, center + 0.5)
+
     ax0.set_xlabel("Frequency [Hz]", fontsize=14)
     ax0.set_ylabel(r"$|V(C) / V(B)|$ [dB]", fontsize=14)
     ax0.ticklabel_format(axis="y", style="plain", useOffset=False)

@@ -13,6 +13,8 @@ tb_mc_hbt_13g2 #(.mm_ok(0)) tb();
 // measure collector current through VCE; VBIC does not declare Ic as an outputvar.
 print dc i(tb.vce)
 store dc i(tb.vce)
+// Start with tight voltage limits to help convergence.
+options vmax = 0.1 vmin = -0.1
 dc $seed 1 1000 1 basic
 measure ic_mean = sample_mean("i(tb.vce)")
 measure ic_std = sample_std("i(tb.vce)")
