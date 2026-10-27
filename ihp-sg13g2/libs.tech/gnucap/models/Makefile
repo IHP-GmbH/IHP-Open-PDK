@@ -9,15 +9,15 @@ TARGET_DIR = ../plugins/models
 OSDI_DIR = ../plugins/osdi
 
 MODULE_TARGETS = \
-	capacitor_module \
-	diode_module \
-	sg13g2_dschottky_nbl1_module \
-	sg13g2_esd_module \
-	sg13g2_hbt_module \
-	sg13g2_moscap_module \
-	sg13g2_moshv_module \
-	sg13g2_moslv_module \
-	sg13g2_svaricaphv_module
+	capacitors_mod \
+	diodes \
+	sg13g2_dschottky_nbl1_mod \
+	sg13g2_esd \
+	sg13g2_hbt_mod \
+	sg13g2_moscap_mod \
+	sg13g2_moshv_mod \
+	sg13g2_moslv_mod \
+	sg13g2_svaricaphv_mod
 
 TARGETS = $(MODULE_TARGETS)
 

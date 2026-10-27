@@ -24,6 +24,7 @@ gnucap/
 ├── gnucap.mk            # Gnucap Makefile configuration
 ├── models/              # Verilog-A model library
 │   ├── Makefile         # Builds Verilog-A model plugins
+│   ├── *.va             # Composite device modules; basenames match Ngspice model libraries
 │   ├── spice/           # SPICE-derived implementations retained pending replacement
 │   │   └── sp_{capacitor,resistor}.va
 │   ├── corners/         # Process-corner definitions
@@ -151,6 +152,14 @@ Dump a paramset as a Verilog-A module:
 
 ```bash
 make -C models/paramsets dump-<model>
+```
+
+### Build Verilog-A Module Plugin
+
+Build a composite device module using its source basename, for example:
+
+```bash
+make -C models capacitors_mod
 ```
 
 ### Build Gnucap Simulator Plugin
