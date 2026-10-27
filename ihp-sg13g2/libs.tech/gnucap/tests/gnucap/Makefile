@@ -4,6 +4,14 @@
 # GPLv3+
 GNUCAP = gnucap
 DIFF = diff
+
+# Preload common plugins before reading a test deck. MODEL_PLUGINS may be a
+# plugin directory (default) or a single model bundle shared library.
+GNUCAP_PLUGINS ?= $(abspath ../../plugins/gnucap)
+UTILITY_PLUGINS ?= $(abspath ../../plugins/util)
+MODEL_PLUGINS ?= $(abspath ../../plugins/models)
+GNUCAP_FLAGS = -a mgsim -a "$(GNUCAP_PLUGINS)" -a "$(UTILITY_PLUGINS)" -a "$(MODEL_PLUGINS)"
+
 # Exclude test files starting with
 TEST_EXCLUDE_PREFIX = wip_
 # Force rebuild on check
@@ -77,7 +85,7 @@ $(dir $(1))check/$(notdir $(1)).out: $(1) | reset-failures
 	  "$(dir $(1))check/$(notdir $(1)).diff"
 	@# Run gnucap and capture output
 	@(cd "$(dir $(1))" && \
-	  $(GNUCAP) "$(notdir $(1))" > "check/$(notdir $(1)).log" 2>&1); \
+	  $(GNUCAP) $(GNUCAP_FLAGS) "$(notdir $(1))" > "check/$(notdir $(1)).log" 2>&1); \
 	status=$$$$?; \
 	if [ $$$$status -ne 0 ]; then \
       rm -f "$(dir $(1))check/$(notdir $(1)).out"; \
@@ -138,4 +146,3 @@ help:
 
 # $(TESTDIRS) are directories, not targets; the aggregates are check-<testdir>.
 .PHONY: check clean help reset-failures $(addprefix check-,$(TESTDIRS))
-

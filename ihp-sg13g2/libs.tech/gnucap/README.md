@@ -193,6 +193,11 @@ Test results are reported as:
 - `CRASH` -> test crashed; see `tests/gnucap/<testdir>/check/*.gc.log`
 - `MISS`  -> no reference file found
 
+Note that the Gnucap test harness preloads `mgsim`, `plugins/gnucap/`, 
+`plugins/util/`, and `plugins/models/` using `-a` flags. Running 
+`gnucap <test_name>.gc` directly without these flags will fail because the 
+required plugins are not loaded.
+
 ### Run All Tests
 
 From the top-level `gnucap/` directory, build the required plugins and run the 
