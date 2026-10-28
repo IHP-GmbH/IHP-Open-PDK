@@ -22,9 +22,11 @@ MODULE_TARGETS = \
 TARGETS = $(MODULE_TARGETS)
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
+OBJECTS = $(TARGETS:%=$(TARGET_DIR)/%.o)
 
 # Default target
-all: $(PLUGINS) paramsets util
+# Keep objects for the top-level bundle.
+all: $(PLUGINS) $(OBJECTS) paramsets util
 
 # Build paramset plugins in their own directory.
 paramsets:

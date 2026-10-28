@@ -21,6 +21,7 @@ TARGETS = \
 	sg13g2_hbt
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%_paramset.so)
+OBJECTS = $(TARGETS:%=$(TARGET_DIR)/%_paramset.o)
 SOURCES = $(TARGETS:%=%.va)
 
 # Compact models required by each family.
@@ -35,7 +36,8 @@ MODELS_sg13g2_moshv_rf = psp103
 MODELS_sg13g2_hbt = vbic_1p3
 
 # Default target
-all: $(PLUGINS)
+# Keep objects for the top-level bundle.
+all: $(PLUGINS) $(OBJECTS)
 
 # Create target directories if they don't exist
 $(TARGET_DIR):
