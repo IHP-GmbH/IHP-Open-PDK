@@ -15,19 +15,10 @@
 * limitations under the License.
 *
 *#######################################################################
-       
-*########################## dantenna models ############################
-.MODEL darea D (level=3 tnom=27 is=2.315E-019 n=1.009 ik=1.434E-007 rs=2.193E+005 cj0=9.371E-016 m=0.3036
-+ vj=0.696 fc=0.5 bv=11.64 ibv=3.458E-007 tlev=1 tcv=-0.001 isr=7.413E-019 xti=5.039 eg=1.20
-+ trs=0 trs2=0 tt=7.009E-007)
-.MODEL dperim D (level=3 tnom=27 is=3.851E-021 n=1.022 rs=1.688E+006 ik=7.838E-008 isr=1.011E-017 xti=3
-+ bv=31.86 ibv=6.115E-014 cj0=1.821E-017 m=0.01923 vj=0.598 eg=1.20 tt=7.009E-007)
-.MODEL dcorner D (level=3 tnom=27 is=6.502E-021 n=1 rs=4.857E+005 ik=1E-006 isr=0 xti=3
-+ bv=11.64 ibv=3.458E-007 cj0=0 m=0.5 vj=0.7 eg=1.20)
 
 
 **************************************
-* Device: dantenna  (ngspice port, corrected 2026-10-20 against Spectre reference)
+* Device: dantenna
 * Testfield: T262, IHP SG13S, Lot AWL403#A, Wafer 19, Chip 4,7, Segment S350B
 * DUTs: D1 (area), D2 (perimeter) and D4 (corners)
 * Temperature range: -40 degC ... +125 degC, DC range: -15 V ... 1 V
@@ -36,16 +27,21 @@
 *  DEV_P = perimeter of the diode in um
 *  DEV_C = number of corners (default=4)
 *
-* Corrections vs. previous ngspice port (verified against Spectre at -40/27/125 degC, <=7 % deviation):
-*  - nbv removed (darea, dperim): Spectre level=1 shows a breakdown slope of exactly 1*Vt;
-*    nbv=48.9 caused a spurious 77 pA leakage at 1 V and convergence failures in ngspice
-*  - level=3: ngspice scales ibv with area only for level=3 (level=1: cbv=m*ibv),
-*    Spectre scales ibv with area. level=3 is otherwise identical here (no w/l, no metal/poly caps).
-*  - Spectre tbv1=0.001 is relative and positive: bv(T)=bv*(1+tbv1*dT) -> tlev=1 tcv=-0.001
-*  - eg=1.20: reproduces Spectre is(T) from -40 to 125 degC (ngspice default eg=1.11 constant)
-* Note: ngspice (>= 48) includes the isr generation current in reverse bias (physically
-*  consistent); Spectre omits it. isr was extracted from forward data only. Effect: fA range.
+* Changes 2026-10 vs. previous version:
+*  - level=3 (ibv scales with area), nbv removed
+*  - tlev=1 tcv=-0.001, eg=1.20 (temperature dependence of bv and is)
+*  - dcorner: cj0=5e-18 added (convergence aid)
 **************************************
+
+*########################## dantenna models ############################
+
+.MODEL darea D (level=3 tnom=27 is=2.315E-019 n=1.009 ik=1.434E-007 rs=2.193E+005 cj0=9.371E-016 m=0.3036
++ vj=0.696 fc=0.5 bv=11.64 ibv=3.458E-007 tlev=1 tcv=-0.001 isr=7.413E-019 xti=5.039 eg=1.20
++ trs=0 trs2=0 tt=7.009E-007)
+.MODEL dperim D (level=3 tnom=27 is=3.851E-021 n=1.022 rs=1.688E+006 ik=7.838E-008 isr=1.011E-017 xti=3
++ bv=31.86 ibv=6.115E-014 cj0=1.821E-017 m=0.01923 vj=0.598 eg=1.20 tt=7.009E-007)
+.MODEL dcorner D (level=3 tnom=27 is=6.502E-021 n=1 rs=4.857E+005 ik=1E-006 isr=0 xti=3
++ bv=11.64 ibv=3.458E-007 cj0=5e-18 m=0.5 vj=0.7 eg=1.20)
 
 .subckt dantenna 1 2 l=780n w=780n
 *                (anode  cathode)
@@ -57,18 +53,8 @@ D3 1 2 dcorner area={DEV_C}
 .ends dantenna
 
 
-*########################## dpantenna models ###########################
-
-.MODEL dparea D (level=3 tnom=27 is=8.569E-020 n=1.003 ik=2.957E-007 rs=1.728E+005 cj0=8.252E-016 m=0.3171
-+ vj=0.6628 fc=0.5 bv=12.14 ibv=1E-006 tlev=1 tcv=-0.001 isr=2.421E-019 xti=4.56 eg=1.20
-+ trs=0 trs2=0 tt=1E-012)
-.MODEL dpperim D (level=3 tnom=27 is=1.186E-020 n=1.006 rs=1.577E+006 ik=2.158E-008 isr=7.211E-018 xti=4.118
-+ bv=27.26 ibv=1.832E-011 cj0=3.657E-017 m=0.1512 vj=0.5241 eg=1.20 tt=1E-012)
-.MODEL dpcorner D (level=3 tnom=27 is=6.965E-021 n=1 rs=4.734E+005 ik=1.19E-008 isr=0 xti=3
-+ cj0=0 m=0.5 vj=0.7 eg=1.20)
-
 **************************************
-* Device: dpantenna  (ngspice port, corrected 2026-10-20 against Spectre reference)
+* Device: dpantenna
 * Testfield: T262, IHP SG13S, Lot AWL403#A, Wafer 19, Chip 4,7, Segment S351B
 * DUTs: D1 (area), D2 (perimeter) and D4 (corners)
 * Temperature range: -40 degC ... +125 degC, DC range: -15 V ... 1 V
@@ -78,15 +64,21 @@ D3 1 2 dcorner area={DEV_C}
 *  DEV_P = perimeter of the diode in um
 *  DEV_C = number of corners (default=4)
 *
-* Corrections vs. previous ngspice port (verified against Spectre at -40/27/125 degC, <=7 % deviation):
-*  - nbv removed (dparea, dpperim): Spectre level=1 shows a breakdown slope of exactly 1*Vt
-*  - level=3: ngspice scales ibv with area only for level=3 (level=1: cbv=m*ibv),
-*    Spectre scales ibv with area. level=3 is otherwise identical here (no w/l, no metal/poly caps).
-*  - Spectre tbv1=0.001 is relative and positive: bv(T)=bv*(1+tbv1*dT) -> tlev=1 tcv=-0.001
-*  - eg=1.20: reproduces Spectre is(T) from -40 to 125 degC (ngspice default eg=1.11 constant)
-* Note: ngspice (>= 48) includes the isr generation current in reverse bias (physically
-*  consistent); Spectre omits it. isr was extracted from forward data only. Effect: fA range.
+* Changes 2026-10 vs. previous version:
+*  - level=3 (ibv scales with area), nbv removed
+*  - tlev=1 tcv=-0.001, eg=1.20 (temperature dependence of bv and is)
+*  - dpcorner: cj0=3e-18 added (convergence aid)
 **************************************
+
+*########################## dpantenna models ###########################
+
+.MODEL dparea D (level=3 tnom=27 is=8.569E-020 n=1.003 ik=2.957E-007 rs=1.728E+005 cj0=8.252E-016 m=0.3171
++ vj=0.6628 fc=0.5 bv=12.14 ibv=1E-006 tlev=1 tcv=-0.001 isr=2.421E-019 xti=4.56 eg=1.20
++ trs=0 trs2=0 tt=1E-012)
+.MODEL dpperim D (level=3 tnom=27 is=1.186E-020 n=1.006 rs=1.577E+006 ik=2.158E-008 isr=7.211E-018 xti=4.118
++ bv=27.26 ibv=1.832E-011 cj0=3.657E-017 m=0.1512 vj=0.5241 eg=1.20 tt=1E-012)
+.MODEL dpcorner D (level=3 tnom=27 is=6.965E-021 n=1 rs=4.734E+005 ik=1.19E-008 isr=0 xti=3
++ cj0=3e-18 m=0.5 vj=0.7 eg=1.20)
 
 .subckt dpantenna 1 2 l=780n w=780n
 *              (PSD  nWell)
