@@ -9,7 +9,17 @@ DIFF = diff
 # plugin directory (default) or a single model bundle shared library.
 GNUCAP_PLUGINS ?= $(abspath ../../plugins/gnucap)
 UTILITY_PLUGINS ?= $(abspath ../../plugins/util)
+
+# Select how model plugins are loaded
+MODEL_LOAD ?= directory
+ifeq ($(MODEL_LOAD),bundle)
+MODEL_PLUGINS ?= $(abspath ../../plugins/sg13g2.so)
+else ifeq ($(MODEL_LOAD),directory)
 MODEL_PLUGINS ?= $(abspath ../../plugins/models)
+else
+$(error Unsupported MODEL_LOAD '$(MODEL_LOAD)'; choose directory or bundle)
+endif
+
 GNUCAP_FLAGS = -a mgsim -a "$(GNUCAP_PLUGINS)" -a "$(UTILITY_PLUGINS)" -a "$(MODEL_PLUGINS)"
 
 # Exclude test files starting with

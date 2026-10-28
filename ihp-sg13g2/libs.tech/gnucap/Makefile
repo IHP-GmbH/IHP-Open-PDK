@@ -28,13 +28,17 @@ check: all
 	@$(MAKE) -C tests
 
 # Clean everything
+clean-plugin-dir = rm -f $(1)/*.cc $(1)/*.o $(1)/*.so
+
 clean:
 	@$(MAKE) -C models clean
 	@$(MAKE) -C cpp clean
 	@$(MAKE) -C tests clean
-	rm -f $(BUNDLE)
-	@# The sub-makes remove their artifacts; remove the empty directories too.
-	@rmdir plugins/models plugins/gnucap plugins/osdi plugins/util plugins 2>/dev/null || true
+	# Remove leftover outdated artifacts (better safe than sorry)
+	$(call clean-plugin-dir,plugins/models)
+	$(call clean-plugin-dir,plugins/gnucap)
+	$(call clean-plugin-dir,plugins/util)
+	rm -f $(BUNDLE) plugins/*.so plugins/osdi/*.osdi
 
 # Help
 help:
