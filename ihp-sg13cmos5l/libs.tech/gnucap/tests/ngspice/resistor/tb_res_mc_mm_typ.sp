@@ -1,1 +1,1 @@
-../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/resistor/tb_res_mc_mm_typ.sp
+../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/resistor/test_res_mc_mm_typ.sp
