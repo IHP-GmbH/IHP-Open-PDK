@@ -62,8 +62,8 @@ Install:
 - [OpenVAF](https://openvaf.semimod.de), for the OSDI step below
 
 Tested with:
-- Gnucap: `476926c`
-- gnucap-modelgen-verilog: `8c0fa01`
+- Gnucap: `31528ae`
+- gnucap-modelgen-verilog: `f3758f72`
 - gnucap-models: `f3ac9b1`
 - Ngspice: `ngspice-46`
 - OpenVAF: `openvaf 23.5.0` (`openvaf-r`)
