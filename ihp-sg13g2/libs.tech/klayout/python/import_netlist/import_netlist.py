@@ -82,11 +82,24 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
     for key, value in params.items():
         print(f' - {key}: {value}')
 
-    # Get PCell Library
-    lib = pya.Library.library_by_name(lib_name, 'sg13g2')
+    # Get the active layout
+    cellview = pya.CellView().active()
+    layout = cellview.layout()
+    if layout == None:
+        print(f'Error: Couldn\'t get active layout.')
+        return (0, 0)
+
+    # Get PCell Library. Several PDKs share this script and all register
+    # a library called SG13_dev, so look it up for the layout's technology.
+    tech = layout.technology_name
+    if not tech:
+        print(f'Error: The active layout has no technology. Set it in File > Layout Properties.')
+        return (0, 0)
+
+    lib = pya.Library.library_by_name(lib_name, tech)
 
     if not lib:
-        print(f'Error: Library not found {lib_name}')
+        print(f'Error: Library not found {lib_name} for technology {tech}')
         return (0, 0)
 
     # The PCell Declaration. This one will create PCell variants.
@@ -94,13 +107,6 @@ def create_pcell_instance(pcell_name='CIRCLE', lib_name='Basic', params={}, pos=
 
     if not pcell_decl:
         print(f'Error: Pcell not found {pcell_name}')
-        return (0, 0)
-
-    # Get the active layout
-    cellview = pya.CellView().active()
-    layout = cellview.layout()
-    if layout == None:
-        print(f'Error: Couldn\'t get active layout.')
         return (0, 0)
 
     # Get the top cell. Assuming only one top cell exists
