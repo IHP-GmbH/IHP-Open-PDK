@@ -84,7 +84,7 @@ def parse_ac_data_gc(filepath_gc):
 
 def plot_tb_cap_cutoff(corner, show=False):
 
-    test_name = f'tb_cap_cutoff_{corner}'
+    test_name = f'test_cap_ac_cutoff_{corner}'
 
     # Load gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -189,7 +189,7 @@ def plot_tb_cap_cutoff(corner, show=False):
 
 def plot_tb_cap_cutoff_mc_stat(plot_sp = True, show=False):
 
-    test_name = f'tb_cap_cutoff_mc_stat'
+    test_name = f'test_cap_mc_stat_cutoff'
 
     # load gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -248,7 +248,7 @@ def plot_tb_cap_cutoff_mc_stat(plot_sp = True, show=False):
 
 def plot_tb_cap_cutoff_mc_mm(corner, plot_sp=True, show=False):
 
-    test_name = f'tb_cap_cutoff_mc_mm_{corner}'
+    test_name = f'test_cap_mc_mm_cutoff_{corner}'
 
     # Load gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -333,7 +333,7 @@ def plot_tb_cap_cutoff_mc_mm(corner, plot_sp=True, show=False):
 
 def plot_tb_cparasitic(corner, plot_sp=True, show=False):
 
-    test_name = f'tb_cap_parasitic_{corner}'
+    test_name = f'test_cap_tran_parasitic_{corner}'
 
     # Load gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -447,4 +447,3 @@ def main():
 if __name__ == "__main__":
 
     main()
-

@@ -351,7 +351,7 @@ def plot_mos_inv_all_corners(ref_dir_gc, fig_dir, fig_name, show=False):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for corner in corners:
-        filepath_gc = ref_dir_gc / f"tb_moslv_inv_{corner}.gc.out"
+        filepath_gc = ref_dir_gc / f"test_{ref_dir_gc.parent.name}_dc_inv_{corner}.gc.out"
 
         data_gc_filt = filter_data(filepath_gc, skip_prefixes=('did not converge', 'open circuit'))
         data_gc = pd.read_csv(StringIO(data_gc_filt), sep=r'\s+', skipfooter=5, engine="python").values

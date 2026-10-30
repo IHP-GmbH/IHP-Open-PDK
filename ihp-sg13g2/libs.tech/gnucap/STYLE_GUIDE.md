@@ -59,14 +59,14 @@ Its interior follows a fixed three-block order, separated by blank `//` lines:
 
 ## Organization and responsibilities
 
-- Use `models/` directory for device modules and corner definitions: 
-  - Device modules (`<device_name>_module.va`): connect primitive instances into 
+- Use `models/` for device modules and `models/corners/` for corner definitions:
+  - Device modules (`<device_name>_mod.va`): connect primitive instances into
     composite PDK devices and expose their ports and parameters for use in 
     circuits and testbenches.
   - Corner modules (`corner<NAME>.va`): own and provide global process-dependent 
     parameter values for deterministic and statistical corners. 
 
-- Use `models/paramset` directory for PDK primitives:
+- Use `models/paramsets/` for PDK primitive paramsets and family build sources:
   - Give each primitive its own file `<device_name>.va` containing its paramset
     declaration. A paramset selects a generic compact model, assigns
     device-specific model parameter values, and declares the parameters that 
@@ -75,9 +75,13 @@ Its interior follows a fixed three-block order, separated by blank `//` lines:
     primitives with mismatch support, provide two overloaded paramset 
     declarations in the same file; one without and one with mismatch.
   - Optional: Group related device primitives that share a compact model in a
-    family file `<family_name>_paramset.va`. This file includes the compact-model
-    source and device-specific paramsets and is used to build a family device 
-    plugin. 
+    family umbrella in `models/paramsets/`, named for the family (for example,
+    `resistor.va`, `capacitor.va`, or `sg13g2_moslv.va`). Use the `sg13g2_`
+    prefix for HBT, MOSCAP, and MOS transistor families, including RF variants.
+    This file includes
+    the compact-model source and device-specific paramsets and builds a family device
+    plugin. Builds are managed by `models/paramsets/Makefile`; family targets omit
+    the `_paramset` suffix, while plugin filenames retain it.
 
 ## Intended use
 
