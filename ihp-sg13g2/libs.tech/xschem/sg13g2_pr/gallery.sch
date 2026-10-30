@@ -1,8 +1,9 @@
-v {xschem version=3.4.6 file_version=1.2}
+v {xschem version=3.4.8RC file_version=1.3}
 G {}
 K {}
 V {}
 S {}
+F {}
 E {}
 T {HBT Devices} 30 -1720 0 0 0.6 0.6 {}
 T {HBT Devices w/  
@@ -294,3 +295,11 @@ w=10e-6
 s=10e-6
 d=222e-6
 nr_r=2}
+C {sg13g2_pr/lvsres.sym} 880 -980 0 0 {name=R6
+w=5e-6
+l=1e-6
+r=1e-6
+spiceprefix=X
+layer=Metal1
+model=lvsres
+}
