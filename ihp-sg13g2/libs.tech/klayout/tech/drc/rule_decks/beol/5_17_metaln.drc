@@ -56,7 +56,13 @@ if TABLES.include?('metaln') || BEOL
     mn_e_width = drc_rules['Mn_e_w'].to_f
     mn_e_length = drc_rules['Mn_e_cr'].to_f
     mn_e_l1 = met_lay.sized(-0.5 * mn_e_width.um).sized(0.5 * mn_e_width.um)
-    mn_e_l = met_lay.sep(mn_e_l1, mn_e_value.um, projection_limits(mn_e_length.um + 0.001.um, nil))
+    # transparent: mn_e_l1 is a subset of met_lay; with the default shielding its
+    # coincident edges hide pairs where both lines are wide (#1222).
+    # angle_limit: only parallel edges form a parallel run, not 45-degree corners.
+    # interacting(..., 2): the rule is a space between lines, so keep pairs that touch
+    # two different polygons and leave notches inside one polygon out, as before.
+    mn_e_l = met_lay.sep(mn_e_l1, mn_e_value.um, projection_limits(mn_e_length.um + 0.001.um, nil),
+                         transparent, angle_limit(1.0)).interacting(met_lay, 2)
     mn_e_l.output("M#{met_no}.e",
                 "5.17. M#{met_no}.e Min. space of Metal#{met_no} lines if, at least one line is wider than #{mn_e_width} µm and the parallel run is more than #{mn_e_length} µm is #{mn_e_value} um")
     mn_e_l1.forget
@@ -68,7 +74,9 @@ if TABLES.include?('metaln') || BEOL
     mn_f_width = drc_rules['Mn_f_w'].to_f
     mn_f_length = drc_rules['Mn_f_cr'].to_f
     mn_f_l1 = met_lay.sized(-0.5 * mn_f_width.um).sized(0.5 * mn_f_width.um)
-    mn_f_l = met_lay.sep(mn_f_l1, mn_f_value.um, projection_limits(mn_f_length.um + 0.001.um, nil))
+    # transparent, angle_limit, interacting: see Mn.e.
+    mn_f_l = met_lay.sep(mn_f_l1, mn_f_value.um, projection_limits(mn_f_length.um + 0.001.um, nil),
+                         transparent, angle_limit(1.0)).interacting(met_lay, 2)
     mn_f_l.output("M#{met_no}.f",
                 "5.17. M#{met_no}.f Min. space of Metal#{met_no} lines if, at least one line is wider than #{mn_f_width} µm and the parallel run is more than #{mn_f_length} µm is #{mn_f_value} um")
     mn_f_l1.forget

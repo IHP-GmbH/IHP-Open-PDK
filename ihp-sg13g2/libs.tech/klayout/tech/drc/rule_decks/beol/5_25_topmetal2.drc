@@ -49,7 +49,13 @@ if TABLES.include?('topmetal2') || BEOL
       tm2_br_length = drc_rules['TM2_bR_cr'].to_f
       tm2_br_l1 = topmetal2_drw.not(ind_drw)
       tm2_br_l2 = tm2_br_l1.sized(-0.5 * tm2_br_width.um).sized(0.5 * tm2_br_width.um)
-      tm2_br_l = topmetal2_drw.sep(tm2_br_l2, tm2_br_value.um, projection_limits(tm2_br_length.um + 0.001.um, nil))
+      # transparent: tm2_br_l2 is a subset of topmetal2_drw; with the default shielding its
+      # coincident edges hide pairs where both lines are wide (#1222).
+      # angle_limit: only parallel edges form a parallel run, not 45-degree corners.
+      # interacting(..., 2): the rule is a space between lines, so keep pairs that touch
+      # two different polygons and leave notches inside one polygon out, as before.
+      tm2_br_l = topmetal2_drw.sep(tm2_br_l2, tm2_br_value.um, projection_limits(tm2_br_length.um + 0.001.um, nil),
+                                   transparent, angle_limit(1.0)).interacting(topmetal2_drw, 2)
       tm2_br_l.output('TM2.bR',
                     "5.25. TM2.bR : Min. space of TopMetal2 lines if, at least one line is wider than #{tm2_br_width} µm
                     and the parallel run is more than #{tm2_br_length} µm is #{tm2_br_value} um")
