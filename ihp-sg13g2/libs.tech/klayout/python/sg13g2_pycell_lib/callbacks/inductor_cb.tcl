@@ -55,7 +55,7 @@ proc inductor_w {} {
     if {$tmpw!="" && $tmpWmin!="" && $tmpWmin>$tmpw} {
         hiGetAttention
         hiGetAttention
-        CbMessage "WARNING: wrong width: using minimum width ${tmpWminS}%s!!"
+        CbMessage "WARNING: wrong width: using minimum width ${tmpWminS}!!"
         iPDK_setParamValue w $tmpWminS $cellId
         set tmpw [Stof $tmpWminS]
     }
