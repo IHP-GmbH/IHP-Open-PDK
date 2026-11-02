@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - SRAM: add timescale in `64x16` ([#1104](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1104))
 
 #### Tools / Infrastructure
+- KLayout metal filler: fill distances as `-rd distance_m1` ... options in batch mode, sg13g2 and sg13cmos5l ([#1315](https://github.com/IHP-GmbH/IHP-Open-PDK/issues/1315))
 - Regression test for `sprintf` utility function ([#1120](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1120))
 - gnucap: statistics reporting ([#998](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/998))
 - Bug report issue template ([#1019](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1019))
