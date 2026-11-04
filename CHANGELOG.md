@@ -108,6 +108,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - KLayout LVS: parallel RF + plain fingers no longer merge under simplify. Previously this gave a false match, so some layouts may now fail LVS ([#1246](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1246))
 - KLayout LVS: fixed LVS testing regression (#1126)
 - LVS: fixed SBD under CMIM issue; added testcase ([#1030](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1030))
+- KLayout LVS: `ihp-sg13g2`: `rfcmim` gets its `wfeed` with Metal5 routes in child cells over its bottom plate, it was 0 ([#1334](https://github.com/IHP-GmbH/IHP-Open-PDK/issues/1334))
 - KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
 - KLayout DRC: fixed filler space/notch violations ([#924](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/924))
 - KLayout DRC: fixed Metal density min/max values
