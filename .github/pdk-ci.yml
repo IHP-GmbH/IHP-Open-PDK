@@ -1,0 +1,78 @@
+# ==========================================================================
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+# ==========================================================================
+
+# Single source of truth for which PDK CI runs on a given change.
+#
+# This repository holds more than one PDK in one tree. They are not independent:
+# ihp-sg13cmos5l reuses large parts of ihp-sg13g2 through relative symlinks (its
+# DRC/LVS rule decks, testcases, pycell library, models, ...), so a change to
+# ihp-sg13g2 can break ihp-sg13cmos5l, while nothing in ihp-sg13g2 depends on
+# ihp-sg13cmos5l. The dependency is one-directional.
+#
+# .github/scripts/affected_pdks.py reads this file and turns a set of changed
+# files into the list of PDKs whose CI must run:
+#   - a change under a PDK's own directory affects that PDK, plus every PDK that
+#     depends on it (the reverse of `depends_on`);
+#   - a change matching `shared_infra` affects every PDK;
+#   - a manual (workflow_dispatch), merge-queue (merge_group) or
+#     undetermined-diff run affects every PDK.
+#
+# To add a PDK, add one block under `pdks` with its `depends_on` and params.
+# Nothing else in the CI needs to change: the workflows read this file, and make
+# reports+succeeds (via the skip-unless macro in ihp-common/pdk.mk) on any test
+# a PDK does not carry.
+
+pdks:
+  ihp-sg13g2:
+    depends_on: []
+  ihp-sg13cmos5l:
+    depends_on: [ihp-sg13g2]          # symlinks into g2; reverse edge only
+
+# Any changed file matching one of these globs runs every PDK's CI: these files
+# define how the tests are built and run, or are shared by every PDK.
+shared_infra:
+  - Makefile
+  - "Makefile.*"
+  - "ihp-common/**"
+  - ".github/actions/**"
+  - ".github/workflows/**"
+  - ".github/scripts/**"
+  - ".github/pdk-ci.yml"
+  - versions.txt
+  - requirements.txt
+  - .flake8
+  - .rubocop.yml
+  - .gitmodules
+
+# Which PDK-relative paths each test class cares about. A workflow passes its
+# class to the detect job, and a PDK's leg for that class runs only when a file
+# under it (or a PDK it depends on) matches one of these globs (a shared_infra
+# change still runs every class for every PDK). This keeps a DRC-only change
+# from spinning LVS and PCell. A change under a PDK dir that matches no class
+# (docs, libs.ref data) runs nothing here. Globs are relative to the PDK dir.
+test_classes:
+  drc:
+    - "libs.tech/klayout/tech/drc/**"
+  lvs:
+    - "libs.tech/klayout/tech/lvs/**"
+  pcell:
+    - "libs.tech/klayout/python/**"
+    - "libs.tech/klayout/*_tests/**"
+  lint:
+    - "libs.tech/klayout/tech/drc/**"
+    - "libs.tech/klayout/tech/lvs/**"
+    - "libs.tech/klayout/python/*_pycell_lib/**"

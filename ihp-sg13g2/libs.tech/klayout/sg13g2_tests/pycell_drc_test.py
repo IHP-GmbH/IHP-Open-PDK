@@ -73,10 +73,12 @@ def add_via_stack_testcases(layout: pya.Layout,
 
     region = pya.Region()
 
-    from sg13g2_pycell_lib.sg13_tech_info import TechInfo
-    
+    from cni.tech import Tech
+    from sg13g2_pycell_lib.sg13_tech_info import TechInfoFactory
+    tech_info = TechInfoFactory.tech_info_for_tech(Tech.get("SG13_dev"))
+
     # add single vias
-    for via in TechInfo.instance().vias:
+    for via in tech_info.vias:
         for (vn_nx, vn_ny), (vt1_nx, vt1_ny), (vt2_nx, vt1_ny) \
          in (((1,1), (1,1), (1,1)), \
              ((2,2), (1,1), (1,1)), \
