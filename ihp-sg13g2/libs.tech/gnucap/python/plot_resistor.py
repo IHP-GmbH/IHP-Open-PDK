@@ -16,12 +16,12 @@ r3_cmc_res_variants = ['rsil', 'rhigh', 'rppd']
 
 def plot_tb_res_mc_stats(mc_trials ="", plot_sp = True, show = False):
 
-    test_name = f'tb_res_mc_stat{mc_trials}'
+    test_name = f'test_res_mc_stat{mc_trials}'
     # Load gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=4, engine="python").values
     # Load ngspice data
-    filepath_ngspice = ref_dir_sp / f'tb_res_mc_stat{mc_trials}.sp.out'
+    filepath_ngspice = ref_dir_sp / f'test_res_mc_stat{mc_trials}.sp.out'
     data_sp = pd.read_csv(filepath_ngspice, sep=r'\s+').values
 
     assert data_gc.shape == data_sp.shape, f"data_gc.shape {data_gc.shape} unequal data_gc.shape {data_sp.shape}"
@@ -74,7 +74,7 @@ def plot_tb_res_mc_stats(mc_trials ="", plot_sp = True, show = False):
 
 def plot_tb_res_mc_mm(corner ='typ', mc_trials="", plot_sp = True, show = False):
 
-    test_name = f'tb_res_mc_mm{mc_trials}_{corner}'
+    test_name = f'test_res_mc_mm{mc_trials}_{corner}'
     # Load gnucap data
     filepath_gc = ref_dir_gc / (test_name + '.gc.out')
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=4, engine="python").values

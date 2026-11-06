@@ -23,7 +23,16 @@ gnucap/
 ├── Makefile             # Top-level entry point: build, test, clean
 ├── gnucap.mk            # Gnucap Makefile configuration
 ├── models/              # Verilog-A model library
-│   └── Makefile         # Builds Verilog-A model plugins
+│   ├── Makefile         # Builds Verilog-A model plugins
+│   ├── *.va             # Composite device modules; basenames match Ngspice model libraries
+│   ├── spice/           # SPICE-derived implementations retained pending replacement
+│   │   └── sp_{capacitor,resistor}.va
+│   ├── corners/         # Process-corner definitions
+│   │   └── corner*.va   # Device-family corner modules
+│   └── paramsets/       # Family umbrellas and device-specific paramset sources
+│       ├── {capacitor,resistor,diode}.va # Family build entry sources
+│       ├── sg13g2_{hbt,moscap,moslv,moslv_rf,moshv,moshv_rf,svaricaphv}.va # SG13G2 family build sources
+│       └── <device_family>_*.va # Device-specific paramsets
 ├── cpp/                 # C++ source for Gnucap simulator plugins
 │   └── Makefile         # Builds Gnucap simulator plugins
 ├── tests/               # Test suite
@@ -53,8 +62,8 @@ Install:
 - [OpenVAF](https://openvaf.semimod.de), for the OSDI step below
 
 Tested with:
-- Gnucap: `476926c`
-- gnucap-modelgen-verilog: `8c0fa01`
+- Gnucap: `31528ae`
+- gnucap-modelgen-verilog: `f3758f72`
 - gnucap-models: `f3ac9b1`
 - Ngspice: `ngspice-46`
 - OpenVAF: `openvaf 23.5.0` (`openvaf-r`)
@@ -121,24 +130,36 @@ make gnucap-plugins
 
 Build a specific model plugin:
 
+Family build sources match their targets, for example `models/paramsets/resistor.va`.
+The nested Makefile uses family targets such as `resistor`, while plugin filenames
+retain the suffix, for example `plugins/models/resistor_paramset.so`.
+
 ```bash
-make -C models <model>
+make -C models/paramsets <model>
 ```
 
 List available models: 
 
 ```bash
-make -C models help
+make -C models/paramsets help
 ```
 Example:
 
 ```bash
-make -C models resistor_paramset
+make -C models/paramsets resistor
 ```
 Dump a paramset as a Verilog-A module:
 
 ```bash
-make -C models dump-<model>
+make -C models/paramsets dump-<model>
+```
+
+### Build Verilog-A Module Plugin
+
+Build a composite device module using its source basename, for example:
+
+```bash
+make -C models capacitors_mod
 ```
 
 ### Build Gnucap Simulator Plugin
@@ -180,6 +201,11 @@ Test results are reported as:
 - `FAIL`  -> diff detected; see `tests/gnucap/<testdir>/check/*.gc.diff`
 - `CRASH` -> test crashed; see `tests/gnucap/<testdir>/check/*.gc.log`
 - `MISS`  -> no reference file found
+
+Note that the Gnucap test harness preloads `mgsim`, `plugins/gnucap/`, 
+`plugins/util/`, and `plugins/models/` using `-a` flags. Running 
+`gnucap <test_name>.gc` directly without these flags will fail because the 
+required plugins are not loaded.
 
 ### Run All Tests
 
@@ -236,8 +262,8 @@ make -C tests/ngspice <testdir>/check/<test>.sp.out
 Example:
 
 ```bash
-make -C tests/gnucap resistor/check/tb_res_basic_typ.gc.out
-make -C tests/ngspice resistor/check/tb_res_basic_typ.sp.out
+make -C tests/gnucap resistor/check/test_res_op_typ.gc.out
+make -C tests/ngspice resistor/check/test_res_op_typ.sp.out
 ```
 
 ## Plotting
