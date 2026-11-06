@@ -16,21 +16,6 @@ if { ![info exist ::env(PAD_CELL_LIBRARY)] } {
 	set ::env(PAD_CELL_LIBRARY) sg13g2_io
 }
 
-# Technology lib
-set ::env(LIB) [dict create]
-dict set ::env(LIB) "*_typ_1p20V_25C" "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_typ_1p20V_25C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_typ_1p2V_3p3V_25C.lib\
-"
-dict set ::env(LIB) "*_fast_1p32V_m40C" "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_fast_1p32V_m40C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_fast_1p32V_3p6V_m40C.lib\
-"
-dict set ::env(LIB) "*_slow_1p08V_125C" "\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_slow_1p08V_125C.lib\
-    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/sg13g2_io/lib/sg13g2_io_slow_1p08V_3p0V_125C.lib\
-"
-
 # Corners
 set ::env(STA_CORNERS) "\
     nom_fast_1p32V_m40C \
@@ -89,20 +74,21 @@ set ::env(KLAYOUT_PROPERTIES) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/te
 set ::env(KLAYOUT_DEF_LAYER_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/sg13g2.map"
 
 set ::env(KLAYOUT_DRC_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/ihp-sg13g2.drc"
-set ::env(KLAYOUT_DRC_OPTIONS) [dict create]
-dict set ::env(KLAYOUT_DRC_OPTIONS) no_recommended true
-dict set ::env(KLAYOUT_DRC_OPTIONS) run_mode deep
+set ::env(KLAYOUT_DRC_DEFINES) [dict create]
+dict set ::env(KLAYOUT_DRC_DEFINES) no_recommended true
+dict set ::env(KLAYOUT_DRC_DEFINES) run_mode deep
 
 set ::env(KLAYOUT_DENSITY_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/rule_decks/density.drc"
-set ::env(KLAYOUT_DENSITY_OPTIONS) [dict create]
+set ::env(KLAYOUT_DENSITY_DEFINES) [dict create]
 
 set ::env(KLAYOUT_ANTENNA_RUNSET) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/drc/rule_decks/antenna.drc"
-set ::env(KLAYOUT_ANTENNA_OPTIONS) [dict create]
+set ::env(KLAYOUT_ANTENNA_DEFINES) [dict create]
 
 set ::env(KLAYOUT_FILLER_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/scripts/filler.py"
 
 set ::env(KLAYOUT_LVS_SCRIPT) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/klayout/tech/lvs/sg13g2.lvs"
-set ::env(KLAYOUT_LVS_OPTIONS) [dict create run_mode deep ]
+set ::env(KLAYOUT_LVS_DEFINES) [dict create]
+dict set ::env(KLAYOUT_LVS_DEFINES) run_mode deep
 
 # netgen setup
 set ::env(NETGEN_SETUP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/netgen/ihp-sg13g2_setup.tcl"

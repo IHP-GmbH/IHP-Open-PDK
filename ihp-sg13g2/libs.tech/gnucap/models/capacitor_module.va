@@ -1,29 +1,39 @@
 //******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
 //                                                                             *
-// Copyright 2023 IHP PDK Authors                                              *
 //                                                                             *
-// Licensed under the Apache License, Version 2.0 (the "License");             *
-// you may not use this file except in compliance with the License.            *
-// You may obtain a copy of the License at                                     *
+//              C O M M O N    SG 13  C A P A C I T O R    M O D E L S         *
 //                                                                             *
-//     https://www.apache.org/licenses/LICENSE-2.0                             *
-//                                                                             *
-// Unless required by applicable law or agreed to in writing, software         *
-// distributed under the License is distributed on an "AS IS" BASIS,           *
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    *
-// See the License for the specific language governing permissions and         *
-// limitations under the License.                                              *
 //                                                                             *
 //******************************************************************************
 
-// Capacitor Verilog-A modules
-// Ported from `ngspice/models/capacitors_*.lib` files
+//******************************************************************************
+// Capacitor modules
+//
+// Adopted from ngspice/models/capacitors_*.lib
+//
 // Modifications:
 // - removed sf scale factor
 // - removed ic parameter TODO: is this ok?
-// - forward mm_ok to cmim_core paramset
 // - moved if branches in cap_rfcmim into localparams
-// (c) Lukas Deutz
+//******************************************************************************
 
 // TODO: test setting multiplicity via $mfactor during device instantiaion
 
@@ -34,15 +44,18 @@
 // Note: top/bottom plate parasitic capacitance is included by parasiticC extraction!
 // Note: top (Metal3) corresponds to PLUS pin
 
+(* desc="cap_cmim capacitor module" *)
 module cap_cmim(PLUS, MINUS);
-    // external ports
     inout PLUS, MINUS;
     electrical PLUS, MINUS;
-    // internal nodes
+
     electrical n1;
-    // parameters
-    parameter real l = 7u;
-    parameter real w = 7u;
+
+    (* desc="Device length", units="m" *)
+    parameter real l = 7u from [7u:75u];
+    (* desc="Device width", units="m" *)
+    parameter real w = 7u from [7u:75u];
+    (* desc="Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
 
     resistor #(.r(55m)) R1(PLUS, n1);
@@ -57,20 +70,25 @@ endmodule
 // Note: top plate (Metal3) corresponds to PLUS pin, bottom plate corresponds to MINUS pin, bn is substrate bulk node
 // Note: valid parameter range for w and l: 7um to 75um
 // Note: valid parameter range for wfeed: 1um to 30um but maximum wfeed = w-1.2um
-//
+
+(* desc="cap_rfcmim capacitor module" *)
 module cap_rfcmim(PLUS, MINUS, bn);
-    // external ports
     inout PLUS, MINUS, bn;
     electrical PLUS, MINUS, bn;
-    // internal nodes
+
     electrical n2, n3, n4, n5, n51;
-    // user facing parameters
+
+    (* desc="Device length", units="m" *)
     parameter real l = 7u from [7u:75u];
+    (* desc="Device width", units="m" *)
     parameter real w = 7u from [7u:75u];
+    (* desc="Enable mismatch" *)
     parameter integer mm_ok = 0 from [0:1];
+    (* desc="Feed line width", units="m" *)
     parameter real wfeed = 2uc from [1u:30u];
+    (* desc="Coupling capacitance to substrate", units="F" *)
     parameter real cic0 = 1E-18;
-    // localparam
+
     localparam real sf = 1E-6;
     localparam real lplate_val = (0.353158 * (l/sf) + 0.485684*l/w) * 1e-12;
     localparam real lfeed_val  = (6.03468  + 0.0814268* (w/sf) - 0.821243*log(wfeed/sf)/log(1.55)) * 1e-12;
@@ -84,7 +102,7 @@ module cap_rfcmim(PLUS, MINUS, bn);
     localparam real lmim_eff = (lmim_raw > 1.0e-18) ? lmim_raw : 1.0e-18;
     localparam real rsub_eff = (rsub_val > 10.0e-3) ? rsub_val : 10.0e-3;
     localparam real lfeed_eff = (lfeed_val > 1.0e-18) ? lfeed_val : 1.0e-18;
-    //   --------- model subcircuit ------------------------------
+
     // TODO: use device primitives from LRM annex E instead?
     capacitor #(.c(cic0)) Cic1(PLUS, bn);
     capacitor #(.c(cic0)) Cic1(MINUS, bn);

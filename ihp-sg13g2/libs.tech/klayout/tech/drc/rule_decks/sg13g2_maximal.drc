@@ -1012,7 +1012,7 @@ class DRC::DRCLayer
         end
         constraint.each do |expression|
             if expression[0] == ">"
-                edge_layer = edge_layer.with_length((expression[1] + 1), nil)
+                edge_layer = edge_layer.with_length((expression[1] + 1.dbu), nil)
             elsif expression[0] == "<"
                 edge_layer = edge_layer.with_length(nil, expression[1])
             elsif expression[0] == "=="
@@ -1022,7 +1022,7 @@ class DRC::DRCLayer
             elsif expression[0] == ">="
                 edge_layer = edge_layer.with_length(expression[1], nil)
             elsif expression[0] == "<="
-                edge_layer = edge_layer.with_length(nil, (expression[1] + 1))
+                edge_layer = edge_layer.with_length(nil, (expression[1] + 1.dbu))
             else
                 raise "invalid expression"
             end
@@ -1537,6 +1537,7 @@ TopMetal2_slit = source.polygons("134/24")
 ColWind = source.polygons("139/0")
 RFMEM = source.polygons("147/0")
 DeepVia = source.polygons("152/0")
+EmWiHV = source.polygons("156/0")
 LBE = source.polygons("157/0")
 NoMetFiller = source.polygons("160/0")
 PEmWind = source.polygons("11/0")
@@ -1559,7 +1560,7 @@ Activ_and_nSD_block = Activ.ext_and(nSD_block)
 selring_pass = Passiv.with_holes
 Passiv_Pad_a1 = Passiv.sized(-150.0.um/2.0, acute_limit).sized(150.0.um/2.0, acute_limit)
 X2 = nSD_block.ext_or(pSD)
-pSD_not_nSD = nSD.ext_not(pSD)
+pSD_not_nSD = pSD.ext_not(nSD)
 subst_tie_hole = (pSD.holes - pSD.with_holes).without_holes
 pSD_pSD_a = pSD.ext_width(0.31.um)
 pSD_pSD_k = pSD.ext_with_area([["<", 0.25.um2]])
@@ -1617,7 +1618,7 @@ V4_Nsram = Via4.ext_not(SRAM)
 Via4_edgC1_in = Via4.ext_and(EdgeSeal)
 Via4_edgC1_out = Via4.ext_not(EdgeSeal)
 M5_Nsram = Metal5.ext_not(SRAM)
-belowTopMetaln_dfpad = Metal5.ext_and(dfpad)
+belowTopMetaln_dfpad = TopMetal1.ext_and(dfpad)
 Metal5_edgA1_in = Metal5.ext_and(EdgeSeal)
 Metal5_outside_EdgeSeal = Metal5.ext_outside(EdgeSeal)
 Metal5_slit_MIM_Slt_g_M5_sep_tmp1 = Metal5_slit.ext_separation(MIM, 0.6.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
@@ -1667,7 +1668,7 @@ ContBar_Act_GP = ContBar.ext_and(Gate)
 ContBar_outside_TRANS = ContBar.ext_outside(TRANS)
 dschottky_1 = Activ_and_nSD_block.ext_and(nBuLay)
 dpin_0 = BasPoly.ext_and(Activ).ext_and(BiWind).ext_and(nSD_block)
-nSD_not_pSD = pSD_not_nSD.dup
+nSD_not_pSD = nSD.ext_not(pSD)
 subst_tie_hole_w_npn = subst_tie_hole.ext_interacting_with_text(TEXT_0, "npn*")
 pSDL_enc_area = subst_tie_hole.ext_not(pSD)
 Act_Nsram_or_Activ_mask = Act_Nsram.ext_or(Activ_mask)
@@ -1795,7 +1796,7 @@ subst_tie_npn = pSD.ext_touching(subst_tie_hole_w_npn).ext_touching(TRANS)
 emit_npn13G2 = EmWind.inside(transG2)
 emit_npn13G2L = EmWind.inside(transG2L)
 trans_bip = transG2.ext_or(transG2C, transG2L, transG2V)
-emit_npn13G2V = EmWind.inside(transG2V)
+emit_npn13G2V = EmWiHV.inside(transG2V)
 nBuLayGen_nBuLay = nBuLay.ext_or(nBuLayGen)
 schottky_nbl_rec = isoPWell.not_outside(SalBlock).not_outside(nSD_block).not_outside(Recog_diode).not_outside(ThickGateOx)
 ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp3 = ThickGateOx.ext_with_coincident_edges(ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2)

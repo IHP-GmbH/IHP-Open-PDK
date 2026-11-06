@@ -1,0 +1,17 @@
+
+module tb_esd_nmos_cl_dc(Vin1, Vin2);
+    inout Vin1, Vin2;
+    electrical Vin1, Vin2;
+
+    parameter real ib = 1m;
+    parameter integer m = 1;
+    parameter integer rfmode = 0 from [0:1];
+
+    ground gnd;
+
+    idc #(.dc(ib)) I0(gnd, Vin1);
+    nmoscl_2 #(.m(m), .l(0.36u), .w(168u), .rfmode(rfmode)) XD1(gnd, Vin1);
+
+    idc #(.dc(ib)) I1(gnd, Vin2);
+    nmoscl_4 #(.m(m), .l(0.36u), .w(168u), .rfmode(rfmode)) XD2(gnd, Vin2);
+endmodule

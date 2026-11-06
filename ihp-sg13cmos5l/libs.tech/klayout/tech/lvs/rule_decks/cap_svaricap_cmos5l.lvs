@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+#==========================================================================
+# Copyright 2024 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+#==========================================================================
+
+#=========================================
+# ---- CMOS5L SVARICAP DERIVATIONS ----
+#=========================================
+#
+# IHP-SG13CMOS5L override of the SVaricap section of cap_derivations.lvs.
+#
+# G2 recognizes the device through nwell_iso (general_derivations.lvs:38,
+# nwell_iso = nwell_drw.and(nbulay_drw)). nBuLay is a forbidden layer in CMOS5L,
+# so nwell_iso is always empty and every varicap_* region produced by
+# cap_derivations.lvs comes out empty. The CMOS5L SVaricap PCell draws
+# ThickGateOx in place of nBuLay (SVaricap_code.py), so the recognizer is redone
+# here on NWell + ThickGateOx.
+#
+# cap_derivations.lvs stays symlinked to G2 so that MIMCAP, RFCMIM and MOSCAP
+# derivations keep tracking upstream. Everything downstream of varicap_core has
+# to be recomputed, not just varicap_core itself.
+#
+#=========================================
+
+logger.info('Starting CMOS5L SVaricap derivations override')
+
+varicap_core = ngate.and(nwell_drw).and(thickgateox_drw).not(varicap_exc)
+varicap_meas_mk = activ.interacting(text_drw.texts(varicap_patt)).interacting(varicap_core)
+varicap_diff_port = nactiv.interacting(varicap_core).not(varicap_core)
+                    .and(nwell_drw).and(thickgateox_drw).not(varicap_exc).sized(-1.nm)
+varicap_poly_port = gatpoly.interacting(varicap_core)
+varicap_ports = varicap_poly_port.join(varicap_diff_port)
+varicap_dev_mk = nwell_drw.sized(1.um).covering(varicap_core).interacting(varicap_ports)

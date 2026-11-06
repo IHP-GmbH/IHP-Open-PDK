@@ -1,0 +1,19 @@
+// load modelgen
+load mgsim
+// load custom gnucap plugins
+load ../../../plugins/gnucap
+
+verilog
+`include ../../../models/cornerHBT.va
+`include ./tb_dc_mc_hbt_13g2l.va
+
+hbt_typ_stat corner_hbt();
+tb_mc_hbt_13g2l #(.mm_ok(0)) tb();
+
+// measure collector current through VCE; VBIC does not declare Ic as an outputvar.
+print dc i(tb.vce)
+store dc i(tb.vce)
+dc $seed 1 1000 1 basic
+measure ic_mean = sample_mean("i(tb.vce)")
+measure ic_std = sample_std("i(tb.vce)")
+status notime

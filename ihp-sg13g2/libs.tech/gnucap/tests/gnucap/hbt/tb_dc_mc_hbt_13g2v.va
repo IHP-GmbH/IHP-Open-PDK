@@ -1,0 +1,16 @@
+load ../../../plugins/models/sg13g2_hbt_paramset.so
+load ../../../plugins/models/idc.so
+include ../../../models/sg13g2_hbt_module.va
+
+module tb_mc_hbt_13g2v();
+    electrical b, c;
+    parameter integer mm_ok = 0 from [0:1];
+    parameter integer Nx = 1 from [1:4];
+    parameter real El = 2.5 from [1:5];
+
+    ground gnd;
+
+    vsource #(.dc(1.5)) vce(c, gnd);
+    idc #(.dc(1u)) i0(gnd, b);
+    npn13G2v #(.Nx(Nx), .El(El), .mm_ok(mm_ok)) q1(c, b, gnd, gnd);
+endmodule
