@@ -39,14 +39,13 @@ class cap_cmomf(DloGen):
     libs.tech/magic/ihp-sg13cmos5l-cap.tcl. TopMetal1 is deliberately excluded:
     it is practically useless as a capacitor plate on this stack.
 
-    Capacitance. AREACAP_M1 / AREACAP_MN below come from that same generator
-    after its recalibration in PR #69, where the Magic wire-edge parasitic
-    extraction was compared against a full 3D OpenEMS analysis and corrected
-    for the roughly constant 11% difference between them. They are therefore a
-    simulation-derived fit, not foundry-provided silicon data, and no
-    corner or mismatch spread is modelled. The C label painted here, the
-    Verilog-A/OSDI model and the xschem symbol all evaluate the same
-    expression, so layout and simulation agree by construction.
+    Capacitance. C = dens * (l - 2 rim) * (w - 2 rim), with dens and rim per
+    metal stack in STACK_CAP below, fitted to Palace EM results on the drawn
+    geometry. They are a simulation-derived fit, not foundry-provided silicon
+    data; libs.tech/verilog-a/cap_cmomf/README.md says what each number rests
+    on. The C label painted here, the Verilog-A/OSDI model and the xschem
+    symbol all evaluate the same expression, so layout and simulation agree by
+    construction.
 
     Axis convention. l is the X extent and w the Y extent, the same mapping
     cap_cmomi uses, because both devices are extracted by the shared
@@ -89,11 +88,20 @@ class cap_cmomf(DloGen):
     PIN_SIZE     = 0.20    # nominal pin square, clipped to the bar it sits on
 
     # ---------------------------------------------------------------
-    # Capacitance density (fF/um^2), recalibrated against OpenEMS in PR #69.
-    # See the class docstring for provenance and for what is NOT modelled.
+    # Capacitance density (fF/um^2) and dead rim (um) per (mmin, mmax).
+    # See the class docstring for provenance. Stacks that are not listed have
+    # no EM point: STACK_CAP_DEFAULT, or the one-level Metal1 value below.
     # ---------------------------------------------------------------
-    AREACAP_M1 = 0.372     # base when Metal1 is the bottom plate
-    AREACAP_MN = 0.305     # base otherwise, and per additional metal layer
+    STACK_CAP = {
+        (1, 4): (1.107, 0.207),
+        (2, 4): (0.852, 0.193),
+        (3, 4): (0.504, 0.121),
+        (1, 3): (0.76, 0.20),
+        (2, 3): (0.50, 0.20),
+        (1, 2): (0.50, 0.20),
+        (1, 1): (0.29, 0.20),
+    }
+    STACK_CAP_DEFAULT = (0.17, 0.20)
 
     # ---------------------------------------------------------------
     # Parameter specs
@@ -148,16 +156,16 @@ class cap_cmomf(DloGen):
     # Helpers
     # ---------------------------------------------------------------
     @classmethod
-    def areacap(cls, mmin, mmax):
-        """Capacitance density in fF/um^2 for a given metal stack.
+    def capacitance(cls, mmin, mmax, l_um, w_um):
+        """Capacitance in fF of a drawn device on a given metal stack.
 
         Kept as a classmethod so the sweep and any external checker can call
-        the exact expression the label uses. The Verilog-A model, the ngspice
-        wrapper and the xschem symbol duplicate this formula deliberately;
+        the exact expression the label uses. The Verilog-A model, the Magic
+        generator and the xschem symbol duplicate this formula deliberately;
         they must be changed together.
         """
-        base = cls.AREACAP_M1 if mmin == 1 else cls.AREACAP_MN
-        return base + (mmax - mmin) * cls.AREACAP_MN
+        dens, rim = cls.STACK_CAP.get((mmin, mmax), cls.STACK_CAP_DEFAULT)
+        return dens * (l_um - 2 * rim) * (w_um - 2 * rim)
 
     @classmethod
     def _pin_box(cls, rect, side):
@@ -476,7 +484,7 @@ class cap_cmomf(DloGen):
               top_metal_name)
 
         # -- Capacitance label (must match the simulation model, contract) --
-        cval = self.areacap(mmin, mmax) * dx * dy
+        cval = self.capacitance(mmin, mmax, dx, dy)
         label_text = 'cap_cmomf C={:.3f}fF'.format(cval)
         dbCreateLabel(self, text_layer, Point(0, GridFix(-0.5)),
                       label_text, 'centerLeft', 'R0',

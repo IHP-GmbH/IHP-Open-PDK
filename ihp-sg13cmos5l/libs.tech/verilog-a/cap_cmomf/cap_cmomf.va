@@ -17,53 +17,65 @@
 //
 // cap_cmomf - metal fringe (finger) MoM capacitor, ihp-sg13cmos5l M1..M4
 //
-// *** LOW-FREQUENCY MODEL ONLY. NOT VALIDATED ON SILICON. ***
+// *** FITTED TO EM SIMULATION. NOT VALIDATED ON SILICON. ***
 //
-// This is deliberately a much thinner model than its sibling cap_cmomi, and
-// the difference is not an oversight. cap_cmomi ships a full RF equivalent
-// circuit (series R/L, skin effect, oxide and substrate shunt) because IHP
-// characterised that device and published coefficients for it. For the fringe
-// cap no such characterisation exists: neither silicon measurements nor an EM
-// fit. Reusing cap_cmomi's RF branches here would mean attaching one device's
-// measured parasitics to another device's geometry, which is inventing data.
+// Equivalent circuit, one substrate branch per plate so that the device is
+// symmetric and its orientation has no electrical meaning:
 //
-// So this model contributes exactly what is actually known:
+//        Rs/2  Ls/2      C      Ls/2  Rs/2
+//   PLUS --/\/\--uuu--+---||---+--uuu--/\/\-- MINUS
+//     |                                         |
+//     Cp                                        Cp
+//     |                                         |
+//     rsub                                      rsub
+//     |                                         |
+//    SUB ------------------------------------- SUB
 //
-//     C = areacap(mmin, mmax) * l * w
+// rfmodel = 0 (default) leaves C, its temperature coefficient and the leak.
+// All internal nodes collapse, so the cost per instance stays that of a
+// capacitor. rfmodel = 1 adds series R and L, the dielectric loss and the
+// substrate branches.
 //
-// and nothing else. There is no series resistance, no series inductance, no
-// substrate coupling and therefore no substrate terminal; the device is
-// 2-terminal. Consequences a designer should be aware of:
+// CAPACITANCE
+//     C = dens(mmin, mmax) * (l - 2 rim) * (w - 2 rim)
 //
-//   - it stays capacitive at every frequency and has no self-resonance, so
-//     high-frequency results are optimistic and must not be trusted;
-//   - it has no path to the substrate, so substrate parasitics of the real
-//     structure are absent. Extract the layout if you need them;
-//   - there is no corner or mismatch spread. Every corner section of
-//     cornerCAP.lib maps to this same nominal model. That is not a claim of
-//     corner stability, the spread is simply not modelled.
+// The outer rim of the drawn device holds feeds and bars rather than comb, so
+// C does not scale with the drawn area. The earlier C = areacap * l * w read
+// 13 to 62 % high against EM, most on small devices. dens and rim are fitted
+// to Palace results (order 3, drawn geometry), see README.md in this
+// directory, which also says how good each number is:
 //
-// COEFFICIENT PROVENANCE
-//   AREACAP_M1 = 0.372 fF/um^2, AREACAP_MN = 0.305 fF/um^2 come from the Magic
-//   device generator libs.tech/magic/ihp-sg13cmos5l-cap.tcl, which is the
-//   origin of this device (contributed by R. Timothy Edwards, PR #31). They
-//   are the values it carries after PR #69, where the Magic wire-edge
-//   parasitic extraction was compared against a full 3D OpenEMS analysis and
-//   corrected for the roughly constant 11% difference between the two. They
-//   are therefore simulation-derived, not foundry silicon data.
+//     Metal1..4   1.107 fF/um^2   0.207 um   max error 2.5 %
+//     Metal2..4   0.852           0.193      max error 4.5 %
+//     Metal3..4   0.504           0.121      max error 8 %
 //
-//   Do NOT use the earlier 0.67 / 0.55 fF/um^2 pair that circulated before
-//   that recalibration: for a full M1..M4 stack it overstates the density by
-//   about a factor of 1.8.
+// The other stacks have no converged EM point. Their densities are estimates
+// from RC extraction and rim is 0.20 um.
 //
-//   The same expression is duplicated, on purpose, in the PCell
-//   (cap_cmomf_code.py), the xschem symbol (cap_cmomf.sym) and the ngspice
-//   wrapper (cap_cmomf.lib), so the drawn C label and the simulated value can
-//   never disagree. All four have to be changed together.
+// The same expression is duplicated, on purpose, in the PCell
+// (cap_cmomf_code.py), the xschem symbol (cap_cmomf.sym), the Magic generator
+// (ihp-sg13cmos5l-cap.tcl) and the PCell sweep (cap_cmomf_sweep.py), so the
+// drawn C label and the simulated value can never disagree. All of them have
+// to be changed together.
+//
+// LIMITS
+//   - No value here is a silicon value. Corner, temperature, dielectric loss
+//     and mismatch numbers are estimates from the process specification and
+//     from publications on other processes, see README.md.
+//   - rfmodel = 1 has one series R anchor, a 25 um x 10 um Metal2..4 device.
+//     Other sizes are extrapolated by the closed form below.
+//   - The dielectric term is a series R that is correct at fref and too small
+//     below it. There is no dielectric absorption.
+//   - Finger parity is not modelled. An even finger count puts both outer
+//     fingers on one net, and such a device reads 7 to 14 % under the fit on
+//     narrow cells.
 //
 // Terminals:
 //   PLUS   - plate 1 (left edge of the drawn device)
 //   MINUS  - plate 2 (top edge of the drawn device)
+//   SUB    - substrate. The wrapper subckt ties it to node 0, so the device
+//            stays 2-terminal for schematics and LVS; rsub stands for the
+//            path to the real substrate tie.
 //
 // Instance parameters:
 //   w        - width  [m], the Y extent of the drawn device (default 5 um)
@@ -72,15 +84,24 @@
 //   mmax     - top metal index    (1 = M1 .. 4 = M4)  (default 4)
 //   subblock - 0|1 substrate-isolation block (layout/LVS only, no electrical
 //              effect; accepted for interface parity with cap_cmomi)
+//   rfmodel  - 0: capacitance only, 1: full equivalent circuit (default 0)
+//   subscale - factor on Cp (default 1). About 0.57 inside an array, where
+//              neighbours screen the plates from the substrate.
+//   cscale   - corner factor on C (default 1), set by cornerCAP.lib
+//   rscale   - corner factor on the metal R (default 1), set by cornerCAP.lib
+//   mmz      - standard normal deviate for local mismatch (default 0)
+//
+// Model parameters: tc1, tcr, tand, fref, rsub, tnom, see below.
 // ---------------------------------------------------------------------------
 
 `include "disciplines.vams"
 `include "constants.vams"
 
-module cap_cmomf(PLUS, MINUS);
+module cap_cmomf(PLUS, MINUS, SUB);
 
-    inout PLUS, MINUS;
-    electrical PLUS, MINUS;
+    inout PLUS, MINUS, SUB;
+    electrical PLUS, MINUS, SUB;
+    electrical na, nb, np, nm;
 
     // ---- instance parameters -------------------------------------------------
     (* type = "instance", units = "m", desc = "width (Y extent)" *)
@@ -93,6 +114,30 @@ module cap_cmomf(PLUS, MINUS);
     parameter integer mmax     = 4    from [1:4];
     (* type = "instance", desc = "substrate-isolation block (layout/LVS only)" *)
     parameter integer subblock = 0    from [0:1];
+    (* type = "instance", desc = "0: C only, 1: full equivalent circuit" *)
+    parameter integer rfmodel  = 0    from [0:1];
+    (* type = "instance", desc = "factor on the plate to substrate C" *)
+    parameter real    subscale = 1.0  from [0.0:inf);
+    (* type = "instance", desc = "corner factor on C" *)
+    parameter real    cscale   = 1.0  from (0.0:inf);
+    (* type = "instance", desc = "corner factor on metal R" *)
+    parameter real    rscale   = 1.0  from (0.0:inf);
+    (* type = "instance", desc = "mismatch deviate, in sigma" *)
+    parameter real    mmz      = 0.0;
+
+    // ---- model parameters ----------------------------------------------------
+    (* units = "1/K", desc = "temperature coefficient of C" *)
+    parameter real    tc1      = 30e-6;
+    (* units = "1/K", desc = "temperature coefficient of metal R" *)
+    parameter real    tcr      = 3.5e-3;
+    (* desc = "dielectric loss tangent at fref" *)
+    parameter real    tand     = 1.0e-3 from [0.0:inf);
+    (* units = "Hz", desc = "frequency at which tand is exact" *)
+    parameter real    fref     = 2.44e9 from (0.0:inf);
+    (* units = "Ohm", desc = "series R of a substrate branch" *)
+    parameter real    rsub     = 7.0e3  from (0.0:inf);
+    (* units = "C", desc = "temperature of the coefficients" *)
+    parameter real    tnom     = 27.0;
 
     // Device multiplicity goes through the Verilog-AMS standard $mfactor, read
     // in the analog block. The ADMS/Xyce toolchain has no $mfactor, so under
@@ -103,28 +148,41 @@ module cap_cmomf(PLUS, MINUS);
     parameter real    mult     = 1.0  from (0.0:inf);
 `endif
 
-    // ---- named branch --------------------------------------------------------
-    branch (PLUS, MINUS) br_cmain;
+    // ---- named branches ------------------------------------------------------
+    branch (PLUS, MINUS) br_leak;
+    branch (na, nb)      br_cmain;
+    branch (PLUS, na)    br_sp;
+    branch (nb, MINUS)   br_sm;
+    branch (PLUS, np)    br_cp;
+    branch (MINUS, nm)   br_cm;
+    branch (np, SUB)     br_rp;
+    branch (nm, SUB)     br_rm;
 
-    real lu, wu, areacap, cmain_fF, Cmain, mMod;
-    integer Nc, Nlay;
+    real lu, wu, dens, rim, le, we, cnom_fF, Cmain, dT, mMod;
+    real frac, ncutr, nfx, nfy, wsp, t, Rmetal, Rside, Lside, kst, Cplate;
+    integer Nlay, nv, nh;
 
     // Weak DC anchor across the plates. A pure ddt() contribution leaves the
     // node pair without a DC path, which is a singular operating point for an
     // otherwise unconnected instance. 1e-12 S is a 1 Tohm parallel leak.
     localparam real GLEAK = 1.0e-12;
 
-    // Capacitance density [fF/um^2], see COEFFICIENT PROVENANCE above.
-    localparam real AREACAP_M1 = 0.372;
-    localparam real AREACAP_MN = 0.305;
+    // Closed form for the series R: metal sheet R [Ohm/sq], via stack per cut
+    // [Ohm] and the factor that makes it meet the EM anchor.
+    localparam real RSHEET = 0.088;
+    localparam real RCUT   = 9.0;
+    localparam real KEM    = 1.2355;
+
+    // Local mismatch [1 x sqrt(fF)]: sigma(C)/C = AMM / sqrt(C / fF).
+    localparam real AMM    = 0.0085;
 
     analog begin
 
         // ---- device multiplicity --------------------------------------------
-        // Read as the standard-compliant handle only. The simulator already
-        // scales the device stamp by m (ngspice/OSDI and gnucap both do), so
-        // the model must NOT scale by mMod itself or the result goes as m^2.
-        // Reserved for the future mismatch model, as in cap_cmomi.va.
+        // The simulator already scales the device stamp by m (ngspice/OSDI and
+        // gnucap both do), so the model must NOT scale by mMod itself or the
+        // result goes as m^2. It enters only the mismatch term, where m devices
+        // in parallel average out.
 `ifdef __XYCE__
         mMod = mult;
 `else
@@ -134,23 +192,78 @@ module cap_cmomf(PLUS, MINUS);
         // ---- units: parameters arrive in SI, model math in micrometres ------
         lu = l * 1.0e6;
         wu = w * 1.0e6;
+        Nlay = mmax - mmin + 1;
+        if (Nlay < 1) Nlay = 1;
+        dT = $temperature - (tnom + `P_CELSIUS0);
 
-        // ---- layer count (clamped >= 1) -------------------------------------
-        Nc   = mmax - mmin + 1;
-        Nlay = (Nc < 1) ? 1 : Nc;
+        // ---- density [fF/um^2] and dead rim [um] per stack ------------------
+        rim = 0.20;
+        case (10 * mmin + mmax)
+            14:      begin dens = 1.107; rim = 0.207; end
+            24:      begin dens = 0.852; rim = 0.193; end
+            34:      begin dens = 0.504; rim = 0.121; end
+            13:      dens = 0.76;
+            23:      dens = 0.50;
+            12:      dens = 0.50;
+            11:      dens = 0.29;
+            default: dens = 0.17;
+        endcase
+        le = lu - 2.0 * rim;
+        we = wu - 2.0 * rim;
+        if (le < 0.1) le = 0.1;
+        if (we < 0.1) we = 0.1;
 
-        // ---- area capacitance density [fF/um^2] -----------------------------
-        // Base set by the bottom plate, plus one increment per extra layer.
-        // Identical to the Magic generator's cap_recalc.
-        areacap  = ((mmin == 1) ? AREACAP_M1 : AREACAP_MN)
-                   + (Nlay - 1) * AREACAP_MN;
-
-        cmain_fF = areacap * lu * wu;
-        Cmain    = cmain_fF * 1.0e-15;
+        cnom_fF = dens * le * we;
+        Cmain   = cnom_fF * 1.0e-15 * cscale * (1.0 + tc1 * dT)
+                  * (1.0 + mmz * AMM / sqrt(mMod * cnom_fF));
 
         // ---- contributions ---------------------------------------------------
         I(br_cmain) <+ Cmain * ddt(V(br_cmain));
-        I(br_cmain) <+ GLEAK * V(br_cmain);
+        I(br_leak)  <+ GLEAK * V(br_leak);
+
+        if (rfmodel == 1) begin
+            // ---- series metal and via cuts, levels share the current --------
+            // nh levels have fingers along Y off a spine along X, nv levels
+            // the other way round. Terms: spine, Y fingers, X fingers, cuts.
+            frac = 1.0 / Nlay;
+            nv   = Nlay / 2;
+            nh   = Nlay - nv;
+            wsp  = 0.2 * nh + 0.385 * nv;
+            nfx  = floor((lu - 0.5) / 0.82);
+            nfy  = floor((wu - 0.5) / 0.82);
+            ncutr = floor(wu / 0.47);
+            if (nfx < 1.0)   nfx = 1.0;
+            if (nfy < 1.0)   nfy = 1.0;
+            if (ncutr < 1.0) ncutr = 1.0;
+            t = (nh * frac) * (nh * frac) * RSHEET * max(lu - 0.51, 0.2) / wsp / 3.0
+              + nh * frac * frac * RSHEET * max(wu - 0.415, 0.2) / 0.2 / 3.0 / nfx;
+            if (nv > 0)
+                t = t + nv * frac * frac * RSHEET * max(lu - 0.41, 0.2) / 0.2 / 3.0 / nfy;
+            if (Nlay > 1)
+                t = t + ((nh * frac) * (nh * frac) + frac * frac) * RCUT / ncutr;
+            Rmetal = 2.0 * t * KEM * rscale * (1.0 + tcr * dT);
+
+            // ---- series branch, half of R and L on each side ----------------
+            Rside = 0.5 * (Rmetal + tand / (`M_TWO_PI * fref * Cmain));
+            Lside = 0.2e-12 * lu;
+            V(br_sp) <+ Rside * I(br_sp) + Lside * ddt(I(br_sp));
+            V(br_sm) <+ Rside * I(br_sm) + Lside * ddt(I(br_sm));
+            V(br_sp) <+ white_noise(4.0 * `P_K * $temperature * Rside, "rs");
+            V(br_sm) <+ white_noise(4.0 * `P_K * $temperature * Rside, "rs");
+
+            // ---- plate to substrate -----------------------------------------
+            kst    = (mmin == 1) ? 1.0 : ((mmin == 2) ? 0.80 : 0.58);
+            Cplate = kst * subscale * (0.00277 * lu * wu + 0.119 * (lu + wu)) * 1.0e-15;
+            I(br_cp) <+ Cplate * ddt(V(br_cp));
+            I(br_cm) <+ Cplate * ddt(V(br_cm));
+            I(br_rp) <+ V(br_rp) / rsub;
+            I(br_rm) <+ V(br_rm) / rsub;
+        end else begin
+            V(br_sp) <+ 0.0;
+            V(br_sm) <+ 0.0;
+            V(br_rp) <+ 0.0;
+            V(br_rm) <+ 0.0;
+        end
 
     end
 

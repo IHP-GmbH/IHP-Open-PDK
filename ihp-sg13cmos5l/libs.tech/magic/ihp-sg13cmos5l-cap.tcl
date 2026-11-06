@@ -34,7 +34,7 @@
 #----------------------------------------------------------------
 
 proc sg13cmos5l::cap_cmomf_defaults {} {
-    return {w 2.00 l 2.00 value 9.28 class capacitor \
+    return {w 2.00 l 2.00 value 2.785 class capacitor \
 		mmin metal1 mmax metal4 square 1 subblock 0 \
 		lmin 2.00 wmin 2.00 lmax 100.0 wmax 100.0}
 }
@@ -55,23 +55,31 @@ proc sg13cmos5l::cap_recalc {field parameters} {
     set mminidx [lsearch $metallist $mmin]
     set mmaxidx [lsearch $metallist $mmax]
 
-    set areacap 0.305
-    if {$mminidx == 0} {set areacap 0.372}
-    for {set i [expr {$mminidx + 1}]} {$i <= $mmaxidx} {incr i} {
-	set areacap [expr {$areacap + 0.305}]
+    # C = areacap * (l - 2 rim) * (w - 2 rim), fitted to EM.  Kept in step with
+    # cap_cmomf.va, cap_cmomf_code.py, cap_cmomf.sym and cap_cmomf_sweep.py.
+    set rim 0.20
+    switch "$mminidx $mmaxidx" {
+	"0 3"   {set areacap 1.107; set rim 0.207}
+	"1 3"   {set areacap 0.852; set rim 0.193}
+	"2 3"   {set areacap 0.504; set rim 0.121}
+	"0 2"   {set areacap 0.76}
+	"1 2"   {set areacap 0.50}
+	"0 1"   {set areacap 0.50}
+	"0 0"   {set areacap 0.29}
+	default {set areacap 0.17}
     }
 
     switch  $field {
 	value { 
 	    if {$square == 1} {
 		# If cap is square, then update both w and l.
-		set wlval [expr {sqrt($value / $areacap)}]
+		set wlval [expr {sqrt($value / $areacap) + 2 * $rim}]
 		set w [format "%.3f" $wlval]
 		set l [format "%.3f" $wlval]
 	    } else {
 		# Otherwise, keep w and update l.
 		set area [expr {$value / $areacap}]
-		set lval [expr {$area / $w}]
+		set lval [expr {$area / ($w - 2 * $rim) + 2 * $rim}]
 		set l [format "%.3f" $lval]
 	    }
 	}
@@ -80,7 +88,7 @@ proc sg13cmos5l::cap_recalc {field parameters} {
 	l -
 	w   {
 	    # Update value based on new width, length, or metal stack
-	    set captotal [expr {$areacap * $w * $l}]
+	    set captotal [expr {$areacap * ($w - 2 * $rim) * ($l - 2 * $rim)}]
 	    set value [format "%.3f" $captotal]
 	}
     }

@@ -14,9 +14,8 @@
 * so both the testbench and the ref/ output beside it are this PDK's own.
 *
 * Same geometry as tb_cap_cmomi_typ.sp on purpose, so the two are directly
-* comparable.  The fringe cap is the denser of the pair here, 1.287 fF/um2
-* against 1.09, and its corner sits near 49.5 MHz where cmomi's sits near
-* 97.6 MHz.
+* comparable.  The fringe cap is the larger of the pair here, 23.3 fF against
+* 16.3 fF, and its corner sits near 68.4 MHz where cmomi's sits near 97.6 MHz.
 *
 * The cap_cmomf OSDI is loaded by the directory .spiceinit, which is a real
 * file here rather than the usual symlink into SG13G2 precisely because that

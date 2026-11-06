@@ -137,8 +137,8 @@ are not compared, `m` is not compared because of the `'mim'` substring gate in
 `map_capacitor_params`, a device declared on the wrong metal band matches
 silently, and a hierarchy with no net crossing a cell boundary extracts nothing
 in deep mode. The band case costs more here than there: `cap_cmomf` runs from
-0.372 fF/um2 on Metal1 alone to 1.287 on the full Metal1-Metal4 stack, so a
-wrong band is a factor of three, not two.
+0.29 fF/um2 on Metal1 alone to 1.107 on the full Metal1-Metal4 stack, so a
+wrong band is a factor of almost four, not two.
 
 Three things differ, and they are what the cmomf suite adds:
 

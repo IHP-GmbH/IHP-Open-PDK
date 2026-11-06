@@ -58,11 +58,19 @@ LVS_RUNNER = os.path.join(KLAYOUT_DIR, "tech", "lvs", "run_lvs.py")
 DRC_RUNNER = os.path.join(KLAYOUT_DIR, "tech", "drc", "run_drc.py")
 TECH_NAME = "sg13cmos5l"
 
-# Capacitance density [fF/um^2], kept in step with cap_cmomf_code.py,
-# cap_cmomf.va, cap_cmomf.lib and cap_cmomf.sym. See the PCell docstring for
-# where the numbers come from.
-AREACAP_M1 = 0.372
-AREACAP_MN = 0.305
+# Capacitance density [fF/um^2] and dead rim [um] per (mmin, mmax), kept in
+# step with cap_cmomf_code.py, cap_cmomf.va, cap_cmomf.sym and the Magic
+# generator. See the PCell docstring for where the numbers come from.
+STACK_CAP = {
+    (1, 4): (1.107, 0.207),
+    (2, 4): (0.852, 0.193),
+    (3, 4): (0.504, 0.121),
+    (1, 3): (0.76, 0.20),
+    (2, 3): (0.50, 0.20),
+    (1, 2): (0.50, 0.20),
+    (1, 1): (0.29, 0.20),
+}
+STACK_CAP_DEFAULT = (0.17, 0.20)
 
 # Placement grid, mirrored from sg13cmos5l_tech.json techParams. The PCell
 # snaps w and l with GridFix before drawing anything, so the analytic check
@@ -109,9 +117,8 @@ def expected_c_ff(params):
     """Analytic capacitance in fF for a config, from the shared formula."""
     mmin = params.get("mmin", 1)
     mmax = params.get("mmax", 4)
-    base = AREACAP_M1 if mmin == 1 else AREACAP_MN
-    areacap = base + (mmax - mmin) * AREACAP_MN
-    return areacap * _gridfix(params["l"] * 1e6) * _gridfix(params["w"] * 1e6)
+    dens, rim = STACK_CAP.get((mmin, mmax), STACK_CAP_DEFAULT)
+    return dens * (_gridfix(params["l"] * 1e6) - 2 * rim) * (_gridfix(params["w"] * 1e6) - 2 * rim)
 
 
 def _generate_one():

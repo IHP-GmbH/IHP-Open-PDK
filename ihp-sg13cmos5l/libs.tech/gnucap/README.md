@@ -61,7 +61,7 @@ Modelled in Verilog-A and exercised by the test suite:
 - capacitors: `cap_cmomi` and `cap_cmomf`, the interdigitated and the metal
   fringe MoM cap, both on this PDK's Metal1..Metal4 stack. The two testbenches
   use the same 5 um x 5 um M1..M4 geometry so their numbers compare directly:
-  the fringe device is the denser of the pair, 1.287 fF/um2 against 1.09.
+  the fringe device is the larger of the pair, 23.3 fF against 16.3 fF.
 
 Modelled but not exercised: `ptap1` and `ntap1` have paramsets in
 `models/resistor_paramset.va`, and no testbench on either side instantiates them.

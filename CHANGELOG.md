@@ -77,6 +77,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Magic LVS: added inductors recognition ([#873](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/873))
 
 #### Simulation / Tools
+- `ihp-sg13cmos5l`: `cap_cmomf` capacitance fitted to EM with a dead rim per metal stack, replacing the area model that read 13 to 62 % high; adds temperature coefficient, corners and mismatch, and an optional RF equivalent circuit (`rfmodel=1`) with series R and L, dielectric loss and substrate branches. Not validated on silicon. Simulated C values and the PCell and symbol labels change.
 - Xschem: parallel-simulation scripts run through Tcl's `exec` ([#1118](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1118))
 - Palace submodule bumped to upstream HEAD for scikit-rf 2.0 fix ([#1040](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1040))
 - gnucap: `make check` properly builds before running tests ([#1077](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1077))
