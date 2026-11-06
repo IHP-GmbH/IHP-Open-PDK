@@ -1661,7 +1661,12 @@ ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp2 = Act_out_ThickGateOx.ext_coincid
 ThickGateOx_Act_out_ThickGateOx_TGO_b_sep_tmp5 = ThickGateOx.ext_and(Act_out_ThickGateOx)
 PWellBlock_relatedNWell = PWellBlock_relatedNWell_0.ext_or(NWell.inside(PWell_block))
 Rppd_0 = GatPoly_res.ext_and(pSD).ext_and(SalBlock_not_nSDBlock_not_esd)
+# Preserve the gate-region check and include facing end caps outside Activ.
+# Select poly shapes forming HV gates, clipped to ThickGateOx; standalone poly and
+# HV gate poly routed outside ThickGateOx are not subject to Gat.b1 (Gat.b applies).
+GP_mosHV_endcaps_Gat_b1 = GatPoly.interacting(GP_mosHV).ext_and(ThickGateOx).isolated(0.25.um).polygons
 GP_mosHV_Gat_b1 = GP_mosHV.ext_space(0.25.um, consider_intersecting_edges: false, polygon_output: true)
+GP_mosHV_Gat_b1 = GP_mosHV_Gat_b1.ext_or(GP_mosHV_endcaps_Gat_b1).merged
 ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp1 = ThickGateOx.ext_separation(GP_out_ThickGateOx, 0.34.um, consider_intersecting_edges: false, consider_touch_points: false, polygon_output: true)
 ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp2 = GP_out_ThickGateOx.ext_coincident_edges(ThickGateOx, outside: true, consider_touch_points: true)
 ThickGateOx_GP_out_ThickGateOx_TGO_d_sep_tmp5 = ThickGateOx.ext_and(GP_out_ThickGateOx)

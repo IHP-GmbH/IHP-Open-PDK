@@ -74,6 +74,7 @@ lint_python: env
 	@echo "Running python linting for Klayout-DRC/LVS scripts in $(PDK_NAME)"
 	@. $(VENV); \
 	 rc=0; \
+	 flake8 $(TOP_DIR)/ihp-common/libs.tech/klayout/tech/drc/testing || rc=1; \
 	 flake8 $(PDK_DIR)/$(dir $(DRC_TESTS)) || rc=1; \
 	 flake8 $(PDK_DIR)/$(dir $(LVS_TESTS)) || rc=1; \
 	 exit $$rc
@@ -88,6 +89,7 @@ lint: lint_python
 test-DRC-main: env
 	$(call skip-unless,$(DRC_TESTS)/run_regression.py,\
 	  echo "Running Klayout-DRC regression for all unit tests"; \
+	  python3 $(TOP_DIR)/ihp-common/libs.tech/klayout/tech/drc/testing/test_gat_b1_endcaps.py --pdk $(PDK_NAME); \
 	  python3 $(DRC_TESTS)/run_regression.py)
 
 #=================================
