@@ -136,6 +136,9 @@ end
 class RES2 < RBA::DeviceClassResistor
   def initialize
     super
+    # Apply merge switches during simplify as well as explicit combine_devices.
+    self.supports_serial_combination = SERIES_RES
+    self.supports_parallel_combination = PARALLEL_RES
     enable_parameter('W', true)
     enable_parameter('L', true)
     enable_parameter('R', false)
