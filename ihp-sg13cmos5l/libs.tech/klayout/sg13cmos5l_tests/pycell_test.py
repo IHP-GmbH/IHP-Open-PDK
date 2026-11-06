@@ -94,6 +94,14 @@ pcellCapMomSame = layout.create_cell("cap_cmomi", "SG13_dev", {"feed": "same"})
 pcellCapMomf = layout.create_cell("cap_cmomf", "SG13_dev", {})
 pcellCapMomfM2M4 = layout.create_cell("cap_cmomf", "SG13_dev", {"mmin": 2, "mmax": 4})
 
+# MOS capacitors (N- and P-type; defaults come from the CMOS5L tech parameters)
+pcellMoscapN = layout.create_cell("moscap_n", "SG13_dev", {})
+pcellMoscapP = layout.create_cell("moscap_p", "SG13_dev", {})
+assert pcellMoscapN is not None, "moscap_n PCell was not registered"
+assert pcellMoscapP is not None, "moscap_p PCell was not registered"
+assert not pcellMoscapN.is_empty(), "moscap_n PCell generated no geometry"
+assert not pcellMoscapP.is_empty(), "moscap_p PCell generated no geometry"
+
 # Guard rings (standalone cell, both types)
 pcellGuardRingNwell = layout.create_cell("guard_ring", "SG13_dev", {"type": "nwell"})
 pcellGuardRingPsub = layout.create_cell("guard_ring", "SG13_dev", {"type": "psub"})
@@ -156,6 +164,10 @@ top.insert(pya.DCellInstArray(pcellGuardRingPsub, pya.DTrans(pya.DVector(10, 125
 top.insert(pya.DCellInstArray(pcellNmosGuarded, pya.DTrans(pya.DVector(20, 125))))
 top.insert(pya.DCellInstArray(pcellPmosGuarded, pya.DTrans(pya.DVector(30, 125))))
 top.insert(pya.DCellInstArray(pcellSVaricapGuarded, pya.DTrans(pya.DVector(40, 125))))
+
+# Row 12: N- and P-type MOS capacitors
+top.insert(pya.DCellInstArray(pcellMoscapN, pya.DTrans(pya.DVector(0, 140))))
+top.insert(pya.DCellInstArray(pcellMoscapP, pya.DTrans(pya.DVector(10, 140))))
 
 # Large structures
 top.insert(pya.DCellInstArray(pcellBondpad, pya.DTrans(pya.DVector(40, 0))))

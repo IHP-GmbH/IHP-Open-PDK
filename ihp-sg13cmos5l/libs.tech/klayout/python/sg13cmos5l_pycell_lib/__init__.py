@@ -49,6 +49,8 @@ moduleNames = [
         'pmos_code',
         # Additional devices for SG13CMOS5L PDK
         'SVaricap_code',   # Modified - ThickGateOx replaces nBuLay
+        'moscap_n_code',  # Symlink - N-type MOS capacitor
+        'moscap_p_code',  # Symlink - P-type MOS capacitor
         'rsil_code',       # Symlink - silicided resistor
         'rppd_code',       # Symlink - p+ poly resistor
         'rhigh_code',      # Symlink - high-R poly resistor
