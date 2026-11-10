@@ -26,11 +26,14 @@ class CustomWriter < RBA::NetlistSpiceWriterDelegate
   def write_device(device)
     device_class = device.device_class
     model_name, default_rfmode = map_mos_output(device_class.name)
+    metal_res_layer = METAL_RES_LAYER_BY_MODEL[device_class.name.to_s.downcase]
+    model_name = 'lvsres' unless metal_res_layer.nil?
     explicit_rfmode = read_rfmode_parameter(device, device_class)
     rfmode = explicit_rfmode.nil? ? default_rfmode : explicit_rfmode
     str = generate_device_prefix(device, device_class)
     str += generate_device_terminals(device, device_class)
     str += "#{model_name} "
+    str += "layer=#{metal_res_layer} " unless metal_res_layer.nil?
     str += generate_default_parameters(device, device_class)
     str = str.strip
     str += " rfmode=#{rfmode}" unless rfmode.nil?
