@@ -39,7 +39,7 @@ value="
 .control
 save all 
 let points=71
-set vgsp="$&points"
+set vgsp=$&points
 set scratch=$curplot
 
 let c_diff=vector($vgsp)

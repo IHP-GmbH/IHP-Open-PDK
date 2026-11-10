@@ -1,4 +1,4 @@
-v {xschem version=3.4.8RC file_version=1.3}
+v {xschem version=3.4.8RC file_version=1.3
 * Copyright 2023 IHP PDK Authors
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
