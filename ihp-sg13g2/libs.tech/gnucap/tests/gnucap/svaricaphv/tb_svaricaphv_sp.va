@@ -1,0 +1,31 @@
+// load model plugins
+load vams/vsine.so
+load ../../../plugins/models/sg13g2_svaricaphv_paramset.so
+
+`include "../../../models/sg13g2_svaricaphv_module.va"
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module tb_svaricaphv_ac(net1, net2, net4, sub);
+    inout net1, net2, net4, sub;
+    electrical net1, net2, net4, sub;
+    electrical net3, net5, net6, net7;
+    ground gnd;
+
+    parameter real Vg = 0 from [-5:5];
+
+    vsource #(.dc(3.5)) V1(net2, gnd);
+    vsource #(.dc(Vg)) Vg1(net3, gnd);
+    vsource #(.dc(Vg)) Vg2(net7, gnd);
+
+    capacitor #(.c(1.0m)) C2(net1, net6);
+    inductor #(.l(1.0m))  L3(net1, net3);
+    capacitor #(.c(1.0m)) C3(net4, net5);
+    inductor #(.l(1.0m))  L4(net4, net7);
+
+    vsine #(.dc(0.0), .mag(1.0)) V2(net6, gnd);
+    vsine #(.dc(0.0), .mag(1.0)) V3(net5, gnd);
+
+    sg13_hv_svaricap #(.w(3.74u), .l(0.3u), .Nx(10), .mm_ok(1)) XC1(net1, net2, net4, sub);
+endmodule

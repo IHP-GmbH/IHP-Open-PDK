@@ -1,5 +1,17 @@
 set current_folder [file dirname [file normalize [info script]]]
 
+# Technology lib
+set ::env(CELL_LIBS) [dict create]
+dict set ::env(CELL_LIBS) "*_typ_1p20V_25C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_typ_1p20V_25C.lib\
+"
+dict set ::env(CELL_LIBS) "*_fast_1p32V_m40C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_fast_1p32V_m40C.lib\
+"
+dict set ::env(CELL_LIBS) "*_slow_1p08V_125C" "\
+    $::env(PDK_ROOT)/$::env(PDK)/libs.ref/$::env(STD_CELL_LIBRARY)/lib/sg13g2_stdcell_slow_1p08V_125C.lib\
+"
+
 # Synthesis mapping
 # Latch mapping
 set ::env(SYNTH_LATCH_MAP) "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/librelane/$::env(STD_CELL_LIBRARY)/latch_map.v"

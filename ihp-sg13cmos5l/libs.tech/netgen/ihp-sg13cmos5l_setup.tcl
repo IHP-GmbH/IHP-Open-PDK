@@ -1,0 +1,365 @@
+########################################################################
+#
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
+#---------------------------------------------------------------
+# Setup file for netgen LVS
+# IHP ihp-sg13cmos5l
+#---------------------------------------------------------------
+permute default
+property default
+property parallel none
+
+# Allow override of default #columns in the output format.
+catch {format $env(NETGEN_COLUMNS)}
+
+#---------------------------------------------------------------
+# For the following, get the cell lists from
+# circuit1 and circuit2.
+#---------------------------------------------------------------
+
+set cells1 [cells list -all -circuit1]
+set cells2 [cells list -all -circuit2]
+
+#-------------------------------------------
+# Resistors (except metal)
+#-------------------------------------------
+
+set devices {}
+lappend devices ptap1
+lappend devices ntap1
+lappend devices rsil
+lappend devices rppd
+lappend devices rhigh
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" 1 2
+	property "-circuit1 $dev" series enable
+	property "-circuit1 $dev" series {w critical}
+	property "-circuit1 $dev" series {l add}
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete b
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" 1 2
+	property "-circuit2 $dev" series enable
+	property "-circuit2 $dev" series {w critical}
+	property "-circuit2 $dev" series {l add}
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete b
+    }
+}
+
+#-------------------------------------------
+# MRM (metal) resistors
+#-------------------------------------------
+
+set devices {}
+lappend devices rm1
+lappend devices rm2
+lappend devices rm3
+lappend devices rm4
+lappend devices rm5
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" end_a end_b
+	property "-circuit1 $dev" series enable
+	property "-circuit1 $dev" series {w critical}
+	property "-circuit1 $dev" series {l add}
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {l 10.0} {w 10.0}
+	# Ignore these properties
+	property "-circuit1 $dev" delete mult
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" end_a end_b
+	property "-circuit2 $dev" series enable
+	property "-circuit2 $dev" series {w critical}
+	property "-circuit2 $dev" series {l add}
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {l 10.0} {w 10.0}
+	# Ignore these properties
+	property "-circuit2 $dev" delete mult
+    }
+}
+
+#-------------------------------------------
+# (MOS) transistors and varactor
+#-------------------------------------------
+
+set devices {}
+lappend devices sg13_hv_nmos
+lappend devices sg13_hv_pmos
+lappend devices sg13_lv_nmos
+lappend devices sg13_lv_pmos
+lappend devices sg13_hv_svaricap
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" 1 3
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" 1 3
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
+    }
+}
+
+#-------------------------------------------
+# (Lateral) bipolar transistor
+#-------------------------------------------
+
+set devices {}
+lappend devices pnpMPA
+
+# TODO: check parallel merge
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {le critical}
+	property "-circuit1 $dev" parallel {we add}
+	property "-circuit1 $dev" tolerance {we 0.01} {le 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete Nx Ny
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {le critical}
+	property "-circuit2 $dev" parallel {we add}
+	property "-circuit2 $dev" tolerance {we 0.01} {le 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete Nx Ny
+    }
+}
+
+#---------------------------------------------------------------------
+# Extended drain MOSFET devices.  These have asymmetric source and
+# drain, and so the source and drain are not permutable.  (Placeholder)
+#---------------------------------------------------------------------
+
+set devices {}
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+}
+
+#---------------------------------------------------------------------
+# (MOS) ESD transistors. (Placeholder)
+#---------------------------------------------------------------------
+
+set devices {}
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" 1 3
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.07} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" 1 3
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.07} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+}
+
+#-------------------------------------------
+# diodes
+#-------------------------------------------
+
+set devices {}
+lappend devices dantenna
+lappend devices dpantenna
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete DEV_A DEV_P DEV_C
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete DEV_A DEV_P DEV_C
+    }
+}
+
+#-------------------------------------------
+# capacitors	(Placeholder)
+#-------------------------------------------
+
+set devices {}
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete ic
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete ic
+    }
+}
+
+#-------------------------------------------
+# Fixed-layout devices
+# ESD devices
+#-------------------------------------------
+
+set devices {}
+lappend devices nmoscl_2
+lappend devices nmoscl_4
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	# Ignore these properties
+	property "-circuit1 $dev" delete mult
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	# Ignore these properties
+	property "-circuit2 $dev" delete mult
+    }
+}
+
+#---------------------------------------------------------------
+# Schematic cells which are not extractable
+#---------------------------------------------------------------
+
+set devices {}
+lappend devices Rparasitic
+lappend devices cparasitic
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	ignore class "-circuit1 $dev"
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	ignore class "-circuit2 $dev"
+    }
+}
+
+#---------------------------------------------------------------
+# Allow the fill, decap, etc., cells to be parallelized
+#---------------------------------------------------------------
+
+set devices {}
+lappend devices sg13cmos5l_antennap
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $cell" parallel enable
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $cell" parallel enable
+    }
+}
+
+foreach cell $cells1 {
+    if {[regexp {sg13cmos5l_decap_[[:digit:]]+} $cell match]} {
+	property "-circuit1 $cell" parallel enable
+    }
+    if {[regexp {sg13cmos5l_fill_[[:digit:]]+} $cell match]} {
+	property "-circuit1 $cell" parallel enable
+    }
+}
+foreach cell $cells2 {
+    if {[regexp {sg13cmos5l_decap_[[:digit:]]+} $cell match]} {
+	property "-circuit2 $cell" parallel enable
+    }
+    if {[regexp {sg13cmos5l_fill_[[:digit:]]+} $cell match]} {
+	property "-circuit2 $cell" parallel enable
+    }
+}
+
+#---------------------------------------------------------------
+# Match pins on black-box cells if LVS is called with "-blackbox"
+#---------------------------------------------------------------
+
+if {[model blackbox]} {
+    foreach cell $cells1 {
+	if {[model "-circuit1 $cell"] == "blackbox"} {
+	    if {[lsearch $cells2 $cell] >= 0} {
+		puts stdout "Matching pins of $cell in circuits 1 and 2"
+		equate pins "-circuit1 $cell" "-circuit2 $cell"
+	    }
+	}
+    }
+}
+
+#---------------------------------------------------------------

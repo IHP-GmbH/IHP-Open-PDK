@@ -1,0 +1,16 @@
+
+module tb_dio_antenna_dc();
+    electrical b, a1, a2;
+
+    parameter real v_sup = 0.0;
+
+    ground gnd;
+
+    vsource #(.dc(v_sup)) V1(b, gnd);
+    // Voltmeters for current probing
+    vsource #(.dc(0.0)) Vm1(b, a1);
+    vsource #(.dc(0.0)) Vm2(b, a2);
+
+    dantenna  #(.l(0.78u), .w(0.78u)) D1(a1 gnd);
+    dpantenna #(.l(0.78u), .w(0.78u)) D2(a2,gnd);
+endmodule

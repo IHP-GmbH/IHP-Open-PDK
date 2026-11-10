@@ -1,0 +1,649 @@
+########################################################################
+#
+# Copyright 2026 IHP PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+########################################################################
+
+#------------------------------------------------------------------------
+# This file is an Open Source foundry process describing the IHP
+# SG13CMOS5L 0.13um fabrication process.
+#
+# Created by Tim Edwards, Open Circuit Design, LLC, for IHP GmbH
+#------------------------------------------------------------------------
+
+tech
+  format 35
+  ihp-sg13cmos5l
+end
+
+version
+ version 1.0.0
+ description "IHP SG13CMOS5L: Open Source rules and DRC"
+ requires magic-8.3.657
+end
+
+#------------------------------------------------------------------------
+# Status 6/05/26: Version 0.6.0 (beta):
+# Release
+#------------------------------------------------------------------------
+
+#------------------------------------------------------------------------
+# Known device types
+#------------------------------------------------------------------------
+# device name			magic ID layer	description
+#------------------------------------------------------------------------
+# dantenna			ndiode		ndiff to psub diode (marked device)
+# dpantenna			pdiode		pdiff to nwell diode (marked device)
+#
+# ptap1						substrate tie resistance
+# ntap1						well tie resistance
+# rsil			 	nres		Salicided n+ poly
+# rppd				pres		Unsalicided p+ poly
+# rhigh				xres		Unsalicided n poly
+#
+# pnpMPA			pnp		Lateral PNP
+#
+# sg13_hv_nmos			hvnfet		Thick-oxide nFET
+# sg13_hv_pmos			hvpfet		Thick-oxide pFET
+# sg13_lv_nmos			nfet		Thin-oxide nFET
+# sg13_lv_pmos			pfet		Thin-oxide pFET
+# nmoscl_2			hvnfetesd	Extended-drain ESD thick-oxide nFET
+# nmoscl_4			hvnfetesd	Extended-drain ESD thick-oxide nFET
+# scr1				hvnfetesd	Silicon-controlled rectifier
+# 
+# Rparasitic					Parasitic resistance, not used
+# cparasitic					Parasitic capacitances, not used
+#------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+# Tile planes
+#-----------------------------------------------------------------------
+
+planes
+  dwell,dw
+  well,w
+  active,a
+  poly,po
+  metal1,m1
+  metal2,m2
+  metal3,m3
+  metal4,m4
+  metal5,m5
+  passiv,p
+  comment,c
+end
+
+#-----------------------------------------------------------------------
+# Tile types
+#-----------------------------------------------------------------------
+
+types
+# Substrate region markers
+  dwell digisub
+
+# Wells
+  well nwell,nw
+  well pwell,pw
+  well pblock,pblk
+ -well obswell
+  well pbase,npn
+  well nbase,pnp
+
+# Transistors
+  active nmos,ntransistor,nfet
+  active pmos,ptransistor,pfet
+  active hvnmos,hvntransistor,hvnfet
+  active hvpmos,hvptransistor,hvpfet
+ -active hvnmosesd,hvntransistoresd,hvnfetesd
+ -active hvpmosesd,hvptransistoresd,hvpfetesd
+  active varactor,varact,var
+  active varcontact,varc
+  active pvaractor,pvaract,pvar
+ -active sealcont,sealc
+
+# Diffusions
+ -active difffill
+  active ndiff,ndiffusion,ndif
+  active pdiff,pdiffusion,pdif
+  active hvndiff,hvndiffusion,hvndif
+  active hvpdiff,hvpdiffusion,hvpdif
+  active ndiffc,ndcontact,ndc
+  active pdiffc,pdcontact,pdc
+  active hvndiffc,hvndcontact,hvndc
+  active hvpdiffc,hvpdcontact,hvpdc
+  active psubdiff,psubstratepdiff,ppdiff,ppd,psd
+  active nsubdiff,nsubstratendiff,nndiff,nnd,nsd
+  active ptapdiff,ptap
+  active ntapdiff,ntap
+  active hvpsubdiff,hvpsubstratepdiff,hvppdiff,hvppd,hvpsd
+  active hvnsubdiff,hvnsubstratendiff,hvnndiff,hvnnd,hvnsd
+  active hvptapdiff,hvptap
+  active hvntapdiff,hvntap
+  active psubdiffcont,psubstratepcontact,psc
+  active nsubdiffcont,nsubstratencontact,nsc
+  active ptapdiffcont,ptapc
+  active ntapdiffcont,ntapc
+  active hvpsubdiffcont,hvpsubstratepcontact,hvpsc
+  active hvnsubdiffcont,hvnsubstratencontact,hvnsc
+  active hvptapdiffcont,hvptapc
+  active hvntapdiffcont,hvntapc
+ -active obsactive
+
+# Poly
+  active poly,p,polysilicon
+  active polycont,pc,pcontact,polycut,polyc
+ -poly obspoly
+ -poly polyfill
+
+# Resistors
+  active npolyres,nres,rsil
+  active ppolyres,pres,rppd
+  active xpolyres,xres,rhigh
+  # Used in scr1, nmoscl_2, and nmoscl_4
+  active hvndiffres,hvrnd,hvrndiff
+
+# Diodes
+  active pdiode,pdi
+  active ndiode,ndi
+  active pdiodecont,pdiodec,pdic
+  active ndiodecont,ndiodec,ndic
+
+# Metal 1
+  metal1 metal1,m1,met1
+  metal1 rmetal1,rm1,rmet1
+  metal1 via1,m2contact,m2cut,m2c,via,v,v1
+ -metal1 obsm1
+ -metal1 m1fill
+ -metal1 iprobe
+ -metal1 diffprobe
+ -metal1 sealvia1,sealv1
+
+# Metal 2
+  metal2 metal2,m2,met2
+  metal2 rmetal2,rm2,rmet2
+  metal2 via2,m3contact,m3cut,m3c,v2
+ -metal2 obsm2
+ -metal2 m2fill
+ -metal2 sealvia2,sealv2
+
+# Metal 3
+  metal3 metal3,m3,met3
+  metal3 rmetal3,rm3,rmet3
+ -metal3 obsm3
+  metal3 via3,v3
+ -metal3 m3fill
+ -metal3 sealvia3,sealv3
+
+# Metal 4
+  metal4 metal4,m4,met4
+  metal4 rmetal4,rm4,rmet4
+ -metal4 obsm4
+  metal4 via4,v4
+ -metal4 m4fill
+ -metal4 sealvia4,sealv4
+
+# Metal 5
+  metal5 metal5,m5,met5
+  metal5 rm5,rmetal5,rmet5
+ -metal5 obsm5
+ -metal5 m5fill
+
+# Passivation cut
+ -passiv seal
+  passiv glass
+
+# Miscellaneous
+  comment fillblock
+  comment thruvia,tsv
+  comment inductor
+  comment comment
+
+end
+
+#-----------------------------------------------------------------------
+# Magic contact types
+#-----------------------------------------------------------------------
+
+contact
+  pc       poly       metal1
+  ndc      ndiff      metal1
+  pdc      pdiff      metal1
+  nsc      nsd        metal1
+  psc      psd        metal1
+  ndic     ndiode     metal1
+  pdic     pdiode     metal1
+  ntapc	   ntap	      metal1
+  ptapc	   ptap	      metal1
+  varc     varact     metal1
+
+  hvndc    hvndiff   metal1
+  hvpdc    hvpdiff   metal1
+  hvnsc    hvnsd     metal1
+  hvpsc    hvpsd     metal1
+  hvntapc  hvntap    metal1
+  hvptapc  hvptap    metal1
+
+  via1   metal1 metal2
+  via2   metal2 metal3
+  via3   metal3 metal4
+  via4   metal4 metal5
+
+  stackable
+end
+
+#-----------------------------------------------------------------------
+# Layer aliases
+#-----------------------------------------------------------------------
+
+aliases
+
+  allwellplane     nwell,pwell,pblock,obswell,nbase
+  allnwell	   nwell,obswell,pnp
+
+  allnfets	   nfet,hvnfet,hvnfetesd
+  allpfets	   pfet,hvpfet,hvpfetesd
+  allfets	   allnfets,allpfets,*var,pvar
+  allfetsstd	   nfet,hvnfet,hvnfetesd,pfet,hvpfet,hvpfetesd
+
+  allnactivenonfet *ndiff,*nsd,*ndiode,*hvndiff,*hvnsd,hvndiffres,*ntap,*hvntap
+  allnactive	   allnactivenonfet,allnfets
+  allnactivenontap *ndiff,*ndiode,*hvndiff,allnfets
+  allnactivetap	   *nsd,*hvnsd,*var,*ntap,*hvntap
+
+  allpactivenonfet *pdiff,*psd,*pdiode,*hvpdiff,*hvpsd,*ptap,*hvptap
+  allpactive	   allpactivenonfet,allpfets
+  allpactivenontap *pdiff,*pdiode,*hvpdiff,allpfets
+  allpactivetap    *psd,*hvpsd,*ptap,*hvptap
+
+  allactivenonfet  allnactivenonfet,allpactivenonfet
+  allactive	   allactivenonfet,allfets
+
+  allndifflv       *ndif,*nsd,*ndiode,nfet,*ntap,*var
+  allpdifflv       *pdif,*psd,*pdiode,pfet,*ptap,pvar
+  alldifflv        allndifflv,allpdifflv
+  allndifflvnonfet *ndif,*nsd,*ndiode,*ntap
+  allpdifflvnonfet *pdif,*psd,*pdiode,*ptap
+  alldifflvnonfet  allndifflvnonfet,allpdifflvnonfet
+
+  allndiffhv       *hvndif,*hvnsd,hvnfet,hvnfetesd,hvndiffres,*hvntap
+  allpdiffhv       *hvpdif,*hvpsd,hvpfet,hvpfetesd,*hvptap
+  alldiffhv        allndiffhv,allpdiffhv
+  allndiffhvnontap *hvndif,hvnfet,hvnfetesd
+  allpdiffhvnontap *hvpdif,hvpfet,hvpfetesd
+  alldiffhvnontap  allndiffhvnontap,allpdiffhvnontap
+  allndiffhvnonfet *hvndif,*hvnsd,hvndiffres,*hvntap
+  allpdiffhvnonfet *hvpdif,*hvpsd,*hvptap
+  alldiffhvnonfet  allndiffhvnonfet,allpdiffhvnonfet
+
+  alldiffnonfet	   alldifflvnonfet,alldiffhvnonfet
+  alldiffnonvar	   alldiffhv,alldifflvnonfet,nfet,pfet
+  alldiff	   alldifflv,alldiffhv
+
+  allpolyres	   pres,nres,xres
+  allpolynonfet	   *poly,allpolyres
+  allpolynonres	   *poly,allfets
+
+  allpoly	   allpolynonfet,allfets
+  allpolynoncap	   *poly,allfets,allpolyres
+
+  allndiffcontlv   ndc,nsc,ndic,ntapc
+  allpdiffcontlv   pdc,psc,pdic,ptapc
+  allndiffconthv   hvndc,hvnsc,hvntapc
+  allpdiffconthv   hvpdc,hvpsc,hvptapc
+  allndiffcont	   allndiffcontlv,allndiffconthv
+  allpdiffcont	   allpdiffcontlv,allpdiffconthv
+  alldiffcontlv	   allndiffcontlv,allpdiffcontlv
+  alldiffconthv	   allndiffconthv,allpdiffconthv
+  alldiffcont	   alldiffcontlv,alldiffconthv
+
+  allcont	alldiffcont,pc,varc
+
+  allres	allpolyres,hvndiffres
+
+  allm1		*m1,rm1,iprobe
+  allm2		*m2,rm2
+  allm3		*m3,rm3
+  allm4	   	*m4,rm4
+  allm5	   	*m5,rm5
+
+  psub		pwell
+
+  obstypes	obswell,obsactive,obspoly,obsm1,obsm2,obsm3,obsm4,obsm5
+  blocktypes	fillblock
+  
+end
+
+#-----------------------------------------------------------------------
+# Layer drawing styles
+#-----------------------------------------------------------------------
+
+styles
+ styletype mos
+  digisub   subcircuit
+  nwell     nwell
+  pwell	    pwell
+  pblock    hvpdiff_mask
+  ndiff     ndiffusion
+  difffill  ndiffusion
+  pdiff     pdiffusion
+  nsd       ndiff_in_nwell
+  psd       pdiff_in_pwell
+  ntap      ndiff_in_nwell
+  ptap      pdiff_in_pwell
+  nfet      ntransistor    ntransistor_stripes
+  pfet      ptransistor    ptransistor_stripes
+  ndc       ndiffusion     metal1  contact_X'es
+  pdc       pdiffusion     metal1  contact_X'es
+  nsc       ndiff_in_nwell metal1  contact_X'es
+  psc       pdiff_in_pwell metal1  contact_X'es
+  ntapc     ndiff_in_nwell metal1  contact_X'es
+  ptapc     pdiff_in_pwell metal1  contact_X'es
+  sealc     pdiff_in_pwell metal1  contact_X'es
+
+  pnp	    nwell ntransistor_stripes
+  hvndiffres  ndiffusion ndop_stripes hvndiff_mask
+
+  hvndiff   ndiffusion     hvndiff_mask
+  hvpdiff   pdiffusion     hvpdiff_mask
+  hvnsd     ndiff_in_nwell hvndiff_mask
+  hvpsd     pdiff_in_pwell hvpdiff_mask
+  hvntap    ndiff_in_nwell hvndiff_mask
+  hvptap    pdiff_in_pwell hvpdiff_mask
+  hvnfet    ntransistor    ntransistor_stripes hvndiff_mask
+  hvnfetesd ntransistor    ntransistor_stripes hvndiff_mask
+  hvpfet    ptransistor    ptransistor_stripes
+  hvpfetesd ptransistor    ptransistor_stripes
+  hvndc     ndiffusion     metal1  contact_X'es hvndiff_mask
+  hvpdc     pdiffusion     metal1  contact_X'es hvpdiff_mask
+  hvnsc     ndiff_in_nwell metal1  contact_X'es hvndiff_mask
+  hvpsc     pdiff_in_pwell metal1  contact_X'es hvpdiff_mask
+  hvntapc   ndiff_in_nwell metal1  contact_X'es hvndiff_mask
+  hvptapc   pdiff_in_pwell metal1  contact_X'es hvpdiff_mask
+  var	    polysilicon	   ndiff_in_nwell
+  pvar	    polysilicon	   pdiff_in_pwell
+  varc      polysilicon	   metal1  ndiff_in_nwell contact_X'es
+
+  poly      polysilicon 
+  polyfill  polysilicon
+  pc        polysilicon    metal1  contact_X'es
+  nres	    polysilicon	   poly_resist_stripes
+  pres      poly_resist    silicide_block
+  xres      poly_resist	   hvpdiff_mask
+
+  pdiode    pdiffusion     pselect2
+  ndiode    ndiffusion     nselect2
+  pdiodec   pdiffusion     pselect2 metal1 contact_X'es
+  ndiodec   ndiffusion     nselect2 metal1 contact_X'es
+
+  metal1    metal1
+  m1fill    metal1
+  iprobe    metal1	   electrode
+  diffprobe metal1	   electrode
+  rm1       metal1         poly_resist_stripes
+  obsm1     metal1
+  m2c       metal1         metal2  via1arrow
+  sealv1    metal1	   metal2  via1arrow
+
+  metal2    metal2
+  m2fill    metal2
+  rm2       metal2         poly_resist_stripes
+  obsm2     metal2
+  m3c       metal2         metal3  via2arrow
+  sealv2    metal2	   metal3  via2arrow
+
+  metal3    metal3
+  m3fill    metal3
+  rm3       metal3         poly_resist_stripes
+  obsm3     metal3
+  via3      metal3         metal4  via3alt
+  sealv3    metal3	   metal4  via3alt
+
+  metal4    metal4
+  m4fill    metal4
+  rm4       metal4         poly_resist_stripes
+  obsm4     metal4
+  via4      metal4         metal5  via4
+  sealv4    metal4	   metal5  via4
+
+  metal5    metal5
+  m5fill    metal5
+  rm5       metal5         poly_resist_stripes
+  obsm5     metal5
+  glass	    mems	   overglass
+  seal	    overglass	   mems
+
+  comment   comment
+  error_p   error_waffle
+  error_s   error_waffle
+  error_ps  error_waffle
+  fillblock cwell
+  thruvia   mems	implant1
+  inductor  implant2
+
+  obswell   cwell
+  obsactive implant4
+  obspoly   implant3
+
+  magnet    substrate_field_implant
+  rotate    via3alt
+  fence     via5
+end
+
+#-----------------------------------------------------------------------
+# Special paint/erase rules
+#-----------------------------------------------------------------------
+
+compose
+  compose  nfet  poly  ndiff
+  compose  pfet  poly  pdiff
+  compose  var   poly  nsd
+  compose  pvar  poly  psd
+
+  compose  hvnfet  poly  hvndiff
+  compose  hvpfet  poly  hvpdiff
+
+  decompose hvnfetesd poly hvndiff
+  decompose hvpfetesd poly hvpdiff
+
+  paint  ndc     nwell  pdc
+  paint  nfet    nwell  pfet
+  paint  ndiff   nwell  pdiff
+  paint  psd     nwell  nsd
+  paint  psc     nwell  nsc
+  paint  ptap    nwell  ntap
+  paint  ptapc   nwell  ntapc
+
+  paint  pdc     pwell  ndc
+  paint  pfet    pwell  nfet
+  paint  pdiff   pwell  ndiff
+  paint  nsd     pwell  psd
+  paint  nsc     pwell  psc
+  paint  ntap    pwell  ptap
+  paint  ntapc   pwell  ptapc
+
+  paint  m1      obsm1  m1
+  paint  m2      obsm2  m2
+  paint  m3      obsm3  m3
+  paint  m4      obsm4  m4
+  paint  m5      obsm5  m5
+
+  # Seal ring contacts are not really contacts in
+  # the database, so use compose rules instead.
+  paint  sealc	 psd	sealc
+  paint  sealv1	 m1	sealv1
+  paint  sealv2	 m2	sealv2
+  paint  sealv3	 m3	sealv3
+  paint  sealv4	 m4	sealv4
+
+  # To preserve keep-out areas for pattern fill,
+  # do not allow comment to overwrite fillblock or inductor.
+  paint  fillblock comment fillblock
+  paint  inductor comment inductor
+
+  # nwell itself is a p-implant blocker, so don't erase
+  # nwell when painting pblock, even though overlap is
+  # technically allowed according to the documentation.
+  paint  nwell  pblock  nwell
+
+end
+
+#-----------------------------------------------------------------------
+# Electrical connectivity
+#-----------------------------------------------------------------------
+
+connect
+  *nwell,*nsd,*ntap,*hvnsd,*hvntap,pnp *nwell,*nsd,*ntap,*hvnsd,*hvntap,pnp
+  pwell,*psd,*ptap,*hvpsd,*hvptap,digisub pwell,*psd,*ptap,*hvpsd,*hvptap,digisub
+  # Note:  This connects butting taps even without a metal strap.
+  *nsd,*hvnsd	*pdiff,*hvpdiff
+  *psd,*hvpsd	*ndiff,*hvndiff
+  *ntap,*hvntap	*pdiff,*hvpdiff
+  *ptap,*hvptap	*ndiff,*hvndiff
+  *m1,m1fill,iprobe,diffprobe	*m1,m1fill,iprobe,diffprobe
+  *m2,m2fill	*m2,m2fill
+  *m3,m3fill	*m3,m3fill
+  *m4,m4fill	*m4,m4fill
+  *m5,m5fill	*m5,m5fill
+   allnactivenonfet	allnactivenonfet
+   # Note:  This creates a short through hvndiffres resistors.
+   *pdiff,*psd,*pdiode,*hvpdiff,*hvpsd *pdiff,*psd,*pdiode,*hvpdiff,*hvpsd
+  *poly,allfets,polyfill	*poly,allfets,polyfill
+end
+
+#-----------------------------------------------------------------------
+# cifoutput section
+#-----------------------------------------------------------------------
+include ihp-sg13cmos5l-cifout
+
+#-----------------------------------------------------------------------
+# cifinput section
+#-----------------------------------------------------------------------
+include ihp-sg13cmos5l-cifin
+
+#-----------------------------------------------------------------------
+# Digital flow maze router cost parameters
+#-----------------------------------------------------------------------
+mzrouter
+end
+
+#-----------------------------------------------------------------------
+# Vendor DRC rules
+#-----------------------------------------------------------------------
+include ihp-sg13cmos5l-drc
+
+#-----------------------------------------------------------------------
+# LEF format definitions
+#-----------------------------------------------------------------------
+
+lef
+
+# Vendor standard cells are fully contacted to nwell and substrate
+# so masterslice layers for nwell/pwell are not required.
+
+masterslice poly  GatPoly
+
+routing m1	Metal1
+routing m2	Metal2
+routing m3	Metal3
+routing m4	Metal4
+routing m5	TopMetal1
+
+cut via1	Via1
+cut via2	Via2
+cut via3	Via3
+cut via4	TopVia1
+
+obs obsm1	Metal1
+obs obsm2	Metal2
+obs obsm3	Metal3
+obs obsm4	Metal4
+obs obsm5	TopMetal1
+
+obs obsm1,obsm2	Via1
+obs obsm2,obsm3	Via2
+obs obsm3,obsm4	Via3
+obs obsm4,obsm5	TopVia1
+
+end
+
+#-----------------------------------------------------------------------
+# Device and Parasitic extraction
+#-----------------------------------------------------------------------
+include ihp-sg13cmos5l-extract
+
+#-----------------------------------------------------------------------
+# Wiring tool definitions
+#-----------------------------------------------------------------------
+
+wiring
+ # All wiring values are in nanometers
+ scalefactor 10
+
+ contact v1  200 m1 5 45 m2   0 45
+ contact v2  200 m2 0 45 m3   0 45
+ contact v3  200 m3 0 45 m4   0 45
+ contact v4  620 m4 0    m5 320 
+
+ contact pc  160  poly 70 70 m1 0 50
+ contact pdc 160 pdiff 70 70 m1 0 50
+ contact ndc 160 ndiff 70 70 m1 0 50
+ contact psc 160   psd 70 70 m1 0 50
+ contact nsc 160   nsd 70 70 m1 0 50
+ contact ptapc 160 ptap 70 70 m1 0 50
+ contact ntapc 160 ntap 70 70 m1 0 50
+
+end
+
+#-----------------------------------------------------------------------
+# Plain old router. . . 
+#-----------------------------------------------------------------------
+
+router
+end
+
+#-----------------------------------------------------------------------
+# Plowing (restored in magic 8.2, need to fill this section)
+#-----------------------------------------------------------------------
+
+plowing
+end
+
+#-----------------------------------------------------------------------
+# No special plot layers defined (use default PNM color choices)
+#-----------------------------------------------------------------------
+
+plot
+  style pnm
+     default
+     draw fillblock no_color_at_all
+     draw obsactive no_color_at_all
+     draw obsm1 no_color_at_all
+     draw obsm2 no_color_at_all
+     draw obsm3 no_color_at_all
+     draw obsm4 no_color_at_all
+     draw obsm5 no_color_at_all
+     draw difffill no_color_at_all
+     draw polyfill no_color_at_all
+     draw m1fill no_color_at_all
+     draw m2fill no_color_at_all
+     draw m3fill no_color_at_all
+     draw m4fill no_color_at_all
+     draw m5fill no_color_at_all
+     draw digisub no_color_at_all
+     draw pblock  no_color_at_all
+     draw nwell cwell
+end
+
+#-----------------------------------------------------------------------

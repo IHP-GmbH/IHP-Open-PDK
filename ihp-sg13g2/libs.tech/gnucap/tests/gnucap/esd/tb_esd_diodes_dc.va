@@ -1,0 +1,29 @@
+
+module tb_esd_diodes_dc();
+    electrical Vin;
+    electrical net1, net2, net3, net4;
+    electrical net5, net6, net7, net8;
+
+    parameter real vb = 0.7;
+    parameter integer m = 1;
+
+    ground gnd;
+
+    vsource #(.dc(vb)) V1(Vin, gnd);
+
+    vsource #(.dc(0.0)) Vmda1(Vin, net1);
+    vsource #(.dc(0.0)) Vmda2(Vin, net2);
+    diodevdd_2kv #(.m(m)) D1(gnd, net1, net2);
+
+    vsource #(.dc(0.0)) Vmda3(Vin, net3);
+    vsource #(.dc(0.0)) Vmda4(Vin, net4);
+    diodevdd_4kv #(.m(m)) D2(gnd, net3, net4);
+
+    vsource #(.dc(0.0)) Vmda5(net5, gnd);
+    vsource #(.dc(0.0)) Vmda6(net6, gnd);
+    diodevss_2kv #(.m(m)) D4(net5, net6, Vin);
+
+    vsource #(.dc(0.0)) Vmda7(net7, gnd);
+    vsource #(.dc(0.0)) Vmda8(net8, gnd);
+    diodevss_4kv #(.m(m)) D5(net7, net8, Vin);
+endmodule

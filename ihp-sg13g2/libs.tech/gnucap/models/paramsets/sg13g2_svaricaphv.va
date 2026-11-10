@@ -1,0 +1,178 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// SG13G2 High-Voltage MOS SVaricap paramsets with and without mismatch
+//
+// Adapted from ngspice/models/sg13g2_svaricaphv_mod*.lib
+//******************************************************************************
+
+(* desc="SG13G2 High-Voltage MOS SVaricap paramset without mismatch" *)
+paramset sg13g2_hv_svaricap_psp mosvar
+    (* desc = "Channel length", units = "m" *)
+    parameter real l = 600n from [300n:800n];
+    (* desc = "Channel width", units = "m" *)
+    parameter real w = 3.74u from [3.74u:9.74u];
+    (* desc = "Temperature offset relative to ambient", units = "K" *)
+    parameter real dta = 0.0;
+    (* desc = "Enable device mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+
+    .L = l;
+    .W = w;
+    .DTA = dta;
+    .VERSION = 1.3;
+    .SUBVERSION = 0.0;
+    .REVISION = 0.0;
+    .LEVEL = 1000.0;
+    .TMIN = -100.0;
+    .TMAX = 500.0;
+    .VMAX = 1.0e4;
+    .TR = 27.0;
+    .LMIN = 2.99e-7;
+    .LMAX = 8.1e-7;
+    .WMIN = 3.7e-6;
+    .WMAX = 9.8e-6;
+    .SWRES = 1;
+    .TYPE = -1;
+    .TYPEP = -1;
+    .TOXO = 6.945e-9 * corner_svaricaphv.sg13g2_hv_svaricap_toxo;
+    .TAU = 0.1;
+    .VFBO = -0.04009 * corner_svaricaphv.sg13g2_hv_svaricap_vfbo;
+    .NSUBO = 3.802e23;
+    .MNSUBO = 1.0;
+    .DNSUBO = 0.0;
+    .VNSUBO = 0.0;
+    .NSLPO = 0.1;
+    .NPO = 1.0e27;
+    .QMC = 1.0;
+    .DLQ = 4.31e-10 * corner_svaricaphv.sg13g2_hv_svaricap_dlq;
+    .DWQ = -1.081e-7 * corner_svaricaphv.sg13g2_hv_svaricap_dwq;
+    .DWR = 0.0;
+    .CFRL = 1.856e-9;
+    .CFRW = 3.155e-11;
+    .RSHG = 0.0;
+    .RPV = 0.0;
+    .REND = 3.795e-4;
+    .RSHS = 727.8;
+    .UAC = 0.06;
+    .UACRED = 0.0;
+    .STVFB = 0.0;
+    .STRSHG = 0.0;
+    .STRPV = 0.0;
+    .STREND = 0.0;
+    .STRSHS = 0.0;
+    .STUAC = 40.0;
+    .FETA = 1.0;
+    .SWIGATE = 1;
+    .CHIBO = 3.1;
+    .CHIBPO = 4.5;
+    .STIG = 2.0;
+    .LOV = 0.0;
+    .NOVO = 1.311e25;
+    .IGINVLW = 0.0;
+    .IGOVW = 0.0;
+    .GCOO = 0.0;
+    .GC2O = 0.375;
+    .GC3O = 0.063;
+    .IGCHVLW = 0.0;
+    .IGOVHVW = 0.0;
+    .GCOHVO = 0.0;
+    .GC2HVO = 0.375;
+    .GC3HVO = 0.063;
+    .IGMAX = 1.0e-2;
+endparamset
+
+(* desc="SG13G2 High-Voltage MOS SVaricap paramset with mismatch" *)
+paramset sg13g2_hv_svaricap_psp mosvar
+    (* desc = "Channel length", units = "m" *)
+    parameter real l = 600n from [300n:800n];
+    (* desc = "Channel width", units = "m" *)
+    parameter real w = 3.74u from [3.74u:9.74u];
+    (* desc = "Temperature offset relative to ambient", units = "K" *)
+    parameter real dta = 0.0;
+    (* desc = "Enable device mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+
+    localparam real dl = $rdist_normal(1, 0.0, 3.0e-9, "instance");
+    localparam real dw = $rdist_normal(2, 0.0, 3.0e-9, "instance");
+
+    .L = l + dl;
+    .W = w + dw;
+    .DTA = dta;
+    .VERSION = 1.3;
+    .SUBVERSION = 0.0;
+    .REVISION = 0.0;
+    .LEVEL = 1000.0;
+    .TMIN = -100.0;
+    .TMAX = 500.0;
+    .VMAX = 1.0e4;
+    .TR = 27.0;
+    .LMIN = 2.99e-7;
+    .LMAX = 8.1e-7;
+    .WMIN = 3.7e-6;
+    .WMAX = 9.8e-6;
+    .SWRES = 1;
+    .TYPE = -1;
+    .TYPEP = -1;
+    .TOXO = 6.945e-9 * corner_svaricaphv.sg13g2_hv_svaricap_toxo;
+    .TAU = 0.1;
+    .VFBO = -0.04009 * corner_svaricaphv.sg13g2_hv_svaricap_vfbo;
+    .NSUBO = 3.802e23;
+    .MNSUBO = 1.0;
+    .DNSUBO = 0.0;
+    .VNSUBO = 0.0;
+    .NSLPO = 0.1;
+    .NPO = 1.0e27;
+    .QMC = 1.0;
+    .DLQ = 4.31e-10 * corner_svaricaphv.sg13g2_hv_svaricap_dlq;
+    .DWQ = -1.081e-7 * corner_svaricaphv.sg13g2_hv_svaricap_dwq;
+    .DWR = 0.0;
+    .CFRL = 1.856e-9;
+    .CFRW = 3.155e-11;
+    .RSHG = 0.0;
+    .RPV = 0.0;
+    .REND = 3.795e-4;
+    .RSHS = 727.8;
+    .UAC = 0.06;
+    .UACRED = 0.0;
+    .STVFB = 0.0;
+    .STRSHG = 0.0;
+    .STRPV = 0.0;
+    .STREND = 0.0;
+    .STRSHS = 0.0;
+    .STUAC = 40.0;
+    .FETA = 1.0;
+    .SWIGATE = 1;
+    .CHIBO = 3.1;
+    .CHIBPO = 4.5;
+    .STIG = 2.0;
+    .LOV = 0.0;
+    .NOVO = 1.311e25;
+    .IGINVLW = 0.0;
+    .IGOVW = 0.0;
+    .GCOO = 0.0;
+    .GC2O = 0.375;
+    .GC3O = 0.063;
+    .IGCHVLW = 0.0;
+    .IGOVHVW = 0.0;
+    .GCOHVO = 0.0;
+    .GC2HVO = 0.375;
+    .GC3HVO = 0.063;
+    .IGMAX = 1.0e-2;
+endparamset

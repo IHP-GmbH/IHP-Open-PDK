@@ -1,0 +1,72 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// parasitic resistor paramsets
+//
+// Adapted from model declarations in ngspice/models/resistor_mod*.lib.
+//******************************************************************************
+
+// In order to have consistency between the netlisted device format
+// the w and l parameters are defined but not used.
+// The value of R is calculated by schematic capture tool.
+(* desc = "PTAP parasitic resistor paramset" *)
+paramset ptap1 sp_resistor
+    (* desc = "Resistance", units = "Ohm" *)
+    parameter real R = 262.08;
+    (* desc = "Width", units = "m" *)
+    parameter real w = 0.78u;
+    (* desc = "Length", units = "m" *)
+    parameter real l = 0.78u;
+
+    .resistance = R;
+endparamset
+
+// In order to have consistency between the netlisted device format
+// the w and l parameters are defined but not used.
+// The value of R is calculated by schematic capture tool.
+// Paramset for an n-type well tie-down resistor (ntap1).
+(* desc = "NTAP parasitic resistor paramset" *)
+paramset ntap1 sp_resistor
+    (* desc = "Resistance", units = "Ohm" *)
+    parameter real R = 262.08;
+    (* desc = "Width", units = "m" *)
+    parameter real w = 0.78u;
+    (* desc = "Length", units = "m" *)
+    parameter real l = 0.78u;
+
+    .resistance = R;
+endparamset
+
+// Parasitic R/C models
+// aluminum: prozess tol. res_rpara
+// value is taken from extraction routine
+// Paramset for modeling parasitic resistances (Rparasitic).
+(* desc = "Parasitic resistor paramset" *)
+paramset Rparasitic sp_resistor
+    (* desc = "Resistance", units = "Ohm" *)
+    parameter real R = 0;
+    (* desc = "First order temp. coefficient" *)
+    parameter real tc1 = 0.00353;
+    (* desc = "Second order temp. coefficient" *)
+    parameter real tc2 = 0.0;
+
+    .resistance = R * corner_res.res_rpara;
+    .tc = tc1;
+    .tc2 = tc2;
+endparamset

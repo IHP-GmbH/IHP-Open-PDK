@@ -15,20 +15,44 @@
 # SPDX-License-Identifier: Apache-2.0
 #==========================================================================
 
-# The top directory where environment will be created.
+# The only Makefile in this repository, and the only place make is started
+# from. The PDK directories carry no build rules of their own: tools such as
+# Ciel archive them for distribution, and a build system is not part of a PDK.
+#
+# The regression targets every PDK shares live in ihp-common/pdk.mk. Anything
+# specific to one PDK lives in Makefile.<pdk> beside this file, included below
+# for the selected PDK only.
+#
+#     make test-DRC-main                      # the default PDK
+#     make test-DRC-main PDK=ihp-sg13cmos5l   # another one
+#     make help PDK=ihp-sg13cmos5l            # what that PDK offers
+
+# The top directory where environment will be created. Evaluated before any
+# include, so $(MAKEFILE_LIST) still ends in this file.
 TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 VENV_RUN_COMMAND = $(TOP_DIR)/actions_venv/bin/activate
 
-# Path to regressions
-KLAYOUT_DRC_TESTS := ihp-sg13g2/libs.tech/klayout/tech/drc/testing/
-KLAYOUT_LVS_TESTS := ihp-sg13g2/libs.tech/klayout/tech/lvs/testing
+# The PDK that `make test-...` targets when none is named.
+PDK ?= ihp-sg13g2
+
+PDK_DIR  := $(TOP_DIR)/$(PDK)
+PDK_NAME := $(PDK)
+
+# Catch a mistyped or missing PDK here, by name. Without this the shared rules
+# below would report every test as "not carried by this PDK" and succeed, which
+# is the same output a real but incomplete PDK produces.
+ifeq ($(wildcard $(PDK_DIR)/libs.tech),)
+$(error PDK '$(PDK)' not found: no $(PDK_DIR)/libs.tech. Set PDK to one of: $(patsubst $(TOP_DIR)/%/libs.tech,%,$(wildcard $(TOP_DIR)/ihp-*/libs.tech)))
+endif
 
 # A pip `requirements.txt` file.
 # https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format
 REQUIREMENTS_FILE := requirements.txt
 
-# ======================= 
-# ------ ENV SETUP ------ 
+.DEFAULT_GOAL := help
+
+# =======================
+# ------ ENV SETUP ------
 # =======================
 
 $(TOP_DIR)/actions_venv:
@@ -50,102 +74,40 @@ env: $(TOP_DIR)/actions_venv
 # ----- LINTING TEST -----
 # ========================
 
-# Lint python code
-lint_python: env
-	@echo "Running python linting for Klayout-DRC/LVS scripts"
-	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/drc
-	@. $(VENV_RUN_COMMAND); flake8 ihp-sg13g2/libs.tech/klayout/tech/lvs
+# Every PDK at once, for local use. `make lint` is the selected PDK only and
+# comes from ihp-common/pdk.mk, which is what CI runs one leg per PDK.
+lint-all: env
+	@echo "Running python linting for Klayout-DRC/LVS scripts in every PDK"
+	@. $(VENV_RUN_COMMAND); flake8 $(TOP_DIR)/ihp-*/libs.tech/klayout/tech/drc
+	@. $(VENV_RUN_COMMAND); flake8 $(TOP_DIR)/ihp-*/libs.tech/klayout/tech/lvs
+
+#==========================
+# --------- HELP ----------
+#==========================
+
+# Double-colon, matching pdk.mk and the per-PDK files, so all three append to
+# one listing. This one is defined first and therefore prints first.
+help::
+	@echo ""
+	@echo " ==== Repository-wide targets ===="
+	@echo ""
+	@echo "... env                        (Create the shared Python virtual environment  )"
+	@echo "... lint-all                   (Run python linting across every PDK           )"
+	@echo ""
+	@echo "Everything below acts on \$$(PDK), currently '$(PDK)'."
+	@echo "Select another with e.g. PDK=ihp-sg13cmos5l."
 
 #=================================
-# ----- test-DRC_regression ------
+# --------- REGRESSIONS ----------
 #=================================
 
-.ONESHELL:
-test-DRC-main: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-DRC regression for all unit tests"
-	@. $(VENV_RUN_COMMAND); python3 $(KLAYOUT_DRC_TESTS)/run_regression.py
+# The regression targets shared by every PDK. A PDK reports and succeeds on a
+# target it does not carry, so the same target can be called for each PDK
+# without this file knowing which ones are real.
+include $(TOP_DIR)/ihp-common/pdk.mk
 
-#=================================
-# -------- test-DRC-cells --------
-#=================================
+# The targets only $(PDK) carries. Optional: a PDK may add nothing of its own.
+# A typo in PDK cannot land here silently, it is caught by the check above.
+-include $(TOP_DIR)/Makefile.$(PDK:ihp-%=%)
 
-.ONESHELL:
-test-DRC-cells: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-DRC regression for all SG13G2 cells"
-	@. $(VENV_RUN_COMMAND); python3 $(KLAYOUT_DRC_TESTS)/run_regression_cells.py
-
-#=================================
-# ----- test-LVS_regression ------
-#=================================
-
-.ONESHELL:
-test-LVS-main: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS regression for all devices"
-	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-main
-
-.ONESHELL:
-test-LVS-% : env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS regression for $* device"
-	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-$*
-
-#=================================
-# -------- test-LVS-cells --------
-#=================================
-
-test-LVS-cells: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS for SG13G2 cells"
-	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-cells
-
-#=================================
-# -------- test-SVS-cell ---------
-#=================================
-
-test-SVS-cell: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-SVS for SG13G2 cell"
-	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-SVS-cell
-
-#=================================
-# -------- test-SRAM ------------
-#=================================
-
-test-SRAM:
-	@python3 ihp-sg13g2/libs.qa/sram/validate_sram.py
-
-#=================================
-# -------- test-LVS-switch -------
-#=================================
-
-test-LVS-switch: env
-	@. $(VENV_RUN_COMMAND); echo "Running Klayout-LVS switch test"
-	@. $(VENV_RUN_COMMAND); cd $(KLAYOUT_LVS_TESTS) && make test-LVS-switch
-
-#=================================
-# ---- test-cap-cmomi-model ------
-#=================================
-
-# The guard that keeps the cap_cmomi capacitance honest. Six artifacts state it
-# and nothing keeps them in step: the Verilog-A, the PCell C= label, the xschem
-# tcleval expression, the qucs-s symbol equation, the copy of that equation
-# pasted into the qucs-s example, and the two stored simulator references. The
-# test asks each of them for the same devices and compares against the Verilog-A
-# built here, which is what a simulation runs.
-#
-# No venv: it drives klayout, ngspice, openvaf and tclsh directly. Skips rather
-# than fails when one of those is missing, like test-gnucap, so DRC/LVS work is
-# not blocked by an absent simulator.
-CAP_CMOMI_MODEL_TOOLS = klayout ngspice tclsh
-
-.ONESHELL:
-test-cap-cmomi-model:
-	@for tool in $(CAP_CMOMI_MODEL_TOOLS); do \
-	  if ! command -v $$tool >/dev/null 2>&1; then \
-	    echo "Skipping: $$tool not installed"; \
-	    exit 0; \
-	  fi; \
-	done; \
-	if ! command -v openvaf-r >/dev/null 2>&1 && ! command -v openvaf >/dev/null 2>&1; then \
-	  echo "Skipping: no Verilog-A compiler installed"; \
-	  exit 0; \
-	fi; \
-	cd ihp-sg13g2/libs.tech/klayout/sg13g2_tests && \
-	python3 cap_cmomi_consistency_test.py
+.PHONY: env lint-all help

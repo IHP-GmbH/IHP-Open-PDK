@@ -37,60 +37,26 @@ proc setCurrentInstancedName {name} {
 proc setCurrentCellParameters {parameters} {
     global currentCellParameters
 
-    set currentCellParameters [dict create]
-    set zeroLengthPattern [format "'?%c'?,?" 0x2717]
-
-    dict for {key value} $parameters {
-        # remove decoration from key
-        regexp {'?([^',]+)'?:?} $key match undecoratedKey
-
-        if {[regexp $zeroLengthPattern $value match]} {
-            set undecoratedValue {}
-        } else {
-            # map space pattern to space
-            set value [string map {"\u2709" " "} $value]
-            # map square brackets pattern to square brackets
-            set value [string map {"\u2772" "\["} $value]
-            set value [string map {"\u2773" "\]"} $value]
-
-            # remove decoration from value
-            regexp {'?([^',]+)'?,?} $value match undecoratedValue
-        }
-
-        dict append currentCellParameters $undecoratedKey $undecoratedValue
-    }
+    set currentCellParameters $parameters
 }
 
 proc getCurrentCellParameters {} {
     global currentCellParameters
 
-    set coercedCellParameters [dict create]
+    set cellParameters [dict create]
 
     dict for {key value} $currentCellParameters {
-        if {$value eq ""} {
-            set value "\u2717"
-        } else {
-            set value [string map {" " "\u2709"} $value]
-            set value [string map {"\[" "\u2772"} $value]
-            set value [string map {"\]" "\u2773"} $value]
-        }
-        dict append coercedCellParameters $key $value
+        set value [string map {"{" "\{" "}" "\}"} $value]
+        dict append cellParameters $key $value
     }
 
-    return $coercedCellParameters
+    return $cellParameters
 }
 
 proc setTechParameters {techParams} {
     global techParameters
 
-    set techParameters [dict create]
-
-    dict for {key value} $techParams {
-        # remove decoration from key/value
-        regexp {'?([^',]+)'?:?} $key match undecoratedKey
-        regexp {'?([^',]+)'?,?} $value match undecoratedValue
-        dict append techParameters $undecoratedKey $undecoratedValue
-    }
+    set techParameters $techParams
 }
 
 proc cni_setAbutment { value } {

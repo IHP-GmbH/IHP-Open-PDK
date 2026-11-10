@@ -1,0 +1,32 @@
+load mgsim
+
+load models/ngspice46/dio.so
+load ../../../plugins/models/sg13g2_svaricaphv_paramset.so
+load ../../../plugins/gnucap/
+load vams/vsine.so
+
+spice
+
+.include ../../../models/paramsets/diode_dsubw.lib
+
+.verilog
+
+`include ../../../models/sg13g2_svaricaphv_module.va
+`include ../../../models/cornerSVARICAPHV.va
+`include ./tb_svaricaphv_ac.va
+
+options numdgt=7
+
+svaricaphv_ff corner_svaricaphv();
+tb_svaricaphv_ac #(.l(0.4u), .mm_ok(1)) tb1();
+tb_svaricaphv_ac #(.l(0.4u), .mm_ok(1)) tb2();
+
+
+.sweep 1000 run 1 1000
+    reseed
+    dc > /dev/null
+    print ac ii(tb1.VG2) ii(tb2.VG2)
+    ac lin 100 1e9 100e9 basic
+go
+
+

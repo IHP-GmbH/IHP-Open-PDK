@@ -18,20 +18,20 @@ IHP Open Source PDK project goal is to provide a fully open source Process
 Design Kit and related data, which can be used to create manufacturable
 designs at IHP’s facility.
 
-As of March 2023, this repository is targeting the SG13G2 process node.
+As of March 2023, this repository is targeting the SG13G2 process node. It also hosts the
+SG13CMOS5L process node, a CMOS-only variant with a reduced metal stack.
 
 <p align="center"><img src="https://github.com/IHP-GmbH/IHP-Open-PDK/assets/116548619/647b8465-8138-4d2e-9dfb-ef0b8fc18b25" alt="IHP Logo Image" width="50%"/></p>
 
-# Current status -- Preview
+# Current status -- Early Access (SG13G2) / Preview (SG13CMOS5L)
 
-> **Warning**
+> [!IMPORTANT]
 >
-> IHP is currently treating the existing content as a **preview only**.
+> IHP currently classifies the open source SG13G2 PDK as **early access** and the SG13CMOS5L PDK as **preview only**.
 
-While the SG13G2 process node and the PDK from which this open source
-release was derived have been used to create many designs that have been
-successfully manufactured in significant quantities, the open source PDK
-is not intended to be used for production at this moment.
+While the SG13G2 process node and the PDK from which this open source release was derived have been used to create many designs that have been successfully manufactured in significant quantities, the open-source SG13G2 PDK is currently provided under **early access** and is not yet intended for production use.
+
+The open-source SG13CMOS5L PDK remains in **preview** status and is likewise not intended for production use at this time.
 
 # Documentation
 
@@ -48,6 +48,31 @@ frequency ($f_{max}$). This process provides 2 gate oxides: A thin gate oxide fo
 oxide for a 3.3 V supply voltage. For both modules NMOS, PMOS and isolated NMOS transistors are
 offered. Further passive components like poly silicon resistors and MIM capacitors are available. The
 backend option offers 5 thin metal layers, two thick metal layers (2 and 3 μm thick) and a MIM layer.
+
+# SG13CMOS5L Process Node
+
+SG13CMOS5L is a CMOS-only 0.13 μm process node from the same platform as SG13G2, but without the SiGe:C
+npn-HBT devices. It provides the same 2 gate oxides: A thin gate oxide for the 1.2 V digital logic and a thick
+oxide for a 3.3 V supply voltage. For both modules NMOS, PMOS and isolated NMOS transistors are offered,
+as well as poly silicon resistors. The aluminium backend offers 4 thin metal layers and one thick top metal
+layer (M1-M4-TM1). The MIM layer is not available, metal-oxide-metal capacitors are offered instead.
+
+Switch between the process nodes by setting the `$PDK` environment variable to `ihp-sg13g2` or `ihp-sg13cmos5l`.
+
+## Supported Devices
+
+* MOSFETs: LV/HV NMOS/PMOS, plus RF variants (including HV RF).
+* Bipolar: `pnpMPA`.
+* Diodes: antenna diodes, `diodevdd`/`diodevss` variants.
+* Resistors: silicided, p+ poly, high-R poly (and model variants).
+* ESD: `nmoscl_2` and `nmoscl_4`.
+* Capacitors: metal-oxide-metal on the Metal1-Metal4 stack, `cap_cmomi`
+  (interdigitated, with feed topology) and `cap_cmomf` (metal fringe / finger).
+  Both ship a KLayout PCell, an xschem symbol, an OSDI compact model and LVS
+  recognition. Neither is validated on CMOS5L silicon yet and neither models
+  corner or mismatch spread; see the header of each model for what is and is
+  not covered.
+* Taps/utilities: `ntap1`, `ptap1`, `sub`, via stack, sealring, `NoFillerStack`.
 
 # PDK Contents
 
@@ -139,7 +164,7 @@ The IHP is one of the world's leading research institutions in the field of sili
 
 ## Contacting IHP
 
-Requests for more information about SG13G2 and other standard and
+Requests for more information about SG13G2, SG13CMOS5L and other standard and
 custom foundry technologies can be emailed to \<openpdk@ihp-microelectronics.com\>.
 
 # License

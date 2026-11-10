@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Fill Metal</description>
+ <version>0.1</version>
+ <category>filler</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>filler</group-name>
+ <menu-path>sg13cmos5l_menu&gt;end("SG13CMOS5L PDK").end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+	# Automatic filler generation script for Metal layers (M1-M4-TM1)
+	# SG13CMOS5L PDK: CMOS-only, M1-M4-TM1 metal stack
+
+	# Metal layers
+	Metal1 = source.input("8/0")
+	Metal1_filler = source.input("8/22")
+	Metal1_nofill = source.input("8/23")
+	Metal1_slit = source.input("8/24")
+	Metal2 = source.input("10/0")
+	Metal2_filler = source.input("10/22")
+	Metal2_nofill = source.input("10/23")
+	Metal2_slit = source.input("10/24")
+	Metal3 = source.input("30/0")
+	Metal3_filler = source.input("30/22")
+	Metal3_nofill = source.input("30/23")
+	Metal3_slit = source.input("30/24")
+	Metal4 = source.input("50/0")
+	Metal4_filler = source.input("50/22")
+	Metal4_nofill = source.input("50/23")
+	Metal4_slit = source.input("50/24")
+	TopMetal1 = source.input("126/0")
+	TopMetal1_filler = source.input("126/22")
+	TopMetal1_nofill = source.input("126/23")
+	TopMetal1_slit = source.input("126/24")
+
+	# Exclusion layers
+	EdgeSeal = source.input("39/0")
+	NoMetFiller = source.input("160/0")
+
+
+	# Create a line edit widget
+	#
+	# text - The default text for the line edit
+	#
+	# Returns a QCheckBox instance
+	def self.create_input_field(text)
+		line_edit = RBA::QLineEdit.new()
+		line_edit.setText(text)
+		line_edit
+	end
+
+	# Create buttons for the distance dialog
+	#
+	# dialog - The distances dialog
+	#
+	# Returns a QWidget instance containing the buttons
+	def self.create_buttons(dialog)
+		container = RBA::QWidget.new
+		layout = RBA::QHBoxLayout.new(container)
+
+		ok_button = RBA::QPushButton.new('OK')
+		ok_button.clicked.connect(Proc.new { dialog.accept })
+		cancel_button = RBA::QPushButton.new('Cancel')
+		cancel_button.clicked.connect(Proc.new { dialog.reject })
+
+		layout.addWidget(ok_button)
+		layout.addWidget(cancel_button)
+
+		container
+	end
+
+	# Create dialog to select custom distances between Mx filler
+	#
+	# defaults - Default distances to add to the input fields
+	def self.create_options_dialog(defaults)
+		dialog = RBA::QDialog.new
+		dialog.windowTitle = "Metal Fill Distances"
+		layout = RBA::QFormLayout.new(dialog)
+
+		layout.addRow('M1 Distance', create_input_field(defaults['distance_m1']))
+		layout.addRow('M2 Distance', create_input_field(defaults['distance_m2']))
+		layout.addRow('M3 Distance', create_input_field(defaults['distance_m3']))
+		layout.addRow('M4 Distance', create_input_field(defaults['distance_m4']))
+		layout.addRow('TM1 Distance', create_input_field(defaults['distance_tm1']))
+
+		layout.addRow('', create_buttons(dialog))
+
+		dialog
+	end
+
+	# Update distance map from the dialog
+	#
+	# distances - The distances map to be updated
+	# dialog    - The dialog containing the updated options
+	def self.update_distances_from_dialog(distances, dialog)
+		distances['distance_m1'] = dialog.layout.itemAt(1).widget.text.to_f
+		if 0.42 > distances['distance_m1']
+			print("M1fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal1:Filler\n")
+			distances['distance_m1'] = 0.42
+		end
+		distances['distance_m2'] = dialog.layout.itemAt(3).widget.text.to_f
+		if 0.42 > distances['distance_m2']
+			print("M2fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal2:Filler\n")
+			distances['distance_m2'] = 0.42
+		end
+		distances['distance_m3'] = dialog.layout.itemAt(5).widget.text.to_f
+		if 0.42 > distances['distance_m3']
+			print("M3fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal3:Filler\n")
+			distances['distance_m3'] = 0.42
+		end
+		distances['distance_m4'] = dialog.layout.itemAt(7).widget.text.to_f
+		if 0.42 > distances['distance_m4']
+			print("M4fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal4:Filler\n")
+			distances['distance_m4'] = 0.42
+		end
+		distances['distance_tm1'] = dialog.layout.itemAt(9).widget.text.to_f
+		if 3.0 > distances['distance_tm1']
+			print("TM1fil.b is defined with min. 3.0. Setting 3.05 as distance for TopMetal1:Filler\n")
+			distances['distance_tm1'] = 3.05
+		end
+	end
+
+	distances = {
+		'distance_m1' => 1.5,
+		'distance_m2' => 1.5,
+		'distance_m3' => 2.0,
+		'distance_m4' => 2.0,
+		'distance_tm1' => 3.05
+	}
+
+	batch_mode = !RBA::Application::instance.main_window
+	if !batch_mode
+		dialog = create_options_dialog(distances)
+		# Show the dialog box and handle user input
+		if dialog.exec == 1 #RBA::QDialog::Accepted
+			update_distances_from_dialog(distances, dialog)
+		end
+	end
+
+	# Paramter
+	width_m1_s = 1.0
+	height_m1_s = 1.0
+	distance_m1_s = distances['distance_m1']
+	width_m1_m = width_m1_s + distance_m1_s + width_m1_s
+	height_m1_m = height_m1_s + distance_m1_s + height_m1_s
+	distance_m1_m = distance_m1_s
+
+	width_m2_s = 1.0
+	height_m2_s = 1.0
+	distance_m2_s = distances['distance_m2']
+	width_m2_m = width_m2_s + distance_m2_s + width_m2_s
+	height_m2_m = height_m2_s + distance_m2_s + height_m2_s
+	distance_m2_m = distance_m2_s
+
+	width_m3_s = 1.0
+	height_m3_s = 1.0
+	distance_m3_s = distances['distance_m3']
+	width_m3_m = width_m3_s + distance_m3_s + width_m3_s
+	height_m3_m = height_m3_s + distance_m3_s + height_m3_s
+	distance_m3_m = distance_m3_s
+
+	width_m4_s = 1.0
+	height_m4_s = 1.0
+	distance_m4_s = distances['distance_m4']
+	width_m4_m = width_m4_s + distance_m4_s + width_m4_s
+	height_m4_m = height_m4_s + distance_m4_s + height_m4_s
+	distance_m4_m = distance_m4_s
+
+	# TopMetal1 uses larger filler cells (from full PDK sg13g2_filler_TopMetal.lym)
+	width_tm1 = 5.0
+	height_tm1 = 10.0
+	distance_tm1 = distances['distance_tm1']
+
+	# Create filler cell
+	pattern_m1_s = fill_pattern("Met1_S_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1_s, height_m1_s))
+	pattern_m1_m = fill_pattern("Met1_M_FILL_CELL").shape(8, 22,  box(0.0, 0.0, width_m1_m, height_m1_m))
+	pattern_m2_s = fill_pattern("Met2_S_FILL_CELL").shape(10, 22, box(0.0, 0.0, width_m2_s, height_m2_s))
+	pattern_m2_m = fill_pattern("Met2_M_FILL_CELL").shape(10, 22, box(0.0, 0.0, width_m2_m, height_m2_m))
+	pattern_m3_s = fill_pattern("Met3_S_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3_s, height_m3_s))
+	pattern_m3_m = fill_pattern("Met3_M_FILL_CELL").shape(30, 22, box(0.0, 0.0, width_m3_m, height_m3_m))
+	pattern_m4_s = fill_pattern("Met4_S_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_s, height_m4_s))
+	pattern_m4_m = fill_pattern("Met4_M_FILL_CELL").shape(50, 22, box(0.0, 0.0, width_m4_m, height_m4_m))
+	pattern_tm1 = fill_pattern("TM1_FILL_CELL").shape(126, 22, box(0.0, 0.0, width_tm1, height_tm1))
+
+	print("Filling M1\n")
+	M1Fil_b = Metal1_filler.dup
+	M1Fil_b.size(0.42, 0.42, "square_limit")
+	M1Fil_c = Metal1.dup
+	M1Fil_c.size(0.42, 0.42, "square_limit")
+	M1Fil = EdgeSeal.holes - (M1Fil_b | M1Fil_c | Metal1_nofill | Metal1_slit | NoMetFiller)
+	M1Fil_left = M1Fil.fill_with_left(pattern_m1_m, hstep(width_m1_m + distance_m1_m), vstep(height_m1_m + distance_m1_m))
+	M1Fil_left.fill(pattern_m1_s, hstep(width_m1_s + distance_m1_s), vstep(height_m1_s + distance_m1_s))
+
+	print("Filling M2\n")
+	M2Fil_b = Metal2_filler.dup
+	M2Fil_b.size(0.42, 0.42, "square_limit")
+	M2Fil_c = Metal2.dup
+	M2Fil_c.size(0.42, 0.42, "square_limit")
+	M2Fil = EdgeSeal.holes - (M2Fil_b | M2Fil_c | Metal2_nofill | Metal2_slit | NoMetFiller)
+	M2Fil_left = M2Fil.fill_with_left(pattern_m2_m, hstep(width_m2_m + distance_m2_m), vstep(height_m2_m + distance_m2_m))
+	M2Fil_left.fill(pattern_m2_s, hstep(width_m2_s + distance_m2_s), vstep(height_m2_s + distance_m2_s))
+
+	print("Filling M3\n")
+	M3Fil_b = Metal3_filler.dup
+	M3Fil_b.size(0.42, 0.42, "square_limit")
+	M3Fil_c = Metal3.dup
+	M3Fil_c.size(0.42, 0.42, "square_limit")
+	M3Fil = EdgeSeal.holes - (M3Fil_b | M3Fil_c | Metal3_nofill | Metal3_slit | NoMetFiller)
+	M3Fil_left = M3Fil.fill_with_left(pattern_m3_m, hstep(width_m3_m + distance_m3_m), vstep(height_m3_m + distance_m3_m))
+	M3Fil_left.fill(pattern_m3_s, hstep(width_m3_s + distance_m3_s), vstep(height_m3_s + distance_m3_s))
+
+	print("Filling M4\n")
+	M4Fil_b = Metal4_filler.dup
+	M4Fil_b.size(0.42, 0.42, "square_limit")
+	M4Fil_c = Metal4.dup
+	M4Fil_c.size(0.42, 0.42, "square_limit")
+	M4Fil = EdgeSeal.holes - (M4Fil_b | M4Fil_c | Metal4_nofill | Metal4_slit | NoMetFiller)
+	M4Fil_left = M4Fil.fill_with_left(pattern_m4_m, hstep(width_m4_m + distance_m4_m), vstep(height_m4_m + distance_m4_m))
+	M4Fil_left.fill(pattern_m4_s, hstep(width_m4_s + distance_m4_s), vstep(height_m4_s + distance_m4_s))
+
+	print("Filling TM1\n")
+	# TopMetal1 exclusion using values from full PDK (sg13g2_filler_TopMetal.lym)
+	TM1Fil_c = TopMetal1.dup
+	TM1Fil_c.size(3.0, 3.0, "square_limit")
+	exclLayTM1 = TM1Fil_c | TopMetal1_filler | TopMetal1_nofill | TopMetal1_slit | NoMetFiller
+	(EdgeSeal.holes - exclLayTM1).fill(pattern_tm1, hstep(width_tm1 + distance_tm1), vstep(height_tm1 + distance_tm1))
+	</text>
+</klayout-macro>

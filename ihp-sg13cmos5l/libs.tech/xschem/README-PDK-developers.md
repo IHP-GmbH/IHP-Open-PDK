@@ -1,0 +1,17 @@
+
+
+# Naming conventions
+
+Since the schematic contains `sg13g2_pr/` string in the instance reference 
+we use symbolic links to ensure schematic portability between G2 and CMOS5L.
+
+In the `xschemrc` file the global variable were change for the same reason. 
+
+SG13G2_MODELS -> MODELS_NGSPICE
+SG13G2_MODELS_XYCE -> MODELS_XYCE
+
+same for SG13CMOS5L
+
+
+
+

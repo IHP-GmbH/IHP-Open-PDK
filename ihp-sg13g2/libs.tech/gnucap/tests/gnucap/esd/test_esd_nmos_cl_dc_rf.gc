@@ -1,0 +1,23 @@
+load mgsim
+load models/ngspice46/dio.so
+load ../../../plugins/models/idc.so
+load ../../../plugins/models/sg13g2_moslv_rf_paramset.so
+
+spice
+
+.include ../../../models/paramsets/diode_esd.lib
+
+.verilog
+
+`include ../../../models/cornerMOSlv.va
+`include ../../../models/sg13g2_moslv_module.va
+`include ./tb_esd_nmos_cl_dc.va
+
+parameter real ib = 0.0;
+
+moslv_tt corner_moslv();
+tb_esd_nmos_cl_dc #(.ib(ib), .rfmode(1)) tb(Vin1, Vin2);
+
+print dc v(Vin1) v(Vin2) iter(0)
+dc ib -20m 20m 10u basic
+status notime
