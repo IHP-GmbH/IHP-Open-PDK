@@ -319,14 +319,14 @@ foreach dev $devices {
 #---------------------------------------------------------------
 
 set devices {}
-lappend devices sg13cmos5l_antennap
+lappend devices sg13cmos5l_antennanp
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
-	property "-circuit1 $cell" parallel enable
+	property "-circuit1 $dev" parallel enable
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	property "-circuit2 $cell" parallel enable
+	property "-circuit2 $dev" parallel enable
     }
 }
 
