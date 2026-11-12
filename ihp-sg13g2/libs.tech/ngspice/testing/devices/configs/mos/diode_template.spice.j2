@@ -1,0 +1,91 @@
+* =========================================================================================
+* Copyright 2025 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* =========================================================================================
+
+* MOS junction-diode structures (di_bd_area, di_bd_perim, di_bs_area, di_bs_perim).
+*
+* The test structure is one junction: the drain (di_bd) or the source (di_bs) diffusion
+* against the bulk. The PDK subcircuit is a transistor, so D, G and S are all connected to
+* the swept junction node: the stand-in channel then carries no current (V_GS = V_GD = 0; the
+* gate-bulk voltage is the junction bias, with negligible effect), and only the junctions conduct. The junction size is the header's
+* area/perimeter (AD/PD for di_bd, AS/PS for di_bs). AS is kept above 0 (1e-30) because the
+* subcircuit recomputes the whole junction geometry from W and NF when as = 0, which would
+* drop the header's drain area.
+*
+* The measured output "ib" of these files is the current at the junction-terminal SMU
+* (header "ib I GROUND D SMU1" for di_bd, "ib I GROUND S SMU3" for di_bs), so the netlist
+* reports the current into the swept junction terminal under that name.
+
+*********
+*Sources*
+*********
+
+.param VD={{ VD }}
+.param VS={{ VS }}
+.param VG={{ VG }}
+.param VB={{ VB }}
+
+Vd d 0 {VD}
+Vs s 0 {VS}
+Vg g 0 {VG}
+Vb b 0 {VB}
+
+*********
+*Circuit*
+*********
+
+.param W={{ W }}
+.param L={{ L }}
+.param AD={{ AD }}
+.param AS={{ AS if (AS|float) > 0 else "1e-30" }}
+.param PD={{ PD }}
+.param PS={{ PS }}
+.param NF={{ NF }}
+.param M={{ M }}
+
+* D, G and S on the swept junction node ({{ sweep_node }}), bulk on its own source.
+XU1 {{ sweep_node }} {{ sweep_node }} {{ sweep_node }} b {{ device_subckt }}
++ w={W} l={L} m={M} ng={NF} ad={AD} as={AS} pd={PD} ps={PS}
+
+* ============================================================================================
+* ----------------------------------------- ANALYSIS -----------------------------------------
+* ============================================================================================
+
+.temp {{ TEMP }}
+* gmin far below the junction leakage: ngspice's default 1e-12 S per junction would add about
+* 1e-11 A at 5 V, which is most of the measured reverse current of these structures.
+.option gmin=1e-15
+
+.control
+  set filetype=ascii
+  set wr_singlescale
+  set wr_vecnames
+
+  dc {{ sweep_var }} {{ sweep_start }} {{ sweep_stop }} {{ sweep_step }}
+
+  * current into the junction terminal = what the junction SMU measured
+  let ib = -i({{ sweep_var }})
+
+  wrdata {{ out_path }} v({{ sweep_node }}) ib
+  quit
+.endc
+
+* ============================================================================================
+* ------------------------------------- CIR/MODELS-SETUP -------------------------------------
+* ============================================================================================
+
+.lib {{ model_corner_lib }} {{ corner }}
+
+.end

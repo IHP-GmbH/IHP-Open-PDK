@@ -1,0 +1,64 @@
+# Pinned simulator toolchains of the device tests (read by tools/toolchain.py).
+# A toolchain ID is ng<ngspice version>-ovr-<OpenVAF-Reloaded commit, 7 digits>. CI cache keys hash
+# this file and tools/ci_setup.sh, so any change here rebuilds the cached toolchains; raise
+# cache_version to rebuild them after a change of the build steps in tools/toolchain.py.
+cache_version: 1
+
+# Every toolchain the tests run on (local `make ... TOOLCHAIN=<id>` and the CI matrix).
+toolchains:
+  - ng46-ovr-b4517ad
+  - ng46-ovr-fdf2522
+  - ng47-ovr-b4517ad
+  - ng47-ovr-fdf2522
+
+# ngspice release tarballs (SourceForge "old-releases" folders keep stable URLs).
+ngspice:
+  "46":
+    url: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/old-releases/46/ngspice-46.tar.gz
+    sha256: a0d1699af1940b06649276dcd6ff5a566c8c0cad01b2f7b5e99dedbb4d64c19b
+  "47":
+    url: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/old-releases/47/ngspice-47.tar.gz
+    sha256: 894e649651f1838a14095e5a5439e7d3aa63e87ede14d283173fda4fcdef675f
+
+# configure options of `tools/toolchain.py build ngspice` (the options of the local ngspice-47 build).
+ngspice_configure:
+  - --with-x
+  - --with-readline=yes
+  - --with-fftw3=yes
+  - --enable-xspice
+  - --enable-cider
+  - --enable-pss
+  - --enable-osdi
+  - --enable-openmp
+  - --enable-klu
+  - --enable-sp
+  - --disable-debug
+
+# OpenVAF-Reloaded source snapshots (codeload tarball of the commit; the commit is checked with
+# `git get-tar-commit-id`). b4517ad built the OSDI files of the 2026-09-09 baseline; fdf2522 was the
+# head of the default branch "mob" on 2026-10-11.
+openvaf:
+  b4517ad:
+    commit: b4517adc0a21ef42e03b396373553a41174444c4
+    url: https://codeload.github.com/OpenVAF/OpenVAF-Reloaded/tar.gz/b4517adc0a21ef42e03b396373553a41174444c4
+  fdf2522:
+    commit: fdf2522b70f42793f64b1c72f0195c96dea0cc19
+    url: https://codeload.github.com/OpenVAF/OpenVAF-Reloaded/tar.gz/fdf2522b70f42793f64b1c72f0195c96dea0cc19
+
+# How `tools/toolchain.py build openvaf` runs cargo: LLVM 21 (the local build and CI use the same).
+openvaf_build:
+  cargo_features: llvm21
+  llvm_prefix_env: LLVM_SYS_211_PREFIX
+  llvm_prefix: /usr/lib/llvm-21
+
+# Verilog-A models compiled per OpenVAF build by `tools/toolchain.py osdi <toolchain>` into
+# osdi_build/ovr-<sha7>/ (loaded by .spiceinit through $OSDI_DIR). "--target_cpu generic" makes the
+# objects independent of the CPU they were built on, so a CI cache can move between runners.
+osdi:
+  flags: ["-D__NGSPICE__", "--target_cpu", "generic"]
+  models:
+    - {source: ../../../verilog-a/psp103/psp103.va, output: psp103.osdi}
+    - {source: ../../../verilog-a/psp103/psp103_nqs.va, output: psp103_nqs.osdi}
+
+# Python of the CI jobs (local runs use the same minor version) and its pinned packages.
+python: "3.14"          # informative: the CI workflow sets up this Python version

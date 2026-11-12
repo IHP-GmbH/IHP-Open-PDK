@@ -1,0 +1,57 @@
+* =========================================================================================
+* Copyright 2025 IHP PDK Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+* =========================================================================================
+
+* pnpMPA capacitance-meter netlist, rendered per measured C-V block and corner
+* (models_verifier/cv_runner/cv_sweep_runner.py). Same meter model as configs/mos/cv_template.spice.j2:
+* HIGH pins (node nh) carry the bias plus a 1 V AC excitation, LOW pins sit at 0 V through
+* sources whose AC currents give C = sum Im(I) / (2 pi f), other pins are AC ground.
+* Instance: emitter area/perimeter (a, p) and n-well area/perimeter (ac, pc) of one cell, m cells.
+* Output: one row "frequency sweep c" per simulated bias point in {{ out_path }}.
+
+Vh nh 0 dc {{ sweep_values[0] }} ac 1
+{% for p in low_pins %}
+Vl_{{ p }} nl_{{ p }} 0 0
+{% endfor %}
+{% for p in float_pins %}
+Rfl_{{ p }} nf_{{ p }} {{ float_to }} 1e12
+{% endfor %}
+
+X1 {{ nodes | join(' ') }} {{ device_subckt }} a={{ A }} p={{ P }} ac={{ AC }} pc={{ PC }} m={{ M|default(1)|int }}
+
+.temp {{ TEMP }}
+
+.control
+  * One row "frequency sweep c" per bias point, appended with full precision. "destroy all" first:
+  * if the AC analysis of a point fails, no row is written (the point then counts as not
+  * simulated) instead of reading the previous point's result.
+  set filetype=ascii
+  set wr_singlescale
+  set appendwrite
+  set numdgt=12
+  foreach vsw {{ sweep_values | join(' ') }}
+    destroy all
+    alter Vh dc = $vsw
+    ac lin 1 {{ freq }} {{ freq }}
+    let sweep = $vsw
+    let c = ({% for p in low_pins %}imag(i(Vl_{{ p }})) + {% endfor %}0) / (2*pi*{{ freq }})
+    wrdata {{ out_path }} sweep c
+  end
+  quit
+.endc
+
+.lib {{ model_corner_lib }} {{ corner }}
+
+.end
