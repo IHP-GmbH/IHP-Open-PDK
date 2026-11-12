@@ -151,46 +151,43 @@
 		dialog.windowTitle = "Metal Fill Distances"
 		layout = RBA::QFormLayout.new(dialog)
 
-		layout.addRow('M1 Distance', create_input_field(defaults['distance_m1']))
-		layout.addRow('M2 Distance', create_input_field(defaults['distance_m2']))
-		layout.addRow('M3 Distance', create_input_field(defaults['distance_m3']))
-		layout.addRow('M4 Distance', create_input_field(defaults['distance_m4']))
-		layout.addRow('M5 Distance', create_input_field(defaults['distance_m5']))
+		defaults.each do |key, value|
+			layout.addRow("#{layer_label(key)} Distance", create_input_field(value))
+		end
 
 		layout.addRow('', create_buttons(dialog))
 
 		dialog
 	end
 
+	# Layer name of a distance key, M1 for distance_m1
+	def self.layer_label(key)
+		key.sub('distance_', '').upcase
+	end
+
+	# Set one distance, raised to its minimum if below
+	#
+	# distances - The distances map to be updated
+	# minimum   - The smallest distance per key
+	# key       - The distance to set
+	# value     - The requested distance
+	def self.set_distance(distances, minimum, key, value)
+		if minimum[key] > value
+			label = layer_label(key)
+			print("#{label}fil.b is defined with min. #{minimum[key]}. Setting #{minimum[key]} as distance for #{label}:Filler\n")
+			value = minimum[key]
+		end
+		distances[key] = value
+	end
+
 	# Update distance map from the dialog
 	#
 	# distances - The distances map to be updated
+	# minimum   - The smallest distance per key
 	# dialog    - The dialog containing the updated options
-	def self.update_distances_from_dialog(distances, dialog)
-		distances['distance_m1'] = dialog.layout.itemAt(1).widget.text.to_f
-		if 0.42 > distances['distance_m1']
-			print("M1fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal1:Filler\n")
-			distances['distance_m1'] = 0.42
-		end
-		distances['distance_m2'] = dialog.layout.itemAt(3).widget.text.to_f
-		if 0.42 > distances['distance_m2']
-			print("M2fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal2:Filler\n")
-			distances['distance_m2'] = 0.42
-		end
-		distances['distance_m3'] = dialog.layout.itemAt(5).widget.text.to_f
-		if 0.42 > distances['distance_m3']
-			print("M3fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal3:Filler\n")
-			distances['distance_m3'] = 0.42
-		end
-		distances['distance_m4'] = dialog.layout.itemAt(7).widget.text.to_f
-		if 0.42 > distances['distance_m4']
-			print("M4fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal4:Filler\n")
-			distances['distance_m4'] = 0.42
-		end
-		distances['distance_m5'] = dialog.layout.itemAt(9).widget.text.to_f
-		if 0.42 > distances['distance_m5']
-			print("M5fil.b is defined with min. 0.42. Setting 0.42 as distance for Metal5:Filler\n")
-			distances['distance_m5'] = 0.42
+	def self.update_distances_from_dialog(distances, minimum, dialog)
+		distances.keys.each_with_index do |key, row|
+			set_distance(distances, minimum, key, dialog.layout.itemAt(2 * row + 1).widget.text.to_f)
 		end
 	end
 
@@ -202,12 +199,29 @@
 		'distance_m5' => 2.0
 	}
 
+	# MFil.b and TM1Fil.b, TopMetal1 at 3.05 as 3.0 exactly caused random DRC
+	# violations
+	minimum = {
+		'distance_m1' => 0.42,
+		'distance_m2' => 0.42,
+		'distance_m3' => 0.42,
+		'distance_m4' => 0.42,
+		'distance_m5' => 0.42
+	}
+
 	batch_mode = !RBA::Application::instance.main_window
 	if !batch_mode
 		dialog = create_options_dialog(distances)
 		# Show the dialog box and handle user input
 		if dialog.exec == 1 #RBA::QDialog::Accepted
-			update_distances_from_dialog(distances, dialog)
+			update_distances_from_dialog(distances, minimum, dialog)
+		end
+	else
+		# Batch mode has no dialog, so -rd distance_m1=0.42 and the other keys
+		# of distances set them instead
+		distances.each_key do |key|
+			value = eval("$#{key}")
+			set_distance(distances, minimum, key, value.to_f) unless value.nil?
 		end
 	end
 
