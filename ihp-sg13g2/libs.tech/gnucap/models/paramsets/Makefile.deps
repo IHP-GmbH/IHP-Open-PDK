@@ -1,0 +1,59 @@
+# Sources reached through `include, listed by hand because gnucap-mg-vams has no
+# dependency-output mode. Without them make compares only the paramset file
+# itself, so editing r3_cmc.va, psp103.va, either cap_cmom*.va or discipline.h
+# leaves a stale .so in place and `make check` then validates the previous
+# build instead of the current one. The external model trees are taken wholesale: any of their
+# .include files feeds the compile, and they are third-party sources that change
+# rarely enough that over-triggering costs nothing.
+
+DISCIPLINE = ../discipline.h
+
+VA_SOURCES = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
+MODEL_SOURCES = $(foreach model,$(MODELS_$(1)),\
+	$(call VA_SOURCES,$(IHP_VERILOG_DIR)/$(model)))
+
+RES_MODEL_SOURCES        = $(call MODEL_SOURCES,resistor)
+CAPACITOR_MODEL_SOURCES  = $(call MODEL_SOURCES,capacitor)
+HBT_MODEL_SOURCES        = $(call MODEL_SOURCES,sg13g2_hbt)
+MOSCAP_MODEL_SOURCES     = $(call MODEL_SOURCES,sg13g2_moscap)
+SVARICAPHV_MODEL_SOURCES = $(call MODEL_SOURCES,sg13g2_svaricaphv)
+MOSLV_MODEL_SOURCES      = $(call MODEL_SOURCES,sg13g2_moslv)
+MOSLV_RF_MODEL_SOURCES   = $(call MODEL_SOURCES,sg13g2_moslv_rf)
+MOSHV_MODEL_SOURCES      = $(call MODEL_SOURCES,sg13g2_moshv)
+MOSHV_RF_MODEL_SOURCES   = $(call MODEL_SOURCES,sg13g2_moshv_rf)
+
+RES_PARAMSETS       = $(wildcard resistor_*.va)
+CAPACITOR_PARAMSETS = $(wildcard capacitor_*.va)
+HBT_PARAMSETS       = $(wildcard sg13g2_hbt_*.va)
+MOSCAP_PARAMSETS    = $(wildcard sg13g2_moscap_*.va)
+MOSLV_PARAMSETS     = $(filter-out sg13g2_moslv_rf%.va,$(wildcard sg13g2_moslv_*.va))
+MOSLV_RF_PARAMSETS  = $(wildcard sg13g2_moslv_rf_*.va)
+MOSHV_PARAMSETS     = $(filter-out sg13g2_moshv_rf%.va,$(wildcard sg13g2_moshv_*.va))
+MOSHV_RF_PARAMSETS  = $(wildcard sg13g2_moshv_rf_*.va)
+
+$(TARGET_DIR)/resistor_paramset.cc resistor_paramset.dump.va: \
+	../spice/sp_resistor.va $(DISCIPLINE) $(RES_MODEL_SOURCES) $(RES_PARAMSETS)
+
+$(TARGET_DIR)/capacitor_paramset.cc capacitor_paramset.dump.va: \
+	../spice/sp_capacitor.va $(CAPACITOR_MODEL_SOURCES) $(CAPACITOR_PARAMSETS)
+
+$(TARGET_DIR)/sg13g2_svaricaphv_paramset.cc sg13g2_svaricaphv_paramset.dump.va: \
+	../spice/sp_capacitor.va $(SVARICAPHV_MODEL_SOURCES)
+
+$(TARGET_DIR)/sg13g2_moscap_paramset.cc sg13g2_moscap_paramset.dump.va: \
+	$(DISCIPLINE) $(MOSCAP_PARAMSETS) $(MOSCAP_MODEL_SOURCES)
+
+$(TARGET_DIR)/sg13g2_moslv_paramset.cc sg13g2_moslv_paramset.dump.va: \
+	$(DISCIPLINE) $(MOSLV_MODEL_SOURCES) $(MOSLV_PARAMSETS)
+
+$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc sg13g2_moslv_rf_paramset.dump.va: \
+	$(DISCIPLINE) $(MOSLV_RF_MODEL_SOURCES) $(MOSLV_RF_PARAMSETS)
+
+$(TARGET_DIR)/sg13g2_moshv_paramset.cc sg13g2_moshv_paramset.dump.va: \
+	$(DISCIPLINE) $(MOSHV_MODEL_SOURCES) $(MOSHV_PARAMSETS)
+
+$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc sg13g2_moshv_rf_paramset.dump.va: \
+	$(DISCIPLINE) $(MOSHV_RF_MODEL_SOURCES) $(MOSHV_RF_PARAMSETS)
+
+$(TARGET_DIR)/sg13g2_hbt_paramset.cc sg13g2_hbt_paramset.dump.va: \
+	$(HBT_PARAMSETS) $(HBT_MODEL_SOURCES)

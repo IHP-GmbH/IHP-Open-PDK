@@ -1,11 +1,18 @@
 # ihp-sg13g2/libs.tech/gnucap/Makefile
 
+include gnucap.mk
+
+BUNDLE = plugins/sg13g2.so
+
 # Build everything
 all: models-plugins gnucap-plugins
 
-# Build Verilog-AMS model plugins
+# Build model plugins and link the model and paramset bundle.
 models-plugins:
 	@$(MAKE) -C models
+	# Modelgen embeds the same runtime helpers in each object; use
+    # allow-multiple-definition to keep only once
+	$(CXX) -shared -Wl,--allow-multiple-definition $(GNUCAP_LDFLAGS) $(LDFLAGS) plugins/models/*.o -o $(BUNDLE)
 
 # Build gnucap plugins
 gnucap-plugins:
@@ -21,13 +28,17 @@ check: all
 	@$(MAKE) -C tests
 
 # Clean everything
+clean-plugin-dir = rm -f $(1)/*.cc $(1)/*.o $(1)/*.so
+
 clean:
 	@$(MAKE) -C models clean
 	@$(MAKE) -C cpp clean
 	@$(MAKE) -C tests clean
-	@# The sub-makes remove their own .so from plugins/models and plugins/gnucap;
-	@# nothing is ever written to plugins/ itself, so only the empty dirs remain.
-	@rmdir plugins/models plugins/gnucap plugins/osdi plugins 2>/dev/null || true
+	# Remove leftover outdated artifacts (better safe than sorry)
+	$(call clean-plugin-dir,plugins/models)
+	$(call clean-plugin-dir,plugins/gnucap)
+	$(call clean-plugin-dir,plugins/util)
+	rm -f $(BUNDLE) plugins/*.so plugins/osdi/*.osdi
 
 # Help
 help:
@@ -35,7 +46,7 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  all             - Build all plugins"
-	@echo "  models-plugins  - Build Verilog-AMS model plugins only"
+	@echo "  models-plugins  - Build model plugins and bundle"
 	@echo "  gnucap-plugins  - Build Gnucap simulator plugins only"
 	@echo "  check           - Build the plugins, then run the test suite"
 	@echo "  clean           - Remove all build artifacts"

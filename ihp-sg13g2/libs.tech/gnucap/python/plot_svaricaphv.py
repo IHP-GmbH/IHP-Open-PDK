@@ -18,9 +18,10 @@ assert ref_dir_sp.exists()
 
 def plot_test_svaricaphv_tran(corner: str, show: bool = False, nx: int = 1):
 
-    test_name = f"test_svaricaphv_tran_{corner}"
+    test_name = "test_svaricaphv_tran"
     if nx != 1:
         test_name += f"_nx{nx}"
+    test_name += f"_{corner}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     filepath_sp = ref_dir_sp / (test_name + ".sp.out")
@@ -72,9 +73,10 @@ def plot_test_svaricaphv_tran(corner: str, show: bool = False, nx: int = 1):
 
 def plot_test_svaricaphv_ac(corner: str, show=False, nx: int = 1):
 
-    test_name = "test_svaricaphv_ac_" + corner
+    test_name = "test_svaricaphv_ac"
     if nx != 1:
         test_name += f"_nx{nx}"
+    test_name += f"_{corner}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     filepath_sp = ref_dir_sp / (test_name + ".sp.out")

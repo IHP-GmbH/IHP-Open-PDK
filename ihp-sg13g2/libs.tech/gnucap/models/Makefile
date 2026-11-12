@@ -2,40 +2,38 @@ include ../gnucap.mk
 
 MODELGEN_VERILOG = gnucap-mg-vams
 OPENVAF = openvaf-r
-IHP_VERILOG_DIR = ../../verilog-a
 
-MODELS = \
-	r3_cmc \
-	psp103 \
-	cap_cmomi \
-	cap_cmomf \
-	vbic_1p3 \
-	mosvar
-
-
-MGFLAGS = -I $(shell gnucap-conf --includedir) -I . \
-	$(addprefix -I $(IHP_VERILOG_DIR)/, $(MODELS))
+MGFLAGS = -I $(shell gnucap-conf --includedir) -I .
 
 TARGET_DIR = ../plugins/models
 OSDI_DIR = ../plugins/osdi
 
-TARGETS = \
-	idc \
-	vpulse \
-	resistor_paramset \
-	capacitor_paramset \
-	sg13g2_moscap_paramset \
-	sg13g2_svaricaphv_paramset \
-	sg13g2_moslv_paramset \
-	sg13g2_moslv_rf_paramset \
-	sg13g2_moshv_paramset \
-	sg13g2_moshv_rf_paramset \
-	sg13g2_hbt_paramset
+MODULE_TARGETS = \
+	capacitors_mod \
+	diodes_mod \
+	sg13g2_dschottky_nbl1_mod \
+	sg13g2_esd \
+	sg13g2_hbt_mod \
+	sg13g2_moscap_mod \
+	sg13g2_moshv_mod \
+	sg13g2_moslv_mod \
+	sg13g2_svaricaphv_mod
+
+TARGETS = $(MODULE_TARGETS)
 
 PLUGINS = $(TARGETS:%=$(TARGET_DIR)/%.so)
+OBJECTS = $(TARGETS:%=$(TARGET_DIR)/%.o)
 
 # Default target
-all: $(PLUGINS)
+# Keep objects for the top-level bundle.
+all: $(PLUGINS) $(OBJECTS) paramsets util
+
+# Build paramset plugins in their own directory.
+paramsets:
+	@$(MAKE) -C paramsets
+
+util:
+	@$(MAKE) -C util
 
 # Create target directories if they don't exist
 $(TARGET_DIR):
@@ -46,62 +44,6 @@ $(OSDI_DIR):
 
 # Auto-generate convenience targets for each item in TARGETS
 $(TARGETS): %: $(TARGET_DIR)/%.so
-# Auto-generate convenience targets to dump each item in TARGETS
-$(TARGETS:%=dump-%): dump-%: %.dump.va
-# Auto-generate convenience targets to build OSDI for each item in TARGETS
-$(TARGETS:%=osdi-%): osdi-%: $(OSDI_DIR)/%.osdi
-
-# Sources reached through `include, listed by hand because gnucap-mg-vams has no
-# dependency-output mode. Without them make compares only the paramset file
-# itself, so editing r3_cmc.va, psp103.va, either cap_cmom*.va or discipline.h
-# leaves a stale .so in place and `make check` then validates the previous
-# build instead of the current one. The external model trees are taken wholesale: any of their
-# .include files feeds the compile, and they are third-party sources that change
-# rarely enough that over-triggering costs nothing.
-
-# TODO: generate dynamically from MODELS
-va_sources  = $(wildcard $(1)/*.va $(1)/*.vams $(1)/*.include $(1)/*.h)
-R3CMC_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/r3_cmc)
-PSP103_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/psp103)
-CMOMI_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomi)
-CMOMF_SRC  := $(call va_sources,$(IHP_VERILOG_DIR)/cap_cmomf)
-VBIC_SRC   := $(call va_sources,$(IHP_VERILOG_DIR)/vbic_1p3)
-MOSVAR_SRC := $(call va_sources,$(IHP_VERILOG_DIR)/mosvar)
-
-RES_PARAMSETS = $(wildcard paramsets/resistor_*.va)
-CAPACITOR_PARAMSETS = $(wildcard paramsets/capacitor_*.va)
-SVARICAPHV_PARAMSETS = paramsets/sg13g2_svaricaphv.va
-HBT_PARAMSETS = $(wildcard paramsets/sg13g2_hbt_*.va)
-MOSCAP_PARAMSETS = $(wildcard paramsets/sg13g2_moscap_*.va)
-MOSLV_PARAMSETS = $(wildcard paramsets/sg13g2_moslv_*.va)
-MOSHV_PARAMSETS = $(wildcard paramsets/sg13g2_moshv_*.va)
-
-$(TARGET_DIR)/resistor_paramset.cc:          resistor.va discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
-$(TARGET_DIR)/capacitor_paramset.cc:         capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
-$(TARGET_DIR)/sg13g2_svaricaphv_paramset.cc: capacitor.va $(MOSVAR_SRC) $(SVARICAPHV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moscap_paramset.cc:     discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-$(TARGET_DIR)/sg13g2_moslv_paramset.cc:      discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moslv_rf_paramset.cc:   discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moshv_paramset.cc:      discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_moshv_rf_paramset.cc:   discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-$(TARGET_DIR)/sg13g2_hbt_paramset.cc:        $(HBT_PARAMSETS) $(VBIC_SRC)
-
-resistor_paramset.dump.va:          resistor.va discipline.h $(R3CMC_SRC) $(RES_PARAMSETS)
-capacitor_paramset.dump.va:         capacitor.va $(CMOMI_SRC) $(CMOMF_SRC) $(CAPACITOR_PARAMSETS)
-sg13g2_moscap_paramset.dump.va:     discipline.h $(MOSCAP_PARAMSETS) $(PSP103_SRC)
-sg13g2_svaricaphv_paramset.dump.va: capacitor.va $(MOSVAR_SRC) $(SVARICAPHV_PARAMSETS)
-sg13g2_moslv_paramset.dump.va:      discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-sg13g2_moslv_rf_paramset.dump.va:   discipline.h $(PSP103_SRC) $(MOSLV_PARAMSETS)
-sg13g2_moshv_paramset.dump.va:      discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-sg13g2_moshv_rf_paramset.dump.va:   discipline.h $(PSP103_SRC) $(MOSHV_PARAMSETS)
-sg13g2_hbt_paramset.dump.va:        $(HBT_PARAMSETS) $(VBIC_SRC)
-
-# Naming the generated C++ as explicit targets above would make it permanent:
-# GNU make only treats a file as intermediate, and deletes it after the build,
-# when it is never mentioned as a target or prerequisite. These are hundreds of
-# MB, so keep them intermediate; the dependencies above still decide when the
-# chain has to be rebuilt.
-.INTERMEDIATE: $(TARGETS:%=$(TARGET_DIR)/%.cc)
 
 # Generate C++ from Verilog-A
 $(TARGET_DIR)/%.cc: %.va | $(TARGET_DIR)
@@ -113,18 +55,17 @@ $(TARGET_DIR)/%.cc: %.vams | $(TARGET_DIR)
 
 # Compile generated C++ to object
 $(TARGET_DIR)/%.o: $(TARGET_DIR)/%.cc
-	${CXX} $(GNUCAP_CPPFLAGS) $(CPPFLAGS) -shared -fPIC ${GNUCAP_CXXFLAGS} ${CXXFLAGS} $< -o $@ -c
+	${CXX} $(GNUCAP_CPPFLAGS) $(CPPFLAGS) -c -fPIC ${GNUCAP_CXXFLAGS} ${CXXFLAGS} $< -o $@
 
 # Link object to shared library
 $(TARGET_DIR)/%.so: $(TARGET_DIR)/%.o
 	${CXX} -shared ${GNUCAP_LDFLAGS} ${LDFLAGS} $< -o $@
 
-# Dump paramset as VA module
+# Dump model as VA module
 %.dump.va: %.va
 	${MODELGEN_VERILOG} ${MGFLAGS} -o $@ --dump $<
 
-# Generate OSDI from dumped paramset Verilog-A module
-# (into OSDI_DIR, which is where clean looks for it)
+# Generate OSDI from dumped Verilog-A module
 $(OSDI_DIR)/%.osdi: %.dump.va | $(OSDI_DIR)
 	${OPENVAF} $< -o $@
 
@@ -133,21 +74,23 @@ clean:
 	rm -f $(PLUGINS)
 	rm -f $(TARGETS:%=$(TARGET_DIR)/%.cc)
 	rm -f $(TARGETS:%=$(TARGET_DIR)/%.o)
-	rm -f $(TARGETS:%=$(OSDI_DIR)/%.osdi)
-	rm -f $(TARGETS:%=%.dump.va)
+	@$(MAKE) -C paramsets clean
+	@$(MAKE) -C util clean
 
 # Help
 help:
 	@echo "Build Verilog-AMS Model Plugins"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all          - Build all Verilog-AMS model plugins (default)"
-	@echo "  clean        - Remove all build artifacts"
+	@echo "  all          - Build model, paramset, and utility plugins (default)"
+	@echo "  paramsets    - Build paramset plugins"
+	@echo "  util         - Build utility plugins"
+	@echo "  clean        - Remove all model and paramset build artifacts"
 	@echo "  <model>      - Build specific model plugin"
-	@echo "  dump-<model> - Dump model as Verilog-A module"
-	@echo "  osdi-<model> - Build OSDI plugin from dumped paramset"
 	@echo ""
 	@echo "Models:"
 	@for target in $(TARGETS); do echo "  $$target"; done
+	@echo ""
+	@echo "Build specific paramsets with make -C paramsets <target>."
 
-.PHONY: clean all $(TARGETS) $(TARGETS:%=dump-%) $(TARGETS:%=osdi-%) help
+.PHONY: clean all paramsets util $(TARGETS) help

@@ -1,0 +1,18 @@
+load vams/vsine.so
+load models/ngspice46/dio.so
+
+spice
+
+.include ../../../models/paramsets/diode_dsubw.lib
+
+.verilog
+
+`include ../../../models/corners/cornerSVARICAPHV.va
+`include ./tb_svaricaphv_ac.va
+
+svaricaphv_tt corner_svaricaphv();
+tb_svaricaphv_ac #(.Nx(2)) tb();
+
+dc
+print ac ir(tb.VG2) ii(tb.VG2)
+ac lin 100 1e9 100e9 basic
