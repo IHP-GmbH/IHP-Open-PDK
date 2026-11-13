@@ -19,6 +19,7 @@
 set currentInst "dummy"
 set currentInstName ""
 set currentCellParameters [dict create]
+set currentCellParamDefValueNames [dict create]
 set currentParamName ""
 set techParameters [dict create]
 set isAbutment 0
@@ -51,6 +52,23 @@ proc getCurrentCellParameters {} {
     }
 
     return $cellParameters
+}
+
+proc setCurrentCellParamDefValueNames {defValueNames} {
+    global currentCellParamDefValueNames
+
+    set currentCellParamDefValueNames $defValueNames
+}
+
+proc getCurrentCellParamDefValueName {param} {
+    global currentCellParamDefValueNames
+
+    if {[dict exists $currentCellParamDefValueNames $param]} {
+        set valName [dict get $currentCellParamDefValueNames $param]
+        return $valName
+    } else {
+        return ""
+    }
 }
 
 proc setTechParameters {techParams} {
@@ -148,6 +166,32 @@ proc iPDK_getParamValue { param inst } {
         }
         return [cni_getParamValue $param $inst]
     }
+}
+
+proc iPDK_getParamDef { attr inst param } {
+    global currentInst
+    global currentInstName
+
+    if {$inst != $currentInst} {
+        error "iPDK_getParamDef: given inst does not match current inst"
+    }
+
+    if {$attr != "defValue"} {
+        error "iPDK_getParamDef: unsupported attr '$attr'"
+    }
+
+    set defValueName [getCurrentCellParamDefValueName $param]
+    if {$defValueName == ""} {
+        error "iPDK_getParamDef: no default value name for parameter '$param' of '$currentInstName'"
+    }
+
+    set defValue [techGetParam $defValueName]
+
+    if {$defValue == ""} {
+        error "iPDK_getParamDef: no default value for parameter '$param' of '$currentInstName'"
+    }
+
+    return $defValue
 }
 
 proc iPDK_getInstCellName { inst } {
