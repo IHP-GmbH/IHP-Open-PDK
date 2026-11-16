@@ -57,7 +57,7 @@ foreach dev $devices {
 	property "-circuit1 $dev" parallel {w add}
 	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete b
+	property "-circuit1 $dev" delete b mm_ok
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	permute "-circuit2 $dev" 1 2
@@ -69,7 +69,7 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete b
+	property "-circuit2 $dev" delete b mm_ok
     }
 }
 
@@ -130,7 +130,7 @@ foreach dev $devices {
 	property "-circuit1 $dev" parallel {w add}
 	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit1 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
+	property "-circuit1 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode mm_ok pre_layout
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	permute "-circuit2 $dev" 1 3
@@ -139,7 +139,7 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode pre_layout
+	property "-circuit2 $dev" delete ng as ad pd ps trise z1 z2 wmin rfmode mm_ok pre_layout
     }
 }
 
@@ -251,27 +251,40 @@ foreach dev $devices {
 }
 
 #-------------------------------------------
-# capacitors	(Placeholder)
+# capacitors
 #-------------------------------------------
 
 set devices {}
+lappend devices cap_cmomf
+lappend devices cap_cmomi
+
+# Do not allow parallel combination of capacitors unless all valid
+# parameters match.  The device value depends on geometry and the number
+# of layers used, all of which must be specified for each device.  
+# However, the cap_cmomf device model does not define the capacitance to
+# substrate, so the two pins are effectively permutable.  cap_cmomi
+# terminals are not permutable.
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
+	if {$dev == "cap_cmomf"} {
+	    permute "-circuit1 $dev" 1 2
+	}
 	property "-circuit1 $dev" parallel enable
-	property "-circuit1 $dev" parallel {l critical}
-	property "-circuit1 $dev" parallel {w add}
 	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit1 $dev" tolerance {mmin 0} {mmax 0} {subblock 0}
 	# Ignore these properties
-	property "-circuit1 $dev" delete ic
+	property "-circuit1 $dev" delete mm_ok
     }
     if {[lsearch $cells2 $dev] >= 0} {
+	if {$dev == "cap_cmomf"} {
+	    permute "-circuit2 $dev" 1 2
+	}
 	property "-circuit2 $dev" parallel enable
-	property "-circuit2 $dev" parallel {l critical}
-	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	property "-circuit2 $dev" tolerance {mmin 0} {mmax 0} {subblock 0}
 	# Ignore these properties
-	property "-circuit2 $dev" delete ic
+	property "-circuit2 $dev" delete mm_ok
     }
 }
 
