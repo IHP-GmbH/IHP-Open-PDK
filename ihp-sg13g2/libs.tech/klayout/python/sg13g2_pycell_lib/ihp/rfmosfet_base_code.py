@@ -209,11 +209,10 @@ class rfmosfet_base(DloGen):
                     y = y+dc+L
                     
         # Source pin
-        id = dbCreateRect(self, Layer('Metal1', 'pin'), Box(0.05, 0.015, W-0.05, ec-0.05-dce))
-        MkPin(self, 'S', 0, id.bbox, id.layer)
+        MkPin(self, 'S', 0, Box(0.05, 0.015, W-0.05, ec-0.05-dce), Layer('Metal1', 'pin'))
         dbCreateLabel(self, text, Point(W/2, ec/2), 'S', 'centerCenter', 'R0', Font.EURO_STYLE, wgat)
-        id = dbCreateRect(self, Layer('Metal1', 'pin'), Box(0.05, 0.015+(dc+L)*1, W-0.05, ec-0.05+(dc+L)*1-dce))
-        MkPin(self, 'D', 0, id.bbox, id.layer)
+        MkPin(self, 'D', 0, Box(0.05, 0.015+(dc+L)*1, W-0.05, ec-0.05+(dc+L)*1-dce),
+              Layer('Metal1', 'pin'))
         dbCreateLabel(self, text, Point(W/2, ec/2+(dc+L)*1), 'D', 'centerCenter', 'R0', Font.EURO_STYLE, wgat)
         if gat_ring == 'Yes' :
             id = dbCreateRect(self, met1, Box(-dgatx-wgat, -dgaty-wgat, -dgatx, hact+dgaty+wgat))
@@ -236,8 +235,7 @@ class rfmosfet_base(DloGen):
         p2_x = p1_x
         p2_y = hact-u
         MetalCont(self, p1_x, p1_y, p2_x, p2_y, met1, cont, viaW+0.01, contW, contW, 0.05, viaS)
-        id = dbCreateRect(self, Layer('Metal1', 'pin'), Box(p1_x-0.1, p1_y, p2_x+0.1, p2_y))
-        MkPin(self, 'G', 0, id.bbox, id.layer)
+        MkPin(self, 'G', 0, Box(p1_x-0.1, p1_y, p2_x+0.1, p2_y), Layer('Metal1', 'pin'))
         dbCreateLabel(self, text, Point((p1_x+p2_x)/2, (p1_y+p2_y)/2), 'G', 'centerCenter', 'R0', Font.EURO_STYLE, wgat)
         p1_x = W+dgatx+wgat*0.5
         p2_x = p1_x
@@ -254,8 +252,7 @@ class rfmosfet_base(DloGen):
             p2_x = xr
             p2_y = p1_y
             MetalCont(self, p1_x, p1_y, p2_x, p2_y, met1, cont, met1_w1, contW, contW, 0.08, contS)
-            id = dbCreateRect(self, Layer('Metal1', 'pin'), Box(p1_x, p1_y-wguard/4, p2_x, p2_y+wguard/4))
-            MkPin(self, 'TIE', 0, id.bbox, id.layer)
+            MkPin(self, 'TIE', 0, Box(p1_x, p1_y-wguard/4, p2_x, p2_y+wguard/4), Layer('Metal1', 'pin'))
             dbCreateLabel(self, text, Point((p1_x+p2_x)/2, (p1_y+p2_y)/2), 'TIE', 'centerCenter', 'R0', Font.EURO_STYLE, wguard/2)
             p1_y = yt-wguard*0.5
             p2_y = p1_y
