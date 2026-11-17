@@ -103,6 +103,9 @@ def run_tests(pdk_dir):
                     if params.get('guard_ring', 'Yes') != 'No':
                         names.add('TIE')
                     self.check_pins(cell, names)
+                    pin_layer = self.layout.find_layer(8, 2)
+                    self.assertIsNotNone(pin_layer)
+                    self.assertEqual(cell.shapes(pin_layer).size(), len(names))
                     self.assertEqual(cell.dbbox().left, 0)
                     self.assertEqual(cell.dbbox().bottom, 0)
 
