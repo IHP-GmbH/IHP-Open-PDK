@@ -441,9 +441,8 @@ def MkPin(self, termName, termIndex, bBox, layerId, label=False, labelHeight = -
 
     bBox = bBox.fix()
 
+    # addPin creates the tracked rectangle carrying connectivity metadata.
     self.addPin(termName, termName, bBox, layerId)
-
-    pcInst = dbCreateRect(self, layerId, bBox)
 
     # pin label
     if label and termName :

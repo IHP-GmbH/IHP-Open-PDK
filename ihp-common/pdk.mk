@@ -143,6 +143,13 @@ test-LVS-%: env
 	  $(LVS_MAKE) test-LVS-$*)
 
 #=================================
+# ------ test-pycell-pins ---------
+#=================================
+
+test-pycell-pins:
+	@python3 "$(TOP_DIR)/ihp-common/tests/klayout_pin_test.py" "$(PDK_DIR)"
+
+#=================================
 # --------- test-SRAM ------------
 #=================================
 
@@ -170,7 +177,8 @@ help::
 	@echo "... test-LVS-<device>          (Run LVS for specific device group             )"
 	@echo "... test-LVS-cells             (Run LVS for all standard cells                )"
 	@echo "... test-LVS-switch            (Run simple LVS switching test                 )"
+	@echo "... test-pycell-pins           (Check PCell pin geometry and connectivity     )"
 	@echo "... test-SRAM                  (Validate SRAM views and Verilog models        )"
 
 .PHONY: lint lint_python test-DRC-main test-DRC-cells test-LVS-main \
-        test-LVS-cells test-LVS-switch test-SRAM help
+        test-LVS-cells test-LVS-switch test-pycell-pins test-SRAM help
