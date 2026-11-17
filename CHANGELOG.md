@@ -105,6 +105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### Devices / PyCells
 - `ihp-sg13g2`, `ihp-sg13cmos5l`: KLayout RF MOS pin geometry and connectivity properties now follow the device origin shift, fixing stray pins and enlarged bounding boxes (#1354).
+- `ihp-sg13g2`, `ihp-sg13cmos5l`: KLayout `MkPin()` no longer creates a duplicate of the API's pin rectangle; pin labels are preserved.
 
 #### LVS / DRC
 - KLayout LVS: RF MOS devices keep their layout geometry. They are now compared as the extracted `rf*` device classes, the netlist reader maps base models with `rfmode=1` to them. `rfmos_model_mapping.lvs`, which replaced them by new devices without device abstract, is removed ([#1246](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1246))
