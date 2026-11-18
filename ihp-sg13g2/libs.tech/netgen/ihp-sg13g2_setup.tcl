@@ -238,7 +238,6 @@ foreach dev $devices {
 set devices {}
 lappend devices dantenna
 lappend devices dpantenna
-lappend devices schottky
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -256,6 +255,30 @@ foreach dev $devices {
 	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
 	# Ignore these properties
 	property "-circuit2 $dev" delete DEV_A DEV_P DEV_C
+    }
+}
+
+#-------------------------------------------
+# Schottky diode
+# schottky_nbl1 is a fixed 0.3um x 1.0um device.
+# The schematic sizes it with Nx and Ny, while
+# magic extracts w and l (and a and p), so the
+# two sets cannot be compared with each other.
+#-------------------------------------------
+
+set devices {}
+lappend devices schottky_nbl1
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	# Ignore these properties
+	property "-circuit1 $dev" delete w l a p Nx Ny
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	# Ignore these properties
+	property "-circuit2 $dev" delete w l a p Nx Ny
     }
 }
 
