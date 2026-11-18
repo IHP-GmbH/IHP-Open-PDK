@@ -35,11 +35,17 @@ if TABLES.include?('activfiller') || FEOL
   end
 
   # Rule AFil.c1: Min. Activ:filler space to Activ is 0.42 um
+  # sep() only catches exterior spacing; overlap (filler inside drawing) is
+  # geometrically a zero-distance violation of the same rule, so the .and()
+  # intersection is emitted under the same rule name.
   logger.info('Executing rule AFil.c1')
   afil_c1_value = drc_rules['AFil_c1'].to_f
-  afil_c1 = activ_drw.sep(activ_filler, afil_c1_value.um, euclidian)
-  afil_c1.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
-  afil_c1.forget
+  afil_c1_sep = activ_drw.sep(activ_filler, afil_c1_value.um, euclidian)
+  afil_c1_ovl = activ_drw.and(activ_filler)
+  afil_c1_sep.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
+  afil_c1_ovl.output('AFil.c1', "5.6. AFil.c1 Min. Activ:filler space to Activ is #{afil_c1_value} um")
+  afil_c1_sep.forget
+  afil_c1_ovl.forget
 
   unless PRECHECK_DRC
     # Rule AFil.c: Min. Activ:filler space to Cont, GatPoly is 1.10 um
