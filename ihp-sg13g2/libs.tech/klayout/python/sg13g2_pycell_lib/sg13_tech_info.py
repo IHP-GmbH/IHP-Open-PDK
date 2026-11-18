@@ -222,7 +222,7 @@ class TechInfo:
         grid = 0.005
         
         vias = [
-            ViaInfo(name='SG13G2_CONT_GATPOLY_M1', description='Cont (GatPoly→Metal1)',
+            ViaInfo(name='SG13G2_CONT_GATPOLY_M1', description='Cont (GatPoly->Metal1)',
                     bottom=ld['GatPoly'], cut=ld['Cont'], top=ld['Metal1'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Cnt_a'], hbmin=tp['Cnt_a'], wtmin=tp['M1_a'], htmin=tp['M1_a'],
                     enc_bottom=tp['Cnt_d'], enc_endcap_bottom=tp['Cnt_d'],
@@ -232,7 +232,7 @@ class TechInfo:
                                                 if nx > tp['Cnt_b1_nr'] and ny > tp['Cnt_b1_nr'] \
                                                 else (tp['Cnt_b'], tp['Cnt_b'])
                     ),
-            ViaInfo(name='SG13G2_CONT_ACTIV_M1', description='Cont (Activ→Metal1)',
+            ViaInfo(name='SG13G2_CONT_ACTIV_M1', description='Cont (Activ->Metal1)',
                     bottom=ld['Activ'], cut=ld['Cont'], top=ld['Metal1'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Cnt_a'], hbmin=tp['Cnt_a'], wtmin=tp['M1_a'], htmin=tp['M1_a'],
                     enc_bottom=tp['Cnt_d'], enc_endcap_bottom=tp['Cnt_d'],
@@ -242,7 +242,7 @@ class TechInfo:
                                                 if nx > tp['Cnt_b1_nr'] and ny > tp['Cnt_b1_nr'] \
                                                 else (tp['Cnt_b'], tp['Cnt_b'])
                     ),
-            ViaInfo(name='SG13G2_VIA_M1_M2', description='Via1 (Metal1→Metal2)',
+            ViaInfo(name='SG13G2_VIA_M1_M2', description='Via1 (Metal1->Metal2)',
                     bottom=ld['Metal1'], cut=ld['Via1'], top=ld['Metal2'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['M1_a'], hbmin=tp['M1_a'], wtmin=tp['Mn_a'], htmin=tp['Mn_a'],
                     enc_bottom=tp['V1_c'], enc_endcap_bottom=tp['V1_c1'],
@@ -252,7 +252,7 @@ class TechInfo:
                                                 if nx > tp['V1_b1_nr'] and ny > tp['V1_b1_nr'] \
                                                 else (tp['V1_b'], tp['V1_b'])
                     ),
-            ViaInfo(name='SG13G2_VIA_M2_M3', description='Via2 (Metal2→Metal3)',
+            ViaInfo(name='SG13G2_VIA_M2_M3', description='Via2 (Metal2->Metal3)',
                     bottom=ld['Metal2'], cut=ld['Via2'], top=ld['Metal3'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Mn_a'], hbmin=tp['Mn_a'], wtmin=tp['Mn_a'], htmin=tp['Mn_a'],
                     enc_bottom=tp['Vn_c'], enc_endcap_bottom=tp['Vn_c1'],
@@ -262,7 +262,7 @@ class TechInfo:
                                                 if nx > tp['Vn_b1_nr'] and ny > tp['Vn_b1_nr'] \
                                                 else (tp['Vn_b'], tp['Vn_b'])
                     ),
-            ViaInfo(name='SG13G2_VIA_M3_M4', description='Via3 (Metal3→Metal4)',
+            ViaInfo(name='SG13G2_VIA_M3_M4', description='Via3 (Metal3->Metal4)',
                     bottom=ld['Metal3'], cut=ld['Via3'], top=ld['Metal4'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Mn_a'], hbmin=tp['Mn_a'], wtmin=tp['Mn_a'], htmin=tp['Mn_a'],
                     enc_bottom=tp['Vn_c'], enc_endcap_bottom=tp['Vn_c1'],
@@ -275,7 +275,7 @@ class TechInfo:
         ]
         if is_g2:
             vias += [
-                ViaInfo(name='SG13G2_VIA_M4_M5', description='Via4 (Metal4→Metal5)',
+                ViaInfo(name='SG13G2_VIA_M4_M5', description='Via4 (Metal4->Metal5)',
                     bottom=ld['Metal4'], cut=ld['Via4'], top=ld['Metal5'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Mn_a'], hbmin=tp['Mn_a'], wtmin=tp['Mn_a'], htmin=tp['Mn_a'],
                     enc_bottom=tp['Vn_c'], enc_endcap_bottom=tp['Vn_c1'],
@@ -285,7 +285,7 @@ class TechInfo:
                                                 if nx > tp['Vn_b1_nr'] and ny > tp['Vn_b1_nr'] \
                                                 else (tp['Vn_b'], tp['Vn_b'])
                 ),
-            ViaInfo(name='SG13G2_VIA_M5_TM1', description='TopVia1 (Metal5→TopMetal1)',
+            ViaInfo(name='SG13G2_VIA_M5_TM1', description='TopVia1 (Metal5->TopMetal1)',
                     bottom=ld['Metal5'], cut=ld['TopVia1'], top=ld['TopMetal1'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['Mn_a'], hbmin=tp['Mn_a'], wtmin=tp['TM1_a'], htmin=tp['TM1_a'],
                     enc_bottom=tp['TV1_c'], enc_endcap_bottom=tp['TV1_c'],
@@ -293,7 +293,7 @@ class TechInfo:
                     width=tp['TV1_a'],
                     space_lambda=lambda nx, ny: (tp['TV1_b'], tp['TV1_b'])
                     ),
-            ViaInfo(name='SG13G2_VIA_TM1_TM2', description='TopVia2 (TopMetal1→TopMetal2)',
+            ViaInfo(name='SG13G2_VIA_TM1_TM2', description='TopVia2 (TopMetal1->TopMetal2)',
                     bottom=ld['TopMetal1'], cut=ld['TopVia2'], top=ld['TopMetal2'], bottom_grid=grid, top_grid=grid,
                     wbmin=tp['TM1_a'], hbmin=tp['TM1_a'], wtmin=tp['TM2_a'], htmin=tp['TM2_a'],
                     enc_bottom=tp['TV2_c'], enc_endcap_bottom=tp['TV2_c'],
@@ -304,7 +304,7 @@ class TechInfo:
             ]
         elif is_cmos5L:
             vias += [
-                ViaInfo(name='SG13G2_VIA_M4_TM1', description='TopVia1 (Metal4→TopMetal1)',
+                ViaInfo(name='SG13G2_VIA_M4_TM1', description='TopVia1 (Metal4->TopMetal1)',
                         bottom=ld['Metal4'], cut=ld['TopVia1'], top=ld['TopMetal1'], bottom_grid=grid, top_grid=grid,
                         wbmin=tp['Mn_a'], hbmin=tp['Mn_a'], wtmin=tp['TM1_a'], htmin=tp['TM1_a'],
                         enc_bottom=tp['TV1_c'], enc_endcap_bottom=tp['TV1_c'],
