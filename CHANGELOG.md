@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased] - 2026-09-01
+## [Unreleased]
+
+## [0.4.0] - 2026-11-19
+
+This release consolidates the development updates merged into main by
+[PR #1344](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1344), covering both
+the SG13G2 and SG13CMOS5L PDKs.
 
 ### Added
 
@@ -19,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - RF MOSFET PyCells: initial version
 - `NoFillerStack` PCell: initial version
 - `ptap1` PCell: initial version
+- Guard-ring PyCells and Xschem symbols for SG13G2 and SG13CMOS5L
+- `chipText` KLayout PyCell
 - PDK modules: initial integration of PDK extensions in Xschem and KLayout
 
 #### LVS
@@ -42,6 +50,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - ITF file: initial version
 - DRM: added version 0.4
 - IO cells: added datasheets
+- SG13CMOS5L standard-cell Xschem views and IO-cell symbols
+- Gnucap support for SG13CMOS5L devices, diodes, and scarvaricap, with
+  regression coverage
+- ITF parasitics files with minimum and maximum process corners
+- SG13G2 OpenEMS tool data
 - Qucs-S: schematics for standard cells ([#939](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/939))
 - GDSFactory: added README and integration guide ([#691](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/691))
 - LibreLane: standalone DRC support ([#728](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/728))
@@ -64,6 +77,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `rfcmim`: added `m` multiplier parameter in Xschem symbol ([#979](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/979))
 - xschem: `mm_ok` flag introduced across sg13g2_pr symbols ([#993](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/993))
 - `pnpMPA` xschem symbol: changed default `w` to align with tech file value
+- KLayout PyCell parameter mapping between Python and Tcl was reworked
+- SG13G2 and SG13CMOS5L LibreLane configuration was synchronized
 
 #### LVS / DRC
 - KLayout LVS: removed unconditional global device purging from rule deck ([#1105](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1105), [#1126](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1126))
@@ -75,6 +90,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - KLayout LVS: via handling refactored to support `cmos5l_ihp` ([#1039](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1039))
 - DRC: `LU.b` – report portions of N+Activ beyond 20 µm max space ([#949](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/949))
 - Magic LVS: added inductors recognition ([#873](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/873))
+- Minimum DRC checks are selected with `--minimum_drc`; `--min_drc` is
+  available as a short form and `--precheck_drc` remains supported with a
+  warning
+- SG13CMOS5L minimum-DRC rule coverage and documentation were aligned with
+  the implemented rule set
 
 #### Simulation / Tools
 - Xschem: parallel-simulation scripts run through Tcl's `exec` ([#1118](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1118))
@@ -95,6 +115,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Qucs-S: individual XMLs for standard cells ([#904](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/904))
 - Xschem: improved evaluation precision ([#907](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/907))
 - Parallelization improvements in simulation scripts ([#629](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/629))
+- Palace was updated to v0.9.2 and OpenEMS to v0.7.0
 
 ### Deprecated
 
@@ -111,6 +132,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
 - KLayout DRC: fixed filler space/notch violations ([#924](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/924))
 - KLayout DRC: fixed Metal density min/max values
+- KLayout DRC: fixed tap and contact checks for both PDKs
+- Magic: fixed seal-boundary generation and SG13CMOS5L TopMetal1 fill
+  blockage generation
 
 #### Extraction / Magic
 - Magic: fixed `cap_rfcmim` missing substrate terminal extraction ([#1111](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1111))
@@ -133,12 +157,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Sealring PCell: fixed corruption caused by compound scaling factor in NLCB ([#1064](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1064))
 - nmos clamp: fix applied ([#600](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/600))
 - Primitive GDS: rolled back incorrect `idiode*` removal
+- SG13CMOS5L MOSCAP alignment and IO clamp connectivity
 
 #### Simulation / Tests
 - Ngspice Monte Carlo tests fix ([#1061](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1061))
 - Fixed tkinter requirements ([#1015](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1015))
 - npn13G2 annotation fix ([#621](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/621))
 - rhigh: fix poly resistor model ([#742](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/742))
+- HBT VBIC `ikp` scaling and repeated-simulation mismatch variation
+- SG13CMOS5L antenna-diode convergence and model updates
 
 ---
 
