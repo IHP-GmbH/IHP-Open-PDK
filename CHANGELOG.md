@@ -12,6 +12,46 @@ This release consolidates the development updates merged into main by
 [PR #1344](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1344), covering both
 the SG13G2 and SG13CMOS5L PDKs.
 
+### Recent updates from PR #1344
+
+#### PDK features and libraries
+- Added guard-ring PyCells for SG13G2 and SG13CMOS5L, including minimum
+  geometry validation, substrate and well labels, and Xschem symbols.
+- Added the `chipText` KLayout PyCell and aligned its implementation and
+  documentation with the PDK technology files.
+- Added SG13CMOS5L standard-cell Xschem views and IO-cell schematics,
+  symbols, and gallery entries.
+- Added SG13CMOS5L MoM capacitor integration and expanded MOSCAP and
+  capacitor DRC, LVS, simulation, and regression coverage.
+- Added Gnucap support for SG13CMOS5L, MOSCAP, MOSHV, MOSLV, HBT, diode,
+  resistor, and scarvaricap models, together with ngspice regression decks.
+- Added minimum and maximum parasitic ITF corners for SG13G2 and SG13CMOS5L.
+- Added the SG13G2 OpenEMS tool-data submodule and updated the Palace and
+  OpenEMS integrations.
+
+#### DRC, LVS, and extraction
+- Renamed the DRC precheck mode to `--minimum_drc` and added the
+  `--min_drc` alias while retaining the deprecated option with a warning.
+- Aligned SG13CMOS5L minimum-DRC documentation, rule selection, density
+  handling, and contact-bar coverage.
+- Corrected tap/contact checks, filler and antenna regression goldens, and
+  maximal-rule checks for SG13G2 and SG13CMOS5L.
+- Fixed Magic fill generation, SRAM handling, seal-boundary generation,
+  TopMetal1 fill blockage mapping, and dantenna import.
+- Improved class-based RF MOS LVS matching and related regression coverage.
+
+#### Models, simulation, and integration
+- Corrected HBT VBIC `ikp` scaling, HBT mismatch behavior, resistor global
+  variation, and repeated-simulation mismatch variation.
+- Updated antenna-diode models and convergence handling for SG13CMOS5L.
+- Updated PSP103 to 103.8.2 and added the CMC VBIC 1.3 Verilog-A model.
+- Reworked KLayout PyCell Python/Tcl parameter mapping and fixed callback,
+  concurrent-library, and inductor-PyCell issues.
+- Synchronized SG13G2 and SG13CMOS5L LibreLane configuration, updated
+  Xschem integration, and added the standard-cell and IO galleries.
+- Updated CI regression environments and added workflow checks for broken
+  links and forbidden characters.
+
 ### Added
 
 #### New Devices / PyCells
