@@ -28,17 +28,24 @@ proc rfmos_cb_ng {} {
     set cell   [iPDK_getInstCellName $cellId]
 
     set ng [iPDK_getParamValue ng $cellId]
+    set maxNG [techGetParam ${cell}_maxNG]
 
-    set ng [expr int($ng)]
+    if {[catch {
+        set ng [expr int($ng)]
+    } exc]} {
+        CbMessage "invalid ng, set to 1"
+        set ng 1
+    }
+
     if {$ng < 1} {
         set ng 1
         CbMessage "ng out of range, set to 1"
         hiGetAttention
     }
 
-    if { $ng > 10} {
-        set ng 10
-        CbMessage "ng out of range, set to 10"
+    if { $ng > $maxNG} {
+        set ng $maxNG
+        CbMessage "ng out of range, set to $maxNG"
         hiGetAttention
     }
 
@@ -162,14 +169,15 @@ proc rfmos_cb_sd {} {
 
     set cellId [iPDK_getCurrentInst]
     set cell   [iPDK_getInstCellName $cellId]
+    set calc [iPDK_getParamValue calculate $cellId]
 
-    if {[iPDK_getParamValue calculate $cellId] == ""} {
+    if {$calc == "" || $calc == "0"} {
         return t
     }
 
     set ng [Stof [iPDK_getParamValue ng $cellId]]
     set ng [expr int($ng)]
-    set nr [expr int([iPDK_getParamValue ng $cellId])]
+    set nr [expr int([iPDK_getParamValue cnt_rows $cellId])]
     set w  [Stof [iPDK_getParamValue w $cellId]]
     set ws [expr $w/$ng]
     set z1 [expr 0.345e-6+0.41e-6*($nr-1)]
