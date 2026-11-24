@@ -59,6 +59,7 @@ def makegds(file, techfile):
 		'magic',
 		'-dnull',
 		'-noconsole',
+		'-norcfile',
 		'-T', techfile,
 		layout_path + '/generate_fill_dist.tcl',
 		filename]
@@ -473,6 +474,7 @@ if __name__ == '__main__':
 		'magic',
 		'-dnull',
 		'-noconsole',
+		'-norcfile',
 		'-T', techfile_path,
 		layout_path + '/generate_fill.tcl']
 
@@ -518,6 +520,7 @@ if __name__ == '__main__':
 			'magic',
 			'-dnull',
 			'-noconsole',
+			'-norcfile',
 			'-T', techfile_path,
 			layout_path + '/generate_fill_final.tcl']
 
