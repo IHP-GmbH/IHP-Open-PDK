@@ -271,38 +271,38 @@ templates = [
         },
     },
     {
-        "regex": re.compile(rf"^.*bondpad(?=.*size=(?P<size>{NUMBER})).*$"),
+        "regex": re.compile(rf"^.*bondpad(?=.*size=(?P<diameter>{NUMBER})).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "bondpad",
         "params": [
             {
-                "name": "size",
-                "type": "string",
+                "name": "diameter",
+                "type": "raw_string",
             }
         ],
-        "default_params": {"size": "80u"},
+        "default_params": {"diameter": "80u"},
     },
     {
         "regex": re.compile(
-            rf"^.*cap_cmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
+            rf"^.*cap_cmim(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>\d+))|).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "cmim",
         "params": [
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "m",
                 "type": "int",
             },
         ],
-        "default_params": {"w": "7.0e-6", "l": "7.0e-6", "m": 1},
+        "default_params": {"w": "7.0e-6", "l": "7.0e-6", "m": 1, "Calculate": "C"},
     },
     {
         "regex": re.compile(
@@ -435,11 +435,11 @@ templates = [
         "params": [
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
         ],
         "default_params": {"l": "0.78u", "w": "0.78u"},
@@ -546,7 +546,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            rf"^.*rhigh(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
+            rf"^.*rhigh(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>\d+))|)(?=.*b=(?P<b>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rhigh",
@@ -572,7 +572,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            rf"^.*rppd(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+))(?=.*b=(?P<b>\d+)).*$"
+            rf"^.*rppd(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>\d+))|)(?=.*b=(?P<b>\d+)).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rppd",
@@ -598,7 +598,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            rf"^.*rsil(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
+            rf"^.*rsil(?=.*w=(?P<w>{NUMBER}))(?=.*l=(?P<l>{NUMBER}))(?:(?=.*m=(?P<m>\d+))|).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "rsil",
@@ -627,11 +627,11 @@ templates = [
         "params": [
             {
                 "name": "w",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "l",
-                "type": "string",
+                "type": "raw_string",
             },
             {
                 "name": "Nx",
@@ -642,7 +642,7 @@ templates = [
     },
     ###################################################################
     {
-        "regex": re.compile(r"^.*diodevdd_2kv(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*diodevdd_2kv(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -654,7 +654,7 @@ templates = [
         "default_params": {"model": "diodevdd_2kv", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*diodevdd_4kv(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*diodevdd_4kv(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -666,7 +666,7 @@ templates = [
         "default_params": {"model": "diodevdd_4kv", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*diodevss_2kv(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*diodevss_2kv(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -678,7 +678,7 @@ templates = [
         "default_params": {"model": "diodevss_2kv", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*diodevss_4kv(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*diodevss_4kv(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -690,7 +690,7 @@ templates = [
         "default_params": {"model": "diodevss_4kv", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*nmoscl_2(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*nmoscl_2(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -702,7 +702,7 @@ templates = [
         "default_params": {"model": "nmoscl_2", "m": 1},
     },
     {
-        "regex": re.compile(r"^.*nmoscl_4(?=.*m=(?P<m>\d+)).*$"),
+        "regex": re.compile(r"^.*nmoscl_4(?:(?=.*m=(?P<m>\d+))|).*$"),
         "pcell_library": "SG13_dev",
         "pcell_name": "esd",
         "params": [
@@ -749,7 +749,7 @@ templates = [
     },
     {
         "regex": re.compile(
-            rf"^.*pnpMPA(?=.*a=(?P<a>{NUMBER}))(?=.*p=(?P<p>{NUMBER}))(?=.*m=(?P<m>\d+)).*$"
+            rf"^.*pnpMPA(?=.*a=(?P<a>{NUMBER}))(?=.*p=(?P<p>{NUMBER}))(?:(?=.*m=(?P<m>\d+))|).*$"
         ),
         "pcell_library": "SG13_dev",
         "pcell_name": "pnpMPA",
