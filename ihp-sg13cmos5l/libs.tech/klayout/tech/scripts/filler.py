@@ -37,6 +37,15 @@ klayout -n sg13cmos5l -zz -r filler.py \
         -rd no_activ \
         -rd no_metal \
         input-file.gds.gz
+
+The metal fill distances, which the fill macro asks for in a dialog in the
+GUI, can be set in batch mode as well, in um, with distance_m1 to distance_m4, distance_tm1:
+
+klayout -n sg13cmos5l -zz -r filler.py \
+        -rd output_file=filled-design.gds.gz \
+        -rd distance_m2=0.42 \
+        -rd distance_m3=0.42 \
+        input-file.gds.gz
 """
 # pylint: disable=import-error
 
