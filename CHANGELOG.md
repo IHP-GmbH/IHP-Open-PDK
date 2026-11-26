@@ -135,6 +135,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Primitive GDS: rolled back incorrect `idiode*` removal
 
 #### Simulation / Tests
+- SG13G2 and SG13CMOS5L: repaired Xschem license headers in shared standard-cell schematics.
+- SG13G2: fixed Xschem control block syntax in the varicap testbench.
 - Ngspice Monte Carlo tests fix ([#1061](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1061))
 - Fixed tkinter requirements ([#1015](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1015))
 - npn13G2 annotation fix ([#621](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/621))
