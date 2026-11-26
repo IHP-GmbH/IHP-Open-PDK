@@ -118,19 +118,105 @@ def min_guard_ring_span(techparams: dict, active_w: Optional[float] = None) -> f
     return GridFix(2 * (active_w - cont_min_act_encl + fill_space) + cont_size)
 
 
-def min_guard_ring_active_w(techparams: dict) -> float:
+class GuardRingMetalStack:
     """
-    Minimum Activ/Metal1 guard-ring width, in micrometers, so that a Cont
-    still fits with its enclosure into the ring on every layer.
+    Metal/via stack of the guard ring, from Activ up to a selectable top metal
+    (Metal1..Metal5).
+
+    Per via level it bundles the cut layer name with the via rules (cut size,
+    spacing, metal enclosures), taken from the tech parameters. Via1 has its
+    own rules (V1_*), Via2..Via4 share the generic metal via rules (Vn_*)
+    according to sg13_tech_info.py. The metal rings are drawn on every metal
+    layer of the stack, so that the stacked vias make the ring an LVS-clean
+    connected net from Activ/Metal1 up to the top metal.
+    """
+
+    TOP_LAYER_CHOICES = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5']
+
+    def __init__(self, techparams: dict, top_layer: str = 'Metal1'):
+        self.techparams = techparams
+        if top_layer not in self.TOP_LAYER_CHOICES:
+            raise ValueError(
+                f"guard ring: unsupported top layer '{top_layer}' "
+                f"(expected one of {self.TOP_LAYER_CHOICES})"
+            )
+        self.top_layer = top_layer
+
+        # NOTE: in SG13G2_CMOS5L, this file is reused (symlinked) and that
+        #       simplified process has no Metal5
+        if self.num_metals() > 4 and techparams['techName'] != 'SG13G2':
+            raise ValueError(
+                "guard ring: top_layer 'Metal5' is only available in SG13G2"
+            )
+
+    def num_metals(self) -> int:
+        """Number of metal layers of the stack (1..5)."""
+        return self.TOP_LAYER_CHOICES.index(self.top_layer) + 1
+
+    def metal_layer_name(self, level: int) -> str:
+        """Layer name of the metal at the given stack level (1-based)."""
+        return f'Metal{level}'
+
+    def via_info(self, level: int) -> dict:
+        """
+        Via rules between Metal<level> and Metal<level+1> (level is 1-based):
+        cut layer name, cut size, cut spacings and enclosures in the metals.
+        """
+        techparams = self.techparams
+        if level == 1:
+            # Via1 (Metal1→Metal2)
+            return {'layer': 'Via1',
+                    'size': techparams['V1_a'],
+                    'space': techparams['V1_b'],
+                    'space_array': techparams['V1_b1'],
+                    'space_array_nr': techparams['V1_b1_nr'],
+                    'enc_bottom': techparams['V1_c'],
+                    'enc_bottom_endcap': techparams['V1_c1'],
+                    'enc_top': techparams['Vn_c'],
+                    'enc_top_endcap': techparams['Vn_c1']}
+        # Via2..Via4 (Metal2→Metal3 .. Metal4→Metal5)
+        return {'layer': f'Via{level}',
+                'size': techparams['Vn_a'],
+                'space': techparams['Vn_b'],
+                'space_array': techparams['Vn_b1'],
+                'space_array_nr': techparams['Vn_b1_nr'],
+                'enc_bottom': techparams['Vn_c'],
+                'enc_bottom_endcap': techparams['Vn_c1'],
+                'enc_top': techparams['Vn_c'],
+                'enc_top_endcap': techparams['Vn_c1']}
+
+
+def min_guard_ring_active_w(techparams: dict, top_layer: str = 'Metal1') -> float:
+    """
+    Minimum Activ/Metal1 guard-ring width, in micrometers, so that a Cont and
+    the vias of the metal stack still fit with their enclosures into the ring
+    on every layer.
     """
     cont_size = techparams['Cnt_a']
     cont_min_act_encl = techparams['Cnt_c']
     min_metal1_width = techparams['M1_a']          # Min Metal1 Width
     min_metal1_cont_encl = techparams['M1_c1']     # Min. Metal1 endcap enclosure of Cont
 
+    stack = GuardRingMetalStack(techparams, top_layer)
+
+    # width needed by the widest via of the stack plus its metal enclosures
+    min_via_w = 0.0
+    for level in range(1, stack.num_metals()):
+        via = stack.via_info(level)
+        enclosure = max(via['enc_bottom'], via['enc_bottom_endcap'],
+                        via['enc_top'], via['enc_top_endcap'])
+        min_via_w = max(min_via_w, via['size'] + 2 * enclosure)
+
+    # upper metals follow the generic metal rules (Mn_a)
+    min_metal_width = min_metal1_width
+    if stack.num_metals() > 1:
+        min_metal_width = max(min_metal_width, techparams['Mn_a'])
+
     return max(default_guard_ring_active_w(techparams),               # Activ enclosure of Cont
                cont_size + 2 * min_metal1_cont_encl,                  # Metal1 enclosure of Cont
-               min_metal1_width)                                      # Min Metal1 width
+               min_metal1_width,                                      # Min Metal1 width
+               min_via_w,                                             # Via of the stack in the band
+               min_metal_width)                                       # Min upper metal width
 
 
 class GuardRingType(StrEnum):
@@ -154,12 +240,15 @@ def generate_guard_ring(dlo_gen: DloGen,
                         h: float,
                         x_center: float,
                         y_center: float,
-                        active_w: Optional[float] = None):
+                        active_w: Optional[float] = None,
+                        top_layer: str = 'Metal1'):
     dlo_gen.grid = dlo_gen.tech.getGridResolution()
     techparams = dlo_gen.tech.getTechParams()
 
     if active_w is None:
         active_w = default_guard_ring_active_w(techparams)
+
+    metal_stack = GuardRingMetalStack(techparams, top_layer)
 
     min_span = min_guard_ring_span(techparams, active_w)
     if w < min_span or h < min_span:
@@ -196,6 +285,14 @@ def generate_guard_ring(dlo_gen: DloGen,
     met1 = Layer('Metal1', 'drawing')
     met1_pin = Layer('Metal1','pin')
     text = Layer('TEXT', 'drawing')
+
+    # upper metals and vias of the stack (Metal2..Metal5, Via1..Via4)
+    metal_layers = [met1]
+    via_layers = []
+    for level in range(2, metal_stack.num_metals() + 1):
+        metal_layers.append(Layer(metal_stack.metal_layer_name(level), 'drawing'))
+    for level in range(1, metal_stack.num_metals()):
+        via_layers.append(Layer(metal_stack.via_info(level)['layer'], 'drawing'))
     
     #*************************************************************************
     #*
@@ -206,6 +303,8 @@ def generate_guard_ring(dlo_gen: DloGen,
     epsilon = techparams['epsilon1']         # for rounding purposes
     cont_size = techparams['Cnt_a']          # Cont width
     cont_space = techparams['Cnt_b']         # Min. Cont space
+    cont_space_array = techparams['Cnt_b1']         # Cont space for large arrays
+    cont_space_array_nr = techparams['Cnt_b1_nr']   # rows/cols threshold for cont_space_array
     cont_min_act_encl = techparams['Cnt_c']  # Min. Activ enclosure of Cont
     ndiff_over = techparams['NW_e']     # Minimum NWell enclosure of NWell tie
                                         # surrounded entirely by NWell in N+Activ1
@@ -227,11 +326,11 @@ def generate_guard_ring(dlo_gen: DloGen,
     wguard_active = active_w
     wguard_met1 = wguard_active
 
-    min_active_w = min_guard_ring_active_w(techparams)
+    min_active_w = min_guard_ring_active_w(techparams, top_layer)
     if active_w < min_active_w - epsilon:
         raise ValueError(
             f"generate_guard_ring: active_w must be >= "
-            f"{min_active_w}um (got {active_w}um)"
+            f"{min_active_w}um for top_layer '{top_layer}' (got {active_w}um)"
         )
 
     if nbulay_available:
@@ -257,67 +356,106 @@ def generate_guard_ring(dlo_gen: DloGen,
         dbCreateRect(dlo_gen, met1, top_box)
         dbCreateRect(dlo_gen, met1, left_box)
         dbCreateRect(dlo_gen, met1, right_box)
+        drawn_metal_levels = [1]
 
         #*********************************************************************
-        #* The whole Metal1 ring is filled with a lattice of Cont:
-        #*   - Cont keeps cont_min_act_encl enclosure to every Activ ring edge
-        #*   - Cont spacing is cont_space, or cont_space_array (Cnt_b1) once
-        #*     the fill becomes an array of more than cont_b1_nr rows and
-        #*     more than cont_b1_nr columns
+        #* The whole metal stack of the ring is filled with a lattice of cuts
+        #* (Cont and Via1..Via4):
+        #*   - cuts keep the minimum enclosure to every metal/Activ ring edge
+        #*   - cut spacing is <space>, or <space_array> once the fill becomes
+        #*     an array of more than <space_array_nr> rows and columns
         #*********************************************************************
 
-        fill_space = guard_ring_fill_space(techparams, width)
-        pitch = cont_size + fill_space
+        def draw_cut_fill(cut_lyr: Layer,
+                          cut_size: float,
+                          cut_space: float,
+                          cut_space_array: float,
+                          cut_space_array_nr: int,
+                          enclosure: float):
+            # NOTE: the enclosure is the same on all four ring edges; it is
+            #       the maximum of the enclosure/endcap rules of the two
+            #       layers connected by the cut
+            fill_space = cut_space
+            band_span = width - 2 * enclosure
+            # NOTE: the epsilon lets an exactly-fitting cut through despite
+            #       floating point noise (at the minimum ring width the band
+            #       span equals the cut size, e.g. 0.3um - 2*0.07um evaluates
+            #       to slightly less than 0.16um)
+            if band_span < cut_size - epsilon:
+                # cuts do not fit into the band cross-section
+                return
 
-        # usable span for a contact array inside the ring band cross-section
-        band_span = width - 2 * cont_min_act_encl
+            rows_across, _ = cont_array_num_and_remainder(band_span, cut_size,
+                                                          cut_space, epsilon)
+            if rows_across > cut_space_array_nr:
+                fill_space = cut_space_array
+            pitch = cut_size + fill_space
 
-        # contacts across the band (rows of the bottom/top bands, columns of
-        # the left/right bands), centered in the band cross-section
-        def across_coords(band_lo: float) -> List[float]:
-            n, _ = cont_array_num_and_remainder(band_span, cont_size, fill_space, epsilon)
-            length = n * cont_size + (n - 1) * fill_space
-            first = band_lo + cont_min_act_encl + (band_span - length) / 2.0
-            return [first + k * pitch for k in range(n)]
+            # contacts across the band (rows of the bottom/top bands, columns
+            # of the left/right bands), centered in the band cross-section
+            def across_coords(band_lo: float) -> List[float]:
+                n, _ = cont_array_num_and_remainder(band_span, cut_size, fill_space, epsilon)
+                length = n * cut_size + (n - 1) * fill_space
+                first = band_lo + enclosure + (band_span - length) / 2.0
+                return [first + k * pitch for k in range(n)]
 
-        # contacts along the ring, starting at the enclosure edge; leftover
-        # space is inserted as a wider gap in the middle of the array
-        def along_coords(start: float, span_len: float) -> List[float]:
-            n, remainder = cont_array_num_and_remainder(span_len, cont_size, fill_space, epsilon)
-            coords: List[float] = []
-            p = start
-            for i in range(n):
-                coords.append(p)
-                if i + 1 == floor(n / 2.0):
-                    p += cont_size + remainder
-                else:
-                    p += cont_size + fill_space
-            return coords
+            # contacts along the ring, starting at the enclosure edge; leftover
+            # space is inserted as a wider gap in the middle of the array
+            def along_coords(start: float, span_len: float) -> List[float]:
+                n, remainder = cont_array_num_and_remainder(span_len, cut_size,
+                                                            fill_space, epsilon)
+                coords: List[float] = []
+                p = start
+                for i in range(n):
+                    coords.append(p)
+                    if i + 1 == floor(n / 2.0):
+                        p += cut_size + remainder
+                    else:
+                        p += cut_size + fill_space
+                return coords
 
-        # bottom/top bands: contact rows across the band, columns along the
-        # full ring width (including the corners)
-        bottom_rows = across_coords(yb)
-        top_rows = across_coords(yt - width)
-        x_coords = along_coords(xl + cont_min_act_encl, xr - xl - 2 * cont_min_act_encl)
+            # bottom/top bands: cut rows across the band, columns along the
+            # full ring width (including the corners)
+            bottom_rows = across_coords(yb)
+            top_rows = across_coords(yt - width)
+            x_coords = along_coords(xl + enclosure, xr - xl - 2 * enclosure)
 
-        # left/right bands: contact columns across the band, rows along the
-        # ring height, keeping fill_space to the bottom/top band contacts
-        y_start = bottom_rows[-1] + cont_size + fill_space
-        y_span = top_rows[0] - fill_space - y_start
-        y_coords = along_coords(y_start, y_span)
+            # left/right bands: cut columns across the band, rows along the
+            # ring height, keeping fill_space to the bottom/top band cuts
+            y_start = bottom_rows[-1] + cut_size + fill_space
+            y_span = top_rows[0] - fill_space - y_start
+            # NOTE: no fit check needed here; cont_array_num_and_remainder()
+            #       yields no cuts for spans that are too small or negative,
+            #       and its epsilon already tolerates an exactly-fitting cut
+            y_coords = along_coords(y_start, y_span)
 
-        left_cols = across_coords(xl)
-        right_cols = across_coords(xr - width)
+            left_cols = across_coords(xl)
+            right_cols = across_coords(xr - width)
 
-        for y in bottom_rows + top_rows:
-            for x in x_coords:
-                contact_box = Box(x, y, x + cont_size, y + cont_size)
-                dbCreateRect(dlo_gen, cont, contact_box)
+            for y in bottom_rows + top_rows:
+                for x in x_coords:
+                    cut_box = Box(x, y, x + cut_size, y + cut_size)
+                    dbCreateRect(dlo_gen, cut_lyr, cut_box)
 
-        for y in y_coords:
-            for x in left_cols + right_cols:
-                contact_box = Box(x, y, x + cont_size, y + cont_size)
-                dbCreateRect(dlo_gen, cont, contact_box)
+            for y in y_coords:
+                for x in left_cols + right_cols:
+                    cut_box = Box(x, y, x + cut_size, y + cut_size)
+                    dbCreateRect(dlo_gen, cut_lyr, cut_box)
+
+        # Cont fill of the Activ/Metal1 ring
+        draw_cut_fill(cont, cont_size, cont_space, cont_space_array,
+                      cont_space_array_nr, cont_min_act_encl)
+        # upper metal rings and the via fills between adjacent metals
+        for level in range(1, metal_stack.num_metals()):
+            via = metal_stack.via_info(level)
+            enclosure = max(via['enc_bottom'], via['enc_bottom_endcap'],
+                            via['enc_top'], via['enc_top_endcap'])
+            # the ring on the upper metal of this via, if not drawn yet
+            if level + 1 > len(drawn_metal_levels):
+                draw_ring(metal_layers[level], xl, yb, xr, yt, wguard_met1, 0.0)
+                drawn_metal_levels.append(level + 1)
+            draw_cut_fill(via_layers[level - 1], via['size'], via['space'],
+                          via['space_array'], via['space_array_nr'], enclosure)
 
     def draw_label(label: Tuple[Layer, str],
                    label_point: Point):
@@ -395,6 +533,8 @@ class guard_ring(DloGen):
         specs('h', '3.05u', 'Height', RangeConstraint(min_span, None))
         specs('active_w', f'{default_active_w}u', 'Activ/Metal1 Width',
               RangeConstraint(min_active_w * 1e-6, None))
+        specs('top_layer', 'Metal1', 'Top Layer',
+              ChoiceConstraint(GuardRingMetalStack.TOP_LAYER_CHOICES))
 
     def setupParams(self, params):
         # process parameter values entered by user
@@ -403,6 +543,7 @@ class guard_ring(DloGen):
         self.w = Numeric(params['w'])*1e6
         self.h = Numeric(params['h'])*1e6
         self.active_w = Numeric(params['active_w'])*1e6
+        self.top_layer = params['top_layer']
 
     def genLayout(self):
         generate_guard_ring(dlo_gen=self,
@@ -411,4 +552,5 @@ class guard_ring(DloGen):
                             h=self.h,
                             x_center=0.0,
                             y_center=0.0,
-                            active_w=self.active_w)
+                            active_w=self.active_w,
+                            top_layer=self.top_layer)
