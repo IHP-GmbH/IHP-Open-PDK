@@ -54,9 +54,11 @@ def cont_array_num_and_remainder(available_span: float,
                                  space: float,
                                  epsilon: float) -> Tuple[int, float]:
     """
-    Number of Cont and the leftover space for an array of Cont with the given
-    spacing that fits into `available_span`. The leftover is meant to be
-    inserted as a wider gap in the middle of the array.
+    Number of Cont and the surplus space for an array of Cont with the given
+    spacing that fits into `available_span`: n cuts, (n - 2) gaps of `space`
+    and one gap of the surplus span the available space exactly. Callers
+    either use the surplus as one wider gap or spread it evenly over all
+    gaps of the array.
     """
     # NOTE: epsilon keeps floating point noise from dropping a contact
     #       when the span fits exactly (e.g. at the minimum guard ring size)
@@ -399,19 +401,23 @@ def generate_guard_ring(dlo_gen: DloGen,
                 first = band_lo + enclosure + (band_span - length) / 2.0
                 return [first + k * pitch for k in range(n)]
 
-            # contacts along the ring, starting at the enclosure edge; leftover
-            # space is inserted as a wider gap in the middle of the array
+            # contacts along the ring, starting at the enclosure edge; the
+            # surplus space is spread evenly over all gaps, keeping the row
+            # uniform (instead of one wider gap in the middle)
             def along_coords(start: float, span_len: float) -> List[float]:
                 n, remainder = cont_array_num_and_remainder(span_len, cut_size,
                                                             fill_space, epsilon)
                 coords: List[float] = []
-                p = start
-                for i in range(n):
-                    coords.append(p)
-                    if i + 1 == floor(n / 2.0):
-                        p += cut_size + remainder
-                    else:
-                        p += cut_size + fill_space
+                if n < 1:
+                    return coords
+                # every gap keeps at least fill_space; the surplus on top of
+                # it is shared equally, so the row ends exactly at
+                # start + span_len with all gaps of equal width
+                gap = fill_space
+                if n > 1:
+                    gap += (remainder - fill_space) / (n - 1)
+                for k in range(n):
+                    coords.append(start + k * (cut_size + gap))
                 return coords
 
             # bottom/top bands: cut rows across the band, columns along the
