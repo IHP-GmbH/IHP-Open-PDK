@@ -111,6 +111,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - KLayout DRC: fixed CNT-A modular detection ([#887](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/887))
 - KLayout DRC: fixed filler space/notch violations ([#924](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/924))
 - KLayout DRC: fixed Metal density min/max values
+- Netgen LVS (SG13G2, SG13CMOS5L): parallel `sg13g2_antennanp` and `sg13cmos5l_antennanp` cells are merged as intended. The setups named them `*_antennap` and read an undefined `$cell`
 
 #### Extraction / Magic
 - Magic: fixed `cap_rfcmim` missing substrate terminal extraction ([#1111](https://github.com/IHP-GmbH/IHP-Open-PDK/pull/1111))
