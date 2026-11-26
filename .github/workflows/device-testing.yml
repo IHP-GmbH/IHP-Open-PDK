@@ -1,0 +1,174 @@
+# Device model tests (ihp-sg13g2/libs.tech/ngspice/testing/devices): measured vs simulated.
+#
+# Thin by design: every step calls a script or a make target that runs the same way locally.
+#   plan        job matrices from toolchain.lock (tools/ci_matrix.py)
+#   ngspice     build each pinned ngspice version once, cached (tools/toolchain.py build ngspice)
+#   openvaf     build each pinned OpenVAF-Reloaded commit once and compile PSP103 with it, cached
+#   unit-tests  framework unit tests and the HBT de-embedding check (no simulation)
+#   tests       one job per toolchain and make target; a job fails on NEW failures (no exactly
+#               matching exception in waivers/), simulation errors, or exceptions whose curve is
+#               missing. The job summary has the counts per run (waived curves counted as failures),
+#               every new failure and the toolchain record; every failure is in the uploaded
+#               final_reports.
+# Caches are keyed on toolchain.lock, tools/ci_setup.sh and the runner image name (ubuntu-24.04,
+# the `runs-on` of every job), so a pin change
+# (or `cache_version` in toolchain.lock) rebuilds them; an edit of tools/toolchain.py does not
+# (hashFiles() is only allowed inside steps, so each cache key spells it out).
+
+name: Device Testing
+
+on:
+  push:
+    branches: [device_models_testing]
+  pull_request:
+    paths:
+      - "ihp-sg13g2/libs.tech/ngspice/testing/devices/**"
+      - "ihp-sg13g2/libs.tech/ngspice/models/**"
+      - "ihp-sg13g2/libs.tech/verilog-a/**"
+      - ".github/workflows/device-testing.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # (not MV / DEV: libtool reads $MV as its move command when ngspice is built)
+  DEV_DIR: ihp-sg13g2/libs.tech/ngspice/testing/devices
+  TOOLCHAIN_ROOT: /home/runner/toolchains
+
+# bash -eo pipefail for every step (a failing command inside a pipe fails the step)
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      ngspice: ${{ steps.matrix.outputs.ngspice }}
+      openvaf: ${{ steps.matrix.outputs.openvaf }}
+      tests: ${{ steps.matrix.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - id: matrix
+        run: python3 "$DEV_DIR/tools/ci_matrix.py" >> "$GITHUB_OUTPUT"
+
+  ngspice:
+    needs: plan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.plan.outputs.ngspice) }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TOOLCHAIN_ROOT }}/ngspice-${{ matrix.version }}
+          key: ngspice-${{ matrix.version }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pip install -r "$DEV_DIR/requirements.lock"
+          $DEV_DIR/tools/ci_setup.sh ngspice
+          python3 "$DEV_DIR/tools/toolchain.py" build ngspice ${{ matrix.version }}
+
+  openvaf:
+    needs: plan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        commit: ${{ fromJSON(needs.plan.outputs.openvaf) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - id: openvaf
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TOOLCHAIN_ROOT }}/openvaf-r-${{ matrix.commit }}
+          key: openvaf-${{ matrix.commit }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+      - id: osdi
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DEV_DIR }}/osdi_build/ovr-${{ matrix.commit }}
+          key: osdi-${{ matrix.commit }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh', 'ihp-sg13g2/libs.tech/verilog-a/psp103/**') }}
+      # OpenVAF is only needed to compile the models: nothing to do when their cache hit.
+      - if: steps.osdi.outputs.cache-hit != 'true'
+        run: $DEV_DIR/tools/ci_setup.sh llvm
+      - if: steps.osdi.outputs.cache-hit != 'true' && steps.openvaf.outputs.cache-hit != 'true'
+        run: python3 "$DEV_DIR/tools/toolchain.py" build openvaf ${{ matrix.commit }}
+      - if: steps.osdi.outputs.cache-hit != 'true'
+        run: python3 "$DEV_DIR/tools/toolchain.py" osdi ${{ matrix.commit }}
+
+  unit-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - run: make -C "$DEV_DIR" unit-tests
+      - run: make -C "$DEV_DIR" check-deembedding RESULTS_ROOT=models_results/checks
+
+  tests:
+    needs: [plan, ngspice, openvaf]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.tests) }}
+    name: ${{ matrix.target }} (${{ matrix.toolchain }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ${{ env.DEV_DIR }}/requirements.lock
+      - run: pip install -r "$DEV_DIR/requirements.lock"
+      - run: $DEV_DIR/tools/ci_setup.sh ngspice
+      - id: ids
+        run: python3 "$DEV_DIR/tools/toolchain.py" ids ${{ matrix.toolchain }} >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.TOOLCHAIN_ROOT }}/ngspice-${{ steps.ids.outputs.ngspice }}
+          key: ngspice-${{ steps.ids.outputs.ngspice }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh') }}
+          fail-on-cache-miss: true
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.DEV_DIR }}/osdi_build/ovr-${{ steps.ids.outputs.openvaf }}
+          key: osdi-${{ steps.ids.outputs.openvaf }}-${{ runner.os }}-ubuntu-24.04-${{ hashFiles('ihp-sg13g2/libs.tech/ngspice/testing/devices/toolchain.lock', 'ihp-sg13g2/libs.tech/ngspice/testing/devices/tools/ci_setup.sh', 'ihp-sg13g2/libs.tech/verilog-a/psp103/**') }}
+          fail-on-cache-miss: true
+      - run: make -C "$DEV_DIR" ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }}
+      - if: always()
+        run: python3 "$DEV_DIR/tools/ci_summary.py" "$DEV_DIR/models_results/${{ matrix.toolchain }}" --title "${{ matrix.target }} on ${{ matrix.toolchain }}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.target }}-${{ matrix.toolchain }}
+          path: |
+            ${{ env.DEV_DIR }}/models_results/${{ matrix.toolchain }}/**/final_reports/
+            ${{ env.DEV_DIR }}/models_results/${{ matrix.toolchain }}/**/toolchain.txt
+          if-no-files-found: warn
