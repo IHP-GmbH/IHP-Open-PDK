@@ -125,6 +125,9 @@ class MIMCAPExtractor < RBA::GenericDeviceExtractor
     conn.connect(dev, dev)
     conn.connect(dev, dev_mk)
     conn.connect(dev, meas_mk)
+    # Metal5 of other cells over the feed of an rfcmim splits the measured metal,
+    # so the feed would be a polygon of its own, which doesn't touch dev
+    conn.connect(meas_mk, meas_mk)
     conn.connect(top_mim, dev_mk)
     conn.connect(btm_mim, dev_mk)
 
