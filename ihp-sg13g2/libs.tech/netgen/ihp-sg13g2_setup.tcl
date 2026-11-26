@@ -155,12 +155,12 @@ foreach dev $devices {
 set devices {}
 lappend devices npn13G2
 lappend devices npn13G2l
-lappend devices npn13g2v
+lappend devices npn13G2v
 lappend devices pnpMPA
 
 # TODO: check parallel merge
-foreach dev $devices {
-    if {[lsearch $cells1 $dev] >= 0} {
+foreach dev_name $devices {
+    foreach dev [lsearch -exact -nocase -all -inline $cells1 $dev_name] {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {le critical}
 	property "-circuit1 $dev" parallel {we add}
@@ -168,7 +168,7 @@ foreach dev $devices {
 	# Ignore these properties
 	property "-circuit1 $dev" delete Nx Ny
     }
-    if {[lsearch $cells2 $dev] >= 0} {
+    foreach dev [lsearch -exact -nocase -all -inline $cells2 $dev_name] {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {le critical}
 	property "-circuit2 $dev" parallel {we add}
@@ -278,6 +278,9 @@ foreach dev $devices {
 	property "-circuit1 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
 	property "-circuit1 $dev" delete ic w l
+	if {$dev eq "cap_rfcmim"} {
+	    property "-circuit1 $dev" delete wfeed
+	}
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	property "-circuit2 $dev" derive area w l
@@ -288,6 +291,9 @@ foreach dev $devices {
 	property "-circuit2 $dev" tolerance {area 0.01} {perimeter 0.01}
 	# Ignore these properties
 	property "-circuit2 $dev" delete ic w l
+	if {$dev eq "cap_rfcmim"} {
+	    property "-circuit2 $dev" delete wfeed
+	}
     }
 }
 
