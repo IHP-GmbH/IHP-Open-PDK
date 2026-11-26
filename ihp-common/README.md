@@ -11,3 +11,13 @@ What belongs here:
 * PDK-aware scripts and build rules that would otherwise be duplicated.
 
 Anything specific to a single PDK stays in that PDK.
+
+## Maximal DRC regression
+
+`make test-DRC-main` also runs `libs.tech/klayout/tech/drc/testing/test_gat_b1_endcaps.py`,
+which checks `Gat.b1` with the complete maximal deck of each PDK (the modular golden
+suite does not cover maximal-only rules). To run it alone and keep the layouts and reports:
+
+```bash
+python3 ihp-common/libs.tech/klayout/tech/drc/testing/test_gat_b1_endcaps.py --pdk ihp-sg13g2 --run-dir /tmp/gat-b1
+```
