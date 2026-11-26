@@ -1,0 +1,512 @@
+//******************************************************************************
+//
+// Library:      SG13G2_dev
+// Technologies: SG13G2
+//
+// Model:        PSP 103.8.2
+// Revision:     200310
+//
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+//
+//******************************************************************************
+// MOS transistor section
+//******************************************************************************
+//
+// MOS-Subckt with D/S-overlap possibility
+//
+//       z1              z2            z1
+//   ----------------------------------------
+//   |          |   |         |   |         |
+//   |    S     | G |   D     | G |    S    |  w/ng, >=0.15u
+//   |          |   |         |   |         |
+//   ----------------------------------------
+//
+//  z1=0.34u, z2=0.38u
+//
+// Parameters as,ad,ps,pd are calculated automatically, if <= 0
+//
+// NOTE:
+// values are one-sigma deviations (1/3 of min-max)
+
+//******************************************************************************
+
+//******************************************************************************
+//
+// High Voltage (hv) MOS Transistors
+//
+// Model:                                PSP 103.6
+// Date:                                 10.03.2020
+// Lot:                                  EDJ
+// WAFER:                                06
+// CHIP Nr:                              x=3, y=9
+// Device:                               SG13G2
+// Maximum drain-source voltage:         3.3
+// Measurement data:
+// Nom. Temperature  (TNOM):             27 grd C
+// Meas. Temperature (TEMP):             27 grd C
+// Valid range for model:                L = (0.45 - 10)um   nmos
+//                                       L = (0.40 - 10)um   pmos
+//                                       W = (0.30 - 10)um
+//
+//******************************************************************************
+
+//******************************************************************************
+// SG13G2 High-Voltage MOSFET modules
+//******************************************************************************
+
+//******************************************************************************
+// Adapted from `ngspice/models/sg13g2_moshv_mod*.lib`
+//
+// Modifications:
+// - SWSOA parameter is set to zero in paramset TODO: user settable?
+// - Moved ngcon parameter into paramset
+//******************************************************************************
+
+// TODO: make modules paramsets once nested (chained) paramsets are supported
+
+//******************************************************************************
+// NMOS
+//******************************************************************************
+
+`include "disciplines.vams"
+
+(* desc = "SG13G2 High-Voltage NMOS module with calculated diffusion geometry, without mismatch" *)
+module sg13_hv_nmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.45u from [0.45u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf = w / ng from [0.3u:10u];
+    localparam real z1 = 0.34e-6;
+    localparam real z2 = 0.38e-6;
+    localparam integer k = ng / 2;
+    localparam integer p = ng % 2;
+    localparam real as = wf * ((2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real ad = wf * (p * z1 + k * z2);
+    localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
+    localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
+
+    sg13g2_hv_nmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_nmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage NMOS module with calculated diffusion geometry, with mismatch" *)
+module sg13_hv_nmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.45u from [0.45u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf_nom = w / ng from [0.3u:10u];
+    localparam real z1 = 0.34e-6;
+    localparam real z2 = 0.38e-6;
+    localparam integer k = ng / 2;
+    localparam integer p = ng % 2;
+    localparam real w_mm = $rdist_normal(1, w, 3e-9, "instance");
+    localparam real l_mm = $rdist_normal(2, l, 3e-9, "instance");
+    localparam real wf = w_mm / ng;
+    localparam real as = wf * ((2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real ad = wf * (p * z1 + k * z2);
+    localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
+    localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real area_um2 = m * l_mm * w_mm * 1e12;
+    localparam real delvto_sig = 0.007 / sqrt(area_um2);
+    localparam real factuo_sig = 0.005 / sqrt(area_um2);
+    localparam real delvto = $rdist_normal(2, 0, delvto_sig, "instance");
+    localparam real factuo = $rdist_normal(3, 1, factuo_sig, "instance");
+
+    sg13g2_hv_nmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_nmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage NMOS module with explicit diffusion geometry, without mismatch" *)
+module sg13_hv_nmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.45u from [0.45u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 0.0 from [0:inf);
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 0.0 from [0:inf);
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 0.0 from [0:inf);
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 0.0 from [0:inf);
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf_nom = w / ng from [0.3u:10u];
+
+    sg13g2_hv_nmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_nmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage NMOS module with explicit diffusion geometry, with mismatch" *)
+module sg13_hv_nmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.45u from [0.45u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 0.0 from [0:inf);
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 0.0 from [0:inf);
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 0.0 from [0:inf);
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 0.0 from [0:inf);
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf_nom = w / ng from [0.3u:10u];
+    localparam real w_mm = $rdist_normal(1, w, 3e-9, "instance");
+    localparam real l_mm = $rdist_normal(2, l, 3e-9, "instance");
+    localparam real area_um2 = m * l_mm * w_mm * 1e12;
+    localparam real delvto_sig = 0.007 / sqrt(area_um2);
+    localparam real factuo_sig = 0.005 / sqrt(area_um2);
+    localparam real delvto = $rdist_normal(2, 0, delvto_sig, "instance");
+    localparam real factuo = $rdist_normal(3, 1, factuo_sig, "instance");
+
+    sg13g2_hv_nmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_nmos(d, g, s, b);
+endmodule
+
+//******************************************************************************
+// PMOS
+//******************************************************************************
+
+(* desc = "SG13G2 High-Voltage PMOS module with calculated diffusion geometry, without mismatch" *)
+module sg13_hv_pmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.4u from [0.4u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf = w / ng from [0.3u:10u];
+    localparam real z1 = 0.34e-6;
+    localparam real z2 = 0.38e-6;
+    localparam integer k = ng / 2;
+    localparam integer p = ng % 2;
+    localparam real as = wf * ((2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real ad = wf * (p * z1 + k * z2);
+    localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
+    localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
+
+    sg13g2_hv_pmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_pmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage PMOS module with calculated diffusion geometry, with mismatch" *)
+module sg13_hv_pmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.4u from [0.4u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf_nom = w / ng from [0.3u:10u];
+    localparam real z1 = 0.34e-6;
+    localparam real z2 = 0.38e-6;
+    localparam integer k = ng / 2;
+    localparam integer p = ng % 2;
+    localparam real w_mm = $rdist_normal(1, w, 3e-9, "instance");
+    localparam real l_mm = $rdist_normal(2, l, 3e-9, "instance");
+    localparam real wf = w_mm / ng;
+    localparam real as = wf * ((2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real ad = wf * (p * z1 + k * z2);
+    localparam real ps = 2 * (wf * (k + p) + p * z1 + k * z2);
+    localparam real pd = 2 * (wf * (k + 1) + (2 - p) * z1 + (k - 1 + p) * z2);
+    localparam real area_um2 = m * l_mm * w_mm * 1e12;
+    localparam real delvto_sig = 0.0045 / sqrt(area_um2);
+    localparam real factuo_sig = 0.0040 / sqrt(area_um2);
+    localparam real delvto = $rdist_normal(3, 0, delvto_sig, "instance");
+    localparam real factuo = $rdist_normal(4, 1, factuo_sig, "instance");
+
+    sg13g2_hv_pmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_pmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage PMOS module with explicit diffusion geometry, without mismatch" *)
+module sg13_hv_pmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.4u from [0.4u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 0 from [0:0];
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 0.0 from [0:inf);
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 0.0 from [0:inf);
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 0.0 from [0:inf);
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 0.0 from [0:inf);
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+    localparam real wf_nom = w / ng from [0.3u:10u];
+
+    sg13g2_hv_pmos_psp #(
+        .w(w),
+        .l(l),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(0.0),
+        .factuo(1.0),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_pmos(d, g, s, b);
+endmodule
+
+(* desc = "SG13G2 High-Voltage PMOS module with explicit diffusion geometry, with mismatch" *)
+module sg13_hv_pmos(d, g, s, b);
+    inout d, g, s, b;
+    electrical d, g, s, b;
+
+    (* desc = "Device width", units = "m" *)
+    parameter real w = 0.3u from (0:inf);
+    (* desc = "Device length", units = "m" *)
+    parameter real l = 0.4u from [0.4u:10u];
+    (* desc = "Number of fingers" *)
+    parameter integer ng = 1 from [1:inf);
+    (* desc = "Instance multiplicity" *)
+    parameter real m = 1.0 from (0:inf);
+    (* desc = "Enable mismatch" *)
+    parameter integer mm_ok = 1 from [1:1];
+    (* desc = "Source diffusion area", units = "m^2" *)
+    parameter real as = 0.0 from [0:inf);
+    (* desc = "Drain diffusion area", units = "m^2" *)
+    parameter real ad = 0.0 from [0:inf);
+    (* desc = "Source diffusion perimeter", units = "m" *)
+    parameter real ps = 0.0 from [0:inf);
+    (* desc = "Drain diffusion perimeter", units = "m" *)
+    parameter real pd = 0.0 from [0:inf);
+    (* desc = "Temperature offset w.r.t. ambient temperature" *)
+    parameter real trise = 0.0;
+    (* desc = "Enable pre-layout parasitic modelling" *)
+    parameter integer pre_layout = 1 from [0:1];
+    (* desc = "Select the PSP103 RF/NQS model" *)
+    parameter integer rfmode = 0 from [0:1];
+
+    localparam real wf_nom = w / ng from [0.3u:10u];
+    localparam real w_mm = $rdist_normal(1, w, 3e-9, "instance");
+    localparam real l_mm = $rdist_normal(2, l, 3e-9, "instance");
+    localparam real area_um2 = m * l_mm * w_mm * 1e12;
+    localparam real delvto_sig = 0.0045 / sqrt(area_um2);
+    localparam real factuo_sig = 0.0040 / sqrt(area_um2);
+    localparam real delvto = $rdist_normal(3, 0, delvto_sig, "instance");
+    localparam real factuo = $rdist_normal(4, 1, factuo_sig, "instance");
+
+    sg13g2_hv_pmos_psp #(
+        .w(w_mm),
+        .l(l_mm),
+        .ng(ng),
+        .m(m),
+        .as(as),
+        .ad(ad),
+        .ps(ps),
+        .pd(pd),
+        .trise(trise),
+        .delvto(delvto),
+        .factuo(factuo),
+        .pre_layout(pre_layout),
+        .rfmode(rfmode))
+        sg13_hv_pmos(d, g, s, b);
+endmodule

@@ -1,1 +1,1 @@
-../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/moshv/tb_moshv_pmos_id_vd_ng4_rf.sp
+../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/moshv/test_sg13_hv_pmos_dc_id_vds_ng4_rf_tt.sp

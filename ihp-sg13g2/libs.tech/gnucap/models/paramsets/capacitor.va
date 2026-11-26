@@ -1,0 +1,53 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// Capacitor paramsets
+//
+// Aggregate source for building capacitor device plugins. It includes the
+// compact capacitor models and the paramsets for different capacitor device
+// variants.
+//******************************************************************************
+
+`pragma modelgen nogen-module
+
+`include "../spice/sp_capacitor.va"
+`include "cap_cmomi.va"
+`include "cap_cmomf.va"
+
+`include "capacitor_cparasitic.va"
+`include "capacitor_cmim_core.va"
+`include "capacitor_cmomi.va"
+`include "capacitor_cmomf.va"
+
+//******************************************************************************
+// placeholders: remaining g2 capacitor devices (reserved slots)
+//******************************************************************************
+// Only cmomi and cmomf are adapted for now. cmim / rfcmim and the rest are intentionally
+// left untouched: cap_cmim/cap_rfcmim stay as source-included wrapper modules in
+// ../capacitors_mod.va, and cmim_core above is their internal core, not a
+// user-facing device. When each cap is ported to this same single-build-unit
+// approach it lands here, following one of two templates:
+//   - a direct paramset over its primitive, like cparasitic / cmim_core / cmomi
+//     (add an mm_ok=0/1 overload once a mismatch model exists, as the resistors do)
+//   - or, if it needs a structural wrapper (core + series R + parasitics, as
+//     cmim does), a compiled module target, cf. the MOS module/paramset split
+//
+// Reserved slots -- uncomment and fill when the device is adapted:
+//   // paramset cmim            sp_capacitor  ... endparamset
+//   // paramset cmomi_<variant>  cap_cmomi      ... endparamset

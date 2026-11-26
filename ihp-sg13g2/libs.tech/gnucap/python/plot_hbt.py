@@ -14,7 +14,7 @@ ref_dir_sp = tests_dir_sp / "hbt" / "ref"
 
 def plot_tb_dc_hbt(device_variant: str, corner: str, show: bool = False):
 
-    test_name = f"tb_dc_hbt_{device_variant}_" + corner
+    test_name = f"test_hbt_{device_variant}_dc_{corner}"
 
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
 
@@ -83,7 +83,7 @@ def plot_tb_dc_hbt_13g2v(corner, show: bool = False):
 
 def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
 
-    test_name = f"tb_ac_hbt_13g2_{corner}"
+    test_name = f"test_hbt_13g2_ac_{corner}"
 
     # Load Gnucap data
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
@@ -111,6 +111,11 @@ def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
     ax0.semilogx(f_gc, gain_gc, c = "blue", label="Gnucap")
     ax0.semilogx(f_sp, gain_sp, c = "orange", ls = "--", label="ngspice")
 
+    ymin, ymax = ax0.get_ylim()
+    if ymax - ymin < 1.0:
+        center = (ymin + ymax) / 2
+        ax0.set_ylim(center - 0.5, center + 0.5)
+
     ax0.set_xlabel("Frequency [Hz]", fontsize=14)
     ax0.set_ylabel(r"$|V(C) / V(B)|$ [dB]", fontsize=14)
     ax0.ticklabel_format(axis="y", style="plain", useOffset=False)
@@ -125,7 +130,7 @@ def plot_tb_ac_hbt_13g2(corner: str, show: bool = False):
 
 def plot_tb_dc_mc_mm_hbt(device_variant: str, corner: str, title: str, show: bool = False):
 
-    test_name = f"tb_dc_mc_mm_hbt_{device_variant}_{corner}"
+    test_name = f"test_hbt_{device_variant}_mc_mm_{corner}"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6
@@ -163,7 +168,7 @@ def plot_tb_dc_mc_mm_hbt_13g2v(corner: str, show: bool = False):
 
 def plot_tb_dc_mc_stat_hbt(device_variant: str, title: str, show: bool = False):
 
-    test_name = f"tb_dc_mc_stat_hbt_{device_variant}"
+    test_name = f"test_hbt_{device_variant}_mc_stat_typ"
     filepath_gc = ref_dir_gc / (test_name + ".gc.out")
     data_gc = pd.read_csv(filepath_gc, sep=r'\s+', skipfooter=7, engine="python").values
     ic_gc = data_gc[:, 1] * 1e6

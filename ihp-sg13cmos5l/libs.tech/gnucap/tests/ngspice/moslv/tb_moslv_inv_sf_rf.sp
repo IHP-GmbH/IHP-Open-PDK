@@ -1,1 +1,1 @@
-../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/moslv/tb_moslv_inv_sf_rf.sp
+../../../../../../ihp-sg13g2/libs.tech/gnucap/tests/ngspice/moslv/test_moslv_dc_inv_rf_sf.sp

@@ -1,0 +1,67 @@
+//******************************************************************************
+//
+// Copyright 2026 IHP PDK Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//******************************************************************************
+
+//******************************************************************************
+// Capacitor corner modules
+//
+// Adapted from `ngspice/models/cornerCAP.lib`
+//
+// Modifications:
+// - Mismatch corners removed; mismatch device variants use paramset overloading
+// - cap_carea converted to SI units (F/m^2)
+//******************************************************************************
+
+// TODO: Enable include guards once Gnucap runtime Verilog loading supports preprocessing.
+// `ifndef SG13G2_CORNER_CAP_VA
+// `define SG13G2_CORNER_CAP_VA
+
+(* desc = "typical capacitor corner" *)
+module cap_typ();
+    localparam real cap_carea = 1.5E-3; // F/m^2
+    localparam real cap_cpara = 1.0;
+endmodule
+
+(* desc = "best-case capacitor corner" *)
+module cap_bcs();
+    localparam real cap_carea = 0.9 * 1.5E-3; // F/m^2
+    localparam real cap_cpara = 0.9;
+endmodule
+
+(* desc = "worst-case capacitor corner" *)
+module cap_wcs();
+    localparam real cap_carea = 1.1 * 1.5E-3; // F/m^2
+    localparam real cap_cpara = 1.1;
+endmodule
+
+(* desc = "statistical capacitor corner" *)
+module cap_typ_stat();
+    parameter integer seed = 0;
+    localparam real cap_carea_nom = 1.5E-3; // F/m^2
+    localparam real cap_cpara_nom  = 1.0;
+    localparam real cap_carea_sig = 0.033 * cap_carea_nom;
+    localparam real cap_cpara_sig = 0.067 * cap_cpara_nom;
+    localparam real cap_carea = $rdist_normal(seed + 1, cap_carea_nom, cap_carea_sig, "global");
+    localparam real cap_cpara = $rdist_normal(seed + 2, cap_cpara_nom, cap_cpara_sig, "global");
+endmodule
+
+(* desc = "capacitor mismatch parameters" *)
+module cap_mm();
+    localparam real cap_carea_mm = $rdist_normal(1, 1, 0.01, "instance");
+endmodule
+
+// `endif

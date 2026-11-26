@@ -11,8 +11,9 @@ assert ref_dir_sp.exists()
 
 def plot_tb_moshv_nmos_id_vd_ng(ng: int, rfmode: bool = False):
 
-    test_name = f"tb_moshv_nmos_id_vd_ng{ng}"
+    test_name = f"test_sg13_hv_nmos_dc_id_vds_ng{ng}"
     if rfmode: test_name += "_rf"
+    test_name += "_tt"
 
     plot_tb_mos_id_vd(
         test_name,
@@ -24,8 +25,9 @@ def plot_tb_moshv_nmos_id_vd_ng(ng: int, rfmode: bool = False):
 
 def plot_tb_moshv_pmos_id_vd_ng(ng: int, rfmode: bool = False):
 
-    test_name = f"tb_moshv_pmos_id_vd_ng{ng}"
+    test_name = f"test_sg13_hv_pmos_dc_id_vds_ng{ng}"
     if rfmode == 1: test_name += "_rf"
+    test_name += "_tt"
 
     plot_tb_mos_id_vd(
         test_name,
@@ -37,8 +39,9 @@ def plot_tb_moshv_pmos_id_vd_ng(ng: int, rfmode: bool = False):
 
 def plot_moshv_inv_corner(corner, rfmode: bool = False, show = False):
 
-    test_name = f"tb_moshv_inv_{corner}"
-    if rfmode: test_name + "_rf"
+    test_name = "test_moshv_dc_inv"
+    if rfmode: test_name += "_rf"
+    test_name += f"_{corner}"
 
     plot_mos_inv(
         test_name,
@@ -53,19 +56,21 @@ def plot_moshv_inv_all_corners(show=False):
     plot_mos_inv_all_corners(
         ref_dir_gc,
         moshv_fig_dir,
-        'tb_moshv_inv_all_corners',
+        'test_moshv_dc_inv_all_corners',
         show=show)
 
 def plot_moshv_mc_stats(test_name, rf_mode = False, show=False):
 
     if rf_mode: test_name += "_rf"
+    test_name += "_tt"
 
     plot_mos_mc_stats(test_name, ref_dir_gc, ref_dir_sp, moshv_fig_dir, show=show)
 
 def plot_moshv_mc_mm(corner, rfmode = False, plot_sp=True, show = False):
 
-    test_name = f"tb_moshv_mc_mm_{corner}"
+    test_name = "test_moshv_mc_mm"
     if rfmode: test_name += "_rf"
+    test_name += f"_{corner}"
 
     plot_mos_mc_mm(
         test_name,
@@ -90,13 +95,12 @@ def main():
         plot_moshv_mc_mm(corner, rfmode=False)
         plot_moshv_mc_mm(corner, rfmode=True)
 
-    plot_moshv_mc_stats('tb_moshv_mc_stat', rf_mode=False)
-    plot_moshv_mc_stats('tb_moshv_mc_stat', rf_mode=True)
+    plot_moshv_mc_stats('test_moshv_mc_stat', rf_mode=False)
+    plot_moshv_mc_stats('test_moshv_mc_stat', rf_mode=True)
 
     print("Finished plotting moshv!")
 
 if __name__ == "__main__":
 
     main()
-
 
