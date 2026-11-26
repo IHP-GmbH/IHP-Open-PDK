@@ -49,6 +49,10 @@ class DeviceCustomMOSCAP < RBA::DeviceClassCapacitor
 end
 
 class MOSCAPExtractor < RBA::GenericDeviceExtractor
+  # How far dev_mk reaches around the core, and the steps in which to look for the bulk port within it
+  BULK_REACH_UM = 1.5
+  BULK_STEP_UM = 0.05
+
   def initialize(name)
     create
     self.name = name
@@ -78,17 +82,15 @@ class MOSCAPExtractor < RBA::GenericDeviceExtractor
   end
 
   def extract_devices(layer_geometry)
-    dev, gate_port, bulk_port, dev_mk = layer_geometry
-    dev_mk.merged.each do |region|
-      region_sel = RBA::Region.new(region).sized((1.0 / $unit).round)
-      bulk_sel = RBA::Region.new(region).sized((12.0 / $unit).round)
-      region_core = dev.interacting(region_sel)
-      region_gate = gate_port.interacting(region_sel)
-      region_bulk = bulk_port.interacting(bulk_sel)
+    dev, gate_port, bulk_port, = layer_geometry
+    # A device for each core, with the gate over it and its nearest bulk port. The marker of a core can hold others:
+    # the markers of cores closer than 3 um merge, and any GatPoly near a core is a gate port
+    dev.merged.each do |core|
+      region_core = RBA::Region.new(core)
+      region_gate = gate_port.interacting(region_core)
+      region_bulk = nearest_bulk_port(region_core, bulk_port)
 
-      if region_core.size != 1
-        $logger.info("No. of core regions exist for #{@name} is #{region_core.size}, should be 1")
-      elsif region_gate.size != 1
+      if region_gate.size != 1
         $logger.info("No. of gate ports exist for #{@name} is #{region_gate.size}, should be 1")
       elsif region_bulk.is_empty?
         $logger.info("No bulk port exists for #{@name}, should be at least 1")
@@ -104,6 +106,16 @@ class MOSCAPExtractor < RBA::GenericDeviceExtractor
   end
 
   private
+
+  def nearest_bulk_port(region_core, bulk_port)
+    # The guard ring of a neighbour is within the marker, too
+    step = (BULK_STEP_UM / $unit).round
+    (step..(BULK_REACH_UM / $unit).round).step(step) do |distance|
+      region_bulk = bulk_port.interacting(region_core.sized(distance))
+      return region_bulk unless region_bulk.is_empty?
+    end
+    RBA::Region.new
+  end
 
   def define_layers
     define_layer('core', 'core Layer')
