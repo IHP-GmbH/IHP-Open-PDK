@@ -506,3 +506,21 @@ proc CbRes {param} {
     
     return $RC
 }
+
+#******************************************************************************************************
+# lvsres callback: set the length based on the selected metal layer
+#******************************************************************************************************
+proc CbLvsres {param} {
+    set cellId [iPDK_getCurrentInst]
+    set layer [iPDK_getParamValue layer $cellId]
+
+    switch $layer {
+        TopMetal2 { set length 2.0u }
+        TopMetal1 { set length 1.64u }
+        default   { set length 1.0u }
+    }
+
+    iPDK_setParamValue length $length $cellId
+
+    return 1
+}
