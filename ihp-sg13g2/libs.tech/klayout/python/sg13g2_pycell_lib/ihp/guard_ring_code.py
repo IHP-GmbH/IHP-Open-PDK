@@ -166,7 +166,7 @@ class GuardRingMetalStack:
         """
         techparams = self.techparams
         if level == 1:
-            # Via1 (Metal1→Metal2)
+            # Via1 (Metal1 -> Metal2)
             return {'layer': 'Via1',
                     'size': techparams['V1_a'],
                     'space': techparams['V1_b'],
@@ -176,7 +176,7 @@ class GuardRingMetalStack:
                     'enc_bottom_endcap': techparams['V1_c1'],
                     'enc_top': techparams['Vn_c'],
                     'enc_top_endcap': techparams['Vn_c1']}
-        # Via2..Via4 (Metal2→Metal3 .. Metal4→Metal5)
+        # Via2..Via4 (Metal2 -> Metal3 .. Metal4 -> Metal5)
         return {'layer': f'Via{level}',
                 'size': techparams['Vn_a'],
                 'space': techparams['Vn_b'],
