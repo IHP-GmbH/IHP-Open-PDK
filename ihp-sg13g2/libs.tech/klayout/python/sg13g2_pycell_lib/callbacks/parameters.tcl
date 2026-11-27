@@ -213,11 +213,6 @@ proc iPDK_engToSci { value } {
     if {[dict exists $sciCache $value]} {
         set res [dict get $sciCache $value]
     } else {
-        variable dispScriptFile
-        set path [file dirname $dispScriptFile]
-        set path "$path:$cniPythonPath"
-        set ::env(PYTHONPATH) $path
-
         set pythonPath [auto_execok python3]
         if {$pythonPath eq ""} {
             set pythonPath [auto_execok python]
