@@ -81,6 +81,29 @@ moduleNames = [
         'guard_ring_code',
 ]
 
+def _setup_pythonpath_env() -> None:
+    """The Tcl callbacks spawn external Python processes;
+    PYTHONPATH must carry the callbacks dir and its cni/numeric dependencies
+    so callback.py is callable there."""
+    here = pathlib.Path(__file__).resolve().parent
+    candidates = [here / 'callbacks']
+
+    # cni and numeric sit in the API's source/python root,
+    # which is already on sys.path. use cni's spec as reference
+    cni_spec = importlib.util.find_spec("cni")
+    if cni_spec and cni_spec.submodule_search_locations:
+        # NOTE: cni is a namespace package (no __init__.py)
+        # so the search location itself is the root dir, do not use .parent
+        candidates.append(pathlib.Path(cni_spec.submodule_search_locations[0]).resolve())
+    else:
+        print("sg13g2_pycell_lib: could not locate 'cni'; callbacks may fail.")
+
+    existing = [e for e in os.environ.get('PYTHONPATH', '').split(os.pathsep) if e]
+    missing = [c for c in candidates if str(c) not in existing]
+
+    # Prepend missing env paths
+    os.environ['PYTHONPATH'] = os.pathsep.join([str(p) for p in missing] + existing)
+
 def getProcessNames():
     processNames = []
     maxDepth = 10
@@ -279,6 +302,8 @@ class SG13G2_NativePCellLib(pya.Library):
         self.layout().register_pcell("Via", ViaPCell())
         self.register("SG13_native_pcell_lib")
 
+# setup environment _before_ any callbacks trigger
+_setup_pythonpath_env()
 
 # instantiate and register the libraries
 PyCellLib()
